@@ -4,10 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.mooner.starlight.R
+import kotlinx.android.synthetic.main.fragment_projects.view.*
 
 class ProjectsFragment : Fragment() {
 
@@ -20,11 +21,17 @@ class ProjectsFragment : Fragment() {
     ): View? {
         projectsViewModel =
                 ViewModelProvider(this).get(ProjectsViewModel::class.java)
-        val root = inflater.inflate(R.layout.fragment_gallery, container, false)
-        val textView: TextView = root.findViewById(R.id.text_gallery)
-        projectsViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
+        val root = inflater.inflate(R.layout.fragment_projects, container, false)
+
+        val recyclerAdapter = ProjectListAdapter(root.context)
+        projectsViewModel.data.observe(viewLifecycleOwner) {
+            recyclerAdapter.data = it
+            recyclerAdapter.notifyDataSetChanged()
         }
+
+        val layoutManager = LinearLayoutManager(root.context)
+        root.recyclerViewProjectList.layoutManager = layoutManager
+        root.recyclerViewProjectList.adapter = recyclerAdapter
         return root
     }
 }

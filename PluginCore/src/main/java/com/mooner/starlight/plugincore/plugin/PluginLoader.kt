@@ -22,16 +22,14 @@ class PluginLoader {
         .getDeclaredMethod("addURL", URL::class.java)
 
     private val defDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/")
-    private val dexDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/.dex/")
+    //private val dexDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/.dex/")
 
     init {
         method.isAccessible = true
     }
 
     fun loadPlugins(dir: File = defDirectory) {
-        println("dir: ${dir.path}")
         if (!dir.exists() || !dir.isDirectory) {
-            println("mkdirs")
             dir.mkdirs()
         }
 
@@ -48,6 +46,7 @@ class PluginLoader {
                     throw InvalidPluginException(e.toString())
                 }
                 val plugin = loadPlugin(config, file)
+
                 //PluginManager.plugins[config.name] = plugin
             } catch (e: Exception) {
                 Session.logger.e(T, e.toString())

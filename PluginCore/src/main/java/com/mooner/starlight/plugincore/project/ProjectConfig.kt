@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ProjectConfig(
         val name: String,
+        val mainScript: String,
         val language: Languages,
         var isEnabled: Boolean,
         val listener: String,
