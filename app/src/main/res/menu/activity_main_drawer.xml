@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_home"
+            android:icon="@drawable/ic_round_home_24"
+            android:title="@string/menu_home" />
+        <item
+            android:id="@+id/nav_projects"
+            android:icon="@drawable/ic_round_projects_24"
+            android:title="@string/menu_gallery" />
+        <item
+            android:id="@+id/nav_slideshow"
+            android:icon="@drawable/ic_round_developer_mode_24"
+            android:title="@string/menu_info" />
+    </group>
+</menu>

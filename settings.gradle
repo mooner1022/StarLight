@@ -1,0 +1,3 @@
+include ':PluginCore'
+include ':app'
+rootProject.name = "StarLight"

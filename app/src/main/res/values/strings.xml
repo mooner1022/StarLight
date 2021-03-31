@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">StarLight</string>
+    <string name="app_version">v0.0.1 Alpha</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Project StarLight 🌟</string>
+    <string name="nav_header_subtitle">v0.0.1 Alpha</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="menu_home">홈</string>
+    <string name="menu_gallery">프로젝트</string>
+    <string name="menu_info">정보</string>
+</resources>
