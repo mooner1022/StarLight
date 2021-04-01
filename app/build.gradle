@@ -1,9 +1,9 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
-    id 'kotlin-android-extensions'
     id 'kotlinx-serialization'
     id 'kotlin-kapt'
+    id 'kotlin-android-extensions'
 }
 
 android {
@@ -65,6 +65,11 @@ dependencies {
     implementation 'com.bitvale:fabdialog:1.0.1'
     implementation 'com.github.arcadefire:nice-spinner:1.4.4'
     implementation 'com.alespero:expandable-cardview:0.8'
+    implementation 'com.github.Rosemoe.CodeEditor:editor:0.4.0'
+    implementation 'com.github.Rosemoe.CodeEditor:language-base:0.4.0'
+    implementation 'com.github.Rosemoe.CodeEditor:language-java:0.4.0'
+    implementation 'com.github.Rosemoe.CodeEditor:language-universal:0.4.0'
+    implementation 'com.github.Rosemoe.CodeEditor:language-s5d:0.4.0'
     implementation project(":PluginCore")
 
     testImplementation 'junit:junit:4.13.2'

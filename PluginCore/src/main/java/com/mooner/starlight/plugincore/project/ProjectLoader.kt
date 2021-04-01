@@ -26,25 +26,25 @@ class ProjectLoader {
         if (listeners.contains(listener)) listeners.remove(listener)
     }
 
-    fun newProject(dir: File, config: ProjectConfig) {
-        Project.create(projectDir, config)
+    fun newProject(dir: File = projectDir, config: ProjectConfig) {
+        projects.add(Project.create(dir, config))
         for (listener in listeners) {
             listener(projects)
         }
     }
 
     fun loadProjects(dir: File = projectDir): List<Project> {
-        val list = mutableListOf<Project>()
+        projects.clear()
         for (folder in dir.listFiles()?.filter { it.isDirectory }?:return emptyList()) {
             val config: ProjectConfig
             try {
                 config = getProjectConfig(folder)
-                list.add(Project(folder, config))
+                projects.add(Project(folder, config))
             } catch (e: IllegalStateException) {
                 Session.logger.e(t, e.toString())
             }
         }
-        return list.toList()
+        return projects.toList()
     }
 
     fun getProjectConfig(dir: File): ProjectConfig {

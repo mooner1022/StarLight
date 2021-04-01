@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.project
 
+import com.mooner.starlight.plugincore.language.Languages
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.mozilla.javascript.Context
@@ -13,6 +14,7 @@ class Project(
         val config: ProjectConfig
 ) {
     private val interpreter: Any
+    val directory: File
 
     companion object {
         fun create(dir: File, config: ProjectConfig): Project {
@@ -27,6 +29,8 @@ class Project(
     init {
         val rawCode: String = (folder.listFiles()?.find { it.isFile && it.name == config.mainScript }?:throw IllegalArgumentException("Cannot find main script ${config.mainScript} for project ${config.name}"))
                 .readText(Charsets.UTF_8)
+
+        directory = folder
 
         interpreter = when(config.language) {
             Languages.JS_RHINO -> {

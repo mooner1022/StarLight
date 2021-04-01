@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.project
 
+import com.mooner.starlight.plugincore.language.Languages
 import com.mooner.starlight.plugincore.plugin.Plugin
 import kotlinx.serialization.Serializable
 

@@ -2,19 +2,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.mooner.starlight">
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@mipmap/ic_logo"
         android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:requestLegacyExternalStorage="true"
-        android:theme="@style/Theme.StarLight"
-        android:fullBackupContent="@xml/backup_descriptor">
+        android:theme="@style/Theme.StarLight">
+        <activity android:name=".ui.editor.EditorActivity"></activity>
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
@@ -25,6 +26,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <service android:name=".core.BackgroundTask" />
     </application>
 

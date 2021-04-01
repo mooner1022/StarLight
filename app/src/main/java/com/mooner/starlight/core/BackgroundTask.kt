@@ -19,17 +19,21 @@ class BackgroundTask: Service() {
 
     override fun onCreate() {
         super.onCreate()
+
+        val style: NotificationCompat.BigTextStyle = NotificationCompat.BigTextStyle()
+        style.bigText("당신만을 위한 봇들을 관리중이에요 :)")
+        style.setSummaryText("StarLight 실행중")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel()
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("StarLight 실행중")
-                .setContentText("당신만을 위한 봇들을 관리중이에요 :)")
+                .setStyle(style)
+                .setShowWhen(false)
                 .build()
             startForeground(NOTIFICATION_ID, notification)
         } else {
             val notification = NotificationCompat.Builder(this)
-                .setContentTitle("StarLight 실행중")
-                .setContentText("당신만을 위한 봇들을 관리중이에요 :)")
+                .setStyle(style)
+                .setShowWhen(false)
                 .build()
             startForeground(NOTIFICATION_ID, notification)
         }

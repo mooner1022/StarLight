@@ -20,10 +20,10 @@ import com.bitvale.fabdialog.widget.FabDialog
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.navigation.NavigationView
 import com.mooner.starlight.core.BackgroundTask
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.getLogger
+import com.mooner.starlight.plugincore.getProjectLoader
 import com.mooner.starlight.plugincore.plugin.PluginLoader
-import com.mooner.starlight.plugincore.project.Languages
-import com.mooner.starlight.plugincore.project.Project
+import com.mooner.starlight.plugincore.language.Languages
 import com.mooner.starlight.plugincore.project.ProjectConfig
 import org.angmarch.views.NiceSpinner
 import java.io.File
@@ -33,6 +33,7 @@ import kotlin.math.abs
 class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
+    private lateinit var languageSpinner: NiceSpinner
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,7 +66,17 @@ class MainActivity : AppCompatActivity() {
             setPositiveButton("추가") {
                 val projectDir = File(Environment.getExternalStorageDirectory(), "StarLight/projects/")
                 val projectName = findViewById<EditText>(R.id.editTextNewProjectName).text.toString()
-
+                getProjectLoader().newProject(projectDir,
+                    ProjectConfig(
+                        name = projectName,
+                        mainScript = "$projectName.js",
+                        language = Languages.values()[languageSpinner.selectedIndex],
+                        isEnabled = false,
+                        listener = "",
+                        usedPlugins = mutableListOf(),
+                        packages = mutableListOf()
+                    )
+                )
                 dialog_fab.collapseDialog()
             }
             setNegativeButton("취소") {
@@ -73,13 +84,13 @@ class MainActivity : AppCompatActivity() {
             }
             setOnClickListener { view ->
                 dialog_fab.expandDialog()
-                val languageSpinner = findDialogViewById(R.id.spinnerLanguage) as NiceSpinner
+                languageSpinner = findDialogViewById(R.id.spinnerLanguage) as NiceSpinner
                 val objects = Languages.values().map { it.name_kr }.toList()
                 with(languageSpinner) {
                     setBackgroundColor(resources.getColor(R.color.transparent))
                     attachDataSource(objects)
                     setOnSpinnerItemSelectedListener { parent, view, position, id ->
-                        Session.logger.i(javaClass.name, "Spinner item selected: $position")
+                        getLogger().i(javaClass.name, "Spinner item selected: $position")
                     }
                 }
             }
