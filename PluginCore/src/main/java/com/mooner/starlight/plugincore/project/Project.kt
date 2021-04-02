@@ -1,19 +1,19 @@
 package com.mooner.starlight.plugincore.project
 
+import com.eclipsesource.v8.V8
+import com.mooner.starlight.plugincore.compiler.Compiler
 import com.mooner.starlight.plugincore.language.Languages
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.mozilla.javascript.Context
-import org.mozilla.javascript.ContextFactory
 import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
 import java.io.File
 
 class Project(
-        folder: File,
-        val config: ProjectConfig
+    folder: File,
+    val config: ProjectConfig
 ) {
-    private val interpreter: Any
+    private val engine: Any
     val directory: File
 
     companion object {
@@ -27,34 +27,29 @@ class Project(
     }
 
     init {
-        val rawCode: String = (folder.listFiles()?.find { it.isFile && it.name == config.mainScript }?:throw IllegalArgumentException("Cannot find main script ${config.mainScript} for project ${config.name}"))
+        val rawCode: String = (folder.listFiles()?.find { it.isFile && it.name == config.mainScript }?:throw IllegalArgumentException(
+            "Cannot find main script ${config.mainScript} for project ${config.name}"
+        ))
                 .readText(Charsets.UTF_8)
-
         directory = folder
+        engine = Compiler.compile(config.language, config.mainScript, rawCode)
+    }
 
-        interpreter = when(config.language) {
+    fun callEvent(methodName: String, args: Array<Any>) {
+        when(config.language) {
             Languages.JS_RHINO -> {
-                val factory = ContextFactory.getGlobal()
-                val context = factory.enterContext().apply {
-                    optimizationLevel = -1
-                    languageVersion = Context.VERSION_ES6
-                }
-                val shared = context.initStandardObjects()
-                val scope = context.newObject(shared)
-                context.evaluateString(scope, rawCode, config.mainScript, 1, null)
-                scope
+                ScriptableObject.callMethod(engine as Scriptable, methodName, args)
+            }
+            Languages.JS_V8 -> {
+                (engine as V8).executeJSFunction(methodName, *args)
             }
             else -> {
-                ""
+
             }
         }
     }
 
-    fun run(args: Array<Any>) {
-        when(config.language) {
-            Languages.JS_RHINO -> {
-                ScriptableObject.callMethod(interpreter as Scriptable, "response", args)
-            }
-        }
+    fun flush() {
+        File(directory.path, "project.json").writeText(Json.encodeToString(config), Charsets.UTF_8)
     }
 }

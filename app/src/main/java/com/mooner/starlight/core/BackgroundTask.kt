@@ -2,6 +2,7 @@ package com.mooner.starlight.core
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -9,6 +10,8 @@ import android.os.Build
 import android.os.IBinder
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import com.mooner.starlight.MainActivity
+import com.mooner.starlight.core.ApplicationSession.pluginLoader
 
 class BackgroundTask: Service() {
     companion object {
@@ -20,6 +23,12 @@ class BackgroundTask: Service() {
     override fun onCreate() {
         super.onCreate()
 
+        loadPlugins()
+
+        val pendingIntent: PendingIntent =
+            Intent(this, MainActivity::class.java).let { notificationIntent ->
+                PendingIntent.getActivity(this, 0, notificationIntent, 0)
+            }
         val style: NotificationCompat.BigTextStyle = NotificationCompat.BigTextStyle()
         style.bigText("당신만을 위한 봇들을 관리중이에요 :)")
         style.setSummaryText("StarLight 실행중")
@@ -28,12 +37,14 @@ class BackgroundTask: Service() {
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setStyle(style)
                 .setShowWhen(false)
+                .setContentIntent(pendingIntent)
                 .build()
             startForeground(NOTIFICATION_ID, notification)
         } else {
             val notification = NotificationCompat.Builder(this)
                 .setStyle(style)
                 .setShowWhen(false)
+                .setContentIntent(pendingIntent)
                 .build()
             startForeground(NOTIFICATION_ID, notification)
         }
@@ -58,5 +69,9 @@ class BackgroundTask: Service() {
             Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(
             notificationChannel)
+    }
+
+    private fun loadPlugins() {
+        ApplicationSession.plugins = pluginLoader.loadPlugins()
     }
 }

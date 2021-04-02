@@ -1,9 +1,9 @@
 package com.mooner.starlight
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.os.Environment
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -19,21 +19,28 @@ import androidx.navigation.ui.setupWithNavController
 import com.bitvale.fabdialog.widget.FabDialog
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.navigation.NavigationView
+import com.mooner.starlight.core.ApplicationSession.projectLoader
 import com.mooner.starlight.core.BackgroundTask
 import com.mooner.starlight.plugincore.getLogger
-import com.mooner.starlight.plugincore.getProjectLoader
-import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.language.Languages
-import com.mooner.starlight.plugincore.project.ProjectConfig
+import kotlinx.android.synthetic.main.app_bar_main.*
 import org.angmarch.views.NiceSpinner
-import java.io.File
 import kotlin.math.abs
-
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var languageSpinner: NiceSpinner
+
+    companion object {
+        @SuppressLint("StaticFieldLeak")
+        lateinit var runningBotsTextView: TextView
+
+        fun reloadText() {
+            val active = projectLoader.getEnabledProjects()
+            runningBotsTextView.text = if (active.isEmpty()) "작동중인 봇이 없어요." else "${active.size}개의 봇이 작동중이에요."
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,7 +62,6 @@ class MainActivity : AppCompatActivity() {
                 startService(intent)
             }
         }
-        PluginLoader().loadPlugins()
 
         val dialog_fab: FabDialog = findViewById(R.id.dialog_fab)
         with(dialog_fab) {
@@ -64,19 +70,12 @@ class MainActivity : AppCompatActivity() {
             setCanceledOnTouchOutside(true)
             setDialogIcon(R.drawable.ic_round_projects_24)
             setPositiveButton("추가") {
-                val projectDir = File(Environment.getExternalStorageDirectory(), "StarLight/projects/")
                 val projectName = findViewById<EditText>(R.id.editTextNewProjectName).text.toString()
-                getProjectLoader().newProject(projectDir,
-                    ProjectConfig(
-                        name = projectName,
-                        mainScript = "$projectName.js",
-                        language = Languages.values()[languageSpinner.selectedIndex],
-                        isEnabled = false,
-                        listener = "",
-                        usedPlugins = mutableListOf(),
-                        packages = mutableListOf()
-                    )
-                )
+                projectLoader.newProject {
+                    name = projectName
+                    mainScript = "$projectName.js"
+                    language = Languages.values()[languageSpinner.selectedIndex]
+                }
                 dialog_fab.collapseDialog()
             }
             setNegativeButton("취소") {
@@ -96,17 +95,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val runningBotsText = findViewById<TextView>(R.id.textViewBotsRunning)
-        val appBar = findViewById<AppBarLayout>(R.id.appBarLayout)
-        appBar.addOnOffsetChangedListener(
+        runningBotsTextView = findViewById(R.id.textViewBotsRunning)
+        appBarLayout.addOnOffsetChangedListener(
             AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
                 val percent = abs(
                     verticalOffset / appBarLayout.totalScrollRange
                         .toFloat()
                 )
-                runningBotsText.alpha = 1.0f - percent
+                runningBotsTextView.alpha = 1.0f - percent
             }
         )
+        reloadText()
 
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
         val navView: NavigationView = findViewById(R.id.nav_view)

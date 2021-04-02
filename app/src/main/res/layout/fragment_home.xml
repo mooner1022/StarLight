@@ -67,6 +67,16 @@
                 android:textSize="20sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/buttonCallEvent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/main_bright"
+                android:text="Call Event"
+                app:layout_constraintEnd_toEndOf="@+id/textViewLogs"
+                app:layout_constraintTop_toTopOf="@+id/textViewLogs"
+                app:rippleColor="@color/main_bright" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
 

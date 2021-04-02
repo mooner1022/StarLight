@@ -28,10 +28,12 @@ class PluginLoader {
         method.isAccessible = true
     }
 
-    fun loadPlugins(dir: File = defDirectory) {
+    fun loadPlugins(dir: File = defDirectory): List<Plugin> {
         if (!dir.exists() || !dir.isDirectory) {
             dir.mkdirs()
         }
+
+        val list: MutableList<Plugin> = mutableListOf()
 
         for (file in dir.listFiles { it -> it.name.substringAfterLast(".") == "apk" }?: arrayOf()) {
             try {
@@ -46,12 +48,13 @@ class PluginLoader {
                     throw InvalidPluginException(e.toString())
                 }
                 val plugin = loadPlugin(config, file)
-
+                list.add(plugin)
                 //PluginManager.plugins[config.name] = plugin
             } catch (e: Exception) {
                 Session.logger.e(T, e.toString())
             }
         }
+        return list
     }
 
     private fun loadPlugin(config: PluginConfig, file: File): StarlightPlugin {

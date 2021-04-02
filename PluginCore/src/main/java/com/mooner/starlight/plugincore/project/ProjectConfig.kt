@@ -10,7 +10,21 @@ data class ProjectConfig(
         val mainScript: String,
         val language: Languages,
         var isEnabled: Boolean,
-        val listener: String,
+        val listeners: MutableList<String>,
         val usedPlugins: MutableList<Plugin>,
         val packages: MutableList<String>
 )
+
+data class MutableProjectConfig(
+        var name: String = "",
+        var mainScript: String = "",
+        var language: Languages = Languages.JS_RHINO,
+        var isEnabled: Boolean = false,
+        var listeners: MutableList<String> = mutableListOf(),
+        var usedPlugins: MutableList<Plugin> = mutableListOf(),
+        var packages: MutableList<String> = mutableListOf()
+) {
+    fun toProjectConfig(): ProjectConfig {
+        return ProjectConfig(name,mainScript, language, isEnabled, listeners, usedPlugins, packages)
+    }
+}

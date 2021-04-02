@@ -5,11 +5,23 @@
     android:layout_height="wrap_content"
     android:background="@drawable/round_all">
 
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardViewIsEnabled"
+        android:layout_width="5dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="2.5dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <com.alespero.expandablecardview.ExpandableCardView
         android:id="@+id/card_project"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
@@ -19,7 +31,7 @@
         app:inner_view="@layout/card_project_inner"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/cardViewIsEnabled"
         app:layout_constraintTop_toTopOf="parent"
         app:startExpanded="false"
         app:title="PROJECT_NAME" />

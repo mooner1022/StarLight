@@ -16,6 +16,11 @@ class ProjectLoader {
         if (!projectDir.exists() || !projectDir.isDirectory) {
             projectDir.mkdirs()
         }
+        loadProjects()
+    }
+
+    fun getEnabledProjects(): List<Project> {
+        return projects.filter { it.config.isEnabled }
     }
 
     fun bind(listener: (projects: List<Project>) -> Unit) {
@@ -26,7 +31,29 @@ class ProjectLoader {
         if (listeners.contains(listener)) listeners.remove(listener)
     }
 
-    fun newProject(dir: File = projectDir, config: ProjectConfig) {
+    fun getProjects(): List<Project> {
+        return this.projects
+    }
+
+    fun getProject(name: String): Project? {
+        return projects.find { it.config.name == name }
+    }
+
+    fun updateProjectConfig(name: String, block: ProjectConfig.() -> Unit) {
+        val project = projects.find { it.config.name == name }?: throw IllegalArgumentException("Cannot find project [$name]")
+        project.config.block()
+        project.flush()
+    }
+
+    fun newProject(config: ProjectConfig, dir: File = projectDir) {
+        projects.add(Project.create(dir, config))
+        for (listener in listeners) {
+            listener(projects)
+        }
+    }
+
+    fun newProject(dir: File = projectDir, block: MutableProjectConfig.() -> Unit) {
+        val config = MutableProjectConfig().apply(block).toProjectConfig()
         projects.add(Project.create(dir, config))
         for (listener in listeners) {
             listener(projects)
@@ -34,6 +61,7 @@ class ProjectLoader {
     }
 
     fun loadProjects(dir: File = projectDir): List<Project> {
+        //projectDir.deleteRecursively()
         projects.clear()
         for (folder in dir.listFiles()?.filter { it.isDirectory }?:return emptyList()) {
             val config: ProjectConfig
@@ -47,7 +75,7 @@ class ProjectLoader {
         return projects.toList()
     }
 
-    fun getProjectConfig(dir: File): ProjectConfig {
+    private fun getProjectConfig(dir: File): ProjectConfig {
         val result = dir.listFiles()?.find { it.isFile && it.name == "project.json" }
                 ?: throw IllegalStateException("Could not find project.json from ${dir.name}")
         try {

@@ -1,5 +1,7 @@
 package com.mooner.starlight.ui.editor
 
+//import io.github.rosemoe.editor.utils.CrashHandler
+
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.Editable
@@ -13,31 +15,17 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.mooner.starlight.R
-
-import io.github.rosemoe.editor.langs.EmptyLanguage
-import io.github.rosemoe.editor.langs.desc.CDescription
-import io.github.rosemoe.editor.langs.desc.CppDescription
 import io.github.rosemoe.editor.langs.desc.JavaScriptDescription
 import io.github.rosemoe.editor.langs.java.JavaLanguage
 import io.github.rosemoe.editor.langs.s5droid.S5droidAutoComplete
-import io.github.rosemoe.editor.langs.s5droid.S5droidLanguage
 import io.github.rosemoe.editor.langs.universal.UniversalLanguage
-//import io.github.rosemoe.editor.utils.CrashHandler
 import io.github.rosemoe.editor.widget.CodeEditor
 import io.github.rosemoe.editor.widget.EditorColorScheme
 import io.github.rosemoe.editor.widget.schemes.*
-
 import java.io.*
 
 
 class EditorActivity : AppCompatActivity() {
-    /*
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_editor)
-    }
-    */
-
     private lateinit var editor: CodeEditor
     private lateinit var panel: LinearLayout
     private lateinit var search: EditText
@@ -64,7 +52,8 @@ class EditorActivity : AppCompatActivity() {
         })
         editor.typefaceText = Typeface.MONOSPACE
         editor.isOverScrollEnabled = false
-        editor.setEditorLanguage(JavaLanguage())
+        editor.textSizePx = 50f
+        editor.setEditorLanguage(UniversalLanguage(JavaScriptDescription()))
         editor.setNonPrintablePaintingFlags(CodeEditor.FLAG_DRAW_WHITESPACE_LEADING or CodeEditor.FLAG_DRAW_LINE_SEPARATOR)
         editor.setText(intent.getStringExtra("code") ?: "")
     }
@@ -111,31 +100,6 @@ class EditorActivity : AppCompatActivity() {
                 }
             }
             R.id.code_format -> editor.formatCodeAsync()
-            R.id.switch_language -> AlertDialog.Builder(this)
-                .setTitle(R.string.switch_language)
-                .setSingleChoiceItems(
-                    arrayOf(
-                        "C",
-                        "C++",
-                        "Java",
-                        "JavaScript",
-                        "S5droid",
-                        "HTML",
-                        "None"
-                    ), -1
-                ) { dialog, which ->
-                    when (which) {
-                        0 -> editor.setEditorLanguage(UniversalLanguage(CDescription()))
-                        1 -> editor.setEditorLanguage(UniversalLanguage(CppDescription()))
-                        2 -> editor.setEditorLanguage(JavaLanguage())
-                        3 -> editor.setEditorLanguage(UniversalLanguage(JavaScriptDescription()))
-                        4 -> editor.setEditorLanguage(S5droidLanguage())
-                        5 -> editor.setEditorLanguage(EmptyLanguage())
-                    }
-                    dialog.dismiss()
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
             R.id.search_panel_st -> if (panel.visibility == View.GONE) {
                 replace.setText("")
                 search.setText("")

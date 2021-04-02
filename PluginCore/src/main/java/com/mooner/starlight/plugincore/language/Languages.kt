@@ -12,10 +12,12 @@ enum class Languages(
         id = "RhinoJS",
         name_kr = "자바스크립트 (라이노)"
     ),
+    /*
     PYTHON(
         id = "Jython",
         name_kr = "파이썬 (Jython)"
     ),
+    */
     CUSTOM(
         id = "",
         name_kr = ""
