@@ -29,10 +29,6 @@ class HomeFragment : Fragment() {
             textView.text = it
         })
 
-        root.buttonCallEvent.setOnClickListener {
-            taskHandler.callEvent("default","response", arrayOf(1, 2, "3"))
-            getLogger().i("MainActivity", "callEvent() called")
-        }
         return root
     }
 }

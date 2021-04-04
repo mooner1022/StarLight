@@ -23,6 +23,7 @@ import com.mooner.starlight.Utils.Companion.getLogger
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.core.ApplicationSession.projectLoader
 import com.mooner.starlight.core.BackgroundTask
+import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
@@ -32,11 +33,6 @@ import kotlin.math.abs
 
 @SuppressLint("StaticFieldLeak")
 class MainActivity : AppCompatActivity() {
-
-    init {
-        getLanguageManager().addLanguage(JSV8())
-    }
-
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var languageSpinner: NiceSpinner
 

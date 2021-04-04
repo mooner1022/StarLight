@@ -44,6 +44,6 @@ class JSV8: Language {
 
     override fun execute(engine: Any, methodName: String, args: Array<Any>) {
         val v8 = engine as V8
-
+        v8.executeJSFunction(methodName, *args)
     }
 }
