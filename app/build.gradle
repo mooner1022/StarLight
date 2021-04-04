@@ -74,6 +74,9 @@ dependencies {
     implementation 'com.github.Rosemoe.CodeEditor:language-universal:0.4.0'
     implementation 'com.github.Rosemoe.CodeEditor:language-s5d:0.4.0'
 
+    implementation group: 'org.mozilla', name: 'rhino', version: '1.7.13'
+    implementation 'com.eclipsesource.j2v8:j2v8:6.2.0@aar'
+
     implementation project(":PluginCore")
 
     testImplementation 'junit:junit:4.13.2'

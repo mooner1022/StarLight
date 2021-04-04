@@ -14,6 +14,7 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import io.github.rosemoe.editor.langs.desc.JavaScriptDescription
 import io.github.rosemoe.editor.langs.java.JavaLanguage
@@ -22,6 +23,7 @@ import io.github.rosemoe.editor.langs.universal.UniversalLanguage
 import io.github.rosemoe.editor.widget.CodeEditor
 import io.github.rosemoe.editor.widget.EditorColorScheme
 import io.github.rosemoe.editor.widget.schemes.*
+import kotlinx.android.synthetic.main.activity_editor.*
 import java.io.*
 
 
@@ -31,10 +33,19 @@ class EditorActivity : AppCompatActivity() {
     private lateinit var search: EditText
     private lateinit var replace:EditText
     private lateinit var fileDir: File
+    private lateinit var name: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editor)
+
+        setSupportActionBar(toolbar_editor)
+        name = intent.getStringExtra("title")!!
+        supportActionBar!!.apply {
+            setDisplayHomeAsUpEnabled(true)
+            setHomeAsUpIndicator(R.drawable.ic_round_arrow_left_24)
+            title = name
+        }
 
         fileDir = File(intent.getStringExtra("fileDir")?:throw IllegalArgumentException("No file directory passed to editor"))
 
@@ -65,19 +76,16 @@ class EditorActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.menu_save -> {
+                if (fileDir.isFile) fileDir.writeText(editor.text.toString())
+                else throw IllegalArgumentException("Target [${fileDir.path}] is not a file")
+                Snackbar.make(window.decorView.findViewById(android.R.id.content), "$name 저장 완료!", Snackbar.LENGTH_LONG).show()
+            }
+            android.R.id.home->{ // 메뉴 버튼
+                finish()
+            }
             R.id.text_undo -> editor.undo()
             R.id.text_redo -> editor.redo()
-            R.id.goto_end -> editor.setSelection(
-                editor.text.lineCount - 1, editor.text.getColumnCount(
-                    editor.text.lineCount - 1
-                )
-            )
-            R.id.move_up -> editor.moveSelectionUp()
-            R.id.move_down -> editor.moveSelectionDown()
-            R.id.home -> editor.moveSelectionHome()
-            R.id.end -> editor.moveSelectionEnd()
-            R.id.move_left -> editor.moveSelectionLeft()
-            R.id.move_right -> editor.moveSelectionRight()
             R.id.code_navigation -> {
                 val labels = editor.textAnalyzeResult.navigation
                 if (labels == null) {
@@ -141,58 +149,9 @@ class EditorActivity : AppCompatActivity() {
                 item.isChecked = !item.isChecked
                 editor.isWordwrap = item.isChecked
             }
-            R.id.open_logs -> {
-                var fis: FileInputStream? = null
-                try {
-                    fis = openFileInput("crash-journal.log")
-                    val br = BufferedReader(InputStreamReader(fis))
-                    val sb = StringBuilder()
-                    var line: String?
-                    while ((br.readLine().also { line = it }) != null) {
-                        sb.append(line).append('\n')
-                    }
-                    Toast.makeText(this, "Succeeded", Toast.LENGTH_SHORT).show()
-                    editor.setText(sb)
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Failed:$e", Toast.LENGTH_SHORT).show()
-                    e.printStackTrace()
-                } finally {
-                    if (fis != null) {
-                        try {
-                            fis.close()
-                        } catch (e: IOException) {
-                            e.printStackTrace()
-                        }
-                    }
-                }
-            }
-            R.id.clear_logs -> {
-                var fos: FileOutputStream? = null
-                try {
-                    fos = openFileOutput("crash-journal.log", MODE_PRIVATE)
-                    Toast.makeText(this, "Succeeded", Toast.LENGTH_SHORT).show()
-                } catch (e: Exception) {
-                    Toast.makeText(this, "Failed:$e", Toast.LENGTH_SHORT).show()
-                    e.printStackTrace()
-                } finally {
-                    if (fos != null) {
-                        try {
-                            fos.close()
-                        } catch (e: IOException) {
-                            e.printStackTrace()
-                        }
-                    }
-                }
-            }
-            R.id.open_debug_logs -> {
-            }
             R.id.editor_line_number -> {
                 editor.isLineNumberEnabled = !editor.isLineNumberEnabled
                 item.isChecked = editor.isLineNumberEnabled
-            }
-            R.id.save -> {
-                if (fileDir.isFile) fileDir.writeText(editor.text.toString())
-                else throw IllegalArgumentException("Target [${fileDir.path}] is not a file")
             }
         }
         return super.onOptionsItemSelected(item)

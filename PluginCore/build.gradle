@@ -53,10 +53,6 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
-    implementation group: 'org.mozilla', name: 'rhino', version: '1.7.13'
-    implementation 'com.eclipsesource.j2v8:j2v8:6.2.0@aar'
-    implementation group: 'org.python', name: 'jython', version: '2.7.2'
-
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'

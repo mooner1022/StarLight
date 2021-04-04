@@ -1,16 +1,17 @@
-package com.mooner.starlight.plugincore.compiler
+package com.mooner.starlight.compiler
 
 import com.eclipsesource.v8.V8
-import com.mooner.starlight.plugincore.Session
-import com.mooner.starlight.plugincore.language.Languages
-import com.mooner.starlight.plugincore.project.ProjectLoader
-import com.mooner.starlight.plugincore.utils.Utils.Companion.addClass
+import com.mooner.starlight.Utils.Companion.addClass
+import com.mooner.starlight.Utils.Companion.getLogger
+import com.mooner.starlight.project.Replier
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.ContextFactory
 
 class Compiler {
     companion object {
-        fun compile(lang: Languages, name: String, code: String): Any {
+        /*
+        fun compile(lang: Languages, name: String, code: String, replier: Replier): Any {
+            println("compiling project $name, code: $code")
             return when(lang) {
                 Languages.JS_RHINO -> {
                     val factory = ContextFactory.getGlobal()
@@ -27,10 +28,22 @@ class Compiler {
                     V8.createV8Runtime().apply {
                         addClass(
                             "replier",
-                            Session,
-                            arrayOf("reply","reply"),
+                            replier,
+                            arrayOf("reply", "replyTo"),
                             arrayOf(arrayOf(String::class.java), arrayOf(String::class.java, String::class.java))
                         )
+                        addClass(
+                                "logger",
+                                getLogger(),
+                                arrayOf("f", "i", "e", "w"),
+                                arrayOf(
+                                        arrayOf(String::class.java, String::class.java),
+                                        arrayOf(String::class.java, String::class.java),
+                                        arrayOf(String::class.java, String::class.java),
+                                        arrayOf(String::class.java, String::class.java)
+                                )
+                        )
+                        executeScript(code)
                     }
                 }
                 else -> {
@@ -38,5 +51,6 @@ class Compiler {
                 }
             }
         }
+         */
     }
 }

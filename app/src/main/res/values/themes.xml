@@ -11,10 +11,11 @@
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+        <item name="android:actionMenuTextColor">@color/black</item>
         <!-- Customize your theme here. -->
     </style>
 
-    <style name="Theme.StarLight.NoActionBar">
+    <style name="Theme.StarLight.NoActionBar" parent="Theme.StarLight">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>

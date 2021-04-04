@@ -58,7 +58,8 @@
                 android:theme="?attr/actionBarTheme"
                 app:buttonGravity="center_vertical"
                 app:layout_collapseMode="pin"
-                app:popupTheme="@style/Theme.StarLight.PopupOverlay" />
+                app:popupTheme="@style/Theme.StarLight.PopupOverlay"
+                app:title="홈" />
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>
 
@@ -87,7 +88,7 @@
         android:layout_marginEnd="@dimen/fab_margin"
         android:layout_marginBottom="@dimen/fab_margin"
         android:padding="@dimen/fab_padding"
-        app:dialogBackgroundColor="@color/dialog_day"
+        app:dialogBackgroundColor="@color/main_bright"
         app:fabIcon="@drawable/ic_round_add_white_24" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

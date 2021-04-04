@@ -19,34 +19,49 @@ import androidx.navigation.ui.setupWithNavController
 import com.bitvale.fabdialog.widget.FabDialog
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.navigation.NavigationView
+import com.mooner.starlight.Utils.Companion.getLogger
+import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.core.ApplicationSession.projectLoader
 import com.mooner.starlight.core.BackgroundTask
-import com.mooner.starlight.plugincore.getLogger
-import com.mooner.starlight.plugincore.language.Languages
+import com.mooner.starlight.languages.JSV8
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
 import kotlinx.android.synthetic.main.app_bar_main.*
 import org.angmarch.views.NiceSpinner
 import kotlin.math.abs
 
+@SuppressLint("StaticFieldLeak")
 class MainActivity : AppCompatActivity() {
+
+    init {
+        getLanguageManager().addLanguage(JSV8())
+    }
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var languageSpinner: NiceSpinner
 
     companion object {
-        @SuppressLint("StaticFieldLeak")
-        lateinit var runningBotsTextView: TextView
+        private lateinit var runningBotsTextView: TextView
+        private lateinit var _toolbar: Toolbar
 
         fun reloadText() {
             val active = projectLoader.getEnabledProjects()
             runningBotsTextView.text = if (active.isEmpty()) "작동중인 봇이 없어요." else "${active.size}개의 봇이 작동중이에요."
+        }
+
+        fun setToolbarText(text: String) {
+            _toolbar.title = text
+            println("title set")
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val toolbar: Toolbar = findViewById(R.id.toolbar)
-        setSupportActionBar(toolbar)
+        _toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(_toolbar)
+
+        ApplicationSession.context = applicationContext
 
         ActivityCompat.requestPermissions(
             this@MainActivity,
@@ -74,21 +89,22 @@ class MainActivity : AppCompatActivity() {
                 projectLoader.newProject {
                     name = projectName
                     mainScript = "$projectName.js"
-                    language = Languages.values()[languageSpinner.selectedIndex]
+                    language = getLanguageManager().getLanguages()[languageSpinner.selectedIndex].id
+                    listeners = mutableListOf("default")
                 }
                 dialog_fab.collapseDialog()
             }
             setNegativeButton("취소") {
                 dialog_fab.collapseDialog()
             }
-            setOnClickListener { view ->
+            setOnClickListener { _ ->
                 dialog_fab.expandDialog()
                 languageSpinner = findDialogViewById(R.id.spinnerLanguage) as NiceSpinner
-                val objects = Languages.values().map { it.name_kr }.toList()
+                val objects = getLanguageManager().getLanguages().map { it.name }.toList()
                 with(languageSpinner) {
                     setBackgroundColor(resources.getColor(R.color.transparent))
                     attachDataSource(objects)
-                    setOnSpinnerItemSelectedListener { parent, view, position, id ->
+                    setOnSpinnerItemSelectedListener { _, _, position, _ ->
                         getLogger().i(javaClass.name, "Spinner item selected: $position")
                     }
                 }

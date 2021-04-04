@@ -1,7 +1,7 @@
-package com.mooner.starlight.plugincore.project
+package com.mooner.starlight.project
 
 import android.os.Environment
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.Utils.Companion.getLogger
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -16,7 +16,7 @@ class ProjectLoader {
         if (!projectDir.exists() || !projectDir.isDirectory) {
             projectDir.mkdirs()
         }
-        loadProjects()
+        loadProjects(false)
     }
 
     fun getEnabledProjects(): List<Project> {
@@ -60,16 +60,18 @@ class ProjectLoader {
         }
     }
 
-    fun loadProjects(dir: File = projectDir): List<Project> {
+    fun loadProjects(useCache: Boolean, dir: File = projectDir): List<Project> {
         //projectDir.deleteRecursively()
-        projects.clear()
-        for (folder in dir.listFiles()?.filter { it.isDirectory }?:return emptyList()) {
-            val config: ProjectConfig
-            try {
-                config = getProjectConfig(folder)
-                projects.add(Project(folder, config))
-            } catch (e: IllegalStateException) {
-                Session.logger.e(t, e.toString())
+        if (!useCache) {
+            projects.clear()
+            for (folder in dir.listFiles()?.filter { it.isDirectory }?:return emptyList()) {
+                val config: ProjectConfig
+                try {
+                    config = getProjectConfig(folder)
+                    projects.add(Project(folder, config))
+                } catch (e: IllegalStateException) {
+                    getLogger().e(t, e.toString())
+                }
             }
         }
         return projects.toList()
