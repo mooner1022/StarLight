@@ -3,9 +3,8 @@ package com.mooner.starlight.plugincore.plugin
 import android.os.Environment
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.annotations.StarLightEventListener
-import com.mooner.starlight.plugincore.event.Listener
+import com.mooner.starlight.plugincore.event.EventListener
 import com.mooner.starlight.plugincore.utils.Utils.Companion.readString
-import dalvik.system.DexClassLoader
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -133,7 +132,7 @@ class PluginLoader {
         return null
     }
 
-    fun registerListener(plugin: Plugin, listener: Listener) {
+    fun registerListener(plugin: Plugin, listener: EventListener) {
         val methods: HashSet<Method>
         try {
             val publicMethods = listener.javaClass.methods
@@ -154,11 +153,11 @@ class PluginLoader {
             val annotation = method.getAnnotation(StarLightEventListener::class.java) ?: continue
 
             val checkClass: Class<*> = method.parameterTypes[0]
-            if (method.parameterTypes.size != 1 || !Listener::class.java.isAssignableFrom(checkClass)) {
+            if (method.parameterTypes.size != 1 || !EventListener::class.java.isAssignableFrom(checkClass)) {
                 Session.getLogger().e("PluginLoader", "Attempted to register invalid listener: ${listener.javaClass.simpleName}")
                 continue
             }
-            val eventClass = checkClass.asSubclass(Listener::class.java)
+            val eventClass = checkClass.asSubclass(EventListener::class.java)
             /*
              * UNFINISHED FUNCTION
              */

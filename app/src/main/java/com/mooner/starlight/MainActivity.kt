@@ -18,14 +18,12 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.bitvale.fabdialog.widget.FabDialog
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.navigation.NavigationView
 import com.mooner.starlight.Utils.Companion.getLogger
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.core.ApplicationSession.projectLoader
 import com.mooner.starlight.core.BackgroundTask
-import com.mooner.starlight.languages.JSRhino
-import com.mooner.starlight.languages.JSV8
-import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
 import kotlinx.android.synthetic.main.app_bar_main.*
 import org.angmarch.views.NiceSpinner
@@ -38,7 +36,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private lateinit var runningBotsTextView: TextView
-        private lateinit var _toolbar: Toolbar
+        private lateinit var ctr: CollapsingToolbarLayout
 
         fun reloadText() {
             val active = projectLoader.getEnabledProjects()
@@ -46,17 +44,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun setToolbarText(text: String) {
-            _toolbar.title = text
-            println("title set")
+            ctr.title = text
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        _toolbar = findViewById(R.id.toolbar)
-        setSupportActionBar(_toolbar)
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
+        ctr = findViewById(R.id.collapsingToolbarLayout)
         ApplicationSession.context = applicationContext
 
         ActivityCompat.requestPermissions(

@@ -12,11 +12,18 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Base64
 import android.util.Log
+import androidx.appcompat.widget.AppCompatMultiAutoCompleteTextView
+import com.mooner.starlight.core.ApplicationSession
+import com.mooner.starlight.core.ApplicationSession.projectLoader
 import com.mooner.starlight.core.ApplicationSession.taskHandler
+import com.mooner.starlight.core.TaskHandler
 import java.io.ByteArrayOutputStream
 import java.util.*
+import kotlin.collections.HashMap
 
 class NotificationListener: NotificationListenerService() {
+    private val sessions: HashMap<String, Notification.Action> = hashMapOf()
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
         if (sbn.packageName == "com.kakao.talk") {
@@ -32,11 +39,25 @@ class NotificationListener: NotificationListenerService() {
                                     applicationContext
                             )
                     )
+                    if (!sessions.containsKey(room)) {
+                        sessions[room] = act
+                    }
+
                     Log.i("StarLight-NotificationListener", "message : $message sender : $sender nRoom : $room nSession : $act")
 
-                    taskHandler.callEvent("default", "response", arrayOf(room, message, sender, imageHash))
+                    taskHandler.fireEvent("default","response", arrayOf(room, message, sender, imageHash))
                 }
             }
+        }
+    }
+
+    init {
+        taskHandler.bindRepliers { room, msg ->
+            if (!sessions.containsKey(room)) {
+                Log.w("NotificationListener", "No session for room $room found")
+                return@bindRepliers
+            }
+            send(msg, sessions[room]!!)
         }
     }
 

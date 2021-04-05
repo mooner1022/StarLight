@@ -1,5 +1,4 @@
 package com.mooner.starlight.plugincore.event
 
-interface Listener {
-    val name: String
+interface EventListener {
 }
