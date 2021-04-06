@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.plugin
 
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.language.Language
 import java.io.File
 import java.util.logging.Logger
@@ -58,7 +59,13 @@ abstract class StarlightPlugin: Plugin {
         get() = manager
 
     fun addCustomLanguage(language: Language) {
-
+        try {
+            Session.getLanguageManager().addLanguage(language)
+            Session.getLogger().i("PluginLoader","Successfully added language ${language.name}")
+        } catch (e: IllegalStateException) {
+            e.printStackTrace()
+            Session.getLogger().e("PluginLoader",e.toString())
+        }
     }
 
     override fun toString(): String = config.fullName

@@ -49,6 +49,7 @@ class PluginLoader {
                     throw InvalidPluginException(e.toString())
                 }
                 val plugin = loadPlugin(config, file)
+                plugin.onEnable()
                 list.add(plugin)
                 //PluginManager.plugins[config.name] = plugin
             } catch (e: Exception) {

@@ -2,14 +2,17 @@ package com.mooner.starlight.ui.projects
 
 import android.content.Intent
 import android.view.View
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.alespero.expandablecardview.ExpandableCardView
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
+import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.core.ApplicationSession.projectLoader
 import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
+import com.mooner.starlight.ui.projects.config.ProjectConfigActivity
 import kotlinx.android.synthetic.main.card_project_inner.view.*
 import kotlinx.android.synthetic.main.card_project_list.view.*
 
@@ -19,8 +22,7 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
     fun bind(cardData: ProjectCardData) {
         itemView.cardViewIsEnabled.setBackgroundColor(itemView.context.getColor(if (cardData.isEnabled) R.color.card_enabled else R.color.card_disabled))
 
-        val langIcon = cardData.language.icon
-        expandable.setIcon(langIcon)
+        expandable.setIcon(cardData.language.icon ?: ContextCompat.getDrawable(itemView.context, R.drawable.ic_js))
         expandable.setTitle(cardData.name)
 
         itemView.buttonEditCode.setOnClickListener {
@@ -39,6 +41,13 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
 
         itemView.buttonDebugRoom.setOnClickListener {
             it.context.startActivity(Intent(it.context, DebugRoomActivity::class.java).apply { putExtra("roomName", cardData.name) })
+        }
+
+        itemView.buttonProjectConfig.setOnClickListener {
+            val intent = Intent(it.context, ProjectConfigActivity::class.java).apply {
+                putExtra("projectName", cardData.name)
+            }
+            it.context.startActivity(intent)
         }
 
         itemView.switchButton.apply {

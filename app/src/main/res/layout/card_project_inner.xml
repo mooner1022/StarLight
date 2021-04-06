@@ -46,6 +46,20 @@
         app:layout_constraintStart_toEndOf="@+id/buttonRecompile"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <Button
+        android:id="@+id/buttonProjectConfig"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="#00FFFFFF"
+        android:elevation="0dp"
+        app:icon="@drawable/ic_round_settings_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/buttonDebugRoom"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <com.suke.widget.SwitchButton
         android:id="@+id/switchButton"
         android:layout_width="wrap_content"

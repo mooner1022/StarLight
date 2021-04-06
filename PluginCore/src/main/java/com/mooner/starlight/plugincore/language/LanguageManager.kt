@@ -1,17 +1,13 @@
 package com.mooner.starlight.plugincore.language
 
-import com.mooner.starlight.plugincore.Session
-
 class LanguageManager {
     private val languages: HashSet<Language> = HashSet()
 
     fun addLanguage(lang: Language) {
         if (languages.contains(lang)) {
-            Session.getLogger().e("LanguageManager", "Duplicate custom language: ${lang.name}")
-            return
+            throw IllegalArgumentException("Duplicate custom language: ${lang.name}")
         }
         languages.add(lang)
-        Session.getLogger().i("LanguageManager", "Successfully added language ${lang.name}")
     }
 
     fun getLanguage(id: String): Language? {

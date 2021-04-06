@@ -8,9 +8,11 @@ interface Language {
 
     val name: String
 
-    val icon: Drawable
+    val icon: Drawable?
 
     val requireRelease: Boolean
+
+    val configList: List<LanguageConfig>
 
     fun compile(code: String, methods: Array<MethodBlock>): Any
 

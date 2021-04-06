@@ -99,4 +99,8 @@ class Project(
     fun bindReplier(listener: (room: String, msg: String) -> Unit) {
         this.listener = listener
     }
+
+    fun getLanguage(): Language {
+        return lang
+    }
 }

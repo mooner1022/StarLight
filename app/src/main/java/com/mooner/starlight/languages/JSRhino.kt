@@ -1,11 +1,11 @@
 package com.mooner.starlight.languages
 
 import android.graphics.drawable.Drawable
+import androidx.annotation.FloatRange
 import androidx.core.content.ContextCompat
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
-import com.mooner.starlight.plugincore.language.Language
-import com.mooner.starlight.plugincore.language.MethodBlock
+import com.mooner.starlight.plugincore.language.*
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.ContextFactory
 import org.mozilla.javascript.Scriptable
@@ -20,6 +20,21 @@ class JSRhino: Language {
         get() = ContextCompat.getDrawable(ApplicationSession.context, R.drawable.ic_js)!!
     override val requireRelease: Boolean
         get() = false
+
+    override val configList: List<LanguageConfig>
+        get() = listOf(
+            SliderLanguageConfig(
+                objectId = "slider_test",
+                objectName = "슬라이더 테스트",
+                max = 100,
+                defaultValue = 50
+            ),
+            ToggleLanguageConfig(
+                objectId = "toggle_test",
+                objectName = "토글 테스트",
+                defaultValue = false
+            )
+        )
 
     override fun compile(code: String, methods: Array<MethodBlock>): Any {
         val factory = ContextFactory.getGlobal()

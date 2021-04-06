@@ -6,8 +6,7 @@ import com.eclipsesource.v8.V8
 import com.mooner.starlight.R
 import com.mooner.starlight.Utils.Companion.addClass
 import com.mooner.starlight.core.ApplicationSession
-import com.mooner.starlight.plugincore.language.Language
-import com.mooner.starlight.plugincore.language.MethodBlock
+import com.mooner.starlight.plugincore.language.*
 
 class JSV8: Language {
     override val id: String
@@ -18,6 +17,21 @@ class JSV8: Language {
         get() = ContextCompat.getDrawable(ApplicationSession.context, R.drawable.ic_nodejs)!!
     override val requireRelease: Boolean
         get() = true
+
+    override val configList: List<LanguageConfig>
+        get() = listOf(
+            ToggleLanguageConfig(
+                objectId = "toggle_test",
+                objectName = "토글 테스트",
+                defaultValue = false
+            ),
+            SliderLanguageConfig(
+                objectId = "slider_test",
+                objectName = "슬라이더 테스트",
+                max = 5,
+                defaultValue = 2
+            )
+        )
 
     override fun compile(code: String, methods: Array<MethodBlock>): Any {
         val v8 = V8.createV8Runtime()
