@@ -63,7 +63,9 @@ class MainActivity : AppCompatActivity() {
             MODE_PRIVATE
         )
 
+        println("isRunning: ${BackgroundTask.isRunning}")
         if (!BackgroundTask.isRunning) {
+            println("start service")
             val intent = Intent(this, BackgroundTask::class.java)
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 startForegroundService(intent)
@@ -72,8 +74,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val dialog_fab: FabDialog = findViewById(R.id.dialog_fab)
-        with(dialog_fab) {
+        val fabDialog: FabDialog = findViewById(R.id.dialog_fab)
+        with(fabDialog) {
             setTitle("새 프로젝트")
             setContentView(R.layout.dialog_new_project)
             setCanceledOnTouchOutside(true)
@@ -86,17 +88,17 @@ class MainActivity : AppCompatActivity() {
                     language = getLanguageManager().getLanguages()[languageSpinner.selectedIndex].id
                     listeners = mutableListOf("default")
                 }
-                dialog_fab.collapseDialog()
+                fabDialog.collapseDialog()
             }
             setNegativeButton("취소") {
-                dialog_fab.collapseDialog()
+                fabDialog.collapseDialog()
             }
             setOnClickListener { _ ->
-                dialog_fab.expandDialog()
+                fabDialog.expandDialog()
                 languageSpinner = findDialogViewById(R.id.spinnerLanguage) as NiceSpinner
                 val objects = getLanguageManager().getLanguages().map { it.name }.toList()
                 with(languageSpinner) {
-                    setBackgroundColor(resources.getColor(R.color.transparent))
+                    setBackgroundColor(context.getColor(R.color.transparent))
                     attachDataSource(objects)
                     setOnSpinnerItemSelectedListener { _, _, position, _ ->
                         getLogger().i(javaClass.name, "Spinner item selected: $position")

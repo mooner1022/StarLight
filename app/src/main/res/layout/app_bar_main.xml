@@ -89,7 +89,7 @@
         android:layout_marginEnd="@dimen/fab_margin"
         android:layout_marginBottom="@dimen/fab_margin"
         android:padding="@dimen/fab_padding"
-        app:dialogBackgroundColor="@color/main_bright"
+        app:dialogBackgroundColor="@color/white"
         app:fabIcon="@drawable/ic_round_add_white_24" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
