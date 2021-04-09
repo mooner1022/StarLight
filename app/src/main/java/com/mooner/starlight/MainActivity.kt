@@ -1,9 +1,17 @@
 package com.mooner.starlight
 
 import android.Manifest
+import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
+import android.view.View
+import android.view.WindowManager
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -20,6 +28,7 @@ import com.bitvale.fabdialog.widget.FabDialog
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.navigation.NavigationView
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.Utils.Companion.getLogger
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.core.ApplicationSession.projectLoader
@@ -37,6 +46,11 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private lateinit var runningBotsTextView: TextView
         private lateinit var ctr: CollapsingToolbarLayout
+        private lateinit var fab: FabDialog
+        private lateinit var view: View
+        private lateinit var fabAnim: Animation
+        private var runnable: Runnable? = null
+        private var isShowingFabAnimation: Boolean = false
 
         fun reloadText() {
             val active = projectLoader.getEnabledProjects()
@@ -45,6 +59,23 @@ class MainActivity : AppCompatActivity() {
 
         fun setToolbarText(text: String) {
             ctr.title = text
+        }
+
+        fun showSnackbar(text: String, length: Int = Snackbar.LENGTH_LONG) {
+            Snackbar.make(view, text, length).show()
+            ObjectAnimator.ofFloat(fab, "translationY", -200f).apply {
+                duration = 200
+                start()
+            }
+            isShowingFabAnimation = true
+            runnable = Runnable {
+                ObjectAnimator.ofFloat(fab, "translationY", 0f).apply {
+                    duration = 200
+                    start()
+                }
+                isShowingFabAnimation = false
+            }
+            Handler(Looper.getMainLooper()).postDelayed(runnable!!, 2900)
         }
     }
 
@@ -75,13 +106,30 @@ class MainActivity : AppCompatActivity() {
         }
 
         val fabDialog: FabDialog = findViewById(R.id.dialog_fab)
+        fabAnim = AnimationUtils.loadAnimation(applicationContext, R.anim.fab_snackbar_anim)
+        view = rootView
+        fab = fabDialog
+
         with(fabDialog) {
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
             setTitle("새 프로젝트")
+            setDialogCornerRadius(100f)
             setContentView(R.layout.dialog_new_project)
             setCanceledOnTouchOutside(true)
             setDialogIcon(R.drawable.ic_round_projects_24)
             setPositiveButton("추가") {
-                val projectName = findViewById<EditText>(R.id.editTextNewProjectName).text.toString()
+                val nameEditText = findViewById<EditText>(R.id.editTextNewProjectName)
+                val projectName = nameEditText.text.toString()
+                if (projectLoader.getProject(projectName) != null) {
+                    nameEditText.error = "이미 존재하는 이름이에요."
+                    nameEditText.requestFocus()
+                    return@setPositiveButton
+                }
+                if (!"(^[1-9A-Za-z]+\$)".toRegex().matches(projectName)) {
+                    nameEditText.error = "이름은 숫자와 영문자만 가능해요."
+                    nameEditText.requestFocus()
+                    return@setPositiveButton
+                }
                 projectLoader.newProject {
                     name = projectName
                     mainScript = "$projectName.js"
@@ -94,7 +142,17 @@ class MainActivity : AppCompatActivity() {
                 fabDialog.collapseDialog()
             }
             setOnClickListener { _ ->
+                if (isShowingFabAnimation) {
+                    if (runnable != null) Handler(Looper.getMainLooper()).removeCallbacks(runnable!!)
+                    ObjectAnimator.ofFloat(view, "translationY", 0f).apply {
+                        duration = 0
+                        start()
+                    }
+                    isShowingFabAnimation = false
+                }
                 fabDialog.expandDialog()
+                val nameEditText = findViewById<EditText>(R.id.editTextNewProjectName)
+                nameEditText.text.clear()
                 languageSpinner = findDialogViewById(R.id.spinnerLanguage) as NiceSpinner
                 val objects = getLanguageManager().getLanguages().map { it.name }.toList()
                 with(languageSpinner) {

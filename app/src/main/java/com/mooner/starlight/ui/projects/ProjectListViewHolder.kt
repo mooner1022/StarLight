@@ -36,7 +36,7 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
 
         itemView.buttonRecompile.setOnClickListener {
             projectLoader.getProject(cardData.name)?.recompile()
-            Snackbar.make(it, "${cardData.name}의 컴파일을 완료했어요!", Snackbar.LENGTH_LONG).show()
+            MainActivity.showSnackbar("${cardData.name}의 컴파일을 완료했어요!")
         }
 
         itemView.buttonDebugRoom.setOnClickListener {

@@ -11,10 +11,10 @@
     <color name="white">#FFFFFFFF</color>
     <color name="transparent">#00FFFFFF</color>
     <color name="dialog_day">#4A515B</color>
-    <color name="main_bright">#F0EDCC</color>
-    <color name="sub_bright">#B6B282</color>
-    <color name="main_dark">#02343F</color>
-    <color name="sub_dark">#02252C</color>
+    <color name="main_bright">#A2A9DA</color>
+    <color name="sub_bright">#8E95BF</color>
+    <color name="main_dark">#2A2C39</color>
+    <color name="sub_dark">#191A25</color>
     <color name="dialog_icon">#CACBCF</color>
     <color name="card_enabled">#77FF99</color>
     <color name="card_disabled">#FF6F6F</color>

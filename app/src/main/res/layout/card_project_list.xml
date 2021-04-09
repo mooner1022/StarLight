@@ -25,7 +25,7 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
-        app:animationDuration="300"
+        app:animationDuration="200"
         app:expandOnClick="true"
         app:icon="@drawable/ic_js"
         app:inner_view="@layout/card_project_inner"
