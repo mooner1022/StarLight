@@ -25,46 +25,5 @@ class Utils {
             }
             obj.close()
         }
-
-        fun getDefaultMethods(replier: Any): Array<MethodBlock> {
-            return arrayOf(
-                MethodBlock(
-                    "replier",
-                    replier,
-                    listOf(
-                        Method(
-                            "reply",
-                            arrayOf(String::class.java)
-                        ),
-                        Method(
-                            "replyTo",
-                            arrayOf(String::class.java, String::class.java)
-                        )
-                    )
-                ),
-                MethodBlock(
-                    "logger",
-                    getLogger(),
-                    listOf(
-                        Method(
-                            "i",
-                            arrayOf(String::class.java, String::class.java)
-                        ),
-                        Method(
-                            "e",
-                            arrayOf(String::class.java, String::class.java)
-                        ),
-                        Method(
-                            "w",
-                            arrayOf(String::class.java, String::class.java)
-                        ),
-                        Method(
-                            "f",
-                            arrayOf(String::class.java, String::class.java)
-                        ),
-                    )
-                )
-            )
-        }
     }
 }

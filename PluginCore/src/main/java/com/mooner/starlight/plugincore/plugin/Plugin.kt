@@ -1,8 +1,6 @@
 package com.mooner.starlight.plugincore.plugin
 
 interface Plugin {
-    val pluginManager: PluginManager
-
     val name: String
 
     fun isEnabled(): Boolean

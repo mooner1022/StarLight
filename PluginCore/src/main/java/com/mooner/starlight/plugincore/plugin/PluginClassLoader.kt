@@ -1,6 +1,7 @@
 package com.mooner.starlight.plugincore.plugin
 
 import android.os.Environment
+import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import dalvik.system.DexClassLoader
 import java.io.File
 
@@ -81,6 +82,6 @@ class PluginClassLoader(
         }
         pluginState = IllegalStateException("Initial initialization")
         this.pluginInit = plugin
-        plugin.init(loader, config, dataDir, file, this)
+        //plugin.init(loader, getProjectLoader(), config, dataDir, file, this)
     }
 }

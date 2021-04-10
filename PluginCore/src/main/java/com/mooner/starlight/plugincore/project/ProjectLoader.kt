@@ -1,7 +1,7 @@
-package com.mooner.starlight.project
+package com.mooner.starlight.plugincore.project
 
 import android.os.Environment
-import com.mooner.starlight.Utils.Companion.getLogger
+import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File

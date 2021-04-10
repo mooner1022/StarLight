@@ -5,11 +5,9 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.alespero.expandablecardview.ExpandableCardView
-import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession
-import com.mooner.starlight.core.ApplicationSession.projectLoader
+import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.ui.projects.config.ProjectConfigActivity
@@ -35,7 +33,7 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         }
 
         itemView.buttonRecompile.setOnClickListener {
-            projectLoader.getProject(cardData.name)?.recompile()
+            getProjectLoader().getProject(cardData.name)?.recompile()
             MainActivity.showSnackbar("${cardData.name}의 컴파일을 완료했어요!")
         }
 
@@ -53,7 +51,7 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         itemView.switchButton.apply {
             isChecked = cardData.isEnabled
             setOnCheckedChangeListener { _, isChecked ->
-                projectLoader.updateProjectConfig(cardData.name) {
+                getProjectLoader().updateProjectConfig(cardData.name) {
                     isEnabled = isChecked
                 }
                 itemView.cardViewIsEnabled.setBackgroundColor(context.getColor(if (isChecked) R.color.card_enabled else R.color.card_disabled))

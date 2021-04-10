@@ -2,14 +2,33 @@ package com.mooner.starlight.plugincore
 
 import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.project.ProjectLoader
 
 class Session {
     companion object {
         private val logger: Logger = Logger()
-        private val languageManager: LanguageManager = LanguageManager()
+
+        private var l_languageManager: LanguageManager? = null
+        private var l_projectLoader: ProjectLoader? = null
+
+        fun initLanguageManager() {
+            if (l_languageManager != null) {
+                getLogger().e("init", "Redeclaration of object languageManager")
+                return
+            }
+            l_languageManager = LanguageManager()
+        }
+        fun initProjectLoader() {
+            if (l_projectLoader != null) {
+                getLogger().e("init", "Redeclaration of object projectLoader")
+                return
+            }
+            l_projectLoader = ProjectLoader()
+        }
 
         fun getLogger(): Logger = logger
-        fun getLanguageManager(): LanguageManager = languageManager
+        fun getProjectLoader(): ProjectLoader = l_projectLoader!!
+        fun getLanguageManager(): LanguageManager = l_languageManager!!
     }
 }
 

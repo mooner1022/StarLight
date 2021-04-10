@@ -36,7 +36,7 @@ class PluginLoader {
 
         val list: MutableList<Plugin> = mutableListOf()
 
-        for (file in dir.listFiles { it -> it.name.substringAfterLast(".") == "apk" }?: arrayOf()) {
+        for (file in dir.listFiles { it -> it.name.substringAfterLast(".") in listOf("apk", "aab") }?: arrayOf()) {
             try {
                 val config: PluginConfig
                 try {
@@ -101,7 +101,7 @@ class PluginLoader {
 
         try {
             jar = JarFile(file)
-            val ent: JarEntry = jar.getJarEntry("starlight.json") ?: throw FileNotFoundException("Cannot find starlight.json")
+            val ent: JarEntry = jar.getJarEntry("res/raw/starlight.json") ?: throw FileNotFoundException("Cannot find starlight.json")
 
             stream = jar.getInputStream(ent)
             return PluginConfig.decode(stream.readString())

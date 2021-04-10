@@ -1,9 +1,9 @@
-package com.mooner.starlight.project
+package com.mooner.starlight.plugincore.project
 
-import com.mooner.starlight.Utils
-import com.mooner.starlight.Utils.Companion.getLogger
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import com.mooner.starlight.plugincore.language.Language
+import com.mooner.starlight.plugincore.utils.Utils
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File

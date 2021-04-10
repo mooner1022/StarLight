@@ -1,16 +1,15 @@
 package com.mooner.starlight.ui.projects.config
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.appbar.AppBarLayout
 import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession
+import com.mooner.starlight.plugincore.Session
 import kotlinx.android.synthetic.main.activity_project_config.*
-import kotlinx.android.synthetic.main.activity_project_config.appBarConfig
 import kotlin.math.abs
 
 class ProjectConfigActivity : AppCompatActivity() {
@@ -26,7 +25,7 @@ class ProjectConfigActivity : AppCompatActivity() {
         }
 
         val projectName = intent.getStringExtra("projectName")!!
-        val project = ApplicationSession.projectLoader.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
+        val project = Session.getProjectLoader().getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
         val recyclerAdapter = ProjectConfigAdapter(applicationContext)
 
         recyclerAdapter.data = project.getLanguage().configList.toMutableList()

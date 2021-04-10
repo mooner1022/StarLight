@@ -23,8 +23,6 @@ class BackgroundTask: Service() {
     override fun onCreate() {
         super.onCreate()
 
-        loadPlugins()
-
         val pendingIntent: PendingIntent =
             Intent(this, MainActivity::class.java).let { notificationIntent ->
                 PendingIntent.getActivity(this, 0, notificationIntent, 0)
@@ -69,9 +67,5 @@ class BackgroundTask: Service() {
             Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(
             notificationChannel)
-    }
-
-    private fun loadPlugins() {
-        ApplicationSession.plugins = pluginLoader.loadPlugins()
     }
 }

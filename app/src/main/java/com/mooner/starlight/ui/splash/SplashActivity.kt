@@ -6,7 +6,11 @@ import android.os.Bundle
 import android.view.animation.AnimationUtils
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
+import com.mooner.starlight.core.ApplicationSession
 import kotlinx.android.synthetic.main.activity_splash.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.concurrent.schedule
 
@@ -20,6 +24,18 @@ class SplashActivity : AppCompatActivity() {
         var isSpinning = false
         var clickCnt = 0
 
+        CoroutineScope(Dispatchers.Default).launch {
+            ApplicationSession.init {
+                if (spinTimer != null) {
+                    spinTimer!!.cancel()
+                }
+                runOnUiThread {
+                    startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                    finish()
+                }
+            }
+        }
+
         val anim = AnimationUtils.loadAnimation(applicationContext, R.anim.splash_logo_anim).apply {
             fillAfter = true
         }
@@ -28,13 +44,6 @@ class SplashActivity : AppCompatActivity() {
         }
 
         cardViewLogoImage.startAnimation(anim)
-        Timer().schedule(2000) {
-            if (spinTimer != null) {
-                spinTimer!!.cancel()
-            }
-            startActivity(Intent(this@SplashActivity, MainActivity::class.java))
-            finish()
-        }
 
         cardViewLogoImage.setOnClickListener {
             clickCnt++

@@ -4,11 +4,9 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession.projectLoader
-import com.mooner.starlight.core.ApplicationSession.taskHandler
 import com.mooner.starlight.models.Message
-import com.mooner.starlight.project.Project
-import com.mooner.starlight.project.Replier
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.project.Project
 import kotlinx.android.synthetic.main.activity_debug_room.*
 
 class DebugRoomActivity : AppCompatActivity() {
@@ -29,7 +27,7 @@ class DebugRoomActivity : AppCompatActivity() {
         println("roomName= $roomName")
         roomTitle.text = roomName
 
-        project = projectLoader.getProject(roomName)!!
+        project = Session.getProjectLoader().getProject(roomName)!!
         project.bindReplier { room, msg ->
             addMessage(
                 Message(

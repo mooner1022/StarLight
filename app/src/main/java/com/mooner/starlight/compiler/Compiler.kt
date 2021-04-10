@@ -1,12 +1,5 @@
 package com.mooner.starlight.compiler
 
-import com.eclipsesource.v8.V8
-import com.mooner.starlight.Utils.Companion.addClass
-import com.mooner.starlight.Utils.Companion.getLogger
-import com.mooner.starlight.project.Replier
-import org.mozilla.javascript.Context
-import org.mozilla.javascript.ContextFactory
-
 class Compiler {
     companion object {
         /*

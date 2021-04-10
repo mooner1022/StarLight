@@ -1,4 +1,4 @@
-package com.mooner.starlight.project
+package com.mooner.starlight.plugincore.project
 
 interface Replier {
     fun reply(msg: String)

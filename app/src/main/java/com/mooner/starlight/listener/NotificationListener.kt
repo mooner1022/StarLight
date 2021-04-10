@@ -12,14 +12,10 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Base64
 import android.util.Log
-import androidx.appcompat.widget.AppCompatMultiAutoCompleteTextView
 import com.mooner.starlight.core.ApplicationSession
-import com.mooner.starlight.core.ApplicationSession.projectLoader
 import com.mooner.starlight.core.ApplicationSession.taskHandler
-import com.mooner.starlight.core.TaskHandler
 import java.io.ByteArrayOutputStream
 import java.util.*
-import kotlin.collections.HashMap
 
 class NotificationListener: NotificationListenerService() {
     private val sessions: HashMap<String, Notification.Action> = hashMapOf()
@@ -52,12 +48,14 @@ class NotificationListener: NotificationListenerService() {
     }
 
     init {
-        taskHandler.bindRepliers { room, msg ->
-            if (!sessions.containsKey(room)) {
-                Log.w("NotificationListener", "No session for room $room found")
-                return@bindRepliers
+        ApplicationSession.onInitComplete {
+            taskHandler.bindRepliers { room, msg ->
+                if (!sessions.containsKey(room)) {
+                    Log.w("NotificationListener", "No session for room $room found")
+                    return@bindRepliers
+                }
+                send(msg, sessions[room]!!)
             }
-            send(msg, sessions[room]!!)
         }
     }
 

@@ -1,4 +1,4 @@
-package com.mooner.starlight.project
+package com.mooner.starlight.plugincore.project
 
 import com.mooner.starlight.plugincore.plugin.Plugin
 import kotlinx.serialization.Serializable
