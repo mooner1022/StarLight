@@ -16,6 +16,9 @@ class ProjectLoader {
         if (!projectDir.exists() || !projectDir.isDirectory) {
             projectDir.mkdirs()
         }
+    }
+
+    fun load() {
         loadProjects(false)
     }
 

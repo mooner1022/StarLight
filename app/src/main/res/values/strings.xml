@@ -8,6 +8,13 @@
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
 
+    <string name="step_default_lib">기본 라이브러리 로드중…</string>
+    <string name="step_lang">언어 로드중…</string>
+    <string name="step_plugin_init">플러그인 로드중…</string>
+    <string name="step_plugins">[%s] 로드중…</string>
+    <string name="step_projects">프로젝트 로드중…</string>
+    <string name="step_starting">앱 시작중…</string>
+
     <string name="menu_home">홈</string>
     <string name="menu_gallery">프로젝트</string>
     <string name="menu_info">정보</string>

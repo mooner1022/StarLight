@@ -7,6 +7,7 @@ import android.view.animation.AnimationUtils
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
+import com.mooner.starlight.plugincore.Session
 import kotlinx.android.synthetic.main.activity_splash.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,17 +24,43 @@ class SplashActivity : AppCompatActivity() {
 
         var isSpinning = false
         var clickCnt = 0
+        val initMillis = System.currentTimeMillis()
 
         CoroutineScope(Dispatchers.Default).launch {
-            ApplicationSession.init {
-                if (spinTimer != null) {
-                    spinTimer!!.cancel()
+            ApplicationSession.context = applicationContext
+            ApplicationSession.init(
+                {
+                    runOnUiThread {
+                        textViewLoadStatus.text = it
+                    }
+                },
+                {
+                    runOnUiThread {
+                        Session.getProjectLoader().load()
+                    }
+                    val currentMillis = System.currentTimeMillis()
+                    println("time: ${currentMillis - initMillis}")
+                    if (currentMillis - initMillis <= 2000) {
+                        Timer().schedule(currentMillis - initMillis) {
+                            if (spinTimer != null) {
+                                spinTimer!!.cancel()
+                            }
+                            runOnUiThread {
+                                startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                                finish()
+                            }
+                        }
+                    } else {
+                        if (spinTimer != null) {
+                            spinTimer!!.cancel()
+                        }
+                        runOnUiThread {
+                            startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                            finish()
+                        }
+                    }
                 }
-                runOnUiThread {
-                    startActivity(Intent(this@SplashActivity, MainActivity::class.java))
-                    finish()
-                }
-            }
+            )
         }
 
         val anim = AnimationUtils.loadAnimation(applicationContext, R.anim.splash_logo_anim).apply {

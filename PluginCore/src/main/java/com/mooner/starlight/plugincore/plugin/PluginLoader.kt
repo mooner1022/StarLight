@@ -29,7 +29,7 @@ class PluginLoader {
         method.isAccessible = true
     }
 
-    fun loadPlugins(dir: File = defDirectory): List<Plugin> {
+    fun loadPlugins(dir: File = defDirectory, onPluginLoad: ((name: String) -> Unit)? = null): List<Plugin> {
         if (!dir.exists() || !dir.isDirectory) {
             dir.mkdirs()
         }
@@ -41,6 +41,7 @@ class PluginLoader {
                 val config: PluginConfig
                 try {
                     config = getConfigFile(file)
+                    if (onPluginLoad != null) onPluginLoad(config.name)
                 } catch (e: FileNotFoundException) {
                     Session.getLogger().e(T, e.toString())
                     throw InvalidPluginException(e.toString())

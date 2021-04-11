@@ -88,8 +88,6 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         ctr = findViewById(R.id.collapsingToolbarLayout)
-        ApplicationSession.context = applicationContext
-
         ActivityCompat.requestPermissions(
                 this@MainActivity,
                 arrayOf(
