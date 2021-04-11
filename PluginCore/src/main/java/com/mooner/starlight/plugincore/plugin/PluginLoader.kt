@@ -67,6 +67,8 @@ class PluginLoader {
             throw InvalidPluginException(
                 "Data folder for plugin ${config.name} exists and is not a directory"
             )
+        } else if (!dataDir.exists()) {
+            dataDir.mkdirs()
         }
 
         /*
