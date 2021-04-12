@@ -12,6 +12,7 @@ import com.mooner.starlight.plugincore.project.ProjectLoader
 
 @SuppressLint("StaticFieldLeak")
 object ApplicationSession {
+    private val pluginLoadTime: HashMap<String, Long> = hashMapOf()
     var isInitComplete: Boolean = false
     private var l_pluginLoader: PluginLoader? = null
     val pluginLoader: PluginLoader
@@ -42,10 +43,20 @@ object ApplicationSession {
             addLanguage(JSV8())
             addLanguage(JSRhino())
         }
+        var preTime: Long = 0
+        var preName = ""
         plugins = pluginLoader.loadPlugins {
+            if (preTime != 0L) {
+                pluginLoadTime[preName] = System.currentTimeMillis() - preTime
+            }
+            preTime = System.currentTimeMillis()
             onPhaseChanged(String.format(context.getString(R.string.step_plugins), it))
+            preName = it
         }
+        pluginLoadTime[preName] = System.currentTimeMillis() - preTime
+
         Session.initProjectLoader()
+        Session.getProjectLoader().load()
         isInitComplete = true
         onFinished()
         if (initCompleteListeners.isNotEmpty()) {

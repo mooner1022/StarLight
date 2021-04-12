@@ -13,7 +13,7 @@ class HomeViewModel : ViewModel() {
     init {
         MainActivity.setToolbarText("홈")
         
-        getLogger().bind {
+        getLogger().bindListener {
             apnd.append(it.toString()).append("\n")
             _text.value = apnd.toString()
         }

@@ -35,9 +35,6 @@ class SplashActivity : AppCompatActivity() {
                     }
                 },
                 {
-                    runOnUiThread {
-                        Session.getProjectLoader().load()
-                    }
                     val currentMillis = System.currentTimeMillis()
                     println("time: ${currentMillis - initMillis}")
                     if (currentMillis - initMillis <= 2000) {

@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.Session
 import kotlinx.android.synthetic.main.activity_project_config.*
@@ -51,6 +52,7 @@ class ProjectConfigActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             android.R.id.home->{ // 메뉴 버튼
+                Snackbar.make(item.actionView, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
                 finish()
             }
         }

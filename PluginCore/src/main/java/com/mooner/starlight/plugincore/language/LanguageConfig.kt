@@ -56,14 +56,14 @@ class SliderLanguageConfig(
 class StringLanguageConfig(
         private val objectId: String,
         private val objectName: String,
-        private val defaultValue: String
+        private val hint: String
 ): LanguageConfig {
     override val id: String
         get() = objectId
     override val name: String
         get() = objectName
     override val default: Any
-        get() = defaultValue
+        get() = hint
     override val type: LanguageConfigType
         get() = LanguageConfigType.STRING
     override val viewType: Int

@@ -4,6 +4,7 @@ import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import com.mooner.starlight.plugincore.language.Method
 import com.mooner.starlight.plugincore.language.MethodBlock
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.util.stream.Collectors
@@ -15,6 +16,10 @@ class Utils {
                 .lines()
                 .parallel()
                 .collect(Collectors.joining("\n"))
+        }
+
+        fun File.hasFile(fileName: String): Boolean {
+            return this.listFiles()?.find { it.name == fileName } != null
         }
 
         fun getDefaultMethods(replier: Any): Array<MethodBlock> {

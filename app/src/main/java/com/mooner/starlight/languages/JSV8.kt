@@ -46,18 +46,21 @@ class JSV8: Language {
             }
             executeScript(code)
         }
+        v8.locker.release()
         return v8
     }
 
     override fun release(engine: Any) {
         val v8 = engine as V8
-        if (!v8.isReleased) {
+        if (!v8.isReleased && v8.locker.hasLock()) {
             v8.release(false)
         }
     }
 
     override fun execute(engine: Any, methodName: String, args: Array<Any>) {
         val v8 = engine as V8
+        v8.locker.acquire()
         v8.executeJSFunction(methodName, *args)
+        v8.locker.release()
     }
 }

@@ -3,19 +3,13 @@ package com.mooner.starlight.plugincore.logger
 class Logger {
     private val listeners: ArrayList<(log: LogData) -> Unit> = arrayListOf()
 
-    fun bind(listener: (log: LogData) -> Unit) {
+    fun bindListener(listener: (log: LogData) -> Unit) {
         if (!listeners.contains(listener)) {
             listeners.add(listener)
         }
     }
 
-    fun unbind(listener: (log: LogData) -> Unit) {
-        if (listeners.contains(listener)) {
-            listeners.remove(listener)
-        }
-    }
-
-    fun f(tag: String, message: String) = log(LogType.FATAL, tag, message)
+    fun d(tag: String, message: String) = log(LogType.DEBUG, tag, message)
 
     fun i(tag: String, message: String) = log(LogType.INFO, tag, message)
 

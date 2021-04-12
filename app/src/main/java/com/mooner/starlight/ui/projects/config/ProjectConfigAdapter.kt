@@ -5,6 +5,7 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
@@ -62,6 +63,10 @@ class ProjectConfigAdapter(
                 })
                 holder.seekBarIndex.text = holder.seekBar.progress.toString()
             }
+            LanguageConfigType.STRING.viewType -> {
+                holder.textString.text = viewData.name
+                holder.editTextString.hint = viewData.default as String
+            }
         }
 
     }
@@ -76,6 +81,7 @@ class ProjectConfigAdapter(
         lateinit var seekBar: SeekBar
 
         lateinit var textString: TextView
+        lateinit var editTextString: EditText
 
         init {
             when(viewType) {
@@ -87,6 +93,10 @@ class ProjectConfigAdapter(
                     textSlider = itemView.findViewById(R.id.textView_configSlider)
                     seekBarIndex = itemView.findViewById(R.id.index_configSlider)
                     seekBar = itemView.findViewById(R.id.seekBar_configSlider)
+                }
+                LanguageConfigType.STRING.viewType -> {
+                    textString = itemView.findViewById(R.id.textView_configString)
+                    editTextString = itemView.findViewById(R.id.editText_configString)
                 }
             }
         }

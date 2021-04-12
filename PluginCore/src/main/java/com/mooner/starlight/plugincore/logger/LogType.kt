@@ -4,5 +4,5 @@ enum class LogType {
     WARNING,
     INFO,
     ERROR,
-    FATAL
+    DEBUG
 }

@@ -3,7 +3,9 @@ package com.mooner.starlight.plugincore.project
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import com.mooner.starlight.plugincore.language.Language
+import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.utils.Utils
+import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -14,6 +16,7 @@ class Project(
 ) {
     private var engine: Any? = null
     private val lang: Language
+    private val logger: LocalLogger
     val directory: File
     private var listener: ((room: String, msg: String) -> Unit)? = null
     private var lastRoom: String? = null
@@ -44,6 +47,12 @@ class Project(
             "Cannot find main script ${config.mainScript} for project ${config.name}"
         )).readText(Charsets.UTF_8)
         directory = folder
+        logger = if (directory.hasFile("logs_local.json")) {
+            LocalLogger.fromFile(File(directory, "logs_local.json"))
+        } else {
+            LocalLogger.create(directory)
+        }
+
         lang = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
         engine = lang.compile(
             rawCode,
@@ -55,7 +64,7 @@ class Project(
         println("calling $methodName with args [${args.joinToString(", ")}]")
 
         if (engine == null) {
-            getLogger().e("EventHandler", "Property engine must not be null")
+            logger.e("EventHandler", "Property engine must not be null")
             return
         }
         if (methodName == "response") {
