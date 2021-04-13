@@ -30,6 +30,11 @@ class JSV8: Language {
                 objectName = "슬라이더 테스트",
                 max = 5,
                 defaultValue = 2
+            ),
+            StringLanguageConfig(
+                objectId = "string_test",
+                objectName = "인풋 테스트",
+                hint = "테스트으으"
             )
         )
 

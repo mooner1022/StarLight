@@ -7,8 +7,8 @@ class Info {
 }
 
 data class Version(
-        val major: String,
-        val minor: Int,
+    val major: String,
+    val minor: Int,
 ) {
     companion object {
         fun fromString(str: String): Version {
@@ -16,17 +16,17 @@ data class Version(
             val spl: List<String>
             try {
                 spl = str.split(".")
-                if (spl.size != 3) throw IllegalArgumentException("Illegal version string")
+                if (spl.size != 3) throw IllegalArgumentException("Illegal version string: Invalid length")
                 for (s in spl) {
-                    if (s.toIntOrNull() != null) throw IllegalArgumentException("Illegal version string")
+                    if (s.toIntOrNull() == null) throw IllegalArgumentException("Illegal version string: Non-numerical version")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 throw IllegalArgumentException("Illegal version string")
             }
             return Version(
-                    major = "${spl[0]}.${spl[1]}",
-                    minor = spl[2].toInt()
+                major = "${spl[0]}.${spl[1]}",
+                minor = spl[2].toInt()
             )
         }
     }

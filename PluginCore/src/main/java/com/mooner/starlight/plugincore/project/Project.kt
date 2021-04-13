@@ -56,7 +56,7 @@ class Project(
         lang = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
         engine = lang.compile(
             rawCode,
-            Utils.getDefaultMethods(defReplier)
+            Utils.getDefaultMethods(defReplier, logger)
         )
     }
 
@@ -97,7 +97,7 @@ class Project(
         }
         engine = lang.compile(
             rawCode,
-            Utils.getDefaultMethods(defReplier)
+            Utils.getDefaultMethods(defReplier, logger)
         )
     }
 

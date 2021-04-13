@@ -3,6 +3,7 @@ package com.mooner.starlight.plugincore.utils
 import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import com.mooner.starlight.plugincore.language.Method
 import com.mooner.starlight.plugincore.language.MethodBlock
+import com.mooner.starlight.plugincore.logger.LocalLogger
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStream
@@ -22,7 +23,7 @@ class Utils {
             return this.listFiles()?.find { it.name == fileName } != null
         }
 
-        fun getDefaultMethods(replier: Any): Array<MethodBlock> {
+        fun getDefaultMethods(replier: Any, logger: LocalLogger): Array<MethodBlock> {
             return arrayOf(
                     MethodBlock(
                             "replier",
@@ -40,7 +41,7 @@ class Utils {
                     ),
                     MethodBlock(
                             "logger",
-                            getLogger(),
+                            logger,
                             listOf(
                                     Method(
                                             "i",
@@ -55,7 +56,7 @@ class Utils {
                                             arrayOf(String::class.java, String::class.java)
                                     ),
                                     Method(
-                                            "f",
+                                            "d",
                                             arrayOf(String::class.java, String::class.java)
                                     ),
                             )

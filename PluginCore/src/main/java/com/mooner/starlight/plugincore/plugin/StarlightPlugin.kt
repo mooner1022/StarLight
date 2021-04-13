@@ -1,12 +1,15 @@
 package com.mooner.starlight.plugincore.plugin
 
+import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Version
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import java.io.File
 
 abstract class StarlightPlugin: Plugin {
+    private lateinit var pluginCoreVersion: Version
     private lateinit var projectLoader: ProjectLoader
     private lateinit var loader: PluginLoader
     private lateinit var file: File
@@ -35,6 +38,10 @@ abstract class StarlightPlugin: Plugin {
             throw IllegalStateException("Cannot use initialization constructor at runtime")
         }
         init(pluginLoader, projectLoader, config, dataDir, file, classLoader!!)
+    }
+
+    init {
+        this.pluginCoreVersion = Info.PLUGINCORE_VERSION
     }
 
     override fun isEnabled(): Boolean = isEnabled
