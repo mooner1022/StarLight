@@ -92,6 +92,7 @@
                     android:id="@+id/configRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_marginTop="25dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -102,5 +103,18 @@
         </androidx.cardview.widget.CardView>
 
     </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabProjectConfig"
+        android:layout_width="@dimen/fab_size"
+        android:layout_height="@dimen/fab_size"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="@dimen/fab_margin"
+        android:layout_marginBottom="@dimen/fab_margin"
+        android:clickable="true"
+        android:visibility="invisible"
+        android:focusable="true"
+        app:tint="#FFFFFF"
+        app:srcCompat="@drawable/ic_round_save_white_24" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

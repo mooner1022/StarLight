@@ -1,6 +1,7 @@
 package com.mooner.starlight.plugincore.plugin
 
 import android.os.Environment
+import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.annotations.StarLightEventListener
 import com.mooner.starlight.plugincore.event.EventListener
@@ -50,6 +51,9 @@ class PluginLoader {
                     throw InvalidPluginException(e.toString())
                 }
                 val plugin = loadPlugin(config, file)
+                if (!plugin.pluginCoreVersion.isCompatibleWith(Info.PLUGINCORE_VERSION)) {
+                    Session.getLogger().e(javaClass.simpleName, "Incompatible plugin version(${plugin.pluginCoreVersion}) found on [${plugin.name}]")
+                }
                 plugin.onEnable()
                 list.add(plugin)
                 //PluginManager.plugins[config.name] = plugin

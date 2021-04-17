@@ -8,7 +8,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 
-class LocalLogger(private var logs: ArrayList<LogData>, private val file: File) {
+class LocalLogger(private var _logs: ArrayList<LogData>, private val file: File) {
     companion object {
         fun create(directory: File): LocalLogger {
             directory.mkdirs()
@@ -35,9 +35,12 @@ class LocalLogger(private var logs: ArrayList<LogData>, private val file: File) 
     }
 
     fun clear() {
-        logs.clear()
+        _logs.clear()
         flush()
     }
+
+    val logs: ArrayList<LogData>
+        get() = this._logs
 
     fun d(tag: String, message: String) = log(LogType.DEBUG, tag, message)
 
@@ -53,14 +56,14 @@ class LocalLogger(private var logs: ArrayList<LogData>, private val file: File) 
             tag = tag,
             message = message
         )
-        logs.add(data)
+        _logs.add(data)
         flush()
         println("[LOCAL/${type.name}] $tag : $message")
     }
 
     private fun flush() {
         CoroutineScope(Dispatchers.IO).launch {
-            file.writeText(Json.encodeToString(logs))
+            file.writeText(Json.encodeToString(_logs))
         }
     }
 }

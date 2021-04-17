@@ -37,8 +37,8 @@ class SplashActivity : AppCompatActivity() {
                 {
                     val currentMillis = System.currentTimeMillis()
                     println("time: ${currentMillis - initMillis}")
-                    if (currentMillis - initMillis <= 2000) {
-                        Timer().schedule(currentMillis - initMillis) {
+                    if ((currentMillis - initMillis) <= 2000) {
+                        Timer().schedule(2000 - (currentMillis - initMillis)) {
                             if (spinTimer != null) {
                                 spinTimer!!.cancel()
                             }

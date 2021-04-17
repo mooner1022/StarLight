@@ -10,10 +10,18 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.TypedString
 import kotlinx.android.synthetic.main.activity_project_config.*
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.io.File
 import kotlin.math.abs
 
 class ProjectConfigActivity : AppCompatActivity() {
+    private val changedData: MutableMap<String, Any> = mutableMapOf()
+    private lateinit var savedData: MutableMap<String, TypedString>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_project_config)
@@ -27,9 +35,30 @@ class ProjectConfigActivity : AppCompatActivity() {
 
         val projectName = intent.getStringExtra("projectName")!!
         val project = Session.getProjectLoader().getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
-        val recyclerAdapter = ProjectConfigAdapter(applicationContext)
+        val recyclerAdapter = ProjectConfigAdapter(applicationContext) { id, data ->
+            changedData[id] = data
+            savedData[id] = TypedString.parse(data)
+            if (!fabProjectConfig.isShown) {
+                fabProjectConfig.show()
+            }
+        }
+
+        val configFile = File(project.directory, "config.json")
+        savedData = try {
+            Json.decodeFromString(configFile.readText())
+        } catch (e: Exception) {
+            mutableMapOf()
+        }
+
+        fabProjectConfig.setOnClickListener {
+            configFile.writeText(Json.encodeToString(savedData))
+            project.getLanguage().onConfigChanged(changedData)
+            Snackbar.make(it, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
+            fabProjectConfig.hide()
+        }
 
         recyclerAdapter.data = project.getLanguage().configList.toMutableList()
+        recyclerAdapter.saved = savedData
         recyclerAdapter.notifyDataSetChanged()
 
         val layoutManager = LinearLayoutManager(applicationContext)
@@ -51,8 +80,7 @@ class ProjectConfigActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
-            android.R.id.home->{ // 메뉴 버튼
-                Snackbar.make(item.actionView, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
+            android.R.id.home -> { // 메뉴 버튼
                 finish()
             }
         }

@@ -5,6 +5,7 @@ import androidx.core.content.ContextCompat
 import com.eclipsesource.v8.V8
 import com.mooner.starlight.R
 import com.mooner.starlight.Utils.Companion.addClass
+import com.mooner.starlight.Utils.Companion.getLogger
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.plugincore.language.*
 
@@ -14,7 +15,7 @@ class JSV8: Language {
     override val name: String
         get() = "자바스크립트 (V8)"
     override val icon: Drawable
-        get() = ContextCompat.getDrawable(ApplicationSession.context, R.drawable.ic_nodejs)!!
+        get() = ContextCompat.getDrawable(ApplicationSession.context, R.drawable.ic_v8)!!
     override val requireRelease: Boolean
         get() = true
 
@@ -37,6 +38,10 @@ class JSV8: Language {
                 hint = "테스트으으"
             )
         )
+
+    override fun onConfigChanged(changed: Map<String, Any>) {
+        getLogger().i("JSV8", "changed: $changed")
+    }
 
     override fun compile(code: String, methods: Array<MethodBlock>): Any {
         val v8 = V8.createV8Runtime()

@@ -7,6 +7,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 class ProjectLoader {
+    @Suppress("DEPRECATION")
     private val projectDir = File(Environment.getExternalStorageDirectory(), "StarLight/projects/")
     private val t = javaClass.simpleName
     private val listeners: MutableList<(projects: List<Project>) -> Unit> = mutableListOf()

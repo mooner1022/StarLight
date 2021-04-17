@@ -14,6 +14,8 @@ interface Language {
 
     val configList: List<LanguageConfig>
 
+    fun onConfigChanged(changed: Map<String, Any>)
+
     fun compile(code: String, methods: Array<MethodBlock>): Any
 
     fun release(engine: Any) {}

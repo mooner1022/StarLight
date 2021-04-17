@@ -36,6 +36,10 @@ class JSRhino: Language {
             )
         )
 
+    override fun onConfigChanged(changed: Map<String, Any>) {
+
+    }
+
     override fun compile(code: String, methods: Array<MethodBlock>): Any {
         val factory = ContextFactory.getGlobal()
         val context = factory.enterContext().apply {

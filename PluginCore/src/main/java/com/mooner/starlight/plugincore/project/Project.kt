@@ -71,7 +71,11 @@ class Project(
             lastRoom = args[0] as String
         }
 
-        lang.execute(engine!!, methodName, args)
+        try {
+            lang.execute(engine!!, methodName, args)
+        } catch (e: Exception) {
+            logger.e(config.name, "Error while executing: $e")
+        }
         /*
         when(config.language) {
             Languages.JS_RHINO -> {
