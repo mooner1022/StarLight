@@ -3,7 +3,7 @@ package com.mooner.starlight.plugincore.plugin
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Version
-import com.mooner.starlight.plugincore.language.Language
+import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import java.io.File
@@ -61,7 +61,7 @@ abstract class StarlightPlugin: Plugin {
 
     protected fun getClassLoader(): ClassLoader = classLoader
 
-    fun addCustomLanguage(language: Language) {
+    fun addCustomLanguage(language: ILanguage) {
         try {
             Session.getLanguageManager().addLanguage(language)
             Session.getLogger().i("PluginLoader","Successfully added language ${language.name}")

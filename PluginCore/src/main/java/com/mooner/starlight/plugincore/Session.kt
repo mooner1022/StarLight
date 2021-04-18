@@ -11,6 +11,8 @@ class Session {
         private var l_languageManager: LanguageManager? = null
         private var l_projectLoader: ProjectLoader? = null
 
+        const val isDebugging: Boolean = true
+
         fun initLanguageManager() {
             if (l_languageManager != null) {
                 getLogger().e("init", "Redeclaration of object languageManager")

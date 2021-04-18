@@ -60,11 +60,11 @@
         app:layout_constraintStart_toEndOf="@+id/buttonDebugRoom"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.suke.widget.SwitchButton
+    <Switch
         android:id="@+id/switchButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="24dp"
+        android:layout_marginEnd="20dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

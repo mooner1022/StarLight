@@ -3,19 +3,20 @@ package com.mooner.starlight.languages
 import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import com.eclipsesource.v8.NodeJS
-import com.eclipsesource.v8.V8
 import com.mooner.starlight.R
-import com.mooner.starlight.Utils.Companion.addClass
 import com.mooner.starlight.core.ApplicationSession
+import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.language.LanguageConfig
 import com.mooner.starlight.plugincore.language.MethodBlock
 
-class JSNode: Language {
+class JSNode: Language() {
     override val id: String
         get() = "NodeJS"
     override val name: String
         get() = "자바스크립트 (NodeJS)"
+    override val fileExtension: String
+        get() = "js"
     override val icon: Drawable
         get() = ContextCompat.getDrawable(ApplicationSession.context, R.drawable.ic_nodejs)!!
     override val requireRelease: Boolean

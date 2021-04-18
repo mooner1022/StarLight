@@ -59,6 +59,7 @@ class PluginLoader {
                 //PluginManager.plugins[config.name] = plugin
             } catch (e: Exception) {
                 Session.getLogger().e(T, e.toString())
+                if (Session.isDebugging) e.printStackTrace()
             }
         }
         return list

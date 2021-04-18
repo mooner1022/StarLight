@@ -1,21 +1,27 @@
 package com.mooner.starlight.languages
 
 import android.graphics.drawable.Drawable
-import androidx.annotation.FloatRange
 import androidx.core.content.ContextCompat
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.language.*
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.ContextFactory
 import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
 
-class JSRhino: Language {
+class JSRhino: Language() {
+    companion object {
+        private const val CONF_OPTIMIZATION = "optimizationLevel"
+    }
+
     override val id: String
         get() = "JS_RHINO"
     override val name: String
         get() = "자바스크립트 (라이노)"
+    override val fileExtension: String
+        get() = "js"
     override val icon: Drawable
         get() = ContextCompat.getDrawable(ApplicationSession.context, R.drawable.ic_js)!!
     override val requireRelease: Boolean
@@ -24,20 +30,15 @@ class JSRhino: Language {
     override val configList: List<LanguageConfig>
         get() = listOf(
             SliderLanguageConfig(
-                objectId = "slider_test",
-                objectName = "슬라이더 테스트",
-                max = 100,
-                defaultValue = 50
-            ),
-            ToggleLanguageConfig(
-                objectId = "toggle_test",
-                objectName = "토글 테스트",
-                defaultValue = false
+                objectId = CONF_OPTIMIZATION,
+                objectName = "최적화 레벨",
+                max = 10,
+                defaultValue = 1
             )
         )
 
     override fun onConfigChanged(changed: Map<String, Any>) {
-
+        Session.getProjectLoader().getProject("")
     }
 
     override fun compile(code: String, methods: Array<MethodBlock>): Any {

@@ -82,6 +82,6 @@ class PluginClassLoader(
         }
         pluginState = IllegalStateException("Initial initialization")
         this.pluginInit = plugin
-        //plugin.init(loader, getProjectLoader(), config, dataDir, file, this)
+        plugin.init(loader, getProjectLoader(), config, dataDir, file, this)
     }
 }

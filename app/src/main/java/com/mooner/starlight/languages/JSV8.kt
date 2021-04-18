@@ -9,11 +9,13 @@ import com.mooner.starlight.Utils.Companion.getLogger
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.plugincore.language.*
 
-class JSV8: Language {
+class JSV8: Language() {
     override val id: String
         get() = "JS_V8"
     override val name: String
         get() = "자바스크립트 (V8)"
+    override val fileExtension: String
+        get() = "js"
     override val icon: Drawable
         get() = ContextCompat.getDrawable(ApplicationSession.context, R.drawable.ic_v8)!!
     override val requireRelease: Boolean

@@ -134,10 +134,11 @@ class MainActivity : AppCompatActivity() {
                     nameEditText.requestFocus()
                     return@setPositiveButton
                 }
+                val selectedLang = getLanguageManager().getLanguages()[languageSpinner.selectedIndex]
                 getProjectLoader().newProject {
                     name = projectName
-                    mainScript = "$projectName.js"
-                    language = getLanguageManager().getLanguages()[languageSpinner.selectedIndex].id
+                    mainScript = "$projectName.${selectedLang.fileExtension}"
+                    language = selectedLang.id
                     listeners = mutableListOf("default")
                 }
                 fabDialog.collapseDialog()

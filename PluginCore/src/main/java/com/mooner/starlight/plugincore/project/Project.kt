@@ -1,8 +1,7 @@
 package com.mooner.starlight.plugincore.project
 
 import com.mooner.starlight.plugincore.Session
-import com.mooner.starlight.plugincore.Session.Companion.getLogger
-import com.mooner.starlight.plugincore.language.Language
+import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.utils.Utils
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
@@ -15,7 +14,7 @@ class Project(
     val config: ProjectConfig
 ) {
     private var engine: Any? = null
-    private val lang: Language
+    private val lang: ILanguage
     private val logger: LocalLogger
     val directory: File
     private var listener: ((room: String, msg: String) -> Unit)? = null
@@ -113,7 +112,7 @@ class Project(
         this.listener = listener
     }
 
-    fun getLanguage(): Language {
+    fun getLanguage(): ILanguage {
         return lang
     }
 }
