@@ -78,7 +78,6 @@ dependencies {
 
     implementation group: 'org.mozilla', name: 'rhino', version: '1.7.13'
     implementation 'com.eclipsesource.j2v8:j2v8:6.2.0@aar'
-    implementation 'io.alicorn.v8:v8-adapter:1.41'
 
     implementation project(":PluginCore")
 

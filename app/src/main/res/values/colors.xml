@@ -15,6 +15,8 @@
     <color name="sub_bright">#8E95BF</color>
     <color name="main_dark">#2A2C39</color>
     <color name="sub_dark">#191A25</color>
+    <color name="cardview_enabled">#DBDEFB</color>
+    <color name="cardview_disabled">#E4E4E4</color>
     <color name="dialog_icon">#CACBCF</color>
     <color name="card_enabled">#77FF99</color>
     <color name="card_disabled">#FF6F6F</color>

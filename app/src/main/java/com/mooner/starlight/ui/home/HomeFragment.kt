@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.mooner.starlight.R
 import com.mooner.starlight.Utils.Companion.getLogger
 import com.mooner.starlight.core.ApplicationSession.taskHandler
+import kotlinx.android.synthetic.main.fragment_home.*
 import kotlinx.android.synthetic.main.fragment_home.view.*
 
 class HomeFragment : Fragment() {
@@ -28,6 +29,9 @@ class HomeFragment : Fragment() {
         homeViewModel.text.observe(viewLifecycleOwner, {
             //textView.text = it
         })
+        root.switchAllPower.setOnCheckedChangeListener { _, isChecked ->
+            root.cardViewAllPower.setCardBackgroundColor(root.context.getColor(if (isChecked) R.color.cardview_enabled else R.color.cardview_disabled))
+        }
 
         return root
     }
