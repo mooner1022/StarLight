@@ -6,75 +6,17 @@
     android:layout_height="match_parent"
     tools:context=".ui.editor.EditorActivity">
 
-    <LinearLayout
-        android:id="@+id/search_panel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="@+id/editor"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/editor">
-
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:onClick="gotoLast"
-                    android:text="@string/layout_tv_last" />
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:onClick="gotoNext"
-                    android:text="@string/layout_tv_next" />
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:onClick="replace"
-                    android:text="@string/layout_tv_replace" />
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:onClick="replaceAll"
-                    android:text="@string/layout_tv_replaceAll" />
-
-
-            </LinearLayout>
-
-        </HorizontalScrollView>
-
-
-        <EditText
-            android:id="@+id/search_editor"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/text_to_search" />
-
-        <EditText
-            android:id="@+id/replace_editor"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/replacement" />
-
-    </LinearLayout>
-
-    <io.github.rosemoe.editor.widget.CodeEditor
-        android:id="@+id/editor"
-        android:layout_width="match_parent"
+    <com.amrdeveloper.codeview.CodeView
+        android:id="@+id/codeView"
+        android:layout_width="0dp"
         android:layout_height="0dp"
+        android:background="@color/white"
+        android:dropDownWidth="150dp"
+        android:dropDownHorizontalOffset="0dp"
+        android:gravity="top|start"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toolbar_editor" />
 
     <androidx.appcompat.widget.Toolbar

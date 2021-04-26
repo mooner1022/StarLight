@@ -58,11 +58,9 @@ dependencies {
     implementation 'androidx.navigation:navigation-ui-ktx:2.3.5'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.1'
-    implementation group: 'org.kohsuke', name: 'github-api', version: '1.125'
 
     implementation 'org.jsoup:jsoup:1.13.1'
     implementation 'com.bitvale:fabdialog:1.0.1'
@@ -70,11 +68,7 @@ dependencies {
     implementation 'com.alespero:expandable-cardview:0.8'
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
 
-    implementation 'com.github.Rosemoe.CodeEditor:editor:0.4.0'
-    implementation 'com.github.Rosemoe.CodeEditor:language-base:0.4.0'
-    implementation 'com.github.Rosemoe.CodeEditor:language-java:0.4.0'
-    implementation 'com.github.Rosemoe.CodeEditor:language-universal:0.4.0'
-    implementation 'com.github.Rosemoe.CodeEditor:language-s5d:0.4.0'
+    implementation 'com.github.AmrDeveloper:CodeView:1.0.0'
 
     implementation group: 'org.mozilla', name: 'rhino', version: '1.7.13'
     implementation 'com.eclipsesource.j2v8:j2v8:6.2.0@aar'

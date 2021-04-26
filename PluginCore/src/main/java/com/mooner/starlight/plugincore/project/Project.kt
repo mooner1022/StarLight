@@ -78,6 +78,7 @@ class Project(
         /*
         when(config.language) {
             Languages.JS_RHINO -> {
+
                 ScriptableObject.callMethod(engine as Scriptable, methodName, args)
             }
             Languages.JS_V8 -> {

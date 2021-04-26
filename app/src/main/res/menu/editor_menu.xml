@@ -28,22 +28,4 @@
                 android:title="@string/search_panel" />
         </menu>
     </item>
-    <item
-        android:id="@+id/code_navigation"
-        android:title="@string/code_navigation" />
-    <item
-        android:id="@+id/text_wordwrap"
-        android:checkable="true"
-        android:title="@string/wordwrap" />
-    <item
-        android:id="@+id/editor_line_number"
-        android:checkable="true"
-        android:checked="true"
-        android:title="@string/line_number_visibility" />
-    <item
-        android:id="@+id/code_format"
-        android:title="@string/format" />
-    <item
-        android:id="@+id/switch_colors"
-        android:title="@string/switch_color_scheme" />
 </menu>

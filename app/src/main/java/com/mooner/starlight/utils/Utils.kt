@@ -1,10 +1,8 @@
-package com.mooner.starlight
+package com.mooner.starlight.utils
 
 import com.eclipsesource.v8.V8
 import com.eclipsesource.v8.V8Object
 import com.mooner.starlight.plugincore.Session
-import com.mooner.starlight.plugincore.language.Method
-import com.mooner.starlight.plugincore.language.MethodBlock
 import com.mooner.starlight.plugincore.logger.Logger
 
 class Utils {

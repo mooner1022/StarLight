@@ -30,8 +30,7 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
-import com.mooner.starlight.Utils.Companion.getLogger
-import com.mooner.starlight.core.ApplicationSession
+import com.mooner.starlight.utils.Utils.Companion.getLogger
 import com.mooner.starlight.core.BackgroundTask
 import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader

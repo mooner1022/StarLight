@@ -1,5 +1,8 @@
 package com.mooner.starlight.plugincore.logger
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class LogData(
     val type: LogType,
     val tag: String,

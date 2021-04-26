@@ -4,8 +4,8 @@ import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import com.eclipsesource.v8.V8
 import com.mooner.starlight.R
-import com.mooner.starlight.Utils.Companion.addClass
-import com.mooner.starlight.Utils.Companion.getLogger
+import com.mooner.starlight.utils.Utils.Companion.addClass
+import com.mooner.starlight.utils.Utils.Companion.getLogger
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.plugincore.language.*
 

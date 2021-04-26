@@ -16,6 +16,9 @@ import java.util.*
 import kotlin.concurrent.schedule
 
 class SplashActivity : AppCompatActivity() {
+    companion object {
+        private const val MIN_LOAD_TIME = 1500L
+    }
     private var spinTimer: Timer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,8 +40,8 @@ class SplashActivity : AppCompatActivity() {
                 {
                     val currentMillis = System.currentTimeMillis()
                     println("time: ${currentMillis - initMillis}")
-                    if ((currentMillis - initMillis) <= 2000) {
-                        Timer().schedule(2000 - (currentMillis - initMillis)) {
+                    if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
+                        Timer().schedule(MIN_LOAD_TIME - (currentMillis - initMillis)) {
                             if (spinTimer != null) {
                                 spinTimer!!.cancel()
                             }

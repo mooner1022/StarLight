@@ -62,12 +62,15 @@ abstract class StarlightPlugin: Plugin {
     protected fun getClassLoader(): ClassLoader = classLoader
 
     fun addCustomLanguage(language: ILanguage) {
+        var isLoadSuccess = false
         try {
             Session.getLanguageManager().addLanguage(language)
-            Session.getLogger().i("PluginLoader","Successfully added language ${language.name}")
+            isLoadSuccess = true
         } catch (e: IllegalStateException) {
+            Session.getLogger().e("LanguageLoader",e.toString())
             e.printStackTrace()
-            Session.getLogger().e("PluginLoader",e.toString())
+        } finally {
+            Session.getLogger().i("LanguageLoader",(if (isLoadSuccess) "Successfully added" else "Failed to add") + " language ${language.name}")
         }
     }
 

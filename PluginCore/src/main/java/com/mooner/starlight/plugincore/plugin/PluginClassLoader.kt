@@ -48,7 +48,7 @@ class PluginClassLoader(
     }
 
     override fun findClass(name: String): Class<*> {
-        return findClass(name, false)
+        return findClass(name, true)
     }
 
     fun findClass(name: String, checkGlobal: Boolean): Class<*> {
