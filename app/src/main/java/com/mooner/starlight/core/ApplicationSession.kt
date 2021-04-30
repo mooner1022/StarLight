@@ -8,6 +8,7 @@ import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.PluginLoader
+import com.mooner.starlight.plugincore.utils.NetworkUtil
 
 @SuppressLint("StaticFieldLeak")
 object ApplicationSession {
@@ -56,7 +57,7 @@ object ApplicationSession {
         pluginLoadTime[preName] = System.currentTimeMillis() - preTime
 
         onPhaseChanged(context.getString(R.string.step_projects))
-        Session.getProjectLoader().load()
+        Session.getProjectLoader().loadProjects()
         isInitComplete = true
         onFinished()
         if (initCompleteListeners.isNotEmpty()) {
@@ -64,6 +65,15 @@ object ApplicationSession {
                 listener()
             }
             initCompleteListeners.clear()
+        }
+
+        NetworkUtil.registerNetworkStatusListener(context)
+        NetworkUtil.addOnNetworkStateChangedListener { state ->
+            if (plugins.isNotEmpty()) {
+                for (plugin in plugins) {
+                    plugin.onNetworkStateChanged(state)
+                }
+            }
         }
     }
 

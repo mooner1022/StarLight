@@ -69,3 +69,21 @@ class StringLanguageConfig(
     override val viewType: Int
         get() = 2
 }
+
+class SpinnerLanguageConfig(
+    private val objectId: String,
+    private val objectName: String,
+    val dataList: List<String>,
+    private val defaultIndex: Int
+): LanguageConfig {
+    override val id: String
+        get() = objectId
+    override val name: String
+        get() = objectName
+    override val default: Any
+        get() = defaultIndex
+    override val type: LanguageConfigType
+        get() = LanguageConfigType.SLIDER
+    override val viewType: Int
+        get() = 3
+}

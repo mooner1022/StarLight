@@ -63,7 +63,11 @@ class LocalLogger(private var _logs: ArrayList<LogData>, private val file: File)
 
     private fun flush() {
         CoroutineScope(Dispatchers.IO).launch {
-            file.writeText(Json.encodeToString(_logs))
+            try {
+                file.writeText(Json.encodeToString(_logs))
+            } catch (e: ConcurrentModificationException) {
+
+            }
         }
     }
 }

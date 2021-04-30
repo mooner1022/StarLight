@@ -19,7 +19,7 @@ class ProjectLoader {
         }
     }
 
-    fun load() {
+    fun loadProjects() {
         loadProjects(false)
     }
 

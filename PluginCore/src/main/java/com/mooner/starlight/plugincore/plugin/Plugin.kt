@@ -12,4 +12,6 @@ interface Plugin {
     fun onDisable() {}
 
     fun onFinish() {}
+
+    fun onNetworkStateChanged(state: Int) {}
 }

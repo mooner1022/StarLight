@@ -16,7 +16,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.alespero.expandablecardview.ExpandableCardView
+    <host.stjin.expandablecardview.ExpandableCardView
         android:id="@+id/card_project"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -31,6 +31,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/cardViewIsEnabled"
         app:layout_constraintTop_toTopOf="parent"
+        app:showSwitch="true"
         app:startExpanded="false"
         app:title="PROJECT_NAME" />
 

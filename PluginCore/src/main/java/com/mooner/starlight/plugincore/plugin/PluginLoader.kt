@@ -2,10 +2,14 @@ package com.mooner.starlight.plugincore.plugin
 
 import android.os.Environment
 import com.mooner.starlight.plugincore.Info
+import com.mooner.starlight.plugincore.Priority
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.annotations.StarLightEventListener
 import com.mooner.starlight.plugincore.event.EventListener
 import com.mooner.starlight.plugincore.utils.Utils.Companion.readString
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -17,12 +21,16 @@ import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
 class PluginLoader {
-    private val T = "PluginLoader"
     private val classes: HashMap<String, Class<*>> = HashMap()
     private val loaders: LinkedHashMap<String, PluginClassLoader> = LinkedHashMap()
     private val method: Method = URLClassLoader::class.java
         .getDeclaredMethod("addURL", URL::class.java)
 
+    companion object {
+        private const val T = "PluginLoader"
+    }
+
+    @Suppress("DEPRECATION")
     private val defDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/")
     //private val dexDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/.dex/")
 
@@ -35,6 +43,7 @@ class PluginLoader {
             dir.mkdirs()
         }
 
+        val lowPriorityQueue: MutableList<Pair<PluginConfig, File>> = mutableListOf()
         val list: MutableList<Plugin> = mutableListOf()
 
         for (file in dir.listFiles { it -> it.name.substringAfterLast(".") in listOf("apk", "aab") }?: arrayOf()) {
@@ -42,7 +51,6 @@ class PluginLoader {
                 val config: PluginConfig
                 try {
                     config = getConfigFile(file)
-                    if (onPluginLoad != null) onPluginLoad(config.name)
                 } catch (e: FileNotFoundException) {
                     Session.getLogger().e(T, e.toString())
                     throw InvalidPluginException(e.toString())
@@ -50,12 +58,31 @@ class PluginLoader {
                     Session.getLogger().e(T, e.toString())
                     throw InvalidPluginException(e.toString())
                 }
-                val plugin = loadPlugin(config, file)
-                if (!plugin.pluginCoreVersion.isCompatibleWith(Info.PLUGINCORE_VERSION)) {
-                    Session.getLogger().e(javaClass.simpleName, "Incompatible plugin version(${plugin.pluginCoreVersion}) found on [${plugin.name}]")
+                when(config.loadPriority) {
+                    Priority.HIGH -> {
+                        if (onPluginLoad != null) onPluginLoad(config.name)
+                        val plugin = loadPlugin(config, file)
+                        if (!plugin.pluginCoreVersion.isCompatibleWith(Info.PLUGINCORE_VERSION)) {
+                            Session.getLogger().e(javaClass.simpleName, "Incompatible plugin version(${plugin.pluginCoreVersion}) found on [${plugin.name}]")
+                        }
+                        plugin.onEnable()
+                        list.add(plugin)
+                    }
+                    Priority.MIDDLE -> {
+                        CoroutineScope(Dispatchers.Default).launch {
+                            if (onPluginLoad != null) onPluginLoad(config.name)
+                            val plugin = loadPlugin(config, file)
+                            if (!plugin.pluginCoreVersion.isCompatibleWith(Info.PLUGINCORE_VERSION)) {
+                                Session.getLogger().e(javaClass.simpleName, "Incompatible plugin version(${plugin.pluginCoreVersion}) found on [${plugin.name}]")
+                            }
+                            plugin.onEnable()
+                            list.add(plugin)
+                        }
+                    }
+                    Priority.LOW -> {
+                        lowPriorityQueue.add(Pair(config, file))
+                    }
                 }
-                plugin.onEnable()
-                list.add(plugin)
                 //PluginManager.plugins[config.name] = plugin
             } catch (e: Exception) {
                 Session.getLogger().e(T, e.toString())
@@ -72,6 +99,44 @@ class PluginLoader {
         if (dataDir.exists() && !dataDir.isDirectory) {
             throw InvalidPluginException(
                 "Data folder for plugin ${config.name} exists and is not a directory"
+            )
+        } else if (!dataDir.exists()) {
+            dataDir.mkdirs()
+        }
+
+        /*
+        try {
+            Session.logger.i(T, "Loading plugin ${config.fullName}")
+            val dexClassLoader = PluginClassLoader(this, ClassLoader.getSystemClassLoader(), config, ))
+            val loaded = dexClassLoader.loadClass(config.main)
+            loaded.newInstance()
+            Session.logger.i(T, "Loaded plugin ${config.fullName} (${file.name})")
+        } catch (e: Exception) {
+            Session.logger.e(T, "Failed to load plugin ${config.fullName} (${file.name}): $e")
+            e.printStackTrace()
+        }
+        */
+
+        Session.getLogger().i(T, "Loading plugin ${config.fullName}")
+        val loader: PluginClassLoader
+        try {
+            loader = PluginClassLoader(this, javaClass.classLoader!!, config, dataDir, file)
+            Session.getLogger().i(T, "Loaded plugin ${config.fullName} (${file.name})")
+        } catch (e: InvalidPluginException) {
+            Session.getLogger().e(T, "Failed to load plugin ${config.fullName} (${file.name}): $e")
+            throw e
+        }
+        loaders[config.name] = loader
+        return loader.plugin
+    }
+
+    private suspend fun loadPluginAsync(config: PluginConfig, file: File): StarlightPlugin {
+        val parent = file.parentFile
+        val dataDir = File(parent, config.name)
+
+        if (dataDir.exists() && !dataDir.isDirectory) {
+            throw InvalidPluginException(
+                    "Data folder for plugin ${config.name} exists and is not a directory"
             )
         } else if (!dataDir.exists()) {
             dataDir.mkdirs()
@@ -180,6 +245,8 @@ class PluginLoader {
     }
 
     private fun removeClass(name: String) {
-        val clazz = classes.remove(name)
+        if (classes.containsKey(name)) {
+            classes.remove(name)
+        }
     }
 }

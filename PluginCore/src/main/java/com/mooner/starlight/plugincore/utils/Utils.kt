@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.utils
 
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import com.mooner.starlight.plugincore.language.Method
 import com.mooner.starlight.plugincore.language.MethodBlock
@@ -21,47 +22,6 @@ class Utils {
 
         fun File.hasFile(fileName: String): Boolean {
             return this.listFiles()?.find { it.name == fileName } != null
-        }
-
-        fun getDefaultMethods(replier: Any, logger: LocalLogger): Array<MethodBlock> {
-            return arrayOf(
-                    MethodBlock(
-                            "replier",
-                            replier,
-                            listOf(
-                                    Method(
-                                            "reply",
-                                            arrayOf(String::class.java)
-                                    ),
-                                    Method(
-                                            "replyTo",
-                                            arrayOf(String::class.java, String::class.java)
-                                    )
-                            )
-                    ),
-                    MethodBlock(
-                            "logger",
-                            logger,
-                            listOf(
-                                    Method(
-                                            "i",
-                                            arrayOf(String::class.java, String::class.java)
-                                    ),
-                                    Method(
-                                            "e",
-                                            arrayOf(String::class.java, String::class.java)
-                                    ),
-                                    Method(
-                                            "w",
-                                            arrayOf(String::class.java, String::class.java)
-                                    ),
-                                    Method(
-                                            "d",
-                                            arrayOf(String::class.java, String::class.java)
-                                    ),
-                            )
-                    )
-            )
         }
     }
 }

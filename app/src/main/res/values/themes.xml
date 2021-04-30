@@ -26,4 +26,20 @@
     <style name="Theme.StarLight.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="Theme.StarLight.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="overrideExpandableCardViewSwitch">
+        <item name="android:thumb">@drawable/switch_thumb_selector</item>
+        <item name="android:track">@drawable/switch_track_selector</item>
+    </style>
+
+    <style name="ExpandedAppBar" parent="@android:style/TextAppearance.Medium">
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">@font/nanumsquare_round_bold</item>
+    </style>
+
+    <style name="CollapsedAppBar" parent="@android:style/TextAppearance.Medium">
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">@font/nanumsquare_round_bold</item>
+    </style>
 </resources>

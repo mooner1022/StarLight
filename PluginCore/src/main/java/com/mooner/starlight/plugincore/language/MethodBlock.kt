@@ -3,6 +3,7 @@ package com.mooner.starlight.plugincore.language
 data class MethodBlock(
     val blockName: String,
     val methodClass: Any,
+    val isCustomClass: Boolean,
     val methods: List<Method>
 )
 

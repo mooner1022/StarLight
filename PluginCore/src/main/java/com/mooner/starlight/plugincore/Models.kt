@@ -31,3 +31,9 @@ data class TypedString(
         }
     }
 }
+
+enum class Priority {
+    HIGH,
+    MIDDLE,
+    LOW
+}

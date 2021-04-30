@@ -1,16 +1,12 @@
 package com.mooner.starlight
 
 import android.Manifest
-import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.Menu
 import android.view.SubMenu
 import android.view.View
-import android.view.WindowManager
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.EditText
@@ -25,19 +21,24 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
-import com.bitvale.fabdialog.widget.FabDialog
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.bottomsheets.setPeekHeight
+import com.afollestad.materialdialogs.callbacks.onDismiss
+import com.afollestad.materialdialogs.customview.customView
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
-import com.mooner.starlight.utils.Utils.Companion.getLogger
 import com.mooner.starlight.core.BackgroundTask
 import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
+import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import kotlinx.android.synthetic.main.app_bar_main.*
 import org.angmarch.views.NiceSpinner
 import kotlin.math.abs
-
 
 @SuppressLint("StaticFieldLeak")
 class MainActivity : AppCompatActivity() {
@@ -45,17 +46,19 @@ class MainActivity : AppCompatActivity() {
     private lateinit var languageSpinner: NiceSpinner
 
     companion object {
-        private lateinit var runningBotsTextView: TextView
+        private lateinit var textViewStatus: TextView
         private lateinit var ctr: CollapsingToolbarLayout
-        private lateinit var fab: FabDialog
+        lateinit var fab: FloatingActionButton
         private lateinit var view: View
         private lateinit var fabAnim: Animation
-        private var runnable: Runnable? = null
-        private var isShowingFabAnimation: Boolean = false
 
-        fun reloadText() {
-            val active = getProjectLoader().getEnabledProjects()
-            runningBotsTextView.text = if (active.isEmpty()) "작동중인 봇이 없어요." else "${active.size}개의 봇이 작동중이에요."
+        fun reloadText(text: String? = null) {
+            if (text == null) {
+                val active = getProjectLoader().getEnabledProjects()
+                textViewStatus.text = if (active.isEmpty()) "작동중인 봇이 없어요." else "${active.size}개의 봇이 작동중이에요."
+            } else {
+                textViewStatus.text = text
+            }
         }
 
         fun setToolbarText(text: String) {
@@ -64,19 +67,6 @@ class MainActivity : AppCompatActivity() {
 
         fun showSnackbar(text: String, length: Int = Snackbar.LENGTH_LONG) {
             Snackbar.make(view, text, length).show()
-            ObjectAnimator.ofFloat(fab, "translationY", -200f).apply {
-                duration = 200
-                start()
-            }
-            isShowingFabAnimation = true
-            runnable = Runnable {
-                ObjectAnimator.ofFloat(fab, "translationY", 0f).apply {
-                    duration = 200
-                    start()
-                }
-                isShowingFabAnimation = false
-            }
-            Handler(Looper.getMainLooper()).postDelayed(runnable!!, 2900)
         }
     }
 
@@ -108,75 +98,73 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val fabDialog: FabDialog = findViewById(R.id.dialog_fab)
         fabAnim = AnimationUtils.loadAnimation(applicationContext, R.anim.fab_snackbar_anim)
         view = rootView
-        fab = fabDialog
+        fab = findViewById(R.id.fabNewProject)
 
-        with(fabDialog) {
-            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
-            setTitle("새 프로젝트")
-            setDialogCornerRadius(100f)
-            setContentView(R.layout.dialog_new_project)
-            setCanceledOnTouchOutside(true)
-            setDialogIcon(R.drawable.ic_round_projects_24)
-            setPositiveButton("추가") {
-                val nameEditText = findViewById<EditText>(R.id.editTextNewProjectName)
-                val projectName = nameEditText.text.toString()
-                if (getProjectLoader().getProject(projectName) != null) {
-                    nameEditText.error = "이미 존재하는 이름이에요."
-                    nameEditText.requestFocus()
-                    return@setPositiveButton
-                }
-                if (!"(^[1-9A-Za-z]+\$)".toRegex().matches(projectName)) {
-                    nameEditText.error = "이름은 숫자와 영문자만 가능해요."
-                    nameEditText.requestFocus()
-                    return@setPositiveButton
-                }
-                val selectedLang = getLanguageManager().getLanguages()[languageSpinner.selectedIndex]
-                getProjectLoader().newProject {
-                    name = projectName
-                    mainScript = "$projectName.${selectedLang.fileExtension}"
-                    language = selectedLang.id
-                    listeners = mutableListOf("default")
-                }
-                fabDialog.collapseDialog()
-            }
-            setNegativeButton("취소") {
-                fabDialog.collapseDialog()
-            }
+        with(fab) {
             setOnClickListener { _ ->
-                if (isShowingFabAnimation) {
-                    if (runnable != null) Handler(Looper.getMainLooper()).removeCallbacks(runnable!!)
-                    ObjectAnimator.ofFloat(view, "translationY", 0f).apply {
-                        duration = 0
-                        start()
+                fab.hide()
+                MaterialDialog(this@MainActivity, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                    //window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+                    setTitle("새 프로젝트")
+                    cornerRadius(25f)
+                    customView(R.layout.dialog_new_project)
+                    cancelOnTouchOutside(true)
+                    noAutoDismiss()
+                    positiveButton(text = "추가") {
+                        val nameEditText = it.findViewById<EditText>(R.id.editTextNewProjectName)
+                        val projectName = nameEditText.text.toString()
+                        if (getProjectLoader().getProject(projectName) != null) {
+                            nameEditText.error = "이미 존재하는 이름이에요."
+                            nameEditText.requestFocus()
+                            return@positiveButton
+                        }
+                        if (!"(^[_1-9A-Za-z]+\$)".toRegex().matches(projectName)) {
+                            nameEditText.error = "이름은 숫자와 영문자만 가능해요."
+                            nameEditText.requestFocus()
+                            return@positiveButton
+                        }
+                        val selectedLang = getLanguageManager().getLanguages()[languageSpinner.selectedIndex]
+                        getProjectLoader().newProject {
+                            name = projectName
+                            mainScript = "$projectName.${selectedLang.fileExtension}"
+                            language = selectedLang.id
+                            listeners = mutableListOf("default")
+                        }
+                        it.dismiss()
                     }
-                    isShowingFabAnimation = false
-                }
-                fabDialog.expandDialog()
-                val nameEditText = findViewById<EditText>(R.id.editTextNewProjectName)
-                nameEditText.text.clear()
-                languageSpinner = findDialogViewById(R.id.spinnerLanguage) as NiceSpinner
-                val objects = getLanguageManager().getLanguages().map { it.name }.toList()
-                with(languageSpinner) {
-                    setBackgroundColor(context.getColor(R.color.transparent))
-                    attachDataSource(objects)
-                    setOnSpinnerItemSelectedListener { _, _, position, _ ->
-                        getLogger().i(javaClass.name, "Spinner item selected: $position")
+                    negativeButton(text = "취소") {
+                        it.dismiss()
+                    }
+                    onDismiss {
+                        fab.show()
+                    }
+
+                    val nameEditText = findViewById<EditText>(R.id.editTextNewProjectName)
+                    nameEditText.text.clear()
+                    languageSpinner = findViewById(R.id.spinnerLanguage)
+                    val objects = getLanguageManager().getLanguages().map { it.name }.toList()
+                    with(languageSpinner) {
+                        setBackgroundColor(context.getColor(R.color.transparent))
+                        attachDataSource(objects)
+                        setOnSpinnerItemSelectedListener { _, _, position, _ ->
+                            getLogger().i(javaClass.name, "Spinner item selected: $position")
+                        }
                     }
                 }
             }
         }
 
-        runningBotsTextView = findViewById(R.id.textViewBotsRunning)
+        textViewStatus = findViewById(R.id.statusView)
         appBarLayout.addOnOffsetChangedListener(
                 AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
-                    val percent = abs(
+                    val percent = 1.0f - abs(
                             verticalOffset / appBarLayout.totalScrollRange
                                     .toFloat()
                     )
-                    runningBotsTextView.alpha = 1.0f - percent
+                    textViewStatus.alpha = percent
+                    imageViewLogo.alpha = percent
                 }
         )
         reloadText()

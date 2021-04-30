@@ -57,4 +57,8 @@ class JSRhino: Language() {
     override fun execute(engine: Any, methodName: String, args: Array<Any>) {
         ScriptableObject.callMethod(engine as Scriptable, methodName, args)
     }
+
+    override fun eval(code: String): Any {
+        return 0
+    }
 }

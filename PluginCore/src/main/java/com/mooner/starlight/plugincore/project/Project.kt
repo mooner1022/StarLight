@@ -3,20 +3,25 @@ package com.mooner.starlight.plugincore.project
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.logger.LocalLogger
-import com.mooner.starlight.plugincore.utils.Utils
+import com.mooner.starlight.plugincore.methods.Methods
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 
 class Project(
-    private val folder: File,
+    val folder: File,
     val config: ProjectConfig
 ) {
+    val isCompiled: Boolean
+        get() = engine != null
     private var engine: Any? = null
-    private val lang: ILanguage
-    private val logger: LocalLogger
-    val directory: File
+    private val lang: ILanguage = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
+    private val logger: LocalLogger = if (folder.hasFile("logs_local.json")) {
+        LocalLogger.fromFile(File(folder, "logs_local.json"))
+    } else {
+        LocalLogger.create(folder)
+    }
     private var listener: ((room: String, msg: String) -> Unit)? = null
     private var lastRoom: String? = null
     private val defReplier = object :Replier {
@@ -41,28 +46,10 @@ class Project(
         }
     }
 
-    init {
-        val rawCode: String = (folder.listFiles()?.find { it.isFile && it.name == config.mainScript }?:throw IllegalArgumentException(
-            "Cannot find main script ${config.mainScript} for project ${config.name}"
-        )).readText(Charsets.UTF_8)
-        directory = folder
-        logger = if (directory.hasFile("logs_local.json")) {
-            LocalLogger.fromFile(File(directory, "logs_local.json"))
-        } else {
-            LocalLogger.create(directory)
-        }
-
-        lang = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
-        engine = lang.compile(
-            rawCode,
-            Utils.getDefaultMethods(defReplier, logger)
-        )
-    }
-
     fun callEvent(methodName: String, args: Array<Any>) {
         println("calling $methodName with args [${args.joinToString(", ")}]")
 
-        if (engine == null) {
+        if (!isCompiled) {
             logger.e("EventHandler", "Property engine must not be null")
             return
         }
@@ -91,22 +78,29 @@ class Project(
         */
     }
 
-    fun recompile() {
-        val rawCode: String = (folder.listFiles()?.find { it.isFile && it.name == config.mainScript }?:throw IllegalArgumentException(
-            "Cannot find main script ${config.mainScript} for project ${config.name}"
-        )).readText(Charsets.UTF_8)
-        if (engine != null && lang.requireRelease) {
-            lang.release(engine!!)
-            println("engine released")
+    fun compile(onSuccess: ((project: Project) -> Unit) = {}, onError: ((e: Exception) -> Unit) = {}) {
+        try {
+            val rawCode: String = (folder.listFiles()?.find { it.isFile && it.name == config.mainScript }?: throw IllegalArgumentException(
+                    "Cannot find main script ${config.mainScript} for project ${config.name}"
+            )).readText(Charsets.UTF_8)
+            if (engine != null && lang.requireRelease) {
+                lang.release(engine!!)
+                println("engine released")
+            }
+            engine = lang.compile(
+                    rawCode,
+                    Methods.getOriginalMethods(defReplier, logger)
+            )
+            onSuccess(this)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            logger.e("${config.name}: compile", e.toString())
+            onError(e)
         }
-        engine = lang.compile(
-            rawCode,
-            Utils.getDefaultMethods(defReplier, logger)
-        )
     }
 
     fun flush() {
-        File(directory.path, "project.json").writeText(Json.encodeToString(config), Charsets.UTF_8)
+        File(folder.path, "project.json").writeText(Json.encodeToString(config), Charsets.UTF_8)
     }
 
     fun bindReplier(listener: (room: String, msg: String) -> Unit) {
