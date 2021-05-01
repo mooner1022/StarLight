@@ -5,23 +5,4 @@
         android:fromAlpha="0.0"
         android:toAlpha="1.0"
         android:duration="1000" />
-    <scale
-        android:interpolator="@android:anim/accelerate_interpolator"
-        android:duration="200"
-        android:fromXScale="0.9"
-        android:fromYScale="0.9"
-        android:toXScale="1.1"
-        android:toYScale="1.1"
-        android:pivotX="50%"
-        android:pivotY="50%" />
-    <scale
-        android:startOffset="200"
-        android:interpolator="@android:anim/decelerate_interpolator"
-        android:duration="200"
-        android:fromXScale="1.1"
-        android:fromYScale="1.1"
-        android:toXScale="1.0"
-        android:toYScale="1.0"
-        android:pivotX="50%"
-        android:pivotY="50%" />
 </set>

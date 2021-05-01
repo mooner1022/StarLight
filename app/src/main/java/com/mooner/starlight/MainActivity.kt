@@ -6,13 +6,13 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.SubMenu
-import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.findNavController
@@ -24,7 +24,6 @@ import androidx.navigation.ui.setupWithNavController
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.bottomsheets.setPeekHeight
 import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.customview.customView
 import com.google.android.material.appbar.AppBarLayout
@@ -33,10 +32,10 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.core.BackgroundTask
+import com.mooner.starlight.databinding.ActivityMainBinding
 import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
 import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
-import kotlinx.android.synthetic.main.app_bar_main.*
 import org.angmarch.views.NiceSpinner
 import kotlin.math.abs
 
@@ -44,13 +43,14 @@ import kotlin.math.abs
 class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var languageSpinner: NiceSpinner
+    private lateinit var binding: ActivityMainBinding
 
     companion object {
         private lateinit var textViewStatus: TextView
         private lateinit var ctr: CollapsingToolbarLayout
         lateinit var fab: FloatingActionButton
-        private lateinit var view: View
         private lateinit var fabAnim: Animation
+        private lateinit var rootLayout: CoordinatorLayout
 
         fun reloadText(text: String? = null) {
             if (text == null) {
@@ -65,17 +65,20 @@ class MainActivity : AppCompatActivity() {
             ctr.title = text
         }
 
-        fun showSnackbar(text: String, length: Int = Snackbar.LENGTH_LONG) {
-            Snackbar.make(view, text, length).show()
+        fun showSnackbar(text: String, duration: Int = Snackbar.LENGTH_SHORT) {
+            Snackbar.make(rootLayout, text, duration).show()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
+        rootLayout = binding.innerLayout.rootLayout
         ctr = findViewById(R.id.collapsingToolbarLayout)
         ActivityCompat.requestPermissions(
                 this@MainActivity,
@@ -99,7 +102,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         fabAnim = AnimationUtils.loadAnimation(applicationContext, R.anim.fab_snackbar_anim)
-        view = rootView
         fab = findViewById(R.id.fabNewProject)
 
         with(fab) {
@@ -157,14 +159,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         textViewStatus = findViewById(R.id.statusView)
-        appBarLayout.addOnOffsetChangedListener(
+        binding.innerLayout.appBarLayout.addOnOffsetChangedListener(
                 AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
                     val percent = 1.0f - abs(
                             verticalOffset / appBarLayout.totalScrollRange
                                     .toFloat()
                     )
                     textViewStatus.alpha = percent
-                    imageViewLogo.alpha = percent
+                    binding.innerLayout.imageViewLogo.alpha = percent
                 }
         )
         reloadText()

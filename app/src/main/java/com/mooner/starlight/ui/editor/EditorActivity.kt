@@ -6,33 +6,29 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
-import com.amrdeveloper.codeview.CodeView
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
-import kotlinx.android.synthetic.main.activity_editor.*
+import com.mooner.starlight.databinding.ActivityEditorBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 
 class EditorActivity : AppCompatActivity() {
-    companion object {
-        //private const val MONACO_DIRECTORY = "file:///android_asset/monaco/index.html"
-    }
-
     private lateinit var fileDir: File
     private lateinit var name: String
     //private lateinit var monaco: WebView
-    private lateinit var codeView: CodeView
     private lateinit var orgCode: String
     private var isCodeChanged = false
+    private lateinit var binding: ActivityEditorBinding
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_editor)
+        binding = ActivityEditorBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        setSupportActionBar(toolbar_editor)
+        setSupportActionBar(binding.toolbarEditor)
         name = intent.getStringExtra("title")!!
         supportActionBar!!.apply {
             setDisplayHomeAsUpEnabled(true)
@@ -42,13 +38,22 @@ class EditorActivity : AppCompatActivity() {
         fileDir = File(intent.getStringExtra("fileDir")
                 ?: throw IllegalArgumentException("No file directory passed to editor"))
 
-        codeView = findViewById(R.id.codeView)
-        with(codeView) {
+        with(binding.codeView) {
             setTabWidth(4)
             CoroutineScope(Dispatchers.IO).launch {
                 orgCode = fileDir.readText()
                 setText(orgCode)
             }
+            resetSyntaxPatternList()
+            setSyntaxPatternsMap(
+                    mapOf(
+                            "function|throw".toPattern() to R.color.code_orange,
+                            "\"(.*?)\"|'(.*?)'".toPattern() to R.color.code_string,
+                            "^val|let|const".toPattern() to R.color.code_orange,
+                    )
+            )
+            reHighlightSyntax()
+            //addErrorLine(1, R.color.code_error)
             addTextChangedListener {
                 isCodeChanged = (it!!.toString() != orgCode)
             }
@@ -123,7 +128,7 @@ class EditorActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.menu_save -> {
                 if (isCodeChanged) {
-                    if (fileDir.isFile) fileDir.writeText(codeView.text.toString())
+                    if (fileDir.isFile) fileDir.writeText(binding.codeView.text.toString())
                     else throw IllegalArgumentException("Target [${fileDir.path}] is not a file")
                     isCodeChanged = false
                 }

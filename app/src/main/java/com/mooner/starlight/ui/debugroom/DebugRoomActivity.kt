@@ -3,11 +3,10 @@ package com.mooner.starlight.ui.debugroom
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.mooner.starlight.R
+import com.mooner.starlight.databinding.ActivityDebugRoomBinding
 import com.mooner.starlight.models.Message
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.project.Project
-import kotlinx.android.synthetic.main.activity_debug_room.*
 
 class DebugRoomActivity : AppCompatActivity() {
     private val chatList: ArrayList<Message> = arrayListOf()
@@ -16,16 +15,18 @@ class DebugRoomActivity : AppCompatActivity() {
     private lateinit var sender: String
     private var imageHash: Int = 0
     private lateinit var project: Project
+    private lateinit var binding: ActivityDebugRoomBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_debug_room)
+        binding = ActivityDebugRoomBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         imageHash = intent.getIntExtra("imageHash", 0)
         sender = intent.getStringExtra("sender").toString()
         roomName = intent.getStringExtra("roomName").toString()
         println("roomName= $roomName")
-        roomTitle.text = roomName
+        binding.roomTitle.text = roomName
 
         project = Session.getProjectLoader().getProject(roomName)!!
         project.bindReplier { room, msg ->
@@ -39,18 +40,18 @@ class DebugRoomActivity : AppCompatActivity() {
         }
 
         userChatAdapter = DebugRoomChatAdapter(this, chatList)
-        chatRecyclerView.adapter = userChatAdapter
+        binding.chatRecyclerView.adapter = userChatAdapter
 
         val layoutManager = LinearLayoutManager(this)
-        chatRecyclerView.layoutManager = layoutManager
+        binding.chatRecyclerView.layoutManager = layoutManager
 
-        sendButton.setOnClickListener {
-            if (messageInput.text.toString().isBlank()) return@setOnClickListener
-            send(messageInput.text.toString())
-            messageInput.setText("")
+        binding.sendButton.setOnClickListener {
+            if (binding.messageInput.text.toString().isBlank()) return@setOnClickListener
+            send(binding.messageInput.text.toString())
+            binding.messageInput.setText("")
         }
 
-        leave.setOnClickListener {
+        binding.leave.setOnClickListener {
             finish()
         }
     }
@@ -70,8 +71,8 @@ class DebugRoomActivity : AppCompatActivity() {
         runOnUiThread {
             chatList.add(message)
             userChatAdapter.notifyItemInserted(chatList.size)
-            messageInput.setText("")
-            chatRecyclerView.scrollToPosition(chatList.size - 1)
+            binding.messageInput.setText("")
+            binding.chatRecyclerView.scrollToPosition(chatList.size - 1)
         }
     }
 }

@@ -9,9 +9,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
+import com.mooner.starlight.databinding.ActivityProjectConfigBinding
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.TypedString
-import kotlinx.android.synthetic.main.activity_project_config.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -21,17 +21,23 @@ import kotlin.math.abs
 class ProjectConfigActivity : AppCompatActivity() {
     private val changedData: MutableMap<String, Any> = mutableMapOf()
     private lateinit var savedData: MutableMap<String, TypedString>
+    private lateinit var binding: ActivityProjectConfigBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_project_config)
-        val toolbar: Toolbar = findViewById(R.id.toolbarConfig)
+        binding = ActivityProjectConfigBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        val toolbar: Toolbar = binding.toolbarConfig
         setSupportActionBar(toolbar)
 
         supportActionBar!!.apply {
             setDisplayHomeAsUpEnabled(true)
             setHomeAsUpIndicator(R.drawable.ic_round_arrow_left_24)
         }
+
+        val fabProjectConfig = binding.fabProjectConfig
+        val configRecyclerView = binding.configRecyclerView
+        val appBarConfig = binding.appBarConfig
 
         val projectName = intent.getStringExtra("projectName")!!
         val project = Session.getProjectLoader().getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
@@ -69,11 +75,12 @@ class ProjectConfigActivity : AppCompatActivity() {
         textViewConfigProjectName.text = projectName
         appBarConfig.addOnOffsetChangedListener(
             AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
-                val percent = abs(
+                val percent = 1.0f - abs(
                     verticalOffset / appBarLayout.totalScrollRange
                         .toFloat()
                 )
-                textViewConfigProjectName.alpha = 1.0f - percent
+                textViewConfigProjectName.alpha = percent
+                binding.imageViewConfigIcon.alpha = percent / 2.0f
             }
         )
     }

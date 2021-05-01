@@ -1,20 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_checked="true">
-        <shape android:dither="true" android:shape="oval" android:useLevel="false" android:visible="true">
-            <solid android:color="@color/main_bright" />
-            <corners android:radius="50dp" />
-            <size android:width="24dp" android:height="24dp" />
-        </shape>
-    </item>
-    <item android:state_checked="false">
-        <shape android:dither="true" android:shape="oval" android:useLevel="false" android:visible="true">
+    <item
+        android:drawable="@drawable/switch_track_off"
+        android:state_checked="false"/>
 
-            <corners android:radius="50dp" />
-            <size android:width="24dp" android:height="24dp" />
-            <stroke
-                android:width="8dp"
-                android:color="@color/main_dark" />
-        </shape>
-    </item>
+    <item
+        android:drawable="@drawable/switch_track_on"
+        android:state_checked="true"/>
 </selector>

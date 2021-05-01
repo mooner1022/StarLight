@@ -3,7 +3,6 @@ plugins {
     id 'kotlin-android'
     id 'kotlinx-serialization'
     id 'kotlin-kapt'
-    id 'kotlin-android-extensions'
 }
 
 android {
@@ -20,6 +19,9 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        viewBinding true
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -79,7 +81,6 @@ dependencies {
     }
 
     implementation project(":PluginCore")
-
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'

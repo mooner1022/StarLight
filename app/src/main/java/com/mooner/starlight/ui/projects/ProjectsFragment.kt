@@ -7,10 +7,10 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
-import kotlinx.android.synthetic.main.fragment_projects.view.*
 
 class ProjectsFragment : Fragment() {
 
@@ -25,6 +25,8 @@ class ProjectsFragment : Fragment() {
                 ViewModelProvider(this).get(ProjectsViewModel::class.java)
         val root = inflater.inflate(R.layout.fragment_projects, container, false)
 
+        val rvProjectList: RecyclerView = root.findViewById(R.id.recyclerViewProjectList)
+
         val fab: FloatingActionButton = MainActivity.fab
         fab.show()
         MainActivity.reloadText()
@@ -37,8 +39,8 @@ class ProjectsFragment : Fragment() {
         }
 
         val layoutManager = LinearLayoutManager(root.context)
-        root.recyclerViewProjectList.layoutManager = layoutManager
-        root.recyclerViewProjectList.adapter = recyclerAdapter
+        rvProjectList.layoutManager = layoutManager
+        rvProjectList.adapter = recyclerAdapter
         return root
     }
 }

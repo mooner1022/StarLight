@@ -1,14 +1,13 @@
 package com.mooner.starlight.ui.splash
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.animation.AnimationUtils
+import androidx.appcompat.app.AppCompatActivity
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
-import com.mooner.starlight.plugincore.Session
-import kotlinx.android.synthetic.main.activity_splash.*
+import com.mooner.starlight.databinding.ActivitySplashBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,10 +19,13 @@ class SplashActivity : AppCompatActivity() {
         private const val MIN_LOAD_TIME = 1500L
     }
     private var spinTimer: Timer? = null
+    private lateinit var binding: ActivitySplashBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_splash)
+        binding = ActivitySplashBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
         var isSpinning = false
         var clickCnt = 0
@@ -34,7 +36,7 @@ class SplashActivity : AppCompatActivity() {
             ApplicationSession.init(
                 {
                     runOnUiThread {
-                        textViewLoadStatus.text = it
+                        binding.textViewLoadStatus.text = it
                     }
                 },
                 {
@@ -70,13 +72,13 @@ class SplashActivity : AppCompatActivity() {
             fillAfter = true
         }
 
-        cardViewLogoImage.startAnimation(anim)
+        binding.imageViewSplashLogo.startAnimation(anim)
 
-        cardViewLogoImage.setOnClickListener {
+        binding.imageViewSplashLogo.setOnClickListener {
             clickCnt++
             if (!isSpinning && clickCnt >= 4) {
                 isSpinning = true
-                cardViewLogoImage.startAnimation(spinAnim)
+                binding.imageViewSplashLogo.startAnimation(spinAnim)
                 spinTimer = Timer().apply {
                     schedule(500) {
                         isSpinning = false
