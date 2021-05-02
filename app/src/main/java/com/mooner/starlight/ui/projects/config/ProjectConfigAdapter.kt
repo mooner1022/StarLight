@@ -7,16 +7,15 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.SeekBar
-import android.widget.Switch
-import android.widget.TextView
+import android.widget.*
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.TypedString
-import com.mooner.starlight.plugincore.language.LanguageConfig
-import com.mooner.starlight.plugincore.language.LanguageConfigType
-import com.mooner.starlight.plugincore.language.SliderLanguageConfig
+import com.mooner.starlight.plugincore.language.*
+import org.angmarch.views.NiceSpinner
 
 class ProjectConfigAdapter(
     private val context: Context,
@@ -30,6 +29,8 @@ class ProjectConfigAdapter(
             LanguageConfigType.TOGGLE.viewType -> LayoutInflater.from(context).inflate(R.layout.config_toggle, parent, false)
             LanguageConfigType.SLIDER.viewType -> LayoutInflater.from(context).inflate(R.layout.config_slider, parent, false)
             LanguageConfigType.STRING.viewType -> LayoutInflater.from(context).inflate(R.layout.config_string, parent, false)
+            LanguageConfigType.SPINNER.viewType -> LayoutInflater.from(context).inflate(R.layout.config_spinner, parent, false)
+            LanguageConfigType.BUTTON.viewType -> LayoutInflater.from(context).inflate(R.layout.config_button, parent, false)
             else -> LayoutInflater.from(context).inflate(R.layout.config_toggle, parent, false)
         }
         return ProjectConfigViewHolder(view, viewType)
@@ -90,8 +91,30 @@ class ProjectConfigAdapter(
                     }
                 })
             }
+            LanguageConfigType.SPINNER.viewType -> {
+                holder.textSpinner.text = viewData.name
+                holder.spinner.apply {
+                    setBackgroundColor(context.getColor(R.color.transparent))
+                    attachDataSource((viewData as SpinnerLanguageConfig).dataList)
+                    setOnSpinnerItemSelectedListener { _, _, position, _ ->
+                        onConfigChanged(viewData.id, position)
+                    }
+                    selectedIndex = getDefault() as Int
+                }
+            }
+            LanguageConfigType.BUTTON.viewType -> {
+                holder.textButton.text = viewData.name
+                val langConf = viewData as ButtonLanguageConfig
+                holder.layoutButton.setOnClickListener {
+                    langConf.onClickListener()
+                }
+                if (langConf.iconRes != null) {
+                    holder.imageViewButton.load(AppCompatResources.getDrawable(context, langConf.iconRes!!))
+                } else if (langConf.iconDrawable != null) {
+                    holder.imageViewButton.load(langConf.iconDrawable!!)
+                }
+            }
         }
-
     }
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
@@ -105,6 +128,15 @@ class ProjectConfigAdapter(
 
         lateinit var textString: TextView
         lateinit var editTextString: EditText
+
+        lateinit var textSpinner: TextView
+        lateinit var spinner: NiceSpinner
+
+        lateinit var textButton: TextView
+        lateinit var layoutButton: ConstraintLayout
+        lateinit var imageViewButton: ImageView
+
+        var context: Context = itemView.context
 
         init {
             when(viewType) {
@@ -120,6 +152,15 @@ class ProjectConfigAdapter(
                 LanguageConfigType.STRING.viewType -> {
                     textString = itemView.findViewById(R.id.textView_configString)
                     editTextString = itemView.findViewById(R.id.editText_configString)
+                }
+                LanguageConfigType.SPINNER.viewType -> {
+                    textSpinner = itemView.findViewById(R.id.textView_configSpinner)
+                    spinner = itemView.findViewById(R.id.spinner_configSpinner)
+                }
+                LanguageConfigType.BUTTON.viewType -> {
+                    textButton = itemView.findViewById(R.id.textView_configButton)
+                    layoutButton = itemView.findViewById(R.id.layout_configButton)
+                    imageViewButton = itemView.findViewById(R.id.imageView_configButton)
                 }
             }
         }

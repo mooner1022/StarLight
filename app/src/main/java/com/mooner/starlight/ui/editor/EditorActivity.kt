@@ -44,7 +44,6 @@ class EditorActivity : AppCompatActivity() {
                 orgCode = fileDir.readText()
                 setText(orgCode)
             }
-            resetSyntaxPatternList()
             setSyntaxPatternsMap(
                     mapOf(
                             "function|throw".toPattern() to R.color.code_orange,

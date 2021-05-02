@@ -89,7 +89,7 @@ class Project(
             }
             engine = lang.compile(
                     rawCode,
-                    Methods.getOriginalMethods(defReplier, logger)
+                    Methods.getOriginalMethods(defReplier, logger) + Methods.getLegacyMethods()
             )
             onSuccess(this)
         } catch (e: Exception) {

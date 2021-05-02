@@ -1,19 +1,14 @@
 package com.mooner.starlight.ui.projects
 
 import android.content.Intent
-import android.content.res.Resources
+import android.graphics.Typeface
 import android.view.View
-import android.widget.Button
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.RelativeLayout
+import android.widget.*
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.ui.debugroom.DebugRoomActivity
@@ -24,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
+
 
 class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
     private val expandable = itemView.findViewById<ExpandableCardView>(R.id.card_project)
@@ -37,9 +33,16 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val buttonRecompile: Button = itemView.findViewById(R.id.buttonRecompile)
         val buttonProjectConfig: Button = itemView.findViewById(R.id.buttonProjectConfig)
         val cardIcon: ImageButton = itemView.findViewById(R.id.card_icon)
+        val cardTitle: TextView = itemView.findViewById(R.id.card_title)
 
+        val face = Typeface.createFromAsset(
+            itemView.context.assets,
+            "fonts/nanumsquare_round_bold.ttf"
+        )
+        cardTitle.typeface = face
         val margin = itemView.context.resources.getDimensionPixelSize(R.dimen.icon_margin)
         cardIcon.visibility = View.VISIBLE
+        cardIcon.scaleType = ImageView.ScaleType.CENTER_CROP
         (cardIcon.layoutParams as RelativeLayout.LayoutParams).apply {
             topMargin = margin
             bottomMargin = margin
@@ -47,7 +50,12 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         cardViewIsEnabled.setBackgroundColor(itemView.context.getColor(if (config.isEnabled) R.color.card_enabled else R.color.card_disabled))
 
         with(expandable) {
-            setIcon(drawable = project.getLanguage().icon ?: ContextCompat.getDrawable(itemView.context, R.drawable.ic_js))
+            setIcon(
+                drawable = project.getLanguage().icon ?: ContextCompat.getDrawable(
+                    itemView.context,
+                    R.drawable.ic_js
+                )
+            )
             setTitle(titleText = config.name)
             setSwitch(config.isEnabled)
             setOnSwitchChangeListener { v, isChecked ->
@@ -82,7 +90,12 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         }
 
         buttonDebugRoom.setOnClickListener {
-            it.context.startActivity(Intent(it.context, DebugRoomActivity::class.java).apply { putExtra("roomName", config.name) })
+            it.context.startActivity(Intent(it.context, DebugRoomActivity::class.java).apply {
+                putExtra(
+                    "roomName",
+                    config.name
+                )
+            })
         }
 
         buttonProjectConfig.setOnClickListener {

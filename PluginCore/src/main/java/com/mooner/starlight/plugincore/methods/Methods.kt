@@ -16,6 +16,7 @@ class Methods {
             return arrayOf(
                 MethodBlock(
                     "replier",
+                    Replier::class.java,
                     replier,
                     false,
                     listOf(
@@ -31,6 +32,7 @@ class Methods {
                 ),
                 MethodBlock(
                     "logger",
+                    LocalLogger::class.java,
                     logger,
                     false,
                     listOf(
@@ -54,6 +56,7 @@ class Methods {
                 ),
                 MethodBlock(
                     "Projects",
+                    Projects::class.java,
                     Projects,
                     true,
                     listOf(
@@ -65,6 +68,7 @@ class Methods {
                 ),
                 MethodBlock(
                     "Languages",
+                    Languages::class.java,
                     Languages,
                     true,
                     listOf(
@@ -81,6 +85,7 @@ class Methods {
             return arrayOf(
                 MethodBlock(
                     "Api",
+                    LegacyApi::class.java,
                     LegacyApi,
                     true,
                     listOf(
@@ -92,6 +97,7 @@ class Methods {
                 ),
                 MethodBlock(
                     "Utils",
+                    Utils::class.java,
                     Utils,
                     true,
                     listOf(

@@ -10,7 +10,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
-        android:fontFamily="@font/nanumsquare_round_regular"
+        android:fontFamily="@font/nanumsquare_round_bold"
         android:text="TEXT"
         android:textSize="14sp"
         app:layout_constraintBottom_toTopOf="@+id/editText_configString"

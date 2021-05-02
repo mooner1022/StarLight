@@ -11,13 +11,13 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
         android:layout_marginTop="8dp"
-        android:fontFamily="@font/nanumsquare_round_regular"
+        android:fontFamily="@font/nanumsquare_round_bold"
         android:text="TEXT"
         android:textSize="14sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Spinner
+    <org.angmarch.views.NiceSpinner
         android:id="@+id/spinner_configSpinner"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

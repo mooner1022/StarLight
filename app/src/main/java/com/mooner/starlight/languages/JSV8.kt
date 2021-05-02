@@ -4,10 +4,8 @@ import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import com.eclipsesource.v8.V8
 import com.eclipsesource.v8.V8Object
-import com.eclipsesource.v8.utils.V8ObjectUtils
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
-import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import com.mooner.starlight.plugincore.language.*
 import io.alicorn.v8.V8JavaAdapter
@@ -26,22 +24,40 @@ class JSV8: Language() {
 
     override val configList: List<LanguageConfig>
         get() = listOf(
-            ToggleLanguageConfig(
-                objectId = "toggle_test",
-                objectName = "토글 테스트",
-                defaultValue = false
-            ),
-            SliderLanguageConfig(
-                objectId = "slider_test",
-                objectName = "슬라이더 테스트",
-                max = 5,
-                defaultValue = 2
-            ),
-            StringLanguageConfig(
-                objectId = "string_test",
-                objectName = "인풋 테스트",
-                hint = "테스트으으"
-            )
+                ToggleLanguageConfig(
+                        objectId = "toggle_test",
+                        objectName = "토글 테스트",
+                        defaultValue = false
+                ),
+                SliderLanguageConfig(
+                        objectId = "slider_test",
+                        objectName = "슬라이더 테스트",
+                        max = 5,
+                        defaultValue = 2
+                ),
+                StringLanguageConfig(
+                        objectId = "string_test",
+                        objectName = "인풋 테스트",
+                        hint = "테스트으으"
+                ),
+                SpinnerLanguageConfig(
+                        objectId = "spinner_test",
+                        objectName = "스피너 테스트",
+                        dataList = listOf(
+                                "테스트1",
+                                "테스트2",
+                                "테스트3",
+                                "짺스"
+                        )
+                ),
+                ButtonLanguageConfig(
+                        objectId = "button_test",
+                        objectName = "버튼 테스트",
+                        onClickListener = {
+                            getLogger().i("JSV8_Config", "onClickListener")
+                        },
+                        iconRes = R.drawable.ic_round_keyboard_arrow_right_24
+                )
         )
 
     override fun onConfigChanged(changed: Map<String, Any>) {
