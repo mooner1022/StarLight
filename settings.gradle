@@ -1,3 +1,4 @@
+include ':expandablecardview-release'
 include ':PluginCore'
 include ':app'
 rootProject.name = "StarLight"

@@ -25,6 +25,7 @@ class ProjectsFragment : Fragment() {
                 ViewModelProvider(this).get(ProjectsViewModel::class.java)
         val root = inflater.inflate(R.layout.fragment_projects, container, false)
 
+        MainActivity.setToolbarText("Projects")
         val rvProjectList: RecyclerView = root.findViewById(R.id.recyclerViewProjectList)
 
         val fab: FloatingActionButton = MainActivity.fab
@@ -32,10 +33,8 @@ class ProjectsFragment : Fragment() {
         MainActivity.reloadText()
         val recyclerAdapter = ProjectListAdapter(root.context)
         projectsViewModel.data.observe(viewLifecycleOwner) {
-            println("before notify")
             recyclerAdapter.data = it
             recyclerAdapter.notifyDataSetChanged()
-            println("after notify")
         }
 
         val layoutManager = LinearLayoutManager(root.context)

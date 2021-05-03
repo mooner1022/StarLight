@@ -78,7 +78,11 @@ class Project(
         */
     }
 
-    fun compile(onSuccess: ((project: Project) -> Unit) = {}, onError: ((e: Exception) -> Unit) = {}) {
+    fun compile() {
+        compile(false)
+    }
+
+    fun compile(throwException: Boolean) {
         try {
             val rawCode: String = (folder.listFiles()?.find { it.isFile && it.name == config.mainScript }?: throw IllegalArgumentException(
                     "Cannot find main script ${config.mainScript} for project ${config.name}"
@@ -91,11 +95,10 @@ class Project(
                     rawCode,
                     Methods.getOriginalMethods(defReplier, logger) + Methods.getLegacyMethods()
             )
-            onSuccess(this)
         } catch (e: Exception) {
             e.printStackTrace()
             logger.e("${config.name}: compile", e.toString())
-            onError(e)
+            if (throwException) throw e
         }
     }
 

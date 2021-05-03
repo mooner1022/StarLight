@@ -32,21 +32,12 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val buttonEditCode: Button = itemView.findViewById(R.id.buttonEditCode)
         val buttonRecompile: Button = itemView.findViewById(R.id.buttonRecompile)
         val buttonProjectConfig: Button = itemView.findViewById(R.id.buttonProjectConfig)
-        val cardIcon: ImageButton = itemView.findViewById(R.id.card_icon)
         val cardTitle: TextView = itemView.findViewById(R.id.card_title)
 
-        val face = Typeface.createFromAsset(
+        cardTitle.typeface = Typeface.createFromAsset(
             itemView.context.assets,
-            "fonts/nanumsquare_round_bold.ttf"
+            "fonts/nanumsquare_round_regular.ttf"
         )
-        cardTitle.typeface = face
-        val margin = itemView.context.resources.getDimensionPixelSize(R.dimen.icon_margin)
-        cardIcon.visibility = View.VISIBLE
-        cardIcon.scaleType = ImageView.ScaleType.CENTER_CROP
-        (cardIcon.layoutParams as RelativeLayout.LayoutParams).apply {
-            topMargin = margin
-            bottomMargin = margin
-        }
         cardViewIsEnabled.setBackgroundColor(itemView.context.getColor(if (config.isEnabled) R.color.card_enabled else R.color.card_disabled))
 
         with(expandable) {
@@ -77,14 +68,15 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
 
         buttonRecompile.setOnClickListener {
             CoroutineScope(Dispatchers.Default).launch {
-                getProjectLoader().getProject(config.name)?.compile({
+                try {
+                    getProjectLoader().getProject(config.name)?.compile(true)
+                } catch (e: Exception) {
                     CoroutineScope(Dispatchers.Main).launch {
-                        MainActivity.showSnackbar("${config.name}의 컴파일을 완료했어요!")
+                        MainActivity.showSnackbar("${config.name}의 컴파일에 실패했어요.\n$e")
                     }
-                }) {
-                    CoroutineScope(Dispatchers.Main).launch {
-                        MainActivity.showSnackbar("${config.name}의 컴파일에 실패했어요.\n$it")
-                    }
+                }
+                CoroutineScope(Dispatchers.Main).launch {
+                    MainActivity.showSnackbar("${config.name}의 컴파일을 완료했어요!")
                 }
             }
         }

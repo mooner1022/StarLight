@@ -69,7 +69,7 @@ class JSV8: Language() {
         v8.apply {
             for (methodBlock in methods) {
                 if (methodBlock.isCustomClass) {
-                    V8JavaAdapter.injectObject(methodBlock.blockName, methodBlock.methodClass, v8)
+                    V8JavaAdapter.injectObject(methodBlock.blockName, methodBlock.instance, v8)
                     getLogger().i(javaClass.simpleName, "Injected ${methodBlock.blockName}")
                     /*
                     addCustomClass(
@@ -82,7 +82,7 @@ class JSV8: Language() {
                 } else {
                     addClass(
                         methodBlock.blockName,
-                        methodBlock.methodClass,
+                        methodBlock.instance,
                         methodBlock.methods.map { it.methodName }.toTypedArray(),
                         methodBlock.methods.map { it.args }.toTypedArray()
                     )

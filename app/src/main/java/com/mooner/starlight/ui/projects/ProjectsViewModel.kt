@@ -17,18 +17,14 @@ class ProjectsViewModel : ViewModel() {
 
     init {
         Session.getProjectLoader().bind { projects ->
-            println("binded listener called")
             _data.value = projects.toMutableList()
         }
 
-        println("initial data called")
         CoroutineScope(Dispatchers.Default).launch {
             val data = Session.getProjectLoader().loadProjects(true).toMutableList()
             withContext(Dispatchers.Main) {
                 _data.value = data
             }
-            println("initial data ended inside coroutine")
         }
-        println("initial data ended outside coroutine")
     }
 }
