@@ -16,7 +16,8 @@
     <string name="step_starting">앱 시작중…</string>
 
     <string name="menu_home">홈</string>
-    <string name="menu_gallery">프로젝트</string>
+    <string name="menu_projects">프로젝트</string>
+    <string name="menu_plugins">플러그인</string>
     <string name="menu_info">정보</string>
 
     <string name="layout_tv_last">마지막</string>

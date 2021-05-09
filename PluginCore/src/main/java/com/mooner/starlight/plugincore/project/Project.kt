@@ -1,13 +1,16 @@
 package com.mooner.starlight.plugincore.project
 
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.methods.Methods
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.io.PrintWriter
 
 class Project(
     val folder: File,
@@ -22,6 +25,7 @@ class Project(
     } else {
         LocalLogger.create(folder)
     }
+    private val languageConfig: MutableMap<String, TypedString>
     private var listener: ((room: String, msg: String) -> Unit)? = null
     private var lastRoom: String? = null
     private val defReplier = object :Replier {
@@ -46,6 +50,20 @@ class Project(
         }
     }
 
+    init {
+        val langConfFile = File(folder, "config-language.json")
+        languageConfig = if (!langConfFile.exists() || !langConfFile.isFile) {
+            mutableMapOf()
+        } else {
+            try {
+                Json.decodeFromString(langConfFile.readText())
+            } catch (e: Exception) {
+                logger.e(config.name, "Failed to parse language config file")
+                mutableMapOf()
+            }
+        }
+    }
+
     fun callEvent(methodName: String, args: Array<Any>) {
         println("calling $methodName with args [${args.joinToString(", ")}]")
 
@@ -61,6 +79,7 @@ class Project(
             lang.execute(engine!!, methodName, args)
         } catch (e: Exception) {
             logger.e(config.name, "Error while executing: $e")
+            e.printStackTrace()
         }
         /*
         when(config.language) {
@@ -93,7 +112,7 @@ class Project(
             }
             engine = lang.compile(
                     rawCode,
-                    Methods.getOriginalMethods(defReplier, logger) + Methods.getLegacyMethods()
+                    Methods.getOriginalMethods(defReplier, logger) + Methods.getApi(1, 4)
             )
         } catch (e: Exception) {
             e.printStackTrace()

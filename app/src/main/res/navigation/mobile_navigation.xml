@@ -14,9 +14,14 @@
     <fragment
         android:id="@+id/nav_projects"
         android:name="com.mooner.starlight.ui.projects.ProjectsFragment"
-        android:label="@string/menu_gallery"
+        android:label="@string/menu_projects"
         tools:layout="@layout/fragment_projects" />
 
+    <fragment
+        android:id="@+id/nav_plugins"
+        android:name="com.mooner.starlight.ui.plugins.PluginsFragment"
+        android:label="@string/menu_plugins"
+        tools:layout="@layout/fragment_plugins" />
     <fragment
         android:id="@+id/nav_slideshow"
         android:name="com.mooner.starlight.ui.slideshow.SlideshowFragment"

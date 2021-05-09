@@ -49,7 +49,7 @@ class ProjectConfigActivity : AppCompatActivity() {
             }
         }
 
-        val configFile = File(project.folder, "config.json")
+        val configFile = File(project.folder, "config-language.json")
         savedData = try {
             Json.decodeFromString(configFile.readText())
         } catch (e: Exception) {

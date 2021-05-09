@@ -1,5 +1,6 @@
 package com.mooner.starlight.ui.home
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +13,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentHomeBinding
+import com.mooner.starlight.plugincore.Session
 
 class HomeFragment : Fragment() {
     private lateinit var homeViewModel: HomeViewModel
@@ -20,6 +22,7 @@ class HomeFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
+    @SuppressLint("SetTextI18n")
     override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
@@ -38,6 +41,10 @@ class HomeFragment : Fragment() {
         //}
         MainActivity.setToolbarText(requireContext().getString(R.string.app_name))
         MainActivity.reloadText(requireContext().getString(R.string.app_version))
+
+        val allProjectsCount = Session.getProjectLoader().getProjects().size
+        val activeProjectsCount = Session.getProjectLoader().getEnabledProjects().size
+        binding.textViewHomeBotStatus.text = "${allProjectsCount}개중 ${activeProjectsCount}개의 프로젝트가 작동중이에요."
 
         binding.cardViewManageProject.setOnClickListener {
             Navigation.findNavController(it).navigate(R.id.nav_projects)

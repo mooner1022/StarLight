@@ -10,7 +10,7 @@ data class MethodBlock(
 
 data class Method(
     val methodName: String,
-    val args: Array<Class<*>>
+    val args: Array<Class<*>> = arrayOf()
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

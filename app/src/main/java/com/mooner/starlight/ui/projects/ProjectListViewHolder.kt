@@ -20,7 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 
-
 class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
     private val expandable = itemView.findViewById<ExpandableCardView>(R.id.card_project)
 

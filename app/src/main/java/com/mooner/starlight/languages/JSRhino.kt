@@ -8,14 +8,13 @@ import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.language.LanguageConfig
 import com.mooner.starlight.plugincore.language.MethodBlock
 import com.mooner.starlight.plugincore.language.SliderLanguageConfig
-import com.mooner.starlight.plugincore.methods.original.Languages
 import org.mozilla.javascript.Context
-import org.mozilla.javascript.ContextFactory
+import org.mozilla.javascript.Function
 import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
-import javax.script.Invocable
 
 class JSRhino: Language() {
+    private lateinit var context: Context
     companion object {
         private const val CONF_OPTIMIZATION = "optimizationLevel"
         private const val CONF_LANG_VERSION = "js_version"
@@ -48,7 +47,7 @@ class JSRhino: Language() {
     }
 
     override fun compile(code: String, methods: Array<MethodBlock>): Any {
-        val context = Context.enter().apply {
+        context = Context.enter().apply {
             optimizationLevel = -1
             languageVersion = with(getLanguageConfig()) {
                 if (containsKey(CONF_LANG_VERSION)) {
@@ -82,7 +81,8 @@ class JSRhino: Language() {
     }
 
     override fun execute(engine: Any, methodName: String, args: Array<Any>) {
-        ScriptableObject.callMethod(engine as Scriptable, methodName, args)
+        ((engine as Scriptable).get(methodName, engine) as Function).call(context, engine, engine, args)
+        //ScriptableObject.callMethod(engine as Scriptable, methodName, args)
         //val invocable = engine as Invocable
         //invocable.invokeFunction(methodName, args)
     }

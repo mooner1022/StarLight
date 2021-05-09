@@ -1,5 +1,7 @@
 package com.mooner.starlight.plugincore.plugin
 
+import com.mooner.starlight.plugincore.project.Project
+
 interface Plugin {
     val name: String
 
@@ -7,11 +9,11 @@ interface Plugin {
 
     fun onEnable() {}
 
-    fun onError(e: Exception) {}
-
     fun onDisable() {}
 
-    fun onFinish() {}
+    fun onError(e: Exception) {}
 
     fun onNetworkStateChanged(state: Int) {}
+
+    fun onProjectStateChanged(state: Int, project: Project) {}
 }
