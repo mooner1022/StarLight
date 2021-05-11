@@ -14,7 +14,7 @@ interface ILanguage {
 
     val requireRelease: Boolean
 
-    val configList: List<LanguageConfig>
+    val configObjectList: List<ConfigObject>
 
     fun onConfigChanged(changed: Map<String, Any>)
 

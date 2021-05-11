@@ -22,25 +22,25 @@ class JSV8: Language() {
     override val requireRelease: Boolean
         get() = true
 
-    override val configList: List<LanguageConfig>
+    override val configObjectList: List<ConfigObject>
         get() = listOf(
-                ToggleLanguageConfig(
+                ToggleConfigObject(
                         objectId = "toggle_test",
                         objectName = "토글 테스트",
                         defaultValue = false
                 ),
-                SliderLanguageConfig(
+                SliderConfigObject(
                         objectId = "slider_test",
                         objectName = "슬라이더 테스트",
                         max = 5,
                         defaultValue = 2
                 ),
-                StringLanguageConfig(
+                StringConfigObject(
                         objectId = "string_test",
                         objectName = "인풋 테스트",
                         hint = "테스트으으"
                 ),
-                SpinnerLanguageConfig(
+                SpinnerConfigObject(
                         objectId = "spinner_test",
                         objectName = "스피너 테스트",
                         dataList = listOf(
@@ -50,7 +50,7 @@ class JSV8: Language() {
                                 "짺스"
                         )
                 ),
-                ButtonLanguageConfig(
+                ButtonConfigObject(
                         objectId = "button_test",
                         objectName = "버튼 테스트",
                         onClickListener = {

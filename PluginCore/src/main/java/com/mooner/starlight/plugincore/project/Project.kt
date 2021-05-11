@@ -3,6 +3,7 @@ package com.mooner.starlight.plugincore.project
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.language.ILanguage
+import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.methods.Methods
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
@@ -19,7 +20,7 @@ class Project(
     val isCompiled: Boolean
         get() = engine != null
     private var engine: Any? = null
-    private val lang: ILanguage = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
+    private val lang: Language = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
     private val logger: LocalLogger = if (folder.hasFile("logs_local.json")) {
         LocalLogger.fromFile(File(folder, "logs_local.json"))
     } else {
@@ -62,6 +63,7 @@ class Project(
                 mutableMapOf()
             }
         }
+        lang.setLanguageConfig(languageConfig)
     }
 
     fun callEvent(methodName: String, args: Array<Any>) {

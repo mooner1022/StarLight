@@ -21,16 +21,16 @@ class ProjectConfigAdapter(
     private val context: Context,
     private val onConfigChanged: (id: String, data: Any) -> Unit
 ): RecyclerView.Adapter<ProjectConfigAdapter.ProjectConfigViewHolder>() {
-    var data = mutableListOf<LanguageConfig>()
+    var data = mutableListOf<ConfigObject>()
     var saved: MutableMap<String, TypedString> = mutableMapOf()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectConfigViewHolder {
         val view = when(viewType) {
-            LanguageConfigType.TOGGLE.viewType -> LayoutInflater.from(context).inflate(R.layout.config_toggle, parent, false)
-            LanguageConfigType.SLIDER.viewType -> LayoutInflater.from(context).inflate(R.layout.config_slider, parent, false)
-            LanguageConfigType.STRING.viewType -> LayoutInflater.from(context).inflate(R.layout.config_string, parent, false)
-            LanguageConfigType.SPINNER.viewType -> LayoutInflater.from(context).inflate(R.layout.config_spinner, parent, false)
-            LanguageConfigType.BUTTON.viewType -> LayoutInflater.from(context).inflate(R.layout.config_button, parent, false)
+            ConfigObjectType.TOGGLE.viewType -> LayoutInflater.from(context).inflate(R.layout.config_toggle, parent, false)
+            ConfigObjectType.SLIDER.viewType -> LayoutInflater.from(context).inflate(R.layout.config_slider, parent, false)
+            ConfigObjectType.STRING.viewType -> LayoutInflater.from(context).inflate(R.layout.config_string, parent, false)
+            ConfigObjectType.SPINNER.viewType -> LayoutInflater.from(context).inflate(R.layout.config_spinner, parent, false)
+            ConfigObjectType.BUTTON.viewType -> LayoutInflater.from(context).inflate(R.layout.config_button, parent, false)
             else -> LayoutInflater.from(context).inflate(R.layout.config_toggle, parent, false)
         }
         return ProjectConfigViewHolder(view, viewType)
@@ -49,17 +49,17 @@ class ProjectConfigAdapter(
         }
 
         when(viewData.viewType) {
-            LanguageConfigType.TOGGLE.viewType -> {
+            ConfigObjectType.TOGGLE.viewType -> {
                 holder.textToggle.text = viewData.name
                 holder.toggle.isChecked = getDefault() as Boolean
                 holder.toggle.setOnCheckedChangeListener { _, isChecked ->
                     onConfigChanged(viewData.id, isChecked)
                 }
             }
-            LanguageConfigType.SLIDER.viewType -> {
+            ConfigObjectType.SLIDER.viewType -> {
                 holder.textSlider.text = viewData.name
                 holder.seekBar.progress = getDefault() as Int
-                holder.seekBar.max = (viewData as SliderLanguageConfig).max
+                holder.seekBar.max = (viewData as SliderConfigObject).max
                 holder.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                     override fun onProgressChanged(
                         seekBar: SeekBar?,
@@ -77,7 +77,7 @@ class ProjectConfigAdapter(
                 })
                 holder.seekBarIndex.text = holder.seekBar.progress.toString()
             }
-            LanguageConfigType.STRING.viewType -> {
+            ConfigObjectType.STRING.viewType -> {
                 holder.textString.text = viewData.name
                 holder.editTextString.hint = viewData.default as String
                 holder.editTextString.setText(getDefault() as String)
@@ -91,20 +91,20 @@ class ProjectConfigAdapter(
                     }
                 })
             }
-            LanguageConfigType.SPINNER.viewType -> {
+            ConfigObjectType.SPINNER.viewType -> {
                 holder.textSpinner.text = viewData.name
                 holder.spinner.apply {
                     setBackgroundColor(context.getColor(R.color.transparent))
-                    attachDataSource((viewData as SpinnerLanguageConfig).dataList)
+                    attachDataSource((viewData as SpinnerConfigObject).dataList)
                     setOnSpinnerItemSelectedListener { _, _, position, _ ->
                         onConfigChanged(viewData.id, position)
                     }
                     selectedIndex = getDefault() as Int
                 }
             }
-            LanguageConfigType.BUTTON.viewType -> {
+            ConfigObjectType.BUTTON.viewType -> {
                 holder.textButton.text = viewData.name
-                val langConf = viewData as ButtonLanguageConfig
+                val langConf = viewData as ButtonConfigObject
                 holder.layoutButton.setOnClickListener {
                     langConf.onClickListener()
                 }
@@ -140,24 +140,24 @@ class ProjectConfigAdapter(
 
         init {
             when(viewType) {
-                LanguageConfigType.TOGGLE.viewType -> {
+                ConfigObjectType.TOGGLE.viewType -> {
                     textToggle = itemView.findViewById(R.id.textView_configToggle)
                     toggle = itemView.findViewById(R.id.switch_configToggle)
                 }
-                LanguageConfigType.SLIDER.viewType -> {
+                ConfigObjectType.SLIDER.viewType -> {
                     textSlider = itemView.findViewById(R.id.textView_configSlider)
                     seekBarIndex = itemView.findViewById(R.id.index_configSlider)
                     seekBar = itemView.findViewById(R.id.seekBar_configSlider)
                 }
-                LanguageConfigType.STRING.viewType -> {
+                ConfigObjectType.STRING.viewType -> {
                     textString = itemView.findViewById(R.id.textView_configString)
                     editTextString = itemView.findViewById(R.id.editText_configString)
                 }
-                LanguageConfigType.SPINNER.viewType -> {
+                ConfigObjectType.SPINNER.viewType -> {
                     textSpinner = itemView.findViewById(R.id.textView_configSpinner)
                     spinner = itemView.findViewById(R.id.spinner_configSpinner)
                 }
-                LanguageConfigType.BUTTON.viewType -> {
+                ConfigObjectType.BUTTON.viewType -> {
                     textButton = itemView.findViewById(R.id.textView_configButton)
                     layoutButton = itemView.findViewById(R.id.layout_configButton)
                     imageViewButton = itemView.findViewById(R.id.imageView_configButton)

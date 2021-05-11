@@ -1,111 +1,132 @@
 package com.mooner.starlight.plugincore.language
 
 import android.graphics.drawable.Drawable
-import androidx.annotation.FloatRange
+import android.view.View
+import androidx.annotation.LayoutRes
 
-enum class LanguageConfigType(
+enum class ConfigObjectType(
     val viewType: Int
 ) {
     TOGGLE(0),
     SLIDER(1),
     STRING(2),
     SPINNER(3),
-    BUTTON(4)
+    BUTTON(4),
+    CUSTOM(5)
 }
 
-interface LanguageConfig {
+interface ConfigObject {
     val id: String
     val name: String
     val default: Any
-    val type: LanguageConfigType
+    val type: ConfigObjectType
     val viewType : Int
 }
 
-class ToggleLanguageConfig(
+class ToggleConfigObject(
         private val objectId: String,
         private val objectName: String,
         private val defaultValue: Boolean
-): LanguageConfig {
+): ConfigObject {
     override val id: String
         get() = objectId
     override val name: String
         get() = objectName
     override val default: Any
         get() = false
-    override val type: LanguageConfigType
-        get() = LanguageConfigType.TOGGLE
+    override val type: ConfigObjectType
+        get() = ConfigObjectType.TOGGLE
     override val viewType: Int
-        get() = LanguageConfigType.TOGGLE.viewType
+        get() = ConfigObjectType.TOGGLE.viewType
 }
 
-class SliderLanguageConfig(
+class SliderConfigObject(
         private val objectId: String,
         private val objectName: String,
         val max: Int,
         private val defaultValue: Int
-): LanguageConfig {
+): ConfigObject {
     override val id: String
         get() = objectId
     override val name: String
         get() = objectName
     override val default: Any
         get() = defaultValue
-    override val type: LanguageConfigType
-        get() = LanguageConfigType.SLIDER
+    override val type: ConfigObjectType
+        get() = ConfigObjectType.SLIDER
     override val viewType: Int
-        get() = LanguageConfigType.SLIDER.viewType
+        get() = ConfigObjectType.SLIDER.viewType
 }
 
-class StringLanguageConfig(
+class StringConfigObject(
         private val objectId: String,
         private val objectName: String,
         private val hint: String
-): LanguageConfig {
+): ConfigObject {
     override val id: String
         get() = objectId
     override val name: String
         get() = objectName
     override val default: Any
         get() = hint
-    override val type: LanguageConfigType
-        get() = LanguageConfigType.STRING
+    override val type: ConfigObjectType
+        get() = ConfigObjectType.STRING
     override val viewType: Int
-        get() = LanguageConfigType.STRING.viewType
+        get() = ConfigObjectType.STRING.viewType
 }
 
-class SpinnerLanguageConfig(
+class SpinnerConfigObject(
     private val objectId: String,
     private val objectName: String,
     val dataList: List<String>,
     private val defaultIndex: Int = 0
-): LanguageConfig {
+): ConfigObject {
     override val id: String
         get() = objectId
     override val name: String
         get() = objectName
     override val default: Any
         get() = defaultIndex
-    override val type: LanguageConfigType
-        get() = LanguageConfigType.SPINNER
+    override val type: ConfigObjectType
+        get() = ConfigObjectType.SPINNER
     override val viewType: Int
-        get() = LanguageConfigType.SPINNER.viewType
+        get() = ConfigObjectType.SPINNER.viewType
 }
 
-class ButtonLanguageConfig(
+class ButtonConfigObject(
         private val objectId: String,
         private val objectName: String,
         val onClickListener: () -> Unit,
         val iconRes: Int? = null,
         val iconDrawable: Drawable? = null
-): LanguageConfig {
+): ConfigObject {
     override val id: String
         get() = objectId
     override val name: String
         get() = objectName
     override val default: Any
         get() = 0
-    override val type: LanguageConfigType
-        get() = LanguageConfigType.BUTTON
+    override val type: ConfigObjectType
+        get() = ConfigObjectType.BUTTON
     override val viewType: Int
-        get() = LanguageConfigType.BUTTON.viewType
+        get() = ConfigObjectType.BUTTON.viewType
+}
+
+class CustomConfigObject(
+    private val objectId: String,
+    private val objectName: String,
+    @LayoutRes
+    val layoutID: Int,
+    val onInflate: (view: View) -> Unit,
+): ConfigObject {
+    override val id: String
+        get() = objectId
+    override val name: String
+        get() = objectName
+    override val default: Any
+        get() = 0
+    override val type: ConfigObjectType
+        get() = ConfigObjectType.CUSTOM
+    override val viewType: Int
+        get() = ConfigObjectType.CUSTOM.viewType
 }

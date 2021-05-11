@@ -6,9 +6,11 @@ import com.mooner.starlight.R
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.utils.NetworkUtil
+import com.mooner.starlight.utils.Alert
 
 @SuppressLint("StaticFieldLeak")
 object ApplicationSession {
@@ -32,6 +34,11 @@ object ApplicationSession {
         if (isInitComplete) {
             onFinished()
             return
+        }
+        Session.getLogger().bindListener {
+            if (it.type == LogType.ERROR) {
+                Alert.show("ERROR", it.message)
+            }
         }
         onPhaseChanged(context.getString(R.string.step_default_lib))
         Session.initLanguageManager()

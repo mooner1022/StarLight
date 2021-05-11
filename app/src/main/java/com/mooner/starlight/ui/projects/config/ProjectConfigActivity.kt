@@ -63,7 +63,7 @@ class ProjectConfigActivity : AppCompatActivity() {
             fabProjectConfig.hide()
         }
 
-        recyclerAdapter.data = project.getLanguage().configList.toMutableList()
+        recyclerAdapter.data = project.getLanguage().configObjectList.toMutableList()
         recyclerAdapter.saved = savedData
         recyclerAdapter.notifyDataSetChanged()
 

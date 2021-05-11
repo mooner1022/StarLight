@@ -41,7 +41,7 @@
             android:theme="@style/Theme.StarLight.NoActionBar">
         </activity>
 
-        <service android:name=".core.BackgroundTask" />
+        <service android:name=".core.ForegroundTask" />
         <service
             android:name=".listener.NotificationListener"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">

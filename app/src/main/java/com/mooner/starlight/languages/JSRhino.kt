@@ -5,9 +5,9 @@ import androidx.core.content.ContextCompat
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.plugincore.language.Language
-import com.mooner.starlight.plugincore.language.LanguageConfig
+import com.mooner.starlight.plugincore.language.ConfigObject
 import com.mooner.starlight.plugincore.language.MethodBlock
-import com.mooner.starlight.plugincore.language.SliderLanguageConfig
+import com.mooner.starlight.plugincore.language.SliderConfigObject
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
 import org.mozilla.javascript.Scriptable
@@ -32,9 +32,9 @@ class JSRhino: Language() {
     override val requireRelease: Boolean
         get() = true
 
-    override val configList: List<LanguageConfig>
+    override val configObjectList: List<ConfigObject>
         get() = listOf(
-            SliderLanguageConfig(
+            SliderConfigObject(
                 objectId = CONF_OPTIMIZATION,
                 objectName = "최적화 레벨",
                 max = 10,

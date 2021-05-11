@@ -14,7 +14,7 @@ import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession.pluginLoader
 
-class BackgroundTask: Service() {
+class ForegroundTask: Service() {
     companion object {
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "ForegroundServiceChannel"

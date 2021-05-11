@@ -2,6 +2,7 @@ package com.mooner.starlight
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
@@ -31,11 +32,14 @@ import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
-import com.mooner.starlight.core.BackgroundTask
+import com.mooner.starlight.core.ForegroundTask
 import com.mooner.starlight.databinding.ActivityMainBinding
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
 import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
+import com.mooner.starlight.plugincore.logger.LogType
+import com.mooner.starlight.utils.Alert
 import org.angmarch.views.NiceSpinner
 import kotlin.math.abs
 
@@ -51,6 +55,7 @@ class MainActivity : AppCompatActivity() {
         lateinit var fab: FloatingActionButton
         private lateinit var fabAnim: Animation
         private lateinit var rootLayout: CoordinatorLayout
+        lateinit var windowContext: Context
 
         fun reloadText(text: String? = null) {
             if (text == null) {
@@ -78,6 +83,7 @@ class MainActivity : AppCompatActivity() {
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
+        windowContext = this
         rootLayout = binding.innerLayout.rootLayout
         ctr = findViewById(R.id.collapsingToolbarLayout)
         ActivityCompat.requestPermissions(
@@ -90,10 +96,10 @@ class MainActivity : AppCompatActivity() {
                 MODE_PRIVATE
         )
 
-        println("isRunning: ${BackgroundTask.isRunning}")
-        if (!BackgroundTask.isRunning) {
+        println("isRunning: ${ForegroundTask.isRunning}")
+        if (!ForegroundTask.isRunning) {
             println("start service")
-            val intent = Intent(this, BackgroundTask::class.java)
+            val intent = Intent(this, ForegroundTask::class.java)
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 startForegroundService(intent)
             } else {
