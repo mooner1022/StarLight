@@ -10,10 +10,10 @@ class LanguageManager {
         languages.add(lang)
     }
 
-    fun getLanguage(id: String): Language? {
+    fun getLanguage(id: String, newInstance: Boolean = true): Language? {
         for (lang in languages) {
             if (lang.id == id) {
-                return lang
+                return if (newInstance) lang.javaClass.newInstance() else lang
             }
         }
         return null

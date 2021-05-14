@@ -84,6 +84,11 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         windowContext = this
+        getLogger().bindListener {
+            if (it.type == LogType.ERROR) {
+                Alert.show(Alert.DIALOG, this,"ERROR", it.message)
+            }
+        }
         rootLayout = binding.innerLayout.rootLayout
         ctr = findViewById(R.id.collapsingToolbarLayout)
         ActivityCompat.requestPermissions(

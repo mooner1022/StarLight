@@ -2,6 +2,7 @@ package com.mooner.starlight.ui.projects.config
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Context.LAYOUT_INFLATER_SERVICE
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -31,6 +32,7 @@ class ProjectConfigAdapter(
             ConfigObjectType.STRING.viewType -> LayoutInflater.from(context).inflate(R.layout.config_string, parent, false)
             ConfigObjectType.SPINNER.viewType -> LayoutInflater.from(context).inflate(R.layout.config_spinner, parent, false)
             ConfigObjectType.BUTTON.viewType -> LayoutInflater.from(context).inflate(R.layout.config_button, parent, false)
+            ConfigObjectType.CUSTOM.viewType -> LayoutInflater.from(context).inflate(R.layout.config_custom, parent, false)
             else -> LayoutInflater.from(context).inflate(R.layout.config_toggle, parent, false)
         }
         return ProjectConfigViewHolder(view, viewType)
@@ -114,6 +116,13 @@ class ProjectConfigAdapter(
                     holder.imageViewButton.load(langConf.iconDrawable!!)
                 }
             }
+            ConfigObjectType.CUSTOM.viewType -> {
+                val data = viewData as CustomConfigObject
+                val inflater = context.getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+                val child: View = inflater.inflate(data.layoutID, holder.customLayout)
+                //holder.customLayout.addView(child)
+                data.onInflate(child)
+            }
         }
     }
 
@@ -135,6 +144,8 @@ class ProjectConfigAdapter(
         lateinit var textButton: TextView
         lateinit var layoutButton: ConstraintLayout
         lateinit var imageViewButton: ImageView
+
+        lateinit var customLayout: LinearLayout
 
         var context: Context = itemView.context
 
@@ -161,6 +172,9 @@ class ProjectConfigAdapter(
                     textButton = itemView.findViewById(R.id.textView_configButton)
                     layoutButton = itemView.findViewById(R.id.layout_configButton)
                     imageViewButton = itemView.findViewById(R.id.imageView_configButton)
+                }
+                ConfigObjectType.CUSTOM.viewType -> {
+                    customLayout = itemView.findViewById(R.id.layout_configCustom)
                 }
             }
         }

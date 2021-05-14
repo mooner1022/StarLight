@@ -42,11 +42,12 @@ class HomeFragment : Fragment() {
         MainActivity.setToolbarText(requireContext().getString(R.string.app_name))
         MainActivity.reloadText(requireContext().getString(R.string.app_version))
 
-        val allProjectsCount = Session.getProjectLoader().getProjects().size
+        //val allProjectsCount = Session.getProjectLoader().getProjects().size
         val activeProjectsCount = Session.getProjectLoader().getEnabledProjects().size
-        binding.textViewHomeBotStatus.text = "${allProjectsCount}개중 ${activeProjectsCount}개의 프로젝트가 작동중이에요."
+        binding.textViewHomeBotStatus.text = "${activeProjectsCount}개의 프로젝트가 작동중이에요."
 
         binding.cardViewManageProject.setOnClickListener {
+            Session.getLogger().e("TEST", IllegalStateException("TEXT Exception").toString())
             Navigation.findNavController(it).navigate(R.id.nav_projects)
         }
 

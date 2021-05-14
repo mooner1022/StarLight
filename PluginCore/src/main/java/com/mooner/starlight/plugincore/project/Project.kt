@@ -26,7 +26,6 @@ class Project(
     } else {
         LocalLogger.create(folder)
     }
-    private val languageConfig: MutableMap<String, TypedString>
     private var listener: ((room: String, msg: String) -> Unit)? = null
     private var lastRoom: String? = null
     private val defReplier = object :Replier {
@@ -53,17 +52,7 @@ class Project(
 
     init {
         val langConfFile = File(folder, "config-language.json")
-        languageConfig = if (!langConfFile.exists() || !langConfFile.isFile) {
-            mutableMapOf()
-        } else {
-            try {
-                Json.decodeFromString(langConfFile.readText())
-            } catch (e: Exception) {
-                logger.e(config.name, "Failed to parse language config file")
-                mutableMapOf()
-            }
-        }
-        lang.setLanguageConfig(languageConfig)
+        lang.setConfigPath(langConfFile)
     }
 
     fun callEvent(methodName: String, args: Array<Any>) {

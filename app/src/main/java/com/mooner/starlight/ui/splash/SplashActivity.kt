@@ -8,6 +8,9 @@ import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.ActivitySplashBinding
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.logger.LogType
+import com.mooner.starlight.utils.Alert
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

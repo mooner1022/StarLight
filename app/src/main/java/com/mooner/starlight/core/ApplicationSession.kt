@@ -35,11 +35,6 @@ object ApplicationSession {
             onFinished()
             return
         }
-        Session.getLogger().bindListener {
-            if (it.type == LogType.ERROR) {
-                Alert.show("ERROR", it.message)
-            }
-        }
         onPhaseChanged(context.getString(R.string.step_default_lib))
         Session.initLanguageManager()
         onPhaseChanged(context.getString(R.string.step_lang))

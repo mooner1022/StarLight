@@ -8,12 +8,16 @@ import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.language.ConfigObject
 import com.mooner.starlight.plugincore.language.MethodBlock
 import com.mooner.starlight.plugincore.language.SliderConfigObject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
 import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
 
 class JSRhino: Language() {
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
     private lateinit var context: Context
     companion object {
         private const val CONF_OPTIMIZATION = "optimizationLevel"
@@ -81,7 +85,10 @@ class JSRhino: Language() {
     }
 
     override fun execute(engine: Any, methodName: String, args: Array<Any>) {
-        ((engine as Scriptable).get(methodName, engine) as Function).call(context, engine, engine, args)
+        scope.launch {
+            val rhino = engine as Scriptable
+            (rhino.get(methodName, engine) as Function).call(context, engine, engine, args)
+        }
         //ScriptableObject.callMethod(engine as Scriptable, methodName, args)
         //val invocable = engine as Invocable
         //invocable.invokeFunction(methodName, args)

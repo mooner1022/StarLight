@@ -24,40 +24,48 @@ class JSV8: Language() {
 
     override val configObjectList: List<ConfigObject>
         get() = listOf(
-                ToggleConfigObject(
-                        objectId = "toggle_test",
-                        objectName = "토글 테스트",
-                        defaultValue = false
-                ),
-                SliderConfigObject(
-                        objectId = "slider_test",
-                        objectName = "슬라이더 테스트",
-                        max = 5,
-                        defaultValue = 2
-                ),
-                StringConfigObject(
-                        objectId = "string_test",
-                        objectName = "인풋 테스트",
-                        hint = "테스트으으"
-                ),
-                SpinnerConfigObject(
-                        objectId = "spinner_test",
-                        objectName = "스피너 테스트",
-                        dataList = listOf(
-                                "테스트1",
-                                "테스트2",
-                                "테스트3",
-                                "짺스"
-                        )
-                ),
-                ButtonConfigObject(
-                        objectId = "button_test",
-                        objectName = "버튼 테스트",
-                        onClickListener = {
-                            getLogger().i("JSV8_Config", "onClickListener")
-                        },
-                        iconRes = R.drawable.ic_round_keyboard_arrow_right_24
+            ToggleConfigObject(
+                objectId = "toggle_test",
+                objectName = "토글 테스트",
+                defaultValue = false
+            ),
+            SliderConfigObject(
+                objectId = "slider_test",
+                objectName = "슬라이더 테스트",
+                max = 5,
+                defaultValue = 2
+            ),
+            StringConfigObject(
+                objectId = "string_test",
+                objectName = "인풋 테스트",
+                hint = "테스트으으"
+            ),
+            SpinnerConfigObject(
+                objectId = "spinner_test",
+                objectName = "스피너 테스트",
+                dataList = listOf(
+                    "테스트1",
+                    "테스트2",
+                    "테스트3",
+                    "짺스"
                 )
+            ),
+            ButtonConfigObject(
+                objectId = "button_test",
+                objectName = "버튼 테스트",
+                onClickListener = {
+                    getLogger().i("JSV8_Config", "onClickListener")
+                },
+                iconRes = R.drawable.ic_round_keyboard_arrow_right_24
+            ),
+            CustomConfigObject(
+                objectId = "custom_test",
+                objectName = "커스텀 테스트",
+                layoutID = R.layout.dialog_new_project,
+                onInflate = {
+
+                }
+            )
         )
 
     override fun onConfigChanged(changed: Map<String, Any>) {

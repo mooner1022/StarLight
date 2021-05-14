@@ -22,30 +22,30 @@ class Alert {
         const val DIALOG = 1
         const val AUTO = 2
 
-        fun show(title: String, msg: String) {
-            show(AUTO, title, msg)
+        fun show(context: Context, title: String, msg: String) {
+            show(AUTO, context, title, msg)
         }
 
-        fun show(type: Int, title: String,  msg: String) {
+        fun show(type: Int, context: Context, title: String,  msg: String) {
             when(type) {
                 NOTIFICATION -> {
-                    showNotification(title, msg)
+                    showNotification(context, title, msg)
                 }
                 DIALOG -> {
-                    showDialog(title, msg)
+                    showDialog(context, title, msg)
                 }
                 AUTO -> {
                     if (Utils.isForeground()) {
-                        showNotification(title, msg)
+                        showNotification(context, title, msg)
                     } else {
-                        showDialog(title, msg)
+                        showDialog(context, title, msg)
                     }
                 }
             }
         }
 
-        private fun showDialog(title: String, msg: String) {
-            MaterialDialog(MainActivity.windowContext, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+        private fun showDialog(windowContext: Context, title: String, msg: String) {
+            MaterialDialog(windowContext, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                 cornerRadius(25f)
                 setTitle(title)
                 customView(R.layout.dialog_alert)
@@ -59,15 +59,15 @@ class Alert {
             }
         }
 
-        private fun showNotification(title: String, msg: String) {
-            val manager = ApplicationSession.context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        private fun showNotification(context: Context, title: String, msg: String) {
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             createNotificationChannel(manager)
             val style: NotificationCompat.BigTextStyle = NotificationCompat.BigTextStyle()
             with(style) {
                 bigText(title)
                 setSummaryText(msg)
             }
-            val builder = NotificationCompat.Builder(ApplicationSession.context, NOTIFICATION_CHANNEL_ID).apply {
+            val builder = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID).apply {
                 setSmallIcon(R.mipmap.ic_logo)
                 setStyle(style)
             }

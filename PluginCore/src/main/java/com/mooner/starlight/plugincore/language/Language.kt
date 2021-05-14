@@ -1,14 +1,21 @@
 package com.mooner.starlight.plugincore.language
 
+import com.mooner.starlight.plugincore.TypedString
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import java.io.File
+
 abstract class Language: ILanguage {
+    private var configPath: File? = null
 
-    private var _config: Map<String, Any> = mapOf()
-
-    internal fun setLanguageConfig(conf: Map<String, Any>) {
-        _config = conf
+    internal fun setConfigPath(path: File) {
+        configPath = path
     }
 
     fun getLanguageConfig(): Map<String, Any> {
-        return _config
+        return if (configPath == null || !configPath!!.isFile || !configPath!!.exists()) mapOf() else {
+            val typed: Map<String, TypedString> = Json.decodeFromString(configPath!!.readText())
+            typed.mapValues { it.value.cast()!! }
+        }
     }
 }
