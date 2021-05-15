@@ -9,6 +9,7 @@ data class ProjectConfig(
         val mainScript: String,
         val language: String,
         var isEnabled: Boolean,
+        val createdMillis: Long = 0,
         val mainListener: String = "default",
         val listeners: MutableList<String>,
         val usedPlugins: MutableList<Plugin>,
@@ -20,12 +21,13 @@ data class MutableProjectConfig(
         var mainScript: String = "",
         var language: String = "",
         var isEnabled: Boolean = false,
+        var createdMillis: Long = 0,
         val mainListener: String = "default",
         var listeners: MutableList<String> = mutableListOf(),
         var usedPlugins: MutableList<Plugin> = mutableListOf(),
         var packages: MutableList<String> = mutableListOf()
 ) {
     fun toProjectConfig(): ProjectConfig {
-        return ProjectConfig(name,mainScript, language, isEnabled, mainListener, listeners, usedPlugins, packages)
+        return ProjectConfig(name,mainScript, language, isEnabled, createdMillis, mainListener, listeners, usedPlugins, packages)
     }
 }

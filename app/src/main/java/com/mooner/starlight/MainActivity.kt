@@ -143,6 +143,7 @@ class MainActivity : AppCompatActivity() {
                             name = projectName
                             mainScript = "$projectName.${selectedLang.fileExtension}"
                             language = selectedLang.id
+                            createdMillis = System.currentTimeMillis()
                             listeners = mutableListOf("default")
                         }
                         it.dismiss()

@@ -12,16 +12,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ProjectsViewModel : ViewModel() {
-    private val _data = MutableLiveData<MutableList<Project>>()
-    val data: LiveData<MutableList<Project>> = _data
+    private val _data = MutableLiveData<List<Project>>()
+    val data: LiveData<List<Project>> = _data
 
     init {
         Session.getProjectLoader().bind { projects ->
-            _data.value = projects.toMutableList()
+            _data.value = projects
         }
 
         CoroutineScope(Dispatchers.Default).launch {
-            val data = Session.getProjectLoader().loadProjects(true).toMutableList()
+            val data = Session.getProjectLoader().loadProjects(true)
             withContext(Dispatchers.Main) {
                 _data.value = data
             }

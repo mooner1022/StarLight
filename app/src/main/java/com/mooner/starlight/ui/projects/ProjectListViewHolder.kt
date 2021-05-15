@@ -1,9 +1,8 @@
 package com.mooner.starlight.ui.projects
 
 import android.content.Intent
-import android.graphics.Typeface
 import android.view.View
-import android.widget.*
+import android.widget.Button
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +21,7 @@ import java.io.File
 
 class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
     private val expandable = itemView.findViewById<ExpandableCardView>(R.id.card_project)
+    private val mainScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 
     fun bind(project: Project) {
         val config = project.config
@@ -31,14 +31,21 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val buttonEditCode: Button = itemView.findViewById(R.id.buttonEditCode)
         val buttonRecompile: Button = itemView.findViewById(R.id.buttonRecompile)
         val buttonProjectConfig: Button = itemView.findViewById(R.id.buttonProjectConfig)
-        val cardTitle: TextView = itemView.findViewById(R.id.card_title)
 
-        cardTitle.typeface = Typeface.createFromAsset(
-            itemView.context.assets,
-            "fonts/nanumsquare_round_regular.ttf"
+        cardViewIsEnabled.setBackgroundColor(
+            itemView.context.getColor(
+                if (project.isCompiled) {
+                    if (config.isEnabled) R.color.card_enabled else R.color.card_disabled
+                } else {
+                    R.color.orange
+                }
+            )
         )
-        cardViewIsEnabled.setBackgroundColor(itemView.context.getColor(if (config.isEnabled) R.color.card_enabled else R.color.card_disabled))
 
+        if (!project.isCompiled) {
+            project.config.isEnabled = false
+            project.flush()
+        }
         with(expandable) {
             setIcon(
                 drawable = project.getLanguage().icon ?: ContextCompat.getDrawable(
@@ -49,11 +56,16 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             setTitle(titleText = config.name)
             setSwitch(config.isEnabled)
             setOnSwitchChangeListener { v, isChecked ->
-                getProjectLoader().updateProjectConfig(config.name) {
-                    isEnabled = isChecked
+                if (project.isCompiled) {
+                    MainActivity.reloadText()
+                    cardViewIsEnabled.setBackgroundColor(v!!.context.getColor(if (isChecked) R.color.card_enabled else R.color.card_disabled))
+                    getProjectLoader().updateProjectConfig(config.name) {
+                        isEnabled = isChecked
+                    }
+                } else {
+                    this.setSwitch(false)
+                    MainActivity.showSnackbar("먼저 컴파일이 완료되어야 해요.")
                 }
-                cardViewIsEnabled.setBackgroundColor(v!!.context.getColor(if (isChecked) R.color.card_enabled else R.color.card_disabled))
-                MainActivity.reloadText()
             }
         }
 
@@ -68,14 +80,23 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         buttonRecompile.setOnClickListener {
             CoroutineScope(Dispatchers.Default).launch {
                 try {
-                    getProjectLoader().getProject(config.name)?.compile(true)
+                    project.compile(true)
                 } catch (e: Exception) {
-                    CoroutineScope(Dispatchers.Main).launch {
+                    mainScope.launch {
                         MainActivity.showSnackbar("${config.name}의 컴파일에 실패했어요.\n$e")
                     }
                 }
-                CoroutineScope(Dispatchers.Main).launch {
+                mainScope.launch {
                     MainActivity.showSnackbar("${config.name}의 컴파일을 완료했어요!")
+                    cardViewIsEnabled.setBackgroundColor(
+                        itemView.context.getColor(
+                            if (project.isCompiled) {
+                                if (config.isEnabled) R.color.card_enabled else R.color.card_disabled
+                            } else {
+                                R.color.orange
+                            }
+                        )
+                    )
                 }
             }
         }

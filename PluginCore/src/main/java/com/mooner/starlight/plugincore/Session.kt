@@ -1,13 +1,17 @@
 package com.mooner.starlight.plugincore
 
+import android.os.Environment
+import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.ProjectLoader
+import java.io.File
 
 class Session {
     companion object {
         private val logger: Logger = Logger()
-
+        @Suppress("DEPRECATION")
+        private var l_generalConfig: GeneralConfig = GeneralConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
         private var l_languageManager: LanguageManager? = null
         private var l_projectLoader: ProjectLoader? = null
 
@@ -31,6 +35,7 @@ class Session {
         fun getLogger(): Logger = logger
         fun getProjectLoader(): ProjectLoader = l_projectLoader!!
         fun getLanguageManager(): LanguageManager = l_languageManager!!
+        fun getGeneralConfig(): GeneralConfig = l_generalConfig
     }
 }
 

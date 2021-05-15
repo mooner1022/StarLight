@@ -47,7 +47,7 @@ class HomeFragment : Fragment() {
         binding.textViewHomeBotStatus.text = "${activeProjectsCount}개의 프로젝트가 작동중이에요."
 
         binding.cardViewManageProject.setOnClickListener {
-            Session.getLogger().e("TEST", IllegalStateException("TEXT Exception").toString())
+            //Session.getLogger().e("TEST", IllegalStateException("TEXT Exception").toString())
             Navigation.findNavController(it).navigate(R.id.nav_projects)
         }
 

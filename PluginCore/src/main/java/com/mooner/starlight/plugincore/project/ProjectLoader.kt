@@ -44,25 +44,24 @@ class ProjectLoader {
         return projects.find { it.config.name == name }
     }
 
-    fun updateProjectConfig(name: String, block: ProjectConfig.() -> Unit) {
+    fun updateProjectConfig(name: String, callListener: Boolean = false, block: ProjectConfig.() -> Unit) {
         val project = projects.find { it.config.name == name }?: throw IllegalArgumentException("Cannot find project [$name]")
         project.config.block()
         project.flush()
+        if (callListener) {
+            callListeners()
+        }
     }
 
     fun newProject(config: ProjectConfig, dir: File = projectDir) {
         projects.add(Project.create(dir, config))
-        for (listener in listeners) {
-            listener(projects)
-        }
+        callListeners()
     }
 
     fun newProject(dir: File = projectDir, block: MutableProjectConfig.() -> Unit) {
         val config = MutableProjectConfig().apply(block).toProjectConfig()
         projects.add(Project.create(dir, config))
-        for (listener in listeners) {
-            listener(projects)
-        }
+        callListeners()
     }
 
     fun loadProjects(useCache: Boolean, dir: File = projectDir): List<Project> {
@@ -76,6 +75,9 @@ class ProjectLoader {
                     val project: Project
                     try {
                         project = Project(folder, config)
+                        if (config.isEnabled) {
+                            project.compile(true)
+                        }
                     } catch (e: IllegalArgumentException) {
                         e.printStackTrace()
                         getLogger().e(javaClass.simpleName, e.toString())
@@ -97,6 +99,12 @@ class ProjectLoader {
             return Json.decodeFromString(result.readText(Charsets.UTF_8))
         } catch (e: Exception) {
             throw IllegalArgumentException("Could not parse project.json from ${dir.name}")
+        }
+    }
+
+    private fun callListeners() {
+        for (listener in listeners) {
+            listener(projects)
         }
     }
 }
