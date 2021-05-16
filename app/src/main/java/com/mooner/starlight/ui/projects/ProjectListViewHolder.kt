@@ -42,31 +42,28 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             )
         )
 
-        if (!project.isCompiled) {
-            project.config.isEnabled = false
-            project.flush()
-        }
         with(expandable) {
             setIcon(
                 drawable = project.getLanguage().icon ?: ContextCompat.getDrawable(
                     itemView.context,
-                    R.drawable.ic_js
+                    R.drawable.ic_question_mark
                 )
             )
             setTitle(titleText = config.name)
-            setSwitch(config.isEnabled)
             setOnSwitchChangeListener { v, isChecked ->
+                println("onChange called!")
                 if (project.isCompiled) {
-                    MainActivity.reloadText()
                     cardViewIsEnabled.setBackgroundColor(v!!.context.getColor(if (isChecked) R.color.card_enabled else R.color.card_disabled))
-                    getProjectLoader().updateProjectConfig(config.name) {
+                    getProjectLoader().updateProjectConfig(config.name, false) {
                         isEnabled = isChecked
                     }
+                    MainActivity.reloadText()
                 } else {
                     this.setSwitch(false)
                     MainActivity.showSnackbar("먼저 컴파일이 완료되어야 해요.")
                 }
             }
+            setSwitch(config.isEnabled)
         }
 
         buttonEditCode.setOnClickListener {

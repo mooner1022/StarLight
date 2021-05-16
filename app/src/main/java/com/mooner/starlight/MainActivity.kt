@@ -133,8 +133,8 @@ class MainActivity : AppCompatActivity() {
                             nameEditText.requestFocus()
                             return@positiveButton
                         }
-                        if (!"(^[_1-9A-Za-z]+\$)".toRegex().matches(projectName)) {
-                            nameEditText.error = "이름은 숫자와 영문자만 가능해요."
+                        if (!"(^[-_0-9A-Za-z]+\$)".toRegex().matches(projectName)) {
+                            nameEditText.error = "이름은 숫자와 -, _, 영문자만 가능해요."
                             nameEditText.requestFocus()
                             return@positiveButton
                         }

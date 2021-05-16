@@ -22,6 +22,9 @@
 
     <string name="project_align_state">프로젝트 정렬 : $state</string>
 
+    <string name="align_reversed">내림차순 정렬</string>
+    <string name="align_active_first">활성화 우선</string>
+
     <string name="layout_tv_last">마지막</string>
     <string name="layout_tv_next">다음</string>
     <string name="layout_tv_replace">교체</string>

@@ -6,6 +6,7 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import androidx.cardview.widget.CardView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -16,17 +17,17 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
+import com.afollestad.materialdialogs.customview.customView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentProjectsBinding
+import com.mooner.starlight.models.Align
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.utils.Utils
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator
 
 class ProjectsFragment : Fragment() {
 
@@ -35,27 +36,66 @@ class ProjectsFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var projects: List<Project>
     private lateinit var recyclerAdapter: ProjectListAdapter
-    private val updateScope: CoroutineScope = CoroutineScope(Dispatchers.Default)
-    private val items = getGridItems(
+    //private val updateScope: CoroutineScope = CoroutineScope(Dispatchers.Default)
+
+    private val aligns = arrayOf(
         ALIGN_GANADA,
-        ALIGN_GANADA_INVERTED,
+        //ALIGN_GANADA_INVERTED,
         ALIGN_DATE,
-        ALIGN_DATE_INVERTED,
+        //ALIGN_DATE_INVERTED,
         ALIGN_COMPILED,
-        ALIGN_NOT_COMPILED
+        //ALIGN_NOT_COMPILED
     )
-    private var alignState: String = Session.getGeneralConfig()[GeneralConfig.CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN]
+    private var alignState: Align = getAlignByName(Session.getGeneralConfig()[GeneralConfig.CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name])?: DEFAULT_ALIGN
+    private var isReversed: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PROJECTS_REVERSED,"false"].toBoolean()
+    private var isActiveFirst: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST,"false"].toBoolean()
     
     companion object {
-        private const val ALIGN_GANADA = "가나다 순"
-        private const val ALIGN_GANADA_INVERTED = "가나다 역순"
-        private const val ALIGN_DATE = "생성일 순"
-        private const val ALIGN_DATE_INVERTED = "생성일 역순"
-        private const val ALIGN_COMPILED = "컴파일 순"
-        private const val ALIGN_NOT_COMPILED = "미컴파일 순"
+        private val ALIGN_GANADA = Align(
+            name = "가나다 순",
+            reversedName = "가나다 역순",
+            icon = R.drawable.ic_round_sort_by_alpha_24,
+            sort = { list, activeFirst ->
+                val comparable = if (activeFirst) {
+                    compareBy<Project>({ it.config.name }, { it.config.isEnabled })
+                } else {
+                    compareBy { it.config.name }
+                }
+                list.sortedWith(comparable)
+            }
+        )
+        //private const val ALIGN_GANADA_INVERTED = "가나다 역순"
+        private val ALIGN_DATE = Align(
+            name = "생성일 순",
+            reversedName = "생성일 역순",
+            icon = R.drawable.ic_baseline_edit_calendar_24,
+            sort = { list, activeFirst ->
+                val comparable = if (activeFirst) {
+                    compareBy<Project>({ it.config.createdMillis }, { it.config.isEnabled })
+                } else {
+                    compareBy { it.config.createdMillis }
+                }
+                list.sortedWith(comparable).asReversed()
+            }
+        )
+        //private const val ALIGN_DATE_INVERTED = "생성일 역순"
+        private val ALIGN_COMPILED = Align(
+            name = "컴파일 순",
+            reversedName = "미 컴파일 순",
+            icon = R.drawable.ic_round_refresh_24,
+            sort = { list, activeFirst ->
+                val comparable = if (activeFirst) {
+                    compareBy<Project>({ it.isCompiled }, { it.config.isEnabled })
+                } else {
+                    compareBy { it.isCompiled }
+                }
+                list.sortedWith(comparable).asReversed()
+            }
+        )
+        //private const val ALIGN_NOT_COMPILED = "미컴파일 순"
         
         //private const val ALIGN_ = " 순"
-        private const val DEFAULT_ALIGN = ALIGN_GANADA
+        private val DEFAULT_ALIGN = ALIGN_GANADA
     }
 
     override fun onCreateView(
@@ -74,15 +114,21 @@ class ProjectsFragment : Fragment() {
         cvProjectAlign.setOnClickListener {
             MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                 cornerRadius(25f)
-                gridItems(items) { _, _, item ->
-                    alignState = item.title
+                gridItems(getGridItems(*aligns)) { dialog, _, item ->
+                    alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
+                    isReversed = dialog.findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked
+                    isActiveFirst = dialog.findViewById<CheckBox>(R.id.checkBoxAlignActiveFirst).isChecked
                     update()
                 }
+                //customView(R.layout.dialog_align_state)
+                customView(R.layout.dialog_align_state)
+                findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked = isReversed
+                findViewById<CheckBox>(R.id.checkBoxAlignActiveFirst).isChecked = isActiveFirst
             }
         }
 
-        binding.textViewProjectAlignState.text = Utils.formatStringRes(R.string.project_align_state, mapOf("state" to alignState))
-        binding.imageViewProjectAlignState.setImageResource(getIcon(alignState))
+        binding.textViewProjectAlignState.text = Utils.formatStringRes(R.string.project_align_state, mapOf("state" to alignState.name))
+        binding.imageViewProjectAlignState.setImageResource(alignState.icon)
 
         val fab: FloatingActionButton = MainActivity.fab
         fab.show()
@@ -90,75 +136,46 @@ class ProjectsFragment : Fragment() {
         recyclerAdapter = ProjectListAdapter(requireContext())
         projectsViewModel.data.observe(viewLifecycleOwner) {
             projects = it
-            recyclerAdapter.data = align(alignState)
-            Handler(Looper.getMainLooper()).post {
-                recyclerAdapter.notifyDataSetChanged()
-            }
         }
+        projects = Session.getProjectLoader().getProjects()
+        recyclerAdapter.data = if (isReversed) alignState.sort(projects, isActiveFirst).asReversed() else alignState.sort(projects, isActiveFirst)
+        recyclerAdapter.notifyDataSetChanged()
 
         val layoutManager = LinearLayoutManager(requireContext())
+        rvProjectList.itemAnimator = SlideInLeftAnimator()
         rvProjectList.layoutManager = layoutManager
         rvProjectList.adapter = recyclerAdapter
         return binding.root
     }
 
-    private fun align(state: String): List<Project> {
-        return when(state) {
-            ALIGN_GANADA -> {
-                projects.sortedBy { it.config.name }
-            }
-            ALIGN_GANADA_INVERTED -> {
-                projects.sortedByDescending { it.config.name }
-            }
-            ALIGN_DATE -> {
-                projects.sortedByDescending { it.config.createdMillis }
-            }
-            ALIGN_DATE_INVERTED -> {
-                projects.sortedBy { it.config.createdMillis }
-            }
-            ALIGN_COMPILED -> {
-                projects.sortedByDescending { it.isCompiled }
-            }
-            ALIGN_NOT_COMPILED -> {
-                projects.sortedBy { it.isCompiled }
-            }
-            else -> {
-                align(DEFAULT_ALIGN)
-            }
-        }
+    private fun getAlignByName(name: String): Align? {
+        return aligns.find { it.name == name }
     }
 
-    private fun getGridItems(vararg items: String): List<BasicGridItem> {
+    private fun getGridItems(vararg items: Align): List<BasicGridItem> {
         val list: MutableList<BasicGridItem> = mutableListOf()
         for (item in items) {
             list.add(
                 BasicGridItem(
-                    getIcon(item),
-                    item
+                    item.icon,
+                    item.name
                 )
             )
         }
         return list
     }
 
-    private fun getIcon(name: String): Int {
-        return when(name) {
-            ALIGN_GANADA, ALIGN_GANADA_INVERTED -> R.drawable.ic_round_sort_by_alpha_24
-            ALIGN_DATE, ALIGN_DATE_INVERTED -> R.drawable.ic_baseline_edit_calendar_24
-            ALIGN_COMPILED, ALIGN_NOT_COMPILED -> R.drawable.ic_round_refresh_24
-            else -> getIcon(DEFAULT_ALIGN)
-        }
-    }
-
-    private fun update() {
-        binding.textViewProjectAlignState.text = Utils.formatStringRes(R.string.project_align_state, mapOf("state" to alignState))
-        binding.imageViewProjectAlignState.setImageResource(getIcon(alignState))
-        recyclerAdapter.data = align(alignState)
+    private fun update(align: Align = alignState, isReversed: Boolean = this.isReversed, activeFirst: Boolean = this.isActiveFirst) {
+        binding.textViewProjectAlignState.text = Utils.formatStringRes(R.string.project_align_state, mapOf("state" to align.name))
+        binding.imageViewProjectAlignState.setImageResource(align.icon)
+        recyclerAdapter.data = if (isReversed) align.sort(projects, activeFirst).asReversed() else align.sort(projects, activeFirst)
         Handler(Looper.getMainLooper()).post {
             recyclerAdapter.notifyDataSetChanged()
         }
         Session.getGeneralConfig().also {
-            it[GeneralConfig.CONFIG_PROJECTS_ALIGN] = alignState
+            it[GeneralConfig.CONFIG_PROJECTS_ALIGN] = align.name
+            it[GeneralConfig.CONFIG_PROJECTS_REVERSED] = isReversed.toString()
+            it[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST] = activeFirst.toString()
             it.push()
         }
     }
