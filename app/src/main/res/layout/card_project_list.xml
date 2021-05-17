@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/round_all">
+    android:backgroundTint="@color/project_card">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardViewIsEnabled"
@@ -11,19 +11,22 @@
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
+        app:cardBackgroundColor="@color/project_card"
         app:cardCornerRadius="2.5dp"
         app:cardElevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <host.stjin.expandablecardview.ExpandableCardView
+    <com.mooner.starlight.ui.presets.ExpandableCardView
         android:id="@+id/card_project"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
+        android:background="@color/project_card"
+        android:backgroundTint="@color/project_card"
         app:animationDuration="200"
         app:expandOnClick="true"
         app:icon="@drawable/ic_js"

@@ -8,7 +8,7 @@ import java.io.File
 
 class GeneralConfig(val path: File) {
     private lateinit var configs: HashMap<String, String>
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
     companion object {
         private const val FILE_NAME = "config_general.json"
@@ -19,9 +19,9 @@ class GeneralConfig(val path: File) {
 
     init {
         val file = File(path, FILE_NAME)
-        if (!file.isFile || !file.exists()) {
-            file.mkdirs()
-            configs = hashMapOf()
+        configs = if (!file.isFile || !file.exists()) {
+            path.mkdirs()
+            hashMapOf()
         } else {
             Json.decodeFromString(file.readText())
         }
@@ -40,14 +40,25 @@ class GeneralConfig(val path: File) {
         return this
     }
 
-    fun push(): GeneralConfig {
+    fun push() {
         if (scope.isActive) {
             scope.cancel()
+            println("cancel!")
         }
+        println("launch!")
         scope.launch {
             val str = Json.encodeToString(configs)
+            println("saved: $str")
+            withContext(Dispatchers.IO) {
+                File(path, FILE_NAME).writeText(str)
+            }
+        }
+        /*
+        scope.launch {
+            val str = Json.encodeToString(configs)
+            println("saved: $str")
             File(path, FILE_NAME).writeText(str)
         }
-        return this
+        */
     }
 }

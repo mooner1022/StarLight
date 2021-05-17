@@ -1,8 +1,6 @@
 package com.mooner.starlight.ui.projects
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -139,7 +137,7 @@ class ProjectsFragment : Fragment() {
         }
         projects = Session.getProjectLoader().getProjects()
         recyclerAdapter.data = if (isReversed) alignState.sort(projects, isActiveFirst).asReversed() else alignState.sort(projects, isActiveFirst)
-        recyclerAdapter.notifyDataSetChanged()
+        recyclerAdapter.notifyItemRangeInserted(0, recyclerAdapter.data.size)
 
         val layoutManager = LinearLayoutManager(requireContext())
         rvProjectList.itemAnimator = SlideInLeftAnimator()
@@ -165,18 +163,24 @@ class ProjectsFragment : Fragment() {
         return list
     }
 
+    private fun reloadList(data: List<Project>) {
+        val orgDataSize = recyclerAdapter.data.size
+        recyclerAdapter.data = listOf()
+        recyclerAdapter.notifyItemRangeRemoved(0, orgDataSize)
+        recyclerAdapter.data = data
+        recyclerAdapter.notifyItemRangeInserted(0, data.size)
+    }
+
     private fun update(align: Align = alignState, isReversed: Boolean = this.isReversed, activeFirst: Boolean = this.isActiveFirst) {
         binding.textViewProjectAlignState.text = Utils.formatStringRes(R.string.project_align_state, mapOf("state" to align.name))
         binding.imageViewProjectAlignState.setImageResource(align.icon)
-        recyclerAdapter.data = if (isReversed) align.sort(projects, activeFirst).asReversed() else align.sort(projects, activeFirst)
-        Handler(Looper.getMainLooper()).post {
-            recyclerAdapter.notifyDataSetChanged()
-        }
+        reloadList(if (isReversed) align.sort(projects, activeFirst).asReversed() else align.sort(projects, activeFirst))
         Session.getGeneralConfig().also {
             it[GeneralConfig.CONFIG_PROJECTS_ALIGN] = align.name
             it[GeneralConfig.CONFIG_PROJECTS_REVERSED] = isReversed.toString()
             it[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST] = activeFirst.toString()
             it.push()
+            println("push!")
         }
     }
 }

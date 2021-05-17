@@ -51,6 +51,10 @@ class HomeFragment : Fragment() {
             Navigation.findNavController(it).navigate(R.id.nav_projects)
         }
 
+        binding.cardViewManagePlugin.setOnClickListener {
+            Navigation.findNavController(it).navigate(R.id.nav_plugins)
+        }
+
         return binding.root
     }
 

@@ -12,8 +12,8 @@ import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
+import com.mooner.starlight.ui.presets.ExpandableCardView
 import com.mooner.starlight.ui.projects.config.ProjectConfigActivity
-import host.stjin.expandablecardview.ExpandableCardView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -51,7 +51,6 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             )
             setTitle(titleText = config.name)
             setOnSwitchChangeListener { v, isChecked ->
-                println("onChange called!")
                 if (project.isCompiled) {
                     cardViewIsEnabled.setBackgroundColor(v!!.context.getColor(if (isChecked) R.color.card_enabled else R.color.card_disabled))
                     getProjectLoader().updateProjectConfig(config.name, false) {
@@ -63,7 +62,9 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
                     MainActivity.showSnackbar("먼저 컴파일이 완료되어야 해요.")
                 }
             }
-            setSwitch(config.isEnabled)
+            if (config.isEnabled) {
+                this.setSwitch(true)
+            }
         }
 
         buttonEditCode.setOnClickListener {

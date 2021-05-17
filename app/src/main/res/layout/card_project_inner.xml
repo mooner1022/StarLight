@@ -17,7 +17,8 @@
         android:layout_height="48dp"
         android:background="#00FFFFFF"
         android:elevation="0dp"
-        app:icon="@drawable/ic_round_edit_24" />
+        app:icon="@drawable/ic_round_edit_24"
+        app:iconTint="@color/button_black" />
 
     <Button
         android:id="@+id/buttonRecompile"
@@ -26,7 +27,8 @@
         android:layout_height="48dp"
         android:background="#00FFFFFF"
         android:elevation="0dp"
-        app:icon="@drawable/ic_round_refresh_24" />
+        app:icon="@drawable/ic_round_refresh_24"
+        app:iconTint="@color/button_black" />
 
     <Button
         android:id="@+id/buttonDebugRoom"
@@ -35,7 +37,8 @@
         android:layout_height="48dp"
         android:background="#00FFFFFF"
         android:elevation="0dp"
-        app:icon="@drawable/ic_round_insert_comment_24" />
+        app:icon="@drawable/ic_round_insert_comment_24"
+        app:iconTint="@color/button_black" />
 
     <Button
         android:id="@+id/buttonProjectConfig"
@@ -44,5 +47,6 @@
         android:layout_height="48dp"
         android:background="#00FFFFFF"
         android:elevation="0dp"
-        app:icon="@drawable/ic_round_settings_24" />
+        app:icon="@drawable/ic_round_settings_24"
+        app:iconTint="@color/button_black" />
 </LinearLayout>

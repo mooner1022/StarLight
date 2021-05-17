@@ -40,9 +40,8 @@
                 android:layout_marginStart="30dp"
                 android:layout_marginTop="40dp"
                 android:elevation="1dp"
-                android:fontFamily="sans-serif-light"
+                android:fontFamily="@font/nanumsquare_round_regular"
                 android:text="@string/app_version"
-                android:textColor="@color/white"
                 android:textSize="14sp"
                 app:layout_collapseMode="parallax" />
 

@@ -48,4 +48,7 @@
     <string name="wordwrap">줄 넘기기</string>
     <string name="line_number_visibility">줄 번호 표시</string>
     <string name="save">저장</string>
+
+    <string name="expandable_card_view_image_content_description">Arrow to expand card</string>
+    <string name="expandable_card_view_icon_content_description">Card icon</string>
 </resources>
