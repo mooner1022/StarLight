@@ -9,11 +9,15 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.Navigation
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentHomeBinding
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
+import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator
+import java.lang.Integer.min
 
 class HomeFragment : Fragment() {
     private lateinit var homeViewModel: HomeViewModel
@@ -53,6 +57,24 @@ class HomeFragment : Fragment() {
 
         binding.cardViewManagePlugin.setOnClickListener {
             Navigation.findNavController(it).navigate(R.id.nav_plugins)
+        }
+
+        binding.buttonMoreLogs.setOnClickListener {
+
+        }
+
+        val logs = Session.getLogger().logs
+        if (logs.isNotEmpty()) {
+            val adapter = LogsRecyclerViewAdapter(requireContext())
+            val layoutManager = LinearLayoutManager(requireContext())
+            println("data: ${adapter.data}")
+            adapter.data = logs.subList(logs.size - min(3, logs.size), logs.size)
+            binding.rvLogs.itemAnimator = SlideInLeftAnimator()
+            binding.rvLogs.layoutManager = layoutManager
+            binding.rvLogs.adapter = adapter
+            binding.rvLogs.visibility = View.VISIBLE
+            binding.textViewNoLogsYet.visibility = View.GONE
+            adapter.notifyItemRangeInserted(0, min(3, logs.size))
         }
 
         return binding.root

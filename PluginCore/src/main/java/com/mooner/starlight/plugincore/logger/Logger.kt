@@ -2,6 +2,7 @@ package com.mooner.starlight.plugincore.logger
 
 class Logger {
     private val listeners: ArrayList<(log: LogData) -> Unit> = arrayListOf()
+    val logs: ArrayList<LogData> = arrayListOf()
 
     fun bindListener(listener: (log: LogData) -> Unit) {
         if (!listeners.contains(listener)) {
@@ -24,9 +25,18 @@ class Logger {
             message = message
         )
         println("[${type.name}] $tag : $message")
+        logs.add(data)
 
         for (listener in listeners) {
             listener(data)
         }
+    }
+
+    fun filter(type: LogType): List<LogData> {
+        return logs.filter { it.type == type }
+    }
+
+    fun filterNot(type: LogType): List<LogData> {
+        return logs.filterNot { it.type == type }
     }
 }

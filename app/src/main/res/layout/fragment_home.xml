@@ -10,6 +10,7 @@
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="25dp"
+        app:cardBackgroundColor="@color/cardview_gray"
         app:cardCornerRadius="0dp"
         app:cardElevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -19,6 +20,7 @@
     <androidx.cardview.widget.CardView
         android:layout_width="0dp"
         android:layout_height="0dp"
+        app:cardBackgroundColor="@color/cardview_gray"
         app:cardCornerRadius="20dp"
         app:cardElevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -45,8 +47,9 @@
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="110dp"
-                    android:backgroundTint="@color/cardview_gray"
-                    app:cardCornerRadius="20dp">
+                    android:backgroundTint="@color/project_card"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -116,8 +119,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="110dp"
                     android:layout_marginTop="16dp"
-                    android:backgroundTint="@color/cardview_gray"
-                    app:cardCornerRadius="20dp">
+                    android:backgroundTint="@color/project_card"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -185,9 +189,9 @@
 
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
-                    android:layout_height="250dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:backgroundTint="@color/cardview_gray"
+                    android:backgroundTint="@color/project_card"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="0dp">
 
@@ -217,7 +221,43 @@
                                 android:text="로그 목록"
                                 android:textAlignment="viewStart"
                                 android:textSize="18sp" />
+
+                            <Button
+                                android:id="@+id/buttonMoreLogs"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="0"
+                                android:backgroundTint="#00FFFFFF"
+                                android:elevation="0dp"
+                                android:fontFamily="@font/nanumsquare_round_regular"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:stateListAnimator="@null"
+                                android:text="더보기"
+                                app:icon="@drawable/ic_round_keyboard_arrow_right_24"
+                                app:iconGravity="textEnd"
+                                app:iconPadding="2dp" />
                         </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/textViewNoLogsYet"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:layout_marginBottom="16dp"
+                            android:fontFamily="@font/nanumsquare_round_bold"
+                            android:text="아직 로그가 없어요!"
+                            android:textAlignment="center"
+                            android:textSize="16sp" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvLogs"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginEnd="16dp"
+                            android:layout_marginBottom="16dp"
+                            android:visibility="gone" />
 
 
                     </LinearLayout>

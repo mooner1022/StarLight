@@ -32,7 +32,7 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val buttonRecompile: Button = itemView.findViewById(R.id.buttonRecompile)
         val buttonProjectConfig: Button = itemView.findViewById(R.id.buttonProjectConfig)
 
-        cardViewIsEnabled.setBackgroundColor(
+        cardViewIsEnabled.setCardBackgroundColor(
             itemView.context.getColor(
                 if (project.isCompiled) {
                     if (config.isEnabled) R.color.card_enabled else R.color.card_disabled
@@ -52,7 +52,7 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             setTitle(titleText = config.name)
             setOnSwitchChangeListener { v, isChecked ->
                 if (project.isCompiled) {
-                    cardViewIsEnabled.setBackgroundColor(v!!.context.getColor(if (isChecked) R.color.card_enabled else R.color.card_disabled))
+                    cardViewIsEnabled.setCardBackgroundColor(v!!.context.getColor(if (isChecked) R.color.card_enabled else R.color.card_disabled))
                     getProjectLoader().updateProjectConfig(config.name, false) {
                         isEnabled = isChecked
                     }
@@ -86,7 +86,7 @@ class ProjectListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
                 }
                 mainScope.launch {
                     MainActivity.showSnackbar("${config.name}의 컴파일을 완료했어요!")
-                    cardViewIsEnabled.setBackgroundColor(
+                    cardViewIsEnabled.setCardBackgroundColor(
                         itemView.context.getColor(
                             if (project.isCompiled) {
                                 if (config.isEnabled) R.color.card_enabled else R.color.card_disabled
