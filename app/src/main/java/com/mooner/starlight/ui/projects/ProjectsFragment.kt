@@ -133,7 +133,12 @@ class ProjectsFragment : Fragment() {
         MainActivity.reloadText()
         recyclerAdapter = ProjectListAdapter(requireContext())
         projectsViewModel.data.observe(viewLifecycleOwner) {
-            projects = it
+            if (projects != it) {
+                projects = it
+                update()
+            } else {
+                Session.getLogger().i(javaClass.simpleName, "Projects update ignored")
+            }
         }
         projects = Session.getProjectLoader().getProjects()
         recyclerAdapter.data = if (isReversed) alignState.sort(projects, isActiveFirst).asReversed() else alignState.sort(projects, isActiveFirst)

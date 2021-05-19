@@ -12,12 +12,15 @@ import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.logger.LogData
 import com.mooner.starlight.plugincore.logger.LogType
+import java.text.SimpleDateFormat
 
 class LogsRecyclerViewAdapter(
     private val context: Context,
 ): RecyclerView.Adapter<LogsRecyclerViewAdapter.LogsViewHolder>() {
     var data = mutableListOf<LogData>()
     var saved: MutableMap<String, TypedString> = mutableMapOf()
+    @SuppressLint("SimpleDateFormat")
+    private val dateFormat = SimpleDateFormat("MM/dd HH:mm:ss")
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LogsViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.card_log, parent, false)
@@ -35,9 +38,24 @@ class LogsRecyclerViewAdapter(
             LogType.WARNING -> R.color.code_yellow
             LogType.ERROR -> R.color.code_error
         }
-        holder.stateColor.setCardBackgroundColor(color)
+        holder.stateColor.setCardBackgroundColor(context.getColor(color))
         holder.title.text = viewData.tag
         holder.content.text = viewData.message
+        holder.timestamp.text = dateFormat.format(viewData.millis)
+    }
+
+    fun pushLog(log: LogData, limit: Int = 0) {
+        println("data before: $data")
+        if (limit != 0 && data.size >= limit) {
+            data = data.drop(1).toMutableList()
+            this.notifyItemRemoved(0)
+            data.add(log)
+            this.notifyItemInserted(data.size)
+        } else {
+            data.add(log)
+            this.notifyItemInserted(data.size)
+        }
+        println("data after: $data")
     }
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
@@ -45,5 +63,6 @@ class LogsRecyclerViewAdapter(
         val stateColor: CardView = itemView.findViewById(R.id.logInfoColor)
         val title: TextView = itemView.findViewById(R.id.logTitleText)
         val content: TextView = itemView.findViewById(R.id.logContentText)
+        val timestamp: TextView = itemView.findViewById(R.id.logTimeStampText)
     }
 }

@@ -54,7 +54,8 @@ class LocalLogger(private var _logs: ArrayList<LogData>, private val file: File)
         val data = LogData(
             type = type,
             tag = tag,
-            message = message
+            message = message,
+            System.currentTimeMillis()
         )
         _logs.add(data)
         flush()

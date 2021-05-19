@@ -42,7 +42,7 @@
         android:paddingEnd="10dp"
         android:paddingBottom="10dp"
         android:text="TextView"
-        android:textAlignment="center"
+        android:textAlignment="viewStart"
         android:textColor="@color/white"
         android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="parent"

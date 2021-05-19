@@ -58,23 +58,32 @@ class HomeFragment : Fragment() {
         binding.cardViewManagePlugin.setOnClickListener {
             Navigation.findNavController(it).navigate(R.id.nav_plugins)
         }
-
+        var count = 0
         binding.buttonMoreLogs.setOnClickListener {
-
+            Session.getLogger().i(javaClass.simpleName, "TEST Log: INFO! :) $count")
+            Session.getLogger().w(javaClass.simpleName, "TEST Log: WARNING! :) $count")
+            Session.getLogger().d(javaClass.simpleName, "TEST Log: DEBUG! :) $count")
+            count ++
         }
 
         val logs = Session.getLogger().logs
+        val adapter = LogsRecyclerViewAdapter(requireContext())
         if (logs.isNotEmpty()) {
-            val adapter = LogsRecyclerViewAdapter(requireContext())
-            val layoutManager = LinearLayoutManager(requireContext())
-            println("data: ${adapter.data}")
-            adapter.data = logs.subList(logs.size - min(3, logs.size), logs.size)
+            val layoutManager = LinearLayoutManager(requireContext()).apply {
+                reverseLayout = true
+                stackFromEnd = true
+            }
+            adapter.data = logs.subList(logs.size - min(3, logs.size), logs.size).toMutableList()
             binding.rvLogs.itemAnimator = SlideInLeftAnimator()
             binding.rvLogs.layoutManager = layoutManager
             binding.rvLogs.adapter = adapter
             binding.rvLogs.visibility = View.VISIBLE
             binding.textViewNoLogsYet.visibility = View.GONE
             adapter.notifyItemRangeInserted(0, min(3, logs.size))
+        }
+
+        Session.getLogger().bindListener {
+            adapter.pushLog(it, 3)
         }
 
         return binding.root

@@ -22,7 +22,8 @@ class Logger {
         val data = LogData(
             type = type,
             tag = tag,
-            message = message
+            message = message,
+            System.currentTimeMillis()
         )
         println("[${type.name}] $tag : $message")
         logs.add(data)
