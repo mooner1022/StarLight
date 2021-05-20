@@ -4,33 +4,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/main_dark"
+    android:background="@drawable/round_top"
     tools:context=".ui.home.HomeFragment">
 
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="25dp"
-        app:cardBackgroundColor="@color/cardview_gray"
-        app:cardCornerRadius="0dp"
-        app:cardElevation="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <androidx.cardview.widget.CardView
+    <ScrollView
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:cardBackgroundColor="@color/cardview_gray"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
@@ -38,8 +24,8 @@
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="110dp"
-                android:backgroundTint="@color/project_card"
+                android:layout_height="126dp"
+                android:backgroundTint="@color/home_card"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 
@@ -76,6 +62,9 @@
                         android:id="@+id/cardViewManageProject"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="16dp"
                         app:cardBackgroundColor="@color/orange"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="0dp">
@@ -109,9 +98,9 @@
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="110dp"
+                android:layout_height="126dp"
                 android:layout_marginTop="16dp"
-                android:backgroundTint="@color/project_card"
+                android:backgroundTint="@color/home_card"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 
@@ -148,6 +137,9 @@
                         android:id="@+id/cardViewManagePlugin"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="16dp"
                         app:cardBackgroundColor="@color/orange"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="0dp">
@@ -183,7 +175,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:backgroundTint="@color/project_card"
+                android:layout_marginBottom="24dp"
+                android:backgroundTint="@color/home_card"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 
@@ -255,7 +248,6 @@
             </androidx.cardview.widget.CardView>
 
         </LinearLayout>
-
-    </androidx.cardview.widget.CardView>
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

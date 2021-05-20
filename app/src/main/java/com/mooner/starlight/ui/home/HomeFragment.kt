@@ -1,3 +1,4 @@
+
 package com.mooner.starlight.ui.home
 
 import android.annotation.SuppressLint
@@ -25,6 +26,10 @@ class HomeFragment : Fragment() {
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+
+    companion object {
+        private const val LOGS_MAX_SIZE = 5
+    }
 
     @SuppressLint("SetTextI18n")
     override fun onCreateView(
@@ -73,17 +78,17 @@ class HomeFragment : Fragment() {
                 reverseLayout = true
                 stackFromEnd = true
             }
-            adapter.data = logs.subList(logs.size - min(3, logs.size), logs.size).toMutableList()
+            adapter.data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
             binding.rvLogs.itemAnimator = SlideInLeftAnimator()
             binding.rvLogs.layoutManager = layoutManager
             binding.rvLogs.adapter = adapter
             binding.rvLogs.visibility = View.VISIBLE
             binding.textViewNoLogsYet.visibility = View.GONE
-            adapter.notifyItemRangeInserted(0, min(3, logs.size))
+            adapter.notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
         }
 
         Session.getLogger().bindListener {
-            adapter.pushLog(it, 3)
+            adapter.pushLog(it, LOGS_MAX_SIZE)
         }
 
         return binding.root

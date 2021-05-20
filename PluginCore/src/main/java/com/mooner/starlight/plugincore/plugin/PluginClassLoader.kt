@@ -2,7 +2,7 @@ package com.mooner.starlight.plugincore.plugin
 
 import android.os.Environment
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
-import dalvik.system.DexClassLoader
+import dalvik.system.PathClassLoader
 import java.io.File
 
 class PluginClassLoader(
@@ -13,7 +13,7 @@ class PluginClassLoader(
     private val file: File,
     @Suppress("deprecation")
     dexDirectory: File = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/.dex")
-): DexClassLoader(file.path, dexDirectory.path, null, parent){
+): PathClassLoader(file.path, parent){
     private var pluginInit: StarlightPlugin? = null
     private var pluginState: java.lang.IllegalStateException? = null
     val plugin: StarlightPlugin

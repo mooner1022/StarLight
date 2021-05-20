@@ -14,13 +14,15 @@ import com.mooner.starlight.plugincore.logger.LogData
 import com.mooner.starlight.plugincore.logger.LogType
 import java.text.SimpleDateFormat
 
+@SuppressLint("SimpleDateFormat")
 class LogsRecyclerViewAdapter(
     private val context: Context,
 ): RecyclerView.Adapter<LogsRecyclerViewAdapter.LogsViewHolder>() {
     var data = mutableListOf<LogData>()
     var saved: MutableMap<String, TypedString> = mutableMapOf()
-    @SuppressLint("SimpleDateFormat")
-    private val dateFormat = SimpleDateFormat("MM/dd HH:mm:ss")
+    private val fullDateFormat = SimpleDateFormat("MM/dd HH:mm")
+    private val hourDateFormat = SimpleDateFormat("HH:mm:ss")
+    private val dateMillis: Long = 24 * 60 * 60 * 1000
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LogsViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.card_log, parent, false)
@@ -41,11 +43,10 @@ class LogsRecyclerViewAdapter(
         holder.stateColor.setCardBackgroundColor(context.getColor(color))
         holder.title.text = viewData.tag
         holder.content.text = viewData.message
-        holder.timestamp.text = dateFormat.format(viewData.millis)
+        holder.timestamp.text = formatDate(viewData.millis)
     }
 
     fun pushLog(log: LogData, limit: Int = 0) {
-        println("data before: $data")
         if (limit != 0 && data.size >= limit) {
             data = data.drop(1).toMutableList()
             this.notifyItemRemoved(0)
@@ -55,7 +56,14 @@ class LogsRecyclerViewAdapter(
             data.add(log)
             this.notifyItemInserted(data.size)
         }
-        println("data after: $data")
+    }
+
+    private fun formatDate(millis: Long): String {
+        return if (System.currentTimeMillis() / dateMillis != millis / dateMillis) {
+            fullDateFormat
+        } else {
+            hourDateFormat
+        }.format(millis)
     }
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")

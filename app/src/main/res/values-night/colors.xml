@@ -26,6 +26,8 @@
     <color name="gray">#989898</color>
     <color name="button_black">#BABABA</color>
     <color name="side_tab">#4C4C4C</color>
+    <color name="home_card">#424242</color>
+    <color name="projects_background">#424242</color>
 
     <color name="code_purple">#C39EC0</color>
     <color name="code_blue">#60A6E1</color>
