@@ -3,13 +3,14 @@ package com.mooner.starlight.plugincore.plugin
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Version
+import com.mooner.starlight.plugincore.event.EventListener
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import java.io.File
 
-abstract class StarlightPlugin: Plugin {
+abstract class StarlightPlugin: Plugin, EventListener {
     val pluginCoreVersion: Version = Info.PLUGINCORE_VERSION
     private lateinit var projectLoader: ProjectLoader
     private lateinit var loader: PluginLoader

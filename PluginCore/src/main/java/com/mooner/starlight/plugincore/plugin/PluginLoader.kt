@@ -4,7 +4,6 @@ import android.os.Environment
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Priority
 import com.mooner.starlight.plugincore.Session
-import com.mooner.starlight.plugincore.annotations.StarLightEventListener
 import com.mooner.starlight.plugincore.event.EventListener
 import com.mooner.starlight.plugincore.utils.Utils.Companion.readString
 import kotlinx.coroutines.CoroutineScope
@@ -15,16 +14,13 @@ import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.lang.reflect.Method
-import java.net.URL
-import java.net.URLClassLoader
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
 class PluginLoader {
     private val classes: HashMap<String, Class<*>> = HashMap()
     private val loaders: LinkedHashMap<String, PluginClassLoader> = LinkedHashMap()
-    private val method: Method = URLClassLoader::class.java
-        .getDeclaredMethod("addURL", URL::class.java)
+    private var listeners: MutableList<EventListener> = mutableListOf()
 
     companion object {
         private const val T = "PluginLoader"
@@ -33,10 +29,6 @@ class PluginLoader {
     @Suppress("DEPRECATION")
     private val defDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/")
     //private val dexDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/.dex/")
-
-    init {
-        method.isAccessible = true
-    }
 
     fun loadPlugins(dir: File = defDirectory, onPluginLoad: ((name: String) -> Unit)? = null): List<Plugin> {
         if (!dir.exists() || !dir.isDirectory) {
@@ -206,7 +198,7 @@ class PluginLoader {
         return null
     }
 
-    fun registerListener(plugin: Plugin, listener: EventListener) {
+    fun registerListener(listener: EventListener) {
         val methods: HashSet<Method>
         try {
             val publicMethods = listener.javaClass.methods
@@ -224,14 +216,15 @@ class PluginLoader {
         }
 
         for (method in methods) {
-            val annotation = method.getAnnotation(StarLightEventListener::class.java) ?: continue
-
+            //val annotation = method.getAnnotation(EventHandler::class.java) ?: continue
             val checkClass: Class<*> = method.parameterTypes[0]
             if (method.parameterTypes.size != 1 || !EventListener::class.java.isAssignableFrom(checkClass)) {
                 Session.getLogger().e("PluginLoader", "Attempted to register invalid listener: ${listener.javaClass.simpleName}")
                 continue
             }
             val eventClass = checkClass.asSubclass(EventListener::class.java)
+
+
             /*
              * UNFINISHED FUNCTION
              */

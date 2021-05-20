@@ -1,7 +1,6 @@
 package com.mooner.starlight
 
 import com.mooner.starlight.plugincore.annotations.StarLightEventListener
-import com.mooner.starlight.plugincore.event.EventType
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 
 @StarLightEventListener

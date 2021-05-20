@@ -1,5 +1,5 @@
 package com.mooner.starlight.plugincore.annotations
 
-@Target(AnnotationTarget.CLASS)
+@Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class StarLightEventListener
+annotation class EventHandler

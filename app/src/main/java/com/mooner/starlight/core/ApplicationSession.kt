@@ -6,9 +6,11 @@ import com.mooner.starlight.R
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.event.EventListener
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.PluginLoader
+import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
 import com.mooner.starlight.utils.Alert
 
@@ -73,7 +75,7 @@ object ApplicationSession {
         NetworkUtil.addOnNetworkStateChangedListener { state ->
             if (plugins.isNotEmpty()) {
                 for (plugin in plugins) {
-                    plugin.onNetworkStateChanged(state)
+                    (plugin as StarlightPlugin).onNetworkStateChanged(state)
                 }
             }
         }
@@ -82,4 +84,5 @@ object ApplicationSession {
     lateinit var context: Context
 
     lateinit var plugins: List<Plugin>
+    lateinit var listeners: List<EventListener>
 }
