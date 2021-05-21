@@ -8,6 +8,7 @@ import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.ProjectLoader
+import com.mooner.starlight.plugincore.utils.Utils.Companion.getFileSize
 import java.io.File
 
 abstract class StarlightPlugin: Plugin, EventListener {
@@ -16,9 +17,11 @@ abstract class StarlightPlugin: Plugin, EventListener {
     private lateinit var loader: PluginLoader
     private lateinit var file: File
     private lateinit var dataDir: File
-    private lateinit var config: PluginConfig
     private lateinit var classLoader: ClassLoader
     private var isEnabled = false
+    lateinit var config: PluginConfig
+    val fileSize: Float
+        get() = file.getFileSize()
 
     constructor() {
         val classLoader = this.javaClass.classLoader

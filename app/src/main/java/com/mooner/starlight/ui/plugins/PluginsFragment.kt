@@ -5,14 +5,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
+import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.FragmentPluginsBinding
+import com.mooner.starlight.utils.Utils
+import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator
 
 class PluginsFragment : Fragment() {
     private var _binding: FragmentPluginsBinding? = null
-    // This property is only valid between onCreateView and
-    // onDestroyView.
     private val binding get() = _binding!!
 
     override fun onCreateView(
@@ -21,10 +23,26 @@ class PluginsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentPluginsBinding.inflate(inflater, container, false)
+        val plugins = ApplicationSession.plugins
 
         MainActivity.setToolbarText("Plugins")
-        MainActivity.reloadText(requireContext().getString(R.string.app_version))
+        MainActivity.reloadText(
+            Utils.formatStringRes(
+                R.string.subtitle_plugins,
+                mapOf(
+                    "count" to plugins.size.toString()
+                )
+            )
+        )
 
+        val adapter = PluginsListAdapter(requireContext())
+        adapter.data = plugins
+        val layoutManager = LinearLayoutManager(requireContext())
+        with(binding.recyclerViewProjectList) {
+            this.adapter = adapter
+            this.layoutManager = layoutManager
+            this.itemAnimator = SlideInLeftAnimator()
+        }
 
         return binding.root
     }

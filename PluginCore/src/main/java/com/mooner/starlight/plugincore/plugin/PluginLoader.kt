@@ -38,7 +38,7 @@ class PluginLoader {
         val lowPriorityQueue: MutableList<Pair<PluginConfig, File>> = mutableListOf()
         val list: MutableList<Plugin> = mutableListOf()
 
-        for (file in dir.listFiles { it -> it.name.substringAfterLast(".") in listOf("apk", "aab") }?: arrayOf()) {
+        for (file in dir.listFiles { it -> it.name.substringAfterLast(".") in listOf("apk", "jar") }?: arrayOf()) {
             try {
                 val config: PluginConfig
                 try {

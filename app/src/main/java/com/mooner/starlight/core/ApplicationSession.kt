@@ -84,5 +84,5 @@ object ApplicationSession {
     lateinit var context: Context
 
     lateinit var plugins: List<Plugin>
-    lateinit var listeners: List<EventListener>
+    lateinit var eventListeners: List<EventListener>
 }
