@@ -22,7 +22,6 @@ class EditorActivity : AppCompatActivity() {
     private var isCodeChanged = false
     private lateinit var binding: ActivityEditorBinding
 
-    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityEditorBinding.inflate(layoutInflater)
