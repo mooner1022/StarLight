@@ -120,7 +120,6 @@ class MainActivity : AppCompatActivity() {
                 fab.hide()
                 MaterialDialog(this@MainActivity, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                     //window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
-                    setTitle("새 프로젝트")
                     cornerRadius(25f)
                     customView(R.layout.dialog_new_project)
                     cancelOnTouchOutside(true)

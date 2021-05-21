@@ -40,10 +40,14 @@ class ProjectListAdapter(
         val config = project.config
 
         with(holder) {
-            holder.cardViewIsEnabled.setCardBackgroundColor(
-                holder.context.getColor(
+            cardViewIsEnabled.setCardBackgroundColor(
+                context.getColor(
                     if (project.isCompiled) {
-                        if (config.isEnabled) R.color.card_enabled else R.color.card_disabled
+                        if (config.isEnabled) {
+                            R.color.card_enabled
+                        } else {
+                            R.color.card_disabled
+                        }
                     } else {
                         R.color.orange
                     }
@@ -51,18 +55,19 @@ class ProjectListAdapter(
             )
 
             with(expandable) {
+                println("isEnabled: ${project.config.isEnabled}")
                 setSwitch(project.config.isEnabled)
                 setIcon(
                     drawable = project.getLanguage().icon ?: ContextCompat.getDrawable(
-                        holder.context,
+                        context,
                         R.drawable.ic_question_mark
                     )
                 )
                 setTitle(titleText = config.name)
                 setOnSwitchChangeListener { v, isChecked ->
                     if (project.isCompiled) {
-                        holder.cardViewIsEnabled.setCardBackgroundColor(
-                            v!!.context.getColor(
+                        cardViewIsEnabled.setCardBackgroundColor(
+                            context.getColor(
                                 if (isChecked) {
                                     R.color.card_enabled
                                 } else {
@@ -70,11 +75,18 @@ class ProjectListAdapter(
                                 }
                             )
                         )
-                        Session.getProjectLoader().updateProjectConfig(config.name, false) {
-                            isEnabled = isChecked
-                        }
+                        project.config.isEnabled = true
+                        project.flush()
+                        //Session.getProjectLoader().updateProjectConfig(config.name, false) {
+                        //    isEnabled = isChecked
+                        //}
+                        println("config: ${project.config}")
                         MainActivity.reloadText()
                     } else {
+                        if (config.isEnabled) {
+                            this.setSwitch(true)
+                            return@setOnSwitchChangeListener
+                        }
                         this.setSwitch(false)
                         MainActivity.showSnackbar("먼저 컴파일이 완료되어야 해요.")
                     }
@@ -103,7 +115,11 @@ class ProjectListAdapter(
                         cardViewIsEnabled.setCardBackgroundColor(
                             itemView.context.getColor(
                                 if (project.isCompiled) {
-                                    if (config.isEnabled) R.color.card_enabled else R.color.card_disabled
+                                    if (config.isEnabled) {
+                                        R.color.card_enabled
+                                    } else {
+                                        R.color.card_disabled
+                                    }
                                 } else {
                                     R.color.orange
                                 }

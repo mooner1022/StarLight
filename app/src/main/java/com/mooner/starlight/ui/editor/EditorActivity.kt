@@ -4,8 +4,10 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
+import com.afollestad.materialdialogs.utils.MDUtil.getStringArray
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityEditorBinding
@@ -38,18 +40,30 @@ class EditorActivity : AppCompatActivity() {
                 ?: throw IllegalArgumentException("No file directory passed to editor"))
 
         with(binding.codeView) {
-            setTabWidth(4)
+            setAdapter(
+                ArrayAdapter(
+                    this@EditorActivity,
+                    R.layout.code_autocomplete_item,
+                    R.id.autoCompleteText,
+                    context.getStringArray(R.array.js_keywords)
+                )
+            )
+            JSSyntaxManager.applyMonokaiTheme(
+                this@EditorActivity,
+                this,
+            )
+            setTabWidth(1)
             CoroutineScope(Dispatchers.IO).launch {
                 orgCode = fileDir.readText()
                 setText(orgCode)
             }
-            setSyntaxPatternsMap(
-                    mapOf(
-                            "function|throw".toPattern() to R.color.code_orange,
-                            "\"(.*?)\"|'(.*?)'".toPattern() to R.color.code_string,
-                            "^val|let|const".toPattern() to R.color.code_orange,
-                    )
-            )
+            //setSyntaxPatternsMap(
+            //        mapOf(
+                            //"function|throw".toPattern() to R.color.code_orange,
+                            //"\"(.*?)\"|'(.*?)'".toPattern() to R.color.code_string,
+                            //"^val|let|const".toPattern() to R.color.code_orange,
+            //        )
+            //)
             reHighlightSyntax()
             //addErrorLine(1, R.color.code_error)
             addTextChangedListener {

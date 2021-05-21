@@ -24,6 +24,9 @@
     <string name="menu_info">정보</string>
 
     <string name="project_align_state">프로젝트 정렬 : $state</string>
+    <string name="plugin_align_state">플러그인 정렬 : $state</string>
+
+    <string name="nothing_yet">아직 $name 없는 것 같아요! $emoji</string>
 
     <string name="align_reversed">내림차순 정렬</string>
     <string name="align_active_first">활성화 우선</string>

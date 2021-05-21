@@ -14,6 +14,7 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
+import com.mooner.starlight.utils.Utils.Companion.trimLength
 
 class PluginsListAdapter(
     private val context: Context
@@ -32,7 +33,8 @@ class PluginsListAdapter(
         val config = plugin.config
 
         with(holder) {
-            name.text = config.fullName
+            name.text = config.name.trimLength(17)
+            version.text = config.version
             fileSize.text = String.format("%.2f MB", plugin.fileSize)
 
             buttonConfig.setOnClickListener {
@@ -61,6 +63,7 @@ class PluginsListAdapter(
 
         val icon: ImageView = itemView.findViewById(R.id.pluginIconImageView)
         val name: TextView = itemView.findViewById(R.id.pluginNameText)
+        val version: TextView = itemView.findViewById(R.id.pluginVersionText)
         val fileSize: TextView = itemView.findViewById(R.id.pluginSizeText)
         val buttonConfig: Button = itemView.findViewById(R.id.pluginConfigButton)
         val buttonRemove: Button = itemView.findViewById(R.id.pluginRemoveButton)

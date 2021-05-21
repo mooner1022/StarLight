@@ -21,5 +21,9 @@ class Utils {
             }
             return string
         }
+
+        fun String.trimLength(max: Int): String {
+            return if (this.length <= max) this else (this.substring(0, max) + "..")
+        }
     }
 }

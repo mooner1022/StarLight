@@ -7,14 +7,16 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 class GeneralConfig(val path: File) {
-    private lateinit var configs: HashMap<String, String>
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
+    private var configs: HashMap<String, String>
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
     companion object {
         private const val FILE_NAME = "config_general.json"
         const val CONFIG_PROJECTS_ALIGN = "projects_align_state"
         const val CONFIG_PROJECTS_REVERSED = "projects_align_reversed"
         const val CONFIG_PROJECTS_ACTIVE_FIRST = "projects_align_active_first"
+        const val CONFIG_PLUGINS_ALIGN = "plugins_align_state"
+        const val CONFIG_PLUGINS_REVERSED = "plugins_align_reversed"
     }
 
     init {
@@ -46,13 +48,20 @@ class GeneralConfig(val path: File) {
             println("cancel!")
         }
         println("launch!")
-        scope.launch {
+
+        CoroutineScope(Dispatchers.Default).launch {
             val str = Json.encodeToString(configs)
-            println("saved: $str")
             withContext(Dispatchers.IO) {
-                File(path, FILE_NAME).writeText(str)
+                println("saved: $str")
+                with(File(path, FILE_NAME)) {
+                    if (!isFile) {
+                        deleteRecursively()
+                    }
+                    writeText(str)
+                }
             }
         }
+
         /*
         scope.launch {
             val str = Json.encodeToString(configs)

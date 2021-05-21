@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="js_keywords">
+        <item>package</item>
+        <item>break</item>
+        <item>case</item>
+        <item>catch</item>
+        <item>class</item>
+        <item>continue</item>
+        <item>default</item>
+        <item>do</item>
+        <item>else</item>
+        <item>enum</item>
+        <item>finally</item>
+        <item>for</item>
+        <item>if</item>
+        <item>use strict</item>
+        <item>instanceof</item>
+        <item>interface</item>
+        <item>long</item>
+        <item>native</item>
+        <item>new</item>
+        <item>return</item>
+        <item>static</item>
+        <item>switch</item>
+        <item>this</item>
+        <item>throw</item>
+        <item>try</item>
+        <item>function</item>
+        <item>while</item>
+        <item>var</item>
+        <item>let</item>
+        <item>const</item>
+
+        <item>replier</item>
+        <item>reply</item>
+        <item>Projects</item>
+        <item>Languages</item>
+        <item>get</item>
+        <item>Api</item>
+        <item>Utils</item>
+    </string-array>
+</resources>

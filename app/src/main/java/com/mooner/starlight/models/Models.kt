@@ -9,10 +9,10 @@ data class Message (
         var viewType : Int
 )
 
-data class Align(
+data class Align <T>(
         val name: String,
         val reversedName: String,
         @DrawableRes
         val icon: Int,
-        val sort: (list: List<Project>, activeFirst: Boolean) -> List<Project>
+        val sort: (list: List<T>, args: Map<String, Boolean>) -> List<T>
 )
