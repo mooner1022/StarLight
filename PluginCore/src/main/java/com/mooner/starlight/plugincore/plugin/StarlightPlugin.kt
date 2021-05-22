@@ -58,8 +58,6 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    fun getLogger(): Logger = Session.getLogger()
-
     fun getDataFolder(): File = dataDir
 
     fun getProjectLoader(): ProjectLoader = projectLoader
@@ -72,10 +70,10 @@ abstract class StarlightPlugin: Plugin, EventListener {
             Session.getLanguageManager().addLanguage(language)
             isLoadSuccess = true
         } catch (e: IllegalStateException) {
-            Session.getLogger().e("LanguageLoader",e.toString())
+            Logger.e("LanguageLoader",e.toString())
             e.printStackTrace()
         } finally {
-            Session.getLogger().i("LanguageLoader",(if (isLoadSuccess) "Successfully added" else "Failed to add") + " language ${language.name}")
+            Logger.i("LanguageLoader",(if (isLoadSuccess) "Successfully added" else "Failed to add") + " language ${language.name}")
         }
     }
 

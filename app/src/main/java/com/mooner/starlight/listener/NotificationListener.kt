@@ -14,11 +14,31 @@ import android.util.Base64
 import android.util.Log
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.core.ApplicationSession.taskHandler
+import com.mooner.starlight.models.Message
+import com.mooner.starlight.plugincore.project.Replier
 import java.io.ByteArrayOutputStream
 import java.util.*
 
 class NotificationListener: NotificationListenerService() {
     private val sessions: HashMap<String, Notification.Action> = hashMapOf()
+    private var lastRoom: String? = null
+    private val replier = object : Replier {
+        override fun reply(msg: String) {
+            if (lastRoom != null) {
+                if (!sessions.containsKey(lastRoom)) {
+                    Log.w("NotificationListener", "No session for room $lastRoom found")
+                }
+                send(msg, sessions[lastRoom]!!)
+            }
+        }
+
+        override fun reply(room: String, msg: String) {
+            if (!sessions.containsKey(room)) {
+                Log.w("NotificationListener", "No session for room $room found")
+            }
+            send(msg, sessions[room]!!)
+        }
+    }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
@@ -41,20 +61,8 @@ class NotificationListener: NotificationListenerService() {
 
                     Log.i("StarLight-NotificationListener", "message : $message sender : $sender nRoom : $room nSession : $act")
 
-                    taskHandler.fireEvent("default","response", arrayOf(room, message, sender, imageHash))
+                    taskHandler.callFunction("response", arrayOf(room, message, sender, imageHash, replier))
                 }
-            }
-        }
-    }
-
-    init {
-        ApplicationSession.onInitComplete {
-            taskHandler.bindRepliers { room, msg ->
-                if (!sessions.containsKey(room)) {
-                    Log.w("NotificationListener", "No session for room $room found")
-                    return@bindRepliers
-                }
-                send(msg, sessions[room]!!)
             }
         }
     }

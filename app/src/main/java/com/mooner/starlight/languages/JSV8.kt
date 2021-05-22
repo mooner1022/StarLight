@@ -6,8 +6,8 @@ import com.eclipsesource.v8.V8
 import com.eclipsesource.v8.V8Object
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
-import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import com.mooner.starlight.plugincore.language.*
+import com.mooner.starlight.plugincore.logger.Logger
 import io.alicorn.v8.V8JavaAdapter
 
 class JSV8: Language() {
@@ -54,7 +54,7 @@ class JSV8: Language() {
                 objectId = "button_test",
                 objectName = "버튼 테스트",
                 onClickListener = {
-                    getLogger().i("JSV8_Config", "onClickListener")
+                    Logger.d("JSV8_Config", "onClickListener")
                 },
                 iconRes = R.drawable.ic_round_keyboard_arrow_right_24
             ),
@@ -69,7 +69,7 @@ class JSV8: Language() {
         )
 
     override fun onConfigChanged(changed: Map<String, Any>) {
-        getLogger().i("JSV8", "changed: $changed")
+        Logger.i("JSV8", "changed: $changed")
     }
 
     override fun compile(code: String, methods: Array<MethodBlock>): Any {
@@ -78,7 +78,7 @@ class JSV8: Language() {
             for (methodBlock in methods) {
                 if (methodBlock.isCustomClass) {
                     V8JavaAdapter.injectObject(methodBlock.blockName, methodBlock.instance, v8)
-                    getLogger().i(javaClass.simpleName, "Injected ${methodBlock.blockName}")
+                    Logger.d(javaClass.simpleName, "Injected ${methodBlock.blockName}")
                     /*
                     addCustomClass(
                         methodBlock.blockName,
@@ -109,7 +109,7 @@ class JSV8: Language() {
         }
     }
 
-    override fun execute(engine: Any, methodName: String, args: Array<Any>) {
+    override fun callFunction(engine: Any, methodName: String, args: Array<Any>) {
         val v8 = engine as V8
         v8.locker.acquire()
         v8.executeJSFunction(methodName, *args)

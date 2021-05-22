@@ -143,7 +143,6 @@ class ProjectsFragment : Fragment() {
                 update()
             } else {
                 isInit = false
-                Session.getLogger().i(javaClass.simpleName, "Projects update ignored")
             }
         }
         projects = Session.getProjectLoader().getProjects()

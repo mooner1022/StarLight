@@ -20,6 +20,7 @@ import com.mooner.starlight.databinding.FragmentPluginsBinding
 import com.mooner.starlight.models.Align
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.utils.Utils
@@ -82,7 +83,7 @@ class PluginsFragment : Fragment() {
         )
 
         if (plugins.isEmpty()) {
-            Session.getLogger().i(javaClass.simpleName, "No plugins detected!")
+            Logger.i(javaClass.simpleName, "No plugins detected!")
             with(binding.textViewNoPluginYet) {
                 visibility = View.VISIBLE
                 text = Utils.formatStringRes(

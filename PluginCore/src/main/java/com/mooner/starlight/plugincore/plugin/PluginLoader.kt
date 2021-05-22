@@ -5,6 +5,7 @@ import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Priority
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.event.EventListener
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.utils.Utils.Companion.readString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,10 +45,10 @@ class PluginLoader {
                 try {
                     config = getConfigFile(file)
                 } catch (e: FileNotFoundException) {
-                    Session.getLogger().e(T, e.toString())
+                    Logger.e(T, e.toString())
                     throw InvalidPluginException(e.toString())
                 } catch (e: IllegalStateException) {
-                    Session.getLogger().e(T, e.toString())
+                    Logger.e(T, e.toString())
                     throw InvalidPluginException(e.toString())
                 }
                 when(config.loadPriority) {
@@ -55,7 +56,7 @@ class PluginLoader {
                         if (onPluginLoad != null) onPluginLoad(config.name)
                         val plugin = loadPlugin(config, file)
                         if (!plugin.pluginCoreVersion.isCompatibleWith(Info.PLUGINCORE_VERSION)) {
-                            Session.getLogger().e(javaClass.simpleName, "Incompatible plugin version(${plugin.pluginCoreVersion}) found on [${plugin.name}]")
+                            Logger.e(javaClass.simpleName, "Incompatible plugin version(${plugin.pluginCoreVersion}) found on [${plugin.name}]")
                         }
                         plugin.onEnable()
                         list.add(plugin)
@@ -65,7 +66,7 @@ class PluginLoader {
                             if (onPluginLoad != null) onPluginLoad(config.name)
                             val plugin = loadPlugin(config, file)
                             if (!plugin.pluginCoreVersion.isCompatibleWith(Info.PLUGINCORE_VERSION)) {
-                                Session.getLogger().e(javaClass.simpleName, "Incompatible plugin version(${plugin.pluginCoreVersion}) found on [${plugin.name}]")
+                                Logger.e(javaClass.simpleName, "Incompatible plugin version(${plugin.pluginCoreVersion}) found on [${plugin.name}]")
                             }
                             plugin.onEnable()
                             list.add(plugin)
@@ -77,7 +78,7 @@ class PluginLoader {
                 }
                 //PluginManager.plugins[config.name] = plugin
             } catch (e: Exception) {
-                Session.getLogger().e(T, e.toString())
+                Logger.e(T, e.toString())
                 if (Session.isDebugging) e.printStackTrace()
             }
         }
@@ -109,13 +110,13 @@ class PluginLoader {
         }
         */
 
-        Session.getLogger().i(T, "Loading plugin ${config.fullName}")
+        Logger.i(T, "Loading plugin ${config.fullName}")
         val loader: PluginClassLoader
         try {
             loader = PluginClassLoader(this, javaClass.classLoader!!, config, dataDir, file)
-            Session.getLogger().i(T, "Loaded plugin ${config.fullName} (${file.name})")
+            Logger.i(T, "Loaded plugin ${config.fullName} (${file.name})")
         } catch (e: InvalidPluginException) {
-            Session.getLogger().e(T, "Failed to load plugin ${config.fullName} (${file.name}): $e")
+            Logger.e(T, "Failed to load plugin ${config.fullName} (${file.name}): $e")
             throw e
         }
         loaders[config.name] = loader
@@ -147,13 +148,13 @@ class PluginLoader {
         }
         */
 
-        Session.getLogger().i(T, "Loading plugin ${config.fullName}")
+        Logger.i(T, "Loading plugin ${config.fullName}")
         val loader: PluginClassLoader
         try {
             loader = PluginClassLoader(this, javaClass.classLoader!!, config, dataDir, file)
-            Session.getLogger().i(T, "Loaded plugin ${config.fullName} (${file.name})")
+            Logger.i(T, "Loaded plugin ${config.fullName} (${file.name})")
         } catch (e: InvalidPluginException) {
-            Session.getLogger().e(T, "Failed to load plugin ${config.fullName} (${file.name}): $e")
+            Logger.e(T, "Failed to load plugin ${config.fullName} (${file.name}): $e")
             throw e
         }
         loaders[config.name] = loader
@@ -211,7 +212,7 @@ class PluginLoader {
             }
         } catch (e: NoClassDefFoundError) {
             e.printStackTrace()
-            Session.getLogger().e("PluginLoader", "Error while adding listener ${listener.javaClass.simpleName}: NoClassDefFound")
+            Logger.e("PluginLoader", "Error while adding listener ${listener.javaClass.simpleName}: NoClassDefFound")
             return
         }
 
@@ -219,7 +220,7 @@ class PluginLoader {
             //val annotation = method.getAnnotation(EventHandler::class.java) ?: continue
             val checkClass: Class<*> = method.parameterTypes[0]
             if (method.parameterTypes.size != 1 || !EventListener::class.java.isAssignableFrom(checkClass)) {
-                Session.getLogger().e("PluginLoader", "Attempted to register invalid listener: ${listener.javaClass.simpleName}")
+                Logger.e("PluginLoader", "Attempted to register invalid listener: ${listener.javaClass.simpleName}")
                 continue
             }
             val eventClass = checkClass.asSubclass(EventListener::class.java)

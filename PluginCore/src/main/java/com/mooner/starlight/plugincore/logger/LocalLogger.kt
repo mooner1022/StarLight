@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.logger
 
+import com.mooner.starlight.plugincore.Session
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -23,12 +24,13 @@ class LocalLogger(private var _logs: ArrayList<LogData>, private val file: File)
             }
             val raw = file.readText()
             if (raw.isBlank()) return create(file.parentFile!!)
-            val logs: ArrayList<LogData>
-            try {
-                logs = Json.decodeFromString(raw)
+            val logs: ArrayList<LogData> = try {
+                Json.decodeFromString(raw)
             } catch (e: Exception) {
                 e.printStackTrace()
-                throw IllegalArgumentException("Cannot parse log file ${file.name}")
+                file.delete()
+                Logger.e(LocalLogger::class.simpleName!!, "Cannot parse log file ${file.name}, removing old file")
+                arrayListOf()
             }
             return LocalLogger(logs, file)
         }

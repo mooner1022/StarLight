@@ -34,11 +34,10 @@ import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.core.ForegroundTask
 import com.mooner.starlight.databinding.ActivityMainBinding
-import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
-import com.mooner.starlight.plugincore.Session.Companion.getLogger
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import com.mooner.starlight.plugincore.logger.LogType
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.utils.Alert
 import org.angmarch.views.NiceSpinner
 import kotlin.math.abs
@@ -84,7 +83,7 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         windowContext = this
-        getLogger().bindListener {
+        Logger.bindListener {
             if (it.type == LogType.ERROR) {
                 Alert.show(Alert.DIALOG, this,"ERROR", it.message)
             }
@@ -162,7 +161,7 @@ class MainActivity : AppCompatActivity() {
                         setBackgroundColor(context.getColor(R.color.transparent))
                         attachDataSource(objects)
                         setOnSpinnerItemSelectedListener { _, _, position, _ ->
-                            getLogger().i(javaClass.name, "Spinner item selected: $position")
+                            Logger.i(javaClass.name, "Spinner item selected: $position")
                         }
                     }
                 }

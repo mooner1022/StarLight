@@ -23,19 +23,7 @@ class Project(
     } else {
         LocalLogger.create(folder)
     }
-    private var listener: ((room: String, msg: String) -> Unit)? = null
     private var lastRoom: String? = null
-    private val defReplier = object :Replier {
-        override fun reply(msg: String) {
-            if (lastRoom != null) {
-                listener!!(lastRoom!!, msg)
-            }
-        }
-
-        override fun replyTo(room: String, msg: String) {
-            listener!!(room, msg)
-        }
-    }
 
     companion object {
         fun create(dir: File, config: ProjectConfig): Project {
@@ -64,7 +52,7 @@ class Project(
         }
 
         try {
-            lang.execute(engine!!, methodName, args)
+            lang.callFunction(engine!!, methodName, args)
         } catch (e: Exception) {
             logger.e(config.name, "Error while executing: $e")
             e.printStackTrace()
@@ -100,7 +88,7 @@ class Project(
             }
             engine = lang.compile(
                     rawCode,
-                    Methods.getOriginalMethods(defReplier, logger) + Methods.getApi(1, 4)
+                    Methods.getApi(1, 4)
             )
         } catch (e: Exception) {
             e.printStackTrace()
@@ -111,10 +99,6 @@ class Project(
 
     fun flush() {
         File(folder.path, "project.json").writeText(Json.encodeToString(config), Charsets.UTF_8)
-    }
-
-    fun bindReplier(listener: (room: String, msg: String) -> Unit) {
-        this.listener = listener
     }
 
     fun getLanguage(): ILanguage {

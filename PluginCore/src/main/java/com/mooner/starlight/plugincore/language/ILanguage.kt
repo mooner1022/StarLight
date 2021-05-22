@@ -22,7 +22,7 @@ interface ILanguage {
 
     fun release(engine: Any) {}
 
-    fun execute(engine: Any, methodName: String, args: Array<Any>)
+    fun callFunction(engine: Any, methodName: String, args: Array<Any>)
 
     fun eval(code: String): Any
 }

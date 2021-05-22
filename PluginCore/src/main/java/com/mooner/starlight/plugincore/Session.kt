@@ -9,7 +9,6 @@ import java.io.File
 
 class Session {
     companion object {
-        private val logger: Logger = Logger()
         @Suppress("DEPRECATION")
         private var l_generalConfig: GeneralConfig = GeneralConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
         private var l_languageManager: LanguageManager? = null
@@ -19,20 +18,19 @@ class Session {
 
         fun initLanguageManager() {
             if (l_languageManager != null) {
-                getLogger().e("init", "Redeclaration of object languageManager")
+                Logger.e("init", "Redeclaration of object languageManager")
                 return
             }
             l_languageManager = LanguageManager()
         }
         fun initProjectLoader() {
             if (l_projectLoader != null) {
-                getLogger().e("init", "Redeclaration of object projectLoader")
+                Logger.e("init", "Redeclaration of object projectLoader")
                 return
             }
             l_projectLoader = ProjectLoader()
         }
 
-        fun getLogger(): Logger = logger
         fun getProjectLoader(): ProjectLoader = l_projectLoader!!
         fun getLanguageManager(): LanguageManager = l_languageManager!!
         fun getGeneralConfig(): GeneralConfig = l_generalConfig

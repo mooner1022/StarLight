@@ -1,9 +1,7 @@
 package com.mooner.starlight.plugincore.project
 
 import android.os.Environment
-import com.mooner.starlight.plugincore.Session
-import com.mooner.starlight.plugincore.Session.Companion.getLogger
-import com.mooner.starlight.plugincore.event.EventListener
+import com.mooner.starlight.plugincore.logger.Logger
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -81,12 +79,12 @@ class ProjectLoader {
                         }
                     } catch (e: IllegalArgumentException) {
                         e.printStackTrace()
-                        getLogger().e(javaClass.simpleName, e.toString())
+                        Logger.e(javaClass.simpleName, e.toString())
                         continue
                     }
                     projects.add(project)
                 } catch (e: IllegalStateException) {
-                    getLogger().e(t, e.toString())
+                    Logger.e(t, e.toString())
                 }
             }
         }

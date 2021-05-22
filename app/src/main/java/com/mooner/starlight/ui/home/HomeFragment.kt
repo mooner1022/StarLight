@@ -16,6 +16,8 @@ import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentHomeBinding
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.logger.LogType
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator
 import java.lang.Integer.min
@@ -65,13 +67,13 @@ class HomeFragment : Fragment() {
         }
         var count = 0
         binding.buttonMoreLogs.setOnClickListener {
-            Session.getLogger().i(javaClass.simpleName, "TEST Log: INFO! :) $count")
-            Session.getLogger().w(javaClass.simpleName, "TEST Log: WARNING! :) $count")
-            Session.getLogger().d(javaClass.simpleName, "TEST Log: DEBUG! :) $count")
+            Logger.i(javaClass.simpleName, "TEST Log: INFO! :) $count")
+            Logger.w(javaClass.simpleName, "TEST Log: WARNING! :) $count")
+            Logger.d(javaClass.simpleName, "TEST Log: DEBUG! :) $count")
             count ++
         }
 
-        val logs = Session.getLogger().logs
+        val logs = Logger.filterNot(LogType.DEBUG)
         val adapter = LogsRecyclerViewAdapter(requireContext())
         if (logs.isNotEmpty()) {
             val layoutManager = LinearLayoutManager(requireContext()).apply {
@@ -87,8 +89,10 @@ class HomeFragment : Fragment() {
             adapter.notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
         }
 
-        Session.getLogger().bindListener {
-            adapter.pushLog(it, LOGS_MAX_SIZE)
+        Logger.bindListener {
+            if (it.type != LogType.DEBUG) {
+                adapter.pushLog(it, LOGS_MAX_SIZE)
+            }
         }
 
         return binding.root

@@ -3,35 +3,17 @@ package com.mooner.starlight.plugincore.methods
 import com.mooner.starlight.plugincore.language.Method
 import com.mooner.starlight.plugincore.language.MethodBlock
 import com.mooner.starlight.plugincore.logger.LocalLogger
-import com.mooner.starlight.plugincore.methods.api4.Timer
 import com.mooner.starlight.plugincore.methods.legacy.LegacyApi
 import com.mooner.starlight.plugincore.methods.legacy.Utils
 import com.mooner.starlight.plugincore.methods.original.Languages
 import com.mooner.starlight.plugincore.methods.original.Projects
-import com.mooner.starlight.plugincore.project.Replier
 
 class Methods {
     companion object {
-        fun getOriginalMethods(replier: Replier, logger: LocalLogger): Array<MethodBlock> {
+        fun getLogger(logger: LocalLogger): Array<MethodBlock> {
             return arrayOf(
                     MethodBlock(
-                            "replier",
-                            Replier::class.java,
-                            replier,
-                            false,
-                            listOf(
-                                    Method(
-                                            "reply",
-                                            arrayOf(String::class.java)
-                                    ),
-                                    Method(
-                                            "replyTo",
-                                            arrayOf(String::class.java, String::class.java)
-                                    )
-                            )
-                    ),
-                    MethodBlock(
-                            "logger",
+                            "Logger",
                             LocalLogger::class.java,
                             logger,
                             false,
@@ -83,6 +65,7 @@ class Methods {
                 )
         )
 
+        /*
         private val timer = MethodBlock(
                 "Timer",
                 Timer::class.java,
@@ -95,6 +78,7 @@ class Methods {
                         )
                 )
         )
+        */
 
         private val utils = MethodBlock(
                 "Utils",
@@ -138,7 +122,7 @@ class Methods {
                     )
                     2 -> arrayOf()
                     3 -> arrayOf()
-                    4 -> arrayOf(languages, projects, timer)
+                    4 -> arrayOf(languages, projects)
                     else -> arrayOf()
                 }
             }

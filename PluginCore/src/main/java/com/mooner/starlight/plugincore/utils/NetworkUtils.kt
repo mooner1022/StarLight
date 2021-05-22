@@ -6,9 +6,6 @@ import android.net.Network
 import android.net.NetworkCapabilities
 
 object NetworkUtil {
-    const val TYPE_WIFI = 1
-    const val TYPE_MOBILE = 2
-    const val TYPE_NOT_CONNECTED = 0
     const val NETWORK_STATUS_NOT_CONNECTED = 0
     const val NETWORK_STATUS_WIFI = 1
     const val NETWORK_STATUS_MOBILE = 2

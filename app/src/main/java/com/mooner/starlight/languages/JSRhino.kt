@@ -84,7 +84,7 @@ class JSRhino: Language() {
         } catch (e: IllegalStateException) {}
     }
 
-    override fun execute(engine: Any, methodName: String, args: Array<Any>) {
+    override fun callFunction(engine: Any, methodName: String, args: Array<Any>) {
         scope.launch {
             val rhino = engine as Scriptable
             (rhino.get(methodName, engine) as Function).call(context, engine, engine, args)
