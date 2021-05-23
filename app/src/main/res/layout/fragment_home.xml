@@ -232,6 +232,7 @@
                         android:layout_marginBottom="16dp"
                         android:fontFamily="@font/nanumsquare_round_bold"
                         android:text="아직 로그가 없어요!"
+                        android:textAlignment="center"
                         android:textSize="16sp" />
 
                     <androidx.recyclerview.widget.RecyclerView

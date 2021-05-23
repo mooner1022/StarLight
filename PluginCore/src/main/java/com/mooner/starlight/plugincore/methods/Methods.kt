@@ -7,6 +7,7 @@ import com.mooner.starlight.plugincore.methods.legacy.LegacyApi
 import com.mooner.starlight.plugincore.methods.legacy.Utils
 import com.mooner.starlight.plugincore.methods.original.Languages
 import com.mooner.starlight.plugincore.methods.original.Projects
+import com.mooner.starlight.plugincore.project.Replier
 
 class Methods {
     companion object {
@@ -38,6 +39,23 @@ class Methods {
                     )
             )
         }
+
+        private val replier = MethodBlock(
+            "Replier",
+            Replier::class.java,
+            0,
+            true,
+            listOf(
+                Method(
+                    "reply",
+                    arrayOf(String::class.java)
+                ),
+                Method(
+                    "reply",
+                    arrayOf(String::class.java, String::class.java)
+                )
+            )
+        )
 
         private val projects = MethodBlock(
                 "Projects",

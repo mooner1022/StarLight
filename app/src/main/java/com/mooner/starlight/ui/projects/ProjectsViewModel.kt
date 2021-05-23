@@ -21,7 +21,7 @@ class ProjectsViewModel : ViewModel() {
         }
 
         CoroutineScope(Dispatchers.Default).launch {
-            val data = Session.getProjectLoader().loadProjects(true)
+            val data = Session.getProjectLoader().loadProjects(false)
             withContext(Dispatchers.Main) {
                 _data.value = data
             }

@@ -7,9 +7,12 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 class ProjectLoader {
+    companion object {
+        private val T = ProjectLoader::class.simpleName!!
+    }
+
     @Suppress("DEPRECATION")
     private val projectDir = File(Environment.getExternalStorageDirectory(), "StarLight/projects/")
-    private val t = javaClass.simpleName
     private val listeners: MutableList<(projects: List<Project>) -> Unit> = mutableListOf()
     private var projects: MutableList<Project> = mutableListOf()
 
@@ -63,9 +66,9 @@ class ProjectLoader {
         callListeners()
     }
 
-    fun loadProjects(useCache: Boolean, dir: File = projectDir): List<Project> {
+    fun loadProjects(force: Boolean, dir: File = projectDir): List<Project> {
         //projectDir.deleteRecursively()
-        if (!useCache) {
+        if (force || projects.isEmpty()) {
             projects.clear()
             for (folder in dir.listFiles()?.filter { it.isDirectory }?:return emptyList()) {
                 val config: ProjectConfig
@@ -75,16 +78,21 @@ class ProjectLoader {
                     try {
                         project = Project(folder, config)
                         if (config.isEnabled) {
-                            project.compile(true)
+                            try {
+                                project.compile(true)
+                            } catch (e: Exception) {
+                                Logger.d(T, "Failed to pre-compile project ${config.name}: $e")
+                                continue
+                            }
                         }
                     } catch (e: IllegalArgumentException) {
                         e.printStackTrace()
-                        Logger.e(javaClass.simpleName, e.toString())
+                        Logger.e(T, e.toString())
                         continue
                     }
                     projects.add(project)
                 } catch (e: IllegalStateException) {
-                    Logger.e(t, e.toString())
+                    Logger.e(T, e.toString())
                 }
             }
         }

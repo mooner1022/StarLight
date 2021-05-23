@@ -8,6 +8,7 @@ import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.plugincore.language.*
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.project.Replier
 import io.alicorn.v8.V8JavaAdapter
 
 class JSV8: Language() {
@@ -21,6 +22,12 @@ class JSV8: Language() {
         get() = ContextCompat.getDrawable(ApplicationSession.context, R.drawable.ic_v8)!!
     override val requireRelease: Boolean
         get() = true
+    override val defaultCode: String
+        get() = """
+            function response(sender, message, room, imageDB, replier) {
+                
+            }
+        """.trimIndent()
 
     override val configObjectList: List<ConfigObject>
         get() = listOf(
@@ -75,10 +82,10 @@ class JSV8: Language() {
     override fun compile(code: String, methods: Array<MethodBlock>): Any {
         val v8 = V8.createV8Runtime()
         v8.apply {
+            V8JavaAdapter.injectClass("replier", Replier::class.java, v8)
             for (methodBlock in methods) {
                 if (methodBlock.isCustomClass) {
                     V8JavaAdapter.injectObject(methodBlock.blockName, methodBlock.instance, v8)
-                    Logger.d(javaClass.simpleName, "Injected ${methodBlock.blockName}")
                     /*
                     addCustomClass(
                         methodBlock.blockName,

@@ -1,6 +1,7 @@
 package com.mooner.starlight.ui.debugroom
 
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mooner.starlight.databinding.ActivityDebugRoomBinding
@@ -21,19 +22,23 @@ class DebugRoomActivity : AppCompatActivity() {
     private val replier = object : Replier {
         override fun reply(msg: String) {
             if (lastRoom != null) {
-                Message(
-                    msg,
-                    lastRoom!!,
-                    1
+                addMessage(
+                    Message(
+                        msg,
+                        lastRoom!!,
+                        1
+                    )
                 )
             }
         }
 
         override fun reply(room: String, msg: String) {
-            Message(
-                msg,
-                room,
-                1
+            addMessage(
+                Message(
+                    msg,
+                    room,
+                    1
+                )
             )
         }
     }
@@ -42,6 +47,13 @@ class DebugRoomActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDebugRoomBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        binding.messageInput.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
+                send(binding.messageInput.text.toString())
+            }
+            true
+        }
 
         imageHash = intent.getIntExtra("imageHash", 0)
         sender = intent.getStringExtra("sender").toString()
@@ -69,6 +81,7 @@ class DebugRoomActivity : AppCompatActivity() {
     }
 
     private fun send(message: String) {
+        lastRoom = roomName
         addMessage(
             Message(
                 message = message,

@@ -45,6 +45,12 @@ class JSRhino: Language() {
                 defaultValue = 1
             )
         )
+    override val defaultCode: String
+        get() = """
+            function response(sender, message, room, imageDB, replier) {
+                
+            }
+        """.trimIndent()
 
     override fun onConfigChanged(changed: Map<String, Any>) {
 

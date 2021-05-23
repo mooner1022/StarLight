@@ -16,22 +16,40 @@ class Logger {
             }
         }
 
-        fun d(tag: String, message: String) = log(LogType.DEBUG, tag, message)
-
-        fun i(tag: String, message: String) = log(LogType.INFO, tag, message)
-
-        fun e(tag: String, message: String) = log(LogType.ERROR, tag, message)
-
-        fun w(tag: String, message: String) = log(LogType.WARNING, tag, message)
-
-        fun log(type: LogType, tag: String, message: String) {
-            val data = LogData(
-                type = type,
-                tag = tag,
-                message = message,
-                System.currentTimeMillis()
+        fun d(tag: String, message: String) = log(
+            LogData(
+                LogType.DEBUG,
+                tag,
+                message
             )
-            println("[${type.name}] $tag : $message")
+        )
+
+        fun i(tag: String, message: String) = log(
+            LogData(
+                LogType.INFO,
+                tag,
+                message
+            )
+        )
+
+        fun e(tag: String, message: String) = log(
+            LogData(
+                LogType.ERROR,
+                tag,
+                message
+            )
+        )
+
+        fun w(tag: String, message: String) = log(
+            LogData(
+                LogType.WARNING,
+                tag,
+                message
+            )
+        )
+
+        fun log(data: LogData) {
+            println(data.toString())
             logs.add(data)
 
             for (listener in listeners) {

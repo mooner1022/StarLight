@@ -19,6 +19,7 @@ import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
+import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator
 import java.lang.Integer.min
 
@@ -81,7 +82,7 @@ class HomeFragment : Fragment() {
                 stackFromEnd = true
             }
             adapter.data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
-            binding.rvLogs.itemAnimator = SlideInLeftAnimator()
+            binding.rvLogs.itemAnimator = FadeInLeftAnimator()
             binding.rvLogs.layoutManager = layoutManager
             binding.rvLogs.adapter = adapter
             binding.rvLogs.visibility = View.VISIBLE

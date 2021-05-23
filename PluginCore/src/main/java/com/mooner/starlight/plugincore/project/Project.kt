@@ -4,6 +4,7 @@ import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.methods.Methods
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.serialization.encodeToString
@@ -98,7 +99,9 @@ class Project(
     }
 
     fun flush() {
-        File(folder.path, "project.json").writeText(Json.encodeToString(config), Charsets.UTF_8)
+        val str = Json.encodeToString(config)
+        logger.d(config.name, "Flushed project config: $str")
+        File(folder.path, "project.json").writeText(str, Charsets.UTF_8)
     }
 
     fun getLanguage(): ILanguage {

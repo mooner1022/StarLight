@@ -23,6 +23,7 @@ import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.utils.Utils
+import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator
 
 class ProjectsFragment : Fragment() {
@@ -164,7 +165,7 @@ class ProjectsFragment : Fragment() {
         recyclerAdapter.notifyItemRangeInserted(0, recyclerAdapter.data.size)
 
         with(binding.recyclerViewProjectList) {
-            itemAnimator = SlideInLeftAnimator()
+            itemAnimator = FadeInLeftAnimator()
             layoutManager = LinearLayoutManager(requireContext())
             adapter = recyclerAdapter
         }

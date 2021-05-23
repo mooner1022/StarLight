@@ -4,6 +4,8 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.Menu
 import android.view.SubMenu
@@ -15,6 +17,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
@@ -39,7 +43,13 @@ import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.utils.Alert
+import com.mooner.starlight.utils.Utils
+import com.skydoves.needs.NeedsAnimation
+import com.skydoves.needs.NeedsItem
+import com.skydoves.needs.createNeeds
+import com.skydoves.needs.showNeeds
 import org.angmarch.views.NiceSpinner
+import www.sanju.motiontoast.MotionToast
 import kotlin.math.abs
 
 @SuppressLint("StaticFieldLeak")
@@ -55,6 +65,11 @@ class MainActivity : AppCompatActivity() {
         private lateinit var fabAnim: Animation
         private lateinit var rootLayout: CoordinatorLayout
         lateinit var windowContext: Context
+        private val REQUIRED_PERMISSIONS = arrayOf(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.INTERNET,
+        )
 
         fun reloadText(text: String? = null) {
             if (text == null) {
@@ -74,6 +89,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("Range")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -83,22 +99,86 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         windowContext = this
-        Logger.bindListener {
-            if (it.type == LogType.ERROR) {
-                Alert.show(Alert.DIALOG, this,"ERROR", it.message)
-            }
-        }
         rootLayout = binding.innerLayout.rootLayout
         ctr = findViewById(R.id.collapsingToolbarLayout)
-        ActivityCompat.requestPermissions(
-                this@MainActivity,
-                arrayOf(
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.INTERNET,
-                ),
-                MODE_PRIVATE
-        )
+
+        val isInitial = intent.getBooleanExtra("isInitial", true)
+        if (isInitial || !Utils.checkPermissions(this, REQUIRED_PERMISSIONS)) {
+            val needs = createNeeds(this) {
+                setTitleIconResource(R.mipmap.ic_logo)
+                title = "시작하기에 앞서,\nStarLight를 사용하기 위해 아래 권한들이 필요해요!"
+                addNeedsItem(
+                    NeedsItem(
+                        null,
+                        "· 저장소 쓰기",
+                        "(필수)",
+                        "기기의 파일에 접근하여 데이터를 저장할 수 있어요."
+                    )
+                )
+                addNeedsItem(
+                    NeedsItem(
+                        null,
+                        "· 저장소 읽기",
+                        "(필수)",
+                        "기기의 파일에 접근하여 데이터를 읽을 수 있어요."
+                    )
+                )
+                addNeedsItem(
+                    NeedsItem(
+                        null,
+                        "· 인터넷",
+                        "(필수)",
+                        "인터넷에 접속할 수 있어요."
+                    )
+                )
+                description = "위 권한들은 필수 권한으로,\n허용하지 않을 시 앱이 정상적으로 동작하지 않아요."
+                confirm = "승인"
+                backgroundAlpha = 0.6f
+                needsAnimation = NeedsAnimation.FADE
+            }
+            needs.setOnConfirmListener {
+                if (Utils.checkPermissions(this@MainActivity, REQUIRED_PERMISSIONS)) {
+                    needs.dismiss()
+                    MotionToast.darkColorToast(this@MainActivity,
+                        "권한 승인!",
+                        "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و",
+                        MotionToast.TOAST_SUCCESS,
+                        MotionToast.GRAVITY_BOTTOM,
+                        MotionToast.LONG_DURATION,
+                        ResourcesCompat.getFont(this@MainActivity, R.font.nanumsquare_round_regular))
+                } else {
+                    ActivityCompat.requestPermissions(
+                        this@MainActivity,
+                        REQUIRED_PERMISSIONS,
+                        MODE_PRIVATE
+                    )
+                    ActivityCompat.OnRequestPermissionsResultCallback { _, permissions, grantResults ->
+                        if (permissions.contentEquals(REQUIRED_PERMISSIONS)) {
+                            if ((grantResults.isNotEmpty() &&
+                                        grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                                needs.dismiss()
+                                MotionToast.darkColorToast(this@MainActivity,
+                                    "권한 승인!",
+                                    "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و",
+                                    MotionToast.TOAST_SUCCESS,
+                                    MotionToast.GRAVITY_BOTTOM,
+                                    MotionToast.LONG_DURATION,
+                                    ResourcesCompat.getFont(this@MainActivity,R.font.nanumsquare_round_regular))
+                            } else {
+                                MotionToast.darkColorToast(this@MainActivity,
+                                    "권한 승인 실패",
+                                    "권한이 승인되지 않았어요.. (´•ω•̥`)",
+                                    MotionToast.TOAST_ERROR,
+                                    MotionToast.GRAVITY_BOTTOM,
+                                    MotionToast.LONG_DURATION,
+                                    ResourcesCompat.getFont(this@MainActivity,R.font.nanumsquare_round_regular))
+                            }
+                        }
+                    }
+                }
+            }
+            binding.drawerLayout.showNeeds(needs)
+        }
 
         println("isRunning: ${ForegroundTask.isRunning}")
         if (!ForegroundTask.isRunning) {

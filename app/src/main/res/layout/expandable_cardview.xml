@@ -63,7 +63,8 @@
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/card_switch"
-                    style="@style/overrideExpandableCardViewSwitch"
+                    android:thumb="@drawable/switch_thumb"
+                    app:track="@drawable/switch_track_selector"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp" />
@@ -76,7 +77,7 @@
                     android:background="?selectableItemBackgroundBorderless"
                     android:contentDescription="@string/expandable_card_view_image_content_description"
                     android:src="@drawable/arrow_down"
-                    android:tint="?attr/colorControlNormal" />
+                    app:tint="?attr/colorControlNormal" />
             </LinearLayout>
 
         </RelativeLayout>

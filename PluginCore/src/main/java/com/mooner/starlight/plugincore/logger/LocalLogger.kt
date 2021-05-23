@@ -1,6 +1,5 @@
 package com.mooner.starlight.plugincore.logger
 
-import com.mooner.starlight.plugincore.Session
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,24 +43,46 @@ class LocalLogger(private var _logs: ArrayList<LogData>, private val file: File)
     val logs: ArrayList<LogData>
         get() = this._logs
 
-    fun d(tag: String, message: String) = log(LogType.DEBUG, tag, message)
-
-    fun i(tag: String, message: String) = log(LogType.INFO, tag, message)
-
-    fun e(tag: String, message: String) = log(LogType.ERROR, tag, message)
-
-    fun w(tag: String, message: String) = log(LogType.WARNING, tag, message)
-
-    private fun log(type: LogType, tag: String, message: String) {
-        val data = LogData(
-            type = type,
-            tag = tag,
-            message = message,
-            System.currentTimeMillis()
+    fun d(tag: String, message: String) = log(
+        LogData(
+            LogType.DEBUG,
+            tag,
+            message,
+            isLocal = true
         )
+    )
+
+    fun i(tag: String, message: String) = log(
+        LogData(
+            LogType.INFO,
+            tag,
+            message,
+            isLocal = true
+        )
+    )
+
+    fun e(tag: String, message: String) = log(
+        LogData(
+            LogType.ERROR,
+            tag,
+            message,
+            isLocal = true
+        )
+    )
+
+    fun w(tag: String, message: String) = log(
+        LogData(
+            LogType.WARNING,
+            tag,
+            message,
+            isLocal = true
+        )
+    )
+
+    private fun log(data: LogData) {
         _logs.add(data)
+        Logger.log(data)
         flush()
-        println("[LOCAL/${type.name}] $tag : $message")
     }
 
     private fun flush() {

@@ -1,6 +1,7 @@
 package com.mooner.starlight.ui.splash
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AppCompatActivity
@@ -30,6 +31,12 @@ class SplashActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
+        val pref = getSharedPreferences("general", 0)
+        val isInitial = pref.getBoolean("isInitial", true)
+        if (isInitial) pref.edit().putBoolean("isInitial", false).apply()
+        val intent = Intent(this@SplashActivity, MainActivity::class.java)
+        intent.putExtra("isInitial", isInitial)
+
         var isSpinning = false
         var clickCnt = 0
         val initMillis = System.currentTimeMillis()
@@ -51,7 +58,7 @@ class SplashActivity : AppCompatActivity() {
                                 spinTimer!!.cancel()
                             }
                             runOnUiThread {
-                                startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                                startActivity(intent)
                                 finish()
                             }
                         }
@@ -60,7 +67,7 @@ class SplashActivity : AppCompatActivity() {
                             spinTimer!!.cancel()
                         }
                         runOnUiThread {
-                            startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                            startActivity(intent)
                             finish()
                         }
                     }

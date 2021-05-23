@@ -24,6 +24,7 @@ import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.utils.Utils
+import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator
 
 class PluginsFragment : Fragment() {
@@ -125,7 +126,7 @@ class PluginsFragment : Fragment() {
         with(binding.recyclerViewProjectList) {
             this.adapter = listAdapter
             this.layoutManager = LinearLayoutManager(requireContext())
-            this.itemAnimator = SlideInLeftAnimator()
+            this.itemAnimator = FadeInLeftAnimator()
         }
 
         return binding.root

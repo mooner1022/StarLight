@@ -16,6 +16,8 @@ interface ILanguage {
 
     val configObjectList: List<ConfigObject>
 
+    val defaultCode: String
+
     fun onConfigChanged(changed: Map<String, Any>)
 
     fun compile(code: String, methods: Array<MethodBlock>): Any

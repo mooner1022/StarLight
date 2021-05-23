@@ -359,7 +359,6 @@ class ExpandableCardView @JvmOverloads constructor(context: Context, attrs: Attr
         this.listener = null
     }
 
-
     fun setOnSwitchChangeListener(listener: OnSwitchChangeListener) {
         this.switchListener = listener
     }
@@ -408,12 +407,10 @@ class ExpandableCardView @JvmOverloads constructor(context: Context, attrs: Attr
         innerView = cardStub.inflate()
     }
 
-
     override fun setOnClickListener(l: OnClickListener?) {
         cardArrow.setOnClickListener(l)
         super.setOnClickListener(l)
     }
-
 
     /**
      * Interfaces
