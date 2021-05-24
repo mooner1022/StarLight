@@ -24,7 +24,35 @@
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
+                android:layout_height="50dp"
+                app:cardBackgroundColor="@color/cardview_disabled"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp">
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchAllProjectPower"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical|end"
+                    android:layout_marginEnd="32dp"
+                    android:thumb="@drawable/switch_thumb"
+                    app:track="@drawable/switch_track_selector" />
+
+                <TextView
+                    android:id="@+id/textViewAllProjectPower"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start|center_vertical"
+                    android:layout_marginStart="32dp"
+                    android:fontFamily="@font/nanumsquare_round_bold"
+                    android:text="@string/all_project_status"
+                    android:textSize="16sp" />
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
                 android:layout_height="126dp"
+                android:layout_marginTop="16dp"
                 android:backgroundTint="@color/home_card"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
@@ -219,7 +247,7 @@
                             android:insetBottom="0dp"
                             android:stateListAnimator="@null"
                             android:text="더보기"
-                            app:icon="@drawable/ic_round_keyboard_arrow_right_24"
+                            android:icon="@drawable/ic_round_keyboard_arrow_right_24"
                             app:iconGravity="textEnd"
                             app:iconPadding="2dp" />
                     </LinearLayout>

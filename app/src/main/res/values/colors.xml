@@ -17,7 +17,7 @@
     <color name="sub_dark">#191A25</color>
     <color name="project_card">#FFFFFF</color>
     <color name="cardview_enabled">#DBDEFB</color>
-    <color name="cardview_disabled">#E4E4E4</color>
+    <color name="cardview_disabled">#C1C1C1</color>
     <color name="cardview_gray">#EAE8E8</color>
     <color name="dialog_icon">#CACBCF</color>
     <color name="card_enabled">#77FF99</color>
@@ -28,6 +28,7 @@
     <color name="side_tab">#FFFFFF</color>
     <color name="home_card">#FFFFFF</color>
     <color name="projects_background">#FFFFFF</color>
+    <color name="bottom_dialog_background">#FFFFFF</color>
 
     <color name="code_purple">#C39EC0</color>
     <color name="code_blue">#60A6E1</color>

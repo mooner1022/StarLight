@@ -12,6 +12,9 @@ import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.logger.LogData
 import com.mooner.starlight.plugincore.logger.LogType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 
 @SuppressLint("SimpleDateFormat")
@@ -23,6 +26,8 @@ class LogsRecyclerViewAdapter(
     private val fullDateFormat = SimpleDateFormat("MM/dd HH:mm")
     private val hourDateFormat = SimpleDateFormat("HH:mm:ss")
     private val dateMillis: Long = 24 * 60 * 60 * 1000
+    private val mainScope: CoroutineScope
+        get() = CoroutineScope(Dispatchers.Main)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LogsViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.card_log, parent, false)
@@ -47,14 +52,16 @@ class LogsRecyclerViewAdapter(
     }
 
     fun pushLog(log: LogData, limit: Int = 0) {
-        if (limit != 0 && data.size >= limit) {
-            data = data.drop(1).toMutableList()
-            this.notifyItemRemoved(0)
-            data.add(log)
-            this.notifyItemInserted(data.size)
-        } else {
-            data.add(log)
-            this.notifyItemInserted(data.size)
+        mainScope.launch {
+            if (limit != 0 && data.size >= limit) {
+                data = data.drop(1).toMutableList()
+                notifyItemRemoved(0)
+                data.add(log)
+                notifyItemInserted(data.size)
+            } else {
+                data.add(log)
+                notifyItemInserted(data.size)
+            }
         }
     }
 

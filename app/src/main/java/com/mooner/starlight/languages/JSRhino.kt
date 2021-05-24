@@ -4,10 +4,7 @@ import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
-import com.mooner.starlight.plugincore.language.Language
-import com.mooner.starlight.plugincore.language.ConfigObject
-import com.mooner.starlight.plugincore.language.MethodBlock
-import com.mooner.starlight.plugincore.language.SliderConfigObject
+import com.mooner.starlight.plugincore.language.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -43,6 +40,24 @@ class JSRhino: Language() {
                 objectName = "최적화 레벨",
                 max = 10,
                 defaultValue = 1
+            ),
+            SpinnerConfigObject(
+                objectId = CONF_LANG_VERSION,
+                objectName = "JS 버전",
+                dataList = listOf(
+                    "JavaScript 1.0",
+                    "JavaScript 1.1",
+                    "JavaScript 1.2",
+                    "JavaScript 1.3",
+                    "JavaScript 1.4",
+                    "JavaScript 1.5",
+                    "JavaScript 1.6",
+                    "JavaScript 1.7",
+                    "JavaScript 1.8",
+                    "JavaScript ES6",
+                    "DEFAULT",
+                ),
+                defaultIndex = 9
             )
         )
     override val defaultCode: String
@@ -63,7 +78,7 @@ class JSRhino: Language() {
                 if (containsKey(CONF_LANG_VERSION)) {
                     val version = get(CONF_LANG_VERSION)
                     if (version is Int) {
-                        version
+                        indexToVersion(version)
                     } else {
                         LANG_DEF_VERSION
                     }
@@ -121,5 +136,22 @@ class JSRhino: Language() {
         return result
         //val engine = ScriptEngineManager().getEngineByName("rhino")!!
         //return engine.eval(code)
+    }
+
+    private fun indexToVersion(index: Int): Int {
+        return when(index) {
+            0 -> Context.VERSION_1_0
+            1 -> Context.VERSION_1_1
+            2 -> Context.VERSION_1_2
+            3 -> Context.VERSION_1_3
+            4 -> Context.VERSION_1_4
+            5 -> Context.VERSION_1_5
+            6 -> Context.VERSION_1_6
+            7 -> Context.VERSION_1_7
+            8 -> Context.VERSION_1_8
+            9 -> Context.VERSION_ES6
+            10 -> Context.VERSION_DEFAULT
+            else -> LANG_DEF_VERSION
+        }
     }
 }

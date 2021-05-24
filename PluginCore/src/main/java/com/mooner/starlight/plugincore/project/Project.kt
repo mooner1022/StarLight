@@ -55,7 +55,7 @@ class Project(
         try {
             lang.callFunction(engine!!, methodName, args)
         } catch (e: Exception) {
-            logger.e(config.name, "Error while executing: $e")
+            logger.e(config.name, "Error while running [${config.name}]: $e")
             e.printStackTrace()
         }
         /*

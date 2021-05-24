@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.Menu
 import android.view.SubMenu
+import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.EditText
@@ -26,6 +27,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
@@ -42,12 +44,15 @@ import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.ui.home.HomeFragment
+import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.utils.Alert
 import com.mooner.starlight.utils.Utils
 import com.skydoves.needs.NeedsAnimation
 import com.skydoves.needs.NeedsItem
 import com.skydoves.needs.createNeeds
 import com.skydoves.needs.showNeeds
+import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import org.angmarch.views.NiceSpinner
 import www.sanju.motiontoast.MotionToast
 import kotlin.math.abs
@@ -260,6 +265,32 @@ class MainActivity : AppCompatActivity() {
                 }
         )
         reloadText()
+
+        val bottomSheet = binding.innerLayout.bottomSheet
+        val logs = Logger.filterNot(LogType.DEBUG)
+        val logsAdapter = LogsRecyclerViewAdapter(applicationContext)
+        if (logs.isNotEmpty()) {
+            val recyclerLayoutManager = LinearLayoutManager(applicationContext).apply {
+                reverseLayout = true
+                stackFromEnd = true
+            }
+            logsAdapter.data = logs.toMutableList()
+            with(bottomSheet.recyclerViewLogs) {
+                itemAnimator = FadeInLeftAnimator()
+                layoutManager = recyclerLayoutManager
+                adapter = logsAdapter
+            }
+            logsAdapter.notifyItemRangeInserted(0, logs.size)
+        }
+
+        Logger.bindListener {
+            if (it.type != LogType.DEBUG) {
+                logsAdapter.pushLog(it)
+            }
+        }
+        with(bottomSheet.recyclerViewLogs) {
+
+        }
 
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
         val navView: NavigationView = findViewById(R.id.nav_view)

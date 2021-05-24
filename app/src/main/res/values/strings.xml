@@ -15,6 +15,7 @@
     <string name="step_projects">프로젝트 로드중…</string>
     <string name="step_starting">앱 시작중…</string>
 
+    <string name="all_project_status">전역 전원 : $state</string>
     <string name="subtitle_projects">$count개의 프로젝트가 작동중이에요.</string>
     <string name="subtitle_plugins">$count개의 플러그인이 설치되었어요.</string>
 
