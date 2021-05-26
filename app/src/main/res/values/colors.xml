@@ -11,8 +11,8 @@
     <color name="white">#FFFFFFFF</color>
     <color name="transparent">#00FFFFFF</color>
     <color name="dialog_day">#4A515B</color>
-    <color name="main_bright">#A2A9DA</color>
-    <color name="sub_bright">#8E95BF</color>
+    <color name="main_bright">#2A2C39</color>
+    <color name="sub_bright">#191A25</color>
     <color name="main_dark">#2A2C39</color>
     <color name="sub_dark">#191A25</color>
     <color name="project_card">#FFFFFF</color>

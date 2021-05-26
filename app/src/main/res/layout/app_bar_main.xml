@@ -104,6 +104,4 @@
         app:tint="@color/white"
         app:layout_anchorGravity="center" />
 
-    <include android:id="@+id/bottomSheet" layout="@layout/bottom_sheet_logs" />
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

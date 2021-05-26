@@ -17,8 +17,8 @@
             android:icon="@drawable/ic_round_plugins_24"
             android:title="@string/menu_plugins" />
         <item
-            android:id="@+id/nav_slideshow"
-            android:icon="@drawable/ic_round_developer_mode_24"
-            android:title="@string/menu_info" />
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_round_settings_24"
+            android:title="@string/menu_settings" />
     </group>
 </menu>

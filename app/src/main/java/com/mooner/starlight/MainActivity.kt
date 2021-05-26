@@ -5,11 +5,12 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.Menu
 import android.view.SubMenu
-import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.EditText
@@ -18,7 +19,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.findNavController
@@ -44,9 +44,8 @@ import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.ui.home.HomeFragment
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import com.mooner.starlight.utils.Alert
+import com.mooner.starlight.ui.overlay.OverlayService
 import com.mooner.starlight.utils.Utils
 import com.skydoves.needs.NeedsAnimation
 import com.skydoves.needs.NeedsItem
@@ -56,6 +55,7 @@ import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import org.angmarch.views.NiceSpinner
 import www.sanju.motiontoast.MotionToast
 import kotlin.math.abs
+
 
 @SuppressLint("StaticFieldLeak")
 class MainActivity : AppCompatActivity() {
@@ -266,7 +266,7 @@ class MainActivity : AppCompatActivity() {
         )
         reloadText()
 
-        val bottomSheet = binding.innerLayout.bottomSheet
+        val bottomSheet = binding.bottomSheet
         val logs = Logger.filterNot(LogType.DEBUG)
         val logsAdapter = LogsRecyclerViewAdapter(applicationContext)
         if (logs.isNotEmpty()) {
@@ -288,8 +288,13 @@ class MainActivity : AppCompatActivity() {
                 logsAdapter.pushLog(it)
             }
         }
-        with(bottomSheet.recyclerViewLogs) {
 
+        if (!Settings.canDrawOverlays(this)) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
         }
 
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)

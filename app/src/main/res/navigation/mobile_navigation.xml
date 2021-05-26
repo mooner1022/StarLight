@@ -25,6 +25,6 @@
     <fragment
         android:id="@+id/nav_slideshow"
         android:name="com.mooner.starlight.ui.slideshow.SlideshowFragment"
-        android:label="@string/menu_info"
+        android:label="@string/menu_settings"
         tools:layout="@layout/fragment_slideshow" />
 </navigation>
