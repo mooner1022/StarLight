@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/overlayParentLayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+
+    android:layout_height="wrap_content"
     android:background="#00FFFFFF"
     android:backgroundTint="#00FFFFFF">
 
-    <include android:id="@+id/bottomSheet" layout="@layout/bottom_sheet_logs" />
+    <include
+        android:id="@+id/bottomSheet"
+        layout="@layout/bottom_sheet_logs" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

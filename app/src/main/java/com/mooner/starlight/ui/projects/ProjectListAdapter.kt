@@ -9,9 +9,11 @@ import android.widget.Button
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.project.Project
+import com.mooner.starlight.plugincore.theme.ThemeManager
 import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.ui.presets.ExpandableCardView
@@ -41,6 +43,14 @@ class ProjectListAdapter(
     override fun onBindViewHolder(holder: ProjectListViewHolder, position: Int) {
         val project = data[position]
         val config = project.config
+
+        val theme = ThemeManager.getCurrentTheme(context)
+        holder.expandable.setBackgroundColor(theme.card.toInt())
+        ThemeManager.matchSwitchColor(context,
+            arrayOf(
+                holder.switch
+            )
+        )
 
         holder.cardViewIsEnabled.setCardBackgroundColor(
             context.getColor(
@@ -177,5 +187,6 @@ class ProjectListAdapter(
         val buttonEditCode: Button = itemView.findViewById(R.id.buttonEditCode)
         val buttonRecompile: Button = itemView.findViewById(R.id.buttonRecompile)
         val buttonProjectConfig: Button = itemView.findViewById(R.id.buttonProjectConfig)
+        val switch: SwitchMaterial = itemView.findViewById(R.id.card_switch)
     }
 }

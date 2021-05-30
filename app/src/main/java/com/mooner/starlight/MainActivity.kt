@@ -44,6 +44,7 @@ import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.theme.ThemeManager
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.ui.overlay.OverlayService
 import com.mooner.starlight.utils.Utils
@@ -185,11 +186,20 @@ class MainActivity : AppCompatActivity() {
             binding.drawerLayout.showNeeds(needs)
         }
 
+        ThemeManager.matchBackgroundColor(applicationContext,
+            mapOf(
+                ThemeManager.COLOR_TOOLBAR to arrayOf(
+                    binding.innerLayout.toolbar,
+                    binding.innerLayout.collapsingToolbarLayout
+                )
+            )
+        )
+
         println("isRunning: ${ForegroundTask.isRunning}")
         if (!ForegroundTask.isRunning) {
             println("start service")
             val intent = Intent(this, ForegroundTask::class.java)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(intent)
             } else {
                 startService(intent)

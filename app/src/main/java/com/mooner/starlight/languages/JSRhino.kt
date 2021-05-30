@@ -108,6 +108,7 @@ class JSRhino: Language() {
     override fun callFunction(engine: Any, methodName: String, args: Array<Any>) {
         scope.launch {
             val rhino = engine as Scriptable
+            Context.enter()
             (rhino.get(methodName, engine) as Function).call(context, engine, engine, args)
         }
         //ScriptableObject.callMethod(engine as Scriptable, methodName, args)

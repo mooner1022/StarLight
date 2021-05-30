@@ -1,5 +1,6 @@
 package com.mooner.starlight.ui.projects
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -22,9 +23,9 @@ import com.mooner.starlight.models.Align
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.project.Project
+import com.mooner.starlight.plugincore.theme.ThemeManager
 import com.mooner.starlight.utils.Utils
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
-import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator
 
 class ProjectsFragment : Fragment() {
 
@@ -109,6 +110,20 @@ class ProjectsFragment : Fragment() {
                 ViewModelProvider(this).get(ProjectsViewModel::class.java)
 
         MainActivity.setToolbarText("Projects")
+
+        ThemeManager.matchBackgroundColor(requireContext(),
+            mapOf(
+                ThemeManager.COLOR_TOOLBAR to arrayOf(
+                    binding.projectParentLayout
+                ),
+                ThemeManager.COLOR_CARD to arrayOf(
+                    binding.cardProjectList,
+                    binding.cardViewProjectAlign
+                )
+            )
+        )
+        val theme = ThemeManager.getCurrentTheme(requireContext())
+        binding.projectInnerLayout.backgroundTintList = ColorStateList.valueOf(theme.background.toInt())
 
         binding.cardViewProjectAlign.setOnClickListener {
             MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {

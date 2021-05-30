@@ -12,11 +12,17 @@ class GeneralConfig(val path: File) {
 
     companion object {
         private const val FILE_NAME = "config_general.json"
+
+        const val CONFIG_ALL_PROJECTS_POWER = "allProjectPower"
+
         const val CONFIG_PROJECTS_ALIGN = "projects_align_state"
         const val CONFIG_PROJECTS_REVERSED = "projects_align_reversed"
         const val CONFIG_PROJECTS_ACTIVE_FIRST = "projects_align_active_first"
+
         const val CONFIG_PLUGINS_ALIGN = "plugins_align_state"
         const val CONFIG_PLUGINS_REVERSED = "plugins_align_reversed"
+
+        const val CONFIG_THEME_CURRENT = "theme_current"
     }
 
     init {

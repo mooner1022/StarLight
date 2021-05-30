@@ -15,6 +15,8 @@ import android.util.Log
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.core.ApplicationSession.taskHandler
 import com.mooner.starlight.models.Message
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.project.Replier
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -39,6 +41,8 @@ class NotificationListener: NotificationListenerService() {
             send(msg, sessions[room]!!)
         }
     }
+    private val isAllPowerOn: Boolean
+    get() = Session.getGeneralConfig()[GeneralConfig.CONFIG_ALL_PROJECTS_POWER, "true"].toBoolean()
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
@@ -46,10 +50,14 @@ class NotificationListener: NotificationListenerService() {
             val wearableExtender = Notification.WearableExtender(sbn.notification)
             for (act in wearableExtender.actions) {
                 if (act.remoteInputs!=null && act.remoteInputs.isNotEmpty()) {
+                    if (!isAllPowerOn) {
+                        return
+                    }
                     val notification = sbn.notification
                     val message = notification.extras["android.text"].toString()
                     val sender = notification.extras.getString("android.title").toString()
                     val room = act.title.toString().replaceFirst("답장 (", "").replace(")", "")
+                    lastRoom = room
                     val imageHash = encodeIcon(
                             notification.getLargeIcon().loadDrawable(
                                     applicationContext

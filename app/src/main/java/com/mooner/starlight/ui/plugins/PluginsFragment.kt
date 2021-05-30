@@ -1,5 +1,6 @@
 package com.mooner.starlight.ui.plugins
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +24,7 @@ import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
+import com.mooner.starlight.plugincore.theme.ThemeManager
 import com.mooner.starlight.utils.Utils
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator
@@ -82,6 +84,16 @@ class PluginsFragment : Fragment() {
                 )
             )
         )
+
+        ThemeManager.matchBackgroundColor(requireContext(),
+            mapOf(
+                ThemeManager.COLOR_TOOLBAR to arrayOf(
+                    binding.pluginsParentLayout
+                ),
+            )
+        )
+        val theme = ThemeManager.getCurrentTheme(requireContext())
+        binding.pluginsInnerLayout.backgroundTintList = ColorStateList.valueOf(theme.background.toInt())
 
         if (plugins.isEmpty()) {
             Logger.i(javaClass.simpleName, "No plugins detected!")

@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/homeParentLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/round_top"
+    android:background="@color/main_bright"
+    android:orientation="vertical"
     tools:context=".ui.home.HomeFragment">
 
     <ScrollView
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:id="@+id/homeInnerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/round_top">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -23,6 +24,7 @@
             android:orientation="vertical">
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/cardAllProjectPower"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 app:cardBackgroundColor="@color/cardview_disabled"
@@ -50,10 +52,10 @@
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/cardManageProject"
                 android:layout_width="match_parent"
                 android:layout_height="126dp"
                 android:layout_marginTop="16dp"
-                android:backgroundTint="@color/home_card"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 
@@ -87,7 +89,7 @@
                     </LinearLayout>
 
                     <androidx.cardview.widget.CardView
-                        android:id="@+id/cardViewManageProject"
+                        android:id="@+id/buttonManageProject"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
                         android:layout_marginStart="16dp"
@@ -125,10 +127,10 @@
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/cardManagePlugin"
                 android:layout_width="match_parent"
                 android:layout_height="126dp"
                 android:layout_marginTop="16dp"
-                android:backgroundTint="@color/home_card"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 
@@ -162,7 +164,7 @@
                     </LinearLayout>
 
                     <androidx.cardview.widget.CardView
-                        android:id="@+id/cardViewManagePlugin"
+                        android:id="@+id/buttonManagePlugin"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
                         android:layout_marginStart="16dp"
@@ -200,11 +202,11 @@
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/cardLogs"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="24dp"
-                android:backgroundTint="@color/home_card"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp">
 
@@ -243,11 +245,11 @@
                             android:backgroundTint="#00FFFFFF"
                             android:elevation="0dp"
                             android:fontFamily="@font/nanumsquare_round_regular"
+                            android:icon="@drawable/ic_round_keyboard_arrow_right_24"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
                             android:stateListAnimator="@null"
                             android:text="더보기"
-                            android:icon="@drawable/ic_round_keyboard_arrow_right_24"
                             app:iconGravity="textEnd"
                             app:iconPadding="2dp" />
                     </LinearLayout>
@@ -279,4 +281,4 @@
         </LinearLayout>
     </ScrollView>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

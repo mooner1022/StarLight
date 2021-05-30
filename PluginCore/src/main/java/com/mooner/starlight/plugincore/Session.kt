@@ -5,35 +5,36 @@ import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.ProjectLoader
+import com.mooner.starlight.plugincore.theme.ThemeManager
 import java.io.File
 
 class Session {
     companion object {
         @Suppress("DEPRECATION")
-        private var l_generalConfig: GeneralConfig = GeneralConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
-        private var l_languageManager: LanguageManager? = null
-        private var l_projectLoader: ProjectLoader? = null
+        private var lGeneralConfig: GeneralConfig = GeneralConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
+        private var lLanguageManager: LanguageManager? = null
+        private var lProjectLoader: ProjectLoader? = null
 
         const val isDebugging: Boolean = true
 
         fun initLanguageManager() {
-            if (l_languageManager != null) {
+            if (lLanguageManager != null) {
                 Logger.e("init", "Redeclaration of object languageManager")
                 return
             }
-            l_languageManager = LanguageManager()
+            lLanguageManager = LanguageManager()
         }
         fun initProjectLoader() {
-            if (l_projectLoader != null) {
+            if (lProjectLoader != null) {
                 Logger.e("init", "Redeclaration of object projectLoader")
                 return
             }
-            l_projectLoader = ProjectLoader()
+            lProjectLoader = ProjectLoader()
         }
 
-        fun getProjectLoader(): ProjectLoader = l_projectLoader!!
-        fun getLanguageManager(): LanguageManager = l_languageManager!!
-        fun getGeneralConfig(): GeneralConfig = l_generalConfig
+        fun getProjectLoader(): ProjectLoader = lProjectLoader!!
+        fun getLanguageManager(): LanguageManager = lLanguageManager!!
+        fun getGeneralConfig(): GeneralConfig = lGeneralConfig
     }
 }
 
