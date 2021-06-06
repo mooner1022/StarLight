@@ -51,14 +51,11 @@ class GeneralConfig(val path: File) {
     fun push() {
         if (scope.isActive) {
             scope.cancel()
-            println("cancel!")
         }
-        println("launch!")
 
         CoroutineScope(Dispatchers.Default).launch {
             val str = Json.encodeToString(configs)
             withContext(Dispatchers.IO) {
-                println("saved: $str")
                 with(File(path, FILE_NAME)) {
                     if (!isFile) {
                         deleteRecursively()

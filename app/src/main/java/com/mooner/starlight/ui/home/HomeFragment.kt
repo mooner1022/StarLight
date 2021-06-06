@@ -57,23 +57,6 @@ class HomeFragment : Fragment() {
         MainActivity.setToolbarText(requireContext().getString(R.string.app_name))
         MainActivity.reloadText(requireContext().getString(R.string.app_version))
 
-        ThemeManager.matchBackgroundColor(requireContext(),
-            mapOf(
-                ThemeManager.COLOR_TOOLBAR to arrayOf(
-                    binding.homeParentLayout
-                ),
-                ThemeManager.COLOR_CARD to arrayOf(
-                    binding.cardManageProject,
-                    binding.cardManagePlugin,
-                    binding.cardLogs
-                ),
-                ThemeManager.COLOR_ENABLED to arrayOf(
-                    binding.buttonManageProject,
-                    binding.buttonManagePlugin
-                )
-            )
-        )
-
         ThemeManager.matchTextColor(requireContext(),
             mapOf(
                 ThemeManager.COLOR_CARD_TEXT to arrayOf(
@@ -86,54 +69,9 @@ class HomeFragment : Fragment() {
         val theme = ThemeManager.getCurrentTheme(requireContext())
         binding.homeInnerLayout.backgroundTintList = ColorStateList.valueOf(theme.background.toInt())
 
-        ThemeManager.matchSwitchColor(requireContext(),
-            arrayOf(binding.switchAllProjectPower)
-        )
-
         //val allProjectsCount = Session.getProjectLoader().getProjects().size
         val activeProjectsCount = Session.getProjectLoader().getEnabledProjects().size
         binding.textViewHomeBotStatus.text = "${activeProjectsCount}개의 프로젝트가 작동중이에요."
-
-        binding.buttonManageProject.setOnClickListener {
-            //Session.getLogger().e("TEST", IllegalStateException("TEXT Exception").toString())
-            Navigation.findNavController(it).navigate(R.id.nav_projects)
-        }
-
-        binding.buttonManagePlugin.setOnClickListener {
-            Navigation.findNavController(it).navigate(R.id.nav_plugins)
-        }
-
-        val isEnabled = Session.getGeneralConfig()[GeneralConfig.CONFIG_ALL_PROJECTS_POWER].toBoolean()
-        binding.switchAllProjectPower.isChecked = isEnabled
-        binding.cardAllProjectPower.setCardBackgroundColor((if (isEnabled) theme.enabled else theme.disabled).toInt())
-        binding.textViewAllProjectPower.setTextColor((if (isEnabled) theme.enabledText else theme.disabledText).toInt())
-        binding.textViewAllProjectPower.text = Utils.formatStringRes(
-            R.string.all_project_status,
-            mapOf(
-                "state" to if (isEnabled) "켜짐" else "꺼짐"
-            )
-        )
-
-        binding.switchAllProjectPower.setOnCheckedChangeListener { _, isChecked ->
-            binding.cardAllProjectPower.setCardBackgroundColor((if (isChecked) theme.enabled else theme.disabled).toInt())
-            binding.textViewAllProjectPower.setTextColor((if (isChecked) theme.enabledText else theme.disabledText).toInt())
-            binding.textViewAllProjectPower.text = Utils.formatStringRes(
-                R.string.all_project_status,
-                mapOf(
-                    "state" to if (isChecked) "켜짐" else "꺼짐"
-                )
-            )
-            Session.getGeneralConfig()[GeneralConfig.CONFIG_ALL_PROJECTS_POWER] = isChecked.toString()
-            Session.getGeneralConfig().push()
-        }
-
-        var count = 0
-        binding.buttonMoreLogs.setOnClickListener {
-            Logger.i(javaClass.simpleName, "TEST Log: INFO! :) $count")
-            Logger.w(javaClass.simpleName, "TEST Log: WARNING! :) $count")
-            Logger.d(javaClass.simpleName, "TEST Log: DEBUG! :) $count")
-            count ++
-        }
 
         val logs = Logger.filterNot(LogType.DEBUG)
         val adapter = LogsRecyclerViewAdapter(requireContext())

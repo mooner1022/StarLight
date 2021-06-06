@@ -5,12 +5,14 @@
     android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     tools:context=".MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#00FFFFFF"
         android:fitsSystemWindows="true"
         android:foregroundGravity="center_horizontal"
         android:theme="@style/Theme.StarLight.AppBarOverlay"
@@ -23,11 +25,11 @@
             android:layout_width="match_parent"
             android:layout_height="220dp"
             android:layout_gravity="center_horizontal|start"
+            android:background="#00F7F8FA"
             android:fitsSystemWindows="true"
             android:foregroundGravity="center_horizontal"
             app:collapsedTitleGravity="left"
             app:collapsedTitleTextAppearance="@style/CollapsedAppBar"
-            app:contentScrim="?attr/colorPrimary"
             app:expandedTitleGravity="center_vertical|left"
             app:expandedTitleTextAppearance="@style/ExpandedAppBar"
             app:layout_scrollFlags="scroll|exitUntilCollapsed|snap">
@@ -55,15 +57,17 @@
                 app:buttonGravity="center_vertical"
                 app:layout_collapseMode="pin"
                 app:popupTheme="@style/Theme.StarLight.PopupOverlay"
-                app:title="@string/app_name" />
+                app:title="@string/app_name"
+                app:titleTextColor="#A6B1E1" />
 
             <ImageView
                 android:id="@+id/imageViewLogo"
-                android:layout_width="150dp"
-                android:layout_height="150dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:layout_gravity="top|end"
+                android:scaleType="fitStart"
                 app:layout_collapseMode="parallax"
-                app:srcCompat="@drawable/ic_logo_transparent" />
+                app:srcCompat="@drawable/svg_top_title" />
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>
 
@@ -73,6 +77,7 @@
         android:id="@+id/nestedScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="-80dp"
         android:clipToPadding="true"
         android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">

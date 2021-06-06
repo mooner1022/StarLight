@@ -6,27 +6,29 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/transparent"
-    app:behavior_hideable="true"
-    app:behavior_peekHeight="32dp"
+    app:behavior_hideable="false"
+    app:behavior_peekHeight="100dp"
     app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
     tools:context=".MainActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
         android:background="@drawable/round_top_bottom_dialog"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:backgroundTint="@color/bottom_sheet"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.cardview.widget.CardView
             android:id="@+id/cardViewHandle"
-            android:layout_width="48dp"
+            android:layout_width="64dp"
             android:layout_height="6dp"
-            android:layout_marginTop="8dp"
-            app:cardBackgroundColor="#6C6C6C"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#FFFFFF"
             app:cardCornerRadius="3dp"
             app:cardElevation="0dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -45,7 +47,8 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textViewLogsTitle" />
+            app:layout_constraintTop_toBottomOf="@+id/textViewLogsTitle"
+            tools:visibility="gone" />
 
         <TextView
             android:id="@+id/textViewLogsTitle"
@@ -57,7 +60,8 @@
             android:text="Logs"
             android:textSize="25sp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="gone" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -9,14 +9,17 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.DisplayMetrics
 import android.view.Menu
 import android.view.SubMenu
+import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.res.ResourcesCompat
@@ -35,6 +38,7 @@ import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.customview.customView
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
@@ -44,9 +48,7 @@ import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.theme.ThemeManager
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import com.mooner.starlight.ui.overlay.OverlayService
 import com.mooner.starlight.utils.Utils
 import com.skydoves.needs.NeedsAnimation
 import com.skydoves.needs.NeedsItem
@@ -186,15 +188,6 @@ class MainActivity : AppCompatActivity() {
             binding.drawerLayout.showNeeds(needs)
         }
 
-        ThemeManager.matchBackgroundColor(applicationContext,
-            mapOf(
-                ThemeManager.COLOR_TOOLBAR to arrayOf(
-                    binding.innerLayout.toolbar,
-                    binding.innerLayout.collapsingToolbarLayout
-                )
-            )
-        )
-
         println("isRunning: ${ForegroundTask.isRunning}")
         if (!ForegroundTask.isRunning) {
             println("start service")
@@ -263,6 +256,28 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        val dp80 = dpToPx(80.0f)
+        val dp100 = dpToPx(100.0f)
+        val maxHeight = resources.displayMetrics.heightPixels - dp100
+        println("maxHeight= $maxHeight")
+        val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet.bottomSheetLogs)
+        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+                override fun onStateChanged(bottomSheet: View, newState: Int) {
+
+                }
+
+                override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                    val height = (dp80 + (maxHeight * slideOffset)).toInt()
+                    println(height)
+                    val params = binding.bottomSheet.constraintLayout.layoutParams
+                    params.height = height
+                    bottomSheet.findViewById<ConstraintLayout>(R.id.constraintLayout).layoutParams = params
+                    bottomSheet.requestLayout()
+                    bottomSheet.forceLayout()
+                }
+            }
+        )
+
         textViewStatus = findViewById(R.id.statusView)
         binding.innerLayout.appBarLayout.addOnOffsetChangedListener(
                 AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
@@ -330,4 +345,8 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment)
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
     }
+
+    private fun dpToPx(dp: Float): Float = dp * (resources.displayMetrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)
+
+    private fun pxToDp(px: Float): Float = px / (resources.displayMetrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)
 }

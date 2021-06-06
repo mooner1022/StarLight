@@ -5,50 +5,56 @@
     android:id="@+id/homeParentLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/main_bright"
+    android:background="#00F7F8FA"
     android:orientation="vertical"
     tools:context=".ui.home.HomeFragment">
 
     <ScrollView
         android:id="@+id/homeInnerLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/round_top">
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
             android:orientation="vertical">
 
+
             <androidx.cardview.widget.CardView
-                android:id="@+id/cardAllProjectPower"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                app:cardBackgroundColor="@color/cardview_disabled"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp">
+                android:layout_height="90dp"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginEnd="20dp"
+                app:cardCornerRadius="@dimen/card_radius"
+                app:cardElevation="@dimen/card_elevation">
 
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/switchAllProjectPower"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical|end"
-                    android:layout_marginEnd="32dp"
-                    android:thumb="@drawable/switch_thumb"
-                    app:track="@drawable/switch_track_selector" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/gradient_card"
+                    android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/textViewAllProjectPower"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="start|center_vertical"
-                    android:layout_marginStart="32dp"
-                    android:fontFamily="@font/nanumsquare_round_bold"
-                    android:text="@string/all_project_status"
-                    android:textSize="16sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="32dp"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="@font/nanumsquare_round_bold"
+                        android:text="업타임"
+                        android:textColor="@android:color/white"
+                        android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/uptimeText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nanumsquare_round_extrabold"
+                        android:text="12시간 10분 28초"
+                        android:textAlignment="center"
+                        android:textColor="@color/white"
+                        android:textSize="20sp" />
+                </LinearLayout>
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
@@ -56,8 +62,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="126dp"
                 android:layout_marginTop="16dp"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp">
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                app:cardBackgroundColor="@color/cardview"
+                app:cardCornerRadius="@dimen/card_radius"
+                app:cardElevation="@dimen/card_elevation">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -83,46 +92,10 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:fontFamily="@font/nanumsquare_round_bold"
-                            android:text="0개의 프로젝트가 작동중이에요."
+                            android:text="Projects"
                             android:textAlignment="viewStart"
                             android:textSize="18sp" />
                     </LinearLayout>
-
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/buttonManageProject"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginEnd="16dp"
-                        android:layout_marginBottom="16dp"
-                        app:cardBackgroundColor="@color/orange"
-                        app:cardCornerRadius="20dp"
-                        app:cardElevation="0dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="20dp"
-                                android:layout_weight="1"
-                                android:fontFamily="@font/nanumsquare_round_extrabold"
-                                android:text="프로젝트 관리"
-                                android:textColor="#FFFFFF"
-                                android:textSize="16sp" />
-
-                            <ImageView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="0.15"
-                                android:src="@drawable/ic_round_view_day_24" />
-
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -131,8 +104,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="126dp"
                 android:layout_marginTop="16dp"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp">
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                app:cardBackgroundColor="@color/cardview"
+                app:cardCornerRadius="@dimen/card_radius"
+                app:cardElevation="@dimen/card_elevation">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -141,14 +117,14 @@
 
                     <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="60dp"
+                        android:layout_height="48dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
                         <ImageView
                             android:layout_width="0dp"
                             android:layout_height="24dp"
-                            android:layout_marginStart="20dp"
+                            android:layout_marginStart="10dp"
                             android:layout_weight="0.15"
                             android:src="@drawable/ic_round_plugins_24" />
 
@@ -158,46 +134,10 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:fontFamily="@font/nanumsquare_round_bold"
-                            android:text="0개의 플러그인이 설치되었어요."
+                            android:text="Plugins"
                             android:textAlignment="viewStart"
-                            android:textSize="18sp" />
+                            android:textSize="20sp" />
                     </LinearLayout>
-
-                    <androidx.cardview.widget.CardView
-                        android:id="@+id/buttonManagePlugin"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginEnd="16dp"
-                        android:layout_marginBottom="16dp"
-                        app:cardBackgroundColor="@color/orange"
-                        app:cardCornerRadius="20dp"
-                        app:cardElevation="0dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="20dp"
-                                android:layout_weight="1"
-                                android:fontFamily="@font/nanumsquare_round_extrabold"
-                                android:text="플러그인 관리"
-                                android:textColor="#FFFFFF"
-                                android:textSize="16sp" />
-
-                            <ImageView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="0.15"
-                                android:src="@drawable/ic_round_view_day_24" />
-
-                        </LinearLayout>
-                    </androidx.cardview.widget.CardView>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -207,8 +147,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="24dp"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp">
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                app:cardBackgroundColor="@color/cardview"
+                app:cardCornerRadius="@dimen/card_radius"
+                app:cardElevation="@dimen/card_elevation">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -233,25 +176,10 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:fontFamily="@font/nanumsquare_round_bold"
-                            android:text="로그 목록"
+                            android:text="Logs"
                             android:textAlignment="viewStart"
                             android:textSize="18sp" />
 
-                        <Button
-                            android:id="@+id/buttonMoreLogs"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="0"
-                            android:backgroundTint="#00FFFFFF"
-                            android:elevation="0dp"
-                            android:fontFamily="@font/nanumsquare_round_regular"
-                            android:icon="@drawable/ic_round_keyboard_arrow_right_24"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:stateListAnimator="@null"
-                            android:text="더보기"
-                            app:iconGravity="textEnd"
-                            app:iconPadding="2dp" />
                     </LinearLayout>
 
                     <TextView
