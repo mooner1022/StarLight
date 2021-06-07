@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -13,6 +14,7 @@ import android.util.DisplayMetrics
 import android.view.Menu
 import android.view.SubMenu
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.EditText
@@ -257,10 +259,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        /*
         Blurry.with(applicationContext)
             .radius(10)
             .sampling(8)
-            .onto(binding.bottomSheet.bottomSheetLogs)
+            .color(Color.parseColor("#FFFFFFFF"))
+            .postOnto(binding.bottomSheet.bottomSheetLogs)
+         */
 
         val dp80 = dpToPx(80.0f)
         val dp40 = dpToPx(40.0f)
@@ -274,6 +279,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                    binding.bottomSheet.constraintLayout.alpha = 1.0f - (slideOffset / 8)
                     val params = binding.bottomSheet.constraintLayout.layoutParams
                     params.height = (dp80 + (maxHeight * slideOffset)).toInt()
                     params.width = (maxWidth + (dp40 * slideOffset)).toInt()
@@ -354,6 +360,10 @@ class MainActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         val navController = findNavController(R.id.nav_host_fragment)
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+    }
+
+    private fun Blurry.Composer.postOnto(view: ViewGroup) {
+        view.post { onto(view) }
     }
 
     private fun dpToPx(dp: Float): Float = dp * (resources.displayMetrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)
