@@ -57,24 +57,15 @@ class HomeFragment : Fragment() {
         MainActivity.setToolbarText(requireContext().getString(R.string.app_name))
         MainActivity.reloadText(requireContext().getString(R.string.app_version))
 
-        ThemeManager.matchTextColor(requireContext(),
-            mapOf(
-                ThemeManager.COLOR_CARD_TEXT to arrayOf(
-                    binding.textViewHomeBotStatus,
-                    binding.textViewHomePluginStatus
-                )
-            )
-        )
-
         val theme = ThemeManager.getCurrentTheme(requireContext())
         binding.homeInnerLayout.backgroundTintList = ColorStateList.valueOf(theme.background.toInt())
 
         //val allProjectsCount = Session.getProjectLoader().getProjects().size
-        val activeProjectsCount = Session.getProjectLoader().getEnabledProjects().size
-        binding.textViewHomeBotStatus.text = "${activeProjectsCount}개의 프로젝트가 작동중이에요."
+        val activeProjects = Session.getProjectLoader().getEnabledProjects()
 
         val logs = Logger.filterNot(LogType.DEBUG)
         val adapter = LogsRecyclerViewAdapter(requireContext())
+
         if (logs.isNotEmpty()) {
             val layoutManager = LinearLayoutManager(requireContext()).apply {
                 reverseLayout = true

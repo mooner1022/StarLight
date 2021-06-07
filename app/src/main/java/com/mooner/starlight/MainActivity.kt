@@ -54,6 +54,7 @@ import com.skydoves.needs.NeedsAnimation
 import com.skydoves.needs.NeedsItem
 import com.skydoves.needs.createNeeds
 import com.skydoves.needs.showNeeds
+import jp.wasabeef.blurry.Blurry
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import org.angmarch.views.NiceSpinner
 import www.sanju.motiontoast.MotionToast
@@ -103,8 +104,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
-        val toolbar: Toolbar = findViewById(R.id.toolbar)
-        setSupportActionBar(toolbar)
+        //val toolbar: Toolbar = findViewById(R.id.toolbar)
+        //setSupportActionBar(toolbar)
 
         windowContext = this
         rootLayout = binding.innerLayout.rootLayout
@@ -256,9 +257,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        Blurry.with(applicationContext)
+            .radius(10)
+            .sampling(8)
+            .onto(binding.bottomSheet.bottomSheetLogs)
+
         val dp80 = dpToPx(80.0f)
         val dp40 = dpToPx(40.0f)
-        val maxWidth = resources.displayMetrics.widthPixels
+        val maxWidth = resources.displayMetrics.widthPixels - dp40
         val maxHeight = resources.displayMetrics.heightPixels - dpToPx(100.0f)
         println("maxHeight= $maxHeight")
         val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet.bottomSheetLogs)
@@ -286,6 +292,7 @@ class MainActivity : AppCompatActivity() {
                                     .toFloat()
                     )
                     textViewStatus.alpha = percent
+                    binding.innerLayout.textViewTitle.alpha = percent
                     binding.innerLayout.imageViewLogo.alpha = percent
                 }
         )
@@ -322,6 +329,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        /*
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
         val navView: NavigationView = findViewById(R.id.nav_view)
         val m: Menu = navView.menu
@@ -339,6 +347,8 @@ class MainActivity : AppCompatActivity() {
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+
+         */
     }
 
     override fun onSupportNavigateUp(): Boolean {
