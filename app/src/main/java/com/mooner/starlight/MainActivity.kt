@@ -257,8 +257,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         val dp80 = dpToPx(80.0f)
-        val dp100 = dpToPx(100.0f)
-        val maxHeight = resources.displayMetrics.heightPixels - dp100
+        val dp40 = dpToPx(40.0f)
+        val maxWidth = resources.displayMetrics.widthPixels
+        val maxHeight = resources.displayMetrics.heightPixels - dpToPx(100.0f)
         println("maxHeight= $maxHeight")
         val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet.bottomSheetLogs)
         bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
@@ -267,10 +268,9 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                    val height = (dp80 + (maxHeight * slideOffset)).toInt()
-                    println(height)
                     val params = binding.bottomSheet.constraintLayout.layoutParams
-                    params.height = height
+                    params.height = (dp80 + (maxHeight * slideOffset)).toInt()
+                    params.width = (maxWidth + (dp40 * slideOffset)).toInt()
                     bottomSheet.findViewById<ConstraintLayout>(R.id.constraintLayout).layoutParams = params
                     bottomSheet.requestLayout()
                     bottomSheet.forceLayout()
