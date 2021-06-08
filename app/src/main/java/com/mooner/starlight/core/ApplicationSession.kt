@@ -33,7 +33,6 @@ object ApplicationSession {
     internal fun init(onPhaseChanged: (phase: String) -> Unit, onFinished: () -> Unit) {
         if (isInitComplete) {
             onFinished()
-            lInitMillis = System.currentTimeMillis()
             return
         }
         onPhaseChanged(context.getString(R.string.step_default_lib))

@@ -4,8 +4,6 @@ package com.mooner.starlight.ui.home
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,22 +22,28 @@ import com.mooner.starlight.plugincore.theme.ThemeManager
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.utils.Utils
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.lang.Integer.min
+import java.util.*
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var handler: Handler
-    private val updateUpTimeTask: Runnable = object: Runnable {
-        override fun run() {
-            val diffMillis = System.currentTimeMillis() - ApplicationSession.initMillis
-            val formatStr = Utils.formatTime(diffMillis)
-            binding.uptimeText.setText(formatStr)
-
-            handler.postDelayed(this, 1000)
+    private var uptimeTimer: Timer? = null
+    private val mainScope = CoroutineScope(Dispatchers.Main)
+    private val updateUpTimeTask: TimerTask
+        get() = object: TimerTask() {
+            override fun run() {
+                val diffMillis = System.currentTimeMillis() - ApplicationSession.initMillis
+                val formatStr = Utils.formatTime(diffMillis)
+                mainScope.launch {
+                    binding.uptimeText.setText(formatStr)
+                }
+            }
         }
-    }
 
     companion object {
         private const val LOGS_MAX_SIZE = 5
@@ -94,18 +98,27 @@ class HomeFragment : Fragment() {
 
         binding.uptimeText.setInAnimation(requireContext(), R.anim.text_fade_in)
         binding.uptimeText.setOutAnimation(requireContext(), R.anim.text_fade_out)
-        handler = Handler(Looper.getMainLooper())
+
+        uptimeTimer = Timer()
+        uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
+
         return binding.root
     }
 
     override fun onResume() {
         super.onResume()
-        handler.removeCallbacks(updateUpTimeTask)
+        if (uptimeTimer == null) {
+            uptimeTimer = Timer()
+            uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        handler.post(updateUpTimeTask)
+        if (uptimeTimer != null) {
+            uptimeTimer!!.cancel()
+            uptimeTimer = null
+        }
     }
 
     override fun onDestroyView() {

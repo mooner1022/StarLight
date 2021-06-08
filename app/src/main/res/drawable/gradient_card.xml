@@ -7,7 +7,7 @@
                 android:type="linear"
                 android:angle="135"
                 android:endColor="#877FE3"
-                android:startColor="#ABA4FF" />
+                android:startColor="#A4D9FF" />
         </shape>
     </item>
 </layer-list>

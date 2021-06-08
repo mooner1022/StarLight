@@ -1,14 +1,10 @@
 package com.mooner.starlight
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.View
 import android.view.ViewGroup
@@ -19,8 +15,6 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.app.ActivityCompat
-import androidx.core.content.res.ResourcesCompat
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
@@ -35,7 +29,6 @@ import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.core.ForegroundTask
 import com.mooner.starlight.databinding.ActivityMainBinding
 import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
@@ -43,15 +36,8 @@ import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import com.mooner.starlight.utils.Utils
-import com.skydoves.needs.NeedsAnimation
-import com.skydoves.needs.NeedsItem
-import com.skydoves.needs.createNeeds
-import com.skydoves.needs.showNeeds
-import jp.wasabeef.blurry.Blurry
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import org.angmarch.views.NiceSpinner
-import www.sanju.motiontoast.MotionToast
 import kotlin.math.abs
 
 
@@ -68,11 +54,6 @@ class MainActivity : AppCompatActivity() {
         private lateinit var fabAnim: Animation
         private lateinit var rootLayout: CoordinatorLayout
         lateinit var windowContext: Context
-        private val REQUIRED_PERMISSIONS = arrayOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.INTERNET,
-        )
 
         fun reloadText(text: String? = null) {
             if (text == null) {
@@ -92,7 +73,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("Range")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -106,82 +86,6 @@ class MainActivity : AppCompatActivity() {
         ctr = findViewById(R.id.collapsingToolbarLayout)
 
         val isInitial = intent.getBooleanExtra("isInitial", true)
-        if (isInitial || !Utils.checkPermissions(this, REQUIRED_PERMISSIONS)) {
-            val needs = createNeeds(this) {
-                setTitleIconResource(R.mipmap.ic_logo)
-                title = "시작하기에 앞서,\nStarLight를 사용하기 위해 아래 권한들이 필요해요!"
-                addNeedsItem(
-                    NeedsItem(
-                        null,
-                        "· 저장소 쓰기",
-                        "(필수)",
-                        "기기의 파일에 접근하여 데이터를 저장할 수 있어요."
-                    )
-                )
-                addNeedsItem(
-                    NeedsItem(
-                        null,
-                        "· 저장소 읽기",
-                        "(필수)",
-                        "기기의 파일에 접근하여 데이터를 읽을 수 있어요."
-                    )
-                )
-                addNeedsItem(
-                    NeedsItem(
-                        null,
-                        "· 인터넷",
-                        "(필수)",
-                        "인터넷에 접속할 수 있어요."
-                    )
-                )
-                description = "위 권한들은 필수 권한으로,\n허용하지 않을 시 앱이 정상적으로 동작하지 않아요."
-                confirm = "승인"
-                backgroundAlpha = 0.6f
-                needsAnimation = NeedsAnimation.FADE
-            }
-            needs.setOnConfirmListener {
-                if (Utils.checkPermissions(this@MainActivity, REQUIRED_PERMISSIONS)) {
-                    needs.dismiss()
-                    MotionToast.darkColorToast(this@MainActivity,
-                        "권한 승인!",
-                        "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و",
-                        MotionToast.TOAST_SUCCESS,
-                        MotionToast.GRAVITY_BOTTOM,
-                        MotionToast.LONG_DURATION,
-                        ResourcesCompat.getFont(this@MainActivity, R.font.nanumsquare_round_regular))
-                } else {
-                    ActivityCompat.requestPermissions(
-                        this@MainActivity,
-                        REQUIRED_PERMISSIONS,
-                        MODE_PRIVATE
-                    )
-                    ActivityCompat.OnRequestPermissionsResultCallback { _, permissions, grantResults ->
-                        if (permissions.contentEquals(REQUIRED_PERMISSIONS)) {
-                            if ((grantResults.isNotEmpty() &&
-                                        grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                                needs.dismiss()
-                                MotionToast.darkColorToast(this@MainActivity,
-                                    "권한 승인!",
-                                    "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و",
-                                    MotionToast.TOAST_SUCCESS,
-                                    MotionToast.GRAVITY_BOTTOM,
-                                    MotionToast.LONG_DURATION,
-                                    ResourcesCompat.getFont(this@MainActivity,R.font.nanumsquare_round_regular))
-                            } else {
-                                MotionToast.darkColorToast(this@MainActivity,
-                                    "권한 승인 실패",
-                                    "권한이 승인되지 않았어요.. (´•ω•̥`)",
-                                    MotionToast.TOAST_ERROR,
-                                    MotionToast.GRAVITY_BOTTOM,
-                                    MotionToast.LONG_DURATION,
-                                    ResourcesCompat.getFont(this@MainActivity,R.font.nanumsquare_round_regular))
-                            }
-                        }
-                    }
-                }
-            }
-            binding.drawerLayout.showNeeds(needs)
-        }
 
         println("isRunning: ${ForegroundTask.isRunning}")
         if (!ForegroundTask.isRunning) {
@@ -271,7 +175,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                    binding.bottomSheet.constraintLayout.alpha = 1.0f - (slideOffset / 8)
+                    //binding.bottomSheet.constraintLayout.alpha = 1.0f - (slideOffset / 8)
                     val params = binding.bottomSheet.constraintLayout.layoutParams
                     params.height = (dp80 + (maxHeight * slideOffset)).toInt()
                     params.width = (maxWidth + (dp40 * slideOffset)).toInt()
@@ -351,10 +255,6 @@ class MainActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         val navController = findNavController(R.id.nav_host_fragment)
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
-    }
-
-    private fun Blurry.Composer.postOnto(view: ViewGroup) {
-        view.post { onto(view) }
     }
 
     private fun dpToPx(dp: Float): Float = dp * (resources.displayMetrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)

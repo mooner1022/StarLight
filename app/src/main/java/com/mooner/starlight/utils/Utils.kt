@@ -42,7 +42,7 @@ class Utils {
             val s = seconds % 60
             val m = (seconds / 60) % 60
             val h = (seconds / (60 * 60)) % 24
-            return String.format("%d시간 %02d분 %02초", h,m,s)
+            return String.format("%d시간 %02d분 %02d초", h,m,s)
         }
     }
 }
