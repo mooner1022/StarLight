@@ -7,42 +7,41 @@ import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.event.EventListener
-import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
-import com.mooner.starlight.utils.Alert
 
 @SuppressLint("StaticFieldLeak")
 object ApplicationSession {
     private val pluginLoadTime: HashMap<String, Long> = hashMapOf()
+
+    private var lInitMillis: Long = 0L
+    val initMillis: Long
+        get() = lInitMillis
+
     var isInitComplete: Boolean = false
-    private var l_pluginLoader: PluginLoader? = null
+
+    private var lPluginLoader: PluginLoader? = null
     val pluginLoader: PluginLoader
-        get() = l_pluginLoader!!
+        get() = lPluginLoader!!
 
-    private var l_taskHandler: TaskHandler? = null
+    private var lTaskHandler: TaskHandler? = null
     val taskHandler: TaskHandler
-        get() = l_taskHandler!!
-
-    private val initCompleteListeners: ArrayList<() -> Unit> = arrayListOf()
-
-    fun onInitComplete(listener: () -> Unit) {
-        initCompleteListeners.add(listener)
-    }
+        get() = lTaskHandler!!
 
     internal fun init(onPhaseChanged: (phase: String) -> Unit, onFinished: () -> Unit) {
         if (isInitComplete) {
             onFinished()
+            lInitMillis = System.currentTimeMillis()
             return
         }
         onPhaseChanged(context.getString(R.string.step_default_lib))
         Session.initLanguageManager()
         onPhaseChanged(context.getString(R.string.step_lang))
-        l_pluginLoader = PluginLoader()
+        lPluginLoader = PluginLoader()
         onPhaseChanged(context.getString(R.string.step_plugin_init))
-        l_taskHandler = TaskHandler()
+        lTaskHandler = TaskHandler()
         Session.getLanguageManager().apply {
             addLanguage(JSV8())
             addLanguage(JSRhino())
@@ -64,12 +63,7 @@ object ApplicationSession {
         Session.getProjectLoader().loadProjects()
         isInitComplete = true
         onFinished()
-        if (initCompleteListeners.isNotEmpty()) {
-            for (listener in initCompleteListeners) {
-                listener()
-            }
-            initCompleteListeners.clear()
-        }
+        lInitMillis = System.currentTimeMillis()
 
         NetworkUtil.registerNetworkStatusListener(context)
         NetworkUtil.addOnNetworkStateChangedListener { state ->

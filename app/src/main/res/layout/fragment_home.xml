@@ -45,15 +45,26 @@
                         android:textColor="@android:color/white"
                         android:textSize="20sp" />
 
-                    <TextView
+                    <TextSwitcher
                         android:id="@+id/uptimeText"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/nanumsquare_round_extrabold"
-                        android:text="12시간 10분 28초"
-                        android:textAlignment="center"
-                        android:textColor="@color/white"
-                        android:textSize="20sp" />
+                        android:layout_height="wrap_content" >
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/nanumsquare_round_extrabold"
+                            android:textAlignment="center"
+                            android:textColor="@color/white"
+                            android:textSize="20sp"
+                            android:text="12시간 10분 28초" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/nanumsquare_round_extrabold"
+                            android:textAlignment="center"
+                            android:textColor="@color/white"
+                            android:textSize="20sp" />
+                    </TextSwitcher>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 

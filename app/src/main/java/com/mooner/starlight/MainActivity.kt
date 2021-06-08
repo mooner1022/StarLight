@@ -5,14 +5,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
+import android.os.Handler
+import android.os.Looper
 import android.util.DisplayMetrics
-import android.view.Menu
-import android.view.SubMenu
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
@@ -20,18 +17,13 @@ import android.view.animation.AnimationUtils
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.findNavController
-import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
@@ -42,8 +34,8 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
+import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.core.ForegroundTask
 import com.mooner.starlight.databinding.ActivityMainBinding
 import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
@@ -267,10 +259,10 @@ class MainActivity : AppCompatActivity() {
             .postOnto(binding.bottomSheet.bottomSheetLogs)
          */
 
-        val dp80 = dpToPx(80.0f)
+        val dp80 = dpToPx(100.0f)
         val dp40 = dpToPx(40.0f)
         val maxWidth = resources.displayMetrics.widthPixels - dp40
-        val maxHeight = resources.displayMetrics.heightPixels - dpToPx(100.0f)
+        val maxHeight = resources.displayMetrics.heightPixels - dpToPx(120.0f)
         println("maxHeight= $maxHeight")
         val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet.bottomSheetLogs)
         bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
@@ -326,7 +318,7 @@ class MainActivity : AppCompatActivity() {
                 logsAdapter.pushLog(it)
             }
         }
-
+        /*
         if (!Settings.canDrawOverlays(this)) {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -335,7 +327,6 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        /*
         val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
         val navView: NavigationView = findViewById(R.id.nav_view)
         val m: Menu = navView.menu

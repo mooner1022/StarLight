@@ -7,14 +7,14 @@
     android:layout_height="match_parent"
     android:background="@color/transparent"
     app:behavior_hideable="false"
-    app:behavior_peekHeight="100dp"
+    app:behavior_peekHeight="120dp"
     app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
     tools:context=".MainActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_height="100dp"
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
         android:background="@drawable/round_top_bottom_dialog"

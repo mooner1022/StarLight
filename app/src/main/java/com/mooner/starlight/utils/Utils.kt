@@ -36,5 +36,13 @@ class Utils {
             }
             return true
         }
+
+        fun formatTime(millis: Long): String {
+            val seconds = millis / 1000
+            val s = seconds % 60
+            val m = (seconds / 60) % 60
+            val h = (seconds / (60 * 60)) % 24
+            return String.format("%d시간 %02d분 %02초", h,m,s)
+        }
     }
 }

@@ -4,20 +4,20 @@ package com.mooner.starlight.ui.home
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.Navigation
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
+import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.FragmentHomeBinding
 import com.mooner.starlight.plugincore.Session
-import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.theme.ThemeManager
@@ -27,11 +27,19 @@ import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import java.lang.Integer.min
 
 class HomeFragment : Fragment() {
-    private lateinit var homeViewModel: HomeViewModel
     private var _binding: FragmentHomeBinding? = null
-    // This property is only valid between onCreateView and
-    // onDestroyView.
     private val binding get() = _binding!!
+
+    private lateinit var handler: Handler
+    private val updateUpTimeTask: Runnable = object: Runnable {
+        override fun run() {
+            val diffMillis = System.currentTimeMillis() - ApplicationSession.initMillis
+            val formatStr = Utils.formatTime(diffMillis)
+            binding.uptimeText.setText(formatStr)
+
+            handler.postDelayed(this, 1000)
+        }
+    }
 
     companion object {
         private const val LOGS_MAX_SIZE = 5
@@ -44,8 +52,6 @@ class HomeFragment : Fragment() {
             savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        homeViewModel =
-                ViewModelProvider(this).get(HomeViewModel::class.java)
         val fab: FloatingActionButton = MainActivity.fab
         if (fab.isVisible) {
             fab.hide()
@@ -86,7 +92,20 @@ class HomeFragment : Fragment() {
             }
         }
 
+        binding.uptimeText.setInAnimation(requireContext(), R.anim.text_fade_in)
+        binding.uptimeText.setOutAnimation(requireContext(), R.anim.text_fade_out)
+        handler = Handler(Looper.getMainLooper())
         return binding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        handler.removeCallbacks(updateUpTimeTask)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        handler.post(updateUpTimeTask)
     }
 
     override fun onDestroyView() {
