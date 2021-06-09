@@ -19,7 +19,7 @@ import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.FragmentPluginsBinding
 import com.mooner.starlight.models.Align
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.Plugin
@@ -27,7 +27,6 @@ import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.theme.ThemeManager
 import com.mooner.starlight.utils.Utils
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
-import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator
 
 class PluginsFragment : Fragment() {
     private var _binding: FragmentPluginsBinding? = null

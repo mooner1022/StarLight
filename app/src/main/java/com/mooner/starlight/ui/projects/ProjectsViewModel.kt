@@ -3,8 +3,7 @@ package com.mooner.starlight.ui.projects
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.mooner.starlight.MainActivity
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,12 +15,12 @@ class ProjectsViewModel : ViewModel() {
     val data: LiveData<List<Project>> = _data
 
     init {
-        Session.getProjectLoader().bind { projects ->
+        Session.projectLoader.bind { projects ->
             _data.value = projects
         }
 
         CoroutineScope(Dispatchers.Default).launch {
-            val data = Session.getProjectLoader().loadProjects(false)
+            val data = Session.projectLoader.loadProjects(false)
             withContext(Dispatchers.Main) {
                 _data.value = data
             }

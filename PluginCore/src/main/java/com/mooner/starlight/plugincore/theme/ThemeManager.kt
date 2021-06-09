@@ -9,10 +9,9 @@ import android.widget.TextView
 import androidx.annotation.ColorInt
 import androidx.appcompat.widget.SwitchCompat
 import androidx.cardview.widget.CardView
-import androidx.core.graphics.drawable.DrawableCompat
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.switchmaterial.SwitchMaterial
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.utils.Utils

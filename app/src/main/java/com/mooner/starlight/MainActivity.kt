@@ -16,12 +16,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.drawable.DrawableCompat
+import androidx.navigation.Navigation
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.viewpager2.widget.ViewPager2
+import androidx.viewpager.widget.ViewPager
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
@@ -34,15 +34,11 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.core.ForegroundTask
 import com.mooner.starlight.databinding.ActivityMainBinding
-import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
-import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
+import com.mooner.starlight.plugincore.core.Session.Companion.getLanguageManager
+import com.mooner.starlight.plugincore.core.Session.Companion.projectLoader
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.ui.PagerFragmentAdapter
-import com.mooner.starlight.ui.home.HomeFragment
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import com.mooner.starlight.ui.plugins.PluginsFragment
-import com.mooner.starlight.ui.projects.ProjectsFragment
 import devlight.io.library.ntb.NavigationTabBar
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import org.angmarch.views.NiceSpinner
@@ -65,7 +61,7 @@ class MainActivity : AppCompatActivity() {
 
         fun reloadText(text: String? = null) {
             if (text == null) {
-                val active = getProjectLoader().getEnabledProjects()
+                val active = projectLoader.getEnabledProjects()
                 textViewStatus.text = if (active.isEmpty()) "작동중인 봇이 없어요." else "${active.size}개의 봇이 작동중이에요."
             } else {
                 textViewStatus.text = text
@@ -121,7 +117,7 @@ class MainActivity : AppCompatActivity() {
                     positiveButton(text = "추가") {
                         val nameEditText = it.findViewById<EditText>(R.id.editTextNewProjectName)
                         val projectName = nameEditText.text.toString()
-                        if (getProjectLoader().getProject(projectName) != null) {
+                        if (projectLoader.getProject(projectName) != null) {
                             nameEditText.error = "이미 존재하는 이름이에요."
                             nameEditText.requestFocus()
                             return@positiveButton
@@ -132,7 +128,7 @@ class MainActivity : AppCompatActivity() {
                             return@positiveButton
                         }
                         val selectedLang = getLanguageManager().getLanguages()[languageSpinner.selectedIndex]
-                        getProjectLoader().newProject {
+                        projectLoader.newProject {
                             name = projectName
                             mainScript = "$projectName.${selectedLang.fileExtension}"
                             language = selectedLang.id
@@ -171,30 +167,45 @@ class MainActivity : AppCompatActivity() {
             .postOnto(binding.bottomSheet.bottomSheetLogs)
          */
 
-        val pagerAdapter = PagerFragmentAdapter(this).apply {
-            addFragment(HomeFragment())
-            addFragment(ProjectsFragment())
-            addFragment(PluginsFragment())
-        }
-        binding.innerLayout.container.adapter = pagerAdapter
-
+        val selectedColor = applicationContext.getColor(R.color.bottom_sheet)
         val tabBarModels: ArrayList<NavigationTabBar.Model> = arrayListOf(
             NavigationTabBar.Model.Builder(
                 ResourcesCompat.getDrawable(resources, R.drawable.ic_round_projects_24, null),
-                applicationContext.getColor(R.color.transparent)
-            ).badgeTitle("프로젝트")
+                selectedColor
+            ).title("프로젝트")
                 .build(),
             NavigationTabBar.Model.Builder(
                 ResourcesCompat.getDrawable(resources, R.drawable.ic_round_plugins_24, null),
-                applicationContext.getColor(R.color.transparent)
-            ).badgeTitle("플러그인")
+                selectedColor
+            ).title("플러그인")
                 .build()
         )
 
         binding.bottomSheet.tabBar.apply {
             badgeBgColor = Color.parseColor("#FFFFFFFF")
+            setIsTitled(true)
             models = tabBarModels
-            setViewPager(binding.innerLayout.container)
+            setOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+                override fun onPageScrolled(
+                    position: Int,
+                    positionOffset: Float,
+                    positionOffsetPixels: Int
+                ) {}
+
+                override fun onPageSelected(position: Int) {
+                    Logger.i(javaClass.simpleName, "tab selected, position: $position")
+                    val fragment = when(position) {
+                        0 -> R.id.nav_home
+                        1 -> R.id.nav_projects
+                        2 -> R.id.nav_plugins
+                        else -> R.id.nav_projects
+                    }
+                    Navigation.findNavController(binding.root).navigate(fragment)
+                }
+
+                override fun onPageScrollStateChanged(state: Int) {}
+
+            })
         }
 
         val dp80 = dpToPx(100.0f)

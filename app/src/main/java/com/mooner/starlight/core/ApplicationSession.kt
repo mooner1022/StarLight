@@ -5,7 +5,7 @@ import android.content.Context
 import com.mooner.starlight.R
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.event.EventListener
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.PluginLoader
@@ -16,19 +16,19 @@ import com.mooner.starlight.plugincore.utils.NetworkUtil
 object ApplicationSession {
     private val pluginLoadTime: HashMap<String, Long> = hashMapOf()
 
-    private var lInitMillis: Long = 0L
+    private var mInitMillis: Long = 0L
     val initMillis: Long
-        get() = lInitMillis
+        get() = mInitMillis
 
     var isInitComplete: Boolean = false
 
-    private var lPluginLoader: PluginLoader? = null
+    private var mPluginLoader: PluginLoader? = null
     val pluginLoader: PluginLoader
-        get() = lPluginLoader!!
+        get() = mPluginLoader!!
 
-    private var lTaskHandler: TaskHandler? = null
+    private var mTaskHandler: TaskHandler? = null
     val taskHandler: TaskHandler
-        get() = lTaskHandler!!
+        get() = mTaskHandler!!
 
     internal fun init(onPhaseChanged: (phase: String) -> Unit, onFinished: () -> Unit) {
         if (isInitComplete) {
@@ -38,9 +38,9 @@ object ApplicationSession {
         onPhaseChanged(context.getString(R.string.step_default_lib))
         Session.initLanguageManager()
         onPhaseChanged(context.getString(R.string.step_lang))
-        lPluginLoader = PluginLoader()
+        mPluginLoader = PluginLoader()
         onPhaseChanged(context.getString(R.string.step_plugin_init))
-        lTaskHandler = TaskHandler()
+        mTaskHandler = TaskHandler()
         Session.getLanguageManager().apply {
             addLanguage(JSV8())
             addLanguage(JSRhino())
@@ -59,10 +59,10 @@ object ApplicationSession {
         pluginLoadTime[preName] = System.currentTimeMillis() - preTime
 
         onPhaseChanged(context.getString(R.string.step_projects))
-        Session.getProjectLoader().loadProjects()
+        Session.projectLoader.loadProjects()
         isInitComplete = true
         onFinished()
-        lInitMillis = System.currentTimeMillis()
+        mInitMillis = System.currentTimeMillis()
 
         NetworkUtil.registerNetworkStatusListener(context)
         NetworkUtil.addOnNetworkStateChangedListener { state ->

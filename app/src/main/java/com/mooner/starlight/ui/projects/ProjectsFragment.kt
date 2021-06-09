@@ -20,7 +20,7 @@ import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentProjectsBinding
 import com.mooner.starlight.models.Align
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.theme.ThemeManager
@@ -161,7 +161,7 @@ class ProjectsFragment : Fragment() {
                 isInit = false
             }
         }
-        projects = Session.getProjectLoader().getProjects()
+        projects = Session.projectLoader.getProjects()
         recyclerAdapter.data = if (isReversed) {
             alignState.sort(
                 projects,

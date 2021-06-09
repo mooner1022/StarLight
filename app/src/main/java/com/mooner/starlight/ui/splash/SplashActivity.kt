@@ -3,7 +3,6 @@ package com.mooner.starlight.ui.splash
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.animation.AnimationUtils
@@ -14,9 +13,6 @@ import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.ActivitySplashBinding
-import com.mooner.starlight.plugincore.Session
-import com.mooner.starlight.plugincore.logger.LogType
-import com.mooner.starlight.utils.Alert
 import com.mooner.starlight.utils.Utils
 import com.skydoves.needs.NeedsAnimation
 import com.skydoves.needs.NeedsItem

@@ -10,7 +10,7 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityProjectConfigBinding
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.TypedString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -40,7 +40,7 @@ class ProjectConfigActivity : AppCompatActivity() {
         val appBarConfig = binding.appBarConfig
 
         val projectName = intent.getStringExtra("projectName")!!
-        val project = Session.getProjectLoader().getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
+        val project = Session.projectLoader.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
         val recyclerAdapter = ProjectConfigAdapter(applicationContext) { id, data ->
             changedData[id] = data
             savedData[id] = TypedString.parse(data)

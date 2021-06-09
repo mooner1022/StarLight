@@ -6,7 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mooner.starlight.databinding.ActivityDebugRoomBinding
 import com.mooner.starlight.models.Message
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.project.Replier
 
@@ -61,7 +61,7 @@ class DebugRoomActivity : AppCompatActivity() {
         println("roomName= $roomName")
         binding.roomTitle.text = roomName
 
-        project = Session.getProjectLoader().getProject(roomName)!!
+        project = Session.projectLoader.getProject(roomName)!!
 
         userChatAdapter = DebugRoomChatAdapter(this, chatList)
         binding.chatRecyclerView.adapter = userChatAdapter

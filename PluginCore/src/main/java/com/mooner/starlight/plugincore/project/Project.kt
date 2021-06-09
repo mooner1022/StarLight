@@ -1,10 +1,9 @@
 package com.mooner.starlight.plugincore.project
 
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
-import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.methods.Methods
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.serialization.encodeToString

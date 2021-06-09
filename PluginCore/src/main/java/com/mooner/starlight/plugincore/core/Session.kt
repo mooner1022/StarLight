@@ -1,40 +1,41 @@
-package com.mooner.starlight.plugincore
+package com.mooner.starlight.plugincore.core
 
 import android.os.Environment
-import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.ProjectLoader
-import com.mooner.starlight.plugincore.theme.ThemeManager
 import java.io.File
 
 class Session {
     companion object {
         @Suppress("DEPRECATION")
-        private var lGeneralConfig: GeneralConfig = GeneralConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
-        private var lLanguageManager: LanguageManager? = null
-        private var lProjectLoader: ProjectLoader? = null
+        private var mGeneralConfig: GeneralConfig = GeneralConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
+
+        private var mLanguageManager: LanguageManager? = null
+
+        private var mProjectLoader: ProjectLoader? = null
+        val projectLoader: ProjectLoader
+            get() = mProjectLoader!!
 
         const val isDebugging: Boolean = true
 
         fun initLanguageManager() {
-            if (lLanguageManager != null) {
+            if (mLanguageManager != null) {
                 Logger.e("init", "Redeclaration of object languageManager")
                 return
             }
-            lLanguageManager = LanguageManager()
+            mLanguageManager = LanguageManager()
         }
         fun initProjectLoader() {
-            if (lProjectLoader != null) {
+            if (mProjectLoader != null) {
                 Logger.e("init", "Redeclaration of object projectLoader")
                 return
             }
-            lProjectLoader = ProjectLoader()
+            mProjectLoader = ProjectLoader()
         }
 
-        fun getProjectLoader(): ProjectLoader = lProjectLoader!!
-        fun getLanguageManager(): LanguageManager = lLanguageManager!!
-        fun getGeneralConfig(): GeneralConfig = lGeneralConfig
+        fun getLanguageManager(): LanguageManager = mLanguageManager!!
+        fun getGeneralConfig(): GeneralConfig = mGeneralConfig
     }
 }
 

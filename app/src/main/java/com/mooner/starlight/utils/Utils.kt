@@ -7,7 +7,9 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import androidx.viewpager.widget.ViewPager
 import com.mooner.starlight.core.ApplicationSession
+import devlight.io.library.ntb.NavigationTabBar
 
 class Utils {
     companion object {

@@ -15,7 +15,7 @@ import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.FragmentHomeBinding
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.theme.ThemeManager
@@ -69,9 +69,12 @@ class HomeFragment : Fragment() {
 
         val theme = ThemeManager.getCurrentTheme(requireContext())
         binding.homeInnerLayout.backgroundTintList = ColorStateList.valueOf(theme.background.toInt())
+        binding.homeInnerLayout.setOnScrollChangeListener { v, _, _, _, _ ->
+            v.parent.requestDisallowInterceptTouchEvent(true)
+        }
 
         //val allProjectsCount = Session.getProjectLoader().getProjects().size
-        val activeProjects = Session.getProjectLoader().getEnabledProjects()
+        val activeProjects = Session.projectLoader.getEnabledProjects()
 
         val logs = Logger.filterNot(LogType.DEBUG)
         val adapter = LogsRecyclerViewAdapter(requireContext())
