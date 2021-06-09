@@ -32,9 +32,22 @@
             app:cardElevation="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toTopOf="parent" />
 
-        </androidx.cardview.widget.CardView>
+        <devlight.io.library.ntb.NavigationTabBar
+            android:id="@+id/tabBar"
+            android:layout_width="0dp"
+            android:layout_height="70dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/cardViewHandle"
+            app:ntb_active_color="#ffffff"
+            app:ntb_badge_size="10sp"
+            app:ntb_badge_title_color="#ffffffff"
+            app:ntb_badged="true"
+            app:ntb_bg_color="#00FFFFFF"
+            app:ntb_corners_radius="@dimen/card_radius"
+            app:ntb_inactive_color="#ffffff" />
 
         <androidx.cardview.widget.CardView
             android:layout_width="0dp"

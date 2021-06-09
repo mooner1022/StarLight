@@ -3,11 +3,11 @@ package com.mooner.starlight
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.view.View
-import android.view.ViewGroup
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.EditText
@@ -15,10 +15,13 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.viewpager2.widget.ViewPager2
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
@@ -35,7 +38,12 @@ import com.mooner.starlight.plugincore.Session.Companion.getLanguageManager
 import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.ui.PagerFragmentAdapter
+import com.mooner.starlight.ui.home.HomeFragment
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
+import com.mooner.starlight.ui.plugins.PluginsFragment
+import com.mooner.starlight.ui.projects.ProjectsFragment
+import devlight.io.library.ntb.NavigationTabBar
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import org.angmarch.views.NiceSpinner
 import kotlin.math.abs
@@ -85,7 +93,7 @@ class MainActivity : AppCompatActivity() {
         rootLayout = binding.innerLayout.rootLayout
         ctr = findViewById(R.id.collapsingToolbarLayout)
 
-        val isInitial = intent.getBooleanExtra("isInitial", true)
+        //val isInitial = intent.getBooleanExtra("isInitial", true)
 
         println("isRunning: ${ForegroundTask.isRunning}")
         if (!ForegroundTask.isRunning) {
@@ -162,6 +170,32 @@ class MainActivity : AppCompatActivity() {
             .color(Color.parseColor("#FFFFFFFF"))
             .postOnto(binding.bottomSheet.bottomSheetLogs)
          */
+
+        val pagerAdapter = PagerFragmentAdapter(this).apply {
+            addFragment(HomeFragment())
+            addFragment(ProjectsFragment())
+            addFragment(PluginsFragment())
+        }
+        binding.innerLayout.container.adapter = pagerAdapter
+
+        val tabBarModels: ArrayList<NavigationTabBar.Model> = arrayListOf(
+            NavigationTabBar.Model.Builder(
+                ResourcesCompat.getDrawable(resources, R.drawable.ic_round_projects_24, null),
+                applicationContext.getColor(R.color.transparent)
+            ).badgeTitle("프로젝트")
+                .build(),
+            NavigationTabBar.Model.Builder(
+                ResourcesCompat.getDrawable(resources, R.drawable.ic_round_plugins_24, null),
+                applicationContext.getColor(R.color.transparent)
+            ).badgeTitle("플러그인")
+                .build()
+        )
+
+        binding.bottomSheet.tabBar.apply {
+            badgeBgColor = Color.parseColor("#FFFFFFFF")
+            models = tabBarModels
+            setViewPager(binding.innerLayout.container)
+        }
 
         val dp80 = dpToPx(100.0f)
         val dp40 = dpToPx(40.0f)
