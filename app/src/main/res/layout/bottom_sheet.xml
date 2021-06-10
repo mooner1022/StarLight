@@ -34,22 +34,20 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <devlight.io.library.ntb.NavigationTabBar
-            android:id="@+id/tabBar"
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/tabNavView"
             android:layout_width="0dp"
             android:layout_height="70dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
+            android:background="@color/transparent"
+            app:elevation="0dp"
+            app:itemIconTint="@color/white"
+            app:itemTextColor="@color/white"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardViewHandle"
-            app:ntb_active_color="#ffffff"
-            app:ntb_badge_size="10sp"
-            app:ntb_badge_title_color="#ffffffff"
-            app:ntb_badged="true"
-            app:ntb_bg_color="#00FFFFFF"
-            app:ntb_corners_radius="@dimen/card_radius"
-            app:ntb_inactive_color="#ffffff" />
+            app:menu="@menu/activity_main_drawer" />
 
         <androidx.cardview.widget.CardView
             android:layout_width="0dp"

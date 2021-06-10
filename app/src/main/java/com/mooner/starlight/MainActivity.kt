@@ -18,8 +18,11 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.navigation.Navigation
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.navigateUp
+import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewpager.widget.ViewPager
 import com.afollestad.materialdialogs.LayoutMode
@@ -167,45 +170,9 @@ class MainActivity : AppCompatActivity() {
             .postOnto(binding.bottomSheet.bottomSheetLogs)
          */
 
-        val selectedColor = applicationContext.getColor(R.color.bottom_sheet)
-        val tabBarModels: ArrayList<NavigationTabBar.Model> = arrayListOf(
-            NavigationTabBar.Model.Builder(
-                ResourcesCompat.getDrawable(resources, R.drawable.ic_round_projects_24, null),
-                selectedColor
-            ).title("프로젝트")
-                .build(),
-            NavigationTabBar.Model.Builder(
-                ResourcesCompat.getDrawable(resources, R.drawable.ic_round_plugins_24, null),
-                selectedColor
-            ).title("플러그인")
-                .build()
-        )
-
-        binding.bottomSheet.tabBar.apply {
-            badgeBgColor = Color.parseColor("#FFFFFFFF")
-            setIsTitled(true)
-            models = tabBarModels
-            setOnPageChangeListener(object : ViewPager.OnPageChangeListener {
-                override fun onPageScrolled(
-                    position: Int,
-                    positionOffset: Float,
-                    positionOffsetPixels: Int
-                ) {}
-
-                override fun onPageSelected(position: Int) {
-                    Logger.i(javaClass.simpleName, "tab selected, position: $position")
-                    val fragment = when(position) {
-                        0 -> R.id.nav_home
-                        1 -> R.id.nav_projects
-                        2 -> R.id.nav_plugins
-                        else -> R.id.nav_projects
-                    }
-                    Navigation.findNavController(binding.root).navigate(fragment)
-                }
-
-                override fun onPageScrollStateChanged(state: Int) {}
-
-            })
+        binding.bottomSheet.tabNavView.setOnNavigationItemSelectedListener {
+            Navigation.findNavController(binding.root).navigate(it.itemId)
+            true
         }
 
         val dp80 = dpToPx(100.0f)
@@ -267,34 +234,6 @@ class MainActivity : AppCompatActivity() {
                 logsAdapter.pushLog(it)
             }
         }
-        /*
-        if (!Settings.canDrawOverlays(this)) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-            startActivity(intent)
-        }
-
-        val drawerLayout: DrawerLayout = findViewById(R.id.drawer_layout)
-        val navView: NavigationView = findViewById(R.id.nav_view)
-        val m: Menu = navView.menu
-        val menuGroup: SubMenu = m.addSubMenu("플러그인")
-        menuGroup.add("Foo")
-        menuGroup.add("Bar")
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        val navController = navHostFragment.navController
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        appBarConfiguration = AppBarConfiguration(
-                setOf(
-                        R.id.nav_home, R.id.nav_projects, R.id.nav_plugins, R.id.nav_slideshow
-                ), drawerLayout
-        )
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
-
-         */
     }
 
     override fun onSupportNavigateUp(): Boolean {
