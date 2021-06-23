@@ -7,7 +7,8 @@
     android:layout_height="match_parent"
     android:background="@color/transparent"
     app:behavior_hideable="false"
-    app:behavior_peekHeight="120dp"
+    app:behavior_peekHeight="90dp"
+    app:gestureInsetBottomIgnored="true"
     app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
     tools:context=".MainActivity">
 
@@ -15,9 +16,10 @@
         android:id="@+id/constraintLayout"
         android:layout_width="match_parent"
         android:layout_height="100dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp"
+        android:layout_marginStart="@dimen/card_margin"
+        android:layout_marginEnd="@dimen/card_margin"
         android:background="@drawable/round_top_bottom_dialog"
+        android:clipToPadding="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -47,32 +49,25 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cardViewHandle"
-            app:menu="@menu/activity_main_drawer" />
+            app:menu="@menu/activity_main_drawer">
 
-        <androidx.cardview.widget.CardView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
+        </com.google.android.material.bottomnavigation.BottomNavigationView>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewLogs"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             android:layout_marginStart="@dimen/card_margin"
             android:layout_marginTop="@dimen/card_margin"
             android:layout_marginEnd="@dimen/card_margin"
-            android:layout_marginBottom="@dimen/card_margin"
-            app:cardBackgroundColor="#FFFFFF"
-            app:cardCornerRadius="@dimen/card_radius"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/round_all"
+            android:clipToPadding="true"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textViewLogsTitle"
-            tools:visibility="visible">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewLogs"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                tools:visibility="visible">
-
-            </androidx.recyclerview.widget.RecyclerView>
-
-        </androidx.cardview.widget.CardView>
+            tools:visibility="visible" />
 
         <TextView
             android:id="@+id/textViewLogsTitle"

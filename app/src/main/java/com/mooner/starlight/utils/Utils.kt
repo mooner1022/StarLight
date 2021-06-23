@@ -40,11 +40,17 @@ class Utils {
         }
 
         fun formatTime(millis: Long): String {
+            val day = 1000 * 60 * 60 * 24
             val seconds = millis / 1000
             val s = seconds % 60
             val m = (seconds / 60) % 60
             val h = (seconds / (60 * 60)) % 24
-            return String.format("%d시간 %02d분 %02d초", h,m,s)
+            return if (millis >= day) {
+                val d = seconds / (60 * 60 * 24)
+                String.format("%d일 %d시간 %02d분 %02d초", h, m, s, d)
+            } else {
+                String.format("%d시간 %02d분 %02d초", h, m, s)
+            }
         }
     }
 }

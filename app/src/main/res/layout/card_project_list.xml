@@ -3,16 +3,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:backgroundTint="@color/project_card">
+    android:backgroundTint="@color/transparent">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardViewIsEnabled"
-        android:layout_width="5dp"
+        android:layout_width="10dp"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
         app:cardBackgroundColor="@color/project_card"
-        app:cardCornerRadius="2.5dp"
+        app:cardCornerRadius="3dp"
         app:cardElevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

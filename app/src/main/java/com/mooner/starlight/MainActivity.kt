@@ -3,28 +3,22 @@ package com.mooner.starlight
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.content.res.ResourcesCompat
 import androidx.navigation.Navigation
 import androidx.navigation.findNavController
-import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.viewpager.widget.ViewPager
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
@@ -42,7 +36,6 @@ import com.mooner.starlight.plugincore.core.Session.Companion.projectLoader
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import devlight.io.library.ntb.NavigationTabBar
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import org.angmarch.views.NiceSpinner
 import kotlin.math.abs
@@ -89,7 +82,7 @@ class MainActivity : AppCompatActivity() {
         //setSupportActionBar(toolbar)
 
         windowContext = this
-        rootLayout = binding.innerLayout.rootLayout
+        rootLayout = binding.root
         ctr = findViewById(R.id.collapsingToolbarLayout)
 
         //val isInitial = intent.getBooleanExtra("isInitial", true)
@@ -171,16 +164,28 @@ class MainActivity : AppCompatActivity() {
          */
 
         binding.bottomSheet.tabNavView.setOnNavigationItemSelectedListener {
-            Navigation.findNavController(binding.root).navigate(it.itemId)
+            Navigation.findNavController(binding.navHostFragment).navigate(it.itemId)
             true
         }
 
-        val dp80 = dpToPx(100.0f)
-        val dp40 = dpToPx(40.0f)
+        val dp100 = dpToPx(100f)
+        val dp40 = dpToPx(40f)
+
+        val dp20 = dpToPx(20f)
         val maxWidth = resources.displayMetrics.widthPixels - dp40
-        val maxHeight = resources.displayMetrics.heightPixels - dpToPx(120.0f)
-        println("maxHeight= $maxHeight")
+        val maxHeight = resources.displayMetrics.heightPixels - dpToPx(120f)
         val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet.bottomSheetLogs)
+        binding.nestedScrollView.setOnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
+            val diff = scrollY - oldScrollY
+            if (diff > 10 && bottomSheetBehavior.peekHeight != 0) {
+                println("hidden")
+                bottomSheetBehavior.setPeekHeight(0, true)
+            } else if (diff < -10 && bottomSheetBehavior.peekHeight != dp100.toInt()) {
+                println("collapsed")
+                bottomSheetBehavior.setPeekHeight(dp100.toInt(), true)
+            }
+        }
+
         bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
 
@@ -188,10 +193,11 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {
                     //binding.bottomSheet.constraintLayout.alpha = 1.0f - (slideOffset / 8)
-                    val params = binding.bottomSheet.constraintLayout.layoutParams
-                    params.height = (dp80 + (maxHeight * slideOffset)).toInt()
-                    params.width = (maxWidth + (dp40 * slideOffset)).toInt()
-                    bottomSheet.findViewById<ConstraintLayout>(R.id.constraintLayout).layoutParams = params
+                    binding.bottomSheet.constraintLayout.layoutParams = binding.bottomSheet.constraintLayout.layoutParams.apply {
+                        height = (dp100 + (maxHeight * slideOffset)).toInt()
+                        width = (maxWidth + (dp40 * slideOffset)).toInt()
+                        (this as ViewGroup.MarginLayoutParams).topMargin = (dp20 * slideOffset).toInt()
+                    }
                     bottomSheet.requestLayout()
                     bottomSheet.forceLayout()
                 }
@@ -199,15 +205,15 @@ class MainActivity : AppCompatActivity() {
         )
 
         textViewStatus = findViewById(R.id.statusView)
-        binding.innerLayout.appBarLayout.addOnOffsetChangedListener(
+        binding.appBarLayout.addOnOffsetChangedListener(
                 AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
                     val percent = 1.0f - abs(
                             verticalOffset / appBarLayout.totalScrollRange
                                     .toFloat()
                     )
                     textViewStatus.alpha = percent
-                    binding.innerLayout.textViewTitle.alpha = percent
-                    binding.innerLayout.imageViewLogo.alpha = percent
+                    binding.textViewTitle.alpha = percent
+                    binding.imageViewLogo.alpha = percent
                 }
         )
         reloadText()

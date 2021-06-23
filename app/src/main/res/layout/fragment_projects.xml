@@ -5,14 +5,13 @@
     android:id="@+id/projectParentLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/main_bright"
+    android:background="#F7F8FA"
     tools:context=".ui.projects.ProjectsFragment">
 
     <LinearLayout
         android:id="@+id/projectInnerLayout"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@drawable/round_top"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -26,13 +25,13 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
-            android:backgroundTint="@color/home_card"
             app:cardCornerRadius="20dp"
             app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:background="@drawable/gradient_card"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -44,6 +43,7 @@
                     android:layout_weight="1"
                     android:fontFamily="@font/nanumsquare_round_extrabold"
                     android:text="@string/project_align_state"
+                    android:textColor="#FFFFFF"
                     android:textSize="16sp" />
 
                 <ImageView
@@ -51,7 +51,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="0.15"
-                    android:src="@drawable/ic_round_sort_by_alpha_24" />
+                    android:src="@drawable/ic_round_sort_by_alpha_24"
+                    app:tint="#FFFFFF" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
