@@ -1,6 +1,7 @@
 package com.mooner.starlight.plugincore.project
 
 import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
@@ -29,7 +30,7 @@ class Project(
         fun create(dir: File, config: ProjectConfig): Project {
             val folder = File(dir.path, config.name)
             folder.mkdirs()
-            File(folder.path, "project.json").writeText(Json.encodeToString(config), Charsets.UTF_8)
+            File(folder.path, "project.json").writeText(json.encodeToString(config), Charsets.UTF_8)
             File(folder.path, config.mainScript).writeText("", Charsets.UTF_8)
             return Project(folder, config)
         }
@@ -98,7 +99,7 @@ class Project(
     }
 
     fun flush() {
-        val str = Json.encodeToString(config)
+        val str = json.encodeToString(config)
         logger.d(config.name, "Flushed project config: $str")
         File(folder.path, "project.json").writeText(str, Charsets.UTF_8)
     }

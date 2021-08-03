@@ -1,6 +1,5 @@
 package com.mooner.starlight.ui.plugins
 
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -19,12 +18,11 @@ import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.FragmentPluginsBinding
 import com.mooner.starlight.models.Align
-import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
-import com.mooner.starlight.plugincore.theme.ThemeManager
 import com.mooner.starlight.utils.Utils
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 
@@ -66,6 +64,24 @@ class PluginsFragment : Fragment() {
         private val DEFAULT_ALIGN = ALIGN_GANADA
     }
 
+    override fun onResume() {
+        super.onResume()
+        with(MainActivity) {
+            setToolbarText("Plugins")
+            reloadText(
+                Utils.formatStringRes(
+                    R.string.subtitle_plugins,
+                    mapOf(
+                        "count" to plugins.size.toString()
+                    )
+                )
+            )
+            if (fab.isOrWillBeShown) {
+                fab.hide()
+            }
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -73,26 +89,6 @@ class PluginsFragment : Fragment() {
     ): View {
         _binding = FragmentPluginsBinding.inflate(inflater, container, false)
         plugins = ApplicationSession.plugins
-
-        MainActivity.setToolbarText("Plugins")
-        MainActivity.reloadText(
-            Utils.formatStringRes(
-                R.string.subtitle_plugins,
-                mapOf(
-                    "count" to plugins.size.toString()
-                )
-            )
-        )
-
-        ThemeManager.matchBackgroundColor(requireContext(),
-            mapOf(
-                ThemeManager.COLOR_TOOLBAR to arrayOf(
-                    binding.pluginsParentLayout
-                ),
-            )
-        )
-        val theme = ThemeManager.getCurrentTheme(requireContext())
-        binding.pluginsInnerLayout.backgroundTintList = ColorStateList.valueOf(theme.background.toInt())
 
         if (plugins.isEmpty()) {
             Logger.i(javaClass.simpleName, "No plugins detected!")

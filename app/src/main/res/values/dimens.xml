@@ -8,7 +8,7 @@
     <dimen name="icon_margin">15dp</dimen>
     <dimen name="icon_width">24dp</dimen>
 
-    <dimen name="card_radius">15dp</dimen>
+    <dimen name="card_radius">20dp</dimen>
     <dimen name="card_elevation">10dp</dimen>
     <dimen name="card_margin">20dp</dimen>
 

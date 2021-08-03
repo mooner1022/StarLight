@@ -1,13 +1,38 @@
 package com.mooner.starlight.plugincore.core
 
+import android.os.Build
 import android.os.Environment
 import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.ProjectLoader
+import kotlinx.serialization.json.Json
 import java.io.File
 
 class Session {
     companion object {
+
+        private val mJson: ThreadLocal<Json> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ThreadLocal.withInitial {
+                Json {
+                    isLenient = true
+                    ignoreUnknownKeys = true
+                    prettyPrint = true
+                }
+            }
+        } else {
+            object : ThreadLocal<Json>() {
+                override fun initialValue(): Json? {
+                    return Json {
+                        isLenient = true
+                        ignoreUnknownKeys = true
+                        prettyPrint = true
+                    }
+                }
+            }
+        }
+        val json: Json
+            get() = mJson.get()!!
+
         @Suppress("DEPRECATION")
         private var mGeneralConfig: GeneralConfig = GeneralConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
 
@@ -38,11 +63,3 @@ class Session {
         fun getGeneralConfig(): GeneralConfig = mGeneralConfig
     }
 }
-
-//fun b3EflsEaRR(eventListener: (eventName: String, arguments: Map<String, Any>) -> Unit) {
-//    Session.eventBinder.bind(eventListener)
-//}
-
-//fun callEvent(eventName: String, arguments: Map<String, Any>) {
-//    Session.eventBinder.call(eventName, arguments)
-//}

@@ -18,7 +18,6 @@ import com.mooner.starlight.databinding.FragmentHomeBinding
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.theme.ThemeManager
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.utils.Utils
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
@@ -49,6 +48,7 @@ class HomeFragment : Fragment() {
         private const val LOGS_MAX_SIZE = 5
     }
 
+
     @SuppressLint("SetTextI18n")
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -56,22 +56,6 @@ class HomeFragment : Fragment() {
             savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        val fab: FloatingActionButton = MainActivity.fab
-        if (fab.isVisible) {
-            fab.hide()
-        }
-        //val textView: TextView = root.findViewById(R.id.textViewLogs)
-        //root.switchAllPower.setOnCheckedChangeListener { _, isChecked ->
-        //    root.cardViewAllPower.setCardBackgroundColor(root.context.getColor(if (isChecked) R.color.cardview_enabled else R.color.cardview_disabled))
-        //}
-        MainActivity.setToolbarText(requireContext().getString(R.string.app_name))
-        MainActivity.reloadText(requireContext().getString(R.string.app_version))
-
-        val theme = ThemeManager.getCurrentTheme(requireContext())
-        binding.homeInnerLayout.backgroundTintList = ColorStateList.valueOf(theme.background.toInt())
-        binding.homeInnerLayout.setOnScrollChangeListener { v, _, _, _, _ ->
-            v.parent.requestDisallowInterceptTouchEvent(true)
-        }
 
         //val allProjectsCount = Session.getProjectLoader().getProjects().size
         val activeProjects = Session.projectLoader.getEnabledProjects()
@@ -113,6 +97,14 @@ class HomeFragment : Fragment() {
         if (uptimeTimer == null) {
             uptimeTimer = Timer()
             uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
+        }
+
+        with(MainActivity) {
+            if (fab.isOrWillBeShown) {
+                fab.hide()
+            }
+            setToolbarText(requireContext().getString(R.string.app_name))
+            reloadText(requireContext().getString(R.string.app_version))
         }
     }
 

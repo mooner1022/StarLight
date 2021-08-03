@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.plugin
 
+import android.content.Context
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.Version
@@ -11,16 +12,18 @@ import com.mooner.starlight.plugincore.utils.Utils.Companion.getFileSize
 import java.io.File
 
 abstract class StarlightPlugin: Plugin, EventListener {
-    val pluginCoreVersion: Version = Info.PLUGINCORE_VERSION
     private lateinit var projectLoader: ProjectLoader
     private lateinit var loader: PluginLoader
     private lateinit var file: File
     private lateinit var dataDir: File
     private lateinit var classLoader: ClassLoader
+    private var _context: Context? = null
     private var isEnabled = false
     lateinit var config: PluginConfig
     val fileSize: Float
         get() = file.getFileSize()
+    val context: Context
+        get() = _context!!
 
     constructor() {
         val classLoader = this.javaClass.classLoader

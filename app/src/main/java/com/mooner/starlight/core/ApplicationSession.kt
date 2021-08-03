@@ -2,6 +2,7 @@ package com.mooner.starlight.core
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Build
 import com.mooner.starlight.R
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
@@ -11,6 +12,7 @@ import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
+import kotlinx.serialization.json.Json
 
 @SuppressLint("StaticFieldLeak")
 object ApplicationSession {

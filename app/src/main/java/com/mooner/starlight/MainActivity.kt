@@ -6,19 +6,17 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.DisplayMetrics
-import android.view.View
-import android.view.ViewGroup
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.navigation.Navigation
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.viewpager2.widget.ViewPager2
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
@@ -26,7 +24,6 @@ import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.customview.customView
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.core.ForegroundTask
@@ -35,11 +32,10 @@ import com.mooner.starlight.plugincore.core.Session.Companion.getLanguageManager
 import com.mooner.starlight.plugincore.core.Session.Companion.projectLoader
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.ui.ViewPagerAdapter
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import org.angmarch.views.NiceSpinner
 import kotlin.math.abs
-
 
 @SuppressLint("StaticFieldLeak")
 class MainActivity : AppCompatActivity() {
@@ -47,13 +43,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var languageSpinner: NiceSpinner
     private lateinit var binding: ActivityMainBinding
 
+
     companion object {
         private lateinit var textViewStatus: TextView
         private lateinit var ctr: CollapsingToolbarLayout
         lateinit var fab: FloatingActionButton
-        private lateinit var fabAnim: Animation
         private lateinit var rootLayout: CoordinatorLayout
-        lateinit var windowContext: Context
 
         fun reloadText(text: String? = null) {
             if (text == null) {
@@ -78,16 +73,10 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
-        //val toolbar: Toolbar = findViewById(R.id.toolbar)
-        //setSupportActionBar(toolbar)
 
-        windowContext = this
         rootLayout = binding.root
         ctr = findViewById(R.id.collapsingToolbarLayout)
 
-        //val isInitial = intent.getBooleanExtra("isInitial", true)
-
-        println("isRunning: ${ForegroundTask.isRunning}")
         if (!ForegroundTask.isRunning) {
             println("start service")
             val intent = Intent(this, ForegroundTask::class.java)
@@ -98,7 +87,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        fabAnim = AnimationUtils.loadAnimation(applicationContext, R.anim.fab_snackbar_anim)
         fab = findViewById(R.id.fabNewProject)
 
         with(fab) {
@@ -147,62 +135,35 @@ class MainActivity : AppCompatActivity() {
                     with(languageSpinner) {
                         setBackgroundColor(context.getColor(R.color.transparent))
                         attachDataSource(objects)
-                        setOnSpinnerItemSelectedListener { _, _, position, _ ->
-                            Logger.i(javaClass.name, "Spinner item selected: $position")
-                        }
                     }
                 }
             }
         }
 
-        /*
-        Blurry.with(applicationContext)
-            .radius(10)
-            .sampling(8)
-            .color(Color.parseColor("#FFFFFFFF"))
-            .postOnto(binding.bottomSheet.bottomSheetLogs)
-         */
-
-        binding.bottomSheet.tabNavView.setOnNavigationItemSelectedListener {
-            Navigation.findNavController(binding.navHostFragment).navigate(it.itemId)
-            true
-        }
-
-        val dp100 = dpToPx(100f)
-        val dp40 = dpToPx(40f)
-
-        val dp20 = dpToPx(20f)
-        val maxWidth = resources.displayMetrics.widthPixels - dp40
-        val maxHeight = resources.displayMetrics.heightPixels - dpToPx(120f)
-        val bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomSheet.bottomSheetLogs)
-        binding.nestedScrollView.setOnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
-            val diff = scrollY - oldScrollY
-            if (diff > 10 && bottomSheetBehavior.peekHeight != 0) {
-                println("hidden")
-                bottomSheetBehavior.setPeekHeight(0, true)
-            } else if (diff < -10 && bottomSheetBehavior.peekHeight != dp100.toInt()) {
-                println("collapsed")
-                bottomSheetBehavior.setPeekHeight(dp100.toInt(), true)
-            }
-        }
-
-        bottomSheetBehavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-                override fun onStateChanged(bottomSheet: View, newState: Int) {
-
+        binding.viewPager.adapter = ViewPagerAdapter(this)
+        binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                val id = when(position) {
+                    0 -> R.id.nav_home
+                    1 -> R.id.nav_projects
+                    2 -> R.id.nav_plugins
+                    else -> R.id.nav_home
                 }
-
-                override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                    //binding.bottomSheet.constraintLayout.alpha = 1.0f - (slideOffset / 8)
-                    binding.bottomSheet.constraintLayout.layoutParams = binding.bottomSheet.constraintLayout.layoutParams.apply {
-                        height = (dp100 + (maxHeight * slideOffset)).toInt()
-                        width = (maxWidth + (dp40 * slideOffset)).toInt()
-                        (this as ViewGroup.MarginLayoutParams).topMargin = (dp20 * slideOffset).toInt()
-                    }
-                    bottomSheet.requestLayout()
-                    bottomSheet.forceLayout()
-                }
+                binding.bottomBar.menu.select(id)
             }
-        )
+        })
+
+        val bottomBar = binding.bottomBar
+        bottomBar.onItemSelectedListener = { _, item, _ ->
+            val index = when(item.id) {
+                R.id.nav_home -> 0
+                R.id.nav_projects -> 1
+                R.id.nav_plugins -> 2
+                else -> 0
+            }
+            binding.viewPager.setCurrentItem(index, true)
+        }
 
         textViewStatus = findViewById(R.id.statusView)
         binding.appBarLayout.addOnOffsetChangedListener(
@@ -218,20 +179,10 @@ class MainActivity : AppCompatActivity() {
         )
         reloadText()
 
-        val bottomSheet = binding.bottomSheet
         val logs = Logger.filterNot(LogType.DEBUG)
         val logsAdapter = LogsRecyclerViewAdapter(applicationContext)
         if (logs.isNotEmpty()) {
-            val recyclerLayoutManager = LinearLayoutManager(applicationContext).apply {
-                reverseLayout = true
-                stackFromEnd = true
-            }
             logsAdapter.data = logs.toMutableList()
-            with(bottomSheet.recyclerViewLogs) {
-                itemAnimator = FadeInLeftAnimator()
-                layoutManager = recyclerLayoutManager
-                adapter = logsAdapter
-            }
             logsAdapter.notifyItemRangeInserted(0, logs.size)
         }
 

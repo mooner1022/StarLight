@@ -1,7 +1,9 @@
 package com.mooner.starlight.ui.projects
 
+import android.content.Context
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,7 +25,6 @@ import com.mooner.starlight.models.Align
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.project.Project
-import com.mooner.starlight.plugincore.theme.ThemeManager
 import com.mooner.starlight.utils.Utils
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 
@@ -100,6 +101,15 @@ class ProjectsFragment : Fragment() {
         private val DEFAULT_ALIGN = ALIGN_GANADA
     }
 
+    override fun onResume() {
+        super.onResume()
+        with(MainActivity) {
+            setToolbarText("Projects")
+            fab.show()
+            reloadText()
+        }
+    }
+
     override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
@@ -108,22 +118,6 @@ class ProjectsFragment : Fragment() {
         _binding = FragmentProjectsBinding.inflate(inflater, container, false)
         projectsViewModel =
                 ViewModelProvider(this).get(ProjectsViewModel::class.java)
-
-        MainActivity.setToolbarText("Projects")
-
-        ThemeManager.matchBackgroundColor(requireContext(),
-            mapOf(
-                ThemeManager.COLOR_TOOLBAR to arrayOf(
-                    binding.projectParentLayout
-                ),
-                ThemeManager.COLOR_CARD to arrayOf(
-                    binding.cardProjectList,
-                    binding.cardViewProjectAlign
-                )
-            )
-        )
-        val theme = ThemeManager.getCurrentTheme(requireContext())
-        binding.projectInnerLayout.backgroundTintList = ColorStateList.valueOf(theme.background.toInt())
 
         binding.cardViewProjectAlign.setOnClickListener {
             MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
@@ -149,9 +143,6 @@ class ProjectsFragment : Fragment() {
         )
         binding.imageViewProjectAlignState.setImageResource(alignState.icon)
 
-        val fab: FloatingActionButton = MainActivity.fab
-        fab.show()
-        MainActivity.reloadText()
         recyclerAdapter = ProjectListAdapter(requireContext())
         projectsViewModel.data.observe(viewLifecycleOwner) {
             if (!isInit) {
@@ -242,7 +233,6 @@ class ProjectsFragment : Fragment() {
             it[GeneralConfig.CONFIG_PROJECTS_REVERSED] = isReversed.toString()
             it[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST] = activeFirst.toString()
             it.push()
-            println("push!")
         }
     }
 }
