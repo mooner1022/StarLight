@@ -4,11 +4,17 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
-import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.res.ResourcesCompat
+import coil.Coil
+import coil.ImageLoader
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
+import coil.load
+import coil.request.repeatCount
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
@@ -21,21 +27,20 @@ import com.skydoves.needs.showNeeds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import www.sanju.motiontoast.MotionToast
 import java.util.*
 import kotlin.concurrent.schedule
 
 class SplashActivity : AppCompatActivity() {
     companion object {
         private const val MIN_LOAD_TIME = 1500L
+        private const val ANIMATION_DURATION = 5000L
+        private val REQUIRED_PERMISSIONS = arrayOf(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.INTERNET,
+        )
     }
-    private var spinTimer: Timer? = null
     private lateinit var binding: ActivitySplashBinding
-    private val REQUIRED_PERMISSIONS = arrayOf(
-        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-        Manifest.permission.READ_EXTERNAL_STORAGE,
-        Manifest.permission.INTERNET,
-    )
 
     @SuppressLint("Range")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,21 +68,19 @@ class SplashActivity : AppCompatActivity() {
                     },
                     {
                         val currentMillis = System.currentTimeMillis()
-                        println("time: ${currentMillis - initMillis}")
                         if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
-                            Timer().schedule(MIN_LOAD_TIME - (currentMillis - initMillis)) {
-                                if (spinTimer != null) {
-                                    spinTimer!!.cancel()
-                                }
+                            val delay = if (!ApplicationSession.isInitComplete)
+                                ANIMATION_DURATION - (currentMillis - initMillis)
+                            else
+                                MIN_LOAD_TIME - (currentMillis - initMillis)
+
+                            Timer().schedule(delay) {
                                 runOnUiThread {
                                     startActivity(intent)
                                     finish()
                                 }
                             }
                         } else {
-                            if (spinTimer != null) {
-                                spinTimer!!.cancel()
-                            }
                             runOnUiThread {
                                 startActivity(intent)
                                 finish()
@@ -124,13 +127,8 @@ class SplashActivity : AppCompatActivity() {
             needs.setOnConfirmListener {
                 if (Utils.checkPermissions(this, REQUIRED_PERMISSIONS)) {
                     needs.dismiss()
-                    MotionToast.darkColorToast(this,
-                        "권한 승인!",
-                        "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و",
-                        MotionToast.TOAST_SUCCESS,
-                        MotionToast.GRAVITY_BOTTOM,
-                        MotionToast.LONG_DURATION,
-                        ResourcesCompat.getFont(this, R.font.nanumsquare_round_regular))
+                    Snackbar.make(view, "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و", Snackbar.LENGTH_LONG).show()
+                    init()
                 } else {
                     ActivityCompat.requestPermissions(
                         this,
@@ -142,22 +140,11 @@ class SplashActivity : AppCompatActivity() {
                             if ((grantResults.isNotEmpty() &&
                                         grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                                 needs.dismiss()
-                                MotionToast.darkColorToast(this,
-                                    "권한 승인!",
-                                    "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و",
-                                    MotionToast.TOAST_SUCCESS,
-                                    MotionToast.GRAVITY_BOTTOM,
-                                    MotionToast.LONG_DURATION,
-                                    ResourcesCompat.getFont(this,R.font.nanumsquare_round_regular))
+                                Snackbar.make(view, "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و", Snackbar.LENGTH_LONG).show()
                                 init()
                             } else {
-                                MotionToast.darkColorToast(this,
-                                    "권한 승인 실패",
-                                    "권한이 승인되지 않았어요.. (´•ω•̥`)",
-                                    MotionToast.TOAST_ERROR,
-                                    MotionToast.GRAVITY_BOTTOM,
-                                    MotionToast.LONG_DURATION,
-                                    ResourcesCompat.getFont(this,R.font.nanumsquare_round_regular))
+                                Snackbar.make(view, "권한이 승인되지 않았어요.. (´•ω•̥`)و", Snackbar.LENGTH_LONG).show()
+                                init()
                             }
                         }
                     }
@@ -168,29 +155,19 @@ class SplashActivity : AppCompatActivity() {
             init()
         }
 
-        var isSpinning = false
-        var clickCnt = 0
-
-        val anim = AnimationUtils.loadAnimation(applicationContext, R.anim.splash_logo_anim).apply {
-            fillAfter = true
-        }
-        val spinAnim = AnimationUtils.loadAnimation(applicationContext, R.anim.splash_spin_anim).apply {
-            fillAfter = true
-        }
-
-        binding.imageViewSplashLogo.startAnimation(anim)
-
-        binding.imageViewSplashLogo.setOnClickListener {
-            clickCnt++
-            if (!isSpinning && clickCnt >= 4) {
-                isSpinning = true
-                binding.imageViewSplashLogo.startAnimation(spinAnim)
-                spinTimer = Timer().apply {
-                    schedule(500) {
-                        isSpinning = false
-                    }
+        val imageLoader = ImageLoader.Builder(applicationContext)
+            .componentRegistry {
+                if (SDK_INT >= 28) {
+                    add(ImageDecoderDecoder(applicationContext))
+                } else {
+                    add(GifDecoder())
                 }
             }
+            .build()
+        Coil.setImageLoader(imageLoader)
+
+        binding.splashAnimImageView.load(R.drawable.splash_anim) {
+            repeatCount(0)
         }
     }
 }

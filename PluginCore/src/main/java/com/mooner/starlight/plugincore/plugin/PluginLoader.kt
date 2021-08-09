@@ -16,7 +16,8 @@ import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
 class PluginLoader {
-    private val classes: HashMap<String, Class<*>> = HashMap()
+    private var plugins: HashSet<Plugin> = hashSetOf()
+    private val classes: HashMap<String, Class<*>> = hashMapOf()
     private val loaders: LinkedHashMap<String, PluginClassLoader> = LinkedHashMap()
 
     companion object {
@@ -27,7 +28,7 @@ class PluginLoader {
     private val defDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/")
     //private val dexDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/.dex/")
 
-    fun loadPlugins(dir: File = defDirectory, onPluginLoad: ((name: String) -> Unit)? = null): List<Plugin> {
+    fun loadPlugins(dir: File = defDirectory, onPluginLoad: ((name: String) -> Unit)? = null): Set<Plugin> {
         if (!dir.exists() || !dir.isDirectory) {
             dir.mkdirs()
         }
@@ -37,7 +38,7 @@ class PluginLoader {
             val config: PluginConfig
             try {
                 config = loadConfigFile(file)
-                configs[config.name] = Pair(file, config)
+                configs[config.id] = Pair(file, config)
             } catch (e: FileNotFoundException) {
                 Logger.e(T, e.toString())
                 throw InvalidPluginException(e.toString())
@@ -49,7 +50,7 @@ class PluginLoader {
             }
         }
 
-        val plugins: MutableList<Plugin> = mutableListOf()
+        val plugins: HashSet<Plugin> = hashSetOf()
         for ((file: File, config: PluginConfig) in configs.values) {
             try {
                 for (dependency in config.depend) {
@@ -72,12 +73,13 @@ class PluginLoader {
             }
         }
 
+        this.plugins = plugins
         return plugins
     }
 
     private fun loadPlugin(config: PluginConfig, file: File): StarlightPlugin {
         val parent = file.parentFile
-        val dataDir = File(parent, config.name)
+        val dataDir = File(parent, "${config.name}(${config.id})")
 
         if (dataDir.exists() && !dataDir.isDirectory) {
             throw InvalidPluginException(
@@ -97,7 +99,67 @@ class PluginLoader {
             throw e
         }
         loaders[config.name] = loader
-        return loader.plugin
+        val plugin = loader.plugin
+        plugin.setConfigPath(File(plugin.getDataFolder(), "config-plugin.json"))
+        loadAssets(file, plugin)
+        if (plugin !in plugins) {
+            plugins.add(plugin)
+        }
+        return plugin
+    }
+
+    fun removePlugin(id: String): Boolean {
+        try {
+            val plugin = getPluginById(id)?: return false
+            if (plugin !is StarlightPlugin) return false
+
+            val file = plugin.file
+            if (!file.exists() || !file.isFile) return false
+
+            file.delete()
+            plugin.getDataFolder().deleteRecursively()
+
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
+    fun getPluginById(id: String): Plugin? = plugins.find { (it as StarlightPlugin).config.id == id }
+
+    fun getPluginByName(name: String): Plugin? = plugins.find { (it as StarlightPlugin).config.name == name }
+
+    fun getPlugins(): Set<Plugin> = plugins
+
+    fun loadAssets(file: File, plugin: Plugin, force: Boolean = false) {
+        require(plugin is StarlightPlugin) { "Plugin [${plugin.name}] does not extend StarlightPlugin" }
+        var jar: JarFile? = null
+        try {
+            jar = JarFile(file)
+            val entries = jar.entries()
+            while (entries.hasMoreElements()) {
+                val entry = entries.nextElement() ?: break
+                if (!entry.name.startsWith("assets/")) continue
+                val fileName = entry.name.split("assets/").last()
+                val writeFile = File(plugin.getDataFolder(), fileName)
+
+                if (force || !writeFile.exists()) {
+                    val entStream = jar.getInputStream(entry)
+                    if (writeFile.isDirectory) {
+                        writeFile.deleteRecursively()
+                    }
+                    writeFile.parentFile?.mkdirs()
+                    writeFile.writeBytes(entStream.readBytes())
+                    Logger.d(T, "Loaded asset [${fileName}] from plugin [${plugin.config.fullName}]")
+                }
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            throw IllegalStateException("Failed to load asset")
+        } finally {
+            jar?.close()
+        }
     }
 
     private fun loadConfigFile(file: File): PluginConfig {

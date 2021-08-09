@@ -4,7 +4,6 @@ data class MethodBlock(
     val blockName: String,
     val methodClass: Class<*>,
     val instance: Any,
-    val isCustomClass: Boolean,
     val methods: List<Method>
 )
 

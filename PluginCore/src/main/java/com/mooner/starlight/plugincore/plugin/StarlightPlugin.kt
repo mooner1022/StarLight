@@ -2,23 +2,27 @@ package com.mooner.starlight.plugincore.plugin
 
 import android.content.Context
 import com.mooner.starlight.plugincore.Info
+import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.Version
 import com.mooner.starlight.plugincore.event.EventListener
+import com.mooner.starlight.plugincore.language.ConfigObject
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import com.mooner.starlight.plugincore.utils.Utils.Companion.getFileSize
+import kotlinx.serialization.decodeFromString
 import java.io.File
 
 abstract class StarlightPlugin: Plugin, EventListener {
     private lateinit var projectLoader: ProjectLoader
     private lateinit var loader: PluginLoader
-    private lateinit var file: File
+    internal lateinit var file: File
     private lateinit var dataDir: File
     private lateinit var classLoader: ClassLoader
     private var _context: Context? = null
     private var isEnabled = false
+    private var configPath: File? = null
     lateinit var config: PluginConfig
     val fileSize: Float
         get() = file.getFileSize()
@@ -47,6 +51,11 @@ abstract class StarlightPlugin: Plugin, EventListener {
         init(pluginLoader, projectLoader, config, dataDir, file, classLoader!!)
     }
 
+    override val configObjects: List<ConfigObject> = listOf()
+
+    override val name: String
+        get() = config.fullName
+
     override fun isEnabled(): Boolean = isEnabled
 
     protected fun setEnabled(enabled: Boolean) {
@@ -60,19 +69,32 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
+    internal fun setConfigPath(path: File) {
+        configPath = path
+    }
+
+    fun getPluginConfigs(): Map<String, Any> {
+        return if (configPath == null || !configPath!!.isFile || !configPath!!.exists()) mapOf() else {
+            val typed: Map<String, TypedString> = Session.json.decodeFromString(configPath!!.readText())
+            typed.mapValues { it.value.cast()!! }
+        }
+    }
+
+    fun callEvent(eventName: String, args: Array<Any>) = Session.projectLoader.callEvent(this.config.id, eventName, args)
+
     fun getDataFolder(): File = dataDir
 
     fun getProjectLoader(): ProjectLoader = projectLoader
 
     protected fun getClassLoader(): ClassLoader = classLoader
 
-    fun addCustomLanguage(language: Language) {
+    fun addLanguage(language: Language) {
         var isLoadSuccess = false
         try {
             Session.getLanguageManager().addLanguage(language)
             isLoadSuccess = true
         } catch (e: IllegalStateException) {
-            Logger.e("LanguageLoader",e.toString())
+            Logger.e("LanguageLoader", e.toString())
             e.printStackTrace()
         } finally {
             Logger.i("LanguageLoader",(if (isLoadSuccess) "Successfully added" else "Failed to add") + " language ${language.name}")
@@ -80,6 +102,14 @@ abstract class StarlightPlugin: Plugin, EventListener {
     }
 
     override fun toString(): String = config.fullName
+
+    override fun equals(other: Any?): Boolean {
+        return when(other) {
+            is StarlightPlugin -> other.config.id == this.config.id
+            null -> false
+            else -> false
+        }
+    }
 
     fun init(
         pluginLoader: PluginLoader,

@@ -9,7 +9,6 @@ import android.widget.Button
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.project.Project
@@ -17,16 +16,15 @@ import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.ui.presets.ExpandableCardView
 import com.mooner.starlight.ui.projects.config.ProjectConfigActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.File
 
 class ProjectListAdapter(
     private val context: Context
 ) : RecyclerView.Adapter<ProjectListAdapter.ProjectListViewHolder>() {
     var data = listOf<Project>()
-    private val mainScope = CoroutineScope(Dispatchers.Main)
+    private val mainContext = Dispatchers.Main
+    private val compileContext = Dispatchers.Default + CoroutineName("ProjectCompileThread")
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectListViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.card_project_list, parent, false)
@@ -43,127 +41,99 @@ class ProjectListAdapter(
         val project = data[position]
         val config = project.config
 
-        holder.cardViewIsEnabled.setCardBackgroundColor(
-            context.getColor(
-                if (project.isCompiled) {
-                    if (config.isEnabled) {
-                        R.color.card_enabled
+        fun updateCardColor() {
+            holder.cardViewIsEnabled.setCardBackgroundColor(
+                context.getColor(
+                    if (project.isCompiled) {
+                        if (config.isEnabled) {
+                            R.color.card_enabled
+                        } else {
+                            R.color.card_disabled
+                        }
                     } else {
-                        R.color.card_disabled
+                        R.color.orange
                     }
-                } else {
-                    R.color.orange
-                }
+                )
             )
-        )
+        }
 
-        with(holder.expandable) {
-            if (project.isCompiled) {
-                setOnSwitchChangeListener { _, isChecked ->
-                    if (isChecked != config.isEnabled) {
-                        holder.cardViewIsEnabled.setCardBackgroundColor(
-                            context.getColor(
-                                if (isChecked) {
-                                    R.color.card_enabled
-                                } else {
-                                    R.color.card_disabled
-                                }
-                            )
-                        )
-                        config.isEnabled = isChecked
-                        project.flush()
-                        MainActivity.reloadText()
-                    }
-                }
-                setSwitch(project.config.isEnabled)
-                setSwitchEnabled(true)
-            } else {
-                setSwitch(false)
-                setSwitchEnabled(false)
+        updateCardColor()
+        holder.expandable.apply {
+            setSwitch(config.isEnabled)
+            setSwitchEnabled(project.isCompiled)
+        }
+
+        holder.expandable.setOnSwitchChangeListener { _, isChecked ->
+            if (config.isEnabled != isChecked) {
+                config.isEnabled = isChecked
+                project.flush()
+                MainActivity.reloadText()
             }
+            updateCardColor()
+            holder.expandable.apply {
+                setSwitch(config.isEnabled)
+                setSwitchEnabled(project.isCompiled)
+            }
+        }
 
-            setIcon(
-                drawable = project.getLanguage().icon
-                    ?: ContextCompat.getDrawable(
-                        context,
-                        R.drawable.ic_round_error_outline_24
+        holder.expandable.setIcon(loader = project.getLanguage().loadIcon)
+
+        holder.expandable.setTitle(titleText = config.name)
+
+        holder.buttonDebugRoom.setOnClickListener {
+            it.context.startActivity(
+                Intent(
+                    it.context,
+                    DebugRoomActivity::class.java
+                ).apply {
+                    putExtra(
+                        "roomName",
+                        config.name
                     )
+                }
             )
-            setTitle(titleText = config.name)
-            setOnExpandedListener { _, isExpanded ->
-                if (isExpanded) {
-                    holder.buttonEditCode.setOnClickListener {
-                        val intent = Intent(
-                            it.context,
-                            EditorActivity::class.java
-                        ).apply {
-                            putExtra("fileDir", File(project.folder, config.mainScript).path)
-                            putExtra("title", config.name)
-                        }
-                        it.context.startActivity(intent)
-                    }
+        }
 
-                    holder.buttonRecompile.setOnClickListener {
-                        CoroutineScope(Dispatchers.Default).launch {
-                            try {
-                                project.compile(true)
-                            } catch (e: Exception) {
-                                mainScope.launch {
-                                    MainActivity.showSnackbar("${config.name}의 컴파일에 실패했어요.\n$e")
-                                }
-                            }
-                            mainScope.launch {
-                                MainActivity.showSnackbar("${config.name}의 컴파일을 완료했어요!")
-                                holder.cardViewIsEnabled.setCardBackgroundColor(
-                                    holder.itemView.context.getColor(
-                                        R.color.card_disabled
-                                    )
-                                )
-                                with(holder.expandable) {
-                                    setSwitchEnabled(true)
-                                    setOnSwitchChangeListener { _, isChecked ->
-                                        if (isChecked != config.isEnabled) {
-                                            holder.cardViewIsEnabled.setCardBackgroundColor(
-                                                context.getColor(
-                                                    if (isChecked) {
-                                                        R.color.card_enabled
-                                                    } else {
-                                                        R.color.card_disabled
-                                                    }
-                                                )
-                                            )
-                                            project.config.isEnabled = true
-                                            project.flush()
-                                            //Session.getProjectLoader().updateProjectConfig(config.name, false) {
-                                            //    isEnabled = isChecked
-                                            //}
-                                            println("config: ${project.config}")
-                                            MainActivity.reloadText()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+        holder.buttonProjectConfig.setOnClickListener {
+            it.context.startActivity(
+                Intent(
+                    it.context,
+                    ProjectConfigActivity::class.java
+                ).apply {
+                    putExtra("projectName", config.name)
+                }
+            )
+        }
 
-                    holder.buttonDebugRoom.setOnClickListener {
-                        it.context.startActivity(
-                            Intent(
-                                it.context,
-                                DebugRoomActivity::class.java
-                            ).apply {
-                                putExtra(
-                                    "roomName",
-                                    config.name
-                                )
-                            })
-                    }
+        holder.buttonEditCode.setOnClickListener {
+            val intent = Intent(
+                it.context,
+                EditorActivity::class.java
+            ).apply {
+                putExtra("fileDir", File(project.folder, config.mainScript).path)
+                putExtra("title", config.name)
+            }
+            it.context.startActivity(intent)
+        }
 
-                    holder.buttonProjectConfig.setOnClickListener {
-                        val intent = Intent(it.context, ProjectConfigActivity::class.java).apply {
-                            putExtra("projectName", config.name)
+        holder.buttonRecompile.setOnClickListener {
+            CoroutineScope(compileContext).launch {
+                var isSuccess = false
+                try {
+                    project.compile(true)
+                    isSuccess = true
+                } catch (e: Exception) {
+                    withContext(context = mainContext) {
+                        MainActivity.showSnackbar("${config.name}의 컴파일에 실패했어요.\n$e")
+                    }
+                }
+                if (isSuccess) {
+                    withContext(context = mainContext) {
+                        MainActivity.showSnackbar("${config.name}의 컴파일을 완료했어요!")
+                        updateCardColor()
+                        if (holder.expandable.isEnabled) {
+                            holder.expandable.setSwitchEnabled(true)
                         }
-                        it.context.startActivity(intent)
                     }
                 }
             }
@@ -178,6 +148,5 @@ class ProjectListAdapter(
         val buttonEditCode: Button = itemView.findViewById(R.id.buttonEditCode)
         val buttonRecompile: Button = itemView.findViewById(R.id.buttonRecompile)
         val buttonProjectConfig: Button = itemView.findViewById(R.id.buttonProjectConfig)
-        val switch: SwitchMaterial = itemView.findViewById(R.id.card_switch)
     }
 }

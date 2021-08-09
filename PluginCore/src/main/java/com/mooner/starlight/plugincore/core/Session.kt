@@ -4,6 +4,7 @@ import android.os.Build
 import android.os.Environment
 import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -42,6 +43,10 @@ class Session {
         val projectLoader: ProjectLoader
             get() = mProjectLoader!!
 
+        private var mPluginLoader: PluginLoader? = null
+        val pluginLoader: PluginLoader
+            get() = mPluginLoader!!
+
         const val isDebugging: Boolean = true
 
         fun initLanguageManager() {
@@ -57,6 +62,14 @@ class Session {
                 return
             }
             mProjectLoader = ProjectLoader()
+        }
+
+        fun initPluginLoader() {
+            if (mPluginLoader != null) {
+                Logger.e("init", "Redeclaration of object pluginLoader")
+                return
+            }
+            mPluginLoader = PluginLoader()
         }
 
         fun getLanguageManager(): LanguageManager = mLanguageManager!!

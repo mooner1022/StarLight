@@ -20,6 +20,7 @@
     <color name="main_bright">#2A2C39</color>
     <color name="sub_bright">#191A25</color>
     <color name="main_dark">#2A2C39</color>
+    <color name="splash_background">#1B1B23</color>
     <color name="sub_dark">#191A25</color>
     <color name="project_card">#FFFFFF</color>
     <color name="cardview_enabled">#DBDEFB</color>

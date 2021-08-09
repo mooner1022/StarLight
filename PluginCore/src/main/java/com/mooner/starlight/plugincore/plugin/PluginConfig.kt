@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.plugin
 
+import com.mooner.starlight.plugincore.core.Session.Companion.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -8,6 +9,7 @@ import kotlinx.serialization.json.Json
 
 @Serializable
 data class PluginConfig(
+    val id: String,
     val name: String,
     @SerialName("main_class")
     val mainClass: String,
@@ -23,11 +25,11 @@ data class PluginConfig(
     companion object {
         fun decode(str: String): PluginConfig {
             if (str.isBlank() || !str.startsWith("{") || !str.endsWith("}")) throw IllegalArgumentException("Illegal String argument: $str")
-            return Json.decodeFromString(str)
+            return json.decodeFromString(str)
         }
     }
 
-    fun encode(): String = Json.encodeToString(this)
+    fun encode(): String = json.encodeToString(this)
 
     val fullName = "$name v$version"
 }

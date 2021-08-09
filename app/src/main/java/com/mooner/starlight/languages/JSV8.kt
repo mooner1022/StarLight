@@ -1,7 +1,15 @@
 package com.mooner.starlight.languages
 
+import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.view.Gravity
+import android.view.View
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
+import androidx.appcompat.app.ActionBar
 import androidx.core.content.ContextCompat
+import coil.load
 import com.eclipsesource.v8.V8
 import com.eclipsesource.v8.V8Object
 import com.mooner.starlight.R
@@ -10,6 +18,7 @@ import com.mooner.starlight.plugincore.language.*
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.Replier
 import io.alicorn.v8.V8JavaAdapter
+import java.io.File
 
 class JSV8: Language() {
     override val id: String
@@ -18,8 +27,9 @@ class JSV8: Language() {
         get() = "자바스크립트 (V8)"
     override val fileExtension: String
         get() = "js"
-    override val icon: Drawable
-        get() = ContextCompat.getDrawable(ApplicationSession.context, R.drawable.ic_v8)!!
+    override val loadIcon: (ImageView) -> Unit = { imageView ->
+        imageView.load(R.drawable.ic_v8)
+    }
     override val requireRelease: Boolean
         get() = true
     override val defaultCode: String
@@ -32,25 +42,25 @@ class JSV8: Language() {
     override val configObjectList: List<ConfigObject>
         get() = listOf(
             ToggleConfigObject(
-                objectId = "toggle_test",
-                objectName = "토글 테스트",
+                id = "toggle_test",
+                name = "토글 테스트",
                 defaultValue = false
             ),
             SliderConfigObject(
-                objectId = "slider_test",
-                objectName = "슬라이더 테스트",
+                id = "slider_test",
+                name = "슬라이더 테스트",
                 max = 5,
                 defaultValue = 2
             ),
             StringConfigObject(
-                objectId = "string_test",
-                objectName = "인풋 테스트",
+                id = "string_test",
+                name = "인풋 테스트",
                 hint = "테스트으으"
             ),
             SpinnerConfigObject(
-                objectId = "spinner_test",
-                objectName = "스피너 테스트",
-                dataList = listOf(
+                id = "spinner_test",
+                name = "스피너 테스트",
+                spinnerItems = listOf(
                     "테스트1",
                     "테스트2",
                     "테스트3",
@@ -58,43 +68,53 @@ class JSV8: Language() {
                 )
             ),
             ButtonConfigObject(
-                objectId = "button_test",
-                objectName = "버튼 테스트",
+                id = "button_test",
+                name = "버튼 테스트",
                 onClickListener = {
                     Logger.d("JSV8_Config", "onClickListener")
                 },
-                iconRes = R.drawable.ic_round_keyboard_arrow_right_24
+                iconRes = R.drawable.ic_round_keyboard_arrow_right_24,
+                backgroundColorInt = Color.parseColor("#ffa361")
             ),
             CustomConfigObject(
-                objectId = "custom_test",
-                objectName = "커스텀 테스트",
-                layoutID = R.layout.dialog_new_project,
+                id = "custom_test",
+                name = "커스텀 테스트",
                 onInflate = {
-
+                    val imageView = ImageView(it.context).apply {
+                        layoutParams = ActionBar.LayoutParams(1440, 1440).apply { gravity = Gravity.CENTER }
+                        maxWidth = 500
+                        maxHeight = 500
+                        x = 0f
+                        y = 0f
+                    }
+                    (it as LinearLayout).addView(imageView)
+                    imageView.load(R.drawable.splash_anim)
                 }
             )
         )
 
-    override fun onConfigChanged(changed: Map<String, Any>) {
-        Logger.i("JSV8", "changed: $changed")
+    override fun onConfigUpdated(updated: Map<String, Any>) {
+        Logger.i("JSV8", "updated: $updated")
     }
 
-    override fun compile(code: String, methods: Array<MethodBlock>): Any {
+    override fun onConfigChanged(id: String, view: View, data: Any) {
+        Logger.i("JSV8", "changed: $id, data: $data")
+        when(id) {
+            "string_test" -> {
+                val input = view as EditText
+                val text = data as String
+                if (text != "쎆쓰") {
+                    input.error = "쒸빨! 라루레후 무야호"
+                }
+            }
+        }
+    }
+
+    override fun compile(code: String, methods: List<MethodBlock>): Any {
         val v8 = V8.createV8Runtime()
-        v8.apply {
-            V8JavaAdapter.injectClass("replier", Replier::class.java, v8)
-            for (methodBlock in methods) {
-                if (methodBlock.isCustomClass) {
-                    V8JavaAdapter.injectObject(methodBlock.blockName, methodBlock.instance, v8)
-                    /*
-                    addCustomClass(
-                        methodBlock.blockName,
-                        methodBlock.methodClass,
-                        methodBlock.methods.map { it.methodName }.toTypedArray(),
-                        methodBlock.methods.map { it.args }.toTypedArray()
-                    )
-                    */
-                } else {
+        try {
+            v8.apply {
+                for (methodBlock in methods) {
                     addClass(
                         methodBlock.blockName,
                         methodBlock.instance,
@@ -102,10 +122,14 @@ class JSV8: Language() {
                         methodBlock.methods.map { it.args }.toTypedArray()
                     )
                 }
+                executeScript(code)
             }
-            executeScript(code)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        } finally {
+            v8.locker.release()
         }
-        v8.locker.release()
         return v8
     }
 
@@ -124,7 +148,7 @@ class JSV8: Language() {
     }
 
     override fun eval(code: String): Any {
-        val engine = compile(code, arrayOf()) as V8
+        val engine = compile(code, listOf()) as V8
         try {
             engine.locker.acquire()
             return engine.executeScript(code)

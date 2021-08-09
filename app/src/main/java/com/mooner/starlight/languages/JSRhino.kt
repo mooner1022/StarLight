@@ -1,7 +1,9 @@
 package com.mooner.starlight.languages
 
 import android.graphics.drawable.Drawable
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
+import coil.load
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.plugincore.language.*
@@ -28,23 +30,24 @@ class JSRhino: Language() {
         get() = "자바스크립트 (라이노)"
     override val fileExtension: String
         get() = "js"
-    override val icon: Drawable
-        get() = ContextCompat.getDrawable(ApplicationSession.context, R.drawable.ic_js)!!
+    override val loadIcon: (ImageView) -> Unit = { imageView ->
+        imageView.load(R.drawable.ic_js)
+    }
     override val requireRelease: Boolean
         get() = true
 
     override val configObjectList: List<ConfigObject>
         get() = listOf(
             SliderConfigObject(
-                objectId = CONF_OPTIMIZATION,
-                objectName = "최적화 레벨",
+                id = CONF_OPTIMIZATION,
+                name = "최적화 레벨",
                 max = 10,
                 defaultValue = 1
             ),
             SpinnerConfigObject(
-                objectId = CONF_LANG_VERSION,
-                objectName = "JS 버전",
-                dataList = listOf(
+                id = CONF_LANG_VERSION,
+                name = "JS 버전",
+                spinnerItems = listOf(
                     "JavaScript 1.0",
                     "JavaScript 1.1",
                     "JavaScript 1.2",
@@ -67,11 +70,9 @@ class JSRhino: Language() {
             }
         """.trimIndent()
 
-    override fun onConfigChanged(changed: Map<String, Any>) {
+    override fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    }
-
-    override fun compile(code: String, methods: Array<MethodBlock>): Any {
+    override fun compile(code: String, methods: List<MethodBlock>): Any {
         context = Context.enter().apply {
             optimizationLevel = -1
             languageVersion = with(getLanguageConfig()) {

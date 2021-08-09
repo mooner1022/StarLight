@@ -48,7 +48,6 @@ class HomeFragment : Fragment() {
         private const val LOGS_MAX_SIZE = 5
     }
 
-
     @SuppressLint("SetTextI18n")
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -59,7 +58,6 @@ class HomeFragment : Fragment() {
 
         //val allProjectsCount = Session.getProjectLoader().getProjects().size
         val activeProjects = Session.projectLoader.getEnabledProjects()
-
         val logs = Logger.filterNot(LogType.DEBUG)
         val adapter = LogsRecyclerViewAdapter(requireContext())
 

@@ -1,60 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mooner.starlight">
+          package="com.mooner.starlight">
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 
     <application
         android:allowBackup="true"
-        android:fullBackupContent="@xml/backup_descriptor"
         android:extractNativeLibs="false"
+        android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@mipmap/ic_logo"
         android:label="@string/app_name"
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.StarLight">
+        <activity android:name=".ui.plugins.config.PluginConfigActivity"
+                  android:theme="@style/Theme.StarLight.NoActionBar">
+        </activity>
         <activity
             android:name=".ui.splash.SplashActivity"
             android:theme="@style/Theme.StarLight.NoActionBar">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.MAIN"/>
 
-                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
         <activity
             android:name=".ui.projects.config.ProjectConfigActivity"
-            android:theme="@style/Theme.StarLight.NoActionBar" />
+            android:theme="@style/Theme.StarLight.NoActionBar"/>
         <activity
             android:name=".ui.editor.EditorActivity"
-            android:theme="@style/Theme.StarLight.NoActionBar" />
+            android:theme="@style/Theme.StarLight.NoActionBar"/>
         <activity
             android:name=".ui.debugroom.DebugRoomActivity"
-            android:theme="@style/Theme.StarLight.NoActionBar" />
+            android:theme="@style/Theme.StarLight.NoActionBar"/>
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
             android:theme="@style/Theme.StarLight.NoActionBar">
         </activity>
 
-        <service android:name=".core.ForegroundTask" />
+        <service android:name=".core.ForegroundTask"/>
         <service
             android:name=".listener.NotificationListener"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
+                <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>
         </service>
-
         <service
             android:name=".ui.overlay.OverlayService"
             android:enabled="true"
-            android:permission="android.permission.SYSTEM_ALERT_WINDOW" />
+            android:permission="android.permission.SYSTEM_ALERT_WINDOW"/>
     </application>
 
 </manifest>

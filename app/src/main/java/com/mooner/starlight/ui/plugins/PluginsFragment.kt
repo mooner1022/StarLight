@@ -15,7 +15,6 @@ import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.FragmentPluginsBinding
 import com.mooner.starlight.models.Align
 import com.mooner.starlight.plugincore.core.GeneralConfig
@@ -88,7 +87,7 @@ class PluginsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentPluginsBinding.inflate(inflater, container, false)
-        plugins = ApplicationSession.plugins
+        plugins = Session.pluginLoader.getPlugins().toList()
 
         if (plugins.isEmpty()) {
             Logger.i(javaClass.simpleName, "No plugins detected!")

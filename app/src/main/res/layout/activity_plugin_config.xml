@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.projects.config.ProjectConfigActivity">
+    tools:context=".ui.plugins.config.PluginConfigActivity">
 
     <ImageView
         android:id="@+id/imageViewLogo"
@@ -78,7 +78,7 @@
     </androidx.core.widget.NestedScrollView>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabProjectConfig"
+        android:id="@+id/fabPluginConfig"
         android:layout_width="56dp"
         android:layout_height="56dp"
         android:layout_gravity="bottom|end"
