@@ -1,6 +1,7 @@
 package com.mooner.starlight.ui.plugins
 
 import android.content.Context
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,13 +9,20 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import coil.size.Scale
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
+import com.mooner.starlight.ui.plugins.config.PluginConfigActivity
+import com.mooner.starlight.utils.Utils
 import com.mooner.starlight.utils.Utils.Companion.trimLength
+import java.io.File
 
 class PluginsListAdapter(
     private val context: Context
@@ -37,17 +45,34 @@ class PluginsListAdapter(
             version.text = config.version
             fileSize.text = String.format("%.2f MB", plugin.fileSize)
 
-            buttonConfig.setOnClickListener {
-                // ...플러그인 설정
+            val iconFile = File(plugin.getDataFolder(), "icon.png")
+            if (iconFile.exists() && iconFile.isFile) {
+                icon.load(iconFile) {
+                    scale(Scale.FIT)
+                }
             }
 
-            buttonRemove.setOnClickListener {
+            buttonConfig.setOnClickListener {
+                // ...플러그인 설정
+                val intent = Intent(it.context, PluginConfigActivity::class.java).apply {
+                    putExtra("pluginName", config.name)
+                    putExtra("pluginId", config.id)
+                }
+                it.context.startActivity(intent)
+            }
+
+            buttonRemove.setOnClickListener { view ->
                 MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                     cornerRadius(25f)
                     title(text = "정말 [${config.name}](을)를 삭제할까요?")
                     message(text = "주의: 삭제시 되돌릴 수 없습니다.")
                     positiveButton(text = "확인") {
-                        // ...삭제 코드
+                        Session.pluginLoader.removePlugin(config.id)
+                        Snackbar.make(view, "플러그인을 삭제했습니다.\n앱을 재시작할까요?", Snackbar.LENGTH_LONG)
+                            .setAction("확인") {
+                                Utils.restartApplication(context)
+                            }
+                            .show()
                         it.dismiss()
                     }
                     negativeButton(text = "취소") {

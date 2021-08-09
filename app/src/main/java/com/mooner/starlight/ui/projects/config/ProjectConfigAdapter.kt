@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
@@ -20,7 +21,7 @@ import org.angmarch.views.NiceSpinner
 
 class ProjectConfigAdapter(
     private val context: Context,
-    private val onConfigChanged: (id: String, data: Any) -> Unit
+    private val onConfigChanged: (id: String, view: View, data: Any) -> Unit
 ): RecyclerView.Adapter<ProjectConfigAdapter.ProjectConfigViewHolder>() {
     var data = mutableListOf<ConfigObject>()
     var saved: MutableMap<String, TypedString> = mutableMapOf()
@@ -55,7 +56,7 @@ class ProjectConfigAdapter(
                 holder.textToggle.text = viewData.name
                 holder.toggle.isChecked = getDefault() as Boolean
                 holder.toggle.setOnCheckedChangeListener { _, isChecked ->
-                    onConfigChanged(viewData.id, isChecked)
+                    onConfigChanged(viewData.id, holder.toggle, isChecked)
                 }
             }
             ConfigObjectType.SLIDER.viewType -> {
@@ -74,7 +75,7 @@ class ProjectConfigAdapter(
                     override fun onStartTrackingTouch(seekBar: SeekBar?) {}
 
                     override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                        onConfigChanged(viewData.id, seekBar!!.progress)
+                        onConfigChanged(viewData.id, holder.seekBar, seekBar!!.progress)
                     }
                 })
                 holder.seekBarIndex.text = holder.seekBar.progress.toString()
@@ -89,7 +90,7 @@ class ProjectConfigAdapter(
                     override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
 
                     override fun afterTextChanged(s: Editable?) {
-                        onConfigChanged(viewData.id, s!!.toString())
+                        onConfigChanged(viewData.id, holder.editTextString, s!!.toString())
                     }
                 })
             }
@@ -97,9 +98,9 @@ class ProjectConfigAdapter(
                 holder.textSpinner.text = viewData.name
                 holder.spinner.apply {
                     setBackgroundColor(context.getColor(R.color.transparent))
-                    attachDataSource((viewData as SpinnerConfigObject).dataList)
+                    attachDataSource((viewData as SpinnerConfigObject).spinnerItems)
                     setOnSpinnerItemSelectedListener { _, _, position, _ ->
-                        onConfigChanged(viewData.id, position)
+                        onConfigChanged(viewData.id, holder.spinner, position)
                     }
                     selectedIndex = getDefault() as Int
                 }
@@ -107,21 +108,21 @@ class ProjectConfigAdapter(
             ConfigObjectType.BUTTON.viewType -> {
                 holder.textButton.text = viewData.name
                 val langConf = viewData as ButtonConfigObject
-                holder.layoutButton.setOnClickListener {
+                holder.cardViewButton.setOnClickListener {
                     langConf.onClickListener()
                 }
-                if (langConf.iconRes != null) {
-                    holder.imageViewButton.load(AppCompatResources.getDrawable(context, langConf.iconRes!!))
-                } else if (langConf.iconDrawable != null) {
-                    holder.imageViewButton.load(langConf.iconDrawable!!)
+
+                when {
+                    langConf.loadIcon != null -> langConf.loadIcon!!(holder.imageViewButton)
+                    langConf.iconDrawable != null -> holder.imageViewButton.load(langConf.iconDrawable!!)
+                }
+                if (langConf.backgroundColorInt != null) {
+                    holder.cardViewButton.setCardBackgroundColor(langConf.backgroundColorInt!!)
                 }
             }
             ConfigObjectType.CUSTOM.viewType -> {
                 val data = viewData as CustomConfigObject
-                val inflater = context.getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
-                val child: View = inflater.inflate(data.layoutID, holder.customLayout)
-                //holder.customLayout.addView(child)
-                data.onInflate(child)
+                data.onInflate(holder.customLayout)
             }
         }
     }
@@ -142,7 +143,7 @@ class ProjectConfigAdapter(
         lateinit var spinner: NiceSpinner
 
         lateinit var textButton: TextView
-        lateinit var layoutButton: ConstraintLayout
+        lateinit var cardViewButton: CardView
         lateinit var imageViewButton: ImageView
 
         lateinit var customLayout: LinearLayout
@@ -170,7 +171,7 @@ class ProjectConfigAdapter(
                 }
                 ConfigObjectType.BUTTON.viewType -> {
                     textButton = itemView.findViewById(R.id.textView_configButton)
-                    layoutButton = itemView.findViewById(R.id.layout_configButton)
+                    cardViewButton = itemView.findViewById(R.id.cardView_configButton)
                     imageViewButton = itemView.findViewById(R.id.imageView_configButton)
                 }
                 ConfigObjectType.CUSTOM.viewType -> {

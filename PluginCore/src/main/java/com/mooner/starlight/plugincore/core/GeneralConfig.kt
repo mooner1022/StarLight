@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.core
 
+import com.mooner.starlight.plugincore.core.Session.Companion.json
 import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -31,7 +32,7 @@ class GeneralConfig(val path: File) {
             path.mkdirs()
             hashMapOf()
         } else {
-            Json.decodeFromString(file.readText())
+            json.decodeFromString(file.readText())
         }
     }
 
@@ -51,14 +52,11 @@ class GeneralConfig(val path: File) {
     fun push() {
         if (scope.isActive) {
             scope.cancel()
-            println("cancel!")
         }
-        println("launch!")
 
         CoroutineScope(Dispatchers.Default).launch {
-            val str = Json.encodeToString(configs)
-            withContext(Dispatchers.IO) {
-                println("saved: $str")
+            synchronized(configs) {
+                val str = json.encodeToString(configs)
                 with(File(path, FILE_NAME)) {
                     if (!isFile) {
                         deleteRecursively()

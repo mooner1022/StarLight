@@ -1,24 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:showIn="navigation_view">
+      xmlns:tools="http://schemas.android.com/tools"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      tools:showIn="navigation_view">
 
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_home"
+            android:enabled="true"
             android:icon="@drawable/ic_round_home_24"
+            app:exb_color="@color/noctis_green"
             android:title="@string/menu_home" />
         <item
             android:id="@+id/nav_projects"
+            android:enabled="true"
             android:icon="@drawable/ic_round_projects_24"
+            app:exb_color="@color/monokai_pro_orange"
             android:title="@string/menu_projects" />
         <item
             android:id="@+id/nav_plugins"
+            android:enabled="true"
             android:icon="@drawable/ic_round_plugins_24"
+            app:exb_color="@color/monokai_pro_sky"
             android:title="@string/menu_plugins" />
         <item
             android:id="@+id/nav_settings"
+            android:enabled="true"
             android:icon="@drawable/ic_round_settings_24"
+            app:exb_color="@color/toolbar"
             android:title="@string/menu_settings" />
     </group>
 </menu>

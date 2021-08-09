@@ -12,10 +12,8 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Base64
 import android.util.Log
-import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.core.ApplicationSession.taskHandler
-import com.mooner.starlight.models.Message
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.project.Replier
 import java.io.ByteArrayOutputStream

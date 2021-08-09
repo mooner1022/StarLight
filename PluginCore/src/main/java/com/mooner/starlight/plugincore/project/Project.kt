@@ -1,14 +1,13 @@
 package com.mooner.starlight.plugincore.project
 
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
-import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.methods.Methods
+import com.mooner.starlight.plugincore.methods.MethodManager
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.io.File
 
 class Project(
@@ -30,8 +29,9 @@ class Project(
         fun create(dir: File, config: ProjectConfig): Project {
             val folder = File(dir.path, config.name)
             folder.mkdirs()
-            File(folder.path, "project.json").writeText(Json.encodeToString(config), Charsets.UTF_8)
-            File(folder.path, config.mainScript).writeText("", Charsets.UTF_8)
+            File(folder.path, "project.json").writeText(json.encodeToString(config), Charsets.UTF_8)
+            val language = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
+            File(folder.path, config.mainScript).writeText(language.defaultCode, Charsets.UTF_8)
             return Project(folder, config)
         }
     }
@@ -74,11 +74,7 @@ class Project(
         */
     }
 
-    fun compile() {
-        compile(false)
-    }
-
-    fun compile(throwException: Boolean) {
+    fun compile(throwException: Boolean = false) {
         try {
             val rawCode: String = (folder.listFiles()?.find { it.isFile && it.name == config.mainScript }?: throw IllegalArgumentException(
                     "Cannot find main script ${config.mainScript} for project ${config.name}"
@@ -88,8 +84,8 @@ class Project(
                 println("engine released")
             }
             engine = lang.compile(
-                    rawCode,
-                    Methods.getApi(1, 4)
+                rawCode,
+                MethodManager.getMethods()
             )
         } catch (e: Exception) {
             e.printStackTrace()
@@ -99,7 +95,7 @@ class Project(
     }
 
     fun flush() {
-        val str = Json.encodeToString(config)
+        val str = json.encodeToString(config)
         logger.d(config.name, "Flushed project config: $str")
         File(folder.path, "project.json").writeText(str, Charsets.UTF_8)
     }

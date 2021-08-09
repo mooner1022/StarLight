@@ -1,7 +1,6 @@
 package com.mooner.starlight.plugincore.plugin
 
-import android.os.Environment
-import com.mooner.starlight.plugincore.Session.Companion.getProjectLoader
+import com.mooner.starlight.plugincore.core.Session.Companion.projectLoader
 import dalvik.system.PathClassLoader
 import java.io.File
 
@@ -11,8 +10,6 @@ class PluginClassLoader(
     private val config: PluginConfig,
     private val dataDir: File,
     private val file: File,
-    @Suppress("deprecation")
-    dexDirectory: File = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/.dex")
 ): PathClassLoader(file.path, parent){
     private var pluginInit: StarlightPlugin? = null
     private var pluginState: java.lang.IllegalStateException? = null
@@ -20,23 +17,19 @@ class PluginClassLoader(
     private val classes: HashMap<String, Class<*>> = HashMap()
 
     init {
-        if (!dexDirectory.exists() || !dexDirectory.isDirectory) {
-            dexDirectory.mkdirs()
-        }
-
         try {
             val jarClass: Class<*>
             try {
-                jarClass = Class.forName(config.main, true, this)
+                jarClass = Class.forName(config.mainClass, true, this)
             } catch (e: ClassNotFoundException) {
-                throw InvalidPluginException("Cannot find main class [${config.main}]")
+                throw InvalidPluginException("Cannot find main class [${config.mainClass}]")
             }
 
             val pluginClass: Class<out StarlightPlugin>
             try {
                 pluginClass = jarClass.asSubclass(StarlightPlugin::class.java)
             } catch (e: ClassCastException) {
-                throw InvalidPluginException("Main class [${config.main}] does not extend StarlightPlugin")
+                throw InvalidPluginException("Main class [${config.mainClass}] does not extend StarlightPlugin")
             }
 
             plugin = pluginClass.newInstance()
@@ -82,6 +75,6 @@ class PluginClassLoader(
         }
         pluginState = IllegalStateException("Initial initialization")
         this.pluginInit = plugin
-        plugin.init(loader, getProjectLoader(), config, dataDir, file, this)
+        plugin.init(loader, projectLoader, config, dataDir, file, this)
     }
 }

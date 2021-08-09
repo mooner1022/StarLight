@@ -7,22 +7,13 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
-import android.view.*
-import androidx.annotation.RequiresApi
-import androidx.coordinatorlayout.widget.CoordinatorLayout
+import android.view.View
+import android.view.WindowManager
 import androidx.core.app.NotificationCompat
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession.pluginLoader
-import com.mooner.starlight.plugincore.logger.LogType
-import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 
 class ForegroundTask: Service() {
 

@@ -10,6 +10,7 @@ import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
 import android.util.AttributeSet
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnClickListener
@@ -23,9 +24,11 @@ import android.widget.*
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import coil.load
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.R
+import java.io.File
 
 
 /**
@@ -95,6 +98,7 @@ class ExpandableCardView @JvmOverloads constructor(context: Context, attrs: Attr
     private var switchListener: OnSwitchChangeListener? = null
 
     private val defaultClickListener = OnClickListener {
+        println("isExpanded= $isExpanded")
         if (isExpanded)
             collapse()
         else
@@ -207,19 +211,20 @@ class ExpandableCardView @JvmOverloads constructor(context: Context, attrs: Attr
     }
 
     fun expand() {
+        println("expand")
         val initialHeight = cardLayout.height
         if (!isMoving) {
             previousHeight = initialHeight
         }
 
-
         val targetHeight = getFullHeight(cardLayout)
 
         if (targetHeight - initialHeight != 0) {
+            println("animate")
             animateViews(initialHeight,
                     targetHeight - initialHeight,
                     EXPANDING)
-        }
+        } else println("쉬불")
     }
 
     /***
@@ -250,6 +255,7 @@ class ExpandableCardView @JvmOverloads constructor(context: Context, attrs: Attr
     }
 
     fun collapse() {
+        println("collapse")
         val initialHeight = cardLayout.measuredHeight
         if (initialHeight - previousHeight != 0) {
             animateViews(initialHeight,
@@ -311,7 +317,7 @@ class ExpandableCardView @JvmOverloads constructor(context: Context, attrs: Attr
         isCollapsing = animationType == COLLAPSING
 
         startAnimation(expandAnimation)
-        //Log.d("SO", "Started animation: " + if (animationType == EXPANDING) "Expanding" else "Collapsing")
+        Log.d("SO", "Started animation: " + if (animationType == EXPANDING) "Expanding" else "Collapsing")
         cardArrow.startAnimation(arrowAnimation)
         isExpanded = animationType == EXPANDING
 
@@ -383,13 +389,16 @@ class ExpandableCardView @JvmOverloads constructor(context: Context, attrs: Attr
             cardTitle.text = titleText
     }
 
-    fun setIcon(@DrawableRes drawableRes: Int = -1, drawable: Drawable? = null) {
+    fun setIcon(@DrawableRes drawableRes: Int = -1, drawable: Drawable? = null, loader: ((ImageView) -> Unit)?) {
         if (drawableRes != -1) {
             iconDrawable = ContextCompat.getDrawable(context, drawableRes)
             cardIcon.setImageDrawable(iconDrawable)
-        } else {
+        } else if (drawable != null) {
             cardIcon.setImageDrawable(drawable)
             iconDrawable = drawable
+        } else if (loader != null) {
+            loader(cardIcon)
+            iconDrawable = cardIcon.drawable
         }
 
     }
@@ -433,5 +442,3 @@ class ExpandableCardView @JvmOverloads constructor(context: Context, attrs: Attr
     }
 
 }
-
-

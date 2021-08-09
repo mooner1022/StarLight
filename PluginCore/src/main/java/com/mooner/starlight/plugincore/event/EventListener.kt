@@ -8,8 +8,6 @@ interface EventListener {
 
     fun onDisable() {}
 
-    fun onError(e: Exception) {}
-
     fun onProjectCreated(project: Project) {}
 
     fun onProjectRemoved(project: Project) {}

@@ -6,17 +6,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/transparent"
-    app:behavior_hideable="true"
-    app:behavior_peekHeight="32dp"
+    app:behavior_hideable="false"
+    app:behavior_peekHeight="90dp"
+    app:gestureInsetBottomIgnored="true"
     app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
     tools:context=".MainActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="100dp"
+        android:layout_marginStart="@dimen/card_margin"
+        android:layout_marginEnd="@dimen/card_margin"
         android:background="@drawable/round_top_bottom_dialog"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:clipToPadding="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -25,27 +28,46 @@
             android:id="@+id/cardViewHandle"
             android:layout_width="48dp"
             android:layout_height="6dp"
-            android:layout_marginTop="8dp"
-            app:cardBackgroundColor="#6C6C6C"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="#FFFFFF"
             app:cardCornerRadius="3dp"
             app:cardElevation="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toTopOf="parent" />
 
-        </androidx.cardview.widget.CardView>
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/tabNavView"
+            android:layout_width="0dp"
+            android:layout_height="70dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@color/transparent"
+            app:elevation="0dp"
+            app:itemIconTint="@color/white"
+            app:itemTextColor="@color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/cardViewHandle"
+            app:menu="@menu/activity_main_drawer">
+
+        </com.google.android.material.bottomnavigation.BottomNavigationView>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewLogs"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginStart="@dimen/card_margin"
+            android:layout_marginTop="@dimen/card_margin"
+            android:layout_marginEnd="@dimen/card_margin"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/round_all"
+            android:clipToPadding="true"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textViewLogsTitle" />
+            app:layout_constraintTop_toBottomOf="@+id/textViewLogsTitle"
+            tools:visibility="visible" />
 
         <TextView
             android:id="@+id/textViewLogsTitle"
@@ -55,9 +77,11 @@
             android:layout_marginTop="180dp"
             android:fontFamily="@font/nanumsquare_round_extrabold"
             android:text="Logs"
+            android:textColor="#FFFFFF"
             android:textSize="25sp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

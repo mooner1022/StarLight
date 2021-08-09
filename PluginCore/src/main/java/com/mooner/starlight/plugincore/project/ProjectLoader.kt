@@ -1,6 +1,7 @@
 package com.mooner.starlight.plugincore.project
 
 import android.os.Environment
+import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.logger.Logger
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -99,11 +100,19 @@ class ProjectLoader {
         return projects.toList()
     }
 
+    fun callEvent(pluginId: String, eventName: String, args: Array<Any>) {
+        val projects = this.projects.filter { pluginId in it.config.listeners }
+        if (projects.isEmpty()) return
+        for (project in projects) {
+            project.callEvent(eventName, args)
+        }
+    }
+
     private fun getProjectConfig(dir: File): ProjectConfig {
         val result = dir.listFiles()?.find { it.isFile && it.name == "project.json" }
                 ?: throw IllegalStateException("Could not find project.json from ${dir.name}")
         try {
-            return Json.decodeFromString(result.readText(Charsets.UTF_8))
+            return json.decodeFromString(result.readText(Charsets.UTF_8))
         } catch (e: Exception) {
             throw IllegalArgumentException("Could not parse project.json from ${dir.name}")
         }

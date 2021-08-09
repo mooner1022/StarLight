@@ -1,7 +1,12 @@
 package com.mooner.starlight.plugincore.language
 
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.view.View
+import android.widget.ImageView
+import androidx.annotation.ColorInt
+import androidx.annotation.ColorRes
+import androidx.annotation.DrawableRes
 import androidx.annotation.LayoutRes
 
 enum class ConfigObjectType(
@@ -24,16 +29,12 @@ interface ConfigObject {
 }
 
 class ToggleConfigObject(
-        private val objectId: String,
-        private val objectName: String,
-        private val defaultValue: Boolean
+    override val id: String,
+    override val name: String,
+    private val defaultValue: Boolean
 ): ConfigObject {
-    override val id: String
-        get() = objectId
-    override val name: String
-        get() = objectName
     override val default: Any
-        get() = false
+        get() = defaultValue
     override val type: ConfigObjectType
         get() = ConfigObjectType.TOGGLE
     override val viewType: Int
@@ -41,15 +42,11 @@ class ToggleConfigObject(
 }
 
 class SliderConfigObject(
-        private val objectId: String,
-        private val objectName: String,
-        val max: Int,
-        private val defaultValue: Int
+    override val id: String,
+    override val name: String,
+    val max: Int,
+    private val defaultValue: Int
 ): ConfigObject {
-    override val id: String
-        get() = objectId
-    override val name: String
-        get() = objectName
     override val default: Any
         get() = defaultValue
     override val type: ConfigObjectType
@@ -59,14 +56,11 @@ class SliderConfigObject(
 }
 
 class StringConfigObject(
-        private val objectId: String,
-        private val objectName: String,
-        private val hint: String
+    override val id: String,
+    override val name: String,
+    private val hint: String,
+    val defaultValue: String = "",
 ): ConfigObject {
-    override val id: String
-        get() = objectId
-    override val name: String
-        get() = objectName
     override val default: Any
         get() = hint
     override val type: ConfigObjectType
@@ -76,15 +70,11 @@ class StringConfigObject(
 }
 
 class SpinnerConfigObject(
-    private val objectId: String,
-    private val objectName: String,
-    val dataList: List<String>,
+    override val id: String,
+    override val name: String,
+    val spinnerItems: List<String>,
     private val defaultIndex: Int = 0
 ): ConfigObject {
-    override val id: String
-        get() = objectId
-    override val name: String
-        get() = objectName
     override val default: Any
         get() = defaultIndex
     override val type: ConfigObjectType
@@ -94,16 +84,16 @@ class SpinnerConfigObject(
 }
 
 class ButtonConfigObject(
-        private val objectId: String,
-        private val objectName: String,
-        val onClickListener: () -> Unit,
-        val iconRes: Int? = null,
-        val iconDrawable: Drawable? = null
+    override val id: String,
+    override val name: String,
+    val onClickListener: () -> Unit,
+    @DrawableRes
+    internal val iconRes: Int? = null,
+    val iconDrawable: Drawable? = null,
+    val loadIcon: ((ImageView) -> Unit)? = null,
+    @ColorInt
+    val backgroundColorInt: Int? = null,
 ): ConfigObject {
-    override val id: String
-        get() = objectId
-    override val name: String
-        get() = objectName
     override val default: Any
         get() = 0
     override val type: ConfigObjectType
@@ -113,16 +103,10 @@ class ButtonConfigObject(
 }
 
 class CustomConfigObject(
-    private val objectId: String,
-    private val objectName: String,
-    @LayoutRes
-    val layoutID: Int,
+    override val id: String,
+    override val name: String,
     val onInflate: (view: View) -> Unit,
 ): ConfigObject {
-    override val id: String
-        get() = objectId
-    override val name: String
-        get() = objectName
     override val default: Any
         get() = 0
     override val type: ConfigObjectType

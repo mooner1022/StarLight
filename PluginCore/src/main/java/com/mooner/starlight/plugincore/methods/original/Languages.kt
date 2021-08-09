@@ -1,6 +1,6 @@
 package com.mooner.starlight.plugincore.methods.original
 
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.language.Language
 
 class Languages {

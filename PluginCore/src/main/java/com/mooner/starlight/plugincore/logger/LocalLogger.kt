@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.logger
 
+import com.mooner.starlight.plugincore.core.Session.Companion.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,7 +25,7 @@ class LocalLogger(private var _logs: ArrayList<LogData>, private val file: File)
             val raw = file.readText()
             if (raw.isBlank()) return create(file.parentFile!!)
             val logs: ArrayList<LogData> = try {
-                Json.decodeFromString(raw)
+                json.decodeFromString(raw)
             } catch (e: Exception) {
                 e.printStackTrace()
                 file.delete()
@@ -80,17 +81,17 @@ class LocalLogger(private var _logs: ArrayList<LogData>, private val file: File)
     )
 
     private fun log(data: LogData) {
-        _logs.add(data)
+        synchronized(_logs) {
+            _logs.add(data)
+        }
         Logger.log(data)
         flush()
     }
 
     private fun flush() {
         CoroutineScope(Dispatchers.IO).launch {
-            try {
-                file.writeText(Json.encodeToString(_logs))
-            } catch (e: ConcurrentModificationException) {
-
+            synchronized(_logs) {
+                file.writeText(json.encodeToString(_logs))
             }
         }
     }

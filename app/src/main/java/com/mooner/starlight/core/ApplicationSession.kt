@@ -5,32 +5,25 @@ import android.content.Context
 import com.mooner.starlight.R
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
-import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
 import com.mooner.starlight.plugincore.event.EventListener
-import com.mooner.starlight.plugincore.logger.LogType
-import com.mooner.starlight.plugincore.plugin.Plugin
-import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
-import com.mooner.starlight.utils.Alert
 
 @SuppressLint("StaticFieldLeak")
 object ApplicationSession {
     private val pluginLoadTime: HashMap<String, Long> = hashMapOf()
+
+    private var mInitMillis: Long = 0L
+    val initMillis: Long
+        get() = mInitMillis
+
     var isInitComplete: Boolean = false
-    private var l_pluginLoader: PluginLoader? = null
-    val pluginLoader: PluginLoader
-        get() = l_pluginLoader!!
 
-    private var l_taskHandler: TaskHandler? = null
+    private var mTaskHandler: TaskHandler? = null
     val taskHandler: TaskHandler
-        get() = l_taskHandler!!
-
-    private val initCompleteListeners: ArrayList<() -> Unit> = arrayListOf()
-
-    fun onInitComplete(listener: () -> Unit) {
-        initCompleteListeners.add(listener)
-    }
+        get() = mTaskHandler!!
 
     internal fun init(onPhaseChanged: (phase: String) -> Unit, onFinished: () -> Unit) {
         if (isInitComplete) {
@@ -40,9 +33,9 @@ object ApplicationSession {
         onPhaseChanged(context.getString(R.string.step_default_lib))
         Session.initLanguageManager()
         onPhaseChanged(context.getString(R.string.step_lang))
-        l_pluginLoader = PluginLoader()
+        Session.initPluginLoader()
         onPhaseChanged(context.getString(R.string.step_plugin_init))
-        l_taskHandler = TaskHandler()
+        mTaskHandler = TaskHandler()
         Session.getLanguageManager().apply {
             addLanguage(JSV8())
             addLanguage(JSRhino())
@@ -50,7 +43,7 @@ object ApplicationSession {
         Session.initProjectLoader()
         var preTime: Long = 0
         var preName = ""
-        plugins = pluginLoader.loadPlugins {
+        pluginLoader.loadPlugins {
             if (preTime != 0L) {
                 pluginLoadTime[preName] = System.currentTimeMillis() - preTime
             }
@@ -61,20 +54,15 @@ object ApplicationSession {
         pluginLoadTime[preName] = System.currentTimeMillis() - preTime
 
         onPhaseChanged(context.getString(R.string.step_projects))
-        Session.getProjectLoader().loadProjects()
+        Session.projectLoader.loadProjects()
         isInitComplete = true
         onFinished()
-        if (initCompleteListeners.isNotEmpty()) {
-            for (listener in initCompleteListeners) {
-                listener()
-            }
-            initCompleteListeners.clear()
-        }
+        mInitMillis = System.currentTimeMillis()
 
         NetworkUtil.registerNetworkStatusListener(context)
         NetworkUtil.addOnNetworkStateChangedListener { state ->
-            if (plugins.isNotEmpty()) {
-                for (plugin in plugins) {
+            if (pluginLoader.getPlugins().isNotEmpty()) {
+                for (plugin in pluginLoader.getPlugins()) {
                     (plugin as StarlightPlugin).onNetworkStateChanged(state)
                 }
             }
@@ -82,7 +70,5 @@ object ApplicationSession {
     }
 
     lateinit var context: Context
-
-    lateinit var plugins: List<Plugin>
     lateinit var eventListeners: List<EventListener>
 }

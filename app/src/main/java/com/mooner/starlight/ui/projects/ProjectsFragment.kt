@@ -1,13 +1,11 @@
 package com.mooner.starlight.ui.projects
 
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
@@ -15,28 +13,22 @@ import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentProjectsBinding
 import com.mooner.starlight.models.Align
-import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.project.Project
-import com.mooner.starlight.plugincore.theme.ThemeManager
 import com.mooner.starlight.utils.Utils
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 
 class ProjectsFragment : Fragment() {
 
-    private lateinit var projectsViewModel: ProjectsViewModel
     private var _binding: FragmentProjectsBinding? = null
     private val binding get() = _binding!!
     private lateinit var projects: List<Project>
     private lateinit var recyclerAdapter: ProjectListAdapter
-    private var isInit = true
-    //private val updateScope: CoroutineScope = CoroutineScope(Dispatchers.Default)
-
     private val aligns = arrayOf(
         ALIGN_GANADA,
         //ALIGN_GANADA_INVERTED,
@@ -100,30 +92,21 @@ class ProjectsFragment : Fragment() {
         private val DEFAULT_ALIGN = ALIGN_GANADA
     }
 
+    override fun onResume() {
+        super.onResume()
+        with(MainActivity) {
+            setToolbarText("Projects")
+            fab.show()
+            reloadText()
+        }
+    }
+
     override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
             savedInstanceState: Bundle?
     ): View {
         _binding = FragmentProjectsBinding.inflate(inflater, container, false)
-        projectsViewModel =
-                ViewModelProvider(this).get(ProjectsViewModel::class.java)
-
-        MainActivity.setToolbarText("Projects")
-
-        ThemeManager.matchBackgroundColor(requireContext(),
-            mapOf(
-                ThemeManager.COLOR_TOOLBAR to arrayOf(
-                    binding.projectParentLayout
-                ),
-                ThemeManager.COLOR_CARD to arrayOf(
-                    binding.cardProjectList,
-                    binding.cardViewProjectAlign
-                )
-            )
-        )
-        val theme = ThemeManager.getCurrentTheme(requireContext())
-        binding.projectInnerLayout.backgroundTintList = ColorStateList.valueOf(theme.background.toInt())
 
         binding.cardViewProjectAlign.setOnClickListener {
             MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
@@ -149,19 +132,18 @@ class ProjectsFragment : Fragment() {
         )
         binding.imageViewProjectAlignState.setImageResource(alignState.icon)
 
-        val fab: FloatingActionButton = MainActivity.fab
-        fab.show()
-        MainActivity.reloadText()
         recyclerAdapter = ProjectListAdapter(requireContext())
-        projectsViewModel.data.observe(viewLifecycleOwner) {
-            if (!isInit) {
-                projects = it
-                update()
-            } else {
-                isInit = false
-            }
+
+        Session.projectLoader.bind { projects ->
+            this.projects = projects
+            update()
         }
-        projects = Session.getProjectLoader().getProjects()
+
+        val data = Session.projectLoader.loadProjects(false)
+        this.projects = data
+        update()
+
+        projects = Session.projectLoader.getProjects()
         recyclerAdapter.data = if (isReversed) {
             alignState.sort(
                 projects,
@@ -242,7 +224,6 @@ class ProjectsFragment : Fragment() {
             it[GeneralConfig.CONFIG_PROJECTS_REVERSED] = isReversed.toString()
             it[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST] = activeFirst.toString()
             it.push()
-            println("push!")
         }
     }
 }

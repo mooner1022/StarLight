@@ -5,7 +5,13 @@
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
+
+    <color name="background">#F7F8FA</color>
+    <color name="cardview">#FFFFFF</color>
+    <color name="bottom_sheet">#74FFFFFF</color>
+
     <color name="black">#FF000000</color>
+    <color name="toolbar">#A6B1E1</color>
     <color name="light_black">#3E3E3E</color>
     <color name="lighter_black">#C3C3C3</color>
     <color name="white">#FFFFFFFF</color>
@@ -14,6 +20,7 @@
     <color name="main_bright">#2A2C39</color>
     <color name="sub_bright">#191A25</color>
     <color name="main_dark">#2A2C39</color>
+    <color name="splash_background">#1B1B23</color>
     <color name="sub_dark">#191A25</color>
     <color name="project_card">#FFFFFF</color>
     <color name="cardview_enabled">#DBDEFB</color>

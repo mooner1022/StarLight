@@ -1,6 +1,7 @@
 package com.mooner.starlight.plugincore.language
 
-import android.graphics.drawable.Drawable
+import android.view.View
+import android.widget.ImageView
 
 interface ILanguage {
 
@@ -10,7 +11,7 @@ interface ILanguage {
 
     val fileExtension: String
 
-    val icon: Drawable?
+    val loadIcon: (ImageView) -> Unit
 
     val requireRelease: Boolean
 
@@ -18,9 +19,11 @@ interface ILanguage {
 
     val defaultCode: String
 
-    fun onConfigChanged(changed: Map<String, Any>)
+    fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    fun compile(code: String, methods: Array<MethodBlock>): Any
+    fun onConfigChanged(id: String, view: View, data: Any) {}
+
+    fun compile(code: String, methods: List<MethodBlock>): Any
 
     fun release(engine: Any) {}
 
