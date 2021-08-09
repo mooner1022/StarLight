@@ -9,7 +9,7 @@
 
 <p align="center">
 `Project StarLight 🌟` is an application which serves Messenger auto-reply service with<br>
-various script languages support and plugin system
+various script language support and plugin system
 </p>
 
 <p align="center" style="color: gray">
