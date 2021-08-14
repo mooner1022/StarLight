@@ -42,6 +42,8 @@ class ProjectsFragment : Fragment() {
     private var isActiveFirst: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST,"false"].toBoolean()
     
     companion object {
+        private const val T = "ProjectsFragment"
+
         private val ALIGN_GANADA = Align<Project>(
             name = "가나다 순",
             reversedName = "가나다 역순",
@@ -117,7 +119,7 @@ class ProjectsFragment : Fragment() {
 
         recyclerAdapter = ProjectListAdapter(requireContext())
 
-        Session.projectLoader.bind { projects ->
+        Session.projectLoader.bindListener(T) { projects ->
             this.projects = projects
             update()
         }
@@ -208,5 +210,10 @@ class ProjectsFragment : Fragment() {
             it[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST] = activeFirst.toString()
             it.push()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Session.projectLoader.unbindListener(T)
     }
 }
