@@ -40,6 +40,8 @@
                 android:layout_marginTop="14dp"
                 android:fontFamily="@font/nanumsquare_round_bold"
                 android:text="TITLE"
+                android:ellipsize="end"
+                android:maxLength="14"
                 android:textSize="18sp"
                 app:layout_constraintStart_toEndOf="@+id/logInfoColor"
                 app:layout_constraintTop_toTopOf="parent" />

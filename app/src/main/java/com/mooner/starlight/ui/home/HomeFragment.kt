@@ -46,6 +46,7 @@ class HomeFragment : Fragment() {
 
     companion object {
         private const val LOGS_MAX_SIZE = 5
+        private const val T = "HomeFragment"
     }
 
     @SuppressLint("SetTextI18n")
@@ -75,7 +76,7 @@ class HomeFragment : Fragment() {
             adapter.notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
         }
 
-        Logger.bindListener {
+        Logger.bindListener(T) {
             if (it.type != LogType.DEBUG) {
                 adapter.pushLog(it, LOGS_MAX_SIZE)
             }
@@ -96,14 +97,6 @@ class HomeFragment : Fragment() {
             uptimeTimer = Timer()
             uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
         }
-
-        with(MainActivity) {
-            if (fab.isOrWillBeShown) {
-                fab.hide()
-            }
-            setToolbarText(requireContext().getString(R.string.app_name))
-            reloadText(requireContext().getString(R.string.app_version))
-        }
     }
 
     override fun onPause() {
@@ -116,6 +109,11 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        if (uptimeTimer != null) {
+            uptimeTimer!!.cancel()
+            uptimeTimer = null
+        }
+        Logger.unbindListener(T)
         _binding = null
     }
 }

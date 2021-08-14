@@ -7,12 +7,16 @@ class Logger {
     }
 
     companion object {
-        private val listeners: ArrayList<(log: LogData) -> Unit> = arrayListOf()
+        private val listeners: MutableMap<String, (log: LogData) -> Unit> = hashMapOf()
         var logs: ArrayList<LogData> = arrayListOf()
 
-        fun bindListener(listener: (log: LogData) -> Unit) {
-            if (!listeners.contains(listener)) {
-                listeners.add(listener)
+        fun bindListener(key: String, listener: (log: LogData) -> Unit) {
+            listeners[key] = listener
+        }
+
+        fun unbindListener(key: String) {
+            if (listeners.containsKey(key)) {
+                listeners.remove(key)
             }
         }
 
@@ -52,7 +56,7 @@ class Logger {
             println(data.toString())
             logs.add(data)
 
-            for (listener in listeners) {
+            for ((_, listener) in listeners) {
                 listener(data)
             }
         }

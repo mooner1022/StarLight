@@ -6,17 +6,26 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.callbacks.onDismiss
+import com.afollestad.materialdialogs.customview.customView
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.ui.presets.ExpandableCardView
 import com.mooner.starlight.ui.projects.config.ProjectConfigActivity
 import kotlinx.coroutines.*
+import org.angmarch.views.NiceSpinner
 import java.io.File
 
 class ProjectListAdapter(
@@ -67,7 +76,6 @@ class ProjectListAdapter(
             if (config.isEnabled != isChecked) {
                 config.isEnabled = isChecked
                 project.flush()
-                MainActivity.reloadText()
             }
             updateCardColor()
             holder.expandable.apply {
@@ -116,7 +124,7 @@ class ProjectListAdapter(
             it.context.startActivity(intent)
         }
 
-        holder.buttonRecompile.setOnClickListener {
+        holder.buttonRecompile.setOnClickListener { view ->
             CoroutineScope(compileContext).launch {
                 var isSuccess = false
                 try {
@@ -124,12 +132,25 @@ class ProjectListAdapter(
                     isSuccess = true
                 } catch (e: Exception) {
                     withContext(context = mainContext) {
-                        MainActivity.showSnackbar("${config.name}의 컴파일에 실패했어요.\n$e")
+                        Snackbar.make(view, "${config.name}의 컴파일에 실패했어요.\n$e", Snackbar.LENGTH_LONG).apply {
+                            setAction("자세히 보기") {
+                                MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                                    cornerRadius(25f)
+                                    cancelOnTouchOutside(false)
+                                    noAutoDismiss()
+                                    title(text = project.config.name + " 에러 로그")
+                                    message(text = e.toString() + "\n" + e.stackTraceToString())
+                                    positiveButton(text = "닫기") {
+                                        dismiss()
+                                    }
+                                }
+                            }
+                        }.show()
                     }
                 }
                 if (isSuccess) {
                     withContext(context = mainContext) {
-                        MainActivity.showSnackbar("${config.name}의 컴파일을 완료했어요!")
+                        Snackbar.make(view, "${config.name} 컴파일 완료!", Snackbar.LENGTH_SHORT).show()
                         updateCardColor()
                         if (holder.expandable.isEnabled) {
                             holder.expandable.setSwitchEnabled(true)

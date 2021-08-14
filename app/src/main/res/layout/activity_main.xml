@@ -36,7 +36,7 @@
             app:layout_scrollFlags="scroll|exitUntilCollapsed|enterAlways|enterAlwaysCollapsed|snap">
 
             <TextView
-                android:id="@+id/textViewTitle"
+                android:id="@+id/titleText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="start|center_vertical"
@@ -50,7 +50,7 @@
                 app:layout_collapseMode="parallax"/>
 
             <TextView
-                android:id="@+id/statusView"
+                android:id="@+id/statusText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="start|center_vertical"

@@ -12,9 +12,10 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Base64
 import android.util.Log
-import com.mooner.starlight.core.ApplicationSession.taskHandler
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
+import com.mooner.starlight.plugincore.core.Session.Companion.projectLoader
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.Replier
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -65,9 +66,9 @@ class NotificationListener: NotificationListenerService() {
                         sessions[room] = act
                     }
 
-                    Log.i("StarLight-NotificationListener", "message : $message sender : $sender nRoom : $room nSession : $act")
+                    Logger.d("NotificationListenerService", "message : $message sender : $sender nRoom : $room nSession : $act")
 
-                    taskHandler.callFunction("response", arrayOf(room, message, sender, imageHash, replier))
+                    projectLoader.callEvent("default", "response", arrayOf(room, message, sender, imageHash, replier))
                 }
             }
         }
@@ -77,13 +78,13 @@ class NotificationListener: NotificationListenerService() {
         val sendIntent = Intent()
         val msg = Bundle()
         for (input in session.remoteInputs) msg.putCharSequence(
-                input.resultKey,
-                message
+            input.resultKey,
+            message
         )
         RemoteInput.addResultsToIntent(session.remoteInputs, sendIntent, msg)
         try {
             session.actionIntent.send(applicationContext, 0, sendIntent)
-            Log.i("send() complete", message)
+            Logger.d("NotificationListenerService", "send() success: $message")
         } catch (e: PendingIntent.CanceledException) {
             e.printStackTrace()
         }
