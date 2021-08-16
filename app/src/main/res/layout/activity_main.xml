@@ -83,6 +83,7 @@
         android:clipToPadding="true"
         android:elevation="0dp"
         android:fillViewport="true"
+        android:overScrollMode="never"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <androidx.viewpager2.widget.ViewPager2

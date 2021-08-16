@@ -10,12 +10,36 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.callbacks.onDismiss
+import com.afollestad.materialdialogs.customview.customView
+import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
+import com.mooner.starlight.plugincore.logger.LogData
+import com.mooner.starlight.plugincore.logger.LogType
+import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.ui.splash.SplashActivity
+import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
+import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 
 class Utils {
     companion object {
+
+        private val alphanumericPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+        fun randomAlphanumeric(length: Int): String {
+            val arr: ArrayList<Char> = arrayListOf()
+            repeat(length) {
+                arr.add(alphanumericPool.random())
+            }
+            return arr.joinToString("")
+        }
+
         fun isForeground(): Boolean {
             val appProcessInfo = ActivityManager.RunningAppProcessInfo()
             ActivityManager.getMyMemoryState(appProcessInfo)
@@ -44,12 +68,11 @@ class Utils {
 
         fun formatTime(millis: Long): String {
             val day = 1000 * 60 * 60 * 24
-            val seconds = millis / 1000
-            val s = seconds % 60
-            val m = (seconds / 60) % 60
-            val h = (seconds / (60 * 60)) % 24
+            val s = TimeUnit.MILLISECONDS.toSeconds(millis) % 60
+            val m = TimeUnit.MILLISECONDS.toMinutes(millis) % 60
+            val h = TimeUnit.MILLISECONDS.toHours(millis) % 24
             return if (millis >= day) {
-                val d = seconds / (60 * 60 * 24)
+                val d = TimeUnit.MILLISECONDS.toDays(millis)
                 String.format("%d일 %d시간 %02d분 %02d초", h, m, s, d)
             } else {
                 String.format("%d시간 %02d분 %02d초", h, m, s)
@@ -68,6 +91,45 @@ class Utils {
             val mgr = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             mgr[AlarmManager.RTC, System.currentTimeMillis() + 100] = mPendingIntent
             exitProcess(0)
+        }
+
+        fun showLogsDialog(context: Context, logs: List<LogData>? = null): MaterialDialog {
+            val mLogs = logs?: Logger.filterNot(LogType.DEBUG)
+            val mAdapter = LogsRecyclerViewAdapter(context).apply {
+                data = mLogs.toMutableList()
+            }
+            val mLayoutManager = LinearLayoutManager(context).apply {
+                reverseLayout = true
+                stackFromEnd = true
+            }
+            return MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                cornerRadius(25f)
+                cancelOnTouchOutside(true)
+                noAutoDismiss()
+                title(text = context.getString(R.string.title_logs))
+                customView(R.layout.dialog_logs)
+                positiveButton(text = context.getString(R.string.close)) {
+                    dismiss()
+                }
+
+                val recycler: RecyclerView = findViewById(R.id.rvLog)
+                recycler.apply {
+                    itemAnimator = FadeInLeftAnimator()
+                    layoutManager = mLayoutManager
+                    adapter = mAdapter
+                }
+                mAdapter.notifyItemRangeInserted(0, mLogs.size)
+
+                if (logs == null) {
+                    val key = randomAlphanumeric(8)
+                    Logger.bindListener(key) {
+                        mAdapter.pushLog(it)
+                    }
+                    onDismiss {
+                        Logger.unbindListener(key)
+                    }
+                }
+            }
         }
     }
 }
