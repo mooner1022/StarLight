@@ -1,24 +1,19 @@
 package com.mooner.starlight.languages
 
 import android.graphics.Color
-import android.graphics.drawable.Drawable
 import android.view.Gravity
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.appcompat.app.ActionBar
-import androidx.core.content.ContextCompat
 import coil.load
 import com.eclipsesource.v8.V8
 import com.eclipsesource.v8.V8Object
 import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.plugincore.language.*
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.project.Replier
-import io.alicorn.v8.V8JavaAdapter
-import java.io.File
+import com.mooner.starlight.plugincore.methods.MethodClass
 
 class JSV8: Language() {
     override val id: String
@@ -78,7 +73,6 @@ class JSV8: Language() {
             ),
             CustomConfigObject(
                 id = "custom_test",
-                name = "커스텀 테스트",
                 onInflate = {
                     val imageView = ImageView(it.context).apply {
                         layoutParams = ActionBar.LayoutParams(1440, 1440).apply { gravity = Gravity.CENTER }
@@ -110,16 +104,16 @@ class JSV8: Language() {
         }
     }
 
-    override fun compile(code: String, methods: List<MethodBlock>): Any {
+    override fun compile(code: String, methods: List<MethodClass>): Any {
         val v8 = V8.createV8Runtime()
         try {
             v8.apply {
                 for (methodBlock in methods) {
                     addClass(
-                        methodBlock.blockName,
+                        methodBlock.className,
                         methodBlock.instance,
-                        methodBlock.methods.map { it.methodName }.toTypedArray(),
-                        methodBlock.methods.map { it.args }.toTypedArray()
+                        methodBlock.functions.map { it.name }.toTypedArray(),
+                        methodBlock.functions.map { it.args }.toTypedArray()
                     )
                 }
                 executeScript(code)
