@@ -6,15 +6,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.io.File
 
-class LocalLogger(private var _logs: ArrayList<LogData>, private val file: File) {
+class LocalLogger(
+    private var _logs: ArrayList<LogData>,
+    private val file: File
+    ) {
     companion object {
         fun create(directory: File): LocalLogger {
             directory.mkdirs()
             val file = File(directory, "logs_local.json")
-            file.writeText("")
+            file.createNewFile()
             return LocalLogger(arrayListOf(), file)
         }
 
@@ -85,13 +87,17 @@ class LocalLogger(private var _logs: ArrayList<LogData>, private val file: File)
             _logs.add(data)
         }
         Logger.log(data)
-        flush()
+        if (data.type != LogType.DEBUG) {
+            flush()
+        }
     }
 
     private fun flush() {
         CoroutineScope(Dispatchers.IO).launch {
             synchronized(_logs) {
-                file.writeText(json.encodeToString(_logs))
+                val logs = _logs.filterNot { it.type == LogType.DEBUG }
+                val encoded = json.encodeToString(logs)
+                file.writeText(encoded)
             }
         }
     }
