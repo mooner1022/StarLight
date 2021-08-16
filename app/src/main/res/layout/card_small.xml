@@ -13,7 +13,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_cloud_yellow" />
+        app:srcCompat="@drawable/ic_round_error_outline_24"/>
 
     <TextView
         android:id="@+id/cardSmallText"

@@ -168,9 +168,9 @@
                 <ImageView
                     android:layout_width="0dp"
                     android:layout_height="24dp"
-                    android:layout_marginStart="20dp"
-                    android:layout_weight="0.15"
-                    android:src="@drawable/ic_round_article_24" />
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="0.35"
+                    android:src="@drawable/ic_round_article_24"/>
 
                 <TextView
                     android:layout_width="0dp"
@@ -179,7 +179,26 @@
                     android:fontFamily="@font/nanumsquare_round_bold"
                     android:text="Logs"
                     android:textAlignment="viewStart"
-                    android:textSize="18sp" />
+                    android:textSize="20sp"/>
+
+                <TextView
+                    android:id="@+id/tvMoreLogs"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/nanumsquare_round_bold"
+                    android:text="더보기"
+                    android:textAlignment="viewEnd"
+                    android:textSize="14sp"/>
+
+                <ImageButton
+                    android:id="@+id/buttonMoreLogs"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="20dp"
+                    android:layout_weight="0.01"
+                    android:background="@color/transparent"
+                    android:src="@drawable/ic_round_keyboard_arrow_right_24"/>
 
             </LinearLayout>
 

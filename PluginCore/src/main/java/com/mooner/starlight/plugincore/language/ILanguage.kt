@@ -2,6 +2,7 @@ package com.mooner.starlight.plugincore.language
 
 import android.view.View
 import android.widget.ImageView
+import com.mooner.starlight.plugincore.methods.MethodClass
 
 interface ILanguage {
 
@@ -23,7 +24,7 @@ interface ILanguage {
 
     fun onConfigChanged(id: String, view: View, data: Any) {}
 
-    fun compile(code: String, methods: List<MethodBlock>): Any
+    fun compile(code: String, methods: List<MethodClass>): Any
 
     fun release(engine: Any) {}
 

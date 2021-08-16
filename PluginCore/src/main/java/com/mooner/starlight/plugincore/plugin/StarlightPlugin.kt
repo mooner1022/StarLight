@@ -1,10 +1,7 @@
 package com.mooner.starlight.plugincore.plugin
 
-import android.content.Context
-import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.Version
 import com.mooner.starlight.plugincore.event.EventListener
 import com.mooner.starlight.plugincore.language.ConfigObject
 import com.mooner.starlight.plugincore.language.Language
@@ -20,14 +17,11 @@ abstract class StarlightPlugin: Plugin, EventListener {
     internal lateinit var file: File
     private lateinit var dataDir: File
     private lateinit var classLoader: ClassLoader
-    private var _context: Context? = null
     private var isEnabled = false
     private var configPath: File? = null
     lateinit var config: PluginConfig
     val fileSize: Float
         get() = file.getFileSize()
-    val context: Context
-        get() = _context!!
 
     constructor() {
         val classLoader = this.javaClass.classLoader
@@ -83,6 +77,8 @@ abstract class StarlightPlugin: Plugin, EventListener {
     fun callEvent(eventName: String, args: Array<Any>) = Session.projectLoader.callEvent(this.config.id, eventName, args)
 
     fun getDataFolder(): File = dataDir
+
+    fun getAsset(directory: String): File = File(dataDir, directory)
 
     fun getProjectLoader(): ProjectLoader = projectLoader
 

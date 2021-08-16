@@ -21,10 +21,6 @@ object ApplicationSession {
 
     var isInitComplete: Boolean = false
 
-    private var mTaskHandler: TaskHandler? = null
-    val taskHandler: TaskHandler
-        get() = mTaskHandler!!
-
     internal fun init(onPhaseChanged: (phase: String) -> Unit, onFinished: () -> Unit) {
         if (isInitComplete) {
             onFinished()
@@ -35,7 +31,6 @@ object ApplicationSession {
         onPhaseChanged(context.getString(R.string.step_lang))
         Session.initPluginLoader()
         onPhaseChanged(context.getString(R.string.step_plugin_init))
-        mTaskHandler = TaskHandler()
         Session.getLanguageManager().apply {
             addLanguage(JSV8())
             addLanguage(JSRhino())

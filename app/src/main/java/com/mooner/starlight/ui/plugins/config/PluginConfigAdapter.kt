@@ -2,18 +2,16 @@ package com.mooner.starlight.ui.plugins.config
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Build
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.cardview.widget.CardView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.language.*
@@ -25,6 +23,7 @@ class PluginConfigAdapter(
 ): RecyclerView.Adapter<PluginConfigAdapter.PluginConfigViewHolder>() {
     var data = listOf<ConfigObject>()
     var saved: MutableMap<String, TypedString> = mutableMapOf()
+    var isHavingError = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PluginConfigViewHolder {
         val view = when(viewType) {
@@ -81,16 +80,25 @@ class PluginConfigAdapter(
                 holder.seekBarIndex.text = holder.seekBar.progress.toString()
             }
             ConfigObjectType.STRING.viewType -> {
-                holder.textString.text = viewData.name
-                holder.editTextString.hint = viewData.default as String
+                val data = viewData as StringConfigObject
+                holder.textString.text = data.name
+                holder.editTextString.hint = data.hint
+                holder.editTextString.inputType = data.inputType
                 holder.editTextString.setText(getDefault() as String)
                 holder.editTextString.addTextChangedListener(object: TextWatcher {
                     override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
                     override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
 
-                    override fun afterTextChanged(s: Editable?) {
-                        onConfigChanged(viewData.id, holder.editTextString, s!!.toString())
+                    override fun afterTextChanged(s: Editable) {
+                        val require: String?
+                        if (data.require(s.toString()).also { require = it } == null) {
+                            if (isHavingError) isHavingError = false
+                            onConfigChanged(viewData.id, holder.editTextString, s.toString())
+                        } else {
+                            if (!isHavingError) isHavingError = true
+                            holder.editTextString.error = require!!
+                        }
                     }
                 })
             }
@@ -109,7 +117,7 @@ class PluginConfigAdapter(
                 holder.textButton.text = viewData.name
                 val langConf = viewData as ButtonConfigObject
                 holder.cardViewButton.setOnClickListener {
-                    langConf.onClickListener()
+                    if (holder.cardViewButton.isEnabled) langConf.onClickListener()
                 }
 
                 when {
@@ -125,12 +133,39 @@ class PluginConfigAdapter(
                 data.onInflate(holder.customLayout)
             }
         }
+
+        if (viewData.dependency != null) {
+            val parent = data.find { it.id == viewData.dependency }
+                ?: throw IllegalArgumentException("Cannot find dependency [${viewData.dependency}] for object [${viewData.id}]")
+            if (parent.type != ConfigObjectType.TOGGLE) throw IllegalArgumentException("Type of object [${parent.id}] does not extend ConfigObjectType.TOGGLE")
+
+            (parent as ToggleConfigObject).listeners.add { isEnabled ->
+                when(viewData.viewType) {
+                    ConfigObjectType.TOGGLE.viewType -> {
+                        holder.toggle.isEnabled = isEnabled
+                    }
+                    ConfigObjectType.SLIDER.viewType -> {
+                        holder.seekBar.isEnabled = isEnabled
+                    }
+                    ConfigObjectType.STRING.viewType -> {
+                        holder.editTextString.isEnabled = isEnabled
+                    }
+                    ConfigObjectType.SPINNER.viewType -> {
+                        holder.spinner.isEnabled = isEnabled
+                    }
+                    ConfigObjectType.BUTTON.viewType -> {
+                        holder.textButton.isEnabled = isEnabled
+                        holder.cardViewButton.isEnabled = isEnabled
+                    }
+                }
+            }
+        }
     }
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     inner class PluginConfigViewHolder(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
         lateinit var textToggle: TextView
-        lateinit var toggle: Switch
+        lateinit var toggle: SwitchMaterial
 
         lateinit var textSlider: TextView
         lateinit var seekBarIndex: TextView

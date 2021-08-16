@@ -2,18 +2,16 @@ package com.mooner.starlight.ui.projects.config
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Context.LAYOUT_INFLATER_SERVICE
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.cardview.widget.CardView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.language.*
@@ -130,7 +128,7 @@ class ProjectConfigAdapter(
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     inner class ProjectConfigViewHolder(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
         lateinit var textToggle: TextView
-        lateinit var toggle: Switch
+        lateinit var toggle: SwitchMaterial
 
         lateinit var textSlider: TextView
         lateinit var seekBarIndex: TextView

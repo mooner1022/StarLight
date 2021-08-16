@@ -2,20 +2,15 @@
 package com.mooner.starlight.ui.home
 
 import android.annotation.SuppressLint
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.FragmentHomeBinding
-import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
@@ -46,6 +41,7 @@ class HomeFragment : Fragment() {
 
     companion object {
         private const val LOGS_MAX_SIZE = 5
+        private const val T = "HomeFragment"
     }
 
     @SuppressLint("SetTextI18n")
@@ -56,28 +52,36 @@ class HomeFragment : Fragment() {
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
-        //val allProjectsCount = Session.getProjectLoader().getProjects().size
-        val activeProjects = Session.projectLoader.getEnabledProjects()
         val logs = Logger.filterNot(LogType.DEBUG)
-        val adapter = LogsRecyclerViewAdapter(requireContext())
+        val mAdapter = LogsRecyclerViewAdapter(requireContext())
 
         if (logs.isNotEmpty()) {
-            val layoutManager = LinearLayoutManager(requireContext()).apply {
+            val mLayoutManager = LinearLayoutManager(requireContext()).apply {
                 reverseLayout = true
                 stackFromEnd = true
             }
-            adapter.data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
-            binding.rvLogs.itemAnimator = FadeInLeftAnimator()
-            binding.rvLogs.layoutManager = layoutManager
-            binding.rvLogs.adapter = adapter
-            binding.rvLogs.visibility = View.VISIBLE
+            mAdapter.data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
+            binding.rvLogs.apply {
+                itemAnimator = FadeInLeftAnimator()
+                layoutManager = mLayoutManager
+                adapter = mAdapter
+                visibility = View.VISIBLE
+            }
             binding.textViewNoLogsYet.visibility = View.GONE
-            adapter.notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
+            mAdapter.notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
         }
 
-        Logger.bindListener {
+        binding.tvMoreLogs.setOnClickListener {
+            Utils.showLogsDialog(requireContext())
+        }
+
+        binding.buttonMoreLogs.setOnClickListener {
+            Utils.showLogsDialog(requireContext())
+        }
+
+        Logger.bindListener(T) {
             if (it.type != LogType.DEBUG) {
-                adapter.pushLog(it, LOGS_MAX_SIZE)
+                mAdapter.pushLog(it, LOGS_MAX_SIZE)
             }
         }
 
@@ -96,14 +100,6 @@ class HomeFragment : Fragment() {
             uptimeTimer = Timer()
             uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
         }
-
-        with(MainActivity) {
-            if (fab.isOrWillBeShown) {
-                fab.hide()
-            }
-            setToolbarText(requireContext().getString(R.string.app_name))
-            reloadText(requireContext().getString(R.string.app_version))
-        }
     }
 
     override fun onPause() {
@@ -116,6 +112,11 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        if (uptimeTimer != null) {
+            uptimeTimer!!.cancel()
+            uptimeTimer = null
+        }
+        Logger.unbindListener(T)
         _binding = null
     }
 }

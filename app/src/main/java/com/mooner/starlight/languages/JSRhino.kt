@@ -1,12 +1,10 @@
 package com.mooner.starlight.languages
 
-import android.graphics.drawable.Drawable
 import android.widget.ImageView
-import androidx.core.content.ContextCompat
 import coil.load
 import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.plugincore.language.*
+import com.mooner.starlight.plugincore.methods.MethodClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -72,7 +70,7 @@ class JSRhino: Language() {
 
     override fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    override fun compile(code: String, methods: List<MethodBlock>): Any {
+    override fun compile(code: String, methods: List<MethodClass>): Any {
         context = Context.enter().apply {
             optimizationLevel = -1
             languageVersion = with(getLanguageConfig()) {
@@ -90,7 +88,7 @@ class JSRhino: Language() {
         val scope = context.newObject(shared)
         //val engine = ScriptEngineManager().getEngineByName("rhino")!!
         for(methodBlock in methods) {
-            ScriptableObject.putProperty(scope, methodBlock.blockName, Context.javaToJS(methodBlock.instance, scope))
+            ScriptableObject.putProperty(scope, methodBlock.className, Context.javaToJS(methodBlock.instance, scope))
             //engine.put(methodBlock.blockName, methodBlock.instance)
         }
         //engine.eval(code)

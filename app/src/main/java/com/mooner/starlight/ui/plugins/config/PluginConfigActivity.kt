@@ -49,6 +49,11 @@ class PluginConfigActivity : AppCompatActivity() {
         }
 
         fabProjectConfig.setOnClickListener {
+            if (recyclerAdapter.isHavingError) {
+                Snackbar.make(it, "올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
+                fabProjectConfig.hide()
+                return@setOnClickListener
+            }
             configFile.writeText(Session.json.encodeToString(savedData))
             plugin.onConfigUpdated(changedData)
             Snackbar.make(it, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()

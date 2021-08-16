@@ -13,7 +13,6 @@ import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
-import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentPluginsBinding
 import com.mooner.starlight.models.Align
@@ -26,8 +25,10 @@ import com.mooner.starlight.utils.Utils
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 
 class PluginsFragment : Fragment() {
+
     private var _binding: FragmentPluginsBinding? = null
     private val binding get() = _binding!!
+
     private lateinit var listAdapter: PluginsListAdapter
     private lateinit var plugins: List<Plugin>
 
@@ -36,10 +37,9 @@ class PluginsFragment : Fragment() {
         ALIGN_FILE_SIZE,
     )
     private var alignState: Align<Plugin> = getAlignByName(
-        Session.getGeneralConfig()
-                [GeneralConfig.CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name]
+        Session.getGeneralConfig()[GeneralConfig.CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name]
     )?: DEFAULT_ALIGN
-    private var isReversed: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PLUGINS_REVERSED,"false"].toBoolean()
+    private var isReversed: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
 
     companion object {
         private val ALIGN_GANADA = Align<Plugin>(
@@ -61,24 +61,6 @@ class PluginsFragment : Fragment() {
         )
 
         private val DEFAULT_ALIGN = ALIGN_GANADA
-    }
-
-    override fun onResume() {
-        super.onResume()
-        with(MainActivity) {
-            setToolbarText("Plugins")
-            reloadText(
-                Utils.formatStringRes(
-                    R.string.subtitle_plugins,
-                    mapOf(
-                        "count" to plugins.size.toString()
-                    )
-                )
-            )
-            if (fab.isOrWillBeShown) {
-                fab.hide()
-            }
-        }
     }
 
     override fun onCreateView(

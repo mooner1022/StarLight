@@ -13,7 +13,6 @@ import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
-import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentProjectsBinding
 import com.mooner.starlight.models.Align
@@ -27,15 +26,13 @@ class ProjectsFragment : Fragment() {
 
     private var _binding: FragmentProjectsBinding? = null
     private val binding get() = _binding!!
+
     private lateinit var projects: List<Project>
     private lateinit var recyclerAdapter: ProjectListAdapter
     private val aligns = arrayOf(
         ALIGN_GANADA,
-        //ALIGN_GANADA_INVERTED,
         ALIGN_DATE,
-        //ALIGN_DATE_INVERTED,
-        ALIGN_COMPILED,
-        //ALIGN_NOT_COMPILED
+        ALIGN_COMPILED
     )
     private var alignState: Align<Project> = getAlignByName(
         Session.getGeneralConfig()
@@ -45,6 +42,8 @@ class ProjectsFragment : Fragment() {
     private var isActiveFirst: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST,"false"].toBoolean()
     
     companion object {
+        private const val T = "ProjectsFragment"
+
         private val ALIGN_GANADA = Align<Project>(
             name = "가나다 순",
             reversedName = "가나다 역순",
@@ -58,7 +57,6 @@ class ProjectsFragment : Fragment() {
                 list.sortedWith(comparable)
             }
         )
-        //private const val ALIGN_GANADA_INVERTED = "가나다 역순"
         private val ALIGN_DATE = Align<Project>(
             name = "생성일 순",
             reversedName = "생성일 역순",
@@ -72,7 +70,6 @@ class ProjectsFragment : Fragment() {
                 list.sortedWith(comparable).asReversed()
             }
         )
-        //private const val ALIGN_DATE_INVERTED = "생성일 역순"
         private val ALIGN_COMPILED = Align<Project>(
             name = "컴파일 순",
             reversedName = "미 컴파일 순",
@@ -86,19 +83,7 @@ class ProjectsFragment : Fragment() {
                 list.sortedWith(comparable).asReversed()
             }
         )
-        //private const val ALIGN_NOT_COMPILED = "미컴파일 순"
-        
-        //private const val ALIGN_ = " 순"
         private val DEFAULT_ALIGN = ALIGN_GANADA
-    }
-
-    override fun onResume() {
-        super.onResume()
-        with(MainActivity) {
-            setToolbarText("Projects")
-            fab.show()
-            reloadText()
-        }
     }
 
     override fun onCreateView(
@@ -134,7 +119,7 @@ class ProjectsFragment : Fragment() {
 
         recyclerAdapter = ProjectListAdapter(requireContext())
 
-        Session.projectLoader.bind { projects ->
+        Session.projectLoader.bindListener(T) { projects ->
             this.projects = projects
             update()
         }
@@ -225,5 +210,10 @@ class ProjectsFragment : Fragment() {
             it[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST] = activeFirst.toString()
             it.push()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Session.projectLoader.unbindListener(T)
     }
 }

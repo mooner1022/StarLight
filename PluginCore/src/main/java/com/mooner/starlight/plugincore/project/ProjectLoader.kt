@@ -14,7 +14,7 @@ class ProjectLoader {
 
     @Suppress("DEPRECATION")
     private val projectDir = File(Environment.getExternalStorageDirectory(), "StarLight/projects/")
-    private val listeners: MutableList<(projects: List<Project>) -> Unit> = mutableListOf()
+    private val listeners: MutableMap<String, (projects: List<Project>) -> Unit> = hashMapOf()
     private var projects: MutableList<Project> = mutableListOf()
 
     init {
@@ -31,12 +31,16 @@ class ProjectLoader {
         return projects.filter { it.config.isEnabled }
     }
 
-    fun bind(listener: (projects: List<Project>) -> Unit) {
-        if (!listeners.contains(listener)) listeners.add(listener)
+    fun bindListener(key: String, listener: (projects: List<Project>) -> Unit) {
+        if (!listeners.containsKey(key)) {
+            listeners[key] = listener
+        }
     }
 
-    fun unbind(listener: (projects: List<Project>) -> Unit) {
-        if (listeners.contains(listener)) listeners.remove(listener)
+    fun unbindListener(key: String) {
+        if (listeners.containsKey(key)) {
+            listeners.remove(key)
+        }
     }
 
     fun getProjects(): List<Project> {
@@ -119,7 +123,7 @@ class ProjectLoader {
     }
 
     private fun callListeners() {
-        for (listener in listeners) {
+        for ((_, listener) in listeners) {
             listener(projects)
         }
     }
