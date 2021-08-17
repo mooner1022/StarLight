@@ -30,7 +30,7 @@ class OriginalMethods {
         )
     )
 
-    init {
+    fun init() {
         MethodManager.addMethod(projectsMethod, languagesMethod)
     }
 }

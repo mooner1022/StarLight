@@ -5,6 +5,7 @@ import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.methods.MethodManager
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.serialization.encodeToString
@@ -25,6 +26,9 @@ class Project(
     }
     private var lastRoom: String? = null
 
+    private val tag: String
+        get() = "Project-${config.name}"
+
     companion object {
         fun create(dir: File, config: ProjectConfig): Project {
             val folder = File(dir.path, config.name)
@@ -42,7 +46,7 @@ class Project(
     }
 
     fun callEvent(methodName: String, args: Array<Any>) {
-        println("calling $methodName with args [${args.joinToString(", ")}]")
+        Logger.d(tag, "calling $methodName with args [${args.joinToString(", ")}]")
 
         if (!isCompiled) {
             logger.e("EventHandler", "Property engine must not be null")
@@ -83,6 +87,7 @@ class Project(
                 lang.release(engine!!)
                 println("engine released")
             }
+            Logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.className }}")
             engine = lang.compile(
                 rawCode,
                 MethodManager.getMethods()

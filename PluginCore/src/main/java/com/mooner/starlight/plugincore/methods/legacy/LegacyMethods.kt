@@ -54,7 +54,7 @@ class LegacyMethods {
         )
     )
 
-    init {
+    fun init() {
         MethodManager.addMethod(loggerMethod, utilsMethod)
     }
 }
