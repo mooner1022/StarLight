@@ -24,7 +24,8 @@ class DebugRoomChatAdapter(
     companion object {
         const val CHAT_SELF = 0
         const val CHAT_BOT = 1
-        const val CHAT_BOT_LONG = 2
+        const val CHAT_SELF_LONG = 2
+        const val CHAT_BOT_LONG = 3
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -35,6 +36,9 @@ class DebugRoomChatAdapter(
             }
             CHAT_BOT -> {
                 view = LayoutInflater.from(context).inflate(R.layout.chat_other, parent, false)
+            }
+            CHAT_SELF_LONG -> {
+                view = LayoutInflater.from(context).inflate(R.layout.chat_self_long, parent, false)
             }
             CHAT_BOT_LONG -> {
                 view = LayoutInflater.from(context).inflate(R.layout.chat_other_long, parent, false)
@@ -64,6 +68,23 @@ class DebugRoomChatAdapter(
                 holder.message.text = messageData.message
                 holder.profileImage.setImageResource(R.drawable.default_profile)
             }
+            CHAT_SELF_LONG -> {
+                holder.message.text = messageData.message
+                    .substring(0..500)
+                    .replace("\u200B", "") + "..."
+                holder.showAllButton.setOnClickListener {
+                    MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                        cornerRadius(25f)
+                        cancelOnTouchOutside(true)
+                        noAutoDismiss()
+                        title(text = context.getString(R.string.title_show_all))
+                        message(text = messageData.message)
+                        positiveButton(text = context.getString(R.string.close)) {
+                            dismiss()
+                        }
+                    }
+                }
+            }
             CHAT_BOT_LONG -> {
                 holder.sender.text = "BOT"
                 holder.message.text = messageData.message
@@ -77,9 +98,6 @@ class DebugRoomChatAdapter(
                         noAutoDismiss()
                         title(text = context.getString(R.string.title_show_all))
                         message(text = messageData.message)
-                        textForm {
-                            this.textSize = 10
-                        }
                         positiveButton(text = context.getString(R.string.close)) {
                             dismiss()
                         }
@@ -107,6 +125,10 @@ class DebugRoomChatAdapter(
                     message = itemView.findViewById(R.id.message)
                     profileImage = itemView.findViewById(R.id.profile)
                     //text = itemView.findViewById(R.id.text)
+                }
+                CHAT_SELF_LONG -> {
+                    message = itemView.findViewById(R.id.message)
+                    showAllButton = itemView.findViewById(R.id.buttonShowAll)
                 }
                 CHAT_BOT_LONG -> {
                     sender = itemView.findViewById(R.id.sender)

@@ -59,7 +59,7 @@ class DebugRoomActivity: AppCompatActivity() {
     }
 
     private fun send(message: String) {
-        addMessage(message, DebugRoomChatAdapter.CHAT_SELF)
+        addMessage(message, if (message.length >= 500) DebugRoomChatAdapter.CHAT_SELF_LONG else DebugRoomChatAdapter.CHAT_SELF)
         val data = Message(
             message = message,
             sender = ChatSender(
@@ -76,7 +76,9 @@ class DebugRoomActivity: AppCompatActivity() {
                         DebugRoomChatAdapter.CHAT_BOT
                     addMessage(msg, viewType)
                 }
-            )
+            ),
+            isGroupChat = false,
+            packageName = "com.kakao.talk"
         )
         project.callEvent(
             name = "onMessage",

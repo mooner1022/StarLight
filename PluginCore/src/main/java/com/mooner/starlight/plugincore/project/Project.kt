@@ -26,7 +26,7 @@ class Project(
     } else {
         LocalLogger.create(directory)
     }
-    private var lastRoom: ChatRoom? = null
+    private var lastRoom: com.mooner.starlight.plugincore.interfaces.ChatRoom? = null
 
     private val tag: String
         get() = "Project-${config.name}"
@@ -87,7 +87,7 @@ class Project(
             )).readText(Charsets.UTF_8)
             if (engine != null && lang.requireRelease) {
                 lang.release(engine!!)
-                println("engine released")
+                Logger.d(tag, "engine released")
             }
             Logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.className }}")
             engine = lang.compile(
@@ -101,7 +101,7 @@ class Project(
         }
     }
 
-    fun flush() {
+    fun saveConfig() {
         val str = json.encodeToString(config)
         logger.d(config.name, "Flushed project config: $str")
         File(directory.path, "project.json").writeText(str, Charsets.UTF_8)
