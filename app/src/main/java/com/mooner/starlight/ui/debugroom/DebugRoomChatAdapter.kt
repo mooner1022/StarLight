@@ -1,31 +1,33 @@
 package com.mooner.starlight.ui.debugroom
 
+import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.util.Base64
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.mooner.starlight.R
-import com.mooner.starlight.models.Message
+import com.mooner.starlight.models.DebugRoomMessage
+import com.skydoves.needs.textForm
 
-class DebugRoomChatAdapter(val context : Context, private val chatList : ArrayList<Message>) : RecyclerView.Adapter<DebugRoomChatAdapter.ViewHolder>() {
-    val CHAT_SELF = 0
-    val CHAT_BOT = 1
-    //private var botProfileImage: Bitmap
+class DebugRoomChatAdapter(
+    val context: Context,
+    private val chatList: ArrayList<DebugRoomMessage>
+) : RecyclerView.Adapter<DebugRoomChatAdapter.ViewHolder>() {
 
-    init {
-        //val img = Base64.decode(profileBase64, Base64.DEFAULT)
-        //botProfileImage = BitmapFactory.decodeByteArray(img, 0, img.size)
+    companion object {
+        const val CHAT_SELF = 0
+        const val CHAT_BOT = 1
+        const val CHAT_BOT_LONG = 2
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        Log.d("chatlist size", chatList.size.toString())
         var view: View? = null
         when (viewType) {
             CHAT_SELF -> {
@@ -33,6 +35,9 @@ class DebugRoomChatAdapter(val context : Context, private val chatList : ArrayLi
             }
             CHAT_BOT -> {
                 view = LayoutInflater.from(context).inflate(R.layout.chat_other, parent, false)
+            }
+            CHAT_BOT_LONG -> {
+                view = LayoutInflater.from(context).inflate(R.layout.chat_other_long, parent, false)
             }
         }
         return ViewHolder(view!!, viewType)
@@ -46,6 +51,7 @@ class DebugRoomChatAdapter(val context : Context, private val chatList : ArrayLi
         return chatList[position].viewType
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val messageData = chatList[position]
 
@@ -58,7 +64,28 @@ class DebugRoomChatAdapter(val context : Context, private val chatList : ArrayLi
                 holder.message.text = messageData.message
                 holder.profileImage.setImageResource(R.drawable.default_profile)
             }
-
+            CHAT_BOT_LONG -> {
+                holder.sender.text = "BOT"
+                holder.message.text = messageData.message
+                    .substring(0..500)
+                    .replace("\u200B", "") + "..."
+                holder.profileImage.setImageResource(R.drawable.default_profile)
+                holder.showAllButton.setOnClickListener {
+                    MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                        cornerRadius(25f)
+                        cancelOnTouchOutside(true)
+                        noAutoDismiss()
+                        title(text = context.getString(R.string.title_show_all))
+                        message(text = messageData.message)
+                        textForm {
+                            this.textSize = 10
+                        }
+                        positiveButton(text = context.getString(R.string.close)) {
+                            dismiss()
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -67,12 +94,12 @@ class DebugRoomChatAdapter(val context : Context, private val chatList : ArrayLi
         lateinit var message: TextView
         lateinit var profileImage: ImageView
         lateinit var text: TextView
+        lateinit var showAllButton: Button
 
         init {
             when (viewType) {
                 CHAT_SELF -> {
                     message = itemView.findViewById(R.id.message)
-                    message.text = "TextView"
                     //text = itemView.findViewById(R.id.text)
                 }
                 CHAT_BOT -> {
@@ -80,6 +107,12 @@ class DebugRoomChatAdapter(val context : Context, private val chatList : ArrayLi
                     message = itemView.findViewById(R.id.message)
                     profileImage = itemView.findViewById(R.id.profile)
                     //text = itemView.findViewById(R.id.text)
+                }
+                CHAT_BOT_LONG -> {
+                    sender = itemView.findViewById(R.id.sender)
+                    message = itemView.findViewById(R.id.message)
+                    profileImage = itemView.findViewById(R.id.profile)
+                    showAllButton = itemView.findViewById(R.id.buttonShowAll)
                 }
             }
         }

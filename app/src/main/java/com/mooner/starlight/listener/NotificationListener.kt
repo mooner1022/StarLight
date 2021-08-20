@@ -3,6 +3,7 @@ package com.mooner.starlight.listener
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.RemoteInput
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
@@ -12,6 +13,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Base64
 import android.util.Log
+import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.core.Session.Companion.projectLoader
@@ -21,6 +23,25 @@ import java.io.ByteArrayOutputStream
 import java.util.*
 
 class NotificationListener: NotificationListenerService() {
+
+    companion object {
+        fun send(message: String, session: Notification.Action, context: Context = ApplicationSession.context) {
+            val sendIntent = Intent()
+            val msg = Bundle()
+            for (input in session.remoteInputs) msg.putCharSequence(
+                input.resultKey,
+                message
+            )
+            RemoteInput.addResultsToIntent(session.remoteInputs, sendIntent, msg)
+            try {
+                session.actionIntent.send(context, 0, sendIntent)
+                Logger.d("NotificationListenerService", "send() success: $message")
+            } catch (e: PendingIntent.CanceledException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     private val sessions: HashMap<String, Notification.Action> = hashMapOf()
     private var lastRoom: String? = null
     private val replier = object : Replier {
@@ -71,22 +92,6 @@ class NotificationListener: NotificationListenerService() {
                     projectLoader.callEvent("default", "response", arrayOf(room, message, sender, imageHash, replier))
                 }
             }
-        }
-    }
-
-    private fun send(message: String, session: Notification.Action) {
-        val sendIntent = Intent()
-        val msg = Bundle()
-        for (input in session.remoteInputs) msg.putCharSequence(
-            input.resultKey,
-            message
-        )
-        RemoteInput.addResultsToIntent(session.remoteInputs, sendIntent, msg)
-        try {
-            session.actionIntent.send(applicationContext, 0, sendIntent)
-            Logger.d("NotificationListenerService", "send() success: $message")
-        } catch (e: PendingIntent.CanceledException) {
-            e.printStackTrace()
         }
     }
 
