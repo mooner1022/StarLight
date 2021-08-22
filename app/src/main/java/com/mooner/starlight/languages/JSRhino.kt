@@ -63,7 +63,7 @@ class JSRhino: Language() {
         )
     override val defaultCode: String
         get() = """
-            function response(sender, message, room, imageDB, replier) {
+            function onMessage(event) {
                 
             }
         """.trimIndent()
