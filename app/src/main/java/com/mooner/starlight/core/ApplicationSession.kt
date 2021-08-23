@@ -3,7 +3,6 @@ package com.mooner.starlight.core
 import android.annotation.SuppressLint
 import android.content.Context
 import com.mooner.starlight.R
-import com.mooner.starlight.languages.GraalVMLang
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.core.Session
@@ -39,7 +38,7 @@ object ApplicationSession {
         Session.getLanguageManager().apply {
             addLanguage(JSV8())
             addLanguage(JSRhino())
-            addLanguage(GraalVMLang())
+            //addLanguage(GraalVMLang())
         }
         Session.initProjectLoader()
         var preTime: Long = 0
