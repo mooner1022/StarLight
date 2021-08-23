@@ -2,6 +2,7 @@ package com.mooner.starlight.ui.plugins.config
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.ColorStateList
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -119,13 +120,12 @@ class PluginConfigAdapter(
                 holder.cardViewButton.setOnClickListener {
                     if (holder.cardViewButton.isEnabled) langConf.onClickListener()
                 }
-
-                when {
-                    langConf.loadIcon != null -> langConf.loadIcon!!(holder.imageViewButton)
-                    langConf.iconDrawable != null -> holder.imageViewButton.load(langConf.iconDrawable!!)
+                holder.imageViewButton.load(langConf.icon.drawableRes)
+                if (langConf.iconTintColor != null) {
+                    holder.imageViewButton.imageTintList = ColorStateList.valueOf(langConf.iconTintColor!!)
                 }
-                if (langConf.backgroundColorInt != null) {
-                    holder.cardViewButton.setCardBackgroundColor(langConf.backgroundColorInt!!)
+                if (langConf.backgroundColor != null) {
+                    holder.cardViewButton.setCardBackgroundColor(langConf.backgroundColor!!)
                 }
             }
             ConfigObjectType.CUSTOM.viewType -> {

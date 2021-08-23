@@ -69,7 +69,7 @@ class JSV8: Language() {
                     Logger.d("JSV8_Config", "onClickListener")
                 },
                 iconRes = R.drawable.ic_round_keyboard_arrow_right_24,
-                backgroundColorInt = Color.parseColor("#ffa361")
+                backgroundColor = Color.parseColor("#ffa361")
             ),
             CustomConfigObject(
                 id = "custom_test",

@@ -95,10 +95,11 @@ class ButtonConfigObject(
     val onClickListener: () -> Unit,
     @DrawableRes
     internal val iconRes: Int? = null,
-    val iconDrawable: Drawable? = null,
     val icon: Icon = Icon.ARROW_RIGHT,
     @ColorInt
-    val backgroundColorInt: Int? = null,
+    val iconTintColor: Int? = null,
+    @ColorInt
+    val backgroundColor: Int? = null,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
