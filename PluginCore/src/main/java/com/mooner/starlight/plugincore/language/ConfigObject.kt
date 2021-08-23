@@ -3,9 +3,9 @@ package com.mooner.starlight.plugincore.language
 import android.graphics.drawable.Drawable
 import android.text.InputType
 import android.view.View
-import android.widget.ImageView
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
+import com.mooner.starlight.plugincore.utils.Icon
 
 enum class ConfigObjectType(
     val viewType: Int
@@ -96,7 +96,7 @@ class ButtonConfigObject(
     @DrawableRes
     internal val iconRes: Int? = null,
     val iconDrawable: Drawable? = null,
-    val loadIcon: ((ImageView) -> Unit)? = null,
+    val icon: Icon = Icon.ARROW_RIGHT,
     @ColorInt
     val backgroundColorInt: Int? = null,
     override val dependency: String? = null
