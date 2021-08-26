@@ -2,18 +2,21 @@ package com.mooner.starlight.languages
 
 import android.graphics.Color
 import android.view.Gravity
-import android.view.View
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.appcompat.app.ActionBar
 import coil.load
 import com.eclipsesource.v8.V8
+import com.eclipsesource.v8.V8Array
 import com.eclipsesource.v8.V8Object
+import com.eclipsesource.v8.V8Value
+import com.eclipsesource.v8.utils.V8ObjectUtils
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.language.*
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.methods.MethodClass
+import com.mooner.starlight.plugincore.models.Message
+
 
 class JSV8: Language() {
     override val id: String
@@ -29,7 +32,7 @@ class JSV8: Language() {
         get() = true
     override val defaultCode: String
         get() = """
-            function response(sender, message, room, imageDB, replier) {
+            function onMessage(event) {
                 
             }
         """.trimIndent()
@@ -87,6 +90,10 @@ class JSV8: Language() {
             )
         )
 
+    override fun onConfigUpdated(updated: Map<String, Any>) {
+        Logger.i("JSV8", "updated: $updated")
+    }
+
     override fun compile(code: String, methods: List<MethodClass>): Any {
         val v8 = V8.createV8Runtime()
         try {
@@ -120,7 +127,21 @@ class JSV8: Language() {
     override fun callFunction(engine: Any, methodName: String, args: Array<Any>) {
         val v8 = engine as V8
         v8.locker.acquire()
-        v8.executeJSFunction(methodName, *args)
+        var messageArg: Message? = null
+        if (args.find { it is Message }.also { if (it != null) messageArg = it as Message } != null) {
+            val msgParams: V8Value = V8ObjectUtils.toV8Object(v8,
+                hashMapOf(
+                    "message" to messageArg!!.message,
+                    "room" to messageArg!!.room,
+                    "sender" to messageArg!!.sender,
+                    "isGroupChat" to messageArg!!.isGroupChat,
+                    "packageName" to messageArg!!.packageName
+                )
+            )
+            v8.executeJSFunction(methodName, V8Array(v8).push(msgParams))
+        } else {
+            v8.executeJSFunction(methodName, *args)
+        }
         v8.locker.release()
     }
 
