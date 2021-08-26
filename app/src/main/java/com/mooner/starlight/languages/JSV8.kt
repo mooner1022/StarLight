@@ -87,23 +87,6 @@ class JSV8: Language() {
             )
         )
 
-    override fun onConfigUpdated(updated: Map<String, Any>) {
-        Logger.i("JSV8", "updated: $updated")
-    }
-
-    override fun onConfigChanged(id: String, view: View, data: Any) {
-        Logger.i("JSV8", "changed: $id, data: $data")
-        when(id) {
-            "string_test" -> {
-                val input = view as EditText
-                val text = data as String
-                if (text != "쎆쓰") {
-                    input.error = "쒸빨! 라루레후 무야호"
-                }
-            }
-        }
-    }
-
     override fun compile(code: String, methods: List<MethodClass>): Any {
         val v8 = V8.createV8Runtime()
         try {
