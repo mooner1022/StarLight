@@ -40,7 +40,6 @@ class DebugRoomActivity: AppCompatActivity() {
 
         project = Session.projectLoader.getProject(roomName)!!
 
-
         userChatAdapter = DebugRoomChatAdapter(this, chatList)
         binding.chatRecyclerView.adapter = userChatAdapter
 
