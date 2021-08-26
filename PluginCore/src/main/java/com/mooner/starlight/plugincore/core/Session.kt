@@ -10,6 +10,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 class Session {
+
     companion object {
 
         private val mJson: ThreadLocal<Json> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -22,7 +23,7 @@ class Session {
             }
         } else {
             object : ThreadLocal<Json>() {
-                override fun initialValue(): Json? {
+                override fun initialValue(): Json {
                     return Json {
                         isLenient = true
                         ignoreUnknownKeys = true

@@ -4,7 +4,6 @@ import android.os.Environment
 import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.logger.Logger
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import java.io.File
 
 class ProjectLoader {
@@ -54,7 +53,7 @@ class ProjectLoader {
     fun updateProjectConfig(name: String, callListener: Boolean = false, block: ProjectConfig.() -> Unit) {
         val project = projects.find { it.config.name == name }?: throw IllegalArgumentException("Cannot find project [$name]")
         project.config.block()
-        project.flush()
+        project.saveConfig()
         if (callListener) {
             callListeners()
         }

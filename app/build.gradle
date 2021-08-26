@@ -76,9 +76,6 @@ dependencies {
 
     implementation group: 'org.mozilla', name: 'rhino', version: '1.7.13'
     implementation 'com.eclipsesource.j2v8:j2v8:6.2.1@aar'
-    implementation ('io.alicorn.v8:v8-adapter:1.59') {
-        exclude group: 'com.eclipsesource.j2v8', module: 'j2v8'
-    }
 
     implementation project(":PluginCore")
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'

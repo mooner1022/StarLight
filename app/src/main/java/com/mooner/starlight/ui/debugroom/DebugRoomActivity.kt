@@ -5,43 +5,21 @@ import android.view.KeyEvent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mooner.starlight.databinding.ActivityDebugRoomBinding
-import com.mooner.starlight.models.Message
+import com.mooner.starlight.models.DebugRoomMessage
 import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.models.ChatSender
+import com.mooner.starlight.plugincore.models.DebugChatRoom
+import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.project.Project
-import com.mooner.starlight.plugincore.project.Replier
 
-class DebugRoomActivity : AppCompatActivity() {
-    private val chatList: ArrayList<Message> = arrayListOf()
+class DebugRoomActivity: AppCompatActivity() {
+    private val chatList: ArrayList<DebugRoomMessage> = arrayListOf()
     private lateinit var userChatAdapter: DebugRoomChatAdapter
-    private lateinit var roomName:String
+    private lateinit var roomName: String
     private lateinit var sender: String
-    private var imageHash: Int = 0
     private lateinit var project: Project
     private lateinit var binding: ActivityDebugRoomBinding
-    private var lastRoom: String? = null
-    private val replier = object : Replier {
-        override fun reply(msg: String) {
-            if (lastRoom != null) {
-                addMessage(
-                    Message(
-                        msg,
-                        lastRoom!!,
-                        1
-                    )
-                )
-            }
-        }
-
-        override fun reply(room: String, msg: String) {
-            addMessage(
-                Message(
-                    msg,
-                    room,
-                    1
-                )
-            )
-        }
-    }
+    private var imageHash: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,7 +36,6 @@ class DebugRoomActivity : AppCompatActivity() {
         imageHash = intent.getIntExtra("imageHash", 0)
         sender = intent.getStringExtra("sender").toString()
         roomName = intent.getStringExtra("roomName").toString()
-        println("roomName= $roomName")
         binding.roomTitle.text = roomName
 
         project = Session.projectLoader.getProject(roomName)!!
@@ -81,20 +58,41 @@ class DebugRoomActivity : AppCompatActivity() {
     }
 
     private fun send(message: String) {
-        lastRoom = roomName
-        addMessage(
-            Message(
-                message = message,
-                roomName = roomName,
-                viewType = 0
-            )
+        addMessage(message, if (message.length >= 500) DebugRoomChatAdapter.CHAT_SELF_LONG else DebugRoomChatAdapter.CHAT_SELF)
+        val data = Message(
+            message = message,
+            sender = ChatSender(
+                name = "DEBUG_SENDER",
+                profileBase64 = "",
+                profileHash = 0
+            ),
+            room = DebugChatRoom(
+                name = roomName,
+                onSend = { msg ->
+                    val viewType = if (msg.length >= 500)
+                        DebugRoomChatAdapter.CHAT_BOT_LONG
+                    else
+                        DebugRoomChatAdapter.CHAT_BOT
+                    addMessage(msg, viewType)
+                }
+            ),
+            isGroupChat = false,
+            packageName = "com.kakao.talk"
         )
-        project.callEvent("response", arrayOf(roomName, message, sender, imageHash, replier))
+        project.callEvent(
+            name = "onMessage",
+            args = arrayOf(data)
+        )
     }
 
-    private fun addMessage(message: Message) {
+    private fun addMessage(msg: String, viewType: Int) {
         runOnUiThread {
-            chatList.add(message)
+            chatList.add(
+                DebugRoomMessage(
+                    message = msg,
+                    viewType = viewType
+                )
+            )
             userChatAdapter.notifyItemInserted(chatList.size)
             binding.messageInput.setText("")
             binding.chatRecyclerView.scrollToPosition(chatList.size - 1)

@@ -15,7 +15,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-class ProjectConfigActivity : AppCompatActivity() {
+class ProjectConfigActivity: AppCompatActivity() {
     private val changedData: MutableMap<String, Any> = mutableMapOf()
     private lateinit var savedData: MutableMap<String, TypedString>
     private lateinit var binding: ActivityProjectConfigBinding
@@ -39,7 +39,7 @@ class ProjectConfigActivity : AppCompatActivity() {
             project.getLanguage().onConfigChanged(id, view, data)
         }
 
-        val configFile = File(project.folder, "config-language.json")
+        val configFile = File(project.directory, "config-language.json")
         savedData = try {
             json.decodeFromString(configFile.readText())
         } catch (e: Exception) {

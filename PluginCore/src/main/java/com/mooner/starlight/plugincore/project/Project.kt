@@ -5,25 +5,31 @@ import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.methods.MethodManager
+import com.mooner.starlight.plugincore.models.ChatRoom
+import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.serialization.encodeToString
 import java.io.File
 
 class Project(
-    val folder: File,
+    val directory: File,
     val config: ProjectConfig
 ) {
     val isCompiled: Boolean
         get() = engine != null
     private var engine: Any? = null
     private val lang: Language = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
-    private val logger: LocalLogger = if (folder.hasFile("logs_local.json")) {
-        LocalLogger.fromFile(File(folder, "logs_local.json"))
+    private val logger: LocalLogger = if (directory.hasFile("logs_local.json")) {
+        LocalLogger.fromFile(File(directory, "logs_local.json"))
     } else {
-        LocalLogger.create(folder)
+        LocalLogger.create(directory)
     }
-    private var lastRoom: String? = null
+    private var lastRoom: com.mooner.starlight.plugincore.interfaces.ChatRoom? = null
+
+    private val tag: String
+        get() = "Project-${config.name}"
 
     companion object {
         fun create(dir: File, config: ProjectConfig): Project {
@@ -37,23 +43,23 @@ class Project(
     }
 
     init {
-        val langConfFile = File(folder, "config-language.json")
+        val langConfFile = File(directory, "config-language.json")
         lang.setConfigPath(langConfFile)
     }
 
-    fun callEvent(methodName: String, args: Array<Any>) {
-        println("calling $methodName with args [${args.joinToString(", ")}]")
+    fun callEvent(name: String, args: Array<Any>) {
+        Logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
 
         if (!isCompiled) {
             logger.e("EventHandler", "Property engine must not be null")
             return
         }
-        if (methodName == "response") {
-            lastRoom = args[0] as String
+        if (name == "response") {
+            lastRoom = (args[0] as Message).room
         }
 
         try {
-            lang.callFunction(engine!!, methodName, args)
+            lang.callFunction(engine!!, name, args)
         } catch (e: Exception) {
             logger.e(config.name, "Error while running [${config.name}]: $e")
             e.printStackTrace()
@@ -76,13 +82,14 @@ class Project(
 
     fun compile(throwException: Boolean = false) {
         try {
-            val rawCode: String = (folder.listFiles()?.find { it.isFile && it.name == config.mainScript }?: throw IllegalArgumentException(
+            val rawCode: String = (directory.listFiles()?.find { it.isFile && it.name == config.mainScript }?: throw IllegalArgumentException(
                     "Cannot find main script ${config.mainScript} for project ${config.name}"
             )).readText(Charsets.UTF_8)
             if (engine != null && lang.requireRelease) {
                 lang.release(engine!!)
-                println("engine released")
+                Logger.d(tag, "engine released")
             }
+            Logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.className }}")
             engine = lang.compile(
                 rawCode,
                 MethodManager.getMethods()
@@ -94,10 +101,10 @@ class Project(
         }
     }
 
-    fun flush() {
+    fun saveConfig() {
         val str = json.encodeToString(config)
         logger.d(config.name, "Flushed project config: $str")
-        File(folder.path, "project.json").writeText(str, Charsets.UTF_8)
+        File(directory.path, "project.json").writeText(str, Charsets.UTF_8)
     }
 
     fun getLanguage(): ILanguage {

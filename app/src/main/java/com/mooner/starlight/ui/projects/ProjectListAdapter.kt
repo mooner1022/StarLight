@@ -6,26 +6,19 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.EditText
 import androidx.cardview.widget.CardView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.callbacks.onDismiss
-import com.afollestad.materialdialogs.customview.customView
 import com.google.android.material.snackbar.Snackbar
-import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.ui.presets.ExpandableCardView
 import com.mooner.starlight.ui.projects.config.ProjectConfigActivity
 import kotlinx.coroutines.*
-import org.angmarch.views.NiceSpinner
 import java.io.File
 
 class ProjectListAdapter(
@@ -75,7 +68,7 @@ class ProjectListAdapter(
         holder.expandable.setOnSwitchChangeListener { _, isChecked ->
             if (config.isEnabled != isChecked) {
                 config.isEnabled = isChecked
-                project.flush()
+                project.saveConfig()
             }
             updateCardColor()
             holder.expandable.apply {
@@ -118,7 +111,7 @@ class ProjectListAdapter(
                 it.context,
                 EditorActivity::class.java
             ).apply {
-                putExtra("fileDir", File(project.folder, config.mainScript).path)
+                putExtra("fileDir", File(project.directory, config.mainScript).path)
                 putExtra("title", config.name)
             }
             it.context.startActivity(intent)
