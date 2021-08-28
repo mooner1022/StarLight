@@ -57,6 +57,9 @@ class PluginConfigAdapter(
                 holder.toggle.isChecked = getDefault() as Boolean
                 holder.toggle.setOnCheckedChangeListener { _, isChecked ->
                     onConfigChanged(viewData.id, holder.toggle, isChecked)
+                    for (listener in (viewData as ToggleConfigObject).listeners) {
+                        listener(isChecked)
+                    }
                 }
             }
             ConfigObjectType.SLIDER.viewType -> {

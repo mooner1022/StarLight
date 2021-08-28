@@ -56,6 +56,9 @@ class ProjectConfigAdapter(
                 holder.toggle.isChecked = getDefault() as Boolean
                 holder.toggle.setOnCheckedChangeListener { _, isChecked ->
                     onConfigChanged(viewData.id, holder.toggle, isChecked)
+                    for (listener in (viewData as ToggleConfigObject).listeners) {
+                        listener(isChecked)
+                    }
                 }
             }
             ConfigObjectType.SLIDER.viewType -> {
@@ -121,6 +124,33 @@ class ProjectConfigAdapter(
             ConfigObjectType.CUSTOM.viewType -> {
                 val data = viewData as CustomConfigObject
                 data.onInflate(holder.customLayout)
+            }
+        }
+
+        if (viewData.dependency != null) {
+            val parent = data.find { it.id == viewData.dependency }
+                ?: throw IllegalArgumentException("Cannot find dependency [${viewData.dependency}] for object [${viewData.id}]")
+            if (parent.type != ConfigObjectType.TOGGLE) throw IllegalArgumentException("Type of object [${parent.id}] does not extend ConfigObjectType.TOGGLE")
+
+            (parent as ToggleConfigObject).listeners.add { isEnabled ->
+                when(viewData.viewType) {
+                    ConfigObjectType.TOGGLE.viewType -> {
+                        holder.toggle.isEnabled = isEnabled
+                    }
+                    ConfigObjectType.SLIDER.viewType -> {
+                        holder.seekBar.isEnabled = isEnabled
+                    }
+                    ConfigObjectType.STRING.viewType -> {
+                        holder.editTextString.isEnabled = isEnabled
+                    }
+                    ConfigObjectType.SPINNER.viewType -> {
+                        holder.spinner.isEnabled = isEnabled
+                    }
+                    ConfigObjectType.BUTTON.viewType -> {
+                        holder.textButton.isEnabled = isEnabled
+                        holder.cardViewButton.isEnabled = isEnabled
+                    }
+                }
             }
         }
     }

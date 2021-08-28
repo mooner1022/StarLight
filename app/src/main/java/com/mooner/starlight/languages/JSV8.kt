@@ -48,7 +48,14 @@ class JSV8: Language() {
                 id = "slider_test",
                 name = "슬라이더 테스트",
                 max = 5,
-                defaultValue = 2
+                defaultValue = 2,
+                dependency = "toggle_test"
+            ),
+            ToggleConfigObject(
+                id = "toggle_test2",
+                name = "토글 테스트2",
+                defaultValue = true,
+                dependency = "toggle_test"
             ),
             StringConfigObject(
                 id = "string_test",
@@ -61,8 +68,7 @@ class JSV8: Language() {
                 spinnerItems = listOf(
                     "테스트1",
                     "테스트2",
-                    "테스트3",
-                    "짺스"
+                    "테스트3"
                 )
             ),
             ButtonConfigObject(
@@ -132,8 +138,15 @@ class JSV8: Language() {
             val msgParams: V8Value = V8ObjectUtils.toV8Object(v8,
                 hashMapOf(
                     "message" to messageArg!!.message,
-                    "room" to messageArg!!.room,
-                    "sender" to messageArg!!.sender,
+                    "room" to mapOf(
+                        "name" to messageArg!!.room.name,
+                        "send" to messageArg!!.room::send
+                    ),
+                    "sender" to mapOf(
+                        "name" to messageArg!!.sender.name,
+                        "profileBase64" to messageArg!!.sender.profileBase64,
+                        "profileHash" to messageArg!!.sender.profileHash
+                    ),
                     "isGroupChat" to messageArg!!.isGroupChat,
                     "packageName" to messageArg!!.packageName
                 )
