@@ -18,8 +18,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.StarLight">
-        <activity android:name=".ui.plugins.config.PluginConfigActivity"
-                  android:theme="@style/Theme.StarLight.NoActionBar">
+        <activity android:name=".ui.debugroom.DebugRoomSettingsActivity">
+        </activity>
+        <activity
+            android:name=".ui.plugins.config.PluginConfigActivity"
+            android:theme="@style/Theme.StarLight.NoActionBar">
         </activity>
         <activity
             android:name=".ui.splash.SplashActivity"
