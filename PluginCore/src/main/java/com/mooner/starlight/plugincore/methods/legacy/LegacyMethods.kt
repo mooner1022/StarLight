@@ -22,7 +22,11 @@ class LegacyMethods {
             MethodFunction(name = "getAndroidVersionCode"),
             MethodFunction(name = "getAndroidVersionName"),
             MethodFunction(name = "getPhoneBrand"),
-            MethodFunction(name = "getPhoneModel")
+            MethodFunction(name = "getPhoneModel"),
+            MethodFunction(
+                name = "randomAlphanumeric",
+                args = arrayOf(Int::class.java)
+            )
         )
     )
 

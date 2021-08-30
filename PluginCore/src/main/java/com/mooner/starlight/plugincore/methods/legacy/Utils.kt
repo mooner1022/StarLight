@@ -34,5 +34,16 @@ class Utils {
         fun getPhoneModel(): String {
             return android.os.Build.MODEL
         }
+
+        /* NEW_API */
+
+        private val alphanumericPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+        fun randomAlphanumeric(length: Int): String {
+            val arr: ArrayList<Char> = arrayListOf()
+            repeat(length) {
+                arr.add(alphanumericPool.random())
+            }
+            return arr.joinToString("")
+        }
     }
 }

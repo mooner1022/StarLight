@@ -81,10 +81,9 @@ class Utils {
 
         fun restartApplication(context: Context) {
             val mStartActivity = Intent(context, SplashActivity::class.java)
-            val mPendingIntentId = (0..100000).random()
             val mPendingIntent = PendingIntent.getActivity(
                 context,
-                mPendingIntentId,
+                0,
                 mStartActivity,
                 PendingIntent.FLAG_CANCEL_CURRENT
             )
