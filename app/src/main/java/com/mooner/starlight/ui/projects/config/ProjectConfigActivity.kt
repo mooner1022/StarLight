@@ -61,6 +61,10 @@ class ProjectConfigActivity: AppCompatActivity() {
             }
         }
 
+        binding.leave.setOnClickListener {
+            finish()
+        }
+
         recyclerAdapter.data = project.getLanguage().configObjectList.toMutableList()
         recyclerAdapter.saved = savedData
         recyclerAdapter.notifyDataSetChanged()

@@ -68,6 +68,10 @@ class PluginConfigActivity : AppCompatActivity() {
             }
         }
 
+        binding.leave.setOnClickListener {
+            finish()
+        }
+
         recyclerAdapter.data = plugin.configObjects.toList()
         recyclerAdapter.saved = savedData
         recyclerAdapter.notifyDataSetChanged()
