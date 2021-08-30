@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.KeyEvent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.databinding.ActivityDebugRoomBinding
 import com.mooner.starlight.models.DebugRoomMessage
 import com.mooner.starlight.plugincore.core.Session
@@ -74,6 +75,9 @@ class DebugRoomActivity: AppCompatActivity() {
                     else
                         DebugRoomChatAdapter.CHAT_BOT
                     addMessage(msg, viewType)
+                },
+                onMarkAsRead = {
+                    Snackbar.make(binding.root, "읽음 처리 호출됨", Snackbar.LENGTH_SHORT).show()
                 }
             ),
             isGroupChat = false,
