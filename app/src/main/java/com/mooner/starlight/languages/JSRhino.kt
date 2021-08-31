@@ -3,6 +3,9 @@ package com.mooner.starlight.languages
 import android.widget.ImageView
 import coil.load
 import com.mooner.starlight.R
+import com.mooner.starlight.plugincore.config.ConfigObject
+import com.mooner.starlight.plugincore.config.SliderConfigObject
+import com.mooner.starlight.plugincore.config.SpinnerConfigObject
 import com.mooner.starlight.plugincore.language.*
 import com.mooner.starlight.plugincore.methods.MethodClass
 import kotlinx.coroutines.CoroutineScope
@@ -45,7 +48,7 @@ class JSRhino: Language() {
             SpinnerConfigObject(
                 id = CONF_LANG_VERSION,
                 name = "JS 버전",
-                spinnerItems = listOf(
+                items = listOf(
                     "JavaScript 1.0",
                     "JavaScript 1.1",
                     "JavaScript 1.2",

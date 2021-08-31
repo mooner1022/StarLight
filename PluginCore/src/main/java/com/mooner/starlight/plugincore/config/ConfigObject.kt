@@ -1,11 +1,10 @@
-package com.mooner.starlight.plugincore.language
+package com.mooner.starlight.plugincore.config
 
-import android.graphics.drawable.Drawable
 import android.text.InputType
 import android.view.View
 import androidx.annotation.ColorInt
-import androidx.annotation.DrawableRes
 import com.mooner.starlight.plugincore.utils.Icon
+import java.util.*
 
 enum class ConfigObjectType(
     val viewType: Int
@@ -15,7 +14,8 @@ enum class ConfigObjectType(
     STRING(2),
     SPINNER(3),
     BUTTON(4),
-    CUSTOM(5)
+    CUSTOM(5),
+    TITLE(6)
 }
 
 interface ConfigObject {
@@ -77,7 +77,7 @@ class StringConfigObject(
 class SpinnerConfigObject(
     override val id: String,
     override val name: String,
-    val spinnerItems: List<String>,
+    val items: List<String>,
     private val defaultIndex: Int = 0,
     override val dependency: String? = null
 ): ConfigObject {
@@ -92,9 +92,7 @@ class SpinnerConfigObject(
 class ButtonConfigObject(
     override val id: String,
     override val name: String,
-    val onClickListener: () -> Unit,
-    @DrawableRes
-    internal val iconRes: Int? = null,
+    val onClickListener: (view: View) -> Unit,
     val icon: Icon = Icon.ARROW_RIGHT,
     @ColorInt
     val iconTintColor: Int? = null,
@@ -121,5 +119,18 @@ class CustomConfigObject(
         get() = ConfigObjectType.CUSTOM
     override val viewType: Int
         get() = ConfigObjectType.CUSTOM.viewType
+    override val dependency: String? = null
+}
+
+class TitleConfigObject(
+    val title: String,
+    @ColorInt
+    val textColor: Int
+): ConfigObject {
+    override val default: Any = 0
+    override val id: String = UUID.randomUUID().toString()
+    override val name: String = title
+    override val type: ConfigObjectType = ConfigObjectType.TITLE
+    override val viewType: Int = ConfigObjectType.TITLE.viewType
     override val dependency: String? = null
 }

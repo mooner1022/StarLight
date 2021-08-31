@@ -12,6 +12,7 @@ import com.eclipsesource.v8.V8Object
 import com.eclipsesource.v8.V8Value
 import com.eclipsesource.v8.utils.V8ObjectUtils
 import com.mooner.starlight.R
+import com.mooner.starlight.plugincore.config.*
 import com.mooner.starlight.plugincore.language.*
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.methods.MethodClass
@@ -65,7 +66,7 @@ class JSV8: Language() {
             SpinnerConfigObject(
                 id = "spinner_test",
                 name = "스피너 테스트",
-                spinnerItems = listOf(
+                items = listOf(
                     "테스트1",
                     "테스트2",
                     "테스트3"
