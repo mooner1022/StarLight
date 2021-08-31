@@ -15,7 +15,7 @@ import coil.load
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.TypedString
-import com.mooner.starlight.plugincore.language.*
+import com.mooner.starlight.plugincore.config.*
 import org.angmarch.views.NiceSpinner
 
 class PluginConfigAdapter(
@@ -23,7 +23,7 @@ class PluginConfigAdapter(
     private val onConfigChanged: (id: String, view: View, data: Any) -> Unit
 ): RecyclerView.Adapter<PluginConfigAdapter.PluginConfigViewHolder>() {
     var data = listOf<ConfigObject>()
-    var saved: MutableMap<String, TypedString> = mutableMapOf()
+    var saved: MutableMap<String, TypedString> = hashMapOf()
     var isHavingError = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PluginConfigViewHolder {
@@ -110,7 +110,7 @@ class PluginConfigAdapter(
                 holder.textSpinner.text = viewData.name
                 holder.spinner.apply {
                     setBackgroundColor(context.getColor(R.color.transparent))
-                    attachDataSource((viewData as SpinnerConfigObject).spinnerItems)
+                    attachDataSource((viewData as SpinnerConfigObject).items)
                     setOnSpinnerItemSelectedListener { _, _, position, _ ->
                         onConfigChanged(viewData.id, holder.spinner, position)
                     }
@@ -121,7 +121,7 @@ class PluginConfigAdapter(
                 holder.textButton.text = viewData.name
                 val langConf = viewData as ButtonConfigObject
                 holder.cardViewButton.setOnClickListener {
-                    if (holder.cardViewButton.isEnabled) langConf.onClickListener()
+                    if (holder.cardViewButton.isEnabled) langConf.onClickListener(it)
                 }
                 holder.imageViewButton.load(langConf.icon.drawableRes)
                 if (langConf.iconTintColor != null) {
@@ -134,6 +134,10 @@ class PluginConfigAdapter(
             ConfigObjectType.CUSTOM.viewType -> {
                 val data = viewData as CustomConfigObject
                 data.onInflate(holder.customLayout)
+            }
+            ConfigObjectType.TITLE.viewType -> {
+                val data = viewData as TitleConfigObject
+                holder.titleText.text = data.title
             }
         }
 
@@ -186,6 +190,8 @@ class PluginConfigAdapter(
 
         lateinit var customLayout: LinearLayout
 
+        lateinit var titleText: TextView
+
         var context: Context = itemView.context
 
         init {
@@ -214,6 +220,9 @@ class PluginConfigAdapter(
                 }
                 ConfigObjectType.CUSTOM.viewType -> {
                     customLayout = itemView.findViewById(R.id.layout_configCustom)
+                }
+                ConfigObjectType.TITLE.viewType -> {
+                    titleText = itemView.findViewById(R.id.textView_configTitle)
                 }
             }
         }

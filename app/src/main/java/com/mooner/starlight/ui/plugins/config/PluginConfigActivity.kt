@@ -11,6 +11,7 @@ import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
+import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -48,33 +49,27 @@ class PluginConfigActivity : AppCompatActivity() {
             mutableMapOf()
         }
 
-        fabProjectConfig.setOnClickListener {
+        fabProjectConfig.setOnClickListener { view ->
             if (recyclerAdapter.isHavingError) {
-                Snackbar.make(it, "올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
+                Snackbar.make(view, "올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
                 fabProjectConfig.hide()
                 return@setOnClickListener
             }
             configFile.writeText(Session.json.encodeToString(savedData))
             plugin.onConfigUpdated(changedData)
-            Snackbar.make(it, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
+            Snackbar.make(view, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
             fabProjectConfig.hide()
         }
 
-        binding.scroll.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-            if (scrollY in 0..200) {
-                binding.imageViewLogo.alpha = 1f - (scrollY / 200.0f)
-            } else {
-                binding.imageViewLogo.alpha = 0f
-            }
-        }
+        binding.scroll.bindFadeImage(binding.imageViewLogo)
 
-        binding.leave.setOnClickListener {
-            finish()
-        }
+        binding.leave.setOnClickListener { finish() }
 
-        recyclerAdapter.data = plugin.configObjects.toList()
-        recyclerAdapter.saved = savedData
-        recyclerAdapter.notifyDataSetChanged()
+        recyclerAdapter.apply {
+            data = plugin.configObjects.toList()
+            saved = savedData
+            notifyDataSetChanged()
+        }
 
         val layoutManager = LinearLayoutManager(applicationContext)
         configRecyclerView.layoutManager = layoutManager

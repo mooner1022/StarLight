@@ -15,15 +15,16 @@ import coil.load
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.TypedString
-import com.mooner.starlight.plugincore.language.*
+import com.mooner.starlight.plugincore.config.*
 import org.angmarch.views.NiceSpinner
 
 class ProjectConfigAdapter(
     private val context: Context,
     private val onConfigChanged: (id: String, view: View, data: Any) -> Unit
 ): RecyclerView.Adapter<ProjectConfigAdapter.ProjectConfigViewHolder>() {
-    var data = mutableListOf<ConfigObject>()
-    var saved: MutableMap<String, TypedString> = mutableMapOf()
+    var data: List<ConfigObject> = emptyList()
+    var saved: MutableMap<String, TypedString> = hashMapOf()
+    var isHavingError = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectConfigViewHolder {
         val view = when(viewType) {
@@ -83,16 +84,25 @@ class ProjectConfigAdapter(
                 holder.seekBarIndex.text = holder.seekBar.progress.toString()
             }
             ConfigObjectType.STRING.viewType -> {
-                holder.textString.text = viewData.name
-                holder.editTextString.hint = viewData.default as String
+                val data = viewData as StringConfigObject
+                holder.textString.text = data.name
+                holder.editTextString.hint = data.hint
+                holder.editTextString.inputType = data.inputType
                 holder.editTextString.setText(getDefault() as String)
                 holder.editTextString.addTextChangedListener(object: TextWatcher {
                     override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
                     override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
 
-                    override fun afterTextChanged(s: Editable?) {
-                        onConfigChanged(viewData.id, holder.editTextString, s!!.toString())
+                    override fun afterTextChanged(s: Editable) {
+                        val require: String?
+                        if (data.require(s.toString()).also { require = it } == null) {
+                            if (isHavingError) isHavingError = false
+                            onConfigChanged(viewData.id, holder.editTextString, s.toString())
+                        } else {
+                            if (!isHavingError) isHavingError = true
+                            holder.editTextString.error = require!!
+                        }
                     }
                 })
             }
@@ -100,7 +110,7 @@ class ProjectConfigAdapter(
                 holder.textSpinner.text = viewData.name
                 holder.spinner.apply {
                     setBackgroundColor(context.getColor(R.color.transparent))
-                    attachDataSource((viewData as SpinnerConfigObject).spinnerItems)
+                    attachDataSource((viewData as SpinnerConfigObject).items)
                     setOnSpinnerItemSelectedListener { _, _, position, _ ->
                         onConfigChanged(viewData.id, holder.spinner, position)
                     }
@@ -111,7 +121,7 @@ class ProjectConfigAdapter(
                 holder.textButton.text = viewData.name
                 val langConf = viewData as ButtonConfigObject
                 holder.cardViewButton.setOnClickListener {
-                    if (holder.cardViewButton.isEnabled) langConf.onClickListener()
+                    if (holder.cardViewButton.isEnabled) langConf.onClickListener(it)
                 }
                 holder.imageViewButton.load(langConf.icon.drawableRes)
                 if (langConf.iconTintColor != null) {
@@ -124,6 +134,10 @@ class ProjectConfigAdapter(
             ConfigObjectType.CUSTOM.viewType -> {
                 val data = viewData as CustomConfigObject
                 data.onInflate(holder.customLayout)
+            }
+            ConfigObjectType.TITLE.viewType -> {
+                val data = viewData as TitleConfigObject
+                holder.titleText.text = data.title
             }
         }
 
@@ -176,6 +190,8 @@ class ProjectConfigAdapter(
 
         lateinit var customLayout: LinearLayout
 
+        lateinit var titleText: TextView
+
         var context: Context = itemView.context
 
         init {
@@ -204,6 +220,9 @@ class ProjectConfigAdapter(
                 }
                 ConfigObjectType.CUSTOM.viewType -> {
                     customLayout = itemView.findViewById(R.id.layout_configCustom)
+                }
+                ConfigObjectType.TITLE.viewType -> {
+                    titleText = itemView.findViewById(R.id.textView_configTitle)
                 }
             }
         }
