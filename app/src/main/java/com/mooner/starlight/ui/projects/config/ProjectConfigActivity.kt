@@ -38,7 +38,8 @@ class ProjectConfigActivity: AppCompatActivity() {
                 FileUtils.openFolderInExplorer(view.context, project.directory.path)
             }
             icon = Icon.FOLDER
-            iconTintColor = 0xB8DFD8
+            backgroundColor = 0xB8DFD8
+            iconTintColor = 0xBDBDBD
         }
         toggle {
             id = "shutdown_on_error"

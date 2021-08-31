@@ -6,6 +6,7 @@ import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.config.SliderConfigObject
 import com.mooner.starlight.plugincore.config.SpinnerConfigObject
+import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.*
 import com.mooner.starlight.plugincore.methods.MethodClass
 import kotlinx.coroutines.CoroutineScope
@@ -34,36 +35,39 @@ class JSRhino: Language() {
     override val loadIcon: (ImageView) -> Unit = { imageView ->
         imageView.load(R.drawable.ic_js)
     }
-    override val requireRelease: Boolean
-        get() = true
+    override val requireRelease: Boolean = true
 
-    override val configObjectList: List<ConfigObject>
-        get() = listOf(
-            SliderConfigObject(
-                id = CONF_OPTIMIZATION,
-                name = "최적화 레벨",
-                max = 10,
-                defaultValue = 1
-            ),
-            SpinnerConfigObject(
-                id = CONF_LANG_VERSION,
-                name = "JS 버전",
-                items = listOf(
-                    "JavaScript 1.0",
-                    "JavaScript 1.1",
-                    "JavaScript 1.2",
-                    "JavaScript 1.3",
-                    "JavaScript 1.4",
-                    "JavaScript 1.5",
-                    "JavaScript 1.6",
-                    "JavaScript 1.7",
-                    "JavaScript 1.8",
-                    "JavaScript ES6",
-                    "DEFAULT",
-                ),
-                defaultIndex = 9
+    override val configObjectList: List<ConfigObject> = config {
+        title {
+            title = "JS-Rhino"
+            textColor = 0xbee7b8
+        }
+        slider {
+            id = CONF_OPTIMIZATION
+            name = "최적화 레벨"
+            max = 10
+            defaultValue = 1
+        }
+        spinner {
+            id = CONF_LANG_VERSION
+            name = "JS 버전"
+            items = listOf(
+                "JavaScript 1.0",
+                "JavaScript 1.1",
+                "JavaScript 1.2",
+                "JavaScript 1.3",
+                "JavaScript 1.4",
+                "JavaScript 1.5",
+                "JavaScript 1.6",
+                "JavaScript 1.7",
+                "JavaScript 1.8",
+                "JavaScript ES6",
+                "DEFAULT",
             )
-        )
+            defaultIndex = 9
+        }
+    }
+
     override val defaultCode: String
         get() = """
             function onMessage(event) {

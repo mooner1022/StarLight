@@ -27,15 +27,17 @@ class ProjectConfigAdapter(
     var isHavingError = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectConfigViewHolder {
-        val view = when(viewType) {
-            ConfigObjectType.TOGGLE.viewType -> LayoutInflater.from(context).inflate(R.layout.config_toggle, parent, false)
-            ConfigObjectType.SLIDER.viewType -> LayoutInflater.from(context).inflate(R.layout.config_slider, parent, false)
-            ConfigObjectType.STRING.viewType -> LayoutInflater.from(context).inflate(R.layout.config_string, parent, false)
-            ConfigObjectType.SPINNER.viewType -> LayoutInflater.from(context).inflate(R.layout.config_spinner, parent, false)
-            ConfigObjectType.BUTTON.viewType -> LayoutInflater.from(context).inflate(R.layout.config_button, parent, false)
-            ConfigObjectType.CUSTOM.viewType -> LayoutInflater.from(context).inflate(R.layout.config_custom, parent, false)
-            else -> LayoutInflater.from(context).inflate(R.layout.config_toggle, parent, false)
+        val layout = when(viewType) {
+            ConfigObjectType.TOGGLE.viewType -> R.layout.config_toggle
+            ConfigObjectType.SLIDER.viewType -> R.layout.config_slider
+            ConfigObjectType.STRING.viewType -> R.layout.config_string
+            ConfigObjectType.SPINNER.viewType -> R.layout.config_spinner
+            ConfigObjectType.BUTTON.viewType -> R.layout.config_button
+            ConfigObjectType.CUSTOM.viewType -> R.layout.config_custom
+            ConfigObjectType.TITLE.viewType -> R.layout.config_title
+            else -> 0
         }
+        val view = LayoutInflater.from(context).inflate(layout, parent, false)
         return ProjectConfigViewHolder(view, viewType)
     }
 
