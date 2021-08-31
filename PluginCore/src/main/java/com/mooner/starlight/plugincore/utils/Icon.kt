@@ -55,6 +55,9 @@ enum class Icon(
     CREATE(
         drawableRes = R.drawable.ic_round_create_24
     ),
+    FOLDER(
+        drawableRes = R.drawable.ic_round_folder_24
+    ),
     CREATE_NEW_FOLDER(
         drawableRes = R.drawable.ic_round_create_new_folder_24
     ),
