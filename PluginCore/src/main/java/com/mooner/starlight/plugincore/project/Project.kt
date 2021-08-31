@@ -17,12 +17,28 @@ class Project(
     val directory: File,
     val config: ProjectConfig
 ) {
+
+    companion object {
+        private const val LANGUAGE_CONFIG_FILE_NAME  = "config-language.json"
+        private const val PROJECT_CONFIG_FILE_NAME   = "project.json"
+        private const val LOGS_FILE_NAME             = "logs_local.json"
+
+        fun create(dir: File, config: ProjectConfig): Project {
+            val folder = File(dir.path, config.name)
+            folder.mkdirs()
+            File(folder.path, PROJECT_CONFIG_FILE_NAME).writeText(json.encodeToString(config), Charsets.UTF_8)
+            val language = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
+            File(folder.path, config.mainScript).writeText(language.defaultCode, Charsets.UTF_8)
+            return Project(folder, config)
+        }
+    }
+
     val isCompiled: Boolean
         get() = engine != null
     private var engine: Any? = null
     private val lang: Language = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
-    private val logger: LocalLogger = if (directory.hasFile("logs_local.json")) {
-        LocalLogger.fromFile(File(directory, "logs_local.json"))
+    private val logger: LocalLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
+        LocalLogger.fromFile(File(directory, LOGS_FILE_NAME))
     } else {
         LocalLogger.create(directory)
     }
@@ -31,19 +47,8 @@ class Project(
     private val tag: String
         get() = "Project-${config.name}"
 
-    companion object {
-        fun create(dir: File, config: ProjectConfig): Project {
-            val folder = File(dir.path, config.name)
-            folder.mkdirs()
-            File(folder.path, "project.json").writeText(json.encodeToString(config), Charsets.UTF_8)
-            val language = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
-            File(folder.path, config.mainScript).writeText(language.defaultCode, Charsets.UTF_8)
-            return Project(folder, config)
-        }
-    }
-
     init {
-        val langConfFile = File(directory, "config-language.json")
+        val langConfFile = File(directory, LANGUAGE_CONFIG_FILE_NAME)
         lang.setConfigPath(langConfFile)
     }
 
@@ -104,7 +109,7 @@ class Project(
     fun saveConfig() {
         val str = json.encodeToString(config)
         logger.d(config.name, "Flushed project config: $str")
-        File(directory.path, "project.json").writeText(str, Charsets.UTF_8)
+        File(directory.path, PROJECT_CONFIG_FILE_NAME).writeText(str, Charsets.UTF_8)
     }
 
     fun getLanguage(): ILanguage {
