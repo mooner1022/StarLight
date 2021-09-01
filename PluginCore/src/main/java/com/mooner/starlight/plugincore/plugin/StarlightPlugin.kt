@@ -1,11 +1,11 @@
 package com.mooner.starlight.plugincore.plugin
 
-import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.event.EventListener
 import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import com.mooner.starlight.plugincore.utils.Utils.Companion.getFileSize
 import kotlinx.serialization.decodeFromString
@@ -121,5 +121,15 @@ abstract class StarlightPlugin: Plugin, EventListener {
         this.dataDir = dataDir
         this.file = file
         this.classLoader = classLoader
+    }
+
+    override fun hashCode(): Int {
+        var result = dataDir.hashCode()
+        result = 31 * result + isEnabled.hashCode()
+        result = 31 * result + config.hashCode()
+        result = 31 * result + fileSize.hashCode()
+        result = 31 * result + configObjects.hashCode()
+        result = 31 * result + name.hashCode()
+        return result
     }
 }

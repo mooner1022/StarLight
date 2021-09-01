@@ -1,17 +1,17 @@
-package com.mooner.starlight.plugincore
+package com.mooner.starlight.plugincore.models
 
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class TypedString(
-        val type: String,
-        val value: String
+    val type: String,
+    val value: String
 ) {
     companion object {
         fun parse(value: Any): TypedString {
             return TypedString(
-                    type = value::class.simpleName!!,
-                    value = value.toString()
+                type = value::class.simpleName!!,
+                value = value.toString()
             )
         }
     }
@@ -30,10 +30,4 @@ data class TypedString(
             null
         }
     }
-}
-
-enum class Priority {
-    HIGH,
-    MIDDLE,
-    LOW
 }

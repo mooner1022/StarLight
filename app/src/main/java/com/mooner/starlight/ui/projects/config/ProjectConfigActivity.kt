@@ -3,7 +3,6 @@ package com.mooner.starlight.ui.projects.config
 import android.content.Intent
 import android.os.Bundle
 import android.provider.DocumentsContract
-import android.view.MenuItem
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
@@ -11,11 +10,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityProjectConfigBinding
-import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.json
+import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.ui.config.ConfigAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
@@ -80,7 +79,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         savedData = try {
             json.decodeFromString(configFile.readText())
         } catch (e: Exception) {
-            mutableMapOf()
+            hashMapOf()
         }
 
         fabProjectConfig.setOnClickListener { view ->
@@ -117,15 +116,6 @@ class ProjectConfigActivity: AppCompatActivity() {
 
         val textViewConfigProjectName: TextView = findViewById(R.id.textViewConfigProjectName)
         textViewConfigProjectName.text = projectName
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId) {
-            android.R.id.home -> {
-                finish()
-            }
-        }
-        return super.onOptionsItemSelected(item)
     }
 
     private fun openFolderInExplorer(path: File): Boolean {
