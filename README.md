@@ -16,6 +16,10 @@ various script language support and plugin system
 Currently in development!
 </p>
 
+<p align="center">
+    + Watch `dev` branch for recent updates :)
+</p>
+
 
 # License
 ```
