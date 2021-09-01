@@ -10,19 +10,20 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.config.*
+import com.mooner.starlight.plugincore.models.TypedString
 import org.angmarch.views.NiceSpinner
 
 class ConfigAdapter(
     private val context: Context,
     private val onConfigChanged: (id: String, view: View, data: Any) -> Unit
 ): RecyclerView.Adapter<ConfigAdapter.ConfigViewHolder>() {
-    var data = listOf<ConfigObject>()
+    var data: List<ConfigObject> = mutableListOf()
     var saved: MutableMap<String, TypedString> = hashMapOf()
     var isHavingError = false
 
@@ -32,7 +33,8 @@ class ConfigAdapter(
             ConfigObjectType.SLIDER.viewType -> R.layout.config_slider
             ConfigObjectType.STRING.viewType -> R.layout.config_string
             ConfigObjectType.SPINNER.viewType -> R.layout.config_spinner
-            ConfigObjectType.BUTTON.viewType -> R.layout.config_button
+            ConfigObjectType.BUTTON_FLAT.viewType -> R.layout.config_button_flat
+            ConfigObjectType.BUTTON_CARD.viewType -> R.layout.config_button_card
             ConfigObjectType.CUSTOM.viewType -> R.layout.config_custom
             ConfigObjectType.TITLE.viewType -> R.layout.config_title
             else -> 0
@@ -119,7 +121,21 @@ class ConfigAdapter(
                     selectedIndex = getDefault() as Int
                 }
             }
-            ConfigObjectType.BUTTON.viewType -> {
+            ConfigObjectType.BUTTON_FLAT.viewType -> {
+                holder.textButton.text = viewData.name
+                val langConf = viewData as ButtonConfigObject
+                holder.layoutButton.setOnClickListener {
+                    if (holder.cardViewButton.isEnabled) langConf.onClickListener(it)
+                }
+                holder.imageViewButton.load(langConf.icon.drawableRes)
+                if (langConf.iconTintColor != null) {
+                    holder.imageViewButton.imageTintList = ColorStateList.valueOf(langConf.iconTintColor!!)
+                }
+                if (langConf.backgroundColor != null) {
+                    holder.layoutButton.setBackgroundColor(langConf.backgroundColor!!)
+                }
+            }
+            ConfigObjectType.BUTTON_CARD.viewType -> {
                 holder.textButton.text = viewData.name
                 val langConf = viewData as ButtonConfigObject
                 holder.cardViewButton.setOnClickListener {
@@ -162,7 +178,11 @@ class ConfigAdapter(
                     ConfigObjectType.SPINNER.viewType -> {
                         holder.spinner.isEnabled = isEnabled
                     }
-                    ConfigObjectType.BUTTON.viewType -> {
+                    ConfigObjectType.BUTTON_CARD.viewType -> {
+                        holder.textButton.isEnabled = isEnabled
+                        holder.layoutButton.isEnabled = isEnabled
+                    }
+                    ConfigObjectType.BUTTON_CARD.viewType -> {
                         holder.textButton.isEnabled = isEnabled
                         holder.cardViewButton.isEnabled = isEnabled
                     }
@@ -189,6 +209,7 @@ class ConfigAdapter(
         lateinit var textButton: TextView
         lateinit var cardViewButton: CardView
         lateinit var imageViewButton: ImageView
+        lateinit var layoutButton: ConstraintLayout
 
         lateinit var customLayout: LinearLayout
 
@@ -215,7 +236,12 @@ class ConfigAdapter(
                     textSpinner = itemView.findViewById(R.id.textView_configSpinner)
                     spinner = itemView.findViewById(R.id.spinner_configSpinner)
                 }
-                ConfigObjectType.BUTTON.viewType -> {
+                ConfigObjectType.BUTTON_FLAT.viewType -> {
+                    textButton = itemView.findViewById(R.id.textView_configButton)
+                    layoutButton = itemView.findViewById(R.id.layout_configButton)
+                    imageViewButton = itemView.findViewById(R.id.imageView_configButton)
+                }
+                ConfigObjectType.BUTTON_CARD.viewType -> {
                     textButton = itemView.findViewById(R.id.textView_configButton)
                     cardViewButton = itemView.findViewById(R.id.cardView_configButton)
                     imageViewButton = itemView.findViewById(R.id.imageView_configButton)

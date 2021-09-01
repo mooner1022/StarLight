@@ -13,7 +13,8 @@ enum class ConfigObjectType(
     SLIDER(1),
     STRING(2),
     SPINNER(3),
-    BUTTON(4),
+    BUTTON_FLAT(4),
+    BUTTON_CARD(-4),
     CUSTOM(5),
     TITLE(6)
 }
@@ -39,7 +40,7 @@ class ToggleConfigObject(
     override val type: ConfigObjectType
         get() = ConfigObjectType.TOGGLE
     override val viewType: Int
-        get() = ConfigObjectType.TOGGLE.viewType
+        get() = type.viewType
 }
 
 class SliderConfigObject(
@@ -54,7 +55,7 @@ class SliderConfigObject(
     override val type: ConfigObjectType
         get() = ConfigObjectType.SLIDER
     override val viewType: Int
-        get() = ConfigObjectType.SLIDER.viewType
+        get() = type.viewType
 }
 
 class StringConfigObject(
@@ -71,7 +72,7 @@ class StringConfigObject(
     override val type: ConfigObjectType
         get() = ConfigObjectType.STRING
     override val viewType: Int
-        get() = ConfigObjectType.STRING.viewType
+        get() = type.viewType
 }
 
 class SpinnerConfigObject(
@@ -86,13 +87,14 @@ class SpinnerConfigObject(
     override val type: ConfigObjectType
         get() = ConfigObjectType.SPINNER
     override val viewType: Int
-        get() = ConfigObjectType.SPINNER.viewType
+        get() = type.viewType
 }
 
 class ButtonConfigObject(
     override val id: String,
     override val name: String,
     val onClickListener: (view: View) -> Unit,
+    private val buttonType: Type = Type.FLAT,
     val icon: Icon = Icon.ARROW_RIGHT,
     @ColorInt
     val iconTintColor: Int? = null,
@@ -103,9 +105,17 @@ class ButtonConfigObject(
     override val default: Any
         get() = 0
     override val type: ConfigObjectType
-        get() = ConfigObjectType.BUTTON
+        get() = when(buttonType) {
+            Type.FLAT -> ConfigObjectType.BUTTON_FLAT
+            Type.CARD -> ConfigObjectType.BUTTON_CARD
+        }
     override val viewType: Int
-        get() = ConfigObjectType.BUTTON.viewType
+        get() = type.viewType
+
+    enum class Type {
+        FLAT,
+        CARD
+    }
 }
 
 class CustomConfigObject(
@@ -118,7 +128,7 @@ class CustomConfigObject(
     override val type: ConfigObjectType
         get() = ConfigObjectType.CUSTOM
     override val viewType: Int
-        get() = ConfigObjectType.CUSTOM.viewType
+        get() = type.viewType
     override val dependency: String? = null
 }
 
@@ -131,6 +141,7 @@ class TitleConfigObject(
     override val id: String = UUID.randomUUID().toString()
     override val name: String = title
     override val type: ConfigObjectType = ConfigObjectType.TITLE
-    override val viewType: Int = ConfigObjectType.TITLE.viewType
+    override val viewType: Int
+        get() = type.viewType
     override val dependency: String? = null
 }

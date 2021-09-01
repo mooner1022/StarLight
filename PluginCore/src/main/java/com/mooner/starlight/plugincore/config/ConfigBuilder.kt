@@ -67,6 +67,7 @@ class ConfigBuilder {
         var id: String? = null
         var name: String? = null
         var onClickListener: ((view: View) -> Unit)? = null
+        var type: ButtonConfigObject.Type = ButtonConfigObject.Type.FLAT
         var icon: Icon = Icon.ARROW_RIGHT
         @ColorInt
         var iconTintColor: Int? = null
@@ -83,6 +84,7 @@ class ConfigBuilder {
                 id = id!!,
                 name = name!!,
                 onClickListener = onClickListener!!,
+                buttonType = type,
                 icon = icon,
                 iconTintColor = iconTintColor,
                 backgroundColor = backgroundColor,

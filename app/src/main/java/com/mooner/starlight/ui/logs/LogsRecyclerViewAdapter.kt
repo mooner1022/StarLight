@@ -9,23 +9,26 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.logger.LogData
 import com.mooner.starlight.plugincore.logger.LogType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.*
 
 @SuppressLint("SimpleDateFormat")
 class LogsRecyclerViewAdapter(
     private val context: Context,
 ): RecyclerView.Adapter<LogsRecyclerViewAdapter.LogsViewHolder>() {
-    var data = mutableListOf<LogData>()
-    var saved: MutableMap<String, TypedString> = mutableMapOf()
-    private val fullDateFormat = SimpleDateFormat("MM/dd HH:mm")
-    private val hourDateFormat = SimpleDateFormat("HH:mm:ss")
-    private val dateMillis: Long = 24 * 60 * 60 * 1000
+
+    companion object {
+        private val fullDateFormat = SimpleDateFormat("MM/dd HH:mm")
+        private val hourDateFormat = SimpleDateFormat("HH:mm:ss")
+    }
+
+    var data: MutableList<LogData> = arrayListOf()
+    private val calendar = Calendar.getInstance()
     private val mainScope: CoroutineScope
         get() = CoroutineScope(Dispatchers.Main)
 
@@ -66,7 +69,9 @@ class LogsRecyclerViewAdapter(
     }
 
     private fun formatDate(millis: Long): String {
-        return if (System.currentTimeMillis() / dateMillis != millis / dateMillis) {
+        val logCalendar = Calendar.getInstance().apply { timeInMillis = millis }
+
+        return if (calendar.get(Calendar.DAY_OF_YEAR) != logCalendar.get(Calendar.DAY_OF_YEAR)) {
             fullDateFormat
         } else {
             hourDateFormat
