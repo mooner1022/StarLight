@@ -11,6 +11,7 @@ import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
+import com.mooner.starlight.ui.config.ConfigAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -33,7 +34,7 @@ class PluginConfigActivity : AppCompatActivity() {
         val pluginName = intent.getStringExtra("pluginName")!!
         val pluginId = intent.getStringExtra("pluginId")!!
         val plugin = pluginLoader.getPluginById(pluginId)?: error("Failed to get plugin [$pluginName]")
-        val recyclerAdapter = PluginConfigAdapter(applicationContext) { id, view, data ->
+        val recyclerAdapter = ConfigAdapter(applicationContext) { id, view, data ->
             changedData[id] = data
             savedData[id] = TypedString.parse(data)
             if (!fabProjectConfig.isShown) {

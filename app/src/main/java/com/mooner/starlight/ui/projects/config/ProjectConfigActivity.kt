@@ -1,9 +1,12 @@
 package com.mooner.starlight.ui.projects.config
 
+import android.content.Intent
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.view.MenuItem
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
@@ -14,8 +17,7 @@ import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.project.Project
-import com.mooner.starlight.plugincore.utils.Icon
-import com.mooner.starlight.utils.FileUtils
+import com.mooner.starlight.ui.config.ConfigAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -34,12 +36,15 @@ class ProjectConfigActivity: AppCompatActivity() {
         button {
             id = "open_folder"
             name = "폴더 열기"
-            onClickListener = { view ->
-                FileUtils.openFolderInExplorer(view.context, project.directory.path)
+            onClickListener = {
+                println("onClick")
+                println("dir= ${project.directory.path}")
+                val result = openFolderInExplorer(project.directory)
+                println(result)
             }
-            icon = Icon.FOLDER
-            backgroundColor = 0xB8DFD8
-            iconTintColor = 0xBDBDBD
+            //icon = Icon.FOLDER
+            //backgroundColor = 0xB8DFD8
+            //iconTintColor = 0xBDBDBD
         }
         toggle {
             id = "shutdown_on_error"
@@ -62,7 +67,7 @@ class ProjectConfigActivity: AppCompatActivity() {
 
         val projectName = intent.getStringExtra("projectName")!!
         project = Session.projectLoader.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
-        val recyclerAdapter = ProjectConfigAdapter(applicationContext) { id, view, data ->
+        val recyclerAdapter = ConfigAdapter(applicationContext) { id, view, data ->
             changedData[id] = data
             savedData[id] = TypedString.parse(data)
             if (!fabProjectConfig.isShown) {
@@ -121,5 +126,19 @@ class ProjectConfigActivity: AppCompatActivity() {
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun openFolderInExplorer(path: File): Boolean {
+        val uri = FileProvider.getUriForFile(applicationContext, "$packageName.provider", path)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri,  DocumentsContract.Document.MIME_TYPE_DIR)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        return if (intent.resolveActivityInfo(packageManager, 0) != null) {
+            startActivity(intent)
+            true
+        } else
+            false
     }
 }

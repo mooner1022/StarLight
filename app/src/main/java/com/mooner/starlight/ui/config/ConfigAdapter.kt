@@ -1,4 +1,4 @@
-package com.mooner.starlight.ui.projects.config
+package com.mooner.starlight.ui.config
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -18,15 +18,15 @@ import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.config.*
 import org.angmarch.views.NiceSpinner
 
-class ProjectConfigAdapter(
+class ConfigAdapter(
     private val context: Context,
     private val onConfigChanged: (id: String, view: View, data: Any) -> Unit
-): RecyclerView.Adapter<ProjectConfigAdapter.ProjectConfigViewHolder>() {
-    var data: List<ConfigObject> = emptyList()
+): RecyclerView.Adapter<ConfigAdapter.ConfigViewHolder>() {
+    var data = listOf<ConfigObject>()
     var saved: MutableMap<String, TypedString> = hashMapOf()
     var isHavingError = false
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectConfigViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ConfigViewHolder {
         val layout = when(viewType) {
             ConfigObjectType.TOGGLE.viewType -> R.layout.config_toggle
             ConfigObjectType.SLIDER.viewType -> R.layout.config_slider
@@ -38,7 +38,7 @@ class ProjectConfigAdapter(
             else -> 0
         }
         val view = LayoutInflater.from(context).inflate(layout, parent, false)
-        return ProjectConfigViewHolder(view, viewType)
+        return ConfigViewHolder(view, viewType)
     }
 
     override fun getItemCount(): Int = data.size
@@ -47,7 +47,7 @@ class ProjectConfigAdapter(
         return data[position].viewType
     }
 
-    override fun onBindViewHolder(holder: ProjectConfigViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ConfigViewHolder, position: Int) {
         val viewData = data[position]
         fun getDefault(): Any {
             return if (saved.containsKey(viewData.id)) saved[viewData.id]!!.cast()!! else viewData.default
@@ -172,7 +172,7 @@ class ProjectConfigAdapter(
     }
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
-    inner class ProjectConfigViewHolder(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
+    inner class ConfigViewHolder(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
         lateinit var textToggle: TextView
         lateinit var toggle: SwitchMaterial
 
