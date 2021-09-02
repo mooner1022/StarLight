@@ -17,9 +17,15 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-class PluginConfigActivity : AppCompatActivity() {
+class PluginConfigActivity: AppCompatActivity() {
 
-    private val changedData: MutableMap<String, Any> = mutableMapOf()
+    companion object {
+        private const val EXTRA_PLUGIN_NAME = "pluginName"
+        private const val EXTRA_PLUGIN_ID = "pluginId"
+        private const val PLUGIN_CONFIG_FILE_NAME = "config-plugin.json"
+    }
+
+    private val changedData: MutableMap<String, Any> = hashMapOf()
     private lateinit var savedData: MutableMap<String, TypedString>
     private lateinit var binding: ActivityPluginConfigBinding
 
@@ -31,8 +37,8 @@ class PluginConfigActivity : AppCompatActivity() {
         val fabProjectConfig = binding.fabPluginConfig
         val configRecyclerView = binding.configRecyclerView
 
-        val pluginName = intent.getStringExtra("pluginName")!!
-        val pluginId = intent.getStringExtra("pluginId")!!
+        val pluginName = intent.getStringExtra(EXTRA_PLUGIN_NAME)!!
+        val pluginId = intent.getStringExtra(EXTRA_PLUGIN_ID)!!
         val plugin = pluginLoader.getPluginById(pluginId)?: error("Failed to get plugin [$pluginName]")
         val recyclerAdapter = ConfigAdapter(applicationContext) { id, view, data ->
             changedData[id] = data
@@ -43,7 +49,7 @@ class PluginConfigActivity : AppCompatActivity() {
             plugin.onConfigChanged(id, view, data)
         }
 
-        val configFile = File((plugin as StarlightPlugin).getDataFolder(), "config-plugin.json")
+        val configFile = File((plugin as StarlightPlugin).getDataFolder(), PLUGIN_CONFIG_FILE_NAME)
         savedData = try {
             Session.json.decodeFromString(configFile.readText())
         } catch (e: Exception) {

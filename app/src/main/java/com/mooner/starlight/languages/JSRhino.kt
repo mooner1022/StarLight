@@ -4,10 +4,9 @@ import android.widget.ImageView
 import coil.load
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.config.ConfigObject
-import com.mooner.starlight.plugincore.config.SliderConfigObject
-import com.mooner.starlight.plugincore.config.SpinnerConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.*
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.methods.MethodClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +20,10 @@ class JSRhino: Language() {
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
     private lateinit var context: Context
     companion object {
-        private const val CONF_OPTIMIZATION = "optimizationLevel"
+
+        private const val T = "JS-Rhino"
+
+        private const val CONF_OPTIMIZATION = "optimization_level"
         private const val CONF_LANG_VERSION = "js_version"
         private const val LANG_DEF_VERSION = Context.VERSION_ES6
     }
@@ -39,7 +41,7 @@ class JSRhino: Language() {
 
     override val configObjectList: List<ConfigObject> = config {
         title {
-            title = "JS-Rhino"
+            title = T
             textColor = 0xbee7b8
         }
         slider {
@@ -61,7 +63,7 @@ class JSRhino: Language() {
                 "JavaScript 1.6",
                 "JavaScript 1.7",
                 "JavaScript 1.8",
-                "JavaScript ES6",
+                "ECMAScript 6 (ES6)",
                 "DEFAULT",
             )
             defaultIndex = 9
@@ -111,11 +113,16 @@ class JSRhino: Language() {
         } catch (e: IllegalStateException) {}
     }
 
-    override fun callFunction(engine: Any, methodName: String, args: Array<Any>) {
+    override fun callFunction(engine: Any, functionName: String, args: Array<Any>) {
         scope.launch {
             val rhino = engine as Scriptable
             Context.enter()
-            (rhino.get(methodName, engine) as Function).call(context, engine, engine, args)
+            val function = rhino.get(functionName, engine)
+            if (function == Scriptable.NOT_FOUND || function !is Function) {
+                Logger.e(T, "Unable to locate function [$functionName]")
+                return@launch
+            }
+            function.call(context, engine, engine, args)
         }
         //ScriptableObject.callMethod(engine as Scriptable, methodName, args)
         //val invocable = engine as Invocable
