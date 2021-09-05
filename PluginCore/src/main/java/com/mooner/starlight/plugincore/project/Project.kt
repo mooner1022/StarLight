@@ -6,8 +6,7 @@ import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.methods.MethodManager
-import com.mooner.starlight.plugincore.models.ChatRoom
+import com.mooner.starlight.plugincore.method.MethodManager
 import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.serialization.encodeToString
@@ -27,7 +26,7 @@ class Project(
             val folder = File(dir.path, config.name)
             folder.mkdirs()
             File(folder.path, PROJECT_CONFIG_FILE_NAME).writeText(json.encodeToString(config), Charsets.UTF_8)
-            val language = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
+            val language = Session.getLanguageManager().getLanguage(config.languageId)?: throw IllegalArgumentException("Cannot find language ${config.languageId}")
             File(folder.path, config.mainScript).writeText(language.defaultCode, Charsets.UTF_8)
             return Project(folder, config)
         }
@@ -36,7 +35,7 @@ class Project(
     val isCompiled: Boolean
         get() = engine != null
     private var engine: Any? = null
-    private val lang: Language = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
+    private val lang: Language = Session.getLanguageManager().getLanguage(config.languageId)?: throw IllegalArgumentException("Cannot find language ${config.languageId}")
     private val logger: LocalLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
         LocalLogger.fromFile(File(directory, LOGS_FILE_NAME))
     } else {

@@ -1,4 +1,4 @@
-package com.mooner.starlight.plugincore.methods.original
+package com.mooner.starlight.api.original
 
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.language.Language

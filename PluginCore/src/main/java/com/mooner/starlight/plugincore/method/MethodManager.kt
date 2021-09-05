@@ -1,4 +1,4 @@
-package com.mooner.starlight.plugincore.methods
+package com.mooner.starlight.plugincore.method
 
 import com.mooner.starlight.plugincore.logger.Logger
 

@@ -1,10 +1,10 @@
-package com.mooner.starlight.plugincore.methods.legacy
+package com.mooner.starlight.api.legacy
 
-import com.mooner.starlight.plugincore.methods.MethodClass
-import com.mooner.starlight.plugincore.methods.MethodFunction
-import com.mooner.starlight.plugincore.methods.MethodManager
+import com.mooner.starlight.plugincore.method.MethodClass
+import com.mooner.starlight.plugincore.method.MethodFunction
+import com.mooner.starlight.plugincore.method.MethodManager
 
-class LegacyMethods {
+class LegacyApis {
 
     private val utilsMethod = MethodClass(
         className = "Utils",

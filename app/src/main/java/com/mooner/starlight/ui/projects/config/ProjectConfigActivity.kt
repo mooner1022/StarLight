@@ -10,18 +10,22 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityProjectConfigBinding
+import com.mooner.starlight.plugincore.config.ButtonConfigObject
 import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.project.Project
+import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ConfigAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
+@ExperimentalSerializationApi
 class ProjectConfigActivity: AppCompatActivity() {
 
     companion object {
@@ -29,26 +33,30 @@ class ProjectConfigActivity: AppCompatActivity() {
     }
 
     private val commonConfigs: List<ConfigObject> = config {
-        title {
+        category {
             title = "일반"
-        }
-        button {
-            id = "open_folder"
-            name = "폴더 열기"
-            onClickListener = {
-                println("onClick")
-                println("dir= ${project.directory.path}")
-                val result = openFolderInExplorer(project.directory)
-                println(result)
+            items = items {
+                button {
+                    id = "open_folder"
+                    name = "폴더 열기"
+                    type = ButtonConfigObject.Type.FLAT
+                    onClickListener = {
+                        println("onClick")
+                        println("dir= ${project.directory.path}")
+                        val result = openFolderInExplorer(project.directory)
+                        println(result)
+                    }
+                    icon = Icon.FOLDER
+                    //backgroundColor = 0xB8DFD8
+                    //iconTintColor = 0xBDBDBD
+                }
+                toggle {
+                    id = "shutdown_on_error"
+                    name = "오류 발생시 비활성화"
+                    defaultValue = true
+                    icon = Icon.ERROR
+                }
             }
-            //icon = Icon.FOLDER
-            //backgroundColor = 0xB8DFD8
-            //iconTintColor = 0xBDBDBD
-        }
-        toggle {
-            id = "shutdown_on_error"
-            name = "오류 발생시 비활성화"
-            defaultValue = true
         }
     }
     private val changedData: MutableMap<String, Any> = hashMapOf()

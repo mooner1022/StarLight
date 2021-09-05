@@ -88,9 +88,9 @@ class MainActivity : AppCompatActivity() {
                     projectLoader.newProject {
                         name = projectName
                         mainScript = "$projectName.${selectedLang.fileExtension}"
-                        language = selectedLang.id
+                        languageId = selectedLang.id
                         createdMillis = System.currentTimeMillis()
-                        listeners = mutableListOf("default")
+                        listeners = hashSetOf("default")
                     }
                     it.dismiss()
                 }

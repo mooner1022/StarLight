@@ -3,7 +3,7 @@ package com.mooner.starlight.plugincore.language
 import android.view.View
 import android.widget.ImageView
 import com.mooner.starlight.plugincore.config.ConfigObject
-import com.mooner.starlight.plugincore.methods.MethodClass
+import com.mooner.starlight.plugincore.method.MethodClass
 
 interface ILanguage {
 

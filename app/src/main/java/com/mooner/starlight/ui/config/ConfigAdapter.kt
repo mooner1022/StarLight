@@ -3,6 +3,7 @@ package com.mooner.starlight.ui.config
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.PorterDuff
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -11,6 +12,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -36,7 +38,7 @@ class ConfigAdapter(
             ConfigObjectType.BUTTON_FLAT.viewType -> R.layout.config_button_flat
             ConfigObjectType.BUTTON_CARD.viewType -> R.layout.config_button_card
             ConfigObjectType.CUSTOM.viewType -> R.layout.config_custom
-            ConfigObjectType.TITLE.viewType -> R.layout.config_title
+            ConfigObjectType.CATEGORY.viewType -> R.layout.config_category
             else -> 0
         }
         val view = LayoutInflater.from(context).inflate(layout, parent, false)
@@ -59,6 +61,10 @@ class ConfigAdapter(
             ConfigObjectType.TOGGLE.viewType -> {
                 holder.textToggle.text = viewData.name
                 holder.toggle.isChecked = getDefault() as Boolean
+                holder.icon.apply {
+                    load((viewData as ToggleConfigObject).icon.drawableRes)
+                    setColorFilter(viewData.iconTintColor)
+                }
                 holder.toggle.setOnCheckedChangeListener { _, isChecked ->
                     onConfigChanged(viewData.id, holder.toggle, isChecked)
                     for (listener in (viewData as ToggleConfigObject).listeners) {
@@ -70,6 +76,10 @@ class ConfigAdapter(
                 holder.textSlider.text = viewData.name
                 holder.seekBar.progress = getDefault() as Int
                 holder.seekBar.max = (viewData as SliderConfigObject).max
+                holder.icon.apply {
+                    load(viewData.icon.drawableRes)
+                    setColorFilter(viewData.iconTintColor)
+                }
                 holder.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                     override fun onProgressChanged(
                         seekBar: SeekBar?,
@@ -93,6 +103,10 @@ class ConfigAdapter(
                 holder.editTextString.hint = data.hint
                 holder.editTextString.inputType = data.inputType
                 holder.editTextString.setText(getDefault() as String)
+                holder.icon.apply {
+                    load(data.icon.drawableRes)
+                    setColorFilter(viewData.iconTintColor)
+                }
                 holder.editTextString.addTextChangedListener(object: TextWatcher {
                     override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
@@ -120,6 +134,10 @@ class ConfigAdapter(
                     }
                     selectedIndex = getDefault() as Int
                 }
+                holder.icon.apply {
+                    load((viewData as SpinnerConfigObject).icon.drawableRes)
+                    setColorFilter(viewData.iconTintColor)
+                }
             }
             ConfigObjectType.BUTTON_FLAT.viewType -> {
                 holder.textButton.text = viewData.name
@@ -127,9 +145,9 @@ class ConfigAdapter(
                 holder.layoutButton.setOnClickListener {
                     if (holder.cardViewButton.isEnabled) langConf.onClickListener(it)
                 }
-                holder.imageViewButton.load(langConf.icon.drawableRes)
-                if (langConf.iconTintColor != null) {
-                    holder.imageViewButton.imageTintList = ColorStateList.valueOf(langConf.iconTintColor!!)
+                holder.icon.apply {
+                    load(langConf.icon.drawableRes)
+                    setColorFilter(viewData.iconTintColor, PorterDuff.Mode.MULTIPLY)
                 }
                 if (langConf.backgroundColor != null) {
                     holder.layoutButton.setBackgroundColor(langConf.backgroundColor!!)
@@ -141,9 +159,9 @@ class ConfigAdapter(
                 holder.cardViewButton.setOnClickListener {
                     if (holder.cardViewButton.isEnabled) langConf.onClickListener(it)
                 }
-                holder.imageViewButton.load(langConf.icon.drawableRes)
-                if (langConf.iconTintColor != null) {
-                    holder.imageViewButton.imageTintList = ColorStateList.valueOf(langConf.iconTintColor!!)
+                holder.icon.apply {
+                    load(langConf.icon.drawableRes)
+                    setColorFilter(viewData.iconTintColor)
                 }
                 if (langConf.backgroundColor != null) {
                     holder.cardViewButton.setCardBackgroundColor(langConf.backgroundColor!!)
@@ -153,9 +171,23 @@ class ConfigAdapter(
                 val data = viewData as CustomConfigObject
                 data.onInflate(holder.customLayout)
             }
-            ConfigObjectType.TITLE.viewType -> {
-                val data = viewData as TitleConfigObject
-                holder.titleText.text = data.title
+            ConfigObjectType.CATEGORY.viewType -> {
+                val data = viewData as CategoryConfigObject
+                holder.categoryTitle.text = data.title
+
+                val children = data.items
+                val ids = children.map { it.id }
+                val childData = saved.filter { it.key in ids }
+                val recyclerAdapter = ConfigAdapter(context, onConfigChanged).apply {
+                    this.data = children
+                    saved = childData.toMutableMap()
+                    notifyDataSetChanged()
+                }
+                val mLayoutManager = LinearLayoutManager(context)
+                holder.categoryItems.apply {
+                    adapter = recyclerAdapter
+                    layoutManager = mLayoutManager
+                }
             }
         }
 
@@ -193,6 +225,8 @@ class ConfigAdapter(
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     inner class ConfigViewHolder(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
+        lateinit var icon: ImageView
+
         lateinit var textToggle: TextView
         lateinit var toggle: SwitchMaterial
 
@@ -208,49 +242,54 @@ class ConfigAdapter(
 
         lateinit var textButton: TextView
         lateinit var cardViewButton: CardView
-        lateinit var imageViewButton: ImageView
         lateinit var layoutButton: ConstraintLayout
 
         lateinit var customLayout: LinearLayout
 
-        lateinit var titleText: TextView
+        lateinit var categoryTitle: TextView
+        lateinit var categoryItems: RecyclerView
 
         var context: Context = itemView.context
 
         init {
             when(viewType) {
                 ConfigObjectType.TOGGLE.viewType -> {
+                    icon = itemView.findViewById(R.id.icon)
                     textToggle = itemView.findViewById(R.id.textView_configToggle)
                     toggle = itemView.findViewById(R.id.switch_configToggle)
                 }
                 ConfigObjectType.SLIDER.viewType -> {
+                    icon = itemView.findViewById(R.id.icon)
                     textSlider = itemView.findViewById(R.id.textView_configSlider)
                     seekBarIndex = itemView.findViewById(R.id.index_configSlider)
                     seekBar = itemView.findViewById(R.id.seekBar_configSlider)
                 }
                 ConfigObjectType.STRING.viewType -> {
+                    icon = itemView.findViewById(R.id.icon)
                     textString = itemView.findViewById(R.id.textView_configString)
                     editTextString = itemView.findViewById(R.id.editText_configString)
                 }
                 ConfigObjectType.SPINNER.viewType -> {
+                    icon = itemView.findViewById(R.id.icon)
                     textSpinner = itemView.findViewById(R.id.textView_configSpinner)
                     spinner = itemView.findViewById(R.id.spinner_configSpinner)
                 }
                 ConfigObjectType.BUTTON_FLAT.viewType -> {
                     textButton = itemView.findViewById(R.id.textView_configButton)
                     layoutButton = itemView.findViewById(R.id.layout_configButton)
-                    imageViewButton = itemView.findViewById(R.id.imageView_configButton)
+                    icon = itemView.findViewById(R.id.icon)
                 }
                 ConfigObjectType.BUTTON_CARD.viewType -> {
                     textButton = itemView.findViewById(R.id.textView_configButton)
                     cardViewButton = itemView.findViewById(R.id.cardView_configButton)
-                    imageViewButton = itemView.findViewById(R.id.imageView_configButton)
+                    icon = itemView.findViewById(R.id.icon)
                 }
                 ConfigObjectType.CUSTOM.viewType -> {
                     customLayout = itemView.findViewById(R.id.layout_configCustom)
                 }
-                ConfigObjectType.TITLE.viewType -> {
-                    titleText = itemView.findViewById(R.id.textView_configTitle)
+                ConfigObjectType.CATEGORY.viewType -> {
+                    categoryTitle = itemView.findViewById(R.id.textView_configTitle)
+                    categoryItems = itemView.findViewById(R.id.recyclerViewCategory)
                 }
             }
         }

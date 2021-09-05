@@ -103,4 +103,10 @@ enum class Icon(
     KEYBOARD(
         drawableRes = R.drawable.ic_round_keyboard_24
     ),
+    COMPRESS(
+        drawableRes = R.drawable.ic_round_compress_24
+    ),
+    EDIT_ATTRIBUTES(
+        drawableRes = R.drawable.ic_round_edit_attributes_24
+    ),
 }

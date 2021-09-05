@@ -7,7 +7,8 @@ import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.*
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.methods.MethodClass
+import com.mooner.starlight.plugincore.method.MethodClass
+import com.mooner.starlight.plugincore.utils.Icon
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -40,33 +41,37 @@ class JSRhino: Language() {
     override val requireRelease: Boolean = true
 
     override val configObjectList: List<ConfigObject> = config {
-        title {
+        category {
             title = T
             textColor = 0xbee7b8
-        }
-        slider {
-            id = CONF_OPTIMIZATION
-            name = "최적화 레벨"
-            max = 10
-            defaultValue = 1
-        }
-        spinner {
-            id = CONF_LANG_VERSION
-            name = "JS 버전"
-            items = listOf(
-                "JavaScript 1.0",
-                "JavaScript 1.1",
-                "JavaScript 1.2",
-                "JavaScript 1.3",
-                "JavaScript 1.4",
-                "JavaScript 1.5",
-                "JavaScript 1.6",
-                "JavaScript 1.7",
-                "JavaScript 1.8",
-                "ECMAScript 6 (ES6)",
-                "DEFAULT",
-            )
-            defaultIndex = 9
+            items = items {
+                slider {
+                    id = CONF_OPTIMIZATION
+                    name = "최적화 레벨"
+                    max = 10
+                    icon = Icon.COMPRESS
+                    defaultValue = 1
+                }
+                spinner {
+                    id = CONF_LANG_VERSION
+                    name = "JS 버전"
+                    items = listOf(
+                        "JavaScript 1.0",
+                        "JavaScript 1.1",
+                        "JavaScript 1.2",
+                        "JavaScript 1.3",
+                        "JavaScript 1.4",
+                        "JavaScript 1.5",
+                        "JavaScript 1.6",
+                        "JavaScript 1.7",
+                        "JavaScript 1.8",
+                        "ECMAScript 6 (ES6)",
+                        "DEFAULT",
+                    )
+                    icon = Icon.EDIT_ATTRIBUTES
+                    defaultIndex = 9
+                }
+            }
         }
     }
 
@@ -80,9 +85,10 @@ class JSRhino: Language() {
     override fun onConfigUpdated(updated: Map<String, Any>) {}
 
     override fun compile(code: String, methods: List<MethodClass>): Any {
+        val config = getLanguageConfig()
         context = Context.enter().apply {
             optimizationLevel = -1
-            languageVersion = with(getLanguageConfig()) {
+            languageVersion = with(config) {
                 if (containsKey(CONF_LANG_VERSION)) {
                     val version = get(CONF_LANG_VERSION)
                     if (version is Int) {

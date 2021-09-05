@@ -1,4 +1,4 @@
-package com.mooner.starlight.plugincore.methods.legacy
+package com.mooner.starlight.api.legacy
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document

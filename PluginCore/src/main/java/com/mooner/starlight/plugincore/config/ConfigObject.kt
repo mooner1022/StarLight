@@ -16,7 +16,7 @@ enum class ConfigObjectType(
     BUTTON_FLAT(4),
     BUTTON_CARD(-4),
     CUSTOM(5),
-    TITLE(6)
+    CATEGORY(6)
 }
 
 interface ConfigObject {
@@ -32,6 +32,9 @@ class ToggleConfigObject(
     override val id: String,
     override val name: String,
     private val defaultValue: Boolean,
+    val icon: Icon,
+    @ColorInt
+    val iconTintColor: Int = 0x000000,
     override val dependency: String? = null
 ): ConfigObject {
     val listeners: ArrayList<(isEnabled: Boolean) -> Unit> = arrayListOf()
@@ -48,6 +51,9 @@ class SliderConfigObject(
     override val name: String,
     val max: Int,
     private val defaultValue: Int,
+    val icon: Icon,
+    @ColorInt
+    val iconTintColor: Int = 0x000000,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -65,6 +71,9 @@ class StringConfigObject(
     private val defaultValue: String = "",
     val inputType: Int = InputType.TYPE_CLASS_TEXT,
     val require: (String) -> String? = { null },
+    val icon: Icon,
+    @ColorInt
+    val iconTintColor: Int = 0x000000,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -80,6 +89,9 @@ class SpinnerConfigObject(
     override val name: String,
     val items: List<String>,
     private val defaultIndex: Int = 0,
+    val icon: Icon,
+    @ColorInt
+    val iconTintColor: Int = 0x000000,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -95,9 +107,9 @@ class ButtonConfigObject(
     override val name: String,
     val onClickListener: (view: View) -> Unit,
     private val buttonType: Type = Type.FLAT,
-    val icon: Icon = Icon.ARROW_RIGHT,
+    val icon: Icon,
     @ColorInt
-    val iconTintColor: Int? = null,
+    val iconTintColor: Int = 0x000000,
     @ColorInt
     val backgroundColor: Int? = null,
     override val dependency: String? = null
@@ -132,15 +144,16 @@ class CustomConfigObject(
     override val dependency: String? = null
 }
 
-class TitleConfigObject(
+class CategoryConfigObject(
     val title: String,
     @ColorInt
-    val textColor: Int
+    val textColor: Int,
+    val items: List<ConfigObject>
 ): ConfigObject {
     override val default: Any = 0
     override val id: String = UUID.randomUUID().toString()
     override val name: String = title
-    override val type: ConfigObjectType = ConfigObjectType.TITLE
+    override val type: ConfigObjectType = ConfigObjectType.CATEGORY
     override val viewType: Int
         get() = type.viewType
     override val dependency: String? = null

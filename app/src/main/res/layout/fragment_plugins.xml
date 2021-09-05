@@ -17,7 +17,7 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/cardViewPluginAlign"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="@dimen/card_height"
         android:layout_marginStart="@dimen/card_margin"
         android:layout_marginEnd="@dimen/card_margin"
         android:backgroundTint="@color/home_card"
@@ -40,7 +40,7 @@
                 android:fontFamily="@font/nanumsquare_round_extrabold"
                 android:text="@string/plugin_align_state"
                 android:textColor="#FFFFFF"
-                android:textSize="16sp" />
+                android:textSize="16sp"/>
 
             <ImageView
                 android:id="@+id/imageViewPluginAlignState"
@@ -48,7 +48,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="0.15"
                 android:src="@drawable/ic_round_sort_by_alpha_24"
-                app:tint="#FFFFFF" />
+                app:tint="#FFFFFF"/>
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>

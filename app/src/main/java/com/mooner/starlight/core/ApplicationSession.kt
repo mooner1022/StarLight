@@ -8,8 +8,8 @@ import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
 import com.mooner.starlight.plugincore.event.EventListener
-import com.mooner.starlight.plugincore.methods.legacy.LegacyMethods
-import com.mooner.starlight.plugincore.methods.original.OriginalMethods
+import com.mooner.starlight.api.legacy.LegacyApis
+import com.mooner.starlight.api.original.OriginalApis
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
 
@@ -28,8 +28,8 @@ object ApplicationSession {
             onFinished()
             return
         }
-        LegacyMethods().init()
-        OriginalMethods().init()
+        LegacyApis().init()
+        OriginalApis().init()
         onPhaseChanged(context.getString(R.string.step_default_lib))
         Session.initLanguageManager()
         onPhaseChanged(context.getString(R.string.step_lang))

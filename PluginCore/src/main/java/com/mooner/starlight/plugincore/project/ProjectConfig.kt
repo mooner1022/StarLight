@@ -1,33 +1,51 @@
 package com.mooner.starlight.plugincore.project
 
-import com.mooner.starlight.plugincore.plugin.Plugin
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class ProjectConfig(
-        val name: String,
-        val mainScript: String,
-        val language: String,
-        var isEnabled: Boolean,
-        val createdMillis: Long = 0,
-        val mainListener: String = "default",
-        val listeners: MutableList<String>,
-        val usedPlugins: MutableList<Plugin>,
-        val packages: MutableList<String>
+    val name: String,
+    val mainScript: String,
+    val languageId: String,
+    var isEnabled: Boolean,
+    val createdMillis: Long = 0L,
+    val listeners: MutableSet<String>,
+    val pluginIds: MutableSet<String>,
+    val packages: MutableSet<String>
 )
 
-data class MutableProjectConfig(
-        var name: String = "",
-        var mainScript: String = "",
-        var language: String = "",
-        var isEnabled: Boolean = false,
-        var createdMillis: Long = 0,
-        val mainListener: String = "default",
-        var listeners: MutableList<String> = mutableListOf(),
-        var usedPlugins: MutableList<Plugin> = mutableListOf(),
-        var packages: MutableList<String> = mutableListOf()
-) {
-    fun toProjectConfig(): ProjectConfig {
-        return ProjectConfig(name,mainScript, language, isEnabled, createdMillis, mainListener, listeners, usedPlugins, packages)
+class ProjectConfigBuilder {
+
+    var name: String? = null
+    var mainScript: String? = null
+    var languageId: String? = null
+    var isEnabled: Boolean = false
+    var createdMillis: Long = 0L
+    var listeners: MutableSet<String> = hashSetOf()
+    var pluginIds: MutableSet<String> = hashSetOf()
+    var packages: MutableSet<String> = hashSetOf()
+
+    private fun required(fieldName: String, value: Any?) {
+        if (value == null) {
+            throw IllegalArgumentException("Required field '$fieldName' is null")
+        }
+    }
+
+    fun build(): ProjectConfig {
+
+        required("name", name)
+        required("mainScript", mainScript)
+        required("languageId", languageId)
+
+        return ProjectConfig(
+            name = name!!,
+            mainScript = mainScript!!,
+            languageId = languageId!!,
+            isEnabled = isEnabled,
+            createdMillis = createdMillis,
+            listeners = listeners,
+            pluginIds = pluginIds,
+            packages = packages
+        )
     }
 }
