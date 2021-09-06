@@ -13,10 +13,12 @@ import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.ui.config.ConfigAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
+@ExperimentalSerializationApi
 class PluginConfigActivity: AppCompatActivity() {
 
     companion object {
