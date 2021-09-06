@@ -29,7 +29,7 @@ interface ILanguage {
 
     fun release(engine: Any) {}
 
-    fun callFunction(engine: Any, functionName: String, args: Array<Any>)
+    fun callFunction(engine: Any, functionName: String, args: Array<Any>, onError: (e: Exception) -> Unit = {})
 
     fun eval(code: String): Any
 }

@@ -55,7 +55,10 @@ class Project(
         Logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
 
         if (!isCompiled) {
-            logger.e("EventHandler", "Property engine must not be null")
+            logger.w("EventHandler", """
+                Property engine must not be null
+                This might be a bug of application
+            """.trimIndent())
             return
         }
         if (name == "response") {
@@ -66,6 +69,17 @@ class Project(
             lang.callFunction(engine!!, name, args)
         } catch (e: Exception) {
             logger.e(config.name, "Error while running [${config.name}]: $e")
+            val shutdownOnError: Boolean?
+            if ((lang.getLanguageConfig()["shutdown_on_error"] as Boolean?).also { shutdownOnError = it } != null) {
+                if (shutdownOnError!!) {
+                    Logger.i(config.name, "Shutting down project [${config.name}]...")
+                    config.isEnabled = false
+                    if (engine != null && lang.requireRelease) {
+                        lang.release(engine!!)
+                        engine = null
+                    }
+                }
+            }
             e.printStackTrace()
         }
         /*

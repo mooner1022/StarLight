@@ -121,16 +121,25 @@ class JSRhino: Language() {
         } catch (e: IllegalStateException) {}
     }
 
-    override fun callFunction(engine: Any, functionName: String, args: Array<Any>) {
+    override fun callFunction(
+        engine: Any,
+        functionName: String,
+        args: Array<Any>,
+        onError: (e: Exception) -> Unit
+    ) {
         scope.launch {
-            val rhino = engine as Scriptable
-            Context.enter()
-            val function = rhino.get(functionName, engine)
-            if (function == Scriptable.NOT_FOUND || function !is Function) {
-                Logger.e(T, "Unable to locate function [$functionName]")
-                return@launch
+            try {
+                val rhino = engine as Scriptable
+                Context.enter()
+                val function = rhino.get(functionName, engine)
+                if (function == Scriptable.NOT_FOUND || function !is Function) {
+                    Logger.e(T, "Unable to locate function [$functionName]")
+                    return@launch
+                }
+                function.call(context, engine, engine, args)
+            } catch (e: Exception) {
+                onError(e)
             }
-            function.call(context, engine, engine, args)
         }
         //ScriptableObject.callMethod(engine as Scriptable, methodName, args)
         //val invocable = engine as Invocable
