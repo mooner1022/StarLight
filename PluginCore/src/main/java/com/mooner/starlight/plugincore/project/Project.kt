@@ -9,9 +9,11 @@ import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.method.MethodManager
 import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import java.io.File
 
+@ExperimentalSerializationApi
 class Project(
     val directory: File,
     val config: ProjectConfig
@@ -57,7 +59,7 @@ class Project(
         if (!isCompiled) {
             logger.w("EventHandler", """
                 Property engine must not be null
-                This might be a bug of application
+                This might be a bug of StarLight
             """.trimIndent())
             return
         }
@@ -65,9 +67,7 @@ class Project(
             lastRoom = (args[0] as Message).room
         }
 
-        try {
-            lang.callFunction(engine!!, name, args)
-        } catch (e: Exception) {
+        lang.callFunction(engine!!, name, args) { e ->
             logger.e(config.name, "Error while running [${config.name}]: $e")
             val shutdownOnError: Boolean?
             if ((lang.getLanguageConfig()["shutdown_on_error"] as Boolean?).also { shutdownOnError = it } != null) {

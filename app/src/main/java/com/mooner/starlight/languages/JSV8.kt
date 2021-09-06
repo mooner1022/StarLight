@@ -142,7 +142,7 @@ class JSV8: Language() {
         }
     }
 
-    override fun callFunction(engine: Any, functionName: String, args: Array<Any>) {
+    override fun callFunction(engine: Any, functionName: String, args: Array<Any>, onError: (e: Exception) -> Unit) {
         val v8 = engine as V8
         v8.locker.acquire()
         var messageArg: Message? = null
@@ -163,9 +163,17 @@ class JSV8: Language() {
                     "packageName" to messageArg!!.packageName
                 )
             )
-            v8.executeJSFunction(functionName, V8Array(v8).push(msgParams))
+            try {
+                v8.executeJSFunction(functionName, V8Array(v8).push(msgParams))
+            } catch (e: Exception) {
+                onError(e)
+            }
         } else {
-            v8.executeJSFunction(functionName, *args)
+            try {
+                v8.executeJSFunction(functionName, *args)
+            } catch (e: Exception) {
+                onError(e)
+            }
         }
         v8.locker.release()
     }

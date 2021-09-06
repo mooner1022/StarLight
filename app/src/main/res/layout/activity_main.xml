@@ -69,12 +69,12 @@
 
     <ImageView
         android:id="@+id/imageViewLogo"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="200dp"
         android:layout_gravity="top|end"
         android:scaleType="fitStart"
         app:layout_collapseMode="parallax"
-        app:srcCompat="@drawable/svg_top_title"/>
+        app:srcCompat="@drawable/svg_top_title_sunset"/>
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/nestedScrollView"

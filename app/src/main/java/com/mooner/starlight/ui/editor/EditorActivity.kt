@@ -1,8 +1,13 @@
 package com.mooner.starlight.ui.editor
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
@@ -16,13 +21,20 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 class EditorActivity : AppCompatActivity() {
+
+    companion object {
+        private const val CODE_DIRECTORY = "/code/"
+    }
+
     private lateinit var fileDir: File
     private lateinit var name: String
     //private lateinit var monaco: WebView
+    private lateinit var codeView: WebView
     private lateinit var orgCode: String
     private var isCodeChanged = false
     private lateinit var binding: ActivityEditorBinding
 
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityEditorBinding.inflate(layoutInflater)
@@ -38,6 +50,30 @@ class EditorActivity : AppCompatActivity() {
         fileDir = File(intent.getStringExtra("fileDir")
                 ?: throw IllegalArgumentException("No file directory passed to editor"))
 
+        codeView = findViewById(R.id.editorWebView)
+        with(codeView) {
+            settings.apply {
+                builtInZoomControls = false
+                javaScriptEnabled = true
+                //loadWithOverviewMode = true
+                displayZoomControls = false
+                allowFileAccess = true
+                allowContentAccess = true
+                webChromeClient = WebChromeClient()
+                setSupportZoom(false)
+                cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+                addJavascriptInterface(object : WebviewCallback {
+                    @JavascriptInterface
+                    override fun onContentChanged(code: String?) {
+                        println("onContentChanged")
+                        isCodeChanged = code != orgCode
+                    }
+                }, "MonacoCallback")
+            }
+            loadUrl(CODE_DIRECTORY)
+        }
+
+        /*
         with(binding.codeView) {
             setAdapter(
                 ArrayAdapter(
@@ -70,7 +106,6 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
-        /*
         monaco = findViewById(R.id.monacoWebView)
         with(monaco) {
             settings.apply {
@@ -139,9 +174,11 @@ class EditorActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.menu_save -> {
                 if (isCodeChanged) {
+                    /*
                     if (fileDir.isFile) fileDir.writeText(binding.codeView.text.toString())
                     else throw IllegalArgumentException("Target [${fileDir.path}] is not a file")
                     isCodeChanged = false
+                     */
                 }
                 Snackbar.make(window.decorView.findViewById(android.R.id.content), "$name 저장 완료!", Snackbar.LENGTH_LONG).show()
             }
