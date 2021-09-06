@@ -28,6 +28,9 @@ enum class Icon(
     COPY(
         drawableRes = R.drawable.ic_round_content_copy_24
     ),
+    PASTE(
+        drawableRes = R.drawable.ic_round_content_paste_24
+    ),
     CLOUD(
         drawableRes = R.drawable.ic_round_cloud_24
     ),
@@ -108,5 +111,47 @@ enum class Icon(
     ),
     EDIT_ATTRIBUTES(
         drawableRes = R.drawable.ic_round_edit_attributes_24
+    ),
+    IMPORT_EXPORT(
+        drawableRes = R.drawable.ic_round_import_export_24
+    ),
+    LINK(
+        drawableRes = R.drawable.ic_round_link_24
+    ),
+    LINK_OFF(
+        drawableRes = R.drawable.ic_round_link_off_24
+    ),
+    LAYERS(
+        drawableRes = R.drawable.ic_round_layers_24
+    ),
+    LAYERS_CLEAR(
+        drawableRes = R.drawable.ic_round_layers_clear_24
+    ),
+    LAUNCH(
+        drawableRes = R.drawable.ic_round_launch_24
+    ),
+    MASKS(
+        drawableRes = R.drawable.ic_round_masks_24
+    ),
+    BOOKMARK(
+        drawableRes = R.drawable.ic_round_bookmark_24
+    ),
+    MARK_CHAT_READ(
+        drawableRes = R.drawable.ic_round_mark_chat_read_24
+    ),
+    MARK_CHAT_UNREAD(
+        drawableRes = R.drawable.ic_round_mark_chat_unread_24
+    ),
+    PIN(
+        drawableRes = R.drawable.ic_round_push_pin_24
+    ),
+    NIGHTS_STAY(
+        drawableRes = R.drawable.ic_round_nights_stay_24
+    ),
+    HALF_MOON(
+        drawableRes = R.drawable.ic_round_brightness_2_24
+    ),
+    SUN(
+        drawableRes = R.drawable.ic_round_brightness_5_24
     ),
 }
