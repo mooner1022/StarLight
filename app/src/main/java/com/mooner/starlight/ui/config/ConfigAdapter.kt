@@ -2,7 +2,6 @@ package com.mooner.starlight.ui.config
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.ColorStateList
 import android.graphics.PorterDuff
 import android.text.Editable
 import android.text.TextWatcher
@@ -143,7 +142,7 @@ class ConfigAdapter(
                 holder.textButton.text = viewData.name
                 val langConf = viewData as ButtonConfigObject
                 holder.layoutButton.setOnClickListener {
-                    if (holder.cardViewButton.isEnabled) langConf.onClickListener(it)
+                    if (holder.layoutButton.isEnabled) langConf.onClickListener(it)
                 }
                 holder.icon.apply {
                     load(langConf.icon.drawableRes)
@@ -174,6 +173,10 @@ class ConfigAdapter(
             ConfigObjectType.CATEGORY.viewType -> {
                 val data = viewData as CategoryConfigObject
                 holder.categoryTitle.text = data.title
+                holder.categoryTitle.apply {
+                    text = data.title
+                    setTextColor(data.textColor)
+                }
 
                 val children = data.items
                 val ids = children.map { it.id }

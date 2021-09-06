@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.config
 
+import android.graphics.Color
 import android.text.InputType
 import android.view.View
 import androidx.annotation.ColorInt
@@ -13,6 +14,8 @@ fun config(block: ConfigBuilder.() -> Unit): List<ConfigObject> {
 class ConfigBuilder {
 
     private val objects: MutableList<ConfigObject> = arrayListOf()
+
+    inline fun color(color: () -> String): Int = Color.parseColor(color())
 
     fun category(block: CategoryConfigBuilder.() -> Unit) {
         val category = CategoryConfigBuilder().apply(block)
@@ -41,7 +44,7 @@ class ConfigBuilder {
     inner class CategoryConfigBuilder {
         var title: String? = null
         @ColorInt
-        var textColor: Int = 0x000000
+        var textColor: Int = Color.parseColor("#000000")
         var items: List<ConfigObject> = arrayListOf()
 
         fun build(): CategoryConfigObject {
@@ -59,6 +62,8 @@ class ConfigBuilder {
 
 class ConfigItemBuilder {
     private val objects: MutableList<ConfigObject> = arrayListOf()
+
+    inline fun color(color: () -> String): Int = Color.parseColor(color())
 
     fun button(block: ButtonConfigBuilder.() -> Unit) {
         val button = ButtonConfigBuilder().apply(block)
@@ -111,7 +116,7 @@ class ConfigItemBuilder {
         var type: ButtonConfigObject.Type = ButtonConfigObject.Type.FLAT
         var icon: Icon? = null
         @ColorInt
-        var iconTintColor: Int = 0x000000
+        var iconTintColor: Int = Color.parseColor("#000000")
         @ColorInt
         var backgroundColor: Int? = null
         var dependency: String? = null
@@ -141,7 +146,7 @@ class ConfigItemBuilder {
         var defaultValue: Boolean = false
         var icon: Icon? = null
         @ColorInt
-        var iconTintColor: Int = 0x000000
+        var iconTintColor: Int = Color.parseColor("#000000")
         var dependency: String? = null
 
         fun build(): ToggleConfigObject {
@@ -167,7 +172,7 @@ class ConfigItemBuilder {
         var defaultValue: Int = 0
         var icon: Icon? = null
         @ColorInt
-        var iconTintColor: Int = 0x000000
+        var iconTintColor: Int = Color.parseColor("#000000")
         var dependency: String? = null
 
         fun build(): SliderConfigObject {
@@ -196,7 +201,7 @@ class ConfigItemBuilder {
         var require: (String) -> String? = { null }
         var icon: Icon? = null
         @ColorInt
-        var iconTintColor: Int = 0x000000
+        var iconTintColor: Int = Color.parseColor("#000000")
         var dependency: String? = null
 
         fun build(): StringConfigObject{
@@ -224,7 +229,7 @@ class ConfigItemBuilder {
         var defaultIndex: Int = 0
         var icon: Icon? = null
         @ColorInt
-        var iconTintColor: Int = 0x000000
+        var iconTintColor: Int = Color.parseColor("#000000")
         var dependency: String? = null
 
         fun build(): SpinnerConfigObject {

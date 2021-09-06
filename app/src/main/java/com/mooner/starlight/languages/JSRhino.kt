@@ -5,7 +5,7 @@ import coil.load
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.config.config
-import com.mooner.starlight.plugincore.language.*
+import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.method.MethodClass
 import com.mooner.starlight.plugincore.utils.Icon
@@ -43,13 +43,14 @@ class JSRhino: Language() {
     override val configObjectList: List<ConfigObject> = config {
         category {
             title = T
-            textColor = 0xbee7b8
+            textColor = color { "#FFC069" }
             items = items {
                 slider {
                     id = CONF_OPTIMIZATION
                     name = "최적화 레벨"
                     max = 10
                     icon = Icon.COMPRESS
+                    iconTintColor = color { "#57837B" }
                     defaultValue = 1
                 }
                 spinner {
@@ -68,7 +69,8 @@ class JSRhino: Language() {
                         "ECMAScript 6 (ES6)",
                         "DEFAULT",
                     )
-                    icon = Icon.EDIT_ATTRIBUTES
+                    icon = Icon.LAYERS
+                    iconTintColor = color { "#C6B4CE" }
                     defaultIndex = 9
                 }
             }

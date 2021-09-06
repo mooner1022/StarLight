@@ -4,6 +4,7 @@ import android.text.InputType
 import android.view.View
 import androidx.annotation.ColorInt
 import com.mooner.starlight.plugincore.utils.Icon
+import com.mooner.starlight.plugincore.utils.Utils
 import java.util.*
 
 enum class ConfigObjectType(
@@ -34,7 +35,7 @@ class ToggleConfigObject(
     private val defaultValue: Boolean,
     val icon: Icon,
     @ColorInt
-    val iconTintColor: Int = 0x000000,
+    val iconTintColor: Int = Utils.color { "#000000" },
     override val dependency: String? = null
 ): ConfigObject {
     val listeners: ArrayList<(isEnabled: Boolean) -> Unit> = arrayListOf()
@@ -53,7 +54,7 @@ class SliderConfigObject(
     private val defaultValue: Int,
     val icon: Icon,
     @ColorInt
-    val iconTintColor: Int = 0x000000,
+    val iconTintColor: Int = Utils.color { "#000000" },
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -73,7 +74,7 @@ class StringConfigObject(
     val require: (String) -> String? = { null },
     val icon: Icon,
     @ColorInt
-    val iconTintColor: Int = 0x000000,
+    val iconTintColor: Int = Utils.color { "#000000" },
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -91,7 +92,7 @@ class SpinnerConfigObject(
     private val defaultIndex: Int = 0,
     val icon: Icon,
     @ColorInt
-    val iconTintColor: Int = 0x000000,
+    val iconTintColor: Int = Utils.color { "#000000" },
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -109,7 +110,7 @@ class ButtonConfigObject(
     private val buttonType: Type = Type.FLAT,
     val icon: Icon,
     @ColorInt
-    val iconTintColor: Int = 0x000000,
+    val iconTintColor: Int = Utils.color { "#000000" },
     @ColorInt
     val backgroundColor: Int? = null,
     override val dependency: String? = null

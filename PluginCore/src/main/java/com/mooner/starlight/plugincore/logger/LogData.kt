@@ -10,6 +10,8 @@ data class LogData(
     val type: LogType,
     @SerialName("a")
     val tag: String,
+    @SerialName("")
+    val threadName: String = "undefined",
     @SerialName("m")
     val message: String,
     @SerialName("l")
@@ -19,9 +21,9 @@ data class LogData(
 ) {
     override fun toString(): String {
         return if (isLocal) {
-            "[LOCAL/${type.name}] $tag : $message"
+            "[$threadName] [LOCAL/${type.name}] $tag : $message"
         } else {
-            "[${type.name}] $tag : $message"
+            "[$threadName] [${type.name}] $tag : $message"
         }
     }
 }

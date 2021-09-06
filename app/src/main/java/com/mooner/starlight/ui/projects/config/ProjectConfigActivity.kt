@@ -1,6 +1,7 @@
 package com.mooner.starlight.ui.projects.config
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.widget.TextView
@@ -47,14 +48,15 @@ class ProjectConfigActivity: AppCompatActivity() {
                         println(result)
                     }
                     icon = Icon.FOLDER
-                    //backgroundColor = 0xB8DFD8
-                    //iconTintColor = 0xBDBDBD
+                    //backgroundColor = Color.parseColor("#B8DFD8")
+                    iconTintColor = color { "#93B5C6" }
                 }
                 toggle {
                     id = "shutdown_on_error"
                     name = "오류 발생시 비활성화"
                     defaultValue = true
                     icon = Icon.ERROR
+                    iconTintColor = color { "#FF6B6B" }
                 }
             }
         }
