@@ -3,6 +3,7 @@ package com.mooner.starlight.plugincore.config
 import android.text.InputType
 import android.view.View
 import androidx.annotation.ColorInt
+import com.google.android.material.chip.Chip
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.plugincore.utils.Utils
 import java.util.*
@@ -17,7 +18,8 @@ enum class ConfigObjectType(
     BUTTON_FLAT(4),
     BUTTON_CARD(-4),
     CUSTOM(5),
-    CATEGORY(6)
+    CATEGORY(6),
+    CHIP_GROUP(7)
 }
 
 interface ConfigObject {
@@ -29,7 +31,7 @@ interface ConfigObject {
     val dependency: String?
 }
 
-class ToggleConfigObject(
+data class ToggleConfigObject(
     override val id: String,
     override val name: String,
     private val defaultValue: Boolean,
@@ -47,7 +49,7 @@ class ToggleConfigObject(
         get() = type.viewType
 }
 
-class SliderConfigObject(
+data class SliderConfigObject(
     override val id: String,
     override val name: String,
     val max: Int,
@@ -65,7 +67,7 @@ class SliderConfigObject(
         get() = type.viewType
 }
 
-class StringConfigObject(
+data class StringConfigObject(
     override val id: String,
     override val name: String,
     val hint: String,
@@ -85,7 +87,7 @@ class StringConfigObject(
         get() = type.viewType
 }
 
-class SpinnerConfigObject(
+data class SpinnerConfigObject(
     override val id: String,
     override val name: String,
     val items: List<String>,
@@ -103,7 +105,7 @@ class SpinnerConfigObject(
         get() = type.viewType
 }
 
-class ButtonConfigObject(
+data class ButtonConfigObject(
     override val id: String,
     override val name: String,
     val onClickListener: (view: View) -> Unit,
@@ -131,7 +133,7 @@ class ButtonConfigObject(
     }
 }
 
-class CustomConfigObject(
+data class CustomConfigObject(
     override val id: String,
     val onInflate: (view: View) -> Unit,
 ): ConfigObject {
@@ -145,7 +147,7 @@ class CustomConfigObject(
     override val dependency: String? = null
 }
 
-class CategoryConfigObject(
+data class CategoryConfigObject(
     val title: String,
     @ColorInt
     val textColor: Int,
@@ -155,7 +157,18 @@ class CategoryConfigObject(
     override val id: String = UUID.randomUUID().toString()
     override val name: String = title
     override val type: ConfigObjectType = ConfigObjectType.CATEGORY
-    override val viewType: Int
-        get() = type.viewType
+    override val viewType: Int = type.viewType
     override val dependency: String? = null
+}
+
+data class ChipGroupConfigObject(
+    override val id: String,
+    val title: String,
+    val chips: List<Chip>,
+    override val dependency: String? = null
+): ConfigObject {
+    override val name: String = title
+    override val default: Any = 0
+    override val type: ConfigObjectType = ConfigObjectType.CHIP_GROUP
+    override val viewType: Int = type.viewType
 }

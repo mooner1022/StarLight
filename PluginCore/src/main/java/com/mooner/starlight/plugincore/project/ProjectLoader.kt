@@ -87,7 +87,7 @@ class ProjectLoader {
                             try {
                                 project.compile(true)
                             } catch (e: Exception) {
-                                Logger.d(T, "Failed to pre-compile project ${config.name}: $e")
+                                Logger.w(T, "Failed to pre-compile project ${config.name}: $e")
                                 continue
                             }
                         }

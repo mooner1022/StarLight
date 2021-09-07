@@ -38,6 +38,7 @@ class ConfigAdapter(
             ConfigObjectType.BUTTON_CARD.viewType -> R.layout.config_button_card
             ConfigObjectType.CUSTOM.viewType -> R.layout.config_custom
             ConfigObjectType.CATEGORY.viewType -> R.layout.config_category
+            ConfigObjectType.CHIP_GROUP.viewType -> R.layout.config_chip_group
             else -> 0
         }
         val view = LayoutInflater.from(context).inflate(layout, parent, false)

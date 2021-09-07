@@ -5,15 +5,11 @@ import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
-import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.method.MethodManager
-import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-@ExperimentalSerializationApi
 class Project(
     val directory: File,
     val config: ProjectConfig
@@ -43,7 +39,6 @@ class Project(
     } else {
         LocalLogger.create(directory)
     }
-    private var lastRoom: com.mooner.starlight.plugincore.interfaces.ChatRoom? = null
 
     private val tag: String
         get() = "Project-${config.name}"
@@ -54,7 +49,7 @@ class Project(
     }
 
     fun callEvent(name: String, args: Array<Any>) {
-        Logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
+        logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
 
         if (!isCompiled) {
             logger.w("EventHandler", """
@@ -63,16 +58,13 @@ class Project(
             """.trimIndent())
             return
         }
-        if (name == "response") {
-            lastRoom = (args[0] as Message).room
-        }
 
         lang.callFunction(engine!!, name, args) { e ->
-            logger.e(config.name, "Error while running [${config.name}]: $e")
+            logger.e(tag, "Error while running: $e")
             val shutdownOnError: Boolean?
             if ((lang.getLanguageConfig()["shutdown_on_error"] as Boolean?).also { shutdownOnError = it } != null) {
                 if (shutdownOnError!!) {
-                    Logger.e(config.name, "Shutting down project [${config.name}]...")
+                    logger.e(config.name, "Shutting down project [${config.name}]...")
                     config.isEnabled = false
                     if (engine != null && lang.requireRelease) {
                         lang.release(engine!!)
@@ -105,16 +97,16 @@ class Project(
             )).readText(Charsets.UTF_8)
             if (engine != null && lang.requireRelease) {
                 lang.release(engine!!)
-                Logger.d(tag, "engine released")
+                logger.d(tag, "engine released")
             }
-            Logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.className }}")
+            logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.className }}")
             engine = lang.compile(
                 rawCode,
                 MethodManager.getMethods()
             )
         } catch (e: Exception) {
             e.printStackTrace()
-            logger.e("${config.name}: compile", e.toString())
+            logger.e(tag, e.toString())
             if (throwException) throw e
         }
     }

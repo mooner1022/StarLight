@@ -8,9 +8,11 @@ import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import com.mooner.starlight.plugincore.utils.Utils.Companion.getFileSize
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import java.io.File
 
+@ExperimentalSerializationApi
 abstract class StarlightPlugin: Plugin, EventListener {
     private lateinit var projectLoader: ProjectLoader
     private lateinit var loader: PluginLoader
