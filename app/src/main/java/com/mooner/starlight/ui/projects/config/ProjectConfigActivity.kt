@@ -42,7 +42,6 @@ class ProjectConfigActivity: AppCompatActivity() {
                     name = "폴더 열기"
                     type = ButtonConfigObject.Type.FLAT
                     onClickListener = {
-                        println("onClick")
                         println("dir= ${project.directory.path}")
                         val result = openFolderInExplorer(project.directory)
                         println(result)

@@ -2,6 +2,8 @@ package com.mooner.starlight.core
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Looper
+import android.webkit.WebView
 import com.mooner.starlight.R
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
@@ -12,6 +14,7 @@ import com.mooner.starlight.api.legacy.LegacyApis
 import com.mooner.starlight.api.original.OriginalApis
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
+import com.mooner.starlight.ui.editor.EditorActivity
 
 @SuppressLint("StaticFieldLeak")
 object ApplicationSession {
@@ -55,6 +58,7 @@ object ApplicationSession {
 
         onPhaseChanged(context.getString(R.string.step_projects))
         Session.projectLoader.loadProjects()
+
         isInitComplete = true
         onFinished()
         mInitMillis = System.currentTimeMillis()
