@@ -72,7 +72,7 @@ class Project(
             val shutdownOnError: Boolean?
             if ((lang.getLanguageConfig()["shutdown_on_error"] as Boolean?).also { shutdownOnError = it } != null) {
                 if (shutdownOnError!!) {
-                    Logger.i(config.name, "Shutting down project [${config.name}]...")
+                    Logger.e(config.name, "Shutting down project [${config.name}]...")
                     config.isEnabled = false
                     if (engine != null && lang.requireRelease) {
                         lang.release(engine!!)
