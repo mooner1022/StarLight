@@ -3,7 +3,6 @@ package com.mooner.starlight.plugincore.config
 import android.text.InputType
 import android.view.View
 import androidx.annotation.ColorInt
-import com.google.android.material.chip.Chip
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.plugincore.utils.Utils
 import java.util.*
@@ -18,8 +17,7 @@ enum class ConfigObjectType(
     BUTTON_FLAT(4),
     BUTTON_CARD(-4),
     CUSTOM(5),
-    CATEGORY(6),
-    CHIP_GROUP(7)
+    CATEGORY(6)
 }
 
 interface ConfigObject {
@@ -159,16 +157,4 @@ data class CategoryConfigObject(
     override val type: ConfigObjectType = ConfigObjectType.CATEGORY
     override val viewType: Int = type.viewType
     override val dependency: String? = null
-}
-
-data class ChipGroupConfigObject(
-    override val id: String,
-    val title: String,
-    val chips: List<Chip>,
-    override val dependency: String? = null
-): ConfigObject {
-    override val name: String = title
-    override val default: Any = 0
-    override val type: ConfigObjectType = ConfigObjectType.CHIP_GROUP
-    override val viewType: Int = type.viewType
 }
