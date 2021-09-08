@@ -99,7 +99,7 @@ class Project(
                 lang.release(engine!!)
                 logger.d(tag, "engine released")
             }
-            logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.className }}")
+            logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.name }}")
             engine = lang.compile(
                 rawCode,
                 MethodManager.getMethods()

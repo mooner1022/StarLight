@@ -7,7 +7,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import java.io.File
 
-@ExperimentalSerializationApi
 class ProjectLoader {
     companion object {
         private val T = ProjectLoader::class.simpleName!!
