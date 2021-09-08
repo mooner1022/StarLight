@@ -22,6 +22,17 @@ class DebugRoomActivity: AppCompatActivity() {
     private lateinit var binding: ActivityDebugRoomBinding
     private var imageHash: Int = 0
 
+    private val onSend: (msg: String) -> Unit = { msg ->
+        val viewType = if (msg.length >= 500)
+            DebugRoomChatAdapter.CHAT_BOT_LONG
+        else
+            DebugRoomChatAdapter.CHAT_BOT
+        addMessage(msg, viewType)
+    }
+    private val onMarkAsRead: () -> Unit = {
+        Snackbar.make(binding.root, "읽음 처리 호출됨", Snackbar.LENGTH_SHORT).show()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDebugRoomBinding.inflate(layoutInflater)
@@ -30,13 +41,15 @@ class DebugRoomActivity: AppCompatActivity() {
         binding.messageInput.setOnKeyListener { _, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
                 send(binding.messageInput.text.toString())
+                true
+            } else {
+                false
             }
-            true
         }
 
         imageHash = intent.getIntExtra("imageHash", 0)
-        sender = intent.getStringExtra("sender").toString()
-        roomName = intent.getStringExtra("roomName").toString()
+        sender = intent.getStringExtra("sender")?: "debug_sender"
+        roomName = intent.getStringExtra("roomName")?: "ERROR"
         binding.roomTitle.text = roomName
 
         project = Session.projectLoader.getProject(roomName)!!
@@ -59,26 +72,23 @@ class DebugRoomActivity: AppCompatActivity() {
     }
 
     private fun send(message: String) {
-        addMessage(message, if (message.length >= 500) DebugRoomChatAdapter.CHAT_SELF_LONG else DebugRoomChatAdapter.CHAT_SELF)
+        addMessage(message,
+            if (message.length >= 500)
+                DebugRoomChatAdapter.CHAT_SELF_LONG
+            else
+                DebugRoomChatAdapter.CHAT_SELF
+        )
         val data = Message(
             message = message,
             sender = ChatSender(
-                name = "DEBUG_SENDER",
+                name = sender,
                 profileBase64 = "",
-                profileHash = 0
+                profileHash = imageHash
             ),
             room = DebugChatRoom(
                 name = roomName,
-                onSend = { msg ->
-                    val viewType = if (msg.length >= 500)
-                        DebugRoomChatAdapter.CHAT_BOT_LONG
-                    else
-                        DebugRoomChatAdapter.CHAT_BOT
-                    addMessage(msg, viewType)
-                },
-                onMarkAsRead = {
-                    Snackbar.make(binding.root, "읽음 처리 호출됨", Snackbar.LENGTH_SHORT).show()
-                }
+                onSend = onSend,
+                onMarkAsRead = onMarkAsRead
             ),
             isGroupChat = false,
             packageName = "com.kakao.talk"
