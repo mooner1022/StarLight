@@ -58,6 +58,9 @@ class GeneralConfig(val path: File) {
             synchronized(configs) {
                 val str = json.encodeToString(configs)
                 with(File(path, FILE_NAME)) {
+                    if (!exists()) {
+                        mkdirs()
+                    }
                     if (!isFile) {
                         deleteRecursively()
                     }
