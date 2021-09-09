@@ -2,10 +2,6 @@ package com.mooner.starlight.plugincore.logger
 
 class Logger {
 
-    init {
-
-    }
-
     companion object {
         private val listeners: MutableMap<String, (log: LogData) -> Unit> = hashMapOf()
         var logs: ArrayList<LogData> = arrayListOf()
@@ -22,33 +18,41 @@ class Logger {
 
         fun d(tag: String, message: String) = log(
             LogData(
-                LogType.DEBUG,
-                tag,
-                message
+                type = LogType.DEBUG,
+                tag = tag,
+                message = message,
+                threadName = Thread.currentThread().name,
+                isLocal = false
             )
         )
 
         fun i(tag: String, message: String) = log(
             LogData(
-                LogType.INFO,
-                tag,
-                message
+                type = LogType.INFO,
+                tag = tag,
+                message = message,
+                threadName = Thread.currentThread().name,
+                isLocal = false
             )
         )
 
         fun e(tag: String, message: String) = log(
             LogData(
-                LogType.ERROR,
-                tag,
-                message
+                type = LogType.ERROR,
+                tag = tag,
+                message = message,
+                threadName = Thread.currentThread().name,
+                isLocal = false
             )
         )
 
         fun w(tag: String, message: String) = log(
             LogData(
-                LogType.WARNING,
-                tag,
-                message
+                type = LogType.WARNING,
+                tag = tag,
+                message = message,
+                threadName = Thread.currentThread().name,
+                isLocal = false
             )
         )
 

@@ -1,33 +1,43 @@
 package com.mooner.starlight.ui.editor
 
+import android.annotation.SuppressLint
+import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.ArrayAdapter
+import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.widget.addTextChangedListener
-import com.afollestad.materialdialogs.utils.MDUtil.getStringArray
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityEditorBinding
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.mooner.starlight.plugincore.logger.Logger
 import java.io.File
 
 class EditorActivity : AppCompatActivity() {
+
+    companion object {
+        private const val T = "EditorActivity"
+        const val ENTRY_POINT = "file:///android_asset/editor/index.html"
+    }
+
     private lateinit var fileDir: File
     private lateinit var name: String
     //private lateinit var monaco: WebView
+    private lateinit var codeView: WebView
     private lateinit var orgCode: String
+    private var code: String = ""
     private var isCodeChanged = false
     private lateinit var binding: ActivityEditorBinding
 
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityEditorBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         setSupportActionBar(binding.toolbarEditor)
         name = intent.getStringExtra("title")!!
         supportActionBar!!.apply {
@@ -38,6 +48,54 @@ class EditorActivity : AppCompatActivity() {
         fileDir = File(intent.getStringExtra("fileDir")
                 ?: throw IllegalArgumentException("No file directory passed to editor"))
 
+        orgCode = fileDir.readText()
+        code = orgCode
+        codeView = findViewById(R.id.editorWebView)
+        with(codeView) {
+            settings.apply {
+                builtInZoomControls = false
+                javaScriptEnabled = true
+                //loadWithOverviewMode = true
+                displayZoomControls = false
+                allowFileAccess = true
+                allowContentAccess = true
+                webChromeClient = WebChromeClient()
+                setSupportZoom(false)
+                cacheMode = WebSettings.LOAD_CACHE_ONLY
+                addJavascriptInterface(object : WebviewCallback {
+
+                    @JavascriptInterface
+                    override fun onLoadComplete() {
+                        /*
+                        val prcCode = orgCode
+                            .replace(""""""", """\"""")
+                            .replace("\n", "\\n")
+
+                         */
+                        val prcCode = Base64.encodeToString(Uri.encode(orgCode, "utf-8").toByteArray(), 0)
+                        println("prcCode = $prcCode")
+                        codeView.post {
+                            codeView.loadUrl(
+                                """javascript:setCode("$prcCode")"""
+                            )
+                        }
+                    }
+
+                    @JavascriptInterface
+                    override fun onContentChanged(code: String?) {
+                        println("onContentChanged")
+                        isCodeChanged = code != orgCode
+                        if (isCodeChanged && code != null) {
+                            this@EditorActivity.code = code
+                        }
+                    }
+                }, "WebviewCallback")
+            }
+            //loadUrl(indexHtml.path)
+            loadUrl(ENTRY_POINT)
+        }
+
+        /*
         with(binding.codeView) {
             setAdapter(
                 ArrayAdapter(
@@ -70,7 +128,6 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
-        /*
         monaco = findViewById(R.id.monacoWebView)
         with(monaco) {
             settings.apply {
@@ -139,11 +196,11 @@ class EditorActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.menu_save -> {
                 if (isCodeChanged) {
-                    if (fileDir.isFile) fileDir.writeText(binding.codeView.text.toString())
-                    else throw IllegalArgumentException("Target [${fileDir.path}] is not a file")
+                    if (fileDir.isFile) fileDir.writeText(this.code)
+                    else Logger.e(T, "Target [${fileDir.path}] is not a file")
                     isCodeChanged = false
                 }
-                Snackbar.make(window.decorView.findViewById(android.R.id.content), "$name 저장 완료!", Snackbar.LENGTH_LONG).show()
+                Snackbar.make(window.decorView.findViewById(android.R.id.content), "$name 저장 완료", Snackbar.LENGTH_LONG).show()
             }
             android.R.id.home -> { // 메뉴 버튼
                 finish()

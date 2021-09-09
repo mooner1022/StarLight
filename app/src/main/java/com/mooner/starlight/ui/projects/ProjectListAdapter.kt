@@ -87,10 +87,9 @@ class ProjectListAdapter(
                     it.context,
                     DebugRoomActivity::class.java
                 ).apply {
-                    putExtra(
-                        "roomName",
-                        config.name
-                    )
+                    putExtra("imageHash", 0)
+                    putExtra("roomName", config.name)
+                    putExtra("sender", "debug_sender")
                 }
             )
         }

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IDE AUTOCOMPLETE</title>
+  <link rel="stylesheet" type="text/css" href="./index.css">
+  <link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.min.css">
+  <script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+  <script type="text/javascript" src="./ace.min.js"></script>
+  <script type="text/javascript" src="./theme-tomorrow_night_eighties.js"></script>
+  <script type="text/javascript" src="./mode-javascript.js"></script>
+  <script type="text/javascript" src="./worker-javascript.js"></script>
+  <script src="./ext-error_marker.js"></script>
+  <script src="./ext-searchbox.js"></script>
+  <script src="./ext-beautify.js"></script>
+  <script src="./ext-language_tools.js"></script>
+  <script src="./ext-spellcheck.js"></script>
+  <script src="./ext-prompt.js"></script>
+</head>
+<body>
+  <div id="editor" onChange="onChange()"></div>
+  <script>
+    const langTools = ace.require("ace/ext/language_tools");
+    //const beautify = ace.require("ace/ext/beautify");
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/tomorrow_night_eighties");
+    editor.getSession().setMode("ace/mode/javascript");
+    editor.setShowPrintMargin(false);
+    editor.setOptions({
+        enableBasicAutocompletion: true,
+        enableSnippets: false,
+        enableLiveAutocompletion: true,
+        fontSize: "16px"
+    });
+    editor.getSession().on("change", () => {
+      onChange();
+    })
+
+    const onChange = () => {
+      const code = editor.getSession().getValue();
+      WebviewCallback.onContentChanged(code);
+    }
+
+    const setCode = (code) => {
+      const prcCode = atob(code);
+      console.log("atob= "+prcCode);
+      editor.setValue(decodeURIComponent(prcCode), -1);
+      editor.clearSelection();
+      //beautify.beautify(editor.getSession());
+    }
+
+    WebviewCallback.onLoadComplete();
+  </script>
+</body>
+</html>

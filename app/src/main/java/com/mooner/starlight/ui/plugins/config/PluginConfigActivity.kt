@@ -7,17 +7,27 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityPluginConfigBinding
-import com.mooner.starlight.plugincore.TypedString
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
+import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
+import com.mooner.starlight.ui.config.ConfigAdapter
+import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-class PluginConfigActivity : AppCompatActivity() {
+@ExperimentalSerializationApi
+class PluginConfigActivity: AppCompatActivity() {
 
-    private val changedData: MutableMap<String, Any> = mutableMapOf()
+    companion object {
+        private const val EXTRA_PLUGIN_NAME = "pluginName"
+        private const val EXTRA_PLUGIN_ID = "pluginId"
+        private const val PLUGIN_CONFIG_FILE_NAME = "config-plugin.json"
+    }
+
+    private val changedData: MutableMap<String, Any> = hashMapOf()
     private lateinit var savedData: MutableMap<String, TypedString>
     private lateinit var binding: ActivityPluginConfigBinding
 
@@ -29,10 +39,10 @@ class PluginConfigActivity : AppCompatActivity() {
         val fabProjectConfig = binding.fabPluginConfig
         val configRecyclerView = binding.configRecyclerView
 
-        val pluginName = intent.getStringExtra("pluginName")!!
-        val pluginId = intent.getStringExtra("pluginId")!!
+        val pluginName = intent.getStringExtra(EXTRA_PLUGIN_NAME)!!
+        val pluginId = intent.getStringExtra(EXTRA_PLUGIN_ID)!!
         val plugin = pluginLoader.getPluginById(pluginId)?: error("Failed to get plugin [$pluginName]")
-        val recyclerAdapter = PluginConfigAdapter(applicationContext) { id, view, data ->
+        val recyclerAdapter = ConfigAdapter(applicationContext) { id, view, data ->
             changedData[id] = data
             savedData[id] = TypedString.parse(data)
             if (!fabProjectConfig.isShown) {
@@ -41,36 +51,34 @@ class PluginConfigActivity : AppCompatActivity() {
             plugin.onConfigChanged(id, view, data)
         }
 
-        val configFile = File((plugin as StarlightPlugin).getDataFolder(), "config-plugin.json")
+        val configFile = File((plugin as StarlightPlugin).getDataFolder(), PLUGIN_CONFIG_FILE_NAME)
         savedData = try {
             Session.json.decodeFromString(configFile.readText())
         } catch (e: Exception) {
             mutableMapOf()
         }
 
-        fabProjectConfig.setOnClickListener {
+        fabProjectConfig.setOnClickListener { view ->
             if (recyclerAdapter.isHavingError) {
-                Snackbar.make(it, "올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
+                Snackbar.make(view, "올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
                 fabProjectConfig.hide()
                 return@setOnClickListener
             }
             configFile.writeText(Session.json.encodeToString(savedData))
             plugin.onConfigUpdated(changedData)
-            Snackbar.make(it, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
+            Snackbar.make(view, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
             fabProjectConfig.hide()
         }
 
-        binding.scroll.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-            if (scrollY in 0..200) {
-                binding.imageViewLogo.alpha = 1f - (scrollY / 200.0f)
-            } else {
-                binding.imageViewLogo.alpha = 0f
-            }
-        }
+        binding.scroll.bindFadeImage(binding.imageViewLogo)
 
-        recyclerAdapter.data = plugin.configObjects.toList()
-        recyclerAdapter.saved = savedData
-        recyclerAdapter.notifyDataSetChanged()
+        binding.leave.setOnClickListener { finish() }
+
+        recyclerAdapter.apply {
+            data = plugin.configObjects.toList()
+            saved = savedData
+            notifyDataSetChanged()
+        }
 
         val layoutManager = LinearLayoutManager(applicationContext)
         configRecyclerView.layoutManager = layoutManager

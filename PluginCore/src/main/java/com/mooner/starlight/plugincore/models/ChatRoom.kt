@@ -1,6 +1,7 @@
 package com.mooner.starlight.plugincore.models
 
 import android.app.Notification
+import android.app.PendingIntent
 import android.app.RemoteInput
 import android.content.Context
 import android.content.Intent
@@ -25,8 +26,17 @@ data class ChatRoom(
             session.actionIntent.send(context, 0, sendIntent)
             Logger.d("ChatRoom", "send() success: $message")
             true
-        } catch (e: Exception) {
+        } catch (e: PendingIntent.CanceledException) {
             false
         }
+    }
+
+    override fun markAsRead(): Boolean {
+        try {
+            session.actionIntent.send(context, 1, Intent())
+        } catch (e: PendingIntent.CanceledException) {
+            return false
+        }
+        return true
     }
 }

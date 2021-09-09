@@ -16,11 +16,12 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/cardViewProjectAlign"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="@dimen/card_height"
         android:layout_marginStart="@dimen/card_margin"
         android:layout_marginEnd="@dimen/card_margin"
         app:cardCornerRadius="@dimen/card_radius"
-        app:cardElevation="@dimen/card_elevation">
+        app:cardElevation="0dp"
+        app:cardMaxElevation="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -38,7 +39,7 @@
                 android:fontFamily="@font/nanumsquare_round_extrabold"
                 android:text="@string/project_align_state"
                 android:textColor="#FFFFFF"
-                android:textSize="16sp" />
+                android:textSize="16sp"/>
 
             <ImageView
                 android:id="@+id/imageViewProjectAlignState"
@@ -46,7 +47,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="0.15"
                 android:src="@drawable/ic_round_sort_by_alpha_24"
-                app:tint="#FFFFFF" />
+                app:tint="#FFFFFF"/>
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>
@@ -59,6 +60,7 @@
         android:layout_marginTop="@dimen/card_margin"
         android:layout_marginEnd="@dimen/card_margin"
         android:layout_marginBottom="@dimen/card_margin"
+        app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="@dimen/card_radius"
         app:cardElevation="@dimen/card_elevation">
 

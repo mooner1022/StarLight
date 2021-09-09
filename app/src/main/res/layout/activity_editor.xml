@@ -6,18 +6,14 @@
     android:layout_height="match_parent"
     tools:context=".ui.editor.EditorActivity">
 
-    <com.amrdeveloper.codeview.CodeView
-        android:id="@+id/codeView"
+    <WebView
+        android:id="@+id/editorWebView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@color/white"
-        android:dropDownWidth="150dp"
-        android:dropDownHorizontalOffset="0dp"
-        android:gravity="top|start"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar_editor" />
+        app:layout_constraintTop_toBottomOf="@+id/toolbar_editor"/>
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar_editor"

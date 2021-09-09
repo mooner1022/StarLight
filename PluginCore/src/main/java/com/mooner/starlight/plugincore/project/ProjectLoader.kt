@@ -64,8 +64,8 @@ class ProjectLoader {
         callListeners()
     }
 
-    fun newProject(dir: File = projectDir, block: MutableProjectConfig.() -> Unit) {
-        val config = MutableProjectConfig().apply(block).toProjectConfig()
+    fun newProject(dir: File = projectDir, block: ProjectConfigBuilder.() -> Unit) {
+        val config = ProjectConfigBuilder().apply(block).build()
         projects.add(Project.create(dir, config))
         callListeners()
     }
@@ -85,7 +85,7 @@ class ProjectLoader {
                             try {
                                 project.compile(true)
                             } catch (e: Exception) {
-                                Logger.d(T, "Failed to pre-compile project ${config.name}: $e")
+                                Logger.w(T, "Failed to pre-compile project ${config.name}: $e")
                                 continue
                             }
                         }
@@ -96,7 +96,9 @@ class ProjectLoader {
                     }
                     projects.add(project)
                 } catch (e: IllegalStateException) {
-                    Logger.e(T, e.toString())
+                    Logger.e(T, "Failed to load project: $e")
+                } catch (e: IllegalArgumentException) {
+                    Logger.e(T, "Failed to load project: $e")
                 }
             }
         }

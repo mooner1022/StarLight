@@ -1,7 +1,7 @@
 package com.mooner.starlight.plugincore.plugin
 
 import android.view.View
-import com.mooner.starlight.plugincore.language.ConfigObject
+import com.mooner.starlight.plugincore.config.ConfigObject
 
 interface Plugin {
     val name: String

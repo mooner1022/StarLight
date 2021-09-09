@@ -73,7 +73,7 @@ class Utils {
             val h = TimeUnit.MILLISECONDS.toHours(millis) % 24
             return if (millis >= day) {
                 val d = TimeUnit.MILLISECONDS.toDays(millis)
-                String.format("%d일 %d시간 %02d분 %02d초", h, m, s, d)
+                String.format("%d일 %d시간 %02d분 %02d초", d, h, m, s)
             } else {
                 String.format("%d시간 %02d분 %02d초", h, m, s)
             }
@@ -81,10 +81,9 @@ class Utils {
 
         fun restartApplication(context: Context) {
             val mStartActivity = Intent(context, SplashActivity::class.java)
-            val mPendingIntentId = (0..100000).random()
             val mPendingIntent = PendingIntent.getActivity(
                 context,
-                mPendingIntentId,
+                0,
                 mStartActivity,
                 PendingIntent.FLAG_CANCEL_CURRENT
             )

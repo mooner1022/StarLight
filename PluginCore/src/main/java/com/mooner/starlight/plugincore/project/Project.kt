@@ -5,10 +5,7 @@ import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
-import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.methods.MethodManager
-import com.mooner.starlight.plugincore.models.ChatRoom
-import com.mooner.starlight.plugincore.models.Message
+import com.mooner.starlight.plugincore.method.MethodManager
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -17,51 +14,64 @@ class Project(
     val directory: File,
     val config: ProjectConfig
 ) {
-    val isCompiled: Boolean
-        get() = engine != null
-    private var engine: Any? = null
-    private val lang: Language = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
-    private val logger: LocalLogger = if (directory.hasFile("logs_local.json")) {
-        LocalLogger.fromFile(File(directory, "logs_local.json"))
-    } else {
-        LocalLogger.create(directory)
-    }
-    private var lastRoom: com.mooner.starlight.plugincore.interfaces.ChatRoom? = null
-
-    private val tag: String
-        get() = "Project-${config.name}"
 
     companion object {
+        private const val LANGUAGE_CONFIG_FILE_NAME  = "config-language.json"
+        private const val PROJECT_CONFIG_FILE_NAME   = "project.json"
+        private const val LOGS_FILE_NAME             = "logs_local.json"
+
         fun create(dir: File, config: ProjectConfig): Project {
             val folder = File(dir.path, config.name)
             folder.mkdirs()
-            File(folder.path, "project.json").writeText(json.encodeToString(config), Charsets.UTF_8)
-            val language = Session.getLanguageManager().getLanguage(config.language)?: throw IllegalArgumentException("Cannot find language ${config.language}")
+            File(folder.path, PROJECT_CONFIG_FILE_NAME).writeText(json.encodeToString(config), Charsets.UTF_8)
+            val language = Session.getLanguageManager().getLanguage(config.languageId)?: throw IllegalArgumentException("Cannot find language ${config.languageId}")
             File(folder.path, config.mainScript).writeText(language.defaultCode, Charsets.UTF_8)
             return Project(folder, config)
         }
     }
 
+    val isCompiled: Boolean
+        get() = engine != null
+    private var engine: Any? = null
+    private val lang: Language = Session.getLanguageManager().getLanguage(config.languageId)?: throw IllegalArgumentException("Cannot find language ${config.languageId}")
+    private val logger: LocalLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
+        LocalLogger.fromFile(File(directory, LOGS_FILE_NAME))
+    } else {
+        LocalLogger.create(directory)
+    }
+
+    private val tag: String
+        get() = "Project-${config.name}"
+
     init {
-        val langConfFile = File(directory, "config-language.json")
+        val langConfFile = File(directory, LANGUAGE_CONFIG_FILE_NAME)
         lang.setConfigPath(langConfFile)
     }
 
     fun callEvent(name: String, args: Array<Any>) {
-        Logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
+        //logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
 
         if (!isCompiled) {
-            logger.e("EventHandler", "Property engine must not be null")
+            logger.w("EventHandler", """
+                Property engine must not be null
+                This might be a bug of StarLight
+            """.trimIndent())
             return
         }
-        if (name == "response") {
-            lastRoom = (args[0] as Message).room
-        }
 
-        try {
-            lang.callFunction(engine!!, name, args)
-        } catch (e: Exception) {
-            logger.e(config.name, "Error while running [${config.name}]: $e")
+        lang.callFunction(engine!!, name, args) { e ->
+            logger.e(tag, "Error while running: $e")
+            val shutdownOnError: Boolean?
+            if ((lang.getLanguageConfig()["shutdown_on_error"] as Boolean?).also { shutdownOnError = it } != null) {
+                if (shutdownOnError!!) {
+                    logger.e(config.name, "Shutting down project [${config.name}]...")
+                    config.isEnabled = false
+                    if (engine != null && lang.requireRelease) {
+                        lang.release(engine!!)
+                        engine = null
+                    }
+                }
+            }
             e.printStackTrace()
         }
         /*
@@ -87,16 +97,16 @@ class Project(
             )).readText(Charsets.UTF_8)
             if (engine != null && lang.requireRelease) {
                 lang.release(engine!!)
-                Logger.d(tag, "engine released")
+                logger.d(tag, "engine released")
             }
-            Logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.className }}")
+            logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.name }}")
             engine = lang.compile(
                 rawCode,
                 MethodManager.getMethods()
             )
         } catch (e: Exception) {
             e.printStackTrace()
-            logger.e("${config.name}: compile", e.toString())
+            logger.e(tag, e.toString())
             if (throwException) throw e
         }
     }
@@ -104,7 +114,7 @@ class Project(
     fun saveConfig() {
         val str = json.encodeToString(config)
         logger.d(config.name, "Flushed project config: $str")
-        File(directory.path, "project.json").writeText(str, Charsets.UTF_8)
+        File(directory.path, PROJECT_CONFIG_FILE_NAME).writeText(str, Charsets.UTF_8)
     }
 
     fun getLanguage(): ILanguage {

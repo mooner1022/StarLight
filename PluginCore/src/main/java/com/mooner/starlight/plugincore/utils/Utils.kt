@@ -2,6 +2,7 @@ package com.mooner.starlight.plugincore.utils
 
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Color
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStream
@@ -34,5 +35,7 @@ class Utils {
                 else -> false
             }
         }
+
+        inline fun color(color: () -> String): Int = Color.parseColor(color())
     }
 }

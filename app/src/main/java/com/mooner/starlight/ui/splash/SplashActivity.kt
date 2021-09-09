@@ -6,8 +6,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
+import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.edit
 import coil.Coil
 import coil.ImageLoader
 import coil.decode.GifDecoder
@@ -19,6 +21,7 @@ import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.ActivitySplashBinding
+import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.utils.Utils
 import com.skydoves.needs.NeedsAnimation
 import com.skydoves.needs.NeedsItem
@@ -32,7 +35,7 @@ import kotlin.concurrent.schedule
 
 class SplashActivity : AppCompatActivity() {
     companion object {
-        private const val MIN_LOAD_TIME = 1500L
+        private const val MIN_LOAD_TIME = 2500L
         private const val ANIMATION_DURATION = 5000L
         private val REQUIRED_PERMISSIONS = arrayOf(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -51,12 +54,17 @@ class SplashActivity : AppCompatActivity() {
 
         val pref = getSharedPreferences("general", 0)
         val isInitial = pref.getBoolean("isInitial", true)
-        if (isInitial) pref.edit().putBoolean("isInitial", false).apply()
+        if (isInitial) pref.edit {
+            putBoolean("isInitial", false)
+        }
         val intent = Intent(this@SplashActivity, MainActivity::class.java)
         intent.putExtra("isInitial", isInitial)
 
         fun init() {
             val initMillis = System.currentTimeMillis()
+
+            val webview = WebView(applicationContext)
+            webview.loadUrl(EditorActivity.ENTRY_POINT)
 
             CoroutineScope(Dispatchers.Default).launch {
                 ApplicationSession.context = applicationContext

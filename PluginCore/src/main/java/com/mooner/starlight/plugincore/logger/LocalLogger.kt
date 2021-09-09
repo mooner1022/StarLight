@@ -11,8 +11,10 @@ import java.io.File
 class LocalLogger(
     private var _logs: ArrayList<LogData>,
     private val file: File
-    ) {
+) {
+
     companion object {
+
         fun create(directory: File): LocalLogger {
             directory.mkdirs()
             val file = File(directory, "logs_local.json")
@@ -48,36 +50,40 @@ class LocalLogger(
 
     fun d(tag: String, message: String) = log(
         LogData(
-            LogType.DEBUG,
-            tag,
-            message,
+            type = LogType.DEBUG,
+            tag = tag,
+            message = message,
+            threadName = Thread.currentThread().name,
             isLocal = true
         )
     )
 
     fun i(tag: String, message: String) = log(
         LogData(
-            LogType.INFO,
-            tag,
-            message,
+            type = LogType.INFO,
+            tag = tag,
+            message = message,
+            threadName = Thread.currentThread().name,
             isLocal = true
         )
     )
 
     fun e(tag: String, message: String) = log(
         LogData(
-            LogType.ERROR,
-            tag,
-            message,
+            type = LogType.ERROR,
+            tag = tag,
+            message = message,
+            threadName = Thread.currentThread().name,
             isLocal = true
         )
     )
 
     fun w(tag: String, message: String) = log(
         LogData(
-            LogType.WARNING,
-            tag,
-            message,
+            type = LogType.WARNING,
+            tag = tag,
+            message = message,
+            threadName = Thread.currentThread().name,
             isLocal = true
         )
     )
