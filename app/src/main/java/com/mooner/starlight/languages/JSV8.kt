@@ -15,6 +15,7 @@ import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.config.*
 import com.mooner.starlight.plugincore.language.*
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.method.Method
 import com.mooner.starlight.plugincore.method.MethodClass
 import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.utils.Icon
@@ -112,13 +113,13 @@ class JSV8: Language() {
         Logger.i("JSV8", "updated: $updated")
     }
 
-    override fun compile(code: String, methods: List<MethodClass>): Any {
+    override fun compile(code: String, methods: List<Method>): Any {
         val v8 = V8.createV8Runtime()
         try {
             v8.apply {
                 for (methodBlock in methods) {
                     addClass(
-                        methodBlock.className,
+                        methodBlock.name,
                         methodBlock.instance,
                         methodBlock.functions.map { it.name }.toTypedArray(),
                         methodBlock.functions.map { it.args }.toTypedArray()
@@ -146,36 +147,34 @@ class JSV8: Language() {
         val v8 = engine as V8
         v8.locker.acquire()
         var messageArg: Message? = null
-        if (args.find { it is Message }.also { if (it != null) messageArg = it as Message } != null) {
-            val msgParams: V8Value = V8ObjectUtils.toV8Object(v8,
-                hashMapOf(
-                    "message" to messageArg!!.message,
-                    "room" to mapOf(
-                        "name" to messageArg!!.room.name,
-                        "send" to messageArg!!.room::send
-                    ),
-                    "sender" to mapOf(
-                        "name" to messageArg!!.sender.name,
-                        "profileBase64" to messageArg!!.sender.profileBase64,
-                        "profileHash" to messageArg!!.sender.profileHash
-                    ),
-                    "isGroupChat" to messageArg!!.isGroupChat,
-                    "packageName" to messageArg!!.packageName
+
+        try {
+            if (args.find { it is Message }.also { if (it != null) messageArg = it as Message } != null) {
+                val msgParams: V8Value = V8ObjectUtils.toV8Object(v8,
+                    hashMapOf(
+                        "message" to messageArg!!.message,
+                        "room" to mapOf(
+                            "name" to messageArg!!.room.name,
+                            "send" to messageArg!!.room::send
+                        ),
+                        "sender" to mapOf(
+                            "name" to messageArg!!.sender.name,
+                            "profileBase64" to messageArg!!.sender.profileBase64,
+                            "profileHash" to messageArg!!.sender.profileHash
+                        ),
+                        "isGroupChat" to messageArg!!.isGroupChat,
+                        "packageName" to messageArg!!.packageName
+                    )
                 )
-            )
-            try {
                 v8.executeJSFunction(functionName, V8Array(v8).push(msgParams))
-            } catch (e: Exception) {
-                onError(e)
-            }
-        } else {
-            try {
+            } else {
                 v8.executeJSFunction(functionName, *args)
-            } catch (e: Exception) {
-                onError(e)
             }
+        } catch (e: Exception) {
+            onError(e)
+        } finally {
+            v8.locker.release()
         }
-        v8.locker.release()
     }
 
     override fun eval(code: String): Any {

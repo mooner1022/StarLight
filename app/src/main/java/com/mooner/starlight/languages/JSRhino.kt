@@ -7,6 +7,7 @@ import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.method.Method
 import com.mooner.starlight.plugincore.method.MethodClass
 import com.mooner.starlight.plugincore.utils.Icon
 import kotlinx.coroutines.CoroutineScope
@@ -86,7 +87,7 @@ class JSRhino: Language() {
 
     override fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    override fun compile(code: String, methods: List<MethodClass>): Any {
+    override fun compile(code: String, methods: List<Method>): Any {
         val config = getLanguageConfig()
         context = Context.enter().apply {
             optimizationLevel = -1
@@ -105,7 +106,7 @@ class JSRhino: Language() {
         val scope = context.newObject(shared)
         //val engine = ScriptEngineManager().getEngineByName("rhino")!!
         for(methodBlock in methods) {
-            ScriptableObject.putProperty(scope, methodBlock.className, Context.javaToJS(methodBlock.instance, scope))
+            ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(methodBlock.instance, scope))
             //engine.put(methodBlock.blockName, methodBlock.instance)
         }
         //engine.eval(code)
@@ -139,6 +140,8 @@ class JSRhino: Language() {
                 function.call(context, engine, engine, args)
             } catch (e: Exception) {
                 onError(e)
+            } finally {
+                Context.exit()
             }
         }
         //ScriptableObject.callMethod(engine as Scriptable, methodName, args)
