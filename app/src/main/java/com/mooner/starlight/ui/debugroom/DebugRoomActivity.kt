@@ -41,10 +41,8 @@ class DebugRoomActivity: AppCompatActivity() {
         binding.messageInput.setOnKeyListener { _, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
                 send(binding.messageInput.text.toString())
-                true
-            } else {
-                false
             }
+            false
         }
 
         imageHash = intent.getIntExtra("imageHash", 0)

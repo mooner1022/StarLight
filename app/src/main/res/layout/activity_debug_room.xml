@@ -29,7 +29,7 @@
         android:ems="10"
         android:fontFamily="@font/nanumsquare_round_regular"
         android:hint="메세지 입력..."
-        android:inputType="text"
+        android:inputType="none"
         android:paddingStart="15dp"
         android:paddingTop="3dp"
         android:paddingEnd="10dp"

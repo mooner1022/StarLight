@@ -3,11 +3,9 @@ package com.mooner.starlight.plugincore.project
 import android.os.Environment
 import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.logger.Logger
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import java.io.File
 
-@ExperimentalSerializationApi
 class ProjectLoader {
     companion object {
         private val T = ProjectLoader::class.simpleName!!

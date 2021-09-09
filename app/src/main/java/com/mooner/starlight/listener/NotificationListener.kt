@@ -20,15 +20,12 @@ import java.io.ByteArrayOutputStream
 class NotificationListener: NotificationListenerService() {
 
     private val sessions: HashMap<String, Notification.Action> = hashMapOf()
-    private var lastRoom: ChatRoom? = null
     private val isAllPowerOn: Boolean
     get() = Session.getGeneralConfig()[GeneralConfig.CONFIG_ALL_PROJECTS_POWER, "true"].toBoolean()
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
         val packageName = sbn.packageName
-        val projects = projectLoader.getProjects().filter { packageName in it.config.packages }
-        if (projects.isEmpty()) return
 
         val wearableExtender = Notification.WearableExtender(sbn.notification)
         for (act in wearableExtender.actions) {
@@ -46,6 +43,9 @@ class NotificationListener: NotificationListenerService() {
                     sessions[room] = act
                 }
 
+                val projects = projectLoader.getEnabledProjects()//.filter { packageName in it.config.packages }
+                if (projects.isEmpty()) return
+
                 val data = Message(
                     message = message,
                     sender = ChatSender(
@@ -61,8 +61,6 @@ class NotificationListener: NotificationListenerService() {
                     isGroupChat = isGroupChat,
                     packageName = sbn.packageName
                 )
-
-                lastRoom = data.room as ChatRoom
 
                 Logger.d("NotificationListenerService", "message : $message sender : $sender nRoom : $room nSession : $act")
 

@@ -1,7 +1,9 @@
 package com.mooner.starlight.ui.editor
 
 import android.annotation.SuppressLint
+import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import android.view.Menu
 import android.view.MenuItem
 import android.webkit.JavascriptInterface
@@ -64,10 +66,14 @@ class EditorActivity : AppCompatActivity() {
 
                     @JavascriptInterface
                     override fun onLoadComplete() {
+                        /*
                         val prcCode = orgCode
                             .replace(""""""", """\"""")
                             .replace("\n", "\\n")
-                        println("preCode = $prcCode")
+
+                         */
+                        val prcCode = Base64.encodeToString(Uri.encode(orgCode, "utf-8").toByteArray(), 0)
+                        println("prcCode = $prcCode")
                         codeView.post {
                             codeView.loadUrl(
                                 """javascript:setCode("$prcCode")"""

@@ -41,7 +41,9 @@
     }
 
     const setCode = (code) => {
-      editor.setValue(code, -1);
+      const prcCode = atob(code);
+      console.log("atob= "+prcCode);
+      editor.setValue(decodeURIComponent(prcCode), -1);
       editor.clearSelection();
       //beautify.beautify(editor.getSession());
     }

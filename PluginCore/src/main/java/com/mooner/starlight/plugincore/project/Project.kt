@@ -49,7 +49,7 @@ class Project(
     }
 
     fun callEvent(name: String, args: Array<Any>) {
-        logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
+        //logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
 
         if (!isCompiled) {
             logger.w("EventHandler", """
