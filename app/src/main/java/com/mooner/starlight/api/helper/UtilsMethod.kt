@@ -1,4 +1,4 @@
-package com.mooner.starlight.api.legacy
+package com.mooner.starlight.api.helper
 
 import com.mooner.starlight.plugincore.method.Method
 import com.mooner.starlight.plugincore.method.MethodFunction
