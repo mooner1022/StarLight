@@ -1,6 +1,6 @@
 package com.mooner.starlight.api.helper
 
-class Timer {
+class TimerMethod {
 
     companion object {
         fun schedule(millis: Long, callback: () -> Unit) {

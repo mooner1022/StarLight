@@ -1,31 +1,31 @@
 package com.mooner.starlight.api.helper
 
-import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.method.Method
 import com.mooner.starlight.plugincore.method.MethodFunction
+import com.mooner.starlight.plugincore.project.Project
 
 class ProjectLoggerMethod: Method() {
 
     override val name: String = "Logger"
-
-    override val instance: Any = LocalLogger
     
     override val functions: List<MethodFunction> = listOf(
-        MethodFunction(
-            name = "i",
+        function {
+            name = "i"
             args = arrayOf(String::class.java, String::class.java)
-        ),
-        MethodFunction(
-            name = "e",
+        },
+        function {
+            name = "e"
             args = arrayOf(String::class.java, String::class.java)
-        ),
-        MethodFunction(
-            name = "w",
+        },
+        function {
+            name = "w"
             args = arrayOf(String::class.java, String::class.java)
-        ),
-        MethodFunction(
-            name = "d",
+        },
+        function {
+            name = "d"
             args = arrayOf(String::class.java, String::class.java)
-        ),
+        }
     )
+
+    override fun getInstance(project: Project): Any = project.logger
 }

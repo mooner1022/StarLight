@@ -34,7 +34,8 @@ class Project(
         get() = engine != null
     private var engine: Any? = null
     private val lang: Language = Session.getLanguageManager().getLanguage(config.languageId)?: throw IllegalArgumentException("Cannot find language ${config.languageId}")
-    private val logger: LocalLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
+
+    val logger: LocalLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
         LocalLogger.fromFile(File(directory, LOGS_FILE_NAME))
     } else {
         LocalLogger.create(directory)
