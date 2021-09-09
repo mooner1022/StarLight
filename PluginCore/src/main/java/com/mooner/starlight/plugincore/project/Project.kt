@@ -102,8 +102,9 @@ class Project(
             }
             logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.name }}")
             engine = lang.compile(
-                rawCode,
-                MethodManager.getMethods()
+                code = rawCode,
+                methods = MethodManager.getMethods(),
+                project = this
             )
         } catch (e: Exception) {
             e.printStackTrace()

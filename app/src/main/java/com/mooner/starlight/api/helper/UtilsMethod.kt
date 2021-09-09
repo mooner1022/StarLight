@@ -9,12 +9,6 @@ import org.jsoup.nodes.Document
 class UtilsMethod: Method() {
 
     object Utils {
-        fun getWebText(url: String): String {
-            return Jsoup.connect(url).apply {
-                ignoreHttpErrors(true)
-                ignoreContentType(true)
-            }.get().text()
-        }
 
         fun parse(url: String): Document {
             return Jsoup.connect(url).apply {
@@ -22,6 +16,8 @@ class UtilsMethod: Method() {
                 ignoreContentType(true)
             }.get()
         }
+
+        fun getWebText(url: String): String = parse(url).text()
 
         fun getAndroidVersionCode(): Int {
             return android.os.Build.VERSION.SDK_INT
@@ -54,22 +50,37 @@ class UtilsMethod: Method() {
     override val name: String = "Utils"
 
     override val functions: List<MethodFunction> = listOf(
-        MethodFunction(
-            name = "getWebText",
+        function {
+            name = "getWebText"
             args = arrayOf(String::class.java)
-        ),
-        MethodFunction(
-            name = "parse",
+            returns = String::class.java
+        },
+        function {
+            name = "parse"
             args = arrayOf(String::class.java)
-        ),
-        MethodFunction(name = "getAndroidVersionCode"),
-        MethodFunction(name = "getAndroidVersionName"),
-        MethodFunction(name = "getPhoneBrand"),
-        MethodFunction(name = "getPhoneModel"),
-        MethodFunction(
-            name = "randomAlphanumeric",
+            returns = Document::class.java
+        },
+        function {
+            name = "getAndroidVersionCode"
+            returns = Int::class.java
+        },
+        function {
+            name = "getAndroidVersionName"
+            returns = String::class.java
+        },
+        function {
+            name = "getPhoneBrand"
+            returns = String::class.java
+        },
+        function {
+            name = "getPhoneModel"
+            returns = String::class.java
+        },
+        function {
+            name = "randomAlphanumeric"
             args = arrayOf(Int::class.java)
-        )
+            returns = String::class.java
+        }
     )
 
     override fun getInstance(project: Project): Any = Utils

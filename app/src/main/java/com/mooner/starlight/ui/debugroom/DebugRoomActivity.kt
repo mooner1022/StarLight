@@ -85,10 +85,10 @@ class DebugRoomActivity: AppCompatActivity() {
             ),
             room = DebugChatRoom(
                 name = roomName,
+                isGroupChat = false,
                 onSend = onSend,
                 onMarkAsRead = onMarkAsRead
             ),
-            isGroupChat = false,
             packageName = "com.kakao.talk"
         )
         project.callEvent(

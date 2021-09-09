@@ -4,6 +4,8 @@ import com.mooner.starlight.plugincore.interfaces.ChatRoom
 
 data class DebugChatRoom(
     override val name: String,
+    override val isGroupChat: Boolean,
+    override val isDebugRoom: Boolean = true,
     val onSend: (message: String) -> Unit,
     val onMarkAsRead: () -> Unit
 ): ChatRoom {

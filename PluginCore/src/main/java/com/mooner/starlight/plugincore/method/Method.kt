@@ -19,6 +19,7 @@ abstract class Method: IMethod {
 
         var name: String? = null
         var args: Array<Class<*>> = emptyArray()
+        var returns: Class<*> = Unit::class.java
 
         private fun required(fieldName: String, value: Any?) {
             if (value == null) {
@@ -31,7 +32,8 @@ abstract class Method: IMethod {
 
             return MethodFunction(
                 name = name!!,
-                args = args
+                args = args,
+                returns = returns
             )
         }
     }

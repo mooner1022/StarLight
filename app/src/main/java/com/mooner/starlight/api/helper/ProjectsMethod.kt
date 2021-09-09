@@ -21,10 +21,15 @@ class ProjectsMethod: Method() {
     override val name: String = "Projects"
 
     override val functions: List<MethodFunction> = listOf(
-        MethodFunction(
-            name = "get",
+        function {
+            name = "get"
+            returns = Project::class.java
+        },
+        function {
+            name = "get"
             args = arrayOf(String::class.java)
-        )
+            returns = Project::class.java
+        }
     )
 
     override fun getInstance(project: Project): Any = Projects(project)

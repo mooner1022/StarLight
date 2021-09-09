@@ -2,12 +2,16 @@ package com.mooner.starlight.api.core
 
 import com.mooner.starlight.plugincore.method.Method
 import com.mooner.starlight.plugincore.method.MethodFunction
+import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.project.Project
 
 class ClientMethod: Method() {
 
     class Client {
 
+        fun on(eventName: String, callback: (event: Message) -> Unit) {
+
+        }
     }
 
     override val name: String = "Client"

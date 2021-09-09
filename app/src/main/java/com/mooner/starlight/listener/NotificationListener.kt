@@ -25,7 +25,6 @@ class NotificationListener: NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
-        val packageName = sbn.packageName
 
         val wearableExtender = Notification.WearableExtender(sbn.notification)
         for (act in wearableExtender.actions) {
@@ -38,7 +37,8 @@ class NotificationListener: NotificationListenerService() {
                 val sender = notification.extras.getString("android.title").toString()
                 val room = act.title.toString().replaceFirst("답장 (", "").replaceAfterLast(")", "")
                 val base64 = notification.getLargeIcon().loadDrawable(applicationContext).toBase64()
-                val isGroupChat = notification.extras.get("android.text") is SpannableString
+                val isGroupChat = notification.extras["android.text"] is SpannableString
+                val isMention = notification.extras["android.text"] is SpannableString
                 if (!sessions.containsKey(room)) {
                     sessions[room] = act
                 }
@@ -55,10 +55,10 @@ class NotificationListener: NotificationListenerService() {
                     ),
                     room = ChatRoom(
                         name = room,
+                        isGroupChat = isGroupChat,
                         session = act,
                         context = applicationContext
                     ),
-                    isGroupChat = isGroupChat,
                     packageName = sbn.packageName
                 )
 
