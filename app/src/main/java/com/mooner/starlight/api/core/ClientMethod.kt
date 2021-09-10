@@ -28,6 +28,6 @@ class ClientMethod: Method() {
     )
 
     override fun getInstance(project: Project): Any {
-        return Unit
+        return Client::class.java
     }
 }
