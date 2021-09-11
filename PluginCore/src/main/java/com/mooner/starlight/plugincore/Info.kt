@@ -2,13 +2,13 @@ package com.mooner.starlight.plugincore
 
 class Info {
     companion object {
-        val PLUGINCORE_VERSION: Version = Version.fromString("0.0.1")
+        val PLUGINCORE_VERSION: Version = Version.fromString("0.0.1b2")
     }
 }
 
 data class Version(
     val major: String,
-    val minor: Int,
+    val minor: String,
 ) {
     companion object {
         fun fromString(str: String): Version {
@@ -17,16 +17,18 @@ data class Version(
             try {
                 spl = str.split(".")
                 if (spl.size != 3) throw IllegalArgumentException("Illegal version string: Invalid length")
+                /*
                 for (s in spl) {
                     if (s.toIntOrNull() == null) throw IllegalArgumentException("Illegal version string: Non-numerical version")
                 }
+                */
             } catch (e: Exception) {
                 e.printStackTrace()
                 throw IllegalArgumentException("Illegal version string")
             }
             return Version(
                 major = "${spl[0]}.${spl[1]}",
-                minor = spl[2].toInt()
+                minor = spl[2]
             )
         }
     }
@@ -50,7 +52,7 @@ data class Version(
 
     override fun hashCode(): Int {
         var result = major.hashCode()
-        result = 31 * result + minor
+        result = 31 * result + minor.hashCode()
         return result
     }
 }

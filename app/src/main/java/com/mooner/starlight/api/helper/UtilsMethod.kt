@@ -2,11 +2,12 @@ package com.mooner.starlight.api.helper
 
 import com.mooner.starlight.plugincore.method.Method
 import com.mooner.starlight.plugincore.method.MethodFunction
+import com.mooner.starlight.plugincore.method.MethodType
 import com.mooner.starlight.plugincore.project.Project
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
-class UtilsMethod: Method() {
+class UtilsMethod: Method<UtilsMethod.Utils>() {
 
     object Utils {
 
@@ -48,6 +49,10 @@ class UtilsMethod: Method() {
     }
 
     override val name: String = "Utils"
+
+    override val type: MethodType = MethodType.OBJECT
+
+    override val instanceClass: Class<Utils> = Utils::class.java
 
     override val functions: List<MethodFunction> = listOf(
         function {

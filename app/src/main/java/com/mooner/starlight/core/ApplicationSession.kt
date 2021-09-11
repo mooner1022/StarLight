@@ -4,10 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import com.mooner.starlight.R
 import com.mooner.starlight.api.core.ClientMethod
-import com.mooner.starlight.api.helper.LanguagesMethod
-import com.mooner.starlight.api.helper.ProjectLoggerMethod
-import com.mooner.starlight.api.helper.ProjectsMethod
-import com.mooner.starlight.api.helper.UtilsMethod
+import com.mooner.starlight.api.core.EventMethod
+import com.mooner.starlight.api.helper.*
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.core.Session
@@ -33,13 +31,15 @@ object ApplicationSession {
             return
         }
         onPhaseChanged(context.getString(R.string.step_default_lib))
-        MethodManager.addMethod(
-            LanguagesMethod(),
-            ProjectLoggerMethod(),
-            ProjectsMethod(),
-            UtilsMethod(),
-            ClientMethod()
-        )
+        MethodManager.apply {
+            addMethod(LanguagesMethod())
+            addMethod(ProjectLoggerMethod())
+            addMethod(ProjectsMethod())
+            addMethod(UtilsMethod())
+            addMethod(ClientMethod())
+            addMethod(EventMethod())
+            addMethod(TimerMethod())
+        }
         onPhaseChanged(context.getString(R.string.step_lang))
         Session.initLanguageManager()
         onPhaseChanged(context.getString(R.string.step_plugin_init))

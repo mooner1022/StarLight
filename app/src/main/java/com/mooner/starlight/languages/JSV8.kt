@@ -113,7 +113,7 @@ class JSV8: Language() {
         Logger.i("JSV8", "updated: $updated")
     }
 
-    override fun compile(code: String, methods: List<Method>, project: Project?): Any {
+    override fun compile(code: String, methods: List<Method<Any>>, project: Project?): Any {
         val v8 = V8.createV8Runtime()
         try {
             v8.apply {

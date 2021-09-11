@@ -5,10 +5,13 @@ import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.method.MethodManager
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
+import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
 import java.io.File
+import java.util.*
 
 class Project(
     val directory: File,
@@ -30,6 +33,7 @@ class Project(
         }
     }
 
+    private val scope: CoroutineScope = CoroutineScope(Job() + Dispatchers.Default)
     val isCompiled: Boolean
         get() = engine != null
     private var engine: Any? = null
@@ -60,21 +64,42 @@ class Project(
             return
         }
 
-        lang.callFunction(engine!!, name, args) { e ->
-            logger.e(tag, "Error while running: $e")
-            val shutdownOnError: Boolean?
-            if ((lang.getLanguageConfig()["shutdown_on_error"] as Boolean?).also { shutdownOnError = it } != null) {
-                if (shutdownOnError!!) {
-                    logger.e(config.name, "Shutting down project [${config.name}]...")
-                    config.isEnabled = false
-                    if (engine != null && lang.requireRelease) {
+        val jobName = "$tag-worker-${UUID.randomUUID()}"
+        val job = scope.launch(newSingleThreadContext(jobName)) {
+            lang.callFunction(engine!!, name, args)
+        }
+        JobLocker.registerJob(
+            key = jobName,
+            job = job
+        ) { e ->
+            when(e) {
+                is ForceReleasedException, is CancellationException -> {
+                    Logger.w(tag, "Task $jobName canceled")
+                    if (engine != null)
                         lang.release(engine!!)
-                        engine = null
+                }
+                null -> {
+                    if (engine != null)
+                        lang.release(engine!!)
+                }
+                else -> {
+                    logger.e(tag, "Error while running: $e")
+                    val shutdownOnError: Boolean?
+                    if ((lang.getLanguageConfig()["shutdown_on_error"] as Boolean?).also { shutdownOnError = it } != null) {
+                        if (shutdownOnError!!) {
+                            logger.e(config.name, "Shutting down project [${config.name}]...")
+                            config.isEnabled = false
+                            if (engine != null && lang.requireRelease) {
+                                lang.release(engine!!)
+                                engine = null
+                            }
+                        }
                     }
+                    e.printStackTrace()
                 }
             }
-            e.printStackTrace()
         }
+
         /*
         when(config.language) {
             Languages.JS_RHINO -> {

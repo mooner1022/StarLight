@@ -4,17 +4,15 @@ import com.mooner.starlight.plugincore.logger.Logger
 
 object MethodManager {
 
-    private val mMethods: MutableSet<Method> = hashSetOf()
+    private val mMethods: MutableSet<Method<Any>> = hashSetOf()
 
-    fun addMethod(vararg methods: Method) {
+    fun <T> addMethod(method: Method<T>) {
         synchronized(mMethods) {
-            for (method in methods) {
-                if (method in mMethods) return
-                mMethods.add(method)
-                Logger.d("MethodManager", "Added method ${method.name}")
-            }
+            if (mMethods.find { it.name == method.name } != null) return
+            mMethods += method as Method<Any>
+            Logger.d("MethodManager", "Added method ${method.name}")
         }
     }
 
-    fun getMethods(): List<Method> = mMethods.toList()
+    fun getMethods(): List<Method<Any>> = mMethods.toList()
 }

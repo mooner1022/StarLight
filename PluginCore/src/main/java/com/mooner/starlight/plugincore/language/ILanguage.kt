@@ -26,7 +26,7 @@ interface ILanguage {
 
     fun onConfigChanged(id: String, view: View, data: Any) {}
 
-    fun compile(code: String, methods: List<Method>, project: Project?): Any
+    fun compile(code: String, methods: List<Method<Any>>, project: Project?): Any
 
     fun release(engine: Any) {}
 

@@ -8,6 +8,7 @@ import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.method.Method
+import com.mooner.starlight.plugincore.method.MethodType
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
 import kotlinx.coroutines.CoroutineScope
@@ -19,7 +20,7 @@ import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
 
 class JSRhino: Language() {
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
+
     private lateinit var context: Context
     companion object {
 
@@ -87,7 +88,7 @@ class JSRhino: Language() {
 
     override fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    override fun compile(code: String, methods: List<Method>, project: Project?): Any {
+    override fun compile(code: String, methods: List<Method<Any>>, project: Project?): Any {
         val config = getLanguageConfig()
         context = Context.enter().apply {
             optimizationLevel = -1
@@ -107,11 +108,15 @@ class JSRhino: Language() {
         //val engine = ScriptEngineManager().getEngineByName("rhino")!!
         for(methodBlock in methods) {
             val instance = methodBlock.getInstance(project!!)
-            if (methodBlock.name == "Client") {
-                ScriptableObject.defineProperty(scope, methodBlock.name, instance::class.java, 0)
-                continue
+
+            when(methodBlock.type) {
+                MethodType.CLASS -> {
+                    context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
+                }
+                MethodType.OBJECT -> {
+                    ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(instance, scope))
+                }
             }
-            ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(instance, scope))
             //engine.put(methodBlock.blockName, methodBlock.instance)
         }
         //engine.eval(code)
@@ -133,22 +138,14 @@ class JSRhino: Language() {
         args: Array<Any>,
         onError: (e: Exception) -> Unit
     ) {
-        scope.launch {
-            try {
-                val rhino = engine as Scriptable
-                Context.enter()
-                val function = rhino.get(functionName, engine)
-                if (function == Scriptable.NOT_FOUND || function !is Function) {
-                    Logger.e(T, "Unable to locate function [$functionName]")
-                    return@launch
-                }
-                function.call(context, engine, engine, args)
-            } catch (e: Exception) {
-                onError(e)
-            } finally {
-                Context.exit()
-            }
+        val rhino = engine as Scriptable
+        Context.enter()
+        val function = rhino.get(functionName, engine)
+        if (function == Scriptable.NOT_FOUND || function !is Function) {
+            Logger.e(T, "Unable to locate function [$functionName]")
+            return
         }
+        function.call(context, engine, engine, args)
         //ScriptableObject.callMethod(engine as Scriptable, methodName, args)
         //val invocable = engine as Invocable
         //invocable.invokeFunction(methodName, args)

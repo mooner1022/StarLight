@@ -1,8 +1,6 @@
 package com.mooner.starlight.plugincore.method
 
-import com.mooner.starlight.plugincore.project.Project
-
-abstract class Method: IMethod {
+abstract class Method <T>: IMethod<T> {
 
     /*
     private var _project: Project? = null

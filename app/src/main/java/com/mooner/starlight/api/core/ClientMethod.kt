@@ -2,19 +2,24 @@ package com.mooner.starlight.api.core
 
 import com.mooner.starlight.plugincore.method.Method
 import com.mooner.starlight.plugincore.method.MethodFunction
+import com.mooner.starlight.plugincore.method.MethodType
 import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.project.Project
 
-class ClientMethod: Method() {
+class BotClient {
 
-    class Client {
+    fun on(eventName: String, callback: (event: Message) -> Unit) {
 
-        fun on(eventName: String, callback: (event: Message) -> Unit) {
-
-        }
     }
+}
 
-    override val name: String = "Client"
+class ClientMethod: Method<BotClient>() {
+
+    override val name: String = "BotClient"
+
+    override val type: MethodType = MethodType.CLASS
+
+    override val instanceClass: Class<BotClient> = BotClient::class.java
 
     override val functions: List<MethodFunction> = listOf(
         function {
@@ -28,6 +33,6 @@ class ClientMethod: Method() {
     )
 
     override fun getInstance(project: Project): Any {
-        return Client::class.java
+        return BotClient()
     }
 }
