@@ -13,6 +13,8 @@ object JobLocker {
      *
      */
 
+    private const val T = "JobLocker"
+
     private data class LockedJob(
         val job: Job,
         val listener: (Throwable?) -> Unit,
@@ -34,19 +36,19 @@ object JobLocker {
         if (!runningJobs.containsKey(key)) {
             runningJobs[key] = data
         }
-        Logger.i("JobLocker", "Registered job $key")
+        Logger.i(T, "Registered job $key")
         job.invokeOnCompletion {
             if (it != null) {
-                Logger.i("JobLocker", "Released job $key with exception")
+                Logger.i(T, "Released job $key with exception")
                 runningJobs.remove(key)
                 onRelease(it)
             } else {
-                Logger.i("JobLocker", "Released job $key")
                 if (data.releaseCounter <= 0) {
                     runningJobs.remove(key)
                     onRelease(null)
+                    Logger.i(T, "Released job $key")
                 } else {
-                    Logger.i("JobLocker", "Postponed release of job $key")
+                    Logger.i(T, "Postponed release of job $key")
                 }
             }
         }
@@ -56,9 +58,9 @@ object JobLocker {
     fun requestLock(key: String = Thread.currentThread().name) {
         if (runningJobs.containsKey(key)) {
             runningJobs[key]!!.releaseCounter++
-            Logger.i("JobLocker", "Locked job $key")
+            Logger.i(T, "Locked job $key")
         } else {
-            Logger.i("JobLocker", "Failed to lock job: job $key is not registered or already released")
+            Logger.i(T, "Failed to lock job: job $key is not registered or already released")
         }
     }
 
@@ -74,10 +76,10 @@ object JobLocker {
             }
             if (isReleased) {
                 runningJobs.remove(key)
-                Logger.i("JobLocker", "Released job $key")
+                Logger.i(T, "Released job $key")
             }
         } else {
-            Logger.i("JobLocker", "Failed to release job: job $key is not registered or already released")
+            Logger.i(T, "Failed to release job: job $key is not registered or already released")
         }
     }
 
@@ -90,7 +92,7 @@ object JobLocker {
                 it.listener(ForceReleasedException("Job force released"))
             }
             runningJobs.remove(key)
-            Logger.w("JobLocker", "Force released job $key, this might not be a normal behavior")
+            Logger.w(T, "Force released job $key, this might not be a normal behavior")
         }
     }
 
