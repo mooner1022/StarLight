@@ -5,15 +5,13 @@ import com.mooner.starlight.plugincore.method.MethodFunction
 import com.mooner.starlight.plugincore.method.MethodType
 import com.mooner.starlight.plugincore.project.JobLocker
 import com.mooner.starlight.plugincore.project.Project
-import java.util.*
 import java.util.function.Consumer
 import kotlin.concurrent.schedule
-import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 class TimerMethod: Method<TimerMethod.Timer>() {
 
     class Timer {
-        fun schedule(millis: Long, callback: Consumer<JvmType.Object?>): java.util.Timer {
+        fun schedule(millis: Long): java.util.Timer {
             /*
             locker.acquire -> run                   -> if(Timer.isRunning()) else -> locker.reease()
                                 |--   Timer.schedule() --|->       await          ->-|
@@ -22,8 +20,24 @@ class TimerMethod: Method<TimerMethod.Timer>() {
             JobLocker.requestLock(jobName)
             return java.util.Timer().apply {
                 schedule(millis) {
-                    callback.accept(null)
+                    //callback.accept(null)
+                    println("timer called")
                     JobLocker.requestRelease(jobName)
+                }
+            }
+        }
+
+        fun schedule(initialDelay: Long, period: Long): java.util.Timer {
+            /*
+            locker.acquire -> run                   -> if(Timer.isRunning()) else -> locker.reease()
+                                |--   Timer.schedule() --|->       await          ->-|
+             */
+            val jobName = Thread.currentThread().name
+            JobLocker.requestLock(jobName)
+            return java.util.Timer().apply {
+                schedule(initialDelay, period) {
+                    //callback.accept(null)
+                    println("timer called")
                 }
             }
         }
