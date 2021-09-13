@@ -5,7 +5,7 @@ class LanguageManager {
 
     fun addLanguage(lang: Language) {
         if (languages.contains(lang)) {
-            throw IllegalArgumentException("Duplicate custom language: ${lang.name}")
+            throw IllegalArgumentException("Duplicated language: ${lang.name}")
         }
         languages.add(lang)
     }

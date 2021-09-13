@@ -1,7 +1,6 @@
 package com.mooner.starlight.plugincore.plugin
 
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.event.EventListener
 import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger

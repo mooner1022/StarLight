@@ -4,7 +4,7 @@ import android.os.Environment
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Version
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.event.EventListener
+import com.mooner.starlight.plugincore.plugin.EventListener
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.utils.Utils.Companion.readString
 import java.io.File

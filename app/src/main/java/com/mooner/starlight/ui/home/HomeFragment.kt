@@ -38,6 +38,7 @@ class HomeFragment : Fragment() {
                 }
             }
         }
+    private lateinit var mAdapter: LogsRecyclerViewAdapter
 
     companion object {
         private const val LOGS_MAX_SIZE = 5
@@ -53,7 +54,7 @@ class HomeFragment : Fragment() {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
         val logs = Logger.filterNot(LogType.DEBUG)
-        val mAdapter = LogsRecyclerViewAdapter(requireContext())
+        mAdapter = LogsRecyclerViewAdapter(requireContext())
 
         if (logs.isNotEmpty()) {
             val mLayoutManager = LinearLayoutManager(requireContext()).apply {
@@ -71,18 +72,16 @@ class HomeFragment : Fragment() {
             mAdapter.notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
         }
 
+        bindLogger(mAdapter)
+
+        binding.projectsRecyclerView
+
         binding.tvMoreLogs.setOnClickListener {
             Utils.showLogsDialog(requireContext())
         }
 
         binding.buttonMoreLogs.setOnClickListener {
             Utils.showLogsDialog(requireContext())
-        }
-
-        Logger.bindListener(T) {
-            if (it.type != LogType.DEBUG) {
-                mAdapter.pushLog(it, LOGS_MAX_SIZE)
-            }
         }
 
         binding.uptimeText.setInAnimation(requireContext(), R.anim.text_fade_in)
@@ -100,6 +99,8 @@ class HomeFragment : Fragment() {
             uptimeTimer = Timer()
             uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
         }
+
+        bindLogger(mAdapter)
     }
 
     override fun onPause() {
@@ -108,6 +109,8 @@ class HomeFragment : Fragment() {
             uptimeTimer!!.cancel()
             uptimeTimer = null
         }
+
+        unbindLogger()
     }
 
     override fun onDestroyView() {
@@ -116,7 +119,19 @@ class HomeFragment : Fragment() {
             uptimeTimer!!.cancel()
             uptimeTimer = null
         }
-        Logger.unbindListener(T)
+        unbindLogger()
         _binding = null
+    }
+
+    private fun bindLogger(mAdapter: LogsRecyclerViewAdapter) {
+        Logger.bindListener(T) {
+            if (it.type != LogType.DEBUG) {
+                mAdapter.pushLog(it, LOGS_MAX_SIZE)
+            }
+        }
+    }
+
+    private fun unbindLogger() {
+        Logger.unbindListener(T)
     }
 }

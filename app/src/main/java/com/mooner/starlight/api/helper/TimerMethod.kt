@@ -27,11 +27,10 @@ class TimerMethod: Method<TimerMethod.Timer>() {
             }
         }
 
+        /*
+         * 메모리 존나샘
+         */
         fun schedule(initialDelay: Long, period: Long): java.util.Timer {
-            /*
-            locker.acquire -> run                   -> if(Timer.isRunning()) else -> locker.reease()
-                                |--   Timer.schedule() --|->       await          ->-|
-             */
             val jobName = Thread.currentThread().name
             JobLocker.requestLock(jobName)
             return java.util.Timer().apply {

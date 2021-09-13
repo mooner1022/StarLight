@@ -75,28 +75,32 @@
             android:orientation="vertical">
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="0dp"
-                    android:layout_height="24dp"
-                    android:layout_marginStart="10dp"
-                    android:layout_weight="0.15"
-                    android:src="@drawable/ic_round_plugins_24"/>
+                        android:layout_width="0dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="0.15"
+                        android:src="@drawable/ic_round_plugins_24"/>
 
                 <TextView
-                    android:id="@+id/textViewHomeProjectStatus"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/nanumsquare_round_bold"
-                    android:text="Projects"
-                    android:textAlignment="viewStart"
-                    android:textSize="20sp"/>
+                        android:id="@+id/textViewHomeProjectStatus"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/nanumsquare_round_bold"
+                        android:text="Projects"
+                        android:textAlignment="viewStart"
+                        android:textSize="20sp"/>
             </LinearLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" android:orientation="horizontal"
+                    android:id="@+id/projectsRecyclerView"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
@@ -139,6 +143,10 @@
                     android:textAlignment="viewStart"
                     android:textSize="20sp"/>
             </LinearLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" android:orientation="horizontal"
+                    android:id="@+id/pluginsRecyclerView"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 

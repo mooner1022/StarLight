@@ -10,7 +10,7 @@ import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
-import com.mooner.starlight.plugincore.event.EventListener
+import com.mooner.starlight.plugincore.plugin.EventListener
 import com.mooner.starlight.plugincore.method.MethodManager
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
