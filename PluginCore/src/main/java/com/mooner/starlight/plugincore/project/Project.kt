@@ -37,7 +37,7 @@ class Project(
     val isCompiled: Boolean
         get() = engine != null
     private var engine: Any? = null
-    private val lang: Language = Session.getLanguageManager().getLanguage(config.languageId)?: throw IllegalArgumentException("Cannot find language ${config.languageId}")
+    private val lang: ILanguage = Session.getLanguageManager().getLanguage(config.languageId)?: throw IllegalArgumentException("Cannot find language ${config.languageId}")
 
     val logger: LocalLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
         LocalLogger.fromFile(File(directory, LOGS_FILE_NAME))
@@ -50,7 +50,7 @@ class Project(
 
     init {
         val langConfFile = File(directory, LANGUAGE_CONFIG_FILE_NAME)
-        lang.setConfigPath(langConfFile)
+        (lang as Language).setConfigPath(langConfFile)
     }
 
     fun callEvent(name: String, args: Array<Any>) {
@@ -85,7 +85,7 @@ class Project(
                 else -> {
                     logger.e(tag, "Error while running: $e")
                     val shutdownOnError: Boolean?
-                    if ((lang.getLanguageConfig()["shutdown_on_error"] as Boolean?).also { shutdownOnError = it } != null) {
+                    if (((lang as Language).getLanguageConfig()["shutdown_on_error"] as Boolean?).also { shutdownOnError = it } != null) {
                         if (shutdownOnError!!) {
                             logger.e(config.name, "Shutting down project [${config.name}]...")
                             config.isEnabled = false

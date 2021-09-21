@@ -28,9 +28,6 @@ class JSV8: Language() {
         get() = "자바스크립트 (V8)"
     override val fileExtension: String
         get() = "js"
-    override val loadIcon: (ImageView) -> Unit = { imageView ->
-        imageView.load(R.drawable.ic_v8)
-    }
     override val requireRelease: Boolean
         get() = true
     override val defaultCode: String

@@ -18,4 +18,6 @@ abstract class Language: ILanguage {
             typed.mapValues { it.value.cast()!! }
         }
     }
+
+    fun getAsset(directory: String): File = File(dataDir, directory)
 }

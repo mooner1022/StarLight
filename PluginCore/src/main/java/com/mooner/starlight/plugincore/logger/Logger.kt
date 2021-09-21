@@ -1,9 +1,13 @@
 package com.mooner.starlight.plugincore.logger
 
+import android.util.Log
+import java.io.File
+
 class Logger {
 
     companion object {
         private val listeners: MutableMap<String, (log: LogData) -> Unit> = hashMapOf()
+        private lateinit var logFile: File
         var logs: ArrayList<LogData> = arrayListOf()
 
         fun bindListener(key: String, listener: (log: LogData) -> Unit) {
@@ -21,8 +25,7 @@ class Logger {
                 type = LogType.DEBUG,
                 tag = tag,
                 message = message,
-                threadName = Thread.currentThread().name,
-                isLocal = false
+                threadName = Thread.currentThread().name
             )
         )
 
@@ -31,8 +34,7 @@ class Logger {
                 type = LogType.INFO,
                 tag = tag,
                 message = message,
-                threadName = Thread.currentThread().name,
-                isLocal = false
+                threadName = Thread.currentThread().name
             )
         )
 
@@ -41,8 +43,17 @@ class Logger {
                 type = LogType.ERROR,
                 tag = tag,
                 message = message,
-                threadName = Thread.currentThread().name,
-                isLocal = false
+                threadName = Thread.currentThread().name
+            )
+        )
+
+        // What a Terrible Failure!
+        fun wtf(tag: String, message: String) = log(
+            LogData(
+                type = LogType.CRITICAL,
+                tag = tag,
+                message = message,
+                threadName = Thread.currentThread().name
             )
         )
 
@@ -51,12 +62,12 @@ class Logger {
                 type = LogType.WARNING,
                 tag = tag,
                 message = message,
-                threadName = Thread.currentThread().name,
-                isLocal = false
+                threadName = Thread.currentThread().name
             )
         )
 
         fun log(data: LogData) {
+            Log.println(data.type.priority, data.tag, data.message)
             println(data.toString())
             logs.add(data)
 

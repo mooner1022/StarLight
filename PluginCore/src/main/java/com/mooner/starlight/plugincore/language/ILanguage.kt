@@ -14,8 +14,6 @@ interface ILanguage {
 
     val fileExtension: String
 
-    val loadIcon: (ImageView) -> Unit
-
     val requireRelease: Boolean
 
     val configObjectList: List<ConfigObject>

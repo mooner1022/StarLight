@@ -14,6 +14,8 @@ import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
+import com.mooner.starlight.plugincore.logger.Logger
+import kotlin.system.exitProcess
 
 class ForegroundTask: Service() {
 
@@ -29,6 +31,23 @@ class ForegroundTask: Service() {
     @SuppressLint("InflateParams")
     override fun onCreate() {
         super.onCreate()
+
+        Thread.setDefaultUncaughtExceptionHandler { paramThread, paramThrowable ->
+            Logger.wtf("StarLight-core", """
+                An uncaught critical exception occurred, shutting down...
+                [버그 제보시 아래 메세지를 첨부해주세요.]
+                ──────────
+                thread  : ${paramThread.name}
+                message : ${paramThrowable.message}
+                cause   : ${paramThrowable.cause}
+                ┉┉┉┉┉┉┉┉┉┉
+                stackTrace:
+                ${paramThrowable.stackTrace}
+                ──────────
+            """.trimIndent())
+            paramThrowable.printStackTrace()
+            exitProcess(2)
+        }
 
         if (!ApplicationSession.isInitComplete) {
             ApplicationSession.context = applicationContext

@@ -1,8 +1,5 @@
 package com.mooner.starlight.languages
 
-import android.widget.ImageView
-import coil.load
-import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.Language
@@ -11,9 +8,6 @@ import com.mooner.starlight.plugincore.method.Method
 import com.mooner.starlight.plugincore.method.MethodType
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
 import org.mozilla.javascript.Scriptable
@@ -37,9 +31,6 @@ class JSRhino: Language() {
         get() = "자바스크립트 (라이노)"
     override val fileExtension: String
         get() = "js"
-    override val loadIcon: (ImageView) -> Unit = { imageView ->
-        imageView.load(R.drawable.ic_js)
-    }
     override val requireRelease: Boolean = true
 
     override val configObjectList: List<ConfigObject> = config {

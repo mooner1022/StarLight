@@ -26,6 +26,8 @@ import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.ViewPagerAdapter
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.utils.Utils
+import nl.bryanderidder.themedtogglebuttongroup.ThemedButton
+import nl.bryanderidder.themedtogglebuttongroup.ThemedToggleButtonGroup
 import org.angmarch.views.NiceSpinner
 import kotlin.math.abs
 
@@ -63,24 +65,29 @@ class MainActivity : AppCompatActivity() {
                 cancelOnTouchOutside(true)
                 noAutoDismiss()
 
-                val nameEditText = findViewById<EditText>(R.id.editTextNewProjectName)
-                val languageSpinner: NiceSpinner = findViewById(R.id.spinnerLanguage)
-                val objects = getLanguageManager().getLanguages().map { it.name }.toList()
+                val nameEditText: EditText = findViewById(R.id.editTextNewProjectName)
+                val cardsLanguage: ThemedToggleButtonGroup = findViewById(R.id.cards_language)
+
+                //val languageSpinner: NiceSpinner = findViewById(R.id.spinnerLanguage)
                 nameEditText.text.clear()
-                with(languageSpinner) {
-                    setBackgroundColor(context.getColor(R.color.transparent))
-                    attachDataSource(objects)
+
+                val languages = getLanguageManager().getLanguages()
+                for (language in languages) {
+                    val button = ThemedButton(context).apply {
+                        text = language.name
+                        icon()
+                    }
                 }
 
-                positiveButton(text = "추가") {
+                positiveButton(text = "생성") {
                     val projectName = nameEditText.text.toString()
                     if (projectLoader.getProject(projectName) != null) {
                         nameEditText.error = "이미 존재하는 이름이에요."
                         nameEditText.requestFocus()
                         return@positiveButton
                     }
-                    if (!"(^[-_0-9A-Za-z]+\$)".toRegex().matches(projectName)) {
-                        nameEditText.error = "이름은 숫자와 -, _, 영문자만 가능해요."
+                    if (!"(^[-_0-9A-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+\$)".toRegex().matches(projectName)) {
+                        nameEditText.error = "이름은 숫자와 -, _, 영문자, 한글만 가능해요."
                         nameEditText.requestFocus()
                         return@positiveButton
                     }

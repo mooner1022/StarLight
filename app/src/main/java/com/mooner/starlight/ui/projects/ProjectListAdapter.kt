@@ -77,7 +77,7 @@ class ProjectListAdapter(
             }
         }
 
-        holder.expandable.setIcon(loader = project.getLanguage().loadIcon)
+        //holder.expandable.setIcon(loader = project.getLanguage().loadIcon)
 
         holder.expandable.setTitle(titleText = config.name)
 

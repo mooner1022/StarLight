@@ -10,6 +10,7 @@ import com.mooner.starlight.plugincore.utils.Utils.Companion.getFileSize
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import java.io.File
+import kotlin.io.path.Path
 
 @ExperimentalSerializationApi
 abstract class StarlightPlugin: Plugin, EventListener {
@@ -23,6 +24,10 @@ abstract class StarlightPlugin: Plugin, EventListener {
     lateinit var config: PluginConfig
     val fileSize: Float
         get() = file.getFileSize()
+
+    companion object {
+        private const val T = "StarlightPlugin"
+    }
 
     constructor() {
         val classLoader = this.javaClass.classLoader
@@ -88,13 +93,13 @@ abstract class StarlightPlugin: Plugin, EventListener {
     fun addLanguage(language: Language) {
         var isLoadSuccess = false
         try {
-            Session.getLanguageManager().addLanguage(language)
+            Session.getLanguageManager().addLanguage(Path(dataDir.path, language.id), language)
             isLoadSuccess = true
         } catch (e: IllegalStateException) {
-            Logger.e("LanguageLoader", e.toString())
+            Logger.e(T, e.toString())
             e.printStackTrace()
         } finally {
-            Logger.i("LanguageLoader",(if (isLoadSuccess) "Successfully added" else "Failed to add") + " language ${language.name}")
+            Logger.i(T,(if (isLoadSuccess) "Successfully added" else "Failed to add") + " language ${language.name}")
         }
     }
 
