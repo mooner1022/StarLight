@@ -46,7 +46,8 @@ class LogsRecyclerViewAdapter(
             LogType.INFO -> R.color.code_string
             LogType.DEBUG -> R.color.code_purple
             LogType.WARNING -> R.color.code_yellow
-            LogType.ERROR -> R.color.code_error
+            LogType.ERROR -> R.color.code_orange
+            LogType.CRITICAL -> R.color.code_error
         }
         holder.stateColor.setCardBackgroundColor(context.getColor(color))
         holder.title.text = viewData.tag

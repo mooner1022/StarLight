@@ -15,7 +15,7 @@ class ProjectsMethod: Method<ProjectsMethod.Projects>() {
         fun get(): Project = project
 
         fun get(name: String): Project? {
-            return Session.projectLoader.getProject(name)
+            return Session.projectManager.getProject(name)
         }
     }
 

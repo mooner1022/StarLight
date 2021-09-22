@@ -17,7 +17,7 @@ class LocalLogger(
 
         fun create(directory: File): LocalLogger {
             directory.mkdirs()
-            val file = File(directory, "logs_local.json")
+            val file = File(directory, "logs-local.json")
             file.createNewFile()
             return LocalLogger(arrayListOf(), file)
         }

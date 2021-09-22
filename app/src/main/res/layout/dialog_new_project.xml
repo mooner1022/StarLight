@@ -44,7 +44,7 @@
     <nl.bryanderidder.themedtogglebuttongroup.ThemedToggleButtonGroup
             android:id="@+id/cards_language"
             android:layout_width="0dp"
-            android:layout_height="130dp"
+            android:layout_height="42dp"
             app:alignItems="center" app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@+id/textView2"
             android:layout_marginTop="8dp" android:paddingStart="32dp" android:paddingEnd="32dp">

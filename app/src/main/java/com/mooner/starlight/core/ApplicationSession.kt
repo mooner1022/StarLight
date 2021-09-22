@@ -2,6 +2,7 @@ package com.mooner.starlight.core
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Environment
 import com.mooner.starlight.R
 import com.mooner.starlight.api.core.ClientMethod
 import com.mooner.starlight.api.core.EventMethod
@@ -14,6 +15,7 @@ import com.mooner.starlight.plugincore.plugin.EventListener
 import com.mooner.starlight.plugincore.method.MethodManager
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
+import java.io.File
 
 @SuppressLint("StaticFieldLeak")
 object ApplicationSession {
@@ -40,17 +42,16 @@ object ApplicationSession {
             addMethod(EventMethod())
             addMethod(TimerMethod())
         }
-        onPhaseChanged(context.getString(R.string.step_lang))
-        Session.initLanguageManager()
-        onPhaseChanged(context.getString(R.string.step_plugin_init))
-        Session.initPluginLoader()
-        Session.getLanguageManager().apply {
-            addLanguage(JSV8())
-            addLanguage(JSRhino())
+        onPhaseChanged(context.getString(R.string.step_plugincore_init))
+
+        @Suppress("DEPRECATION")
+        val starlightDir = File(Environment.getExternalStorageDirectory(), "StarLight/")
+        Session.init(starlightDir)
+        Session.languageManager.apply {
+            addLanguage(File(starlightDir, "assets/JS_V8/").path, JSV8())
+            addLanguage(File(starlightDir, "assets/JS_RHINO/").path, JSRhino())
             //addLanguage(GraalVMLang())
         }
-        // init ProjectLoader first
-        Session.initProjectLoader()
 
         var preTime: Long = 0
         var preName = ""

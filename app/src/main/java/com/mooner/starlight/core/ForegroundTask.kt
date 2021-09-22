@@ -42,9 +42,7 @@ class ForegroundTask: Service() {
                 cause   : ${paramThrowable.cause}
                 ┉┉┉┉┉┉┉┉┉┉
                 stackTrace:
-                ${paramThrowable.stackTrace}
-                ──────────
-            """.trimIndent())
+            """.trimIndent() + paramThrowable.stackTraceToString() + "\n──────────")
             paramThrowable.printStackTrace()
             exitProcess(2)
         }

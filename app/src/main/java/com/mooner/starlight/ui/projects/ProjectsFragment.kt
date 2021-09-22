@@ -35,11 +35,11 @@ class ProjectsFragment : Fragment() {
         ALIGN_COMPILED
     )
     private var alignState: Align<Project> = getAlignByName(
-        Session.getGeneralConfig()
+        Session.generalConfig
                 [GeneralConfig.CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name]
     )?: DEFAULT_ALIGN
-    private var isReversed: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PROJECTS_REVERSED,"false"].toBoolean()
-    private var isActiveFirst: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST,"false"].toBoolean()
+    private var isReversed: Boolean = Session.generalConfig[GeneralConfig.CONFIG_PROJECTS_REVERSED,"false"].toBoolean()
+    private var isActiveFirst: Boolean = Session.generalConfig[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST,"false"].toBoolean()
     
     companion object {
         private const val T = "ProjectsFragment"
@@ -50,9 +50,9 @@ class ProjectsFragment : Fragment() {
             icon = R.drawable.ic_round_sort_by_alpha_24,
             sort = { list, args ->
                 val comparable = if (args.containsKey("activeFirst")) {
-                    compareBy<Project>({ it.config.name }, { it.config.isEnabled })
+                    compareBy<Project>({ it.info.name }, { it.info.isEnabled })
                 } else {
-                    compareBy { it.config.name }
+                    compareBy { it.info.name }
                 }
                 list.sortedWith(comparable)
             }
@@ -63,9 +63,9 @@ class ProjectsFragment : Fragment() {
             icon = R.drawable.ic_baseline_edit_calendar_24,
             sort = { list, args ->
                 val comparable = if (args.containsKey("activeFirst")) {
-                    compareBy<Project>({ it.config.createdMillis }, { it.config.isEnabled })
+                    compareBy<Project>({ it.info.createdMillis }, { it.info.isEnabled })
                 } else {
-                    compareBy { it.config.createdMillis }
+                    compareBy { it.info.createdMillis }
                 }
                 list.sortedWith(comparable).asReversed()
             }
@@ -76,7 +76,7 @@ class ProjectsFragment : Fragment() {
             icon = R.drawable.ic_round_refresh_24,
             sort = { list, args ->
                 val comparable = if (args.containsKey("activeFirst")) {
-                    compareBy<Project>({ it.isCompiled }, { it.config.isEnabled })
+                    compareBy<Project>({ it.isCompiled }, { it.info.isEnabled })
                 } else {
                     compareBy { it.isCompiled }
                 }
@@ -119,7 +119,7 @@ class ProjectsFragment : Fragment() {
 
         recyclerAdapter = ProjectListAdapter(requireContext())
 
-        Session.projectLoader.bindListener(T) { projects ->
+        Session.projectManager.bindListener(T) { projects ->
             this.projects = projects
             update()
         }
@@ -128,7 +128,7 @@ class ProjectsFragment : Fragment() {
         this.projects = data
         update()
 
-        projects = Session.projectLoader.getProjects()
+        projects = Session.projectManager.getProjects()
         recyclerAdapter.data = if (isReversed) {
             alignState.sort(
                 projects,
@@ -204,7 +204,7 @@ class ProjectsFragment : Fragment() {
                 )
             }
         )
-        Session.getGeneralConfig().also {
+        Session.generalConfig.also {
             it[GeneralConfig.CONFIG_PROJECTS_ALIGN] = align.name
             it[GeneralConfig.CONFIG_PROJECTS_REVERSED] = isReversed.toString()
             it[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST] = activeFirst.toString()
@@ -214,6 +214,6 @@ class ProjectsFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Session.projectLoader.unbindListener(T)
+        Session.projectManager.unbindListener(T)
     }
 }

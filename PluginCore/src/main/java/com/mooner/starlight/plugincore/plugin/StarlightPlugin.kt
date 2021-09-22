@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.plugin
 
+import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.language.Language
@@ -11,6 +12,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import java.io.File
 import kotlin.io.path.Path
+import kotlin.io.path.pathString
 
 @ExperimentalSerializationApi
 abstract class StarlightPlugin: Plugin, EventListener {
@@ -51,7 +53,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
         init(pluginLoader, projectLoader, config, dataDir, file, classLoader!!)
     }
 
-    override val configObjects: List<ConfigObject> = listOf()
+    override val configObjects: List<CategoryConfigObject> = listOf()
 
     override val name: String
         get() = config.fullName
@@ -80,7 +82,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    fun callEvent(eventName: String, args: Array<Any>) = Session.projectLoader.callEvent(this.config.id, eventName, args)
+    fun callEvent(eventName: String, args: Array<Any>) = Session.projectManager.callEvent(this.config.id, eventName, args)
 
     fun getDataFolder(): File = dataDir
 
@@ -93,7 +95,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
     fun addLanguage(language: Language) {
         var isLoadSuccess = false
         try {
-            Session.getLanguageManager().addLanguage(Path(dataDir.path, language.id), language)
+            Session.languageManager.addLanguage(Path(dataDir.path, language.id).pathString, language)
             isLoadSuccess = true
         } catch (e: IllegalStateException) {
             Logger.e(T, e.toString())

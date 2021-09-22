@@ -146,13 +146,13 @@ data class CustomConfigObject(
 }
 
 data class CategoryConfigObject(
+    override val id: String,
     val title: String,
     @ColorInt
     val textColor: Int,
     val items: List<ConfigObject>
 ): ConfigObject {
     override val default: Any = 0
-    override val id: String = UUID.randomUUID().toString()
     override val name: String = title
     override val type: ConfigObjectType = ConfigObjectType.CATEGORY
     override val viewType: Int = type.viewType

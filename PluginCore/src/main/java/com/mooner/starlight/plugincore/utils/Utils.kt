@@ -37,5 +37,7 @@ class Utils {
         }
 
         inline fun color(color: () -> String): Int = Color.parseColor(color())
+
+
     }
 }

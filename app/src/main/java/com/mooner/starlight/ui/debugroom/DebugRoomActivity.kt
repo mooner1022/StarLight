@@ -50,7 +50,7 @@ class DebugRoomActivity: AppCompatActivity() {
         roomName = intent.getStringExtra("roomName")?: "ERROR"
         binding.roomTitle.text = roomName
 
-        project = Session.projectLoader.getProject(roomName)!!
+        project = Session.projectManager.getProject(roomName)!!
 
         userChatAdapter = DebugRoomChatAdapter(this, chatList)
         binding.chatRecyclerView.adapter = userChatAdapter

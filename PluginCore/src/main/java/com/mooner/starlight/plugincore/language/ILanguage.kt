@@ -2,6 +2,7 @@ package com.mooner.starlight.plugincore.language
 
 import android.view.View
 import android.widget.ImageView
+import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.method.Method
 import com.mooner.starlight.plugincore.project.Project
@@ -16,7 +17,7 @@ interface ILanguage {
 
     val requireRelease: Boolean
 
-    val configObjectList: List<ConfigObject>
+    val configObjectList: List<CategoryConfigObject>
 
     val defaultCode: String
 

@@ -6,6 +6,7 @@ import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.project.ProjectLoader
+import com.mooner.starlight.plugincore.project.ProjectManager
 import kotlinx.serialization.json.Json
 import java.io.File
 
@@ -36,11 +37,17 @@ class Session {
             get() = mJson.get()!!
 
         @Suppress("DEPRECATION")
-        private var mGeneralConfig: GeneralConfig = GeneralConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
+        val generalConfig: GeneralConfig =
+            GeneralConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
 
         private var mLanguageManager: LanguageManager? = null
+        val languageManager: LanguageManager
+            get() = mLanguageManager!!
 
         private var mProjectLoader: ProjectLoader? = null
+        private var mProjectManager: ProjectManager? = null
+        val projectManager: ProjectManager
+            get() = mProjectManager!!
         val projectLoader: ProjectLoader
             get() = mProjectLoader!!
 
@@ -50,30 +57,20 @@ class Session {
 
         const val isDebugging: Boolean = true
 
-        fun initLanguageManager() {
-            if (mLanguageManager != null) {
-                Logger.e("init", "Redeclaration of object languageManager")
-                return
+        fun init(baseDir: File) {
+            Logger.e("lol", Thread.currentThread().stackTrace.joinToString { it.className })
+            val preStack = Thread.currentThread().stackTrace[2]
+            Logger.i("lol", """${preStack.className} / ${preStack.fileName} : ${preStack.methodName}""")
+            if (!preStack.className.startsWith("com.mooner.starlight")) {
+                throw IllegalAccessException("Illegal access to internal function init()")
             }
+
+            val projectDir = File(baseDir, "projects/")
+
             mLanguageManager = LanguageManager()
+            mPluginLoader    = PluginLoader()
+            mProjectManager  = ProjectManager(projectDir)
+            mProjectLoader   = ProjectLoader(projectDir)
         }
-        fun initProjectLoader() {
-            if (mProjectLoader != null) {
-                Logger.e("init", "Redeclaration of object projectLoader")
-                return
-            }
-            mProjectLoader = ProjectLoader()
-        }
-
-        fun initPluginLoader() {
-            if (mPluginLoader != null) {
-                Logger.e("init", "Redeclaration of object pluginLoader")
-                return
-            }
-            mPluginLoader = PluginLoader()
-        }
-
-        fun getLanguageManager(): LanguageManager = mLanguageManager!!
-        fun getGeneralConfig(): GeneralConfig = mGeneralConfig
     }
 }

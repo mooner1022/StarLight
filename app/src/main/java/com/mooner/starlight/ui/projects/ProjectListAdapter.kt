@@ -41,7 +41,7 @@ class ProjectListAdapter(
 
     override fun onBindViewHolder(holder: ProjectListViewHolder, position: Int) {
         val project = data[position]
-        val config = project.config
+        val config = project.info
 
         fun updateCardColor() {
             holder.cardViewIsEnabled.setCardBackgroundColor(
@@ -130,7 +130,7 @@ class ProjectListAdapter(
                                     cornerRadius(25f)
                                     cancelOnTouchOutside(false)
                                     noAutoDismiss()
-                                    title(text = project.config.name + " 에러 로그")
+                                    title(text = project.info.name + " 에러 로그")
                                     message(text = e.toString() + "\n" + e.stackTraceToString())
                                     positiveButton(text = "닫기") {
                                         dismiss()

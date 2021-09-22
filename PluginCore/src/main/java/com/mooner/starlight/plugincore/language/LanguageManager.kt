@@ -1,21 +1,18 @@
 package com.mooner.starlight.plugincore.language
 
-import java.nio.file.Path
-import kotlin.io.path.Path
-
 class LanguageManager {
+
     private val languages: MutableSet<ILanguage> = HashSet()
+    private val languageAssetPaths: MutableMap<String, String> = hashMapOf()
+
+    internal fun getAssetPath(id: String): String? = languageAssetPaths[id]
 
     fun addLanguage(assetPath: String, lang: ILanguage) {
-        val path = Path(assetPath)
-        addLanguage(path, lang)
-    }
-
-    fun addLanguage(assetPath: Path, lang: ILanguage) {
         if (languages.contains(lang)) {
             throw IllegalArgumentException("Duplicated language: ${lang.name}")
         }
         languages.add(lang)
+        languageAssetPaths[lang.id] = assetPath
     }
 
     fun getLanguage(id: String, newInstance: Boolean = true): ILanguage? {

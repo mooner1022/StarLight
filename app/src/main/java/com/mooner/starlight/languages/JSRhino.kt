@@ -1,5 +1,6 @@
 package com.mooner.starlight.languages
 
+import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.Language
@@ -18,7 +19,7 @@ class JSRhino: Language() {
     private lateinit var context: Context
     companion object {
 
-        private const val T = "JS-Rhino"
+        private const val T = "JS-라이노"
 
         private const val CONF_OPTIMIZATION = "optimization_level"
         private const val CONF_LANG_VERSION = "js_version"
@@ -33,8 +34,9 @@ class JSRhino: Language() {
         get() = "js"
     override val requireRelease: Boolean = true
 
-    override val configObjectList: List<ConfigObject> = config {
+    override val configObjectList: List<CategoryConfigObject> = config {
         category {
+            id = T
             title = T
             textColor = color { "#FFC069" }
             items = items {

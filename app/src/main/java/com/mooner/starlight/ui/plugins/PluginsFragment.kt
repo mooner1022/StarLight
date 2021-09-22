@@ -37,9 +37,9 @@ class PluginsFragment : Fragment() {
         ALIGN_FILE_SIZE,
     )
     private var alignState: Align<Plugin> = getAlignByName(
-        Session.getGeneralConfig()[GeneralConfig.CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name]
+        Session.generalConfig[GeneralConfig.CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name]
     )?: DEFAULT_ALIGN
-    private var isReversed: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
+    private var isReversed: Boolean = Session.generalConfig[GeneralConfig.CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
 
     companion object {
         private val ALIGN_GANADA = Align<Plugin>(
@@ -168,7 +168,7 @@ class PluginsFragment : Fragment() {
                 )
             }
         )
-        Session.getGeneralConfig().also {
+        Session.generalConfig.also {
             it[GeneralConfig.CONFIG_PLUGINS_ALIGN] = align.name
             it[GeneralConfig.CONFIG_PLUGINS_REVERSED] = isReversed.toString()
             it.push()

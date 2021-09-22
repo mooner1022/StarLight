@@ -11,7 +11,6 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -37,7 +36,6 @@ class ConfigAdapter(
             ConfigObjectType.BUTTON_FLAT.viewType -> R.layout.config_button_flat
             ConfigObjectType.BUTTON_CARD.viewType -> R.layout.config_button_card
             ConfigObjectType.CUSTOM.viewType -> R.layout.config_custom
-            ConfigObjectType.CATEGORY.viewType -> R.layout.config_category
             else -> 0
         }
         val view = LayoutInflater.from(context).inflate(layout, parent, false)
@@ -170,28 +168,6 @@ class ConfigAdapter(
                 val data = viewData as CustomConfigObject
                 data.onInflate(holder.customLayout)
             }
-            ConfigObjectType.CATEGORY.viewType -> {
-                val data = viewData as CategoryConfigObject
-                holder.categoryTitle.text = data.title
-                holder.categoryTitle.apply {
-                    text = data.title
-                    setTextColor(data.textColor)
-                }
-
-                val children = data.items
-                val ids = children.map { it.id }
-                val childData = saved.filter { it.key in ids }
-                val recyclerAdapter = ConfigAdapter(context, onConfigChanged).apply {
-                    this.data = children
-                    saved = childData.toMutableMap()
-                    notifyDataSetChanged()
-                }
-                val mLayoutManager = LinearLayoutManager(context)
-                holder.categoryItems.apply {
-                    adapter = recyclerAdapter
-                    layoutManager = mLayoutManager
-                }
-            }
         }
 
         if (viewData.dependency != null) {
@@ -249,9 +225,6 @@ class ConfigAdapter(
 
         lateinit var customLayout: LinearLayout
 
-        lateinit var categoryTitle: TextView
-        lateinit var categoryItems: RecyclerView
-
         var context: Context = itemView.context
 
         init {
@@ -289,10 +262,6 @@ class ConfigAdapter(
                 }
                 ConfigObjectType.CUSTOM.viewType -> {
                     customLayout = itemView.findViewById(R.id.layout_configCustom)
-                }
-                ConfigObjectType.CATEGORY.viewType -> {
-                    categoryTitle = itemView.findViewById(R.id.textView_configTitle)
-                    categoryItems = itemView.findViewById(R.id.recyclerViewCategory)
                 }
             }
         }

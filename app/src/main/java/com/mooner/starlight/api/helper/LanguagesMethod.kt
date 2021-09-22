@@ -1,6 +1,7 @@
 package com.mooner.starlight.api.helper
 
 import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.method.Method
 import com.mooner.starlight.plugincore.method.MethodFunction
@@ -12,10 +13,10 @@ class LanguagesMethod: Method<LanguagesMethod.Languages>() {
     class Languages(
         private val project: Project
     ) {
-        fun get(): Language = project.getLanguage() as Language
+        fun get(): ILanguage = project.getLanguage()
 
-        fun get(id: String): Language? {
-            return Session.getLanguageManager().getLanguage(id)
+        fun get(id: String): ILanguage? {
+            return Session.languageManager.getLanguage(id)
         }
     }
 

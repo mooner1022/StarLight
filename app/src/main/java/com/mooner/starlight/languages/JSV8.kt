@@ -22,6 +22,11 @@ import com.mooner.starlight.plugincore.utils.Icon
 
 
 class JSV8: Language() {
+
+    companion object {
+        private const val T = "JS-V8"
+    }
+
     override val id: String
         get() = "JS_V8"
     override val name: String
@@ -37,9 +42,10 @@ class JSV8: Language() {
             }
         """.trimIndent()
 
-    override val configObjectList: List<ConfigObject> = config {
+    override val configObjectList: List<CategoryConfigObject> = config {
         category {
-            title = "JS-V8"
+            id = T
+            title = T
             items = items {
                 toggle {
                     id = "toggle_test"

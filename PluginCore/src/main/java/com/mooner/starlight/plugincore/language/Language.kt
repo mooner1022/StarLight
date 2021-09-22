@@ -1,23 +1,31 @@
 package com.mooner.starlight.plugincore.language
 
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.models.TypedString
 import kotlinx.serialization.decodeFromString
 import java.io.File
 
 abstract class Language: ILanguage {
-    private var configPath: File? = null
+    private var configFile: File? = null
 
-    internal fun setConfigPath(path: File) {
-        configPath = path
+    internal fun setConfigFile(path: File) {
+        configFile = path
     }
 
-    fun getLanguageConfig(): Map<String, Any> {
-        return if (configPath == null || !configPath!!.isFile || !configPath!!.exists()) mapOf() else {
-            val typed: Map<String, TypedString> = json.decodeFromString(configPath!!.readText())
-            typed.mapValues { it.value.cast()!! }
+    protected fun getLanguageConfig(): Map<String, Any> {
+        return if (configFile == null || !configFile!!.isFile || !configFile!!.exists()) mapOf() else {
+            val raw = configFile!!.readText()
+            val typed: Map<String, Map<String, TypedString>> =
+                if (raw.isNotBlank())
+                    json.decodeFromString(raw)
+                else
+                    emptyMap()
+            (typed[id]?: emptyMap()).mapValues { it.value.cast()!! }
         }
     }
 
-    fun getAsset(directory: String): File = File(dataDir, directory)
+    protected fun getAsset(directory: String): File = File(Session.languageManager.getAssetPath(id), directory)
+
+    fun getIconFile(): File = getAsset("$id.png")
 }

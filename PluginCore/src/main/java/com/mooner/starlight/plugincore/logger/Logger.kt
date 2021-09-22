@@ -68,7 +68,6 @@ class Logger {
 
         fun log(data: LogData) {
             Log.println(data.type.priority, data.tag, data.message)
-            println(data.toString())
             logs.add(data)
 
             for ((_, listener) in listeners) {

@@ -11,6 +11,7 @@ import android.util.Base64
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.projectLoader
+import com.mooner.starlight.plugincore.core.Session.Companion.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.models.ChatRoom
 import com.mooner.starlight.plugincore.models.ChatSender
@@ -21,7 +22,7 @@ class NotificationListener: NotificationListenerService() {
 
     private val sessions: HashMap<String, Notification.Action> = hashMapOf()
     private val isAllPowerOn: Boolean
-    get() = Session.getGeneralConfig()[GeneralConfig.CONFIG_ALL_PROJECTS_POWER, "true"].toBoolean()
+    get() = Session.generalConfig[GeneralConfig.CONFIG_ALL_PROJECTS_POWER, "true"].toBoolean()
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
@@ -38,12 +39,12 @@ class NotificationListener: NotificationListenerService() {
                 val room = act.title.toString().replaceFirst("답장 (", "").replaceAfterLast(")", "")
                 val base64 = notification.getLargeIcon().loadDrawable(applicationContext).toBase64()
                 val isGroupChat = notification.extras["android.text"] is SpannableString
-                val isMention = notification.extras["android.text"] is SpannableString
+                val hasMention = notification.extras["android.text"] is SpannableString
                 if (!sessions.containsKey(room)) {
                     sessions[room] = act
                 }
 
-                val projects = projectLoader.getEnabledProjects()//.filter { packageName in it.config.packages }
+                val projects = projectManager.getEnabledProjects()//.filter { packageName in it.config.packages }
                 if (projects.isEmpty()) return
 
                 val data = Message(
