@@ -41,13 +41,11 @@ class ParentAdapter(
         }
 
         val children = viewData.items
-        val ids = children.map { it.id }
-        val childData = saved.filter { it.key in ids }
         val recyclerAdapter = ConfigAdapter(context) { id, view, data ->
             onConfigChanged(viewData.id, id, view, data)
         }.apply {
             this.data = children
-            saved = childData[viewData.id]?.toMutableMap()?: mutableMapOf()
+            saved = this@ParentAdapter.saved[viewData.id]?.toMutableMap()?: mutableMapOf()
             notifyDataSetChanged()
         }
         val mLayoutManager = LinearLayoutManager(context)

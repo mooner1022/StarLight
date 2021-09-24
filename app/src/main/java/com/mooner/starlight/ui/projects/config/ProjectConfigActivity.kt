@@ -68,6 +68,8 @@ class ProjectConfigActivity: AppCompatActivity() {
 
         val projectName = intent.getStringExtra("projectName")!!
         project = Session.projectManager.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
+        savedData = project.configManager.getAllConfig()
+
         val recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
             if (changedData.containsKey(parentId)) {
                 changedData[parentId]!![id] = data
@@ -90,8 +92,6 @@ class ProjectConfigActivity: AppCompatActivity() {
             saved = savedData
             notifyDataSetChanged()
         }
-
-        savedData = project.configManager.getAllConfig()
 
         fabProjectConfig.setOnClickListener { view ->
             if (recyclerAdapter.isHavingError) {

@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(view)
 
         if (!ForegroundTask.isRunning) {
-            println("start service")
+            Logger.d(T, "Starting foreground task...")
             val intent = Intent(this, ForegroundTask::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(intent)

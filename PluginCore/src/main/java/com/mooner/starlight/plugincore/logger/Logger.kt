@@ -6,9 +6,14 @@ import java.io.File
 class Logger {
 
     companion object {
+
         private val listeners: MutableMap<String, (log: LogData) -> Unit> = hashMapOf()
         private lateinit var logFile: File
         var logs: ArrayList<LogData> = arrayListOf()
+
+        fun init(baseDir: File) {
+            //logFile = File(baseDir, FILE_PATH)
+        }
 
         fun bindListener(key: String, listener: (log: LogData) -> Unit) {
             listeners[key] = listener
@@ -82,5 +87,17 @@ class Logger {
         fun filterNot(type: LogType): List<LogData> {
             return logs.filterNot { it.type == type }
         }
+
+        private fun flush() {
+
+        }
+
+        private fun load() {
+
+        }
+
+        //private fun getFilePath(): String {
+
+        //}
     }
 }

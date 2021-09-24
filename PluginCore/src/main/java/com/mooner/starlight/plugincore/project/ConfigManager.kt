@@ -26,14 +26,12 @@ class ConfigManager(
     }
 
     private var isUpdated: Boolean = false
-    private var config: ConcurrentMap<String, MutableMap<String, TypedString>> = ConcurrentHashMap()
+    private var config: MutableMap<String, MutableMap<String, TypedString>> = hashMapOf()
 
-    fun update(updated: ConcurrentMap<String, MutableMap<String, TypedString>>) {
+    fun update(updated: MutableMap<String, MutableMap<String, TypedString>>) {
         this.config = updated
         isUpdated = true
     }
-
-    fun update(updated: Map<String, MutableMap<String, TypedString>>) = update(ConcurrentHashMap(updated))
 
     fun getAllConfig(): MutableMap<String, MutableMap<String, TypedString>> = config
 
@@ -43,7 +41,7 @@ class ConfigManager(
         CoroutineScope(Dispatchers.IO).launch {
             if (!isUpdated) {
                 val raw = configFile.readText()
-                config = if (raw.isNotBlank()) json.decodeFromString(raw) else ConcurrentHashMap()
+                config = if (raw.isNotBlank()) json.decodeFromString(raw) else hashMapOf()
             } else {
                 val encoded = json.encodeToString(config)
                 configFile.writeText(encoded)
