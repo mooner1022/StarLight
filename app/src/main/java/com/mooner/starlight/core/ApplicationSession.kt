@@ -11,6 +11,7 @@ import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.EventListener
 import com.mooner.starlight.plugincore.method.MethodManager
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
@@ -32,6 +33,11 @@ object ApplicationSession {
             onFinished()
             return
         }
+
+        @Suppress("DEPRECATION")
+        val starlightDir = File(Environment.getExternalStorageDirectory(), "StarLight/")
+        Logger.init(starlightDir)
+
         onPhaseChanged(context.getString(R.string.step_default_lib))
         MethodManager.apply {
             addMethod(LanguagesMethod())
@@ -44,8 +50,6 @@ object ApplicationSession {
         }
         onPhaseChanged(context.getString(R.string.step_plugincore_init))
 
-        @Suppress("DEPRECATION")
-        val starlightDir = File(Environment.getExternalStorageDirectory(), "StarLight/")
         Session.init(starlightDir)
         Session.languageManager.apply {
             addLanguage(File(starlightDir, "assets/JS_V8/").path, JSV8())
