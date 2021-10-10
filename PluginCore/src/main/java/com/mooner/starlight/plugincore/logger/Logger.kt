@@ -58,8 +58,7 @@ class Logger {
             LogData(
                 type = LogType.DEBUG,
                 tag = tag,
-                message = message,
-                threadName = Thread.currentThread().name
+                message = message
             )
         )
 
@@ -69,8 +68,7 @@ class Logger {
             LogData(
                 type = LogType.INFO,
                 tag = tag,
-                message = message,
-                threadName = Thread.currentThread().name
+                message = message
             )
         )
 
@@ -80,8 +78,7 @@ class Logger {
             LogData(
                 type = LogType.ERROR,
                 tag = tag,
-                message = message,
-                threadName = Thread.currentThread().name
+                message = message
             )
         )
 
@@ -92,8 +89,7 @@ class Logger {
             LogData(
                 type = LogType.CRITICAL,
                 tag = tag,
-                message = message,
-                threadName = Thread.currentThread().name
+                message = message
             )
         )
 
@@ -103,13 +99,12 @@ class Logger {
             LogData(
                 type = LogType.WARNING,
                 tag = tag,
-                message = message,
-                threadName = Thread.currentThread().name
+                message = message
             )
         )
 
         fun log(data: LogData) {
-            Log.println(data.type.priority, data.tag, data.message)
+            Log.println(data.type.priority, data.tag?: data.type.name, data.message)
             logs.add(data)
 
             for ((_, listener) in listeners) {
