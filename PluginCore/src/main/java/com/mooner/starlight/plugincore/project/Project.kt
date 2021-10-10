@@ -1,6 +1,5 @@
 package com.mooner.starlight.plugincore.project
 
-import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.json
 import com.mooner.starlight.plugincore.language.ILanguage
@@ -36,7 +35,8 @@ class Project(
 
     val configManager: ConfigManager = ConfigManager(File(directory, CONFIG_FILE_NAME))
 
-    private val scope: CoroutineScope = CoroutineScope(Job() + Dispatchers.Default)
+    private lateinit var jobName: String
+    private lateinit var scope: CoroutineScope
     val isCompiled: Boolean
         get() = engine != null
     private var engine: Any? = null
@@ -58,7 +58,6 @@ class Project(
 
     fun callEvent(name: String, args: Array<Any>) {
         //logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
-
         if (!isCompiled) {
             val thread = Thread.currentThread()
             logger.w("EventHandler", """
@@ -79,8 +78,13 @@ class Project(
             return
         }
 
-        val jobName = "$tag-worker-${UUID.randomUUID()}"
-        val job = scope.launch(newSingleThreadContext(jobName)) {
+        if (!this::jobName.isInitialized || !this::scope.isInitialized) {
+            jobName = "$tag-worker-${UUID.randomUUID()}"
+            scope = CoroutineScope(newSingleThreadContext(jobName))
+            Logger.d("Allocated thread $jobName to project ${info.name}")
+        }
+
+        val job = scope.launch {
             lang.callFunction(engine!!, name, args)
         }
         JobLocker.registerJob(
