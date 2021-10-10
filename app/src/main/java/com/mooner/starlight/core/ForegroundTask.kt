@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageInfo
 import android.os.Build
 import android.os.IBinder
 import android.view.View
@@ -14,8 +15,10 @@ import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
+import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.logger.Logger
 import kotlin.system.exitProcess
+
 
 class ForegroundTask: Service() {
 
@@ -33,17 +36,25 @@ class ForegroundTask: Service() {
         super.onCreate()
 
         Thread.setDefaultUncaughtExceptionHandler { paramThread, paramThrowable ->
+            val pInfo: PackageInfo = applicationContext.packageManager.getPackageInfo(applicationContext.packageName, 0)
+            val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+                pInfo.longVersionCode
+            else
+                pInfo.versionCode
+
             Logger.wtf("StarLight-core", """
                 An uncaught critical exception occurred, shutting down...
                 [버그 제보시 아래 메세지를 첨부해주세요.]
                 ──────────
+                StarLight v${pInfo.versionName}(build ${versionCode})
+                PluginCore v${Info.PLUGINCORE_VERSION}
+                Build.VERSION.SDK_INT: ${Build.VERSION.SDK_INT}
                 thread  : ${paramThread.name}
-                message : ${paramThrowable.message}
+                message : ${paramThrowable.localizedMessage}
                 cause   : ${paramThrowable.cause}
                 ┉┉┉┉┉┉┉┉┉┉
                 stackTrace:
             """.trimIndent() + paramThrowable.stackTraceToString() + "\n──────────")
-            paramThrowable.printStackTrace()
             exitProcess(2)
         }
 
