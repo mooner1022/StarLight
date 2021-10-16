@@ -1,12 +1,11 @@
 package com.mooner.starlight
 
+import android.animation.LayoutTransition
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
-import android.view.Gravity
-import android.view.ViewGroup
+import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
@@ -19,21 +18,21 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.customview.customView
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.core.ForegroundTask
 import com.mooner.starlight.databinding.ActivityMainBinding
 import com.mooner.starlight.plugincore.core.Session.Companion.languageManager
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
 import com.mooner.starlight.plugincore.core.Session.Companion.projectManager
-import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.ViewPagerAdapter
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.utils.Utils
-import com.mooner.starlight.utils.ViewUtils
-import nl.bryanderidder.themedtogglebuttongroup.ThemedButton
-import nl.bryanderidder.themedtogglebuttongroup.ThemedToggleButtonGroup
 import kotlin.math.abs
+
 
 @SuppressLint("StaticFieldLeak")
 class MainActivity : AppCompatActivity() {
@@ -70,27 +69,24 @@ class MainActivity : AppCompatActivity() {
                 noAutoDismiss()
 
                 val nameEditText: EditText = findViewById(R.id.editTextNewProjectName)
-                val cardsLanguage: ThemedToggleButtonGroup = findViewById(R.id.cards_language)
 
                 //val languageSpinner: NiceSpinner
                 // = findViewById(R.id.spinnerLanguage)
                 nameEditText.text.clear()
 
+                val chipGroup: ChipGroup = this.findViewById(R.id.langSelectionGroup)
+                chipGroup.layoutTransition.enableTransitionType(LayoutTransition.CHANGING)
                 val languages = languageManager.getLanguages()
-                for (language in languages) {
-                    val button = ThemedButton(context).apply {
+                for ((index, language) in languages.withIndex()) {
+                    val chip = Chip(this.windowContext).apply {
+                        id = index
                         text = language.name
-                        setPadding(0, 0, 0, 0)
-                        gravity = Gravity.CENTER_VERTICAL
-                        //icon(drawable = Drawable.createFromPath((language as Language).getIconFile().path))
-                        //this.icon = context.getDrawable(R.drawable.ic_js)!!
+                        isCheckable = true
+                        if (index == 0) {
+                            isChecked = true
+                        }
                     }
-                    cardsLanguage.addView(button,
-                        ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.WRAP_CONTENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                    )
+                    chipGroup.addView(chip)
                 }
 
                 positiveButton(text = "생성") {
@@ -105,16 +101,20 @@ class MainActivity : AppCompatActivity() {
                         nameEditText.requestFocus()
                         return@positiveButton
                     }
-                    /*
-                    val selectedLang = languageManager.getLanguages()[languageSpinner.selectedIndex]
-                    projectLoader.newProject {
+
+                    val id = chipGroup.checkedChipId
+                    if (id == View.NO_ID) {
+                        Snackbar.make(this.view, "사용할 언어를 선택해주세요.", Snackbar.LENGTH_SHORT).show()
+                        return@positiveButton
+                    }
+                    val selectedLang = languageManager.getLanguages()[id]
+                    projectManager.newProject {
                         name = projectName
                         mainScript = "$projectName.${selectedLang.fileExtension}"
                         languageId = selectedLang.id
                         createdMillis = System.currentTimeMillis()
                         listeners = hashSetOf("default")
                     }
-                    */
                     it.dismiss()
                 }
                 negativeButton(text = "취소") {

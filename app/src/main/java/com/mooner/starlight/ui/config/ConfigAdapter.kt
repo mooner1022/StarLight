@@ -225,8 +225,6 @@ class ConfigAdapter(
 
         lateinit var customLayout: LinearLayout
 
-        var context: Context = itemView.context
-
         init {
             when(viewType) {
                 ConfigObjectType.TOGGLE.viewType -> {

@@ -7,25 +7,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.FragmentHomeBinding
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import com.mooner.starlight.utils.Utils
-import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.lang.Integer.min
-import java.util.*
 
 class HomeFragment : Fragment() {
+
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
+    /*
     private var uptimeTimer: Timer? = null
     private val mainScope = CoroutineScope(Dispatchers.Main)
     private val updateUpTimeTask: TimerTask
@@ -39,6 +31,7 @@ class HomeFragment : Fragment() {
             }
         }
     private lateinit var mAdapter: LogsRecyclerViewAdapter
+     */
 
     companion object {
         private const val LOGS_MAX_SIZE = 5
@@ -53,6 +46,7 @@ class HomeFragment : Fragment() {
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
+        /*
         val logs = Logger.filterNot(LogType.DEBUG)
         mAdapter = LogsRecyclerViewAdapter(requireContext())
 
@@ -89,37 +83,46 @@ class HomeFragment : Fragment() {
 
         uptimeTimer = Timer()
         uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
+        */
+
+        binding.widgets
 
         return binding.root
     }
 
     override fun onResume() {
         super.onResume()
+        /*
         if (uptimeTimer == null) {
             uptimeTimer = Timer()
             uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
         }
 
         bindLogger(mAdapter)
+         */
     }
 
     override fun onPause() {
         super.onPause()
+        /*
         if (uptimeTimer != null) {
             uptimeTimer!!.cancel()
             uptimeTimer = null
         }
 
         unbindLogger()
+        */
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        /*
         if (uptimeTimer != null) {
             uptimeTimer!!.cancel()
             uptimeTimer = null
         }
         unbindLogger()
+        */
         _binding = null
     }
 

@@ -89,7 +89,8 @@ class DebugRoomActivity: AppCompatActivity() {
                 onSend = onSend,
                 onMarkAsRead = onMarkAsRead
             ),
-            packageName = "com.kakao.talk"
+            packageName = "com.kakao.talk",
+            hasMention = false
         )
         project.callEvent(
             name = "onMessage",

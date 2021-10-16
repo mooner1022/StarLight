@@ -52,8 +52,9 @@ object ApplicationSession {
 
         Session.init(starlightDir)
         Session.languageManager.apply {
-            addLanguage(File(starlightDir, "assets/JS_V8/").path, JSV8())
-            addLanguage(File(starlightDir, "assets/JS_RHINO/").path, JSRhino())
+            val dummyPath = File(starlightDir, "").path
+            addLanguage(dummyPath, JSV8())
+            addLanguage(dummyPath, JSRhino())
             //addLanguage(GraalVMLang())
         }
 

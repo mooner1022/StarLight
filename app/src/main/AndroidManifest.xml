@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
           package="com.mooner.starlight">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
@@ -16,6 +17,7 @@
     </queries>
 
     <application
+            tools:replace="android:icon"
         android:allowBackup="true"
         android:extractNativeLibs="false"
         android:fullBackupContent="@xml/backup_descriptor"

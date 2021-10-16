@@ -27,5 +27,5 @@ abstract class Language: ILanguage {
 
     protected fun getAsset(directory: String): File = File(Session.languageManager.getAssetPath(id), directory)
 
-    fun getIconFile(): File = getAsset("$id.png")
+    fun getIconFile(): File = getAsset("icon.png")
 }

@@ -29,7 +29,7 @@ class JSRhino: Language() {
     override val id: String
         get() = "JS_RHINO"
     override val name: String
-        get() = "자바스크립트 (라이노)"
+        get() = "자바스크립트(라이노)"
     override val fileExtension: String
         get() = "js"
     override val requireRelease: Boolean = true
@@ -113,7 +113,7 @@ class JSRhino: Language() {
             //engine.put(methodBlock.blockName, methodBlock.instance)
         }
         //engine.eval(code)
-        context.evaluateString(scope, code, name, 1, null)
+        context.evaluateString(scope, code, project?.info?.name?: name, 1, null)
         //scope.put()
         return scope
     }

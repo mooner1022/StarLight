@@ -30,7 +30,7 @@ class JSV8: Language() {
     override val id: String
         get() = "JS_V8"
     override val name: String
-        get() = "자바스크립트 (V8)"
+        get() = "자바스크립트(V8)"
     override val fileExtension: String
         get() = "js"
     override val requireRelease: Boolean

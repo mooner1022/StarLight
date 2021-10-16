@@ -1,58 +1,41 @@
-package com.mooner.starlight.ui.config
+package com.mooner.starlight.ui.home
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
-import androidx.recyclerview.widget.LinearLayoutManager
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.config.*
-import com.mooner.starlight.plugincore.models.TypedString
+import com.mooner.starlight.plugincore.config.CategoryConfigObject
+import com.mooner.starlight.plugincore.config.ConfigObjectType
 
-class ParentAdapter(
+class WidgetsAdapter (
     private val context: Context,
     private val onConfigChanged: (parentId: String, id: String, view: View, data: Any) -> Unit
-): RecyclerView.Adapter<ParentAdapter.ViewHolder>() {
+): RecyclerView.Adapter<WidgetsAdapter.ViewHolder>() {
+
     var data: List<CategoryConfigObject> = mutableListOf()
-    var saved: MutableMap<String, MutableMap<String, TypedString>> = hashMapOf()
-    var isHavingError = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.config_category, parent, false)
         return ViewHolder(view, viewType)
     }
 
-    override fun getItemCount(): Int = data.size
+    override fun getItemCount(): Int {
+        return data.size
+    }
 
     override fun getItemViewType(position: Int): Int {
         return ConfigObjectType.CATEGORY.viewType
     }
 
+    
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val viewData = data[position]
 
-        holder.categoryTitle.text = viewData.title
-        holder.categoryTitle.apply {
-            text = viewData.title
-            setTextColor(viewData.textColor)
-        }
 
-        val children = viewData.items
-        val recyclerAdapter = ConfigAdapter(context) { id, view, data ->
-            onConfigChanged(viewData.id, id, view, data)
-        }.apply {
-            this.data = children
-            saved = this@ParentAdapter.saved[viewData.id]?.toMutableMap()?: mutableMapOf()
-            notifyDataSetChanged()
-        }
-        val mLayoutManager = LinearLayoutManager(context)
-        holder.categoryItems.apply {
-            adapter = recyclerAdapter
-            layoutManager = mLayoutManager
-        }
     }
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")

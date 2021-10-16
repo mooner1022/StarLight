@@ -1,3 +1,4 @@
+
 package com.mooner.starlight.plugincore.project
 
 import com.mooner.starlight.plugincore.core.Session
@@ -170,5 +171,11 @@ class Project(
 
     fun getLanguage(): ILanguage {
         return lang
+    }
+
+    fun destroy() {
+        if (this::scope.isInitialized) {
+            (scope.coroutineContext as CoroutineDispatcher).cancel()
+        }
     }
 }

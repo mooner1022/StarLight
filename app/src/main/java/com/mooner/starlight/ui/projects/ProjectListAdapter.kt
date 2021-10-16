@@ -8,11 +8,15 @@ import android.view.ViewGroup
 import android.widget.Button
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import coil.size.Scale
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
+import com.mooner.starlight.languages.JSRhino
+import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
@@ -26,7 +30,7 @@ class ProjectListAdapter(
 ) : RecyclerView.Adapter<ProjectListAdapter.ProjectListViewHolder>() {
     var data = listOf<Project>()
     private val mainContext = Dispatchers.Main
-    private val compileContext = Dispatchers.Default + CoroutineName("ProjectCompileThread")
+    private val compileContext = Dispatchers.Default
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectListViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.card_project_list, parent, false)
@@ -77,7 +81,15 @@ class ProjectListAdapter(
             }
         }
 
-        //holder.expandable.setIcon(loader = project.getLanguage().loadIcon)
+        holder.expandable.setIcon {
+            when(project.getLanguage().id) {
+                "JS_RHINO" -> it.load(R.drawable.ic_js)
+                "JS_V8" -> it.load(R.drawable.ic_v8)
+                else -> it.load((project.getLanguage() as Language).getIconFile()) {
+                    scale(Scale.FIT)
+                }
+            }
+        }
 
         holder.expandable.setTitle(titleText = config.name)
 

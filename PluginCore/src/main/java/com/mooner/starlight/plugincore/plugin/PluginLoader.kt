@@ -41,10 +41,10 @@ class PluginLoader {
                 configs[config.id] = Pair(file, config)
             } catch (e: FileNotFoundException) {
                 Logger.e(T, e.toString())
-                throw InvalidPluginException(e.toString())
+                //throw InvalidPluginException(e.toString())
             } catch (e: IllegalStateException) {
                 Logger.e(T, e.toString())
-                throw InvalidPluginException(e.toString())
+                //throw InvalidPluginException(e.toString())
             } catch (e: Exception) {
                 Logger.e(T, "Unexpected error while loading config: $e")
             }

@@ -17,12 +17,13 @@ import com.mooner.starlight.plugincore.models.ChatRoom
 import com.mooner.starlight.plugincore.models.ChatSender
 import com.mooner.starlight.plugincore.models.Message
 import java.io.ByteArrayOutputStream
+import java.util.*
 
 class NotificationListener: NotificationListenerService() {
 
-    private val sessions: HashMap<String, Notification.Action> = hashMapOf()
+    private val sessions: MutableMap<String, Notification.Action> = WeakHashMap()
     private val isAllPowerOn: Boolean
-    get() = Session.generalConfig[GeneralConfig.CONFIG_ALL_PROJECTS_POWER, "true"].toBoolean()
+        get() = Session.generalConfig[GeneralConfig.CONFIG_ALL_PROJECTS_POWER, "true"].toBoolean()
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
@@ -60,7 +61,8 @@ class NotificationListener: NotificationListenerService() {
                         session = act,
                         context = applicationContext
                     ),
-                    packageName = sbn.packageName
+                    packageName = sbn.packageName,
+                    hasMention = hasMention
                 )
 
                 Logger.d("NotificationListenerService", "message : $message sender : $sender nRoom : $room nSession : $act")
@@ -68,6 +70,7 @@ class NotificationListener: NotificationListenerService() {
                 for (project in projects) {
                     project.callEvent("onMessage", arrayOf(data))
                 }
+                stopSelf()
             }
         }
     }
