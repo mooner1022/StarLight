@@ -50,7 +50,7 @@ class LogsRecyclerViewAdapter(
             LogType.CRITICAL -> R.color.code_error
         }
         holder.stateColor.setCardBackgroundColor(context.getColor(color))
-        holder.title.text = viewData.tag
+        holder.title.text = viewData.tag?: viewData.type.name
         holder.content.text = viewData.message
         holder.timestamp.text = formatDate(viewData.millis)
     }

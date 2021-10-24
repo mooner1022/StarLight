@@ -1,21 +1,25 @@
 
 package com.mooner.starlight.ui.home
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.mooner.starlight.databinding.FragmentHomeBinding
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
+import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
+
+    private lateinit var widgetsAdapter: WidgetsAdapter
 
     /*
     private var uptimeTimer: Timer? = null
@@ -33,12 +37,6 @@ class HomeFragment : Fragment() {
     private lateinit var mAdapter: LogsRecyclerViewAdapter
      */
 
-    companion object {
-        private const val LOGS_MAX_SIZE = 5
-        private const val T = "HomeFragment"
-    }
-
-    @SuppressLint("SetTextI18n")
     override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
@@ -85,37 +83,50 @@ class HomeFragment : Fragment() {
         uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
         */
 
-        binding.widgets
+        widgetsAdapter = WidgetsAdapter(requireContext())
+        widgetsAdapter.data = Session.widgetManager.getWidgets()
+        widgetsAdapter.notifyItemRangeInserted(0, widgetsAdapter.data.size)
+        with(binding.widgets) {
+            itemAnimator = FadeInUpAnimator()
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = widgetsAdapter
+        }
 
         return binding.root
     }
-
+    /*
     override fun onResume() {
         super.onResume()
-        /*
         if (uptimeTimer == null) {
             uptimeTimer = Timer()
             uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
         }
-
         bindLogger(mAdapter)
-         */
     }
 
     override fun onPause() {
         super.onPause()
-        /*
         if (uptimeTimer != null) {
             uptimeTimer!!.cancel()
             uptimeTimer = null
         }
-
         unbindLogger()
-        */
+    }
+    */
+
+    override fun onPause() {
+        super.onPause()
+        widgetsAdapter.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        widgetsAdapter.onResume()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        widgetsAdapter.onDestroy()
         /*
         if (uptimeTimer != null) {
             uptimeTimer!!.cancel()
@@ -124,17 +135,5 @@ class HomeFragment : Fragment() {
         unbindLogger()
         */
         _binding = null
-    }
-
-    private fun bindLogger(mAdapter: LogsRecyclerViewAdapter) {
-        Logger.bindListener(T) {
-            if (it.type != LogType.DEBUG) {
-                mAdapter.pushLog(it, LOGS_MAX_SIZE)
-            }
-        }
-    }
-
-    private fun unbindLogger() {
-        Logger.unbindListener(T)
     }
 }

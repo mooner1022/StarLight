@@ -7,6 +7,7 @@ import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import com.mooner.starlight.plugincore.project.ProjectManager
+import com.mooner.starlight.plugincore.widget.WidgetManager
 import kotlinx.serialization.json.Json
 import java.io.File
 
@@ -55,12 +56,14 @@ class Session {
         val pluginLoader: PluginLoader
             get() = mPluginLoader!!
 
+        private var mWidgetManager: WidgetManager? = null
+        val widgetManager: WidgetManager
+            get() = mWidgetManager!!
+
         const val isDebugging: Boolean = true
 
         fun init(baseDir: File) {
-            Logger.e("lol", Thread.currentThread().stackTrace.joinToString { it.className })
             val preStack = Thread.currentThread().stackTrace[2]
-            Logger.i("lol", """${preStack.className} / ${preStack.fileName} : ${preStack.methodName}""")
             if (!preStack.className.startsWith("com.mooner.starlight")) {
                 throw IllegalAccessException("Illegal access to internal function init()")
             }
@@ -68,6 +71,7 @@ class Session {
             val projectDir = File(baseDir, "projects/")
 
             mLanguageManager = LanguageManager()
+            mWidgetManager   = WidgetManager()
             mPluginLoader    = PluginLoader()
             mProjectManager  = ProjectManager(projectDir)
             mProjectLoader   = ProjectLoader(projectDir)
