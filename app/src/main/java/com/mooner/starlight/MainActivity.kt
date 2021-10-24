@@ -26,11 +26,8 @@ import com.mooner.starlight.databinding.ActivityMainBinding
 import com.mooner.starlight.plugincore.core.Session.Companion.languageManager
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
 import com.mooner.starlight.plugincore.core.Session.Companion.projectManager
-import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.ViewPagerAdapter
-import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import com.mooner.starlight.utils.Utils
 import com.mooner.starlight.utils.Utils.Companion.formatStringRes
 import kotlin.math.abs
 
@@ -167,20 +164,6 @@ class MainActivity : AppCompatActivity() {
                     binding.imageViewLogo.alpha = percent
                 }
         )
-
-
-        val logs = Logger.filterNot(LogType.DEBUG)
-        val logsAdapter = LogsRecyclerViewAdapter(applicationContext)
-        if (logs.isNotEmpty()) {
-            logsAdapter.data = logs.toMutableList()
-            logsAdapter.notifyItemRangeInserted(0, logs.size)
-        }
-
-        Logger.bindListener(T) {
-            if (it.type != LogType.DEBUG) {
-                logsAdapter.pushLog(it)
-            }
-        }
     }
 
     fun onPageChanged(id: Int) {
@@ -230,11 +213,6 @@ class MainActivity : AppCompatActivity() {
                 binding.fabNewProject.hide()
             }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Logger.unbindListener(T)
     }
 
     override fun onSupportNavigateUp(): Boolean {

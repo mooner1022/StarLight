@@ -70,7 +70,6 @@ class NotificationListener: NotificationListenerService() {
                 for (project in projects) {
                     project.callEvent("onMessage", arrayOf(data))
                 }
-                stopSelf()
             }
         }
     }

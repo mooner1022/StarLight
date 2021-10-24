@@ -83,6 +83,7 @@ class ForegroundTask: Service() {
                 .build()
             startForeground(NOTIFICATION_ID, notification)
         }
+        isRunning = true
     }
 
     override fun onBind(intent: Intent): IBinder? {

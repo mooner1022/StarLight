@@ -35,7 +35,7 @@ data class ToggleConfigObject(
     private val defaultValue: Boolean,
     val icon: Icon,
     @ColorInt
-    val iconTintColor: Int = Utils.color { "#000000" },
+    val iconTintColor: Int,
     override val dependency: String? = null
 ): ConfigObject {
     val listeners: ArrayList<(isEnabled: Boolean) -> Unit> = arrayListOf()
@@ -54,7 +54,7 @@ data class SliderConfigObject(
     private val defaultValue: Int,
     val icon: Icon,
     @ColorInt
-    val iconTintColor: Int = Utils.color { "#000000" },
+    val iconTintColor: Int,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -74,7 +74,7 @@ data class StringConfigObject(
     val require: (String) -> String? = { null },
     val icon: Icon,
     @ColorInt
-    val iconTintColor: Int = Utils.color { "#000000" },
+    val iconTintColor: Int,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -92,7 +92,7 @@ data class SpinnerConfigObject(
     private val defaultIndex: Int = 0,
     val icon: Icon,
     @ColorInt
-    val iconTintColor: Int = Utils.color { "#000000" },
+    val iconTintColor: Int,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -110,7 +110,7 @@ data class ButtonConfigObject(
     private val buttonType: Type = Type.FLAT,
     val icon: Icon,
     @ColorInt
-    val iconTintColor: Int = Utils.color { "#000000" },
+    val iconTintColor: Int,
     @ColorInt
     val backgroundColor: Int? = null,
     override val dependency: String? = null

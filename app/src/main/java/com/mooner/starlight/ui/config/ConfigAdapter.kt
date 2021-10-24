@@ -2,7 +2,6 @@ package com.mooner.starlight.ui.config
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.PorterDuff
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -16,6 +15,7 @@ import coil.load
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.config.*
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.models.TypedString
 import org.angmarch.views.NiceSpinner
 
@@ -25,6 +25,7 @@ class ConfigAdapter(
 ): RecyclerView.Adapter<ConfigAdapter.ConfigViewHolder>() {
     var data: List<ConfigObject> = mutableListOf()
     var saved: MutableMap<String, TypedString> = hashMapOf()
+    private val toggleValues: MutableMap<String, Boolean> = hashMapOf()
     var isHavingError = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ConfigViewHolder {
@@ -56,8 +57,10 @@ class ConfigAdapter(
 
         when(viewData.viewType) {
             ConfigObjectType.TOGGLE.viewType -> {
+                val toggleValue = getDefault() as Boolean
+                toggleValues[viewData.id] = toggleValue
                 holder.textToggle.text = viewData.name
-                holder.toggle.isChecked = getDefault() as Boolean
+                holder.toggle.isChecked = toggleValue
                 holder.icon.apply {
                     load((viewData as ToggleConfigObject).icon.drawableRes)
                     setColorFilter(viewData.iconTintColor)
@@ -144,7 +147,7 @@ class ConfigAdapter(
                 }
                 holder.icon.apply {
                     load(langConf.icon.drawableRes)
-                    setColorFilter(viewData.iconTintColor, PorterDuff.Mode.MULTIPLY)
+                    setColorFilter(viewData.iconTintColor)
                 }
                 if (langConf.backgroundColor != null) {
                     holder.layoutButton.setBackgroundColor(langConf.backgroundColor!!)
@@ -175,7 +178,7 @@ class ConfigAdapter(
                 ?: throw IllegalArgumentException("Cannot find dependency [${viewData.dependency}] for object [${viewData.id}]")
             if (parent.type != ConfigObjectType.TOGGLE) throw IllegalArgumentException("Type of object [${parent.id}] does not extend ConfigObjectType.TOGGLE")
 
-            (parent as ToggleConfigObject).listeners.add { isEnabled ->
+            fun setEnabled(isEnabled: Boolean) {
                 when(viewData.viewType) {
                     ConfigObjectType.TOGGLE.viewType -> {
                         holder.toggle.isEnabled = isEnabled
@@ -189,7 +192,7 @@ class ConfigAdapter(
                     ConfigObjectType.SPINNER.viewType -> {
                         holder.spinner.isEnabled = isEnabled
                     }
-                    ConfigObjectType.BUTTON_CARD.viewType -> {
+                    ConfigObjectType.BUTTON_FLAT.viewType -> {
                         holder.textButton.isEnabled = isEnabled
                         holder.layoutButton.isEnabled = isEnabled
                     }
@@ -198,6 +201,14 @@ class ConfigAdapter(
                         holder.cardViewButton.isEnabled = isEnabled
                     }
                 }
+            }
+
+            (parent as ToggleConfigObject).listeners.add { isEnabled ->
+                setEnabled(isEnabled)
+            }
+
+            if (toggleValues.containsKey(viewData.dependency)) {
+                setEnabled(toggleValues[viewData.dependency]!!)
             }
         }
     }
