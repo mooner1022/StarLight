@@ -1,6 +1,5 @@
 package com.mooner.starlight.core
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Environment
 import com.mooner.starlight.R
@@ -12,23 +11,24 @@ import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.plugin.EventListener
 import com.mooner.starlight.plugincore.method.MethodManager
+import com.mooner.starlight.plugincore.plugin.EventListener
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
+import com.mooner.starlight.ui.widget.DummyWidgetSlim
+import com.mooner.starlight.ui.widget.LogsWidget
+import com.mooner.starlight.ui.widget.UptimeWidgetDefault
+import com.mooner.starlight.ui.widget.UptimeWidgetSlim
 import java.io.File
 
-@SuppressLint("StaticFieldLeak")
 object ApplicationSession {
-    private val pluginLoadTime: HashMap<String, Long> = hashMapOf()
-
     private var mInitMillis: Long = 0L
     val initMillis: Long
         get() = mInitMillis
 
     var isInitComplete: Boolean = false
 
-    internal fun init(onPhaseChanged: (phase: String) -> Unit, onFinished: () -> Unit) {
+    internal fun init(context: Context, onPhaseChanged: (phase: String) -> Unit = {}, onFinished: () -> Unit = {}) {
         if (isInitComplete) {
             onFinished()
             return
@@ -52,26 +52,23 @@ object ApplicationSession {
 
         Session.init(starlightDir)
         Session.languageManager.apply {
-            val dummyPath = File(starlightDir, "").path
-            addLanguage(dummyPath, JSV8())
-            addLanguage(dummyPath, JSRhino())
+            addLanguage("", JSV8())
+            addLanguage("", JSRhino())
             //addLanguage(GraalVMLang())
         }
 
-        var preTime: Long = 0
-        var preName = ""
-        pluginLoader.loadPlugins {
-            if (preTime != 0L) {
-                pluginLoadTime[preName] = System.currentTimeMillis() - preTime
-            }
-            preTime = System.currentTimeMillis()
-            onPhaseChanged(String.format(context.getString(R.string.step_plugins), it))
-            preName = it
-        }
-        pluginLoadTime[preName] = System.currentTimeMillis() - preTime
+
+        pluginLoader.loadPlugins { onPhaseChanged(String.format(context.getString(R.string.step_plugins), it)) }
 
         onPhaseChanged(context.getString(R.string.step_projects))
         Session.projectLoader.loadProjects()
+
+        Session.widgetManager.apply {
+            addWidget(DummyWidgetSlim())
+            addWidget(UptimeWidgetDefault())
+            addWidget(UptimeWidgetSlim())
+            addWidget(LogsWidget())
+        }
 
         isInitComplete = true
         onFinished()
@@ -87,6 +84,6 @@ object ApplicationSession {
         }
     }
 
-    lateinit var context: Context
+    //lateinit var context: Context
     lateinit var eventListeners: List<EventListener>
 }
