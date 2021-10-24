@@ -50,7 +50,7 @@ class DebugRoomActivity: AppCompatActivity() {
         roomName = intent.getStringExtra("roomName")?: "ERROR"
         binding.roomTitle.text = roomName
 
-        project = Session.projectLoader.getProject(roomName)!!
+        project = Session.projectManager.getProject(roomName)!!
 
         userChatAdapter = DebugRoomChatAdapter(this, chatList)
         binding.chatRecyclerView.adapter = userChatAdapter
@@ -85,11 +85,12 @@ class DebugRoomActivity: AppCompatActivity() {
             ),
             room = DebugChatRoom(
                 name = roomName,
+                isGroupChat = false,
                 onSend = onSend,
                 onMarkAsRead = onMarkAsRead
             ),
-            isGroupChat = false,
-            packageName = "com.kakao.talk"
+            packageName = "com.kakao.talk",
+            hasMention = false
         )
         project.callEvent(
             name = "onMessage",

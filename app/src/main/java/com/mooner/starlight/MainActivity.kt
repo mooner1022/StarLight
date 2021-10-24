@@ -1,9 +1,11 @@
 package com.mooner.starlight
 
+import android.animation.LayoutTransition
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
@@ -16,18 +18,22 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.customview.customView
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.core.ForegroundTask
 import com.mooner.starlight.databinding.ActivityMainBinding
-import com.mooner.starlight.plugincore.core.Session.Companion.getLanguageManager
+import com.mooner.starlight.plugincore.core.Session.Companion.languageManager
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
-import com.mooner.starlight.plugincore.core.Session.Companion.projectLoader
+import com.mooner.starlight.plugincore.core.Session.Companion.projectManager
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.ViewPagerAdapter
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.utils.Utils
-import org.angmarch.views.NiceSpinner
+import com.mooner.starlight.utils.Utils.Companion.formatStringRes
 import kotlin.math.abs
+
 
 @SuppressLint("StaticFieldLeak")
 class MainActivity : AppCompatActivity() {
@@ -45,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(view)
 
         if (!ForegroundTask.isRunning) {
-            println("start service")
+            Logger.d(T, "Starting foreground task...")
             val intent = Intent(this, ForegroundTask::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(intent)
@@ -63,29 +69,47 @@ class MainActivity : AppCompatActivity() {
                 cancelOnTouchOutside(true)
                 noAutoDismiss()
 
-                val nameEditText = findViewById<EditText>(R.id.editTextNewProjectName)
-                val languageSpinner: NiceSpinner = findViewById(R.id.spinnerLanguage)
-                val objects = getLanguageManager().getLanguages().map { it.name }.toList()
+                val nameEditText: EditText = findViewById(R.id.editTextNewProjectName)
+
+                //val languageSpinner: NiceSpinner
+                // = findViewById(R.id.spinnerLanguage)
                 nameEditText.text.clear()
-                with(languageSpinner) {
-                    setBackgroundColor(context.getColor(R.color.transparent))
-                    attachDataSource(objects)
+
+                val chipGroup: ChipGroup = this.findViewById(R.id.langSelectionGroup)
+                chipGroup.layoutTransition.enableTransitionType(LayoutTransition.CHANGING)
+                val languages = languageManager.getLanguages()
+                for ((index, language) in languages.withIndex()) {
+                    val chip = Chip(this.windowContext).apply {
+                        id = index
+                        text = language.name
+                        isCheckable = true
+                        if (index == 0) {
+                            isChecked = true
+                        }
+                    }
+                    chipGroup.addView(chip)
                 }
 
-                positiveButton(text = "추가") {
+                positiveButton(text = "생성") {
                     val projectName = nameEditText.text.toString()
-                    if (projectLoader.getProject(projectName) != null) {
+                    if (projectManager.getProject(projectName) != null) {
                         nameEditText.error = "이미 존재하는 이름이에요."
                         nameEditText.requestFocus()
                         return@positiveButton
                     }
-                    if (!"(^[-_0-9A-Za-z]+\$)".toRegex().matches(projectName)) {
-                        nameEditText.error = "이름은 숫자와 -, _, 영문자만 가능해요."
+                    if (!"(^[-_0-9A-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+\$)".toRegex().matches(projectName)) {
+                        nameEditText.error = "이름은 숫자와 -, _, 영문자, 한글만 가능해요."
                         nameEditText.requestFocus()
                         return@positiveButton
                     }
-                    val selectedLang = getLanguageManager().getLanguages()[languageSpinner.selectedIndex]
-                    projectLoader.newProject {
+
+                    val id = chipGroup.checkedChipId
+                    if (id == View.NO_ID) {
+                        Snackbar.make(this.view, "사용할 언어를 선택해주세요.", Snackbar.LENGTH_SHORT).show()
+                        return@positiveButton
+                    }
+                    val selectedLang = languageManager.getLanguages()[id]
+                    projectManager.newProject {
                         name = projectName
                         mainScript = "$projectName.${selectedLang.fileExtension}"
                         languageId = selectedLang.id
@@ -111,6 +135,7 @@ class MainActivity : AppCompatActivity() {
                     0 -> R.id.nav_home
                     1 -> R.id.nav_projects
                     2 -> R.id.nav_plugins
+                    3 -> R.id.nav_settings
                     else -> R.id.nav_home
                 }
                 binding.bottomBar.menu.select(id)
@@ -124,6 +149,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_home -> 0
                 R.id.nav_projects -> 1
                 R.id.nav_plugins -> 2
+                R.id.nav_settings -> 3
                 else -> 0
             }
             binding.viewPager.setCurrentItem(index, true)
@@ -165,9 +191,9 @@ class MainActivity : AppCompatActivity() {
                 updateFab(isShown = false)
             }
             R.id.nav_projects -> {
-                val count = projectLoader.getProjects().count { it.config.isEnabled }
+                val count = projectManager.getProjects().count { it.info.isEnabled }
                 binding.titleText.text = applicationContext.getText(R.string.title_projects)
-                binding.statusText.text = Utils.formatStringRes(
+                binding.statusText.text = applicationContext.formatStringRes(
                     R.string.subtitle_projects,
                     mapOf(
                         "count" to count.toString()
@@ -178,12 +204,17 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_plugins -> {
                 val count = pluginLoader.getPlugins().size
                 binding.titleText.text = applicationContext.getText(R.string.title_plugins)
-                binding.statusText.text = Utils.formatStringRes(
+                binding.statusText.text = applicationContext.formatStringRes(
                     R.string.subtitle_plugins,
                     mapOf(
                         "count" to count.toString()
                     )
                 )
+                updateFab(isShown = false)
+            }
+            R.id.nav_settings -> {
+                binding.titleText.text = applicationContext.getText(R.string.title_settings)
+                binding.statusText.text = ""
                 updateFab(isShown = false)
             }
         }

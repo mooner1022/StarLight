@@ -19,8 +19,9 @@ import com.mooner.starlight.models.Align
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.project.Project
-import com.mooner.starlight.utils.Utils
+import com.mooner.starlight.utils.Utils.Companion.formatStringRes
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
+import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 
 class ProjectsFragment : Fragment() {
 
@@ -35,11 +36,11 @@ class ProjectsFragment : Fragment() {
         ALIGN_COMPILED
     )
     private var alignState: Align<Project> = getAlignByName(
-        Session.getGeneralConfig()
+        Session.generalConfig
                 [GeneralConfig.CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name]
     )?: DEFAULT_ALIGN
-    private var isReversed: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PROJECTS_REVERSED,"false"].toBoolean()
-    private var isActiveFirst: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST,"false"].toBoolean()
+    private var isReversed: Boolean = Session.generalConfig[GeneralConfig.CONFIG_PROJECTS_REVERSED,"false"].toBoolean()
+    private var isActiveFirst: Boolean = Session.generalConfig[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST,"false"].toBoolean()
     
     companion object {
         private const val T = "ProjectsFragment"
@@ -50,9 +51,9 @@ class ProjectsFragment : Fragment() {
             icon = R.drawable.ic_round_sort_by_alpha_24,
             sort = { list, args ->
                 val comparable = if (args.containsKey("activeFirst")) {
-                    compareBy<Project>({ it.config.name }, { it.config.isEnabled })
+                    compareBy<Project>({ it.info.name }, { it.info.isEnabled })
                 } else {
-                    compareBy { it.config.name }
+                    compareBy { it.info.name }
                 }
                 list.sortedWith(comparable)
             }
@@ -63,9 +64,9 @@ class ProjectsFragment : Fragment() {
             icon = R.drawable.ic_baseline_edit_calendar_24,
             sort = { list, args ->
                 val comparable = if (args.containsKey("activeFirst")) {
-                    compareBy<Project>({ it.config.createdMillis }, { it.config.isEnabled })
+                    compareBy<Project>({ it.info.createdMillis }, { it.info.isEnabled })
                 } else {
-                    compareBy { it.config.createdMillis }
+                    compareBy { it.info.createdMillis }
                 }
                 list.sortedWith(comparable).asReversed()
             }
@@ -76,7 +77,7 @@ class ProjectsFragment : Fragment() {
             icon = R.drawable.ic_round_refresh_24,
             sort = { list, args ->
                 val comparable = if (args.containsKey("activeFirst")) {
-                    compareBy<Project>({ it.isCompiled }, { it.config.isEnabled })
+                    compareBy<Project>({ it.isCompiled }, { it.info.isEnabled })
                 } else {
                     compareBy { it.isCompiled }
                 }
@@ -109,7 +110,7 @@ class ProjectsFragment : Fragment() {
             }
         }
 
-        binding.textViewProjectAlignState.text = Utils.formatStringRes(
+        binding.textViewProjectAlignState.text = requireContext().formatStringRes(
             R.string.project_align_state,
             mapOf(
                 "state" to if (isReversed) alignState.reversedName else alignState.name
@@ -119,16 +120,13 @@ class ProjectsFragment : Fragment() {
 
         recyclerAdapter = ProjectListAdapter(requireContext())
 
-        Session.projectLoader.bindListener(T) { projects ->
-            this.projects = projects
-            update()
-        }
+        bindListener()
 
         val data = Session.projectLoader.loadProjects(false)
         this.projects = data
         update()
 
-        projects = Session.projectLoader.getProjects()
+        projects = Session.projectManager.getProjects()
         recyclerAdapter.data = if (isReversed) {
             alignState.sort(
                 projects,
@@ -147,7 +145,7 @@ class ProjectsFragment : Fragment() {
         recyclerAdapter.notifyItemRangeInserted(0, recyclerAdapter.data.size)
 
         with(binding.recyclerViewProjectList) {
-            itemAnimator = FadeInLeftAnimator()
+            itemAnimator = FadeInUpAnimator()
             layoutManager = LinearLayoutManager(requireContext())
             adapter = recyclerAdapter
         }
@@ -180,7 +178,7 @@ class ProjectsFragment : Fragment() {
     }
 
     private fun update(align: Align<Project> = alignState, isReversed: Boolean = this.isReversed, activeFirst: Boolean = this.isActiveFirst) {
-        binding.textViewProjectAlignState.text = Utils.formatStringRes(
+        binding.textViewProjectAlignState.text = requireContext().formatStringRes(
             R.string.project_align_state,
             mapOf(
                 "state" to if (isReversed) align.reversedName else align.name
@@ -204,7 +202,7 @@ class ProjectsFragment : Fragment() {
                 )
             }
         )
-        Session.getGeneralConfig().also {
+        Session.generalConfig.also {
             it[GeneralConfig.CONFIG_PROJECTS_ALIGN] = align.name
             it[GeneralConfig.CONFIG_PROJECTS_REVERSED] = isReversed.toString()
             it[GeneralConfig.CONFIG_PROJECTS_ACTIVE_FIRST] = activeFirst.toString()
@@ -212,8 +210,33 @@ class ProjectsFragment : Fragment() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        unbindListener()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bindListener()
+        if (this.projects.size != Session.projectManager.getProjects().size) {
+            this.projects = Session.projectManager.getProjects()
+            update()
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        Session.projectLoader.unbindListener(T)
+        unbindListener()
+    }
+
+    private fun bindListener() {
+        Session.projectManager.bindListener(T) { projects ->
+            this.projects = projects
+            update()
+        }
+    }
+
+    private fun unbindListener() {
+        Session.projectManager.unbindListener(T)
     }
 }

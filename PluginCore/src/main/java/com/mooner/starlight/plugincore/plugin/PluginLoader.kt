@@ -4,7 +4,6 @@ import android.os.Environment
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Version
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.event.EventListener
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.utils.Utils.Companion.readString
 import java.io.File
@@ -16,9 +15,9 @@ import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
 class PluginLoader {
-    private var plugins: HashSet<Plugin> = hashSetOf()
-    private val classes: HashMap<String, Class<*>> = hashMapOf()
-    private val loaders: LinkedHashMap<String, PluginClassLoader> = LinkedHashMap()
+    private var plugins: MutableSet<Plugin> = hashSetOf()
+    private val classes: MutableMap<String, Class<*>> = hashMapOf()
+    private val loaders: MutableMap<String, PluginClassLoader> = LinkedHashMap()
 
     companion object {
         private const val T = "PluginLoader"
@@ -33,24 +32,24 @@ class PluginLoader {
             dir.mkdirs()
         }
 
-        val configs: HashMap<String, Pair<File, PluginConfig>> = hashMapOf()
-        for (file in dir.listFiles { it -> it.name.substringAfterLast(".") in listOf("apk", "jar") }?: arrayOf()) {
+        val configs: MutableMap<String, Pair<File, PluginConfig>> = hashMapOf()
+        for (file in dir.listFiles { it -> it.extension in listOf("apk", "jar") }?: arrayOf()) {
             val config: PluginConfig
             try {
                 config = loadConfigFile(file)
                 configs[config.id] = Pair(file, config)
             } catch (e: FileNotFoundException) {
                 Logger.e(T, e.toString())
-                throw InvalidPluginException(e.toString())
+                //throw InvalidPluginException(e.toString())
             } catch (e: IllegalStateException) {
                 Logger.e(T, e.toString())
-                throw InvalidPluginException(e.toString())
+                //throw InvalidPluginException(e.toString())
             } catch (e: Exception) {
                 Logger.e(T, "Unexpected error while loading config: $e")
             }
         }
 
-        val plugins: HashSet<Plugin> = hashSetOf()
+        val plugins: MutableSet<Plugin> = hashSetOf()
         for ((file: File, config: PluginConfig) in configs.values) {
             try {
                 for (dependency in config.depend) {
@@ -142,7 +141,7 @@ class PluginLoader {
                 val entry = entries.nextElement() ?: break
                 if (!entry.name.startsWith("assets/")) continue
                 val fileName = entry.name.split("assets/").last()
-                val writeFile = File(plugin.getDataFolder(), fileName)
+                val writeFile = File(plugin.getDataFolder().resolve("assets/"), fileName)
 
                 if (force || !writeFile.exists()) {
                     val entStream = jar.getInputStream(entry)
@@ -201,7 +200,7 @@ class PluginLoader {
     }
 
     fun registerListener(listener: EventListener) {
-        val methods: HashSet<Method>
+        val methods: MutableSet<Method>
         try {
             val publicMethods = listener.javaClass.methods
             methods = HashSet(publicMethods.size, Float.MAX_VALUE)

@@ -6,14 +6,14 @@ import android.view.View
 import androidx.annotation.ColorInt
 import com.mooner.starlight.plugincore.utils.Icon
 
-fun config(block: ConfigBuilder.() -> Unit): List<ConfigObject> {
+fun config(block: ConfigBuilder.() -> Unit): List<CategoryConfigObject> {
     val builder = ConfigBuilder().apply(block)
     return builder.build(flush = true)
 }
 
 class ConfigBuilder {
 
-    private val objects: MutableList<ConfigObject> = arrayListOf()
+    private val objects: MutableList<CategoryConfigObject> = arrayListOf()
 
     inline fun color(color: () -> String): Int = Color.parseColor(color())
 
@@ -22,7 +22,7 @@ class ConfigBuilder {
         objects.add(category.build())
     }
 
-    fun build(flush: Boolean = true): List<ConfigObject> {
+    fun build(flush: Boolean = true): List<CategoryConfigObject> {
         val list = objects.toList()
         if (flush) {
             objects.clear()
@@ -42,16 +42,19 @@ class ConfigBuilder {
     }
 
     inner class CategoryConfigBuilder {
+        var id: String? = null
         var title: String? = null
         @ColorInt
         var textColor: Int = Color.parseColor("#000000")
         var items: List<ConfigObject> = arrayListOf()
 
         fun build(): CategoryConfigObject {
+            required("id", id)
             required("title", title)
             require(items.isNotEmpty()) { "Field [items] must not be empty" }
 
             return CategoryConfigObject(
+                id = id!!,
                 title = title!!,
                 textColor = textColor,
                 items = items

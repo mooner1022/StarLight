@@ -16,21 +16,23 @@ import com.mooner.starlight.plugincore.config.*
 import com.mooner.starlight.plugincore.language.*
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.method.Method
-import com.mooner.starlight.plugincore.method.MethodClass
 import com.mooner.starlight.plugincore.models.Message
+import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
 
 
 class JSV8: Language() {
+
+    companion object {
+        private const val T = "JS-V8"
+    }
+
     override val id: String
         get() = "JS_V8"
     override val name: String
-        get() = "자바스크립트 (V8)"
+        get() = "자바스크립트(V8)"
     override val fileExtension: String
         get() = "js"
-    override val loadIcon: (ImageView) -> Unit = { imageView ->
-        imageView.load(R.drawable.ic_v8)
-    }
     override val requireRelease: Boolean
         get() = true
     override val defaultCode: String
@@ -40,9 +42,10 @@ class JSV8: Language() {
             }
         """.trimIndent()
 
-    override val configObjectList: List<ConfigObject> = config {
+    override val configObjectList: List<CategoryConfigObject> = config {
         category {
-            title = "JS-V8"
+            id = T
+            title = T
             items = items {
                 toggle {
                     id = "toggle_test"
@@ -113,14 +116,14 @@ class JSV8: Language() {
         Logger.i("JSV8", "updated: $updated")
     }
 
-    override fun compile(code: String, methods: List<Method>): Any {
+    override fun compile(code: String, methods: List<Method<Any>>, project: Project?): Any {
         val v8 = V8.createV8Runtime()
         try {
             v8.apply {
                 for (methodBlock in methods) {
                     addClass(
                         methodBlock.name,
-                        methodBlock.instance,
+                        methodBlock.getInstance(project!!),
                         methodBlock.functions.map { it.name }.toTypedArray(),
                         methodBlock.functions.map { it.args }.toTypedArray()
                     )
@@ -155,6 +158,7 @@ class JSV8: Language() {
                         "message" to messageArg!!.message,
                         "room" to mapOf(
                             "name" to messageArg!!.room.name,
+                            "isGroupChat" to messageArg!!.room.isGroupChat,
                             "send" to messageArg!!.room::send
                         ),
                         "sender" to mapOf(
@@ -162,7 +166,6 @@ class JSV8: Language() {
                             "profileBase64" to messageArg!!.sender.profileBase64,
                             "profileHash" to messageArg!!.sender.profileHash
                         ),
-                        "isGroupChat" to messageArg!!.isGroupChat,
                         "packageName" to messageArg!!.packageName
                     )
                 )
@@ -178,7 +181,7 @@ class JSV8: Language() {
     }
 
     override fun eval(code: String): Any {
-        val engine = compile(code, listOf()) as V8
+        val engine = compile(code, listOf(), null) as V8
         try {
             engine.locker.acquire()
             return engine.executeScript(code)

@@ -18,9 +18,7 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.customview.customView
 import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.plugincore.logger.LogData
-import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.ui.splash.SplashActivity
@@ -46,8 +44,8 @@ class Utils {
             return appProcessInfo.importance == IMPORTANCE_FOREGROUND || appProcessInfo.importance == IMPORTANCE_VISIBLE
         }
 
-        fun formatStringRes(@StringRes id: Int, map: Map<String, String>): String {
-            var string = ApplicationSession.context.getString(id)
+        fun Context.formatStringRes(@StringRes id: Int, map: Map<String, String>): String {
+            var string = this.getString(id)
             for (pair in map) {
                 string = string.replace("\$${pair.key}", pair.value)
             }
@@ -93,7 +91,7 @@ class Utils {
         }
 
         fun showLogsDialog(context: Context, logs: List<LogData>? = null): MaterialDialog {
-            val mLogs = logs?: Logger.filterNot(LogType.DEBUG)
+            val mLogs = logs?: Logger.logs
             val mAdapter = LogsRecyclerViewAdapter(context).apply {
                 data = mLogs.toMutableList()
             }

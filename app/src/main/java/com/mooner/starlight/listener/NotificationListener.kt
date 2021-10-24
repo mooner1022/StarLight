@@ -11,21 +11,22 @@ import android.util.Base64
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.projectLoader
+import com.mooner.starlight.plugincore.core.Session.Companion.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.models.ChatRoom
 import com.mooner.starlight.plugincore.models.ChatSender
 import com.mooner.starlight.plugincore.models.Message
 import java.io.ByteArrayOutputStream
+import java.util.*
 
 class NotificationListener: NotificationListenerService() {
 
-    private val sessions: HashMap<String, Notification.Action> = hashMapOf()
+    private val sessions: MutableMap<String, Notification.Action> = WeakHashMap()
     private val isAllPowerOn: Boolean
-    get() = Session.getGeneralConfig()[GeneralConfig.CONFIG_ALL_PROJECTS_POWER, "true"].toBoolean()
+        get() = Session.generalConfig[GeneralConfig.CONFIG_ALL_PROJECTS_POWER, "true"].toBoolean()
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
-        val packageName = sbn.packageName
 
         val wearableExtender = Notification.WearableExtender(sbn.notification)
         for (act in wearableExtender.actions) {
@@ -38,12 +39,13 @@ class NotificationListener: NotificationListenerService() {
                 val sender = notification.extras.getString("android.title").toString()
                 val room = act.title.toString().replaceFirst("답장 (", "").replaceAfterLast(")", "")
                 val base64 = notification.getLargeIcon().loadDrawable(applicationContext).toBase64()
-                val isGroupChat = notification.extras.get("android.text") is SpannableString
+                val isGroupChat = notification.extras["android.text"] is SpannableString
+                val hasMention = notification.extras["android.text"] is SpannableString
                 if (!sessions.containsKey(room)) {
                     sessions[room] = act
                 }
 
-                val projects = projectLoader.getEnabledProjects()//.filter { packageName in it.config.packages }
+                val projects = projectManager.getEnabledProjects()//.filter { packageName in it.config.packages }
                 if (projects.isEmpty()) return
 
                 val data = Message(
@@ -55,11 +57,12 @@ class NotificationListener: NotificationListenerService() {
                     ),
                     room = ChatRoom(
                         name = room,
+                        isGroupChat = isGroupChat,
                         session = act,
                         context = applicationContext
                     ),
-                    isGroupChat = isGroupChat,
-                    packageName = sbn.packageName
+                    packageName = sbn.packageName,
+                    hasMention = hasMention
                 )
 
                 Logger.d("NotificationListenerService", "message : $message sender : $sender nRoom : $room nSession : $act")
@@ -67,6 +70,7 @@ class NotificationListener: NotificationListenerService() {
                 for (project in projects) {
                     project.callEvent("onMessage", arrayOf(data))
                 }
+                stopSelf()
             }
         }
     }

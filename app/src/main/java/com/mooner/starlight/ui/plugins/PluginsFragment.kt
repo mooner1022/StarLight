@@ -22,7 +22,9 @@ import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.utils.Utils
+import com.mooner.starlight.utils.Utils.Companion.formatStringRes
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
+import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 
 class PluginsFragment : Fragment() {
 
@@ -37,9 +39,9 @@ class PluginsFragment : Fragment() {
         ALIGN_FILE_SIZE,
     )
     private var alignState: Align<Plugin> = getAlignByName(
-        Session.getGeneralConfig()[GeneralConfig.CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name]
+        Session.generalConfig[GeneralConfig.CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name]
     )?: DEFAULT_ALIGN
-    private var isReversed: Boolean = Session.getGeneralConfig()[GeneralConfig.CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
+    private var isReversed: Boolean = Session.generalConfig[GeneralConfig.CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
 
     companion object {
         private val ALIGN_GANADA = Align<Plugin>(
@@ -72,10 +74,10 @@ class PluginsFragment : Fragment() {
         plugins = Session.pluginLoader.getPlugins().toList()
 
         if (plugins.isEmpty()) {
-            Logger.i(javaClass.simpleName, "No plugins detected!")
+            Logger.d(javaClass.simpleName, "No plugins detected!")
             with(binding.textViewNoPluginYet) {
                 visibility = View.VISIBLE
-                text = Utils.formatStringRes(
+                text = requireContext().formatStringRes(
                     R.string.nothing_yet,
                     mapOf(
                         "name" to "플러그인이",
@@ -85,7 +87,7 @@ class PluginsFragment : Fragment() {
             }
         }
 
-        binding.textViewPluginAlignState.text = Utils.formatStringRes(
+        binding.textViewPluginAlignState.text = requireContext().formatStringRes(
             R.string.plugin_align_state,
             mapOf(
                 "state" to if (isReversed) alignState.reversedName else alignState.name
@@ -108,13 +110,12 @@ class PluginsFragment : Fragment() {
         }
 
         listAdapter = PluginsListAdapter(requireContext())
-        println("plugins: $plugins")
         listAdapter.data = plugins
         listAdapter.notifyItemRangeInserted(0, plugins.size)
         with(binding.recyclerViewProjectList) {
-            this.adapter = listAdapter
-            this.layoutManager = LinearLayoutManager(requireContext())
-            this.itemAnimator = FadeInLeftAnimator()
+            adapter = listAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+            itemAnimator = FadeInUpAnimator()
         }
 
         return binding.root
@@ -148,7 +149,7 @@ class PluginsFragment : Fragment() {
     }
 
     private fun update(align: Align<Plugin> = alignState, isReversed: Boolean = this.isReversed) {
-        binding.textViewPluginAlignState.text = Utils.formatStringRes(
+        binding.textViewPluginAlignState.text = requireContext().formatStringRes(
             R.string.plugin_align_state,
             mapOf(
                 "state" to if (isReversed) align.reversedName else align.name
@@ -168,11 +169,10 @@ class PluginsFragment : Fragment() {
                 )
             }
         )
-        Session.getGeneralConfig().also {
+        Session.generalConfig.also {
             it[GeneralConfig.CONFIG_PLUGINS_ALIGN] = align.name
             it[GeneralConfig.CONFIG_PLUGINS_REVERSED] = isReversed.toString()
             it.push()
-            println("push!")
         }
     }
 

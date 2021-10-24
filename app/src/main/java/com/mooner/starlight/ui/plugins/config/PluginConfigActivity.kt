@@ -11,7 +11,7 @@ import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
 import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
-import com.mooner.starlight.ui.config.ConfigAdapter
+import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
@@ -27,8 +27,9 @@ class PluginConfigActivity: AppCompatActivity() {
         private const val PLUGIN_CONFIG_FILE_NAME = "config-plugin.json"
     }
 
-    private val changedData: MutableMap<String, Any> = hashMapOf()
-    private lateinit var savedData: MutableMap<String, TypedString>
+    private val changedData: MutableMap<String, MutableMap<String, Any>> = hashMapOf()
+    private lateinit var savedData: MutableMap<String, MutableMap<String, TypedString>>
+
     private lateinit var binding: ActivityPluginConfigBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,9 +43,19 @@ class PluginConfigActivity: AppCompatActivity() {
         val pluginName = intent.getStringExtra(EXTRA_PLUGIN_NAME)!!
         val pluginId = intent.getStringExtra(EXTRA_PLUGIN_ID)!!
         val plugin = pluginLoader.getPluginById(pluginId)?: error("Failed to get plugin [$pluginName]")
-        val recyclerAdapter = ConfigAdapter(applicationContext) { id, view, data ->
-            changedData[id] = data
-            savedData[id] = TypedString.parse(data)
+        val recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
+            if (changedData.containsKey(parentId)) {
+                changedData[parentId]!![id] = data
+            } else {
+                changedData[parentId] = hashMapOf(id to data)
+            }
+
+            if (savedData.containsKey(parentId)) {
+                savedData[parentId]!![id] = TypedString.parse(data)
+            } else {
+                savedData[parentId] = hashMapOf(id to TypedString.parse(data))
+            }
+
             if (!fabProjectConfig.isShown) {
                 fabProjectConfig.show()
             }

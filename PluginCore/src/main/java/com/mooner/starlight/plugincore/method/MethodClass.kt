@@ -1,15 +1,9 @@
 package com.mooner.starlight.plugincore.method
 
-data class MethodClass(
-    val className: String,
-    val clazz: Class<*>,
-    val instance: Any,
-    val functions: List<MethodFunction>
-)
-
 data class MethodFunction(
     val name: String,
-    val args: Array<Class<*>> = arrayOf()
+    val args: Array<Class<*>> = arrayOf(),
+    val returns: Class<*> = Unit::class.java
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

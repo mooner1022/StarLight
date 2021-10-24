@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content" android:orientation="vertical">
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp">
+
+        <ImageButton
+                android:id="@+id/buttonMoreLogs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/transparent"
+                android:src="@drawable/ic_round_keyboard_arrow_right_24" app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginEnd="20dp"/>
+        <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/nanumsquare_round_bold"
+                android:text="로그"
+                android:textAlignment="viewStart"
+                android:textSize="16sp"
+                android:textColor="#706EB9"
+                app:layout_constraintStart_toEndOf="@+id/imageView3"
+                app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintTop_toTopOf="parent"/>
+        <TextView
+                android:id="@+id/tvMoreLogs"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/nanumsquare_round_bold"
+                android:text="더보기"
+                android:textAlignment="viewEnd"
+                android:textSize="16sp"
+                app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/buttonMoreLogs"/>
+        <ImageView
+                android:layout_width="0dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_round_article_24"
+                android:tint="#706EB9" app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent" android:id="@+id/imageView3"
+                app:layout_constraintTop_toTopOf="parent" android:layout_marginStart="20dp"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <TextView
+            android:id="@+id/textViewNoLogsYet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="@font/nanumsquare_round_bold"
+            android:text="아직 로그가 없어요!"
+            android:textAlignment="center"
+            android:textSize="16sp" android:visibility="visible"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvLogs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone" android:touchscreenBlocksFocus="true" android:nestedScrollingEnabled="false"/>
+
+</LinearLayout>

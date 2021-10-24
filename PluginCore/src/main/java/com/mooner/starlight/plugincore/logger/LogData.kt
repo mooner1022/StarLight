@@ -9,9 +9,9 @@ data class LogData(
     @SerialName("t")
     val type: LogType,
     @SerialName("a")
-    val tag: String,
+    val tag: String? = null,
     @SerialName("")
-    val threadName: String = "undefined",
+    val threadName: String = Thread.currentThread().name,
     @SerialName("m")
     val message: String,
     @SerialName("l")
@@ -19,11 +19,21 @@ data class LogData(
     @Transient
     val isLocal: Boolean = false
 ) {
-    override fun toString(): String {
-        return if (isLocal) {
-            "[$threadName] [LOCAL/${type.name}] $tag : $message"
-        } else {
-            "[$threadName] [${type.name}] $tag : $message"
+    fun toString(excludeThread: Boolean = false): String {
+        val append = StringBuilder("[").apply {
+            if (!excludeThread)
+                append("$threadName/")
+            if (isLocal)
+                append("LOCAL/")
+            append("${type.name}]: ")
+            if (tag != null)
+                append("[$tag] ")
+            append(message)
         }
+        return append.toString()
+    }
+
+    override fun toString(): String {
+        return toString(excludeThread = false)
     }
 }

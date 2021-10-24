@@ -2,9 +2,10 @@ package com.mooner.starlight.plugincore.language
 
 import android.view.View
 import android.widget.ImageView
+import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.method.Method
-import com.mooner.starlight.plugincore.method.MethodClass
+import com.mooner.starlight.plugincore.project.Project
 
 interface ILanguage {
 
@@ -14,11 +15,9 @@ interface ILanguage {
 
     val fileExtension: String
 
-    val loadIcon: (ImageView) -> Unit
-
     val requireRelease: Boolean
 
-    val configObjectList: List<ConfigObject>
+    val configObjectList: List<CategoryConfigObject>
 
     val defaultCode: String
 
@@ -26,7 +25,7 @@ interface ILanguage {
 
     fun onConfigChanged(id: String, view: View, data: Any) {}
 
-    fun compile(code: String, methods: List<Method>): Any
+    fun compile(code: String, methods: List<Method<Any>>, project: Project?): Any
 
     fun release(engine: Any) {}
 

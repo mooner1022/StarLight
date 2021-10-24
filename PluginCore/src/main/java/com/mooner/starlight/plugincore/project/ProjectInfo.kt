@@ -3,7 +3,7 @@ package com.mooner.starlight.plugincore.project
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ProjectConfig(
+data class ProjectInfo(
     val name: String,
     val mainScript: String,
     val languageId: String,
@@ -14,7 +14,7 @@ data class ProjectConfig(
     val packages: MutableSet<String>
 )
 
-class ProjectConfigBuilder {
+class ProjectInfoBuilder {
 
     var name: String? = null
     var mainScript: String? = null
@@ -31,13 +31,13 @@ class ProjectConfigBuilder {
         }
     }
 
-    fun build(): ProjectConfig {
+    fun build(): ProjectInfo {
 
         required("name", name)
         required("mainScript", mainScript)
         required("languageId", languageId)
 
-        return ProjectConfig(
+        return ProjectInfo(
             name = name!!,
             mainScript = mainScript!!,
             languageId = languageId!!,

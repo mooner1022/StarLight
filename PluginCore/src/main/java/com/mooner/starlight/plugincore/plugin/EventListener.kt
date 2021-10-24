@@ -1,4 +1,4 @@
-package com.mooner.starlight.plugincore.event
+package com.mooner.starlight.plugincore.plugin
 
 import com.mooner.starlight.plugincore.project.Project
 

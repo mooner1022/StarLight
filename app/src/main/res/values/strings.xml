@@ -17,11 +17,11 @@
     <string name="open">열기</string>
     <string name="close">닫기</string>
     <string name="ok">확인</string>
+    <string name="cancel">취소</string>
     <string name="delete">제거</string>
 
     <string name="step_default_lib">기본 라이브러리 로드중…</string>
-    <string name="step_lang">언어 로드중…</string>
-    <string name="step_plugin_init">플러그인 로드중…</string>
+    <string name="step_plugincore_init">PluginCore 로드중…</string>
     <string name="step_plugins">[%s] 로드중…</string>
     <string name="step_projects">프로젝트 로드중…</string>
     <string name="step_init_editor">코드 에디터 로드중…</string>
@@ -70,4 +70,6 @@
 
     <string name="expandable_card_view_image_content_description">Arrow to expand card</string>
     <string name="expandable_card_view_icon_content_description">Card icon</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
