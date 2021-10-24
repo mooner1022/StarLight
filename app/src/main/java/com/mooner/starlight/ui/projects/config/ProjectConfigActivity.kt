@@ -7,6 +7,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityProjectConfigBinding
@@ -53,6 +56,52 @@ class ProjectConfigActivity: AppCompatActivity() {
             }
         }
     }
+    private val cautiousConfigs: List<CategoryConfigObject> = config {
+        category {
+            id = "cautious"
+            title = "위험"
+            textColor = color { "#FF865E" }
+            items = items {
+                button {
+                    id = "interrupt_thread"
+                    name = "프로젝트 스레드 강제 종료"
+                    type = ButtonConfigObject.Type.FLAT
+                    onClickListener = {
+                        project.destroy()
+                    }
+                    icon = Icon.LAYERS_CLEAR
+                    //backgroundColor = Color.parseColor("#B8DFD8")
+                    iconTintColor = color { "#FF5C58" }
+                }
+                button {
+                    id = "delete_project"
+                    name = "프로젝트 제거"
+                    type = ButtonConfigObject.Type.FLAT
+                    onClickListener = {
+                        MaterialDialog(it.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                            cornerRadius(25f)
+                            cancelOnTouchOutside(true)
+                            noAutoDismiss()
+                            //icon(res = R.drawable.ic_round_delete_forever_24)
+                            title(text = "프로젝트를 정말로 제거할까요?")
+                            message(text = "주의: 프로젝트 제거시 복구가 불가합니다.")
+                            positiveButton(text = context.getString(R.string.delete)) {
+                                Session.projectManager.removeProject(project, removeFiles = true)
+                                dismiss()
+                            }
+                            negativeButton(text = context.getString(R.string.close)) {
+                                dismiss()
+                            }
+                        }
+                    }
+                    icon = Icon.DELETE_SWEEP
+                    //backgroundColor = Color.parseColor("#B8DFD8")
+                    iconTintColor = color { "#FF5C58" }
+                }
+            }
+        }
+    }
+
     private val changedData: MutableMap<String, MutableMap<String, Any>> = hashMapOf()
     private lateinit var savedData: MutableMap<String, MutableMap<String, TypedString>>
     private lateinit var binding: ActivityProjectConfigBinding
@@ -88,7 +137,7 @@ class ProjectConfigActivity: AppCompatActivity() {
             }
             project.getLanguage().onConfigChanged(id, view, data)
         }.apply {
-            data = (commonConfigs + project.getLanguage().configObjectList)
+            data = (commonConfigs + project.getLanguage().configObjectList + cautiousConfigs)
             saved = savedData
             notifyDataSetChanged()
         }

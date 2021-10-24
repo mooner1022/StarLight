@@ -31,6 +31,7 @@ import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.ViewPagerAdapter
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.utils.Utils
+import com.mooner.starlight.utils.Utils.Companion.formatStringRes
 import kotlin.math.abs
 
 
@@ -134,6 +135,7 @@ class MainActivity : AppCompatActivity() {
                     0 -> R.id.nav_home
                     1 -> R.id.nav_projects
                     2 -> R.id.nav_plugins
+                    3 -> R.id.nav_settings
                     else -> R.id.nav_home
                 }
                 binding.bottomBar.menu.select(id)
@@ -147,6 +149,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_home -> 0
                 R.id.nav_projects -> 1
                 R.id.nav_plugins -> 2
+                R.id.nav_settings -> 3
                 else -> 0
             }
             binding.viewPager.setCurrentItem(index, true)
@@ -190,7 +193,7 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_projects -> {
                 val count = projectManager.getProjects().count { it.info.isEnabled }
                 binding.titleText.text = applicationContext.getText(R.string.title_projects)
-                binding.statusText.text = Utils.formatStringRes(
+                binding.statusText.text = applicationContext.formatStringRes(
                     R.string.subtitle_projects,
                     mapOf(
                         "count" to count.toString()
@@ -201,12 +204,17 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_plugins -> {
                 val count = pluginLoader.getPlugins().size
                 binding.titleText.text = applicationContext.getText(R.string.title_plugins)
-                binding.statusText.text = Utils.formatStringRes(
+                binding.statusText.text = applicationContext.formatStringRes(
                     R.string.subtitle_plugins,
                     mapOf(
                         "count" to count.toString()
                     )
                 )
+                updateFab(isShown = false)
+            }
+            R.id.nav_settings -> {
+                binding.titleText.text = applicationContext.getText(R.string.title_settings)
+                binding.statusText.text = ""
                 updateFab(isShown = false)
             }
         }

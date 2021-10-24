@@ -1,7 +1,6 @@
 package com.mooner.starlight.ui.splash
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build.VERSION.SDK_INT
@@ -45,7 +44,6 @@ class SplashActivity : AppCompatActivity() {
     }
     private lateinit var binding: ActivitySplashBinding
 
-    @SuppressLint("Range")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySplashBinding.inflate(layoutInflater)
@@ -67,8 +65,9 @@ class SplashActivity : AppCompatActivity() {
             webview.loadUrl(EditorActivity.ENTRY_POINT)
 
             CoroutineScope(Dispatchers.Default).launch {
-                ApplicationSession.context = applicationContext
+                //ApplicationSession.context = applicationContext
                 ApplicationSession.init(
+                    applicationContext,
                     {
                         runOnUiThread {
                             binding.textViewLoadStatus.text = it
@@ -129,7 +128,6 @@ class SplashActivity : AppCompatActivity() {
                 )
                 description = "위 권한들은 필수 권한으로,\n허용하지 않을 시 앱이 정상적으로 동작하지 않아요."
                 confirm = "승인"
-                backgroundAlpha = 0.6f
                 needsAnimation = NeedsAnimation.FADE
             }
             needs.setOnConfirmListener {

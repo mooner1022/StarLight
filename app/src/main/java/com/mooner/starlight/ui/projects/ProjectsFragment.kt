@@ -19,8 +19,9 @@ import com.mooner.starlight.models.Align
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.project.Project
-import com.mooner.starlight.utils.Utils
+import com.mooner.starlight.utils.Utils.Companion.formatStringRes
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
+import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 
 class ProjectsFragment : Fragment() {
 
@@ -109,7 +110,7 @@ class ProjectsFragment : Fragment() {
             }
         }
 
-        binding.textViewProjectAlignState.text = Utils.formatStringRes(
+        binding.textViewProjectAlignState.text = requireContext().formatStringRes(
             R.string.project_align_state,
             mapOf(
                 "state" to if (isReversed) alignState.reversedName else alignState.name
@@ -119,10 +120,7 @@ class ProjectsFragment : Fragment() {
 
         recyclerAdapter = ProjectListAdapter(requireContext())
 
-        Session.projectManager.bindListener(T) { projects ->
-            this.projects = projects
-            update()
-        }
+        bindListener()
 
         val data = Session.projectLoader.loadProjects(false)
         this.projects = data
@@ -147,7 +145,7 @@ class ProjectsFragment : Fragment() {
         recyclerAdapter.notifyItemRangeInserted(0, recyclerAdapter.data.size)
 
         with(binding.recyclerViewProjectList) {
-            itemAnimator = FadeInLeftAnimator()
+            itemAnimator = FadeInUpAnimator()
             layoutManager = LinearLayoutManager(requireContext())
             adapter = recyclerAdapter
         }
@@ -180,7 +178,7 @@ class ProjectsFragment : Fragment() {
     }
 
     private fun update(align: Align<Project> = alignState, isReversed: Boolean = this.isReversed, activeFirst: Boolean = this.isActiveFirst) {
-        binding.textViewProjectAlignState.text = Utils.formatStringRes(
+        binding.textViewProjectAlignState.text = requireContext().formatStringRes(
             R.string.project_align_state,
             mapOf(
                 "state" to if (isReversed) align.reversedName else align.name
@@ -212,8 +210,33 @@ class ProjectsFragment : Fragment() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        unbindListener()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bindListener()
+        if (this.projects.size != Session.projectManager.getProjects().size) {
+            this.projects = Session.projectManager.getProjects()
+            update()
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        unbindListener()
+    }
+
+    private fun bindListener() {
+        Session.projectManager.bindListener(T) { projects ->
+            this.projects = projects
+            update()
+        }
+    }
+
+    private fun unbindListener() {
         Session.projectManager.unbindListener(T)
     }
 }

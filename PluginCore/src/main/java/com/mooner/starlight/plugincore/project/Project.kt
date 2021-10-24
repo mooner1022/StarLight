@@ -13,6 +13,7 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
 import java.io.File
 import java.util.*
+import kotlin.coroutines.CoroutineContext
 
 class Project(
     val directory: File,
@@ -37,7 +38,8 @@ class Project(
     val configManager: ConfigManager = ConfigManager(File(directory, CONFIG_FILE_NAME))
 
     private lateinit var jobName: String
-    private lateinit var scope: CoroutineScope
+    //private lateinit var scope: CoroutineScope
+    private lateinit var context: CoroutineContext
     val isCompiled: Boolean
         get() = engine != null
     private var engine: Any? = null
@@ -79,13 +81,13 @@ class Project(
             return
         }
 
-        if (!this::jobName.isInitialized || !this::scope.isInitialized) {
+        if (!this::jobName.isInitialized || !this::context.isInitialized) {
             jobName = "$tag-worker-${UUID.randomUUID()}"
-            scope = CoroutineScope(newSingleThreadContext(jobName))
+            context = newSingleThreadContext(jobName)
             Logger.d("Allocated thread $jobName to project ${info.name}")
         }
 
-        val job = scope.launch {
+        val job = CoroutineScope(context).launch {
             lang.callFunction(engine!!, name, args)
         }
         JobLocker.registerJob(
@@ -174,8 +176,9 @@ class Project(
     }
 
     fun destroy() {
-        if (this::scope.isInitialized) {
-            (scope.coroutineContext as CoroutineDispatcher).cancel()
+        if (this::context.isInitialized) {
+            JobLocker.forceRelease(jobName)
+            (context as CoroutineDispatcher).cancel()
         }
     }
 }

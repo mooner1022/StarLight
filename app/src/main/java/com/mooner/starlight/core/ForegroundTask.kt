@@ -10,8 +10,6 @@ import android.content.Intent
 import android.content.pm.PackageInfo
 import android.os.Build
 import android.os.IBinder
-import android.view.View
-import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
@@ -19,17 +17,14 @@ import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.logger.Logger
 import kotlin.system.exitProcess
 
-
 class ForegroundTask: Service() {
 
     companion object {
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "ForegroundServiceChannel"
+        @JvmStatic
         var isRunning: Boolean = false
     }
-
-    private var windowManager: WindowManager? = null
-    private var view: View? = null
 
     @SuppressLint("InflateParams")
     override fun onCreate() {
@@ -59,8 +54,8 @@ class ForegroundTask: Service() {
         }
 
         if (!ApplicationSession.isInitComplete) {
-            ApplicationSession.context = applicationContext
-            ApplicationSession.init({},{})
+            //ApplicationSession.context = applicationContext
+            ApplicationSession.init(applicationContext)
         }
 
         createNotificationChannel()
@@ -87,62 +82,6 @@ class ForegroundTask: Service() {
                 .setShowWhen(false)
                 .build()
             startForeground(NOTIFICATION_ID, notification)
-        }
-
-        /*
-        val inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-
-        val params = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            WindowManager.LayoutParams(
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        or WindowManager.LayoutParams.FLAG_SPLIT_TOUCH,
-                PixelFormat.TRANSLUCENT
-            )
-        } else {
-            WindowManager.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
-                PixelFormat.TRANSLUCENT
-            )
-        }
-        params.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-        view = inflater.inflate(R.layout.layout_overlay_dialog, null)
-        val logsRecycler: RecyclerView = view!!.findViewById(R.id.recyclerViewLogs)
-        val logs = Logger.filterNot(LogType.DEBUG)
-        val logsAdapter = LogsRecyclerViewAdapter(applicationContext)
-        if (logs.isNotEmpty()) {
-            val recyclerLayoutManager = LinearLayoutManager(applicationContext).apply {
-                reverseLayout = true
-                stackFromEnd = true
-            }
-            logsAdapter.data = logs.toMutableList()
-            with(logsRecycler) {
-                itemAnimator = FadeInLeftAnimator()
-                layoutManager = recyclerLayoutManager
-                adapter = logsAdapter
-            }
-            logsAdapter.notifyItemRangeInserted(0, logs.size)
-        }
-
-        windowManager!!.addView(view, params)
-        */
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        if (windowManager != null) {
-            if (view != null) {
-                windowManager!!.removeView(view)
-                view = null
-            }
-            windowManager = null
         }
     }
 

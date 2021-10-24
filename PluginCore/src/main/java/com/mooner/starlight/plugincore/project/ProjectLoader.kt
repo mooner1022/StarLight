@@ -31,17 +31,17 @@ class ProjectLoader(
         if (force || projects.isEmpty()) {
             projects.clear()
             for (folder in dir.listFiles()?.filter { it.isDirectory }?:return emptyList()) {
-                val config: ProjectInfo
+                val info: ProjectInfo
                 try {
-                    config = getProjectConfig(folder)
+                    info = getProjectConfig(folder)
                     val project: Project
                     try {
-                        project = Project(folder, config)
-                        if (config.isEnabled) {
+                        project = Project(folder, info)
+                        if (info.isEnabled) {
                             try {
                                 project.compile(true)
                             } catch (e: Exception) {
-                                Logger.w(T, "Failed to pre-compile project ${config.name}: $e")
+                                Logger.w(T, "Failed to pre-compile project ${info.name}: $e")
                                 continue
                             }
                         }
@@ -50,7 +50,7 @@ class ProjectLoader(
                         Logger.e(T, e.toString())
                         continue
                     }
-                    projects.add(project)
+                    projects[info.name] = project
                 } catch (e: IllegalStateException) {
                     Logger.e(T, "Failed to load project: $e")
                 } catch (e: IllegalArgumentException) {
@@ -58,7 +58,7 @@ class ProjectLoader(
                 }
             }
         }
-        return projects.toList()
+        return projects.values.toList()
     }
 
     private fun getProjectConfig(dir: File): ProjectInfo {

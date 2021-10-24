@@ -39,9 +39,7 @@ class ProjectListAdapter(
 
     override fun getItemCount(): Int = data.size
 
-    override fun getItemViewType(position: Int): Int {
-        return position
-    }
+    override fun getItemViewType(position: Int): Int = 0
 
     override fun onBindViewHolder(holder: ProjectListViewHolder, position: Int) {
         val project = data[position]

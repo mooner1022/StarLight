@@ -34,7 +34,7 @@ data class Version(
     }
 
     override fun toString(): String {
-        return "v$major.$minor"
+        return "$major.$minor"
     }
 
     override fun equals(other: Any?): Boolean {

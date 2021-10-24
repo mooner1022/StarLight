@@ -7,10 +7,10 @@ class ProjectManager(
 ) {
 
     internal val listeners: MutableMap<String, (projects: List<Project>) -> Unit> = hashMapOf()
-    internal var projects: MutableList<Project> = mutableListOf()
+    internal var projects: MutableMap<String, Project> = hashMapOf()
 
     fun getEnabledProjects(): List<Project> {
-        return projects.filter { it.info.isEnabled }
+        return projects.values.filter { it.info.isEnabled }
     }
 
     fun bindListener(key: String, listener: (projects: List<Project>) -> Unit) {
@@ -26,15 +26,15 @@ class ProjectManager(
     }
 
     fun getProjects(): List<Project> {
-        return this.projects
+        return this.projects.values.toList()
     }
 
     fun getProject(name: String): Project? {
-        return projects.find { it.info.name == name }
+        return projects[name]
     }
 
     fun updateProjectConfig(name: String, callListener: Boolean = false, block: ProjectInfo.() -> Unit) {
-        val project = projects.find { it.info.name == name }?: throw IllegalArgumentException("Cannot find project [$name]")
+        val project = projects[name]?: throw IllegalArgumentException("Cannot find project [$name]")
         project.info.block()
         project.saveConfig()
         if (callListener) {
@@ -43,27 +43,39 @@ class ProjectManager(
     }
 
     fun newProject(config: ProjectInfo, dir: File = projectDir) {
-        projects.add(Project.create(dir, config))
+        projects[config.name] = Project.create(dir, config)
         callListeners()
     }
 
     fun newProject(dir: File = projectDir, block: ProjectInfoBuilder.() -> Unit) {
         val config = ProjectInfoBuilder().apply(block).build()
-        projects.add(Project.create(dir, config))
+        projects[config.name] = Project.create(dir, config)
         callListeners()
     }
 
     fun callEvent(pluginId: String, eventName: String, args: Array<Any>) {
-        val projects = this.projects.filter { pluginId in it.info.listeners }
+        val projects = this.projects.values.filter { pluginId in it.info.listeners }
         if (projects.isEmpty()) return
         for (project in projects) {
             project.callEvent(eventName, args)
         }
     }
 
+    fun removeProject(project: Project, removeFiles: Boolean = true) {
+        removeProject(project.info.name, removeFiles)
+    }
+
+    fun removeProject(name: String, removeFiles: Boolean = true) {
+        if (projects.containsKey(name)) {
+            if (removeFiles) projects[name]!!.directory.deleteRecursively()
+            projects -= name
+        }
+        callListeners()
+    }
+
     private fun callListeners() {
         for ((_, listener) in listeners) {
-            listener(projects)
+            listener(projects.values.toList())
         }
     }
 }
