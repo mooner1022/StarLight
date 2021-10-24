@@ -154,4 +154,13 @@ enum class Icon(
     SUN(
         drawableRes = R.drawable.ic_round_brightness_5_24
     ),
+    TIMER(
+        drawableRes = R.drawable.ic_round_timer_24
+    ),
+    TIMER_OFF(
+        drawableRes = R.drawable.ic_round_timer_off_24
+    ),
+    ACCESS_TIME(
+        drawableRes = R.drawable.ic_round_access_time_24
+    )
 }
