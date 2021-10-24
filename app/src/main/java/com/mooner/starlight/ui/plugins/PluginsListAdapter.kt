@@ -36,6 +36,8 @@ class PluginsListAdapter(
 
     override fun getItemCount(): Int = data.size
 
+    override fun getItemViewType(position: Int): Int = 0
+
     override fun onBindViewHolder(holder: PluginListViewHolder, position: Int) {
         val plugin = data[position] as StarlightPlugin
         val config = plugin.config
@@ -45,7 +47,7 @@ class PluginsListAdapter(
             version.text = config.version
             fileSize.text = String.format("%.2f MB", plugin.fileSize)
 
-            val iconFile = File(plugin.getDataFolder(), "icon.png")
+            val iconFile = File(plugin.getDataFolder().resolve("assets"), "icon.png")
             if (iconFile.exists() && iconFile.isFile) {
                 icon.load(iconFile) {
                     scale(Scale.FIT)

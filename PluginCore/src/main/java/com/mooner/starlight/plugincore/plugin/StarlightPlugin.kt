@@ -14,7 +14,6 @@ import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.pathString
 
-@ExperimentalSerializationApi
 abstract class StarlightPlugin: Plugin, EventListener {
     private lateinit var projectLoader: ProjectLoader
     private lateinit var loader: PluginLoader
@@ -95,7 +94,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
     fun addLanguage(language: Language) {
         var isLoadSuccess = false
         try {
-            Session.languageManager.addLanguage(Path(dataDir.path, language.id).pathString, language)
+            Session.languageManager.addLanguage(Path(dataDir.resolve("assets").path, language.id).pathString, language)
             isLoadSuccess = true
         } catch (e: IllegalStateException) {
             Logger.e(T, e.toString())
