@@ -9,13 +9,13 @@
             android:id="@+id/nav_home"
             android:enabled="true"
             android:icon="@drawable/ic_round_home_24"
-            app:exb_color="@color/noctis_green"
+            app:exb_color="@color/monokai_pro_orange"
             android:title="@string/menu_home" />
         <item
             android:id="@+id/nav_projects"
             android:enabled="true"
             android:icon="@drawable/ic_round_projects_24"
-            app:exb_color="@color/monokai_pro_orange"
+            app:exb_color="@color/orange"
             android:title="@string/menu_projects" />
         <item
             android:id="@+id/nav_plugins"
