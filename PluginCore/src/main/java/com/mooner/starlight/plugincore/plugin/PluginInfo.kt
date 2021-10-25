@@ -5,10 +5,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 @Serializable
-data class PluginConfig(
+data class PluginInfo(
     val id: String,
     val name: String,
     @SerialName("main_class")
@@ -23,7 +22,7 @@ data class PluginConfig(
     val description: String
 ) {
     companion object {
-        fun decode(str: String): PluginConfig {
+        fun decode(str: String): PluginInfo {
             if (str.isBlank() || !str.startsWith("{") || !str.endsWith("}")) throw IllegalArgumentException("Illegal String argument: $str")
             return json.decodeFromString(str)
         }

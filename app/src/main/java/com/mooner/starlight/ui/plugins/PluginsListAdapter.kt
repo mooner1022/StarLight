@@ -40,7 +40,7 @@ class PluginsListAdapter(
 
     override fun onBindViewHolder(holder: PluginListViewHolder, position: Int) {
         val plugin = data[position] as StarlightPlugin
-        val config = plugin.config
+        val config = plugin.info
 
         with(holder) {
             name.text = config.name.trimLength(17)
