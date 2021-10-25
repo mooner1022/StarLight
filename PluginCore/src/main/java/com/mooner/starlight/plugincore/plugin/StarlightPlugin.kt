@@ -1,14 +1,13 @@
 package com.mooner.starlight.plugincore.plugin
 
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
+import com.mooner.starlight.plugincore.config.Config
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import com.mooner.starlight.plugincore.utils.Utils.Companion.getFileSize
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import java.io.File
 import kotlin.io.path.Path
@@ -22,7 +21,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
     private lateinit var classLoader: ClassLoader
     private var isEnabled = false
     private var configPath: File? = null
-    lateinit var config: PluginConfig
+    lateinit var info: PluginInfo
     val fileSize: Float
         get() = file.getFileSize()
 
@@ -39,11 +38,11 @@ abstract class StarlightPlugin: Plugin, EventListener {
     }
 
     protected constructor(
-            pluginLoader: PluginLoader,
-            projectLoader: ProjectLoader,
-            config: PluginConfig,
-            dataDir: File,
-            file: File,
+        pluginLoader: PluginLoader,
+        projectLoader: ProjectLoader,
+        config: PluginInfo,
+        dataDir: File,
+        file: File,
     ) {
         val classLoader = this.javaClass.classLoader
         if (classLoader is PluginClassLoader) {
@@ -55,7 +54,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
     override val configObjects: List<CategoryConfigObject> = listOf()
 
     override val name: String
-        get() = config.fullName
+        get() = info.fullName
 
     override fun isEnabled(): Boolean = isEnabled
 
@@ -74,14 +73,14 @@ abstract class StarlightPlugin: Plugin, EventListener {
         configPath = path
     }
 
-    fun getPluginConfigs(): Map<String, Any> {
-        return if (configPath == null || !configPath!!.isFile || !configPath!!.exists()) mapOf() else {
-            val typed: Map<String, TypedString> = Session.json.decodeFromString(configPath!!.readText())
-            typed.mapValues { it.value.cast()!! }
+    fun getPluginConfigs(): Config {
+        return if (configPath == null || !configPath!!.isFile || !configPath!!.exists()) Config(emptyMap()) else {
+            val loadedMap: Map<String, Map<String, TypedString>> = Session.json.decodeFromString(configPath!!.readText())
+            Config(loadedMap)
         }
     }
 
-    fun callEvent(eventName: String, args: Array<Any>) = Session.projectManager.callEvent(this.config.id, eventName, args)
+    fun callEvent(eventName: String, args: Array<Any>) = Session.projectManager.callEvent(this.info.id, eventName, args)
 
     fun getDataFolder(): File = dataDir
 
@@ -104,11 +103,11 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    override fun toString(): String = config.fullName
+    override fun toString(): String = info.fullName
 
     override fun equals(other: Any?): Boolean {
         return when(other) {
-            is StarlightPlugin -> other.config.id == this.config.id
+            is StarlightPlugin -> other.info.id == this.info.id
             null -> false
             else -> false
         }
@@ -117,14 +116,14 @@ abstract class StarlightPlugin: Plugin, EventListener {
     fun init(
         pluginLoader: PluginLoader,
         projectLoader: ProjectLoader,
-        config: PluginConfig,
+        info: PluginInfo,
         dataDir: File,
         file: File,
         classLoader: ClassLoader
     ) {
         this.loader = pluginLoader
         this.projectLoader = projectLoader
-        this.config = config
+        this.info = info
         this.dataDir = dataDir
         this.file = file
         this.classLoader = classLoader
@@ -133,7 +132,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
     override fun hashCode(): Int {
         var result = dataDir.hashCode()
         result = 31 * result + isEnabled.hashCode()
-        result = 31 * result + config.hashCode()
+        result = 31 * result + info.hashCode()
         result = 31 * result + fileSize.hashCode()
         result = 31 * result + configObjects.hashCode()
         result = 31 * result + name.hashCode()
