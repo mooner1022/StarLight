@@ -1,8 +1,8 @@
-package com.mooner.starlight.plugincore
+package com.mooner.starlight.plugincore.core
 
 class Info {
     companion object {
-        val PLUGINCORE_VERSION: Version = Version.fromString("0.0.1b3")
+        val PLUGINCORE_VERSION: Version = Version.fromString("0.0.1b4")
     }
 }
 
