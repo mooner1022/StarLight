@@ -28,7 +28,9 @@ class Logger {
                 dir.mkdirs()
             }
 
-            val fileName = ((dir.listFiles()?.filter { it.nameWithoutExtension.toIntOrNull() != null }?.maxByOrNull { it.nameWithoutExtension }?.nameWithoutExtension?.toInt() ?: -1) + 1).toString() + ".log"
+            val logFiles = dir.listFiles()?.filter { it.nameWithoutExtension.toIntOrNull() != null }
+            val fileIndex = (logFiles?.maxOfOrNull { it.nameWithoutExtension.toInt() } ?: -1) + 1
+            val fileName = "$fileIndex.log"
             logFile = File(dir, fileName)
         }
 
