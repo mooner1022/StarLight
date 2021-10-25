@@ -8,8 +8,8 @@
 </p>
 
 <p align="center">
-`Project StarLight 🌟` is an application which serves Messenger auto-reply service with<br>
-various script language support and plugin system
+`Project StarLight 🌟` is a Messenger auto-reply application that supports<br>
+a variety of script languages and a plugin platform
 </p>
 
 <p align="center" style="color: gray">
