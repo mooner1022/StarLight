@@ -23,6 +23,7 @@ import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.ui.splash.SplashActivity
 import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
+import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 
@@ -111,7 +112,7 @@ class Utils {
 
                 val recycler: RecyclerView = findViewById(R.id.rvLog)
                 recycler.apply {
-                    itemAnimator = FadeInLeftAnimator()
+                    itemAnimator = FadeInUpAnimator()
                     layoutManager = mLayoutManager
                     adapter = mAdapter
                 }
@@ -121,6 +122,9 @@ class Utils {
                     val key = randomAlphanumeric(8)
                     Logger.bindListener(key) {
                         mAdapter.pushLog(it)
+                        recycler.post {
+                            recycler.smoothScrollToPosition(mAdapter.data.size - 1)
+                        }
                     }
                     onDismiss {
                         Logger.unbindListener(key)

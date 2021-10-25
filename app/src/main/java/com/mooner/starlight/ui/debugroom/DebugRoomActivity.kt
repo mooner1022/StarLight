@@ -12,9 +12,12 @@ import com.mooner.starlight.plugincore.models.ChatSender
 import com.mooner.starlight.plugincore.models.DebugChatRoom
 import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.project.Project
+import jp.wasabeef.recyclerview.animators.FadeInAnimator
+import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 
 class DebugRoomActivity: AppCompatActivity() {
-    private val chatList: ArrayList<DebugRoomMessage> = arrayListOf()
+
+    private val chatList: MutableList<DebugRoomMessage> = mutableListOf()
     private lateinit var userChatAdapter: DebugRoomChatAdapter
     private lateinit var roomName: String
     private lateinit var sender: String
@@ -47,16 +50,18 @@ class DebugRoomActivity: AppCompatActivity() {
 
         imageHash = intent.getIntExtra("imageHash", 0)
         sender = intent.getStringExtra("sender")?: "debug_sender"
-        roomName = intent.getStringExtra("roomName")?: "ERROR"
+        roomName = intent.getStringExtra("roomName")?: "undefined"
         binding.roomTitle.text = roomName
 
         project = Session.projectManager.getProject(roomName)!!
 
         userChatAdapter = DebugRoomChatAdapter(this, chatList)
-        binding.chatRecyclerView.adapter = userChatAdapter
 
-        val layoutManager = LinearLayoutManager(this)
-        binding.chatRecyclerView.layoutManager = layoutManager
+        binding.chatRecyclerView.apply {
+            adapter = userChatAdapter
+            layoutManager = LinearLayoutManager(this@DebugRoomActivity)
+            itemAnimator = FadeInAnimator()
+        }
 
         binding.sendButton.setOnClickListener {
             if (binding.messageInput.text.toString().isBlank()) return@setOnClickListener
@@ -108,7 +113,9 @@ class DebugRoomActivity: AppCompatActivity() {
             )
             userChatAdapter.notifyItemInserted(chatList.size)
             binding.messageInput.setText("")
-            binding.chatRecyclerView.scrollToPosition(chatList.size - 1)
+            binding.chatRecyclerView.post {
+                binding.chatRecyclerView.smoothScrollToPosition(chatList.size - 1)
+            }
         }
     }
 }
