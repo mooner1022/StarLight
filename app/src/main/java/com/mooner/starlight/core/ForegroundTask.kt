@@ -13,7 +13,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.Info
+import com.mooner.starlight.plugincore.core.Info
 import com.mooner.starlight.plugincore.logger.Logger
 import kotlin.system.exitProcess
 
@@ -44,6 +44,7 @@ class ForegroundTask: Service() {
                 StarLight v${pInfo.versionName}(build ${versionCode})
                 PluginCore v${Info.PLUGINCORE_VERSION}
                 Build.VERSION.SDK_INT: ${Build.VERSION.SDK_INT}
+                Build.DEVICE: ${Build.DEVICE}
                 thread  : ${paramThread.name}
                 message : ${paramThrowable.localizedMessage}
                 cause   : ${paramThrowable.cause}
