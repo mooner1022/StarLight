@@ -23,6 +23,7 @@ data class TypedString(
                 "Boolean" -> value.toBoolean()
                 "Float" -> value.toFloat()
                 "Int" -> value.toInt()
+                "Long" -> value.toLong()
                 "Double" -> value.toDouble()
                 else -> null
             }
@@ -30,4 +31,7 @@ data class TypedString(
             null
         }
     }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T> castAs(): T = cast() as T
 }
