@@ -1,13 +1,13 @@
 package com.mooner.starlight.api.helper
 
-import com.mooner.starlight.plugincore.method.Method
-import com.mooner.starlight.plugincore.method.MethodFunction
-import com.mooner.starlight.plugincore.method.MethodType
+import com.mooner.starlight.plugincore.api.Api
+import com.mooner.starlight.plugincore.api.ApiFunction
+import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.project.Project
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
-class UtilsMethod: Method<UtilsMethod.Utils>() {
+class UtilsApi: Api<UtilsApi.Utils>() {
 
     object Utils {
 
@@ -50,11 +50,11 @@ class UtilsMethod: Method<UtilsMethod.Utils>() {
 
     override val name: String = "Utils"
 
-    override val type: MethodType = MethodType.OBJECT
+    override val instanceType: InstanceType = InstanceType.OBJECT
 
     override val instanceClass: Class<Utils> = Utils::class.java
 
-    override val functions: List<MethodFunction> = listOf(
+    override val functions: List<ApiFunction> = listOf(
         function {
             name = "getWebText"
             args = arrayOf(String::class.java)

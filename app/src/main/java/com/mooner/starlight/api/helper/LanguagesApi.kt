@@ -2,13 +2,12 @@ package com.mooner.starlight.api.helper
 
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.language.ILanguage
-import com.mooner.starlight.plugincore.language.Language
-import com.mooner.starlight.plugincore.method.Method
-import com.mooner.starlight.plugincore.method.MethodFunction
-import com.mooner.starlight.plugincore.method.MethodType
+import com.mooner.starlight.plugincore.api.Api
+import com.mooner.starlight.plugincore.api.ApiFunction
+import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.project.Project
 
-class LanguagesMethod: Method<LanguagesMethod.Languages>() {
+class LanguagesApi: Api<LanguagesApi.Languages>() {
 
     class Languages(
         private val project: Project
@@ -22,12 +21,12 @@ class LanguagesMethod: Method<LanguagesMethod.Languages>() {
 
     override val name: String = "Languages"
 
-    override val type: MethodType = MethodType.OBJECT
+    override val instanceType: InstanceType = InstanceType.OBJECT
 
     override val instanceClass: Class<Languages> = Languages::class.java
 
-    override val functions: List<MethodFunction> = listOf(
-        MethodFunction(
+    override val functions: List<ApiFunction> = listOf(
+        ApiFunction(
             name = "get",
             args = arrayOf(String::class.java)
         )

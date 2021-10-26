@@ -15,7 +15,7 @@ import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.config.*
 import com.mooner.starlight.plugincore.language.*
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.method.Method
+import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
@@ -116,11 +116,11 @@ class JSV8: Language() {
         Logger.i("JSV8", "updated: $updated")
     }
 
-    override fun compile(code: String, methods: List<Method<Any>>, project: Project?): Any {
+    override fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any {
         val v8 = V8.createV8Runtime()
         try {
             v8.apply {
-                for (methodBlock in methods) {
+                for (methodBlock in apis) {
                     addClass(
                         methodBlock.name,
                         methodBlock.getInstance(project!!),

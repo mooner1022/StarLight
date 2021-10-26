@@ -1,8 +1,8 @@
 package com.mooner.starlight.api.core
 
-import com.mooner.starlight.plugincore.method.Method
-import com.mooner.starlight.plugincore.method.MethodFunction
-import com.mooner.starlight.plugincore.method.MethodType
+import com.mooner.starlight.plugincore.api.Api
+import com.mooner.starlight.plugincore.api.ApiFunction
+import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.project.Project
 
 
@@ -42,15 +42,15 @@ class Event {
     }
 }
 
-class EventMethod: Method<Event>() {
+class EventApi: Api<Event>() {
 
     override val name: String = "Event"
 
-    override val type: MethodType = MethodType.CLASS
+    override val instanceType: InstanceType = InstanceType.CLASS
 
     override val instanceClass: Class<Event> = Event::class.java
 
-    override val functions: List<MethodFunction> = listOf(
+    override val functions: List<ApiFunction> = listOf(
         function {
             name = "Message"
             returns = Event.Message::class.java

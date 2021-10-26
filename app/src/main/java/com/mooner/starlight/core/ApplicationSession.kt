@@ -3,15 +3,15 @@ package com.mooner.starlight.core
 import android.content.Context
 import android.os.Environment
 import com.mooner.starlight.R
-import com.mooner.starlight.api.core.ClientMethod
-import com.mooner.starlight.api.core.EventMethod
+import com.mooner.starlight.api.core.ClientApi
+import com.mooner.starlight.api.core.EventApi
 import com.mooner.starlight.api.helper.*
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.method.MethodManager
+import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.plugin.EventListener
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
@@ -39,14 +39,14 @@ object ApplicationSession {
         Logger.init(starlightDir)
 
         onPhaseChanged(context.getString(R.string.step_default_lib))
-        MethodManager.apply {
-            addMethod(LanguagesMethod())
-            addMethod(ProjectLoggerMethod())
-            addMethod(ProjectsMethod())
-            addMethod(UtilsMethod())
-            addMethod(ClientMethod())
-            addMethod(EventMethod())
-            addMethod(TimerMethod())
+        ApiManager.apply {
+            addApi(LanguagesApi())
+            addApi(ProjectLoggerApi())
+            addApi(ProjectsApi())
+            addApi(UtilsApi())
+            addApi(ClientApi())
+            addApi(EventApi())
+            addApi(TimerApi())
         }
         onPhaseChanged(context.getString(R.string.step_plugincore_init))
 

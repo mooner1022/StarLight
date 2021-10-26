@@ -1,14 +1,14 @@
 package com.mooner.starlight.api.helper
 
-import com.mooner.starlight.plugincore.method.Method
-import com.mooner.starlight.plugincore.method.MethodFunction
-import com.mooner.starlight.plugincore.method.MethodType
+import com.mooner.starlight.plugincore.api.Api
+import com.mooner.starlight.plugincore.api.ApiFunction
+import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.project.JobLocker
 import com.mooner.starlight.plugincore.project.Project
 import java.util.function.Consumer
 import kotlin.concurrent.schedule
 
-class TimerMethod: Method<TimerMethod.Timer>() {
+class TimerApi: Api<TimerApi.Timer>() {
 
     class Timer {
         fun schedule(millis: Long): java.util.Timer {
@@ -43,8 +43,8 @@ class TimerMethod: Method<TimerMethod.Timer>() {
     }
 
     override val name: String = "Timer"
-    override val type: MethodType = MethodType.OBJECT
-    override val functions: List<MethodFunction> = listOf(
+    override val instanceType: InstanceType = InstanceType.OBJECT
+    override val functions: List<ApiFunction> = listOf(
         function {
             name = "schedule"
             args = arrayOf(Long::class.java, Consumer::class.java)

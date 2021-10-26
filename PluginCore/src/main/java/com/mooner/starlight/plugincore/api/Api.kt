@@ -1,6 +1,6 @@
-package com.mooner.starlight.plugincore.method
+package com.mooner.starlight.plugincore.api
 
-abstract class Method <T>: IMethod<T> {
+abstract class Api <T>: IApi<T> {
 
     /*
     private var _project: Project? = null
@@ -13,22 +13,23 @@ abstract class Method <T>: IMethod<T> {
     }
      */
 
-    protected class MethodFunctionBuilder {
+    protected class ApiFunctionBuilder {
 
         var name: String? = null
         var args: Array<Class<*>> = emptyArray()
         var returns: Class<*> = Unit::class.java
 
+        @Suppress("SameParameterValue")
         private fun required(fieldName: String, value: Any?) {
             if (value == null) {
                 throw IllegalArgumentException("Required field '$fieldName' is null")
             }
         }
 
-        fun build(): MethodFunction {
+        fun build(): ApiFunction {
             required("name", name)
 
-            return MethodFunction(
+            return ApiFunction(
                 name = name!!,
                 args = args,
                 returns = returns
@@ -36,8 +37,8 @@ abstract class Method <T>: IMethod<T> {
         }
     }
 
-    protected fun function(block: MethodFunctionBuilder.() -> Unit): MethodFunction {
-        val builder = MethodFunctionBuilder().apply(block)
+    protected fun function(block: ApiFunctionBuilder.() -> Unit): ApiFunction {
+        val builder = ApiFunctionBuilder().apply(block)
         return builder.build()
     }
 }

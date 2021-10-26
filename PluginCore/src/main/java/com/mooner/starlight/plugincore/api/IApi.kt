@@ -1,16 +1,16 @@
-package com.mooner.starlight.plugincore.method
+package com.mooner.starlight.plugincore.api
 
 import com.mooner.starlight.plugincore.project.Project
 
-interface IMethod <T> {
+interface IApi <T> {
 
     val name: String
 
-    val type: MethodType
-
-    val functions: List<MethodFunction>
+    val functions: List<ApiFunction>
 
     val instanceClass: Class<T>
+
+    val instanceType: InstanceType
 
     fun getInstance(project: Project): Any
 }

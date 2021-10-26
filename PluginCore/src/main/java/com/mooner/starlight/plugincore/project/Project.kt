@@ -7,7 +7,7 @@ import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.method.MethodManager
+import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
@@ -152,10 +152,10 @@ class Project(
                 lang.release(engine!!)
                 logger.d(tag, "engine released")
             }
-            logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.name }}")
+            logger.d(tag, "compile() called, methods= ${ApiManager.getApis().joinToString { it.name }}")
             engine = lang.compile(
                 code = rawCode,
-                methods = MethodManager.getMethods(),
+                apis = ApiManager.getApis(),
                 project = this
             )
         } catch (e: Exception) {

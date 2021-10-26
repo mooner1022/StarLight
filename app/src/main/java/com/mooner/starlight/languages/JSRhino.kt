@@ -1,12 +1,11 @@
 package com.mooner.starlight.languages
 
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
-import com.mooner.starlight.plugincore.config.ConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.method.Method
-import com.mooner.starlight.plugincore.method.MethodType
+import com.mooner.starlight.plugincore.api.Api
+import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
 import org.mozilla.javascript.Context
@@ -81,7 +80,7 @@ class JSRhino: Language() {
 
     override fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    override fun compile(code: String, methods: List<Method<Any>>, project: Project?): Any {
+    override fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any {
         val config = getLanguageConfig()
         context = Context.enter().apply {
             optimizationLevel = -1
@@ -99,14 +98,14 @@ class JSRhino: Language() {
         val shared = context.initStandardObjects()
         val scope = context.newObject(shared)
         //val engine = ScriptEngineManager().getEngineByName("rhino")!!
-        for(methodBlock in methods) {
+        for(methodBlock in apis) {
             val instance = methodBlock.getInstance(project!!)
 
-            when(methodBlock.type) {
-                MethodType.CLASS -> {
+            when(methodBlock.instanceType) {
+                InstanceType.CLASS -> {
                     context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
                 }
-                MethodType.OBJECT -> {
+                InstanceType.OBJECT -> {
                     ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(instance, scope))
                 }
             }

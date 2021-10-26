@@ -1,10 +1,8 @@
 package com.mooner.starlight.plugincore.language
 
 import android.view.View
-import android.widget.ImageView
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
-import com.mooner.starlight.plugincore.config.ConfigObject
-import com.mooner.starlight.plugincore.method.Method
+import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.project.Project
 
 interface ILanguage {
@@ -25,7 +23,7 @@ interface ILanguage {
 
     fun onConfigChanged(id: String, view: View, data: Any) {}
 
-    fun compile(code: String, methods: List<Method<Any>>, project: Project?): Any
+    fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any
 
     fun release(engine: Any) {}
 

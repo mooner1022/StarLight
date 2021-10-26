@@ -1,6 +1,6 @@
-package com.mooner.starlight.plugincore.method
+package com.mooner.starlight.plugincore.api
 
-data class MethodFunction(
+data class ApiFunction(
     val name: String,
     val args: Array<Class<*>> = arrayOf(),
     val returns: Class<*> = Unit::class.java
@@ -9,7 +9,7 @@ data class MethodFunction(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as MethodFunction
+        other as ApiFunction
 
         if (name != other.name) return false
         if (!args.contentEquals(other.args)) return false

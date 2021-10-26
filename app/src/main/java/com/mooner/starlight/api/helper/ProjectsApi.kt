@@ -1,12 +1,12 @@
 package com.mooner.starlight.api.helper
 
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.method.Method
-import com.mooner.starlight.plugincore.method.MethodFunction
-import com.mooner.starlight.plugincore.method.MethodType
+import com.mooner.starlight.plugincore.api.Api
+import com.mooner.starlight.plugincore.api.ApiFunction
+import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.project.Project
 
-class ProjectsMethod: Method<ProjectsMethod.Projects>() {
+class ProjectsApi: Api<ProjectsApi.Projects>() {
 
     class Projects(
         private val project: Project
@@ -21,11 +21,11 @@ class ProjectsMethod: Method<ProjectsMethod.Projects>() {
 
     override val name: String = "Projects"
 
-    override val type: MethodType = MethodType.OBJECT
+    override val instanceType: InstanceType = InstanceType.OBJECT
 
     override val instanceClass: Class<Projects> = Projects::class.java
 
-    override val functions: List<MethodFunction> = listOf(
+    override val functions: List<ApiFunction> = listOf(
         function {
             name = "get"
             returns = Project::class.java
