@@ -48,43 +48,54 @@ class LocalLogger(
     val logs: ArrayList<LogData>
         get() = this._logs
 
-    fun d(tag: String, message: String) = log(
+    fun d(message: String) = d(tag = null, message = message)
+
+    fun d(tag: String?, message: String) = Logger.log(
         LogData(
             type = LogType.DEBUG,
             tag = tag,
-            message = message,
-            threadName = Thread.currentThread().name,
-            isLocal = true
+            message = message
         )
     )
 
-    fun i(tag: String, message: String) = log(
+    fun i(message: String) = i(tag = null, message = message)
+
+    fun i(tag: String?, message: String) = Logger.log(
         LogData(
             type = LogType.INFO,
             tag = tag,
-            message = message,
-            threadName = Thread.currentThread().name,
-            isLocal = true
+            message = message
         )
     )
 
-    fun e(tag: String, message: String) = log(
+    fun e(message: String) = e(tag = null, message = message)
+
+    fun e(tag: String?, message: String) = Logger.log(
         LogData(
             type = LogType.ERROR,
             tag = tag,
-            message = message,
-            threadName = Thread.currentThread().name,
-            isLocal = true
+            message = message
         )
     )
 
-    fun w(tag: String, message: String) = log(
+    // What a Terrible Failure!
+    fun wtf(message: String) = wtf(tag = null, message = message)
+
+    fun wtf(tag: String?, message: String) = Logger.log(
+        LogData(
+            type = LogType.CRITICAL,
+            tag = tag,
+            message = message
+        )
+    )
+
+    fun w(message: String) = w(tag = null, message = message)
+
+    fun w(tag: String?, message: String) = Logger.log(
         LogData(
             type = LogType.WARNING,
             tag = tag,
-            message = message,
-            threadName = Thread.currentThread().name,
-            isLocal = true
+            message = message
         )
     )
 
