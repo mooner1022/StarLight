@@ -93,7 +93,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
     protected fun getClassLoader(): ClassLoader = classLoader
 
     @Deprecated(
-        message = "This method is left for old version compatibility, although it is deprecated.",
+        message = "Retained for legacy compatability, don't use it.",
         replaceWith = ReplaceWith("addLanguage(language: ILanguage)", "com.mooner.starlight.plugincore.plugin.StarlightPlugin.addLanguage")
     )
     fun addLanguage(language: Language) = addLanguage(language as ILanguage)

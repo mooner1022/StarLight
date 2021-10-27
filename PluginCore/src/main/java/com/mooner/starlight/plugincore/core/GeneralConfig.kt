@@ -7,26 +7,20 @@ import kotlinx.serialization.encodeToString
 import java.io.File
 
 class GeneralConfig(val path: File) {
-    private var configs: HashMap<String, String>
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
     companion object {
         private const val FILE_NAME = "config_general.json"
 
-        const val CONFIG_ALL_PROJECTS_POWER = "allProjectPower"
+        const val CONFIG_ALL_PROJECTS_POWER = "all_project_power"
 
-        const val CONFIG_PROJECTS_ALIGN = "projects_align_state"
-        const val CONFIG_PROJECTS_REVERSED = "projects_align_reversed"
-        const val CONFIG_PROJECTS_ACTIVE_FIRST = "projects_align_active_first"
-
-        const val CONFIG_PLUGINS_ALIGN = "plugins_align_state"
-        const val CONFIG_PLUGINS_REVERSED = "plugins_align_reversed"
-
-        const val CONFIG_THEME_CURRENT = "theme_current"
+        //const val CONFIG_THEME_CURRENT = "theme_current"
     }
 
+    private var configs: MutableMap<String, String>
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private var file = File(path, FILE_NAME)
+
     init {
-        val file = File(path, FILE_NAME)
         configs = if (!file.isFile || !file.exists()) {
             path.mkdirs()
             hashMapOf()
@@ -35,17 +29,12 @@ class GeneralConfig(val path: File) {
         }
     }
 
-    operator fun get(id: String): String? {
-        return configs[id]
-    }
+    operator fun get(id: String): String? = configs[id]
 
-    operator fun get(id: String, def: String): String {
-        return get(id)?: def
-    }
+    operator fun get(id: String, def: String): String = get(id)?: def
 
-    operator fun set(id: String, value: String): GeneralConfig {
+    operator fun set(id: String, value: String) {
         configs[id] = value
-        return this
     }
 
     fun push() {
@@ -53,18 +42,16 @@ class GeneralConfig(val path: File) {
             scope.cancel()
         }
 
-        CoroutineScope(Dispatchers.Default).launch {
-            synchronized(configs) {
-                val str = json.encodeToString(configs)
-                with(File(path, FILE_NAME)) {
-                    if (!exists()) {
-                        mkdirs()
-                    }
-                    if (!isFile) {
-                        deleteRecursively()
-                    }
-                    writeText(str)
+        scope.launch {
+            val str = synchronized(configs) { json.encodeToString(configs) }
+            with(file) {
+                if (!exists()) {
+                    mkdirs()
                 }
+                if (!isFile) {
+                    deleteRecursively()
+                }
+                writeText(str)
             }
         }
 

@@ -36,8 +36,9 @@
     <string name="menu_plugins">플러그인</string>
     <string name="menu_settings">설정</string>
 
-    <string name="project_align_state">프로젝트 정렬 : $state</string>
-    <string name="plugin_align_state">플러그인 정렬 : $state</string>
+    <string name="project_align_state">프로젝트 정렬</string>
+    <string name="plugin_align_state">플러그인 정렬</string>
+    <string name="default_placeholder">DEFAULT</string>
 
     <string name="nothing_yet">아직 $name 없는 것 같아요! $emoji</string>
 
