@@ -2,7 +2,7 @@
 package com.mooner.starlight.plugincore.project
 
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.Companion.json
+import com.mooner.starlight.plugincore.core.Session.json
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger

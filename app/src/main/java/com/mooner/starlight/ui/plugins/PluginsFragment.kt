@@ -18,6 +18,7 @@ import com.mooner.starlight.databinding.FragmentPluginsBinding
 import com.mooner.starlight.models.Align
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.core.Session.pluginManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
@@ -71,7 +72,7 @@ class PluginsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentPluginsBinding.inflate(inflater, container, false)
-        plugins = Session.pluginLoader.getPlugins().toList()
+        plugins = pluginManager.getPlugins().toList()
 
         if (plugins.isEmpty()) {
             Logger.d(javaClass.simpleName, "No plugins detected!")

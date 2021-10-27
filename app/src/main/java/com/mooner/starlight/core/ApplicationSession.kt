@@ -9,9 +9,10 @@ import com.mooner.starlight.api.helper.*
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
+import com.mooner.starlight.plugincore.core.Session.pluginLoader
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.api.ApiManager
+import com.mooner.starlight.plugincore.core.Session.pluginManager
 import com.mooner.starlight.plugincore.plugin.EventListener
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
@@ -76,8 +77,8 @@ object ApplicationSession {
 
         NetworkUtil.registerNetworkStatusListener(context)
         NetworkUtil.addOnNetworkStateChangedListener { state ->
-            if (pluginLoader.getPlugins().isNotEmpty()) {
-                for (plugin in pluginLoader.getPlugins()) {
+            if (pluginManager.getPlugins().isNotEmpty()) {
+                for (plugin in pluginManager.getPlugins()) {
                     (plugin as StarlightPlugin).onNetworkStateChanged(state)
                 }
             }

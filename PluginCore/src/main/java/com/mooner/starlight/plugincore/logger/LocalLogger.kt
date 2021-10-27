@@ -1,6 +1,6 @@
 package com.mooner.starlight.plugincore.logger
 
-import com.mooner.starlight.plugincore.core.Session.Companion.json
+import com.mooner.starlight.plugincore.core.Session.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

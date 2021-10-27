@@ -17,6 +17,7 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.core.Session.pluginManager
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.ui.plugins.config.PluginConfigActivity
@@ -69,7 +70,7 @@ class PluginsListAdapter(
                     title(text = "정말 [${config.name}](을)를 삭제할까요?")
                     message(text = "주의: 삭제시 되돌릴 수 없습니다.")
                     positiveButton(text = "확인") {
-                        Session.pluginLoader.removePlugin(config.id)
+                        pluginManager.removePlugin(config.id)
                         Snackbar.make(view, "플러그인을 삭제했습니다.\n앱을 재시작할까요?", Snackbar.LENGTH_LONG)
                             .setAction("확인") {
                                 Utils.restartApplication(context)

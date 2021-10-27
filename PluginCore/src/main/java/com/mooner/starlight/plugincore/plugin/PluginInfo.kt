@@ -1,6 +1,6 @@
 package com.mooner.starlight.plugincore.plugin
 
-import com.mooner.starlight.plugincore.core.Session.Companion.json
+import com.mooner.starlight.plugincore.core.Session.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString

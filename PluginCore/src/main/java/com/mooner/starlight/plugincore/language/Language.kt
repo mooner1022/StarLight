@@ -1,7 +1,7 @@
 package com.mooner.starlight.plugincore.language
 
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.Companion.json
+import com.mooner.starlight.plugincore.core.Session.json
 import com.mooner.starlight.plugincore.models.TypedString
 import kotlinx.serialization.decodeFromString
 import java.io.File

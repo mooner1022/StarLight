@@ -3,11 +3,13 @@ package com.mooner.starlight.plugincore.plugin
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.Config
 import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import com.mooner.starlight.plugincore.utils.Utils.Companion.getFileSize
+import com.mooner.starlight.plugincore.widget.IWidget
 import kotlinx.serialization.decodeFromString
 import java.io.File
 import kotlin.io.path.Path
@@ -90,7 +92,13 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     protected fun getClassLoader(): ClassLoader = classLoader
 
-    fun addLanguage(language: Language) {
+    @Deprecated(
+        message = "This method is left for old version compatibility, although it is deprecated.",
+        replaceWith = ReplaceWith("addLanguage(language: ILanguage)", "com.mooner.starlight.plugincore.plugin.StarlightPlugin.addLanguage")
+    )
+    fun addLanguage(language: Language) = addLanguage(language as ILanguage)
+
+    fun addLanguage(language: ILanguage) {
         var isLoadSuccess = false
         try {
             Session.languageManager.addLanguage(Path(dataDir.resolve("assets").path, language.id).pathString, language)
@@ -102,6 +110,8 @@ abstract class StarlightPlugin: Plugin, EventListener {
             Logger.i(T,(if (isLoadSuccess) "Successfully added" else "Failed to add") + " language ${language.name}")
         }
     }
+
+    fun addWidget(widget: IWidget) = Session.widgetManager.addWidget(widget)
 
     override fun toString(): String = info.fullName
 

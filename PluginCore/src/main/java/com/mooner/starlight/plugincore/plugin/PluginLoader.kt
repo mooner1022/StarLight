@@ -15,7 +15,6 @@ import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
 class PluginLoader {
-    private var plugins: MutableSet<Plugin> = hashSetOf()
     private val classes: MutableMap<String, Class<*>> = hashMapOf()
     private val loaders: MutableMap<String, PluginClassLoader> = LinkedHashMap()
 
@@ -72,7 +71,7 @@ class PluginLoader {
             }
         }
 
-        this.plugins = plugins
+        Session.pluginManager.plugins = plugins
         return plugins
     }
 
@@ -101,35 +100,11 @@ class PluginLoader {
         val plugin = loader.plugin
         plugin.setConfigPath(File(plugin.getDataFolder(), "config-plugin.json"))
         loadAssets(file, plugin)
-        if (plugin !in plugins) {
-            plugins.add(plugin)
+        if (plugin !in Session.pluginManager.plugins) {
+            Session.pluginManager.plugins += plugin
         }
         return plugin
     }
-
-    fun removePlugin(id: String): Boolean {
-        try {
-            val plugin = getPluginById(id)?: return false
-            if (plugin !is StarlightPlugin) return false
-
-            val file = plugin.file
-            if (!file.exists() || !file.isFile) return false
-
-            file.delete()
-            plugin.getDataFolder().deleteRecursively()
-
-            return true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return false
-        }
-    }
-
-    fun getPluginById(id: String): Plugin? = plugins.find { (it as StarlightPlugin).info.id == id }
-
-    fun getPluginByName(name: String): Plugin? = plugins.find { (it as StarlightPlugin).info.name == name }
-
-    fun getPlugins(): List<Plugin> = plugins.toList()
 
     fun loadAssets(file: File, plugin: Plugin, force: Boolean = false) {
         require(plugin is StarlightPlugin) { "Plugin [${plugin.name}] does not extend StarlightPlugin" }
@@ -199,7 +174,7 @@ class PluginLoader {
         return null
     }
 
-    fun registerListener(listener: EventListener) {
+    fun registerListener(plugin: Plugin, listener: EventListener) {
         val methods: MutableSet<Method>
         try {
             val publicMethods = listener.javaClass.methods

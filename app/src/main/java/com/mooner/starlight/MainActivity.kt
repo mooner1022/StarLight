@@ -23,9 +23,10 @@ import com.google.android.material.chip.ChipGroup
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.core.ForegroundTask
 import com.mooner.starlight.databinding.ActivityMainBinding
-import com.mooner.starlight.plugincore.core.Session.Companion.languageManager
-import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
-import com.mooner.starlight.plugincore.core.Session.Companion.projectManager
+import com.mooner.starlight.plugincore.core.Session.languageManager
+import com.mooner.starlight.plugincore.core.Session.pluginLoader
+import com.mooner.starlight.plugincore.core.Session.pluginManager
+import com.mooner.starlight.plugincore.core.Session.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.ViewPagerAdapter
 import com.mooner.starlight.utils.Utils.Companion.formatStringRes
@@ -185,7 +186,7 @@ class MainActivity : AppCompatActivity() {
                 updateFab(isShown = true)
             }
             R.id.nav_plugins -> {
-                val count = pluginLoader.getPlugins().size
+                val count = pluginManager.getPlugins().size
                 binding.titleText.text = applicationContext.getText(R.string.title_plugins)
                 binding.statusText.text = applicationContext.formatStringRes(
                     R.string.subtitle_plugins,

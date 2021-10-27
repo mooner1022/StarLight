@@ -8,7 +8,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityPluginConfigBinding
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
+import com.mooner.starlight.plugincore.core.Session.pluginManager
 import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.ui.config.ParentAdapter
@@ -42,7 +42,7 @@ class PluginConfigActivity: AppCompatActivity() {
 
         val pluginName = intent.getStringExtra(EXTRA_PLUGIN_NAME)!!
         val pluginId = intent.getStringExtra(EXTRA_PLUGIN_ID)!!
-        val plugin = pluginLoader.getPluginById(pluginId)?: error("Failed to get plugin [$pluginName]")
+        val plugin = pluginManager.getPluginById(pluginId)?: error("Failed to get plugin [$pluginName]")
         val recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
             if (changedData.containsKey(parentId)) {
                 changedData[parentId]!![id] = data

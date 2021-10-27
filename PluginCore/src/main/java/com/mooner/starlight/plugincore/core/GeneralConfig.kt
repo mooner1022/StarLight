@@ -1,10 +1,9 @@
 package com.mooner.starlight.plugincore.core
 
-import com.mooner.starlight.plugincore.core.Session.Companion.json
+import com.mooner.starlight.plugincore.core.Session.json
 import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.io.File
 
 class GeneralConfig(val path: File) {

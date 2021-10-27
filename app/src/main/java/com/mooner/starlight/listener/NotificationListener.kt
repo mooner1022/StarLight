@@ -10,8 +10,7 @@ import android.text.SpannableString
 import android.util.Base64
 import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.Companion.projectLoader
-import com.mooner.starlight.plugincore.core.Session.Companion.projectManager
+import com.mooner.starlight.plugincore.core.Session.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.models.ChatRoom
 import com.mooner.starlight.plugincore.models.ChatSender
@@ -70,6 +69,7 @@ class NotificationListener: NotificationListenerService() {
                 for (project in projects) {
                     project.callEvent("onMessage", arrayOf(data))
                 }
+                stopSelf()
             }
         }
     }
