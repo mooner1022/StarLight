@@ -15,22 +15,22 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
-import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.ui.presets.ExpandableCardView
 import com.mooner.starlight.ui.projects.config.ProjectConfigActivity
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class ProjectListAdapter(
     private val context: Context
 ) : RecyclerView.Adapter<ProjectListAdapter.ProjectListViewHolder>() {
     var data = listOf<Project>()
-    private val mainContext = Dispatchers.Main
-    private val compileContext = Dispatchers.Default
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectListViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.card_project_list, parent, false)
@@ -43,40 +43,37 @@ class ProjectListAdapter(
 
     override fun onBindViewHolder(holder: ProjectListViewHolder, position: Int) {
         val project = data[position]
-        val config = project.info
+        val info = project.info
 
-        fun updateCardColor() {
-            holder.cardViewIsEnabled.setCardBackgroundColor(
-                context.getColor(
-                    if (project.isCompiled) {
-                        if (config.isEnabled) {
-                            R.color.card_enabled
-                        } else {
-                            R.color.card_disabled
-                        }
-                    } else {
-                        R.color.orange
-                    }
-                )
-            )
-        }
+        fun getCardColor(): Int = context.getColor(
+            if (project.isCompiled) {
+                if (info.isEnabled) {
+                    R.color.card_enabled
+                } else {
+                    R.color.card_disabled
+                }
+            } else {
+                R.color.orange
+            }
+        )
 
-        updateCardColor()
-        holder.expandable.apply {
-            setSwitch(config.isEnabled)
-            setSwitchEnabled(project.isCompiled)
-        }
+        holder.cardViewIsEnabled.setCardBackgroundColor(getCardColor())
 
         holder.expandable.setOnSwitchChangeListener { _, isChecked ->
-            if (config.isEnabled != isChecked) {
-                config.isEnabled = isChecked
+            if (info.isEnabled != isChecked) {
+                info.isEnabled = isChecked
                 project.saveConfig()
             }
-            updateCardColor()
+            holder.cardViewIsEnabled.setCardBackgroundColor(getCardColor())
             holder.expandable.apply {
-                setSwitch(config.isEnabled)
+                setSwitch(info.isEnabled)
                 setSwitchEnabled(project.isCompiled)
             }
+        }
+
+        holder.expandable.apply {
+            setSwitch(info.isEnabled)
+            setSwitchEnabled(project.isCompiled)
         }
 
         holder.expandable.setIcon {
@@ -89,17 +86,19 @@ class ProjectListAdapter(
             }
         }
 
-        holder.expandable.setTitle(titleText = config.name)
+        holder.expandable.setTitle(titleText = info.name)
 
         holder.buttonDebugRoom.setOnClickListener {
+            if (!project.isCompiled) {
+                Snackbar.make(it, "아직 프로젝트가 컴파일되지 않았어요.", Snackbar.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             it.context.startActivity(
                 Intent(
                     it.context,
                     DebugRoomActivity::class.java
                 ).apply {
-                    putExtra("imageHash", 0)
-                    putExtra("roomName", config.name)
-                    putExtra("sender", "debug_sender")
+                    putExtra("roomName", info.name)
                 }
             )
         }
@@ -110,7 +109,7 @@ class ProjectListAdapter(
                     it.context,
                     ProjectConfigActivity::class.java
                 ).apply {
-                    putExtra("projectName", config.name)
+                    putExtra("projectName", info.name)
                 }
             )
         }
@@ -120,21 +119,24 @@ class ProjectListAdapter(
                 it.context,
                 EditorActivity::class.java
             ).apply {
-                putExtra("fileDir", File(project.directory, config.mainScript).path)
-                putExtra("title", config.name)
+                putExtra("fileDir", File(project.directory, info.mainScript).path)
+                putExtra("title", info.name)
             }
             it.context.startActivity(intent)
         }
 
         holder.buttonRecompile.setOnClickListener { view ->
-            CoroutineScope(compileContext).launch {
-                var isSuccess = false
+            CoroutineScope(Dispatchers.Default).launch {
                 try {
                     project.compile(true)
-                    isSuccess = true
+                    withContext(Dispatchers.Main) {
+                        Snackbar.make(view, "${info.name} 컴파일 완료!", Snackbar.LENGTH_SHORT).show()
+                        holder.cardViewIsEnabled.setCardBackgroundColor(getCardColor())
+                        holder.expandable.setSwitchEnabled(true)
+                    }
                 } catch (e: Exception) {
-                    withContext(context = mainContext) {
-                        Snackbar.make(view, "${config.name}의 컴파일에 실패했어요.\n$e", Snackbar.LENGTH_LONG).apply {
+                    withContext(Dispatchers.Main) {
+                        Snackbar.make(view, "${info.name}의 컴파일에 실패했어요.\n$e", Snackbar.LENGTH_LONG).apply {
                             setAction("자세히 보기") {
                                 MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                                     cornerRadius(25f)
@@ -148,15 +150,7 @@ class ProjectListAdapter(
                                 }
                             }
                         }.show()
-                    }
-                }
-                if (isSuccess) {
-                    withContext(context = mainContext) {
-                        Snackbar.make(view, "${config.name} 컴파일 완료!", Snackbar.LENGTH_SHORT).show()
-                        updateCardColor()
-                        if (holder.expandable.isEnabled) {
-                            holder.expandable.setSwitchEnabled(true)
-                        }
+                        holder.expandable.setSwitchEnabled(false)
                     }
                 }
             }

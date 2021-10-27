@@ -42,7 +42,8 @@ class ProjectLoader(
                                 project.compile(true)
                             } catch (e: Exception) {
                                 Logger.w(T, "Failed to pre-compile project ${info.name}: $e")
-                                continue
+                                info.isEnabled = false
+                                project.saveConfig()
                             }
                         }
                     } catch (e: IllegalArgumentException) {

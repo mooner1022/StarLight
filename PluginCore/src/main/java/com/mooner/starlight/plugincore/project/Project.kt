@@ -1,13 +1,13 @@
 
 package com.mooner.starlight.plugincore.project
 
+import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.json
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
@@ -166,9 +166,10 @@ class Project(
     }
 
     fun saveConfig() {
-        val str = json.encodeToString(info)
-        logger.d(info.name, "Flushed project config: $str")
-        File(directory.path, INFO_FILE_NAME).writeText(str, Charsets.UTF_8)
+        CoroutineScope(Dispatchers.IO).launch {
+            val str = synchronized(info) { json.encodeToString(info) }
+            File(directory.path, INFO_FILE_NAME).writeText(str, Charsets.UTF_8)
+        }
     }
 
     fun getLanguage(): ILanguage {

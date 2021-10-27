@@ -15,15 +15,14 @@ data class ProjectInfo(
 )
 
 class ProjectInfoBuilder {
-
     var name: String? = null
     var mainScript: String? = null
     var languageId: String? = null
     var isEnabled: Boolean = false
     var createdMillis: Long = 0L
-    var listeners: MutableSet<String> = hashSetOf()
-    var pluginIds: MutableSet<String> = hashSetOf()
-    var packages: MutableSet<String> = hashSetOf()
+    var listeners: MutableSet<String> = mutableSetOf()
+    var pluginIds: MutableSet<String> = mutableSetOf()
+    var packages: MutableSet<String> = mutableSetOf()
 
     private fun required(fieldName: String, value: Any?) {
         if (value == null) {

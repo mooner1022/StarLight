@@ -22,10 +22,8 @@ import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
-import kotlinx.serialization.ExperimentalSerializationApi
 import java.io.File
 
-@ExperimentalSerializationApi
 class ProjectConfigActivity: AppCompatActivity() {
 
     private val commonConfigs: List<CategoryConfigObject> = config {
