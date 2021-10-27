@@ -66,6 +66,7 @@ class UptimeWidgetSlim: Widget() {
     override fun onDestroyWidget() {
         super.onDestroyWidget()
         cancelTimer()
+        uptimeText = null
         isCreated = false
     }
 
