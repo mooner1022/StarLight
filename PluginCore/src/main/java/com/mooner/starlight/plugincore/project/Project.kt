@@ -15,7 +15,7 @@ import java.io.File
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 
-class Project(
+class Project (
     val directory: File,
     val info: ProjectInfo
 ) {
@@ -37,9 +37,9 @@ class Project(
 
     val configManager: ConfigManager = ConfigManager(File(directory, CONFIG_FILE_NAME))
 
-    private lateinit var jobName: String
+    private var threadName: String? = null
     //private lateinit var scope: CoroutineScope
-    private lateinit var context: CoroutineContext
+    private var context: CoroutineContext? = null
     val isCompiled: Boolean
         get() = engine != null
     private var engine: Any? = null
@@ -81,16 +81,22 @@ class Project(
             return
         }
 
-        if (!this::jobName.isInitialized || !this::context.isInitialized) {
-            jobName = "$tag-worker-${UUID.randomUUID()}"
-            context = newSingleThreadContext(jobName)
-            Logger.d("Allocated thread $jobName to project ${info.name}")
+        if (threadName == null || context == null) {
+            if (context != null) {
+                context?.cancel()
+                context = null
+
+            }
+            threadName = "$tag-thread"
+            context = newSingleThreadContext(threadName!!)
+            Logger.d("Allocated thread $threadName to project ${info.name}")
         }
 
-        val job = CoroutineScope(context).launch {
+        val jobName: String = UUID.randomUUID().toString()
+        val job = CoroutineScope(context!!).launch {
             lang.callFunction(engine!!, name, args)
         }
-        JobLocker.registerJob(
+        JobLocker.withParent(threadName!!).registerJob(
             key = jobName,
             job = job
         ) { e ->
@@ -176,10 +182,18 @@ class Project(
         return lang
     }
 
+    fun activeJobs(): Int {
+        return if (context == null || threadName == null) 0
+        else JobLocker.withParent(threadName!!).activeJobs()
+    }
+
     fun destroy() {
-        if (this::context.isInitialized) {
-            JobLocker.forceRelease(jobName)
+        if (context != null) {
+            if (threadName != null) {
+                JobLocker.withParent(threadName!!).purge()
+            }
             (context as CoroutineDispatcher).cancel()
+            context = null
         }
     }
 }

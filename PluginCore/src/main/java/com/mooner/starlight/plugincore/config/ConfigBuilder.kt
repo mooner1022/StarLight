@@ -114,7 +114,8 @@ class ConfigItemBuilder {
 
     inner class ButtonConfigBuilder {
         var id: String? = null
-        var name: String? = null
+        var title: String? = null
+        var description: String? = null
         var onClickListener: ((view: View) -> Unit)? = null
         var type: ButtonConfigObject.Type = ButtonConfigObject.Type.FLAT
         var icon: Icon? = null
@@ -126,13 +127,14 @@ class ConfigItemBuilder {
 
         fun build(): ButtonConfigObject {
             required("id", id)
-            required("name", name)
+            required("title", title)
             required("onClickListener", onClickListener)
             required("icon", icon)
 
             return ButtonConfigObject(
                 id = id!!,
-                name = name!!,
+                title = title!!,
+                description = description,
                 onClickListener = onClickListener!!,
                 buttonType = type,
                 icon = icon!!,
@@ -145,7 +147,8 @@ class ConfigItemBuilder {
 
     inner class ToggleConfigBuilder {
         var id: String? = null
-        var name: String? = null
+        var title: String? = null
+        var description: String? = null
         var defaultValue: Boolean = false
         var icon: Icon? = null
         @ColorInt
@@ -154,12 +157,13 @@ class ConfigItemBuilder {
 
         fun build(): ToggleConfigObject {
             required("id", id)
-            required("name", name)
+            required("title", title)
             required("icon", icon)
 
             return ToggleConfigObject(
                 id = id!!,
-                name = name!!,
+                title = title!!,
+                description = description,
                 defaultValue = defaultValue,
                 icon = icon!!,
                 iconTintColor = iconTintColor,
@@ -170,7 +174,8 @@ class ConfigItemBuilder {
 
     inner class SliderConfigBuilder {
         var id: String? = null
-        var name: String? = null
+        var title: String? = null
+        var description: String? = null
         var max: Int? = null
         var defaultValue: Int = 0
         var icon: Icon? = null
@@ -180,13 +185,14 @@ class ConfigItemBuilder {
 
         fun build(): SliderConfigObject {
             required("id", id)
-            required("name", name)
+            required("title", title)
             required("max", max)
             required("icon", icon)
 
             return SliderConfigObject(
                 id = id!!,
-                name = name!!,
+                title = title!!,
+                description = description,
                 max = max!!,
                 defaultValue = defaultValue,
                 icon = icon!!,
@@ -198,7 +204,8 @@ class ConfigItemBuilder {
 
     inner class StringConfigBuilder {
         var id: String? = null
-        var name: String? = null
+        var title: String? = null
+        var description: String? = null
         var hint: String? = null
         var inputType: Int = InputType.TYPE_CLASS_TEXT
         var require: (String) -> String? = { null }
@@ -209,12 +216,13 @@ class ConfigItemBuilder {
 
         fun build(): StringConfigObject{
             required("id", id)
-            required("name", name)
+            required("title", title)
             required("icon", icon)
 
             return StringConfigObject(
                 id = id!!,
-                name = name!!,
+                title = title!!,
+                description = description,
                 hint = hint ?: "",
                 inputType = inputType,
                 require = require,
@@ -227,7 +235,8 @@ class ConfigItemBuilder {
 
     inner class SpinnerConfigBuilder {
         var id: String? = null
-        var name: String? = null
+        var title: String? = null
+        var description: String? = null
         var items: List<String>? = null
         var defaultIndex: Int = 0
         var icon: Icon? = null
@@ -237,13 +246,14 @@ class ConfigItemBuilder {
 
         fun build(): SpinnerConfigObject {
             required("id", id)
-            required("name", name)
+            required("title", title)
             required("items", items)
             required("icon", icon)
 
             return SpinnerConfigObject(
                 id = id!!,
-                name = name!!,
+                title = title!!,
+                description = description,
                 items = items!!,
                 defaultIndex = defaultIndex,
                 icon = icon!!,

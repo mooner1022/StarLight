@@ -27,7 +27,7 @@ class SettingsFragment : Fragment() {
             items = items {
                 toggle {
                     id = "dummy"
-                    name = "나츠이로 마츠리"
+                    title = "나츠이로 마츠리"
                     icon = Icon.NIGHTS_STAY
                     iconTintColor = color { "#706EB9" }
                     defaultValue = false
@@ -41,7 +41,7 @@ class SettingsFragment : Fragment() {
             items = items {
                 string {
                     id = "load_timeout"
-                    name = "플러그인 로드 시간 제한(ms)"
+                    title = "플러그인 로드 시간 제한(ms)"
                     icon = Icon.TIMER_OFF
                     iconTintColor = color { "#BE9FE1" }
                     inputType = InputType.TYPE_CLASS_NUMBER
@@ -60,14 +60,14 @@ class SettingsFragment : Fragment() {
                 }
                 toggle {
                     id = "safe_mode"
-                    name = "안전 모드 (재시작 필요)"
+                    title = "안전 모드 (재시작 필요)"
                     icon = Icon.LAYERS_CLEAR
                     iconTintColor = color { "#62D2A2" }
                     defaultValue = false
                 }
                 button {
                     id = "restart_with_safe_mode"
-                    name = "안전 모드로 재시작"
+                    title = "안전 모드로 재시작"
                     icon = Icon.REFRESH
                     iconTintColor = color { "#FF6F3C" }
                     onClickListener = {

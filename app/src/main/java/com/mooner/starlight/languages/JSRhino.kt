@@ -1,11 +1,11 @@
 package com.mooner.starlight.languages
 
+import com.mooner.starlight.plugincore.api.Api
+import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.api.Api
-import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
 import org.mozilla.javascript.Context
@@ -41,7 +41,7 @@ class JSRhino: Language() {
             items = items {
                 slider {
                     id = CONF_OPTIMIZATION
-                    name = "최적화 레벨"
+                    title = "최적화 레벨"
                     max = 10
                     icon = Icon.COMPRESS
                     iconTintColor = color { "#57837B" }
@@ -49,7 +49,7 @@ class JSRhino: Language() {
                 }
                 spinner {
                     id = CONF_LANG_VERSION
-                    name = "JS 버전"
+                    title = "JS 버전"
                     items = listOf(
                         "JavaScript 1.0",
                         "JavaScript 1.1",

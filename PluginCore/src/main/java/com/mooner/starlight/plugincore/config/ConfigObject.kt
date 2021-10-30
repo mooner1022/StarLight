@@ -4,8 +4,6 @@ import android.text.InputType
 import android.view.View
 import androidx.annotation.ColorInt
 import com.mooner.starlight.plugincore.utils.Icon
-import com.mooner.starlight.plugincore.utils.Utils
-import java.util.*
 
 enum class ConfigObjectType(
     val viewType: Int
@@ -22,7 +20,10 @@ enum class ConfigObjectType(
 
 interface ConfigObject {
     val id: String
-    val name: String
+    val title: String
+    val description: String?
+    val icon: Icon
+    val iconTintColor: Int
     val default: Any
     val type: ConfigObjectType
     val viewType: Int
@@ -31,11 +32,12 @@ interface ConfigObject {
 
 data class ToggleConfigObject(
     override val id: String,
-    override val name: String,
+    override val title: String,
+    override val description: String?,
     private val defaultValue: Boolean,
-    val icon: Icon,
+    override val icon: Icon,
     @ColorInt
-    val iconTintColor: Int,
+    override val iconTintColor: Int,
     override val dependency: String? = null
 ): ConfigObject {
     val listeners: ArrayList<(isEnabled: Boolean) -> Unit> = arrayListOf()
@@ -49,12 +51,13 @@ data class ToggleConfigObject(
 
 data class SliderConfigObject(
     override val id: String,
-    override val name: String,
+    override val title: String,
+    override val description: String? = null,
     val max: Int,
     private val defaultValue: Int,
-    val icon: Icon,
+    override val icon: Icon,
     @ColorInt
-    val iconTintColor: Int,
+    override val iconTintColor: Int,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -67,14 +70,15 @@ data class SliderConfigObject(
 
 data class StringConfigObject(
     override val id: String,
-    override val name: String,
+    override val title: String,
+    override val description: String? = null,
     val hint: String,
     private val defaultValue: String = "",
     val inputType: Int = InputType.TYPE_CLASS_TEXT,
     val require: (String) -> String? = { null },
-    val icon: Icon,
+    override val icon: Icon,
     @ColorInt
-    val iconTintColor: Int,
+    override val iconTintColor: Int,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -87,12 +91,13 @@ data class StringConfigObject(
 
 data class SpinnerConfigObject(
     override val id: String,
-    override val name: String,
+    override val title: String,
+    override val description: String? = null,
     val items: List<String>,
     private val defaultIndex: Int = 0,
-    val icon: Icon,
+    override val icon: Icon,
     @ColorInt
-    val iconTintColor: Int,
+    override val iconTintColor: Int,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -105,12 +110,13 @@ data class SpinnerConfigObject(
 
 data class ButtonConfigObject(
     override val id: String,
-    override val name: String,
+    override val title: String,
+    override val description: String? = null,
     val onClickListener: (view: View) -> Unit,
     private val buttonType: Type = Type.FLAT,
-    val icon: Icon,
+    override val icon: Icon,
     @ColorInt
-    val iconTintColor: Int,
+    override val iconTintColor: Int,
     @ColorInt
     val backgroundColor: Int? = null,
     override val dependency: String? = null
@@ -137,7 +143,10 @@ data class CustomConfigObject(
 ): ConfigObject {
     override val default: Any
         get() = 0
-    override val name: String = ""
+    override val title: String = ""
+    override val description: String? = null
+    override val icon: Icon = Icon.ERROR
+    override val iconTintColor: Int = 0x0
     override val type: ConfigObjectType
         get() = ConfigObjectType.CUSTOM
     override val viewType: Int
@@ -147,13 +156,15 @@ data class CustomConfigObject(
 
 data class CategoryConfigObject(
     override val id: String,
-    val title: String,
+    override val title: String,
     @ColorInt
     val textColor: Int,
     val items: List<ConfigObject>
 ): ConfigObject {
     override val default: Any = 0
-    override val name: String = title
+    override val description: String? = null
+    override val icon: Icon = Icon.ERROR
+    override val iconTintColor: Int = 0x0
     override val type: ConfigObjectType = ConfigObjectType.CATEGORY
     override val viewType: Int = type.viewType
     override val dependency: String? = null

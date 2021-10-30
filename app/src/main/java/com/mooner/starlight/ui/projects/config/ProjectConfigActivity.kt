@@ -33,7 +33,7 @@ class ProjectConfigActivity: AppCompatActivity() {
             items = items {
                 button {
                     id = "open_folder"
-                    name = "폴더 열기"
+                    title = "폴더 열기"
                     type = ButtonConfigObject.Type.FLAT
                     onClickListener = {
                         println("dir= ${project.directory.path}")
@@ -46,54 +46,9 @@ class ProjectConfigActivity: AppCompatActivity() {
                 }
                 toggle {
                     id = "shutdown_on_error"
-                    name = "오류 발생시 비활성화"
+                    title = "오류 발생시 비활성화"
                     defaultValue = true
                     icon = Icon.ERROR
-                    iconTintColor = color { "#FF6B6B" }
-                }
-            }
-        }
-    }
-    private val cautiousConfigs: List<CategoryConfigObject> = config {
-        category {
-            id = "cautious"
-            title = "위험"
-            textColor = color { "#FF865E" }
-            items = items {
-                button {
-                    id = "interrupt_thread"
-                    name = "프로젝트 스레드 강제 종료"
-                    type = ButtonConfigObject.Type.FLAT
-                    onClickListener = {
-                        project.destroy()
-                    }
-                    icon = Icon.LAYERS_CLEAR
-                    //backgroundColor = Color.parseColor("#B8DFD8")
-                    iconTintColor = color { "#FF5C58" }
-                }
-                button {
-                    id = "delete_project"
-                    name = "프로젝트 제거"
-                    type = ButtonConfigObject.Type.FLAT
-                    onClickListener = {
-                        MaterialDialog(it.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                            cornerRadius(25f)
-                            cancelOnTouchOutside(true)
-                            noAutoDismiss()
-                            //icon(res = R.drawable.ic_round_delete_forever_24)
-                            title(text = "프로젝트를 정말로 제거할까요?")
-                            message(text = "주의: 프로젝트 제거시 복구가 불가합니다.")
-                            positiveButton(text = context.getString(R.string.delete)) {
-                                Session.projectManager.removeProject(project, removeFiles = true)
-                                dismiss()
-                            }
-                            negativeButton(text = context.getString(R.string.close)) {
-                                dismiss()
-                            }
-                        }
-                    }
-                    icon = Icon.DELETE_SWEEP
-                    //backgroundColor = Color.parseColor("#B8DFD8")
                     iconTintColor = color { "#FF5C58" }
                 }
             }
@@ -135,7 +90,7 @@ class ProjectConfigActivity: AppCompatActivity() {
             }
             project.getLanguage().onConfigChanged(id, view, data)
         }.apply {
-            data = (commonConfigs + project.getLanguage().configObjectList + cautiousConfigs)
+            data = (commonConfigs + project.getLanguage().configObjectList + getCautiousConfigs())
             saved = savedData
             notifyDataSetChanged()
         }
@@ -169,6 +124,55 @@ class ProjectConfigActivity: AppCompatActivity() {
 
         val textViewConfigProjectName: TextView = findViewById(R.id.textViewConfigProjectName)
         textViewConfigProjectName.text = projectName
+    }
+
+    private fun getCautiousConfigs(): List<CategoryConfigObject> = config {
+        category {
+            id = "cautious"
+            title = "위험"
+            textColor = color { "#FF865E" }
+            items = items {
+                button {
+                    id = "interrupt_thread"
+                    title = "프로젝트 스레드 강제 종료"
+                    description = "${project.activeJobs()}개의 작업이 실행중이에요."
+                    type = ButtonConfigObject.Type.FLAT
+                    onClickListener = {
+                        val active = project.activeJobs()
+                        project.destroy()
+                        Snackbar.make(it, "${active}개의 작업을 강제 종료하고 할당 해제했어요.", Snackbar.LENGTH_SHORT).show()
+                    }
+                    icon = Icon.LAYERS_CLEAR
+                    //backgroundColor = Color.parseColor("#B8DFD8")
+                    iconTintColor = color { "#FF5C58" }
+                }
+                button {
+                    id = "delete_project"
+                    title = "프로젝트 제거"
+                    type = ButtonConfigObject.Type.FLAT
+                    onClickListener = {
+                        MaterialDialog(it.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                            cornerRadius(25f)
+                            cancelOnTouchOutside(true)
+                            noAutoDismiss()
+                            //icon(res = R.drawable.ic_round_delete_forever_24)
+                            title(text = "프로젝트를 정말로 제거할까요?")
+                            message(text = "주의: 프로젝트 제거시 복구가 불가합니다.")
+                            positiveButton(text = context.getString(R.string.delete)) {
+                                Session.projectManager.removeProject(project, removeFiles = true)
+                                dismiss()
+                            }
+                            negativeButton(text = context.getString(R.string.close)) {
+                                dismiss()
+                            }
+                        }
+                    }
+                    icon = Icon.DELETE_SWEEP
+                    //backgroundColor = Color.parseColor("#B8DFD8")
+                    iconTintColor = color { "#FF5C58" }
+                }
+            }
+        }
     }
 
     private fun openFolderInExplorer(path: File): Boolean {
