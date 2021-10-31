@@ -1,120 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:backgroundTint="@color/transparent"
-              android:orientation="vertical"
-              android:paddingStart="@dimen/card_margin"
-              android:paddingEnd="@dimen/card_margin">
-
-    <androidx.cardview.widget.CardView
+<androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
-        android:layout_height="116dp"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="0dp">
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/transparent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+    <com.mooner.starlight.ui.presets.ExpandableCardView
+            android:id="@+id/card_plugin"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/project_card"
+            android:backgroundTint="@color/project_card"
+            app:animationDuration="200"
+            app:expandOnClick="true"
+            app:icon="@drawable/ic_round_developer_mode_24"
+            app:inner_view="@layout/card_plugin_buttons"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:showSwitch="false"
+            app:startExpanded="false"
+            app:title="PLUGIN_NAME" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintHorizontal_bias="0.0" app:layout_constraintVertical_bias="0.0"
+            android:layout_marginTop="8dp" android:layout_marginBottom="8dp"/>
+    <TextView
+            android:id="@+id/pluginSizeText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="64dp"
+            android:fontFamily="@font/nanumsquare_round_bold"
+            android:text="0.00 MB"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/card_plugin" android:layout_marginTop="16dp"/>
 
-            <ImageView
-                android:id="@+id/pluginIconImageView"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="4dp"
-                app:layout_constraintBottom_toTopOf="@+id/cardManageProject"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:srcCompat="@drawable/ic_round_developer_mode_24"/>
-
-            <TextView
-                android:id="@+id/pluginNameText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="14dp"
-                android:fontFamily="@font/nanumsquare_round_bold"
-                android:text="TITLE"
-                android:textSize="18sp"
-                app:layout_constraintStart_toEndOf="@+id/pluginIconImageView"
-                app:layout_constraintTop_toTopOf="parent"/>
-
-            <TextView
-                android:id="@+id/pluginVersionText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginBottom="8dp"
-                android:fontFamily="@font/nanumsquare_round_bold"
-                android:text="v0.0.1"
-                android:textSize="12sp"
-                app:layout_constraintBottom_toTopOf="@+id/cardManageProject"
-                app:layout_constraintStart_toEndOf="@+id/pluginIconImageView"
-                app:layout_constraintTop_toBottomOf="@+id/pluginNameText"/>
-
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardManageProject"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="@color/cardview_gray"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent">
-
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/pluginConfigButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:background="@color/transparent"
-                        android:fontFamily="@font/nanumsquare_round_bold"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="설정"
-                        app:icon="@drawable/ic_round_settings_24"
-                        app:iconGravity="textStart"/>
-
-                    <Button
-                        android:id="@+id/pluginRemoveButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:backgroundTint="@color/code_error"
-                        android:fontFamily="@font/nanumsquare_round_bold"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="제거"
-                        android:textColor="@color/white"
-                        app:icon="@drawable/ic_round_delete_forever_24"
-                        app:iconGravity="textStart"
-                        app:iconTint="@color/white"/>
-
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <TextView
-                android:id="@+id/pluginSizeText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                android:fontFamily="@font/nanumsquare_round_bold"
-                android:text="0.00 MB"
-                app:layout_constraintBottom_toTopOf="@+id/cardManageProject"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"/>
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.cardview.widget.CardView>
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

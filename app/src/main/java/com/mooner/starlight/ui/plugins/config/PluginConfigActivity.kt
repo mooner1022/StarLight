@@ -1,11 +1,9 @@
 package com.mooner.starlight.ui.plugins.config
 
 import android.os.Bundle
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
-import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityPluginConfigBinding
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.pluginManager
@@ -13,12 +11,10 @@ import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-@ExperimentalSerializationApi
 class PluginConfigActivity: AppCompatActivity() {
 
     companion object {
@@ -95,7 +91,6 @@ class PluginConfigActivity: AppCompatActivity() {
         configRecyclerView.layoutManager = layoutManager
         configRecyclerView.adapter = recyclerAdapter
 
-        val textViewConfigProjectName: TextView = findViewById(R.id.textViewConfigProjectName)
-        textViewConfigProjectName.text = pluginName
+        binding.pluginName.text = pluginName
     }
 }
