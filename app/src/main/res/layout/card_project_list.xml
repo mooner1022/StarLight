@@ -32,7 +32,7 @@
         app:animationDuration="200"
         app:expandOnClick="true"
         app:icon="@drawable/ic_js"
-        app:inner_view="@layout/card_project_inner"
+        app:inner_view="@layout/card_project_buttons"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/cardViewIsEnabled"

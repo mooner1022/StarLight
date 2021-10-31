@@ -37,7 +37,7 @@ class Project (
 
     val configManager: ConfigManager = ConfigManager(File(directory, CONFIG_FILE_NAME))
 
-    private var threadName: String? = null
+    var threadName: String? = null
     //private lateinit var scope: CoroutineScope
     private var context: CoroutineContext? = null
     val isCompiled: Boolean

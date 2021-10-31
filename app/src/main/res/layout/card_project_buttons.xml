@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:divider="@drawable/card_plugin_divider"
+    android:gravity="center|center_vertical"
+    android:orientation="horizontal"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:showDividers="middle">
+
+    <ImageButton
+            android:id="@+id/buttonEditCode"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:srcCompat="@drawable/ic_round_edit_24"
+            android:background="#00FFFFFF"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"/>
+
+    <ImageButton
+            android:id="@+id/buttonRecompile"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:srcCompat="@drawable/ic_round_refresh_24"
+            android:background="#00FFFFFF"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"/>
+
+    <ImageButton
+            android:id="@+id/buttonDebugRoom"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:srcCompat="@drawable/ic_round_insert_comment_24"
+            android:background="#00FFFFFF"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"/>
+
+    <ImageButton
+            android:id="@+id/buttonProjectConfig"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:srcCompat="@drawable/ic_round_settings_24"
+            android:background="#00FFFFFF"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"/>
+    <ImageButton
+            android:id="@+id/buttonProjectInfo"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            app:srcCompat="@drawable/ic_round_info_24"
+            android:background="#00FFFFFF"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"/>
+
+</LinearLayout>

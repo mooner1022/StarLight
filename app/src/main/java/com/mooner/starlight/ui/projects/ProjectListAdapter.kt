@@ -5,7 +5,7 @@ import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.ImageButton
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
@@ -21,6 +21,7 @@ import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.ui.presets.ExpandableCardView
 import com.mooner.starlight.ui.projects.config.ProjectConfigActivity
+import com.mooner.starlight.ui.projects.info.ProjectInfoActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -155,15 +156,26 @@ class ProjectListAdapter(
                 }
             }
         }
+
+        holder.buttonProjectInfo.setOnClickListener {
+            val intent = Intent(
+                it.context,
+                ProjectInfoActivity::class.java
+            ).apply {
+                putExtra("projectName", info.name)
+            }
+            it.context.startActivity(intent)
+        }
     }
 
     inner class ProjectListViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val context: Context = itemView.context
-        val expandable: ExpandableCardView = itemView.findViewById(R.id.card_project)
-        val cardViewIsEnabled: CardView = itemView.findViewById(R.id.cardViewIsEnabled)
-        val buttonDebugRoom: Button = itemView.findViewById(R.id.buttonDebugRoom)
-        val buttonEditCode: Button = itemView.findViewById(R.id.buttonEditCode)
-        val buttonRecompile: Button = itemView.findViewById(R.id.buttonRecompile)
-        val buttonProjectConfig: Button = itemView.findViewById(R.id.buttonProjectConfig)
+        val expandable: ExpandableCardView   = itemView.findViewById(R.id.card_project)
+        val cardViewIsEnabled: CardView      = itemView.findViewById(R.id.cardViewIsEnabled)
+        val buttonDebugRoom: ImageButton     = itemView.findViewById(R.id.buttonDebugRoom)
+        val buttonEditCode: ImageButton      = itemView.findViewById(R.id.buttonEditCode)
+        val buttonRecompile: ImageButton     = itemView.findViewById(R.id.buttonRecompile)
+        val buttonProjectConfig: ImageButton = itemView.findViewById(R.id.buttonProjectConfig)
+        val buttonProjectInfo: ImageButton   = itemView.findViewById(R.id.buttonProjectInfo)
     }
 }
