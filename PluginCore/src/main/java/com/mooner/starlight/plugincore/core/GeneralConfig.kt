@@ -2,7 +2,9 @@ package com.mooner.starlight.plugincore.core
 
 import com.mooner.starlight.plugincore.core.Session.json
 import com.mooner.starlight.plugincore.models.TypedString
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -10,7 +12,7 @@ import java.io.File
 class GeneralConfig(val path: File) {
 
     companion object {
-        private const val FILE_NAME = "config_general.json"
+        private const val FILE_NAME = "config-general.json"
         private const val DEFAULT_CATEGORY = "general"
     }
 
@@ -22,7 +24,6 @@ class GeneralConfig(val path: File) {
             json.decodeFromString(file.readText())
         }
     }
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
     private var file = File(path, FILE_NAME)
 
     operator fun get(id: String): String? = configs[DEFAULT_CATEGORY]?.get(id)?.value
@@ -39,12 +40,8 @@ class GeneralConfig(val path: File) {
     fun getAllConfigs(): Map<String, Map<String, TypedString>> = configs
 
     fun push() {
-        if (scope.isActive) {
-            scope.cancel()
-        }
-
-        scope.launch {
-            val str = synchronized(configs) { json.encodeToString(configs) }
+        CoroutineScope(Dispatchers.IO).launch {
+            val str = json.encodeToString(configs)
             with(file) {
                 if (!exists()) {
                     mkdirs()
