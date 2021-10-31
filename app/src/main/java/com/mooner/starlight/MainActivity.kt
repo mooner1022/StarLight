@@ -1,7 +1,6 @@
 package com.mooner.starlight
 
 import android.animation.LayoutTransition
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -24,7 +23,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.core.ForegroundTask
 import com.mooner.starlight.databinding.ActivityMainBinding
 import com.mooner.starlight.plugincore.core.Session.languageManager
-import com.mooner.starlight.plugincore.core.Session.pluginLoader
 import com.mooner.starlight.plugincore.core.Session.pluginManager
 import com.mooner.starlight.plugincore.core.Session.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
@@ -32,8 +30,6 @@ import com.mooner.starlight.ui.ViewPagerAdapter
 import com.mooner.starlight.utils.Utils.Companion.formatStringRes
 import kotlin.math.abs
 
-
-@SuppressLint("StaticFieldLeak")
 class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding

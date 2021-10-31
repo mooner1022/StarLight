@@ -24,8 +24,9 @@ abstract class StarlightPlugin: Plugin, EventListener {
     private var isEnabled = false
     private var configPath: File? = null
     lateinit var info: PluginInfo
-    val fileSize: Float
-        get() = file.getFileSize()
+
+    val fileSize: Float get() = file.getFileSize()
+    val fileName: String get() = file.name
 
     companion object {
         private const val T = "StarlightPlugin"

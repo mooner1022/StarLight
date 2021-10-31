@@ -2,6 +2,7 @@ package com.mooner.starlight.ui.config
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.ColorStateList
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -10,6 +11,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -64,7 +66,8 @@ class ConfigAdapter(
             }
             holder.icon.apply {
                 load(viewData.icon.drawableRes)
-                setColorFilter(viewData.iconTintColor)
+                ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(viewData.iconTintColor))
+                //setColorFilter(viewData.iconTintColor, android.graphics.PorterDuff.Mode.SRC_IN)
             }
         }
         when(viewData.viewType) {
@@ -164,6 +167,7 @@ class ConfigAdapter(
                 if (viewData.viewType != ConfigObjectType.CUSTOM.viewType) {
                     holder.icon.isEnabled = isEnabled
                     holder.title.isEnabled = isEnabled
+                    holder.description.isEnabled = isEnabled
                 }
 
                 when(viewData.viewType) {

@@ -1,6 +1,7 @@
 package com.mooner.starlight.plugincore.core
 
 import com.mooner.starlight.plugincore.core.Session.json
+import com.mooner.starlight.plugincore.models.TypedString
 import kotlinx.coroutines.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -10,32 +11,32 @@ class GeneralConfig(val path: File) {
 
     companion object {
         private const val FILE_NAME = "config_general.json"
-
-        const val CONFIG_ALL_PROJECTS_POWER = "all_project_power"
-
-        //const val CONFIG_THEME_CURRENT = "theme_current"
+        private const val DEFAULT_CATEGORY = "general"
     }
 
-    private var configs: MutableMap<String, String>
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
-    private var file = File(path, FILE_NAME)
-
-    init {
-        configs = if (!file.isFile || !file.exists()) {
+    private val configs: MutableMap<String, MutableMap<String, TypedString>> by lazy {
+        if (!file.isFile || !file.exists()) {
             path.mkdirs()
             hashMapOf()
         } else {
             json.decodeFromString(file.readText())
         }
     }
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private var file = File(path, FILE_NAME)
 
-    operator fun get(id: String): String? = configs[id]
+    operator fun get(id: String): String? = configs[DEFAULT_CATEGORY]?.get(id)?.value
 
     operator fun get(id: String, def: String): String = get(id)?: def
 
     operator fun set(id: String, value: String) {
-        configs[id] = value
+        if (configs.containsKey(DEFAULT_CATEGORY))
+            configs[DEFAULT_CATEGORY]!![id] = TypedString(type = "String", value = value)
+        else
+            configs[DEFAULT_CATEGORY] = mutableMapOf(id to TypedString(type = "String", value = value))
     }
+
+    fun getAllConfigs(): Map<String, Map<String, TypedString>> = configs
 
     fun push() {
         if (scope.isActive) {

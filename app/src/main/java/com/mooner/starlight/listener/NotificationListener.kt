@@ -8,7 +8,6 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.text.SpannableString
 import android.util.Base64
-import com.mooner.starlight.plugincore.core.GeneralConfig
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
@@ -21,8 +20,8 @@ import java.util.*
 class NotificationListener: NotificationListenerService() {
 
     private val sessions: MutableMap<String, Notification.Action> = WeakHashMap()
-    private val isAllPowerOn: Boolean
-        get() = Session.generalConfig[GeneralConfig.CONFIG_ALL_PROJECTS_POWER, "true"].toBoolean()
+    private val isGlobalPowerOn: Boolean
+        get() = Session.generalConfig["global_power", "true"].toBoolean()
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
@@ -30,7 +29,7 @@ class NotificationListener: NotificationListenerService() {
         val wearableExtender = Notification.WearableExtender(sbn.notification)
         for (act in wearableExtender.actions) {
             if (act.remoteInputs != null && act.remoteInputs.isNotEmpty()) {
-                if (!isAllPowerOn) {
+                if (!isGlobalPowerOn) {
                     return
                 }
                 val notification = sbn.notification

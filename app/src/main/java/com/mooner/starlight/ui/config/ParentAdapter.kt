@@ -18,7 +18,7 @@ class ParentAdapter(
     private val onConfigChanged: (parentId: String, id: String, view: View, data: Any) -> Unit
 ): RecyclerView.Adapter<ParentAdapter.ViewHolder>() {
     var data: List<CategoryConfigObject> = mutableListOf()
-    var saved: MutableMap<String, MutableMap<String, TypedString>> = hashMapOf()
+    var saved: Map<String, Map<String, TypedString>> = hashMapOf()
     var isHavingError = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
