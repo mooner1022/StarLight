@@ -27,10 +27,10 @@
 
             <!-- Rivedi effetto ripple -->
 
-            <ImageButton
+            <ImageView
                     android:id="@+id/card_icon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
                     android:layout_centerVertical="true"
                     android:layout_marginStart="15dp"
                     android:background="#00FFFFFF"

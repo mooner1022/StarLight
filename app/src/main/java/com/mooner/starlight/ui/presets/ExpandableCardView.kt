@@ -24,11 +24,9 @@ import android.widget.*
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
-import coil.load
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.R
-import java.io.File
 
 
 /**
@@ -63,7 +61,7 @@ class ExpandableCardView @JvmOverloads constructor(context: Context, attrs: Attr
     private lateinit var cardTitle: TextView
     private lateinit var cardLayout: MaterialCardView
     private lateinit var cardSwitch: SwitchMaterial
-    private lateinit var cardIcon: ImageButton
+    private lateinit var cardIcon: ImageView
     private lateinit var cardArrow: ImageButton
     private lateinit var cardHeader: RelativeLayout
     private lateinit var cardContainer: LinearLayout
