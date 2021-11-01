@@ -84,7 +84,7 @@ class ProjectsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var projects: List<Project>
-    private lateinit var recyclerAdapter: ProjectListAdapter
+    private var recyclerAdapter: ProjectListAdapter? = null
     private val aligns = arrayOf(
         ALIGN_GANADA,
         ALIGN_DATE,
@@ -125,8 +125,8 @@ class ProjectsFragment : Fragment() {
         recyclerAdapter = ProjectListAdapter(requireContext())
 
         projects = projectManager.getProjects()
-        recyclerAdapter.data = sortData()
-        recyclerAdapter.notifyItemRangeInserted(0, recyclerAdapter.data.size)
+        recyclerAdapter!!.data = sortData()
+        recyclerAdapter!!.notifyItemRangeInserted(0, recyclerAdapter!!.data.size)
 
         with(binding.recyclerViewProjectList) {
             itemAnimator = FadeInUpAnimator()
@@ -157,12 +157,14 @@ class ProjectsFragment : Fragment() {
         return if (isReversed) aligned.asReversed() else aligned
     }
 
-    private fun reloadList(data: List<Project>) {
-        val orgDataSize = recyclerAdapter.data.size
-        recyclerAdapter.data = listOf()
-        recyclerAdapter.notifyItemRangeRemoved(0, orgDataSize)
-        recyclerAdapter.data = data
-        recyclerAdapter.notifyItemRangeInserted(0, data.size)
+    private fun reloadList(list: List<Project>) {
+        recyclerAdapter?.apply {
+            val orgDataSize = data.size
+            data = listOf()
+            notifyItemRangeRemoved(0, orgDataSize)
+            data = list
+            notifyItemRangeInserted(0, list.size)
+        }
     }
 
     private fun update() {
@@ -192,9 +194,10 @@ class ProjectsFragment : Fragment() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onDestroyView() {
+        super.onDestroyView()
         unbindListener()
+        recyclerAdapter = null
     }
 
     private fun bindListener() {

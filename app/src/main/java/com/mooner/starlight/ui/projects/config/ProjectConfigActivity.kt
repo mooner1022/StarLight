@@ -59,6 +59,7 @@ class ProjectConfigActivity: AppCompatActivity() {
     private lateinit var savedData: MutableMap<String, MutableMap<String, TypedString>>
     private lateinit var binding: ActivityProjectConfigBinding
     private lateinit var project: Project
+    private var recyclerAdapter: ParentAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,7 +73,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         project = Session.projectManager.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
         savedData = project.configManager.getAllConfig()
 
-        val recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
+        recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
             if (changedData.containsKey(parentId)) {
                 changedData[parentId]!![id] = data
             } else {
@@ -96,7 +97,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         }
 
         fabProjectConfig.setOnClickListener { view ->
-            if (recyclerAdapter.isHavingError) {
+            if (recyclerAdapter!!.isHavingError) {
                 Snackbar.make(view, "올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
                 fabProjectConfig.hide()
                 return@setOnClickListener
@@ -187,5 +188,10 @@ class ProjectConfigActivity: AppCompatActivity() {
             true
         } else
             false
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        recyclerAdapter = null
     }
 }

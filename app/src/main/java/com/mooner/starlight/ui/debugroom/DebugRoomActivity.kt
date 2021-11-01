@@ -13,12 +13,11 @@ import com.mooner.starlight.plugincore.models.DebugChatRoom
 import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.project.Project
 import jp.wasabeef.recyclerview.animators.FadeInAnimator
-import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 
 class DebugRoomActivity: AppCompatActivity() {
 
     private val chatList: MutableList<DebugRoomMessage> = mutableListOf()
-    private lateinit var userChatAdapter: DebugRoomChatAdapter
+    private var userChatAdapter: DebugRoomChatAdapter? = null
     private lateinit var roomName: String
     private lateinit var sender: String
     private lateinit var project: Project
@@ -111,11 +110,16 @@ class DebugRoomActivity: AppCompatActivity() {
                     viewType = viewType
                 )
             )
-            userChatAdapter.notifyItemInserted(chatList.size)
+            userChatAdapter?.notifyItemInserted(chatList.size)
             binding.messageInput.setText("")
             binding.chatRecyclerView.post {
                 binding.chatRecyclerView.smoothScrollToPosition(chatList.size - 1)
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        userChatAdapter = null
     }
 }

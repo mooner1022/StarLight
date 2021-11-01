@@ -18,6 +18,7 @@ class ProjectInfoActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityProjectInfoBinding
+    private var recyclerAdapter: ParentAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,10 +28,10 @@ class ProjectInfoActivity : AppCompatActivity() {
         val projectName = intent.getStringExtra(EXTRA_PROJECT_NAME)!!
         val project = (Session.projectManager.getProject(projectName)?: error("Failed to get project [$projectName]"))
         val lang = project.getLanguage()
-        val recyclerAdapter = ParentAdapter(applicationContext) { _, _, _, _ -> }
+        recyclerAdapter = ParentAdapter(applicationContext) { _, _, _, _ -> }
 
         val info = project.info
-        recyclerAdapter.data = config {
+        recyclerAdapter!!.data = config {
             category {
                 id = "general"
                 title = "기본"
@@ -145,7 +146,7 @@ class ProjectInfoActivity : AppCompatActivity() {
                 }
             }
         }
-        recyclerAdapter.notifyDataSetChanged()
+        recyclerAdapter!!.notifyDataSetChanged()
 
         binding.leave.setOnClickListener { finish() }
 
@@ -156,5 +157,10 @@ class ProjectInfoActivity : AppCompatActivity() {
         binding.recyclerView.adapter = recyclerAdapter
 
         binding.projectName.text = projectName
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        recyclerAdapter = null
     }
 }

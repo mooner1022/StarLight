@@ -19,6 +19,7 @@ class SettingsFragment : Fragment() {
 
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
+    private var recyclerAdapter: ParentAdapter? = null
 
     private val settings: List<CategoryConfigObject> = config {
         category {
@@ -90,7 +91,7 @@ class SettingsFragment : Fragment() {
     ): View {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
 
-        val recyclerAdapter = ParentAdapter(requireContext()) { _, id, _, data ->
+        recyclerAdapter = ParentAdapter(requireContext()) { _, id, _, data ->
             Session.generalConfig[id] = data.toString()
             Session.generalConfig.push()
         }.apply {
@@ -105,5 +106,10 @@ class SettingsFragment : Fragment() {
         }
 
         return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        recyclerAdapter = null
     }
 }

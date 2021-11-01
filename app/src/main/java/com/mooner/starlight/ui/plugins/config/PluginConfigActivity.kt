@@ -25,6 +25,7 @@ class PluginConfigActivity: AppCompatActivity() {
 
     private val changedData: MutableMap<String, MutableMap<String, Any>> = hashMapOf()
     private lateinit var savedData: MutableMap<String, MutableMap<String, TypedString>>
+    private var recyclerAdapter: ParentAdapter? = null
 
     private lateinit var binding: ActivityPluginConfigBinding
 
@@ -39,7 +40,7 @@ class PluginConfigActivity: AppCompatActivity() {
         val pluginName = intent.getStringExtra(EXTRA_PLUGIN_NAME)!!
         val pluginId = intent.getStringExtra(EXTRA_PLUGIN_ID)!!
         val plugin = pluginManager.getPluginById(pluginId)?: error("Failed to get plugin [$pluginName]")
-        val recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
+        recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
             if (changedData.containsKey(parentId)) {
                 changedData[parentId]!![id] = data
             } else {
@@ -66,7 +67,7 @@ class PluginConfigActivity: AppCompatActivity() {
         }
 
         fabProjectConfig.setOnClickListener { view ->
-            if (recyclerAdapter.isHavingError) {
+            if (recyclerAdapter!!.isHavingError) {
                 Snackbar.make(view, "올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
                 fabProjectConfig.hide()
                 return@setOnClickListener
@@ -81,7 +82,7 @@ class PluginConfigActivity: AppCompatActivity() {
 
         binding.leave.setOnClickListener { finish() }
 
-        recyclerAdapter.apply {
+        recyclerAdapter!!.apply {
             data = plugin.configObjects.toList()
             saved = savedData
             notifyDataSetChanged()
@@ -92,5 +93,10 @@ class PluginConfigActivity: AppCompatActivity() {
         configRecyclerView.adapter = recyclerAdapter
 
         binding.pluginName.text = pluginName
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        recyclerAdapter = null
     }
 }

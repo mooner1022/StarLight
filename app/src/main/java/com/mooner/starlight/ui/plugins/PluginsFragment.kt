@@ -57,8 +57,10 @@ class PluginsFragment : Fragment() {
     private var _binding: FragmentPluginsBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var listAdapter: PluginsListAdapter
-    private lateinit var plugins: List<Plugin>
+    private var listAdapter: PluginsListAdapter? = null
+    private val plugins: List<Plugin> by lazy {
+        pluginManager.getPlugins().toList()
+    }
 
     private val aligns = arrayOf(
         ALIGN_GANADA,
@@ -75,7 +77,6 @@ class PluginsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentPluginsBinding.inflate(inflater, container, false)
-        plugins = pluginManager.getPlugins().toList()
 
         if (plugins.isEmpty()) {
             Logger.d(javaClass.simpleName, "No plugins detected!")
@@ -109,8 +110,8 @@ class PluginsFragment : Fragment() {
         binding.alignStateIcon.setImageResource(alignState.icon)
 
         listAdapter = PluginsListAdapter(requireContext())
-        listAdapter.data = sortData()
-        listAdapter.notifyItemRangeInserted(0, plugins.size)
+        listAdapter!!.data = sortData()
+        listAdapter!!.notifyItemRangeInserted(0, plugins.size)
 
         with(binding.recyclerViewProjectList) {
             adapter = listAdapter
@@ -139,7 +140,7 @@ class PluginsFragment : Fragment() {
     }
 
     private fun reloadList(list: List<Plugin>) {
-        with(listAdapter) {
+        listAdapter?.apply {
             val orgDataSize = data.size
             data = listOf()
             notifyItemRangeRemoved(0, orgDataSize)
@@ -161,6 +162,7 @@ class PluginsFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        listAdapter = null
         _binding = null
     }
 }

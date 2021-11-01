@@ -9,9 +9,6 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mooner.starlight.databinding.FragmentHomeBinding
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.logger.LogType
-import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 
 class HomeFragment : Fragment() {
@@ -19,7 +16,7 @@ class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var widgetsAdapter: WidgetsAdapter
+    private var widgetsAdapter: WidgetsAdapter? = null
 
     /*
     private var uptimeTimer: Timer? = null
@@ -83,9 +80,11 @@ class HomeFragment : Fragment() {
         uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
         */
 
-        widgetsAdapter = WidgetsAdapter(requireContext())
-        widgetsAdapter.data = Session.widgetManager.getWidgets()
-        widgetsAdapter.notifyItemRangeInserted(0, widgetsAdapter.data.size)
+        widgetsAdapter = WidgetsAdapter(requireContext()).apply {
+            data = Session.widgetManager.getWidgets()
+            notifyItemRangeInserted(0, data.size)
+        }
+
         with(binding.widgets) {
             itemAnimator = FadeInUpAnimator()
             layoutManager = LinearLayoutManager(requireContext())
@@ -116,17 +115,18 @@ class HomeFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
-        widgetsAdapter.onPause()
+        widgetsAdapter?.onPause()
     }
 
     override fun onResume() {
         super.onResume()
-        widgetsAdapter.onResume()
+        widgetsAdapter?.onResume()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        widgetsAdapter.onDestroy()
+        widgetsAdapter?.onDestroy()
+        widgetsAdapter = null
         /*
         if (uptimeTimer != null) {
             uptimeTimer!!.cancel()

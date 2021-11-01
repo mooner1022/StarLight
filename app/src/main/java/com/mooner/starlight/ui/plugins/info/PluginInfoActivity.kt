@@ -19,6 +19,7 @@ class PluginInfoActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityPluginInfoBinding
+    private var recyclerAdapter: ParentAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,10 +29,10 @@ class PluginInfoActivity : AppCompatActivity() {
         val pluginName = intent.getStringExtra(EXTRA_PLUGIN_NAME)!!
         val pluginId = intent.getStringExtra(EXTRA_PLUGIN_ID)!!
         val plugin = (Session.pluginManager.getPluginById(pluginId)?: error("Failed to get plugin [$pluginName]")) as StarlightPlugin
-        val recyclerAdapter = ParentAdapter(applicationContext) { _, _, _, _ -> }
+        recyclerAdapter = ParentAdapter(applicationContext) { _, _, _, _ -> }
 
         val info = plugin.info
-        recyclerAdapter.data = config {
+        recyclerAdapter!!.data = config {
             category {
                 id = "general"
                 title = "기본"
@@ -136,7 +137,7 @@ class PluginInfoActivity : AppCompatActivity() {
                 }
             }
         }
-        recyclerAdapter.notifyDataSetChanged()
+        recyclerAdapter!!.notifyDataSetChanged()
 
         binding.leave.setOnClickListener { finish() }
 
@@ -147,5 +148,10 @@ class PluginInfoActivity : AppCompatActivity() {
         binding.recyclerView.adapter = recyclerAdapter
 
         binding.pluginName.text = pluginName
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        recyclerAdapter = null
     }
 }

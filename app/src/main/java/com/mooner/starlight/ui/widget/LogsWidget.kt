@@ -27,7 +27,7 @@ class LogsWidget: Widget() {
     override val name: String = "로그"
     override val size: WidgetSize = WidgetSize.XLarge
 
-    private lateinit var mAdapter: LogsRecyclerViewAdapter
+    private var mAdapter: LogsRecyclerViewAdapter? = null
 
     override fun onCreateWidget(view: View) {
         val context = view.context
@@ -53,7 +53,10 @@ class LogsWidget: Widget() {
                     reverseLayout = true
                     stackFromEnd = true
                 }
-                mAdapter.data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
+                mAdapter!!.apply {
+                    data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
+                    notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
+                }
                 rvLogs.apply {
                     itemAnimator = FadeInUpAnimator()
                     layoutManager = mLayoutManager
@@ -61,7 +64,6 @@ class LogsWidget: Widget() {
                     visibility = View.VISIBLE
                 }
                 textViewNoLogsYet.visibility = View.GONE
-                mAdapter.notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
             }
 
             bindLogger()
@@ -93,6 +95,7 @@ class LogsWidget: Widget() {
     override fun onDestroyWidget() {
         super.onDestroyWidget()
         unbindLogger()
+        mAdapter = null
     }
 
     override fun onCreateThumbnail(view: View) {
@@ -101,7 +104,7 @@ class LogsWidget: Widget() {
 
     private fun bindLogger() {
         Logger.bindListener(T) {
-            mAdapter.pushLog(it, LOGS_MAX_SIZE)
+            mAdapter?.pushLog(it, LOGS_MAX_SIZE)
         }
     }
 
