@@ -110,7 +110,7 @@ class PluginsFragment : Fragment() {
 
         listAdapter = PluginsListAdapter(requireContext())
         listAdapter.data = sortData()
-        listAdapter.notifyItemRangeInserted(0, plugins.size - 1)
+        listAdapter.notifyItemRangeInserted(0, plugins.size)
 
         with(binding.recyclerViewProjectList) {
             adapter = listAdapter
@@ -142,9 +142,9 @@ class PluginsFragment : Fragment() {
         with(listAdapter) {
             val orgDataSize = data.size
             data = listOf()
-            notifyItemRangeRemoved(0, orgDataSize - 1)
+            notifyItemRangeRemoved(0, orgDataSize)
             data = list
-            notifyItemRangeInserted(0, data.size - 1)
+            notifyItemRangeInserted(0, data.size)
         }
     }
 
