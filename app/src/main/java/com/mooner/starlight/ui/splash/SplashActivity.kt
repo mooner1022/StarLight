@@ -104,17 +104,17 @@ class SplashActivity : AppCompatActivity() {
                                     grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                             needs.dismiss()
                             Snackbar.make(view, "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و", Snackbar.LENGTH_LONG).show()
-                            init()
+                            init(intent)
                         } else {
                             Snackbar.make(view, "권한이 승인되지 않았어요.. (´•ω•̥`)و", Snackbar.LENGTH_LONG).show()
-                            init()
+                            init(intent)
                         }
                     }
                 }
             }
             binding.root.showNeeds(needs)
         } else {
-            init()
+            init(intent)
         }
 
         val imageLoader = ImageLoader.Builder(applicationContext)
@@ -133,7 +133,7 @@ class SplashActivity : AppCompatActivity() {
         }
     }
 
-    private fun init() {
+    private fun init(intent: Intent) {
         val initMillis = System.currentTimeMillis()
 
         val webview = WebView(applicationContext)
@@ -159,18 +159,18 @@ class SplashActivity : AppCompatActivity() {
                         loadTimer = Timer().apply {
                             schedule(delay) {
                                 loadTimer = null
-                                startMainActivity()
+                                startMainActivity(intent)
                             }
                         }
                     } else {
-                        startMainActivity()
+                        startMainActivity(intent)
                     }
                 }
             )
         }
     }
 
-    private fun startMainActivity() = runOnUiThread {
+    private fun startMainActivity(intent: Intent) = runOnUiThread {
         startActivity(intent)
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()
