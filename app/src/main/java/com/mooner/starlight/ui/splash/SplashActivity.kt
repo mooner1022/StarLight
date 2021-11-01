@@ -33,6 +33,7 @@ import java.util.*
 import kotlin.concurrent.schedule
 
 class SplashActivity : AppCompatActivity() {
+
     companion object {
         private const val MIN_LOAD_TIME = 2500L
         private const val ANIMATION_DURATION = 5000L
@@ -43,6 +44,7 @@ class SplashActivity : AppCompatActivity() {
         )
     }
     private lateinit var binding: ActivitySplashBinding
+    private var loadTimer: Timer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,46 +59,6 @@ class SplashActivity : AppCompatActivity() {
         }
         val intent = Intent(this@SplashActivity, MainActivity::class.java)
         intent.putExtra("isInitial", isInitial)
-
-        fun init() {
-            val initMillis = System.currentTimeMillis()
-
-            val webview = WebView(applicationContext)
-            webview.loadUrl(EditorActivity.ENTRY_POINT)
-
-            CoroutineScope(Dispatchers.Default).launch {
-                //ApplicationSession.context = applicationContext
-                ApplicationSession.init(
-                    applicationContext,
-                    {
-                        runOnUiThread {
-                            binding.textViewLoadStatus.text = it
-                        }
-                    },
-                    {
-                        val currentMillis = System.currentTimeMillis()
-                        if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
-                            val delay = if (!ApplicationSession.isInitComplete)
-                                ANIMATION_DURATION - (currentMillis - initMillis)
-                            else
-                                MIN_LOAD_TIME - (currentMillis - initMillis)
-
-                            Timer().schedule(delay) {
-                                runOnUiThread {
-                                    startActivity(intent)
-                                    finish()
-                                }
-                            }
-                        } else {
-                            runOnUiThread {
-                                startActivity(intent)
-                                finish()
-                            }
-                        }
-                    }
-                )
-            }
-        }
 
         if (isInitial || !Utils.checkPermissions(this, REQUIRED_PERMISSIONS)) {
             val needs = createNeeds(this) {
@@ -131,27 +93,21 @@ class SplashActivity : AppCompatActivity() {
                 needsAnimation = NeedsAnimation.FADE
             }
             needs.setOnConfirmListener {
-                if (Utils.checkPermissions(this, REQUIRED_PERMISSIONS)) {
-                    needs.dismiss()
-                    Snackbar.make(view, "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و", Snackbar.LENGTH_LONG).show()
-                    init()
-                } else {
-                    ActivityCompat.requestPermissions(
-                        this,
-                        REQUIRED_PERMISSIONS,
-                        MODE_PRIVATE
-                    )
-                    ActivityCompat.OnRequestPermissionsResultCallback { _, permissions, grantResults ->
-                        if (permissions.contentEquals(REQUIRED_PERMISSIONS)) {
-                            if ((grantResults.isNotEmpty() &&
-                                        grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                                needs.dismiss()
-                                Snackbar.make(view, "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و", Snackbar.LENGTH_LONG).show()
-                                init()
-                            } else {
-                                Snackbar.make(view, "권한이 승인되지 않았어요.. (´•ω•̥`)و", Snackbar.LENGTH_LONG).show()
-                                init()
-                            }
+                ActivityCompat.requestPermissions(
+                    this,
+                    REQUIRED_PERMISSIONS,
+                    MODE_PRIVATE
+                )
+                ActivityCompat.OnRequestPermissionsResultCallback { _, permissions, grantResults ->
+                    if (permissions.contentEquals(REQUIRED_PERMISSIONS)) {
+                        if ((grantResults.isNotEmpty() &&
+                                    grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                            needs.dismiss()
+                            Snackbar.make(view, "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و", Snackbar.LENGTH_LONG).show()
+                            init()
+                        } else {
+                            Snackbar.make(view, "권한이 승인되지 않았어요.. (´•ω•̥`)و", Snackbar.LENGTH_LONG).show()
+                            init()
                         }
                     }
                 }
@@ -174,6 +130,57 @@ class SplashActivity : AppCompatActivity() {
 
         binding.splashAnimImageView.load(R.drawable.splash_anim) {
             repeatCount(0)
+        }
+    }
+
+    private fun init() {
+        val initMillis = System.currentTimeMillis()
+
+        val webview = WebView(applicationContext)
+        webview.loadUrl(EditorActivity.ENTRY_POINT)
+
+        CoroutineScope(Dispatchers.Default).launch {
+            //ApplicationSession.context = applicationContext
+            ApplicationSession.init(
+                context = applicationContext,
+                onPhaseChanged = { phase ->
+                    runOnUiThread {
+                        binding.textViewLoadStatus.text = phase
+                    }
+                },
+                onFinished = {
+                    val currentMillis = System.currentTimeMillis()
+                    if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
+                        val delay = if (!ApplicationSession.isInitComplete)
+                            ANIMATION_DURATION - (currentMillis - initMillis)
+                        else
+                            MIN_LOAD_TIME - (currentMillis - initMillis)
+
+                        loadTimer = Timer().apply {
+                            schedule(delay) {
+                                loadTimer = null
+                                startMainActivity()
+                            }
+                        }
+                    } else {
+                        startMainActivity()
+                    }
+                }
+            )
+        }
+    }
+
+    private fun startMainActivity() = runOnUiThread {
+        startActivity(intent)
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        finish()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (loadTimer != null) {
+            loadTimer!!.cancel()
+            loadTimer = null
         }
     }
 }
