@@ -2,6 +2,7 @@ package com.mooner.starlight.plugincore.core
 
 import android.os.Build
 import android.os.Environment
+import com.mooner.starlight.plugincore.config.GeneralConfig
 import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.plugin.PluginManager

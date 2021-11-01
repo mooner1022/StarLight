@@ -11,6 +11,7 @@ import com.mooner.starlight.databinding.FragmentSettingsBinding
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.utils.Utils
@@ -92,7 +93,7 @@ class SettingsFragment : Fragment() {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
 
         recyclerAdapter = ParentAdapter(requireContext()) { _, id, _, data ->
-            Session.generalConfig[id] = data.toString()
+            Session.generalConfig[id] = TypedString.parse(data)
             Session.generalConfig.push()
         }.apply {
             data = settings

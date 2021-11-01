@@ -94,7 +94,9 @@ class Project (
 
         val jobName: String = UUID.randomUUID().toString()
         val job = CoroutineScope(context!!).launch {
-            lang.callFunction(engine!!, name, args)
+            lang.callFunction(engine!!, name, args) {
+
+            }
         }
         JobLocker.withParent(threadName!!).registerJob(
             key = jobName,

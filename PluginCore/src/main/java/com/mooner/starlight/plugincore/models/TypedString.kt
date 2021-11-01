@@ -39,3 +39,5 @@ data class TypedString(
 
     fun encode(): String = Session.json.encodeToString(this)
 }
+
+infix fun String.typed(type: String): TypedString = TypedString(type, this)

@@ -1,7 +1,8 @@
-package com.mooner.starlight.plugincore.core
+package com.mooner.starlight.plugincore.config
 
 import com.mooner.starlight.plugincore.core.Session.json
 import com.mooner.starlight.plugincore.models.TypedString
+import com.mooner.starlight.plugincore.models.typed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,11 +31,15 @@ class GeneralConfig(val path: File) {
 
     operator fun get(id: String, def: String): String = get(id)?: def
 
-    operator fun set(id: String, value: String) {
+    operator fun set(id: String, value: TypedString) {
         if (configs.containsKey(DEFAULT_CATEGORY))
-            configs[DEFAULT_CATEGORY]!![id] = TypedString(type = "String", value = value)
+            configs[DEFAULT_CATEGORY]!![id] = value
         else
-            configs[DEFAULT_CATEGORY] = mutableMapOf(id to TypedString(type = "String", value = value))
+            configs[DEFAULT_CATEGORY] = mutableMapOf(id to value)
+    }
+
+    operator fun set(id: String, value: String) {
+        set(id, value typed "String")
     }
 
     fun getAllConfigs(): Map<String, Map<String, TypedString>> = configs

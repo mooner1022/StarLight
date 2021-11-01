@@ -130,14 +130,18 @@ class JSRhino: Language() {
         args: Array<Any>,
         onError: (e: Exception) -> Unit
     ) {
-        val rhino = engine as Scriptable
-        Context.enter()
-        val function = rhino.get(functionName, engine)
-        if (function == Scriptable.NOT_FOUND || function !is Function) {
-            Logger.e(T, "Unable to locate function [$functionName]")
-            return
+        try {
+            val rhino = engine as Scriptable
+            Context.enter()
+            val function = rhino.get(functionName, engine)
+            if (function == Scriptable.NOT_FOUND || function !is Function) {
+                Logger.e(T, "Unable to locate function [$functionName]")
+                return
+            }
+            function.call(context, engine, engine, args)
+        } catch (e: Exception) {
+            onError(e)
         }
-        function.call(context, engine, engine, args)
         //ScriptableObject.callMethod(engine as Scriptable, methodName, args)
         //val invocable = engine as Invocable
         //invocable.invokeFunction(methodName, args)
