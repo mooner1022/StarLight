@@ -17,8 +17,10 @@ class ParentAdapter(
     private val context: Context,
     private val onConfigChanged: (parentId: String, id: String, view: View, data: Any) -> Unit
 ): RecyclerView.Adapter<ParentAdapter.ViewHolder>() {
+
     var data: List<CategoryConfigObject> = mutableListOf()
-    var saved: Map<String, Map<String, TypedString>> = hashMapOf()
+    var saved: Map<String, Map<String, TypedString>> = mutableMapOf()
+    private var recyclerAdapter: ConfigAdapter? = null
     var isHavingError = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -42,7 +44,7 @@ class ParentAdapter(
         }
 
         val children = viewData.items
-        val recyclerAdapter = ConfigAdapter(context) { id, view, data ->
+        recyclerAdapter = ConfigAdapter(context) { id, view, data ->
             onConfigChanged(viewData.id, id, view, data)
         }.apply {
             this.data = children
@@ -58,12 +60,11 @@ class ParentAdapter(
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var categoryTitle: TextView
-        var categoryItems: RecyclerView
+        val categoryTitle: TextView     = itemView.findViewById(R.id.title)
+        val categoryItems: RecyclerView = itemView.findViewById(R.id.recyclerViewCategory)
+    }
 
-        init {
-            categoryTitle = itemView.findViewById(R.id.title)
-            categoryItems = itemView.findViewById(R.id.recyclerViewCategory)
-        }
+    fun destroy() {
+        recyclerAdapter = null
     }
 }

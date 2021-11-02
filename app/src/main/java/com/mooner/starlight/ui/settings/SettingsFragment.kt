@@ -111,6 +111,7 @@ class SettingsFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        recyclerAdapter?.destroy()
         recyclerAdapter = null
     }
 }

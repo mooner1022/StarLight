@@ -192,6 +192,7 @@ class ProjectConfigActivity: AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        recyclerAdapter?.destroy()
         recyclerAdapter = null
     }
 }
