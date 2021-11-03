@@ -2,12 +2,14 @@ package com.mooner.starlight.plugincore.core
 
 import android.os.Build
 import android.os.Environment
+import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.config.GeneralConfig
 import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.plugin.PluginManager
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import com.mooner.starlight.plugincore.project.ProjectManager
+import com.mooner.starlight.plugincore.utils.NetworkUtil
 import com.mooner.starlight.plugincore.widget.WidgetManager
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -72,5 +74,30 @@ object Session {
         mPluginManager   = PluginManager()
         mProjectManager  = ProjectManager(projectDir)
         mProjectLoader   = ProjectLoader(projectDir)
+    }
+
+    fun shutdown() {
+        val preStack = Thread.currentThread().stackTrace[2]
+        if (!preStack.className.startsWith("com.mooner.starlight")) {
+            throw IllegalAccessException("Illegal access to internal function shutdown()")
+        }
+
+        generalConfig.push()
+
+        NetworkUtil.purge()
+        ApiManager.purge()
+
+        mLanguageManager?.purge()
+        mWidgetManager?.purge()
+        mPluginLoader?.purge()
+        mPluginManager?.purge()
+        mProjectManager?.purge()
+        mLanguageManager = null
+        mWidgetManager = null
+        mPluginManager = null
+        mPluginLoader = null
+        mProjectManager = null
+
+        mJson.remove()
     }
 }

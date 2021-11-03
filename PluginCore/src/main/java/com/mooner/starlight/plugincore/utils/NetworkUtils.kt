@@ -13,24 +13,26 @@ object NetworkUtil {
 
     private val listeners: ArrayList<(status: Int) -> Unit> = arrayListOf()
 
-    fun registerNetworkStatusListener(context: Context) {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        connectivityManager.registerDefaultNetworkCallback(
-                object : ConnectivityManager.NetworkCallback() {
-                    override fun onAvailable(network: Network) {
-                        val status = getConnectivityStatus(connectivityManager)
-                        for (listener in listeners) {
-                            listener(status)
-                        }
-                    }
+    private var connectivityManager: ConnectivityManager? = null
+    private var callback: ConnectivityManager.NetworkCallback? = null
 
-                    override fun onLost(network: Network) {
-                        for (listener in listeners) {
-                            listener(NETWORK_STATUS_NOT_CONNECTED)
-                        }
-                    }
+    fun registerNetworkStatusListener(context: Context) {
+        connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                val status = getConnectivityStatus(connectivityManager!!)
+                for (listener in listeners) {
+                    listener(status)
                 }
-        )
+            }
+
+            override fun onLost(network: Network) {
+                for (listener in listeners) {
+                    listener(NETWORK_STATUS_NOT_CONNECTED)
+                }
+            }
+        }
+        connectivityManager!!.registerDefaultNetworkCallback(callback!!)
     }
 
     fun addOnNetworkStateChangedListener(listener: (status: Int) -> Unit) {
@@ -51,5 +53,11 @@ object NetworkUtil {
             actNw.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> NETWORK_STATUS_ETHERNET
             else -> NETWORK_STATUS_NOT_CONNECTED
         }
+    }
+
+    internal fun purge() {
+        if (connectivityManager != null && callback != null)
+            connectivityManager!!.unregisterNetworkCallback(callback!!)
+        listeners.clear()
     }
 }

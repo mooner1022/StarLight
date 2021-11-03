@@ -11,4 +11,8 @@ class WidgetManager {
     fun getWidgetById(id: String): IWidget? = widgets.find { it.id == id }
 
     fun getWidgets(): List<IWidget> = widgets.toList()
+
+    internal fun purge() {
+        widgets.clear()
+    }
 }

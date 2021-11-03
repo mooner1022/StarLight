@@ -27,4 +27,11 @@ class PluginManager {
             return false
         }
     }
+
+    internal fun purge() {
+        for (plugin in plugins) {
+            (plugin as StarlightPlugin).onDisable()
+        }
+        plugins.clear()
+    }
 }

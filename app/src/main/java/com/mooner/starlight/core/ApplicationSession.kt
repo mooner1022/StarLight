@@ -8,11 +8,11 @@ import com.mooner.starlight.api.core.EventApi
 import com.mooner.starlight.api.helper.*
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
+import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.pluginLoader
-import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.core.Session.pluginManager
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.EventListener
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
@@ -82,6 +82,14 @@ object ApplicationSession {
                     (plugin as StarlightPlugin).onNetworkStateChanged(state)
                 }
             }
+        }
+    }
+
+    internal fun shutdown() {
+        try {
+            Session.shutdown()
+        } catch (e: Exception) {
+            Logger.wtf("ApplicationSession", "Failed to gracefully shutdown Session: ${e.localizedMessage}\ncause:\n${e.stackTrace}")
         }
     }
 

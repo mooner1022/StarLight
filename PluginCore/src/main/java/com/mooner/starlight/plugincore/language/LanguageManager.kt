@@ -27,4 +27,9 @@ class LanguageManager {
     fun getLanguages(): Array<ILanguage> {
         return languages.toTypedArray()
     }
+
+    internal fun purge() {
+        languages.clear()
+        languageAssetPaths.clear()
+    }
 }

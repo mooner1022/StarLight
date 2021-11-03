@@ -16,4 +16,8 @@ object ApiManager {
     }
 
     fun getApis(): List<Api<Any>> = mApis
+
+    internal fun purge() {
+        mApis.clear()
+    }
 }
