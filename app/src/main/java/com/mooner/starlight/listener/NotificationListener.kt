@@ -35,7 +35,7 @@ class NotificationListener: NotificationListenerService() {
                 val notification = sbn.notification
                 val message = notification.extras["android.text"].toString()
                 val sender = notification.extras.getString("android.title").toString()
-                val room = act.title.toString().replaceFirst("답장 (", "").replaceAfterLast(")", "")
+                val room = act.title.toString().replaceFirst("답장 (", "").dropLast(1)
                 val base64 = notification.getLargeIcon().loadDrawable(applicationContext).toBase64()
                 val isGroupChat = notification.extras["android.text"] is SpannableString
                 val hasMention = notification.extras["android.text"] is SpannableString

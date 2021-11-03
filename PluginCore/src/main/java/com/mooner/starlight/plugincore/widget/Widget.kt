@@ -16,7 +16,7 @@ abstract class Widget: IWidget {
 
     override fun hashCode(): Int = this.id.hashCode()
 
-    fun View.updateHeight() {
+    protected fun View.updateHeight() {
         assert(this@Widget.size == WidgetSize.Wrap) { "Widget size should be WidgetSize.Wrap to use updateHeight()" }
         assert(Thread.currentThread().name == "main") { "View function should only be accessed from main thread" }
         params {
