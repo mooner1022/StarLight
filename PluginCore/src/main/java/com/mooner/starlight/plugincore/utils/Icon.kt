@@ -34,6 +34,9 @@ enum class Icon(
     CLOUD(
         drawableRes = R.drawable.ic_round_cloud_24
     ),
+    CLOUD_DOWNLOAD(
+        drawableRes = R.drawable.ic_round_cloud_download_24
+    ),
     ADD(
         drawableRes = R.drawable.ic_round_add_24
     ),
@@ -183,5 +186,14 @@ enum class Icon(
     ),
     POWER(
         drawableRes = R.drawable.ic_round_power_settings_new_24
+    ),
+    SHARE(
+        drawableRes = R.drawable.ic_round_share_24
+    ),
+    IOS_SHARE(
+        drawableRes = R.drawable.ic_round_ios_share_24
+    ),
+    ACCOUNT_BOX(
+        drawableRes = R.drawable.ic_round_account_box_24
     ),
 }
