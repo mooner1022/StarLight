@@ -37,11 +37,16 @@ class ParentAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val viewData = data[position]
 
-        holder.categoryTitle.text = viewData.title
-        holder.categoryTitle.apply {
-            text = viewData.title
-            setTextColor(viewData.textColor)
+        if (viewData.title.isNotBlank()) {
+            holder.categoryTitle.apply {
+                visibility = View.VISIBLE
+                text = viewData.title
+                setTextColor(viewData.textColor)
+            }
+        } else {
+            holder.categoryTitle.visibility = View.INVISIBLE
         }
+
 
         val children = viewData.items
         recyclerAdapter = ConfigAdapter(context) { id, view, data ->
