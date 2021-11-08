@@ -11,6 +11,6 @@ class Config(
         return if (categoryData == null)
             null
         else
-            ConfigCategory(categoryData)
+            ConfigCategoryImpl(categoryData)
     }
 }

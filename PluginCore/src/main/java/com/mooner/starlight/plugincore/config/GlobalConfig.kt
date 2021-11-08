@@ -10,7 +10,9 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-class GeneralConfig(val path: File) {
+class GlobalConfig(
+    private val path: File
+) {
 
     companion object {
         private const val FILE_NAME = "config-general.json"
@@ -22,10 +24,11 @@ class GeneralConfig(val path: File) {
             path.mkdirs()
             hashMapOf()
         } else {
-            json.decodeFromString(file.readText())
+            json.decodeFromString<HashMap<String, MutableMap<String, TypedString>>>(file.readText())
         }
     }
     private var file = File(path, FILE_NAME)
+    private var isSaved: Boolean = false
 
     operator fun get(id: String): String? = configs[DEFAULT_CATEGORY]?.get(id)?.value
 
@@ -42,9 +45,22 @@ class GeneralConfig(val path: File) {
         set(id, value typed "String")
     }
 
+    fun getCategory(id: String): MutableConfigCategory {
+        if (!configs.containsKey(id)) {
+            configs[id] = mutableMapOf()
+        }
+        return MutableConfigCategory(configs[id]!!)
+    }
+
     fun getAllConfigs(): Map<String, Map<String, TypedString>> = configs
 
+    fun edit(block: GlobalConfig.() -> Unit) {
+        this.apply(block)
+        push()
+    }
+
     fun push() {
+        isSaved = true
         CoroutineScope(Dispatchers.IO).launch {
             val str = json.encodeToString(configs)
             with(file) {
