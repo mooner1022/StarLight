@@ -14,7 +14,7 @@
             android:backgroundTint="@color/project_card"
             app:animationDuration="200"
             app:expandOnClick="true"
-            app:icon="@drawable/ic_round_developer_mode_24"
+            app:icon="@drawable/ic_round_plugins_24"
             app:inner_view="@layout/card_plugin_buttons"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
