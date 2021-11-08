@@ -4,6 +4,7 @@ import android.text.InputType
 import android.view.View
 import androidx.annotation.ColorInt
 import com.mooner.starlight.plugincore.utils.Icon
+import java.io.File
 
 enum class ConfigObjectType(
     val viewType: Int
@@ -22,8 +23,10 @@ interface ConfigObject {
     val id: String
     val title: String
     val description: String?
-    val icon: Icon
-    val iconTintColor: Int
+    val icon: Icon?
+    val iconFile: File?
+    val iconResId: Int?
+    val iconTintColor: Int?
     val default: Any
     val type: ConfigObjectType
     val viewType: Int
@@ -35,9 +38,11 @@ data class ToggleConfigObject(
     override val title: String,
     override val description: String?,
     private val defaultValue: Boolean,
-    override val icon: Icon,
+    override val icon: Icon? = null,
+    override val iconFile: File? = null,
+    override val iconResId: Int? = null,
     @ColorInt
-    override val iconTintColor: Int,
+    override val iconTintColor: Int?,
     override val dependency: String? = null
 ): ConfigObject {
     val listeners: ArrayList<(isEnabled: Boolean) -> Unit> = arrayListOf()
@@ -55,9 +60,11 @@ data class SliderConfigObject(
     override val description: String? = null,
     val max: Int,
     private val defaultValue: Int,
-    override val icon: Icon,
+    override val icon: Icon? = null,
+    override val iconFile: File? = null,
+    override val iconResId: Int? = null,
     @ColorInt
-    override val iconTintColor: Int,
+    override val iconTintColor: Int?,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -76,9 +83,11 @@ data class StringConfigObject(
     private val defaultValue: String = "",
     val inputType: Int = InputType.TYPE_CLASS_TEXT,
     val require: (String) -> String? = { null },
-    override val icon: Icon,
+    override val icon: Icon? = null,
+    override val iconFile: File? = null,
+    override val iconResId: Int? = null,
     @ColorInt
-    override val iconTintColor: Int,
+    override val iconTintColor: Int?,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -95,9 +104,11 @@ data class SpinnerConfigObject(
     override val description: String? = null,
     val items: List<String>,
     private val defaultIndex: Int = 0,
-    override val icon: Icon,
+    override val icon: Icon? = null,
+    override val iconFile: File? = null,
+    override val iconResId: Int? = null,
     @ColorInt
-    override val iconTintColor: Int,
+    override val iconTintColor: Int?,
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
@@ -114,9 +125,11 @@ data class ButtonConfigObject(
     override val description: String? = null,
     val onClickListener: (view: View) -> Unit,
     private val buttonType: Type = Type.FLAT,
-    override val icon: Icon,
+    override val icon: Icon? = null,
+    override val iconFile: File? = null,
+    override val iconResId: Int? = null,
     @ColorInt
-    override val iconTintColor: Int,
+    override val iconTintColor: Int?,
     @ColorInt
     val backgroundColor: Int? = null,
     override val dependency: String? = null
@@ -145,7 +158,9 @@ data class CustomConfigObject(
         get() = 0
     override val title: String = ""
     override val description: String? = null
-    override val icon: Icon = Icon.ERROR
+    override val icon: Icon? = null
+    override val iconFile: File? = null
+    override val iconResId: Int? = null
     override val iconTintColor: Int = 0x0
     override val type: ConfigObjectType
         get() = ConfigObjectType.CUSTOM
@@ -163,7 +178,9 @@ data class CategoryConfigObject(
 ): ConfigObject {
     override val default: Any = 0
     override val description: String? = null
-    override val icon: Icon = Icon.ERROR
+    override val icon: Icon? = null
+    override val iconFile: File? = null
+    override val iconResId: Int? = null
     override val iconTintColor: Int = 0x0
     override val type: ConfigObjectType = ConfigObjectType.CATEGORY
     override val viewType: Int = type.viewType

@@ -14,6 +14,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
+import coil.size.Scale
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.config.*
@@ -65,8 +66,18 @@ class ConfigAdapter(
                 holder.description.visibility = View.GONE
             }
             holder.icon.apply {
-                load(viewData.icon.drawableRes)
-                ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(viewData.iconTintColor))
+                when {
+                    viewData.icon != null -> load(viewData.icon!!.drawableRes)
+                    viewData.iconFile != null -> load(viewData.iconFile!!) {
+                        scale(Scale.FIT)
+                    }
+                    viewData.iconResId != null -> load(viewData.iconResId!!)
+                }
+
+                if (viewData.iconTintColor != null)
+                    ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(viewData.iconTintColor!!))
+                else
+                    ImageViewCompat.setImageTintList(this, null)
                 //setColorFilter(viewData.iconTintColor, android.graphics.PorterDuff.Mode.SRC_IN)
             }
         }
@@ -107,22 +118,33 @@ class ConfigAdapter(
                 holder.editTextString.hint = data.hint
                 holder.editTextString.inputType = data.inputType
                 holder.editTextString.setText(getDefault() as String)
+
+                fun updateText(s: Editable) {
+                    val require: String?
+                    if (data.require(s.toString()).also { require = it } == null) {
+                        if (isHavingError) isHavingError = false
+                        onConfigChanged(viewData.id, holder.editTextString, s.toString())
+                    } else {
+                        if (!isHavingError) isHavingError = true
+                        holder.editTextString.error = require!!
+                    }
+                }
+
                 holder.editTextString.addTextChangedListener(object: TextWatcher {
                     override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
                     override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
 
                     override fun afterTextChanged(s: Editable) {
-                        val require: String?
-                        if (data.require(s.toString()).also { require = it } == null) {
-                            if (isHavingError) isHavingError = false
-                            onConfigChanged(viewData.id, holder.editTextString, s.toString())
-                        } else {
-                            if (!isHavingError) isHavingError = true
-                            holder.editTextString.error = require!!
-                        }
+                        if (holder.editTextString.hasFocus()) return
+                        updateText(s)
                     }
                 })
+                holder.editTextString.setOnFocusChangeListener { view, hasFocus ->
+                    if (!hasFocus) {
+                        updateText((view as EditText).text)
+                    }
+                }
             }
             ConfigObjectType.SPINNER.viewType -> {
                 holder.spinner.apply {

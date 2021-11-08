@@ -4,7 +4,9 @@ import android.graphics.Color
 import android.text.InputType
 import android.view.View
 import androidx.annotation.ColorInt
+import androidx.annotation.DrawableRes
 import com.mooner.starlight.plugincore.utils.Icon
+import java.io.File
 
 fun config(block: ConfigBuilder.() -> Unit): List<CategoryConfigObject> {
     val builder = ConfigBuilder().apply(block)
@@ -50,12 +52,12 @@ class ConfigBuilder {
 
         fun build(): CategoryConfigObject {
             required("id", id)
-            required("title", title)
-            require(items.isNotEmpty()) { "Field [items] must not be empty" }
+            //required("title", title)
+            require(items.isNotEmpty()) { "Field 'items' must not be empty" }
 
             return CategoryConfigObject(
                 id = id!!,
-                title = title!!,
+                title = title?: "",
                 textColor = textColor,
                 items = items
             )
@@ -112,24 +114,49 @@ class ConfigItemBuilder {
         }
     }
 
-    inner class ButtonConfigBuilder {
+    private fun required(fieldNames: String, vararg values: Any?) {
+        for (value in values) {
+            if (value != null)
+                return
+        }
+        throw IllegalArgumentException("Least one of required field [$fieldNames] should not be null")
+    }
+
+    abstract inner class ConfigBuilder {
         var id: String? = null
         var title: String? = null
         var description: String? = null
+
+        var icon: Icon? = null
+        var iconFile: File? = null
+        @DrawableRes
+        var iconResId: Int? = null
+
+        @ColorInt
+        var iconTintColor: Int? = Color.parseColor("#000000")
+
+        var dependency: String? = null
+
+        fun setIcon(icon: Icon? = null, iconFile: File? = null, @DrawableRes iconResId: Int? = null) {
+            when {
+                icon != null -> this.icon = icon
+                iconFile != null -> this.iconFile = iconFile
+                iconResId != null -> this.iconResId = iconResId
+            }
+        }
+    }
+
+    inner class ButtonConfigBuilder: ConfigBuilder() {
         var onClickListener: ((view: View) -> Unit)? = null
         var type: ButtonConfigObject.Type = ButtonConfigObject.Type.FLAT
-        var icon: Icon? = null
-        @ColorInt
-        var iconTintColor: Int = Color.parseColor("#000000")
         @ColorInt
         var backgroundColor: Int? = null
-        var dependency: String? = null
 
         fun build(): ButtonConfigObject {
             required("id", id)
             required("title", title)
             required("onClickListener", onClickListener)
-            required("icon", icon)
+            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
 
             return ButtonConfigObject(
                 id = id!!,
@@ -137,7 +164,9 @@ class ConfigItemBuilder {
                 description = description,
                 onClickListener = onClickListener!!,
                 buttonType = type,
-                icon = icon!!,
+                icon = icon,
+                iconFile = iconFile,
+                iconResId = iconResId,
                 iconTintColor = iconTintColor,
                 backgroundColor = backgroundColor,
                 dependency = dependency
@@ -145,49 +174,37 @@ class ConfigItemBuilder {
         }
     }
 
-    inner class ToggleConfigBuilder {
-        var id: String? = null
-        var title: String? = null
-        var description: String? = null
+    inner class ToggleConfigBuilder: ConfigBuilder() {
         var defaultValue: Boolean = false
-        var icon: Icon? = null
-        @ColorInt
-        var iconTintColor: Int = Color.parseColor("#000000")
-        var dependency: String? = null
 
         fun build(): ToggleConfigObject {
             required("id", id)
             required("title", title)
-            required("icon", icon)
+            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
 
             return ToggleConfigObject(
                 id = id!!,
                 title = title!!,
                 description = description,
                 defaultValue = defaultValue,
-                icon = icon!!,
+                icon = icon,
+                iconFile = iconFile,
+                iconResId = iconResId,
                 iconTintColor = iconTintColor,
                 dependency = dependency
             )
         }
     }
 
-    inner class SliderConfigBuilder {
-        var id: String? = null
-        var title: String? = null
-        var description: String? = null
+    inner class SliderConfigBuilder: ConfigBuilder() {
         var max: Int? = null
         var defaultValue: Int = 0
-        var icon: Icon? = null
-        @ColorInt
-        var iconTintColor: Int = Color.parseColor("#000000")
-        var dependency: String? = null
 
         fun build(): SliderConfigObject {
             required("id", id)
             required("title", title)
             required("max", max)
-            required("icon", icon)
+            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
 
             return SliderConfigObject(
                 id = id!!,
@@ -195,29 +212,28 @@ class ConfigItemBuilder {
                 description = description,
                 max = max!!,
                 defaultValue = defaultValue,
-                icon = icon!!,
+                icon = icon,
+                iconFile = iconFile,
+                iconResId = iconResId,
                 iconTintColor = iconTintColor,
                 dependency = dependency
             )
         }
     }
 
-    inner class StringConfigBuilder {
-        var id: String? = null
-        var title: String? = null
-        var description: String? = null
+    inner class StringConfigBuilder: ConfigBuilder() {
         var hint: String? = null
         var inputType: Int = InputType.TYPE_CLASS_TEXT
         var require: (String) -> String? = { null }
-        var icon: Icon? = null
-        @ColorInt
-        var iconTintColor: Int = Color.parseColor("#000000")
-        var dependency: String? = null
+
+        fun setIcon(icon: Icon? = null, iconFile: File? = null) {
+
+        }
 
         fun build(): StringConfigObject{
             required("id", id)
             required("title", title)
-            required("icon", icon)
+            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
 
             return StringConfigObject(
                 id = id!!,
@@ -226,29 +242,24 @@ class ConfigItemBuilder {
                 hint = hint ?: "",
                 inputType = inputType,
                 require = require,
-                icon = icon!!,
+                icon = icon,
+                iconFile = iconFile,
+                iconResId = iconResId,
                 iconTintColor = iconTintColor,
                 dependency = dependency
             )
         }
     }
 
-    inner class SpinnerConfigBuilder {
-        var id: String? = null
-        var title: String? = null
-        var description: String? = null
+    inner class SpinnerConfigBuilder: ConfigBuilder() {
         var items: List<String>? = null
         var defaultIndex: Int = 0
-        var icon: Icon? = null
-        @ColorInt
-        var iconTintColor: Int = Color.parseColor("#000000")
-        var dependency: String? = null
 
         fun build(): SpinnerConfigObject {
             required("id", id)
             required("title", title)
             required("items", items)
-            required("icon", icon)
+            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
 
             return SpinnerConfigObject(
                 id = id!!,
@@ -256,7 +267,9 @@ class ConfigItemBuilder {
                 description = description,
                 items = items!!,
                 defaultIndex = defaultIndex,
-                icon = icon!!,
+                icon = icon,
+                iconFile = iconFile,
+                iconResId = iconResId,
                 iconTintColor = iconTintColor,
                 dependency = dependency
             )
