@@ -3,15 +3,16 @@ package com.mooner.starlight.core
 import android.content.Context
 import android.os.Environment
 import com.mooner.starlight.R
-import com.mooner.starlight.api.core.ClientMethod
-import com.mooner.starlight.api.core.EventMethod
+import com.mooner.starlight.api.core.ClientApi
+import com.mooner.starlight.api.core.EventApi
 import com.mooner.starlight.api.helper.*
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
+import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
+import com.mooner.starlight.plugincore.core.Session.pluginLoader
+import com.mooner.starlight.plugincore.core.Session.pluginManager
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.method.MethodManager
 import com.mooner.starlight.plugincore.plugin.EventListener
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
@@ -39,14 +40,14 @@ object ApplicationSession {
         Logger.init(starlightDir)
 
         onPhaseChanged(context.getString(R.string.step_default_lib))
-        MethodManager.apply {
-            addMethod(LanguagesMethod())
-            addMethod(ProjectLoggerMethod())
-            addMethod(ProjectsMethod())
-            addMethod(UtilsMethod())
-            addMethod(ClientMethod())
-            addMethod(EventMethod())
-            addMethod(TimerMethod())
+        ApiManager.apply {
+            addApi(LanguagesApi())
+            addApi(ProjectLoggerApi())
+            addApi(ProjectsApi())
+            addApi(UtilsApi())
+            addApi(ClientApi())
+            addApi(EventApi())
+            addApi(TimerApi())
         }
         onPhaseChanged(context.getString(R.string.step_plugincore_init))
 
@@ -57,8 +58,11 @@ object ApplicationSession {
             //addLanguage(GraalVMLang())
         }
 
-
-        pluginLoader.loadPlugins { onPhaseChanged(String.format(context.getString(R.string.step_plugins), it)) }
+        if (!Session.globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
+            pluginLoader.loadPlugins { onPhaseChanged(String.format(context.getString(R.string.step_plugins), it)) }
+        } else {
+            Logger.i("PluginLoader", "Skipping plugin load...")
+        }
 
         onPhaseChanged(context.getString(R.string.step_projects))
         Session.projectLoader.loadProjects()
@@ -76,11 +80,19 @@ object ApplicationSession {
 
         NetworkUtil.registerNetworkStatusListener(context)
         NetworkUtil.addOnNetworkStateChangedListener { state ->
-            if (pluginLoader.getPlugins().isNotEmpty()) {
-                for (plugin in pluginLoader.getPlugins()) {
+            if (pluginManager.getPlugins().isNotEmpty()) {
+                for (plugin in pluginManager.getPlugins()) {
                     (plugin as StarlightPlugin).onNetworkStateChanged(state)
                 }
             }
+        }
+    }
+
+    internal fun shutdown() {
+        try {
+            Session.shutdown()
+        } catch (e: Exception) {
+            Logger.wtf("ApplicationSession", "Failed to gracefully shutdown Session: ${e.localizedMessage}\ncause:\n${e.stackTrace}")
         }
     }
 

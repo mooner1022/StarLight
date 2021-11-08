@@ -27,15 +27,15 @@
 
             <!-- Rivedi effetto ripple -->
 
-            <ImageButton
-                android:id="@+id/card_icon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="15dp"
-                android:background="#00FFFFFF"
-                android:contentDescription="@string/expandable_card_view_icon_content_description"
-                android:visibility="visible"/>
+            <ImageView
+                    android:id="@+id/card_icon"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="15dp"
+                    android:background="#00FFFFFF"
+                    android:contentDescription="@string/expandable_card_view_icon_content_description"
+                    android:visibility="visible" android:layout_alignParentStart="true"/>
 
             <TextView
                 android:id="@+id/card_title"

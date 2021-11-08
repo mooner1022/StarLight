@@ -8,45 +8,64 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-    <permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
 
     <queries>
         <intent>
-            <action android:name="android.intent.action.VIEW" />
+            <action android:name="android.intent.action.VIEW"/>
         </intent>
     </queries>
 
     <application
-            tools:replace="android:icon"
-        android:allowBackup="true"
-        android:extractNativeLibs="false"
-        android:fullBackupContent="@xml/backup_descriptor"
-        android:icon="@mipmap/ic_logo"
-        android:label="@string/app_name"
-        android:requestLegacyExternalStorage="true"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.StarLight">
+            android:allowBackup="true"
+            android:extractNativeLibs="false"
+            android:fullBackupContent="@xml/backup_descriptor"
+            android:icon="@mipmap/ic_logo"
+            android:label="@string/app_name"
+            android:requestLegacyExternalStorage="true"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:supportsRtl="true"
+            android:theme="@style/Theme.StarLight"
+            tools:replace="android:icon">
+        <activity android:name="com.mooner.starlight.ui.settings.dev.DevModeActivity">
+        </activity>
+        <activity
+                android:name=".ui.settings.info.AppInfoActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar">
+        </activity>
+        <activity
+                android:name=".ui.crash.FatalErrorActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar">
+        </activity>
+        <activity
+                android:name=".ui.projects.info.ProjectInfoActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar">
+        </activity>
+        <activity
+                android:name=".ui.plugins.info.PluginInfoActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar">
+        </activity>
 
         <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
-            android:exported="false"
-            android:grantUriPermissions="true">
+                android:name="androidx.core.content.FileProvider"
+                android:authorities="${applicationId}.provider"
+                android:exported="false"
+                android:grantUriPermissions="true">
             <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths" />
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/provider_paths"/>
         </provider>
 
         <activity android:name=".ui.debugroom.DebugRoomSettingsActivity">
         </activity>
         <activity
-            android:name=".ui.plugins.config.PluginConfigActivity"
-            android:theme="@style/Theme.StarLight.NoActionBar">
+                android:name=".ui.plugins.config.PluginConfigActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar">
         </activity>
         <activity
-            android:name=".ui.splash.SplashActivity"
-            android:theme="@style/Theme.StarLight.NoActionBar">
+                android:name=".ui.splash.SplashActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -54,26 +73,26 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.projects.config.ProjectConfigActivity"
-            android:theme="@style/Theme.StarLight.NoActionBar"/>
+                android:name=".ui.projects.config.ProjectConfigActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar"/>
         <activity
-            android:name=".ui.editor.EditorActivity"
-            android:theme="@style/Theme.StarLight.NoActionBar"/>
+                android:name=".ui.editor.EditorActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar"/>
         <activity
-            android:name=".ui.debugroom.DebugRoomActivity"
-            android:theme="@style/Theme.StarLight.NoActionBar"/>
+                android:name=".ui.debugroom.DebugRoomActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar"/>
         <activity
-            android:name=".MainActivity"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.StarLight.NoActionBar">
+                android:name=".MainActivity"
+                android:label="@string/app_name"
+                android:theme="@style/Theme.StarLight.NoActionBar">
         </activity>
 
         <service
                 android:name=".core.ForegroundTask"
                 android:stopWithTask="false"/>
         <service
-            android:name=".listener.NotificationListener"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+                android:name=".listener.NotificationListener"
+                android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>

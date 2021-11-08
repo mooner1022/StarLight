@@ -1,9 +1,9 @@
 package com.mooner.starlight.plugincore.plugin
 
 import android.os.Environment
-import com.mooner.starlight.plugincore.Info
-import com.mooner.starlight.plugincore.Version
+import com.mooner.starlight.plugincore.core.Info
 import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.core.Version
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.utils.Utils.Companion.readString
 import java.io.File
@@ -15,7 +15,6 @@ import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
 class PluginLoader {
-    private var plugins: MutableSet<Plugin> = hashSetOf()
     private val classes: MutableMap<String, Class<*>> = hashMapOf()
     private val loaders: MutableMap<String, PluginClassLoader> = LinkedHashMap()
 
@@ -32,12 +31,12 @@ class PluginLoader {
             dir.mkdirs()
         }
 
-        val configs: MutableMap<String, Pair<File, PluginConfig>> = hashMapOf()
+        val pluginInfos: MutableMap<String, Pair<File, PluginInfo>> = hashMapOf()
         for (file in dir.listFiles { it -> it.extension in listOf("apk", "jar") }?: arrayOf()) {
-            val config: PluginConfig
+            val info: PluginInfo
             try {
-                config = loadConfigFile(file)
-                configs[config.id] = Pair(file, config)
+                info = loadInfoFile(file)
+                pluginInfos[info.id] = Pair(file, info)
             } catch (e: FileNotFoundException) {
                 Logger.e(T, e.toString())
                 //throw InvalidPluginException(e.toString())
@@ -45,24 +44,24 @@ class PluginLoader {
                 Logger.e(T, e.toString())
                 //throw InvalidPluginException(e.toString())
             } catch (e: Exception) {
-                Logger.e(T, "Unexpected error while loading config: $e")
+                Logger.e(T, "Unexpected error while loading info: $e")
             }
         }
 
         val plugins: MutableSet<Plugin> = hashSetOf()
-        for ((file: File, config: PluginConfig) in configs.values) {
+        for ((file: File, info: PluginInfo) in pluginInfos.values) {
             try {
-                for (dependency in config.depend) {
-                    if (!configs.containsKey(dependency)) {
-                        throw DependencyNotFoundException("Unable to find plugin [$dependency] for plugin [${config.name}]")
+                for (dependency in info.depend) {
+                    if (!pluginInfos.containsKey(dependency)) {
+                        throw DependencyNotFoundException("Unable to find plugin [$dependency] for plugin [${info.name}]")
                         //Logger.e(T, "Unable to find plugin [$dependency] for plugin ${config.fullName}")
                     }
                 }
 
-                if (onPluginLoad != null) onPluginLoad(config.name)
-                val plugin = loadPlugin(config, file)
-                if (!Version.fromString(config.apiVersion).isCompatibleWith(Info.PLUGINCORE_VERSION)) {
-                    Logger.w(javaClass.simpleName, "Incompatible plugin version(${config.apiVersion}) found on plugin [${plugin.name}]")
+                if (onPluginLoad != null) onPluginLoad(info.name)
+                val plugin = loadPlugin(info, file)
+                if (!Version.fromString(info.apiVersion).isCompatibleWith(Info.PLUGINCORE_VERSION)) {
+                    Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin [${plugin.name}]")
                 }
                 plugins.add(plugin)
                 plugin.onEnable()
@@ -72,64 +71,40 @@ class PluginLoader {
             }
         }
 
-        this.plugins = plugins
+        Session.pluginManager.plugins = plugins
         return plugins
     }
 
-    private fun loadPlugin(config: PluginConfig, file: File): StarlightPlugin {
+    private fun loadPlugin(info: PluginInfo, file: File): StarlightPlugin {
         val parent = file.parentFile
-        val dataDir = File(parent, "${config.name}(${config.id})")
+        val dataDir = File(parent, "${info.name}(${info.id})")
 
         if (dataDir.exists() && !dataDir.isDirectory) {
             throw InvalidPluginException(
-                "Data folder for plugin ${config.name} already exists and is not a directory"
+                "Data folder for plugin ${info.name} already exists and is not a directory"
             )
         } else if (!dataDir.exists()) {
             dataDir.mkdirs()
         }
 
-        Logger.i(T, "Loading plugin ${config.fullName}")
+        Logger.i(T, "Loading plugin ${info.fullName}")
         val loader: PluginClassLoader
         try {
-            loader = PluginClassLoader(this, javaClass.classLoader!!, config, dataDir, file)
-            Logger.i(T, "Loaded plugin ${config.fullName} (${file.name})")
+            loader = PluginClassLoader(this, javaClass.classLoader!!, info, dataDir, file)
+            Logger.i(T, "Loaded plugin ${info.fullName} (${file.name})")
         } catch (e: InvalidPluginException) {
-            Logger.e(T, "Failed to load plugin ${config.fullName} (${file.name}): $e")
+            Logger.e(T, "Failed to load plugin ${info.fullName} (${file.name}): $e")
             throw e
         }
-        loaders[config.name] = loader
+        loaders[info.name] = loader
         val plugin = loader.plugin
         plugin.setConfigPath(File(plugin.getDataFolder(), "config-plugin.json"))
         loadAssets(file, plugin)
-        if (plugin !in plugins) {
-            plugins.add(plugin)
+        if (plugin !in Session.pluginManager.plugins) {
+            Session.pluginManager.plugins += plugin
         }
         return plugin
     }
-
-    fun removePlugin(id: String): Boolean {
-        try {
-            val plugin = getPluginById(id)?: return false
-            if (plugin !is StarlightPlugin) return false
-
-            val file = plugin.file
-            if (!file.exists() || !file.isFile) return false
-
-            file.delete()
-            plugin.getDataFolder().deleteRecursively()
-
-            return true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return false
-        }
-    }
-
-    fun getPluginById(id: String): Plugin? = plugins.find { (it as StarlightPlugin).config.id == id }
-
-    fun getPluginByName(name: String): Plugin? = plugins.find { (it as StarlightPlugin).config.name == name }
-
-    fun getPlugins(): Set<Plugin> = plugins
 
     fun loadAssets(file: File, plugin: Plugin, force: Boolean = false) {
         require(plugin is StarlightPlugin) { "Plugin [${plugin.name}] does not extend StarlightPlugin" }
@@ -150,7 +125,7 @@ class PluginLoader {
                     }
                     writeFile.parentFile?.mkdirs()
                     writeFile.writeBytes(entStream.readBytes())
-                    Logger.d(T, "Loaded asset [${fileName}] from plugin [${plugin.config.fullName}]")
+                    Logger.d(T, "Loaded asset [${fileName}] from plugin [${plugin.info.fullName}]")
                 }
             }
         } catch (e: IOException) {
@@ -161,7 +136,7 @@ class PluginLoader {
         }
     }
 
-    private fun loadConfigFile(file: File): PluginConfig {
+    private fun loadInfoFile(file: File): PluginInfo {
         var jar: JarFile? = null
         var stream: InputStream? = null
 
@@ -170,7 +145,7 @@ class PluginLoader {
             val ent: JarEntry = jar.getJarEntry("res/raw/starlight.json") ?: throw FileNotFoundException("Cannot find starlight.json")
 
             stream = jar.getInputStream(ent)
-            return PluginConfig.decode(stream.readString())
+            return PluginInfo.decode(stream.readString())
         } catch (e: IOException) {
             throw IllegalStateException("Cannot open starlight.json")
         } finally {
@@ -199,7 +174,7 @@ class PluginLoader {
         return null
     }
 
-    fun registerListener(listener: EventListener) {
+    fun registerListener(plugin: Plugin, listener: EventListener) {
         val methods: MutableSet<Method>
         try {
             val publicMethods = listener.javaClass.methods
@@ -242,5 +217,10 @@ class PluginLoader {
         if (classes.containsKey(name)) {
             classes.remove(name)
         }
+    }
+
+    internal fun purge() {
+        classes.clear()
+        loaders.clear()
     }
 }

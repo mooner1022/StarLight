@@ -1,7 +1,7 @@
 package com.mooner.starlight.plugincore.project
 
-import com.mooner.starlight.plugincore.core.Session.Companion.json
-import com.mooner.starlight.plugincore.core.Session.Companion.projectManager
+import com.mooner.starlight.plugincore.core.Session.json
+import com.mooner.starlight.plugincore.core.Session.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
 import kotlinx.serialization.decodeFromString
 import java.io.File
@@ -42,7 +42,8 @@ class ProjectLoader(
                                 project.compile(true)
                             } catch (e: Exception) {
                                 Logger.w(T, "Failed to pre-compile project ${info.name}: $e")
-                                continue
+                                info.isEnabled = false
+                                project.saveConfig()
                             }
                         }
                     } catch (e: IllegalArgumentException) {

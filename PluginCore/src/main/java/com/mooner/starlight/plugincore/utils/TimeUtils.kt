@@ -17,5 +17,10 @@ class TimeUtils {
                 SimpleDateFormat("HH:mm:ss", Locale.getDefault())
             return format.format(System.currentTimeMillis())
         }
+
+        fun formatMillis(millis: Long, pattern: String): String {
+            val format = SimpleDateFormat(pattern, Locale.getDefault())
+            return format.format(millis)
+        }
     }
 }

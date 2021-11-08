@@ -1,5 +1,6 @@
 package com.mooner.starlight.ui.widget
 
+import android.animation.LayoutTransition
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +15,9 @@ import com.mooner.starlight.plugincore.widget.WidgetSize
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.utils.Utils
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.lang.Integer.min
 
 class LogsWidget: Widget() {
@@ -25,11 +29,13 @@ class LogsWidget: Widget() {
 
     override val id: String = "widget_logs"
     override val name: String = "로그"
-    override val size: WidgetSize = WidgetSize.XLarge
+    override val size: WidgetSize = WidgetSize.Wrap
 
-    private lateinit var mAdapter: LogsRecyclerViewAdapter
+    private var mAdapter: LogsRecyclerViewAdapter? = null
+    private var mView: View? = null
 
     override fun onCreateWidget(view: View) {
+        mView = view
         val context = view.context
         LayoutInflater.from(context).inflate(R.layout.widget_logs, view as ViewGroup, true)
         with(view) {
@@ -43,6 +49,7 @@ class LogsWidget: Widget() {
                 Utils.showLogsDialog(context)
             }
 
+            layoutTransition = LayoutTransition()
             val rvLogs: RecyclerView = findViewById(R.id.rvLogs)
             val textViewNoLogsYet: TextView = findViewById(R.id.textViewNoLogsYet)
             val logs = Logger.logs
@@ -53,15 +60,18 @@ class LogsWidget: Widget() {
                     reverseLayout = true
                     stackFromEnd = true
                 }
-                mAdapter.data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
+                mAdapter!!.apply {
+                    data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
+                    notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
+                }
                 rvLogs.apply {
                     itemAnimator = FadeInUpAnimator()
                     layoutManager = mLayoutManager
                     adapter = mAdapter
                     visibility = View.VISIBLE
                 }
+                mView!!.updateHeight()
                 textViewNoLogsYet.visibility = View.GONE
-                mAdapter.notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
             }
 
             bindLogger()
@@ -93,6 +103,8 @@ class LogsWidget: Widget() {
     override fun onDestroyWidget() {
         super.onDestroyWidget()
         unbindLogger()
+        mAdapter = null
+        mView = null
     }
 
     override fun onCreateThumbnail(view: View) {
@@ -101,7 +113,12 @@ class LogsWidget: Widget() {
 
     private fun bindLogger() {
         Logger.bindListener(T) {
-            mAdapter.pushLog(it, LOGS_MAX_SIZE)
+            mAdapter?.pushLog(it, LOGS_MAX_SIZE)
+            if (mView != null) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    mView!!.updateHeight()
+                }
+            }
         }
     }
 

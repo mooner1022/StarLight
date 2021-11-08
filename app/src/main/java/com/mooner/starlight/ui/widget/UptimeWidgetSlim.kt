@@ -21,27 +21,32 @@ class UptimeWidgetSlim: Widget() {
     override val size: WidgetSize = WidgetSize.Slim
 
     private var isCreated = false
-    private lateinit var uptimeText: TextSwitcher
+    private var uptimeText: TextSwitcher? = null
     private var uptimeTimer: Timer? = null
     private val mainScope = CoroutineScope(Dispatchers.Main)
     private val updateUpTimeTask: TimerTask
         get() = object: TimerTask() {
             override fun run() {
+                if (uptimeText == null) {
+                    cancelTimer()
+                    return
+                }
                 val diffMillis = System.currentTimeMillis() - ApplicationSession.initMillis
                 val formatStr = Utils.formatTime(diffMillis)
                 mainScope.launch {
-                    uptimeText.setText(formatStr)
+                    uptimeText!!.setText(formatStr)
                 }
             }
         }
+
 
     override fun onCreateWidget(view: View) {
         if (uptimeTimer != null) return
         LayoutInflater.from(view.context).inflate(R.layout.widget_uptime_slim, view as ViewGroup, true)
         with(view) {
             uptimeText = findViewById(R.id.uptimeText)
-            uptimeText.setInAnimation(context, R.anim.text_fade_in)
-            uptimeText.setOutAnimation(context, R.anim.text_fade_out)
+            uptimeText!!.setInAnimation(context, R.anim.text_fade_in)
+            uptimeText!!.setOutAnimation(context, R.anim.text_fade_out)
         }
         scheduleTimer()
         isCreated = true
@@ -61,6 +66,8 @@ class UptimeWidgetSlim: Widget() {
     override fun onDestroyWidget() {
         super.onDestroyWidget()
         cancelTimer()
+        uptimeText = null
+        isCreated = false
     }
 
     private fun scheduleTimer() {

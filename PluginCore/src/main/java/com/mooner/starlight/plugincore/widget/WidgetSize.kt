@@ -7,4 +7,5 @@ enum class WidgetSize(
     Medium(viewType = 1),
     Large(viewType = 2),
     XLarge(viewType = 3),
+    Wrap(viewType = 4),
 }

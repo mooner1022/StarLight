@@ -24,59 +24,69 @@
         app:cardCornerRadius="@dimen/card_radius"
         app:cardElevation="@dimen/card_elevation">
 
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@drawable/gradient_card"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/textViewPluginAlignState"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:layout_weight="1"
-                android:fontFamily="@font/nanumsquare_round_extrabold"
-                android:text="@string/plugin_align_state"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"/>
+            android:gravity="center_vertical">
 
             <ImageView
-                android:id="@+id/imageViewPluginAlignState"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.15"
-                android:src="@drawable/ic_round_sort_by_alpha_24"
-                app:tint="#FFFFFF"/>
+                    android:id="@+id/alignStateIcon"
+                    android:layout_width="0dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_round_sort_by_alpha_24"
+                    app:tint="#FFFFFF" app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent"
+                    android:layout_marginStart="20dp"/>
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/nanumsquare_round_extrabold"
+                    android:text="@string/plugin_align_state"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    app:layout_constraintStart_toEndOf="@+id/alignStateIcon"
+                    app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintTop_toTopOf="parent"
+            />
+            <TextView
+                    android:id="@+id/alignState"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.15"
+                    android:fontFamily="@font/nanumsquare_round_extrabold"
+                    android:text="@string/default_placeholder"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp" app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent"
+                    android:layout_marginEnd="20dp"/>
 
-        </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
 
     <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginStart="@dimen/card_margin"
-        android:layout_marginTop="@dimen/card_margin"
-        android:layout_marginEnd="@dimen/card_margin"
-        android:layout_marginBottom="@dimen/card_margin"
-        app:cardCornerRadius="@dimen/card_radius"
-        app:cardElevation="@dimen/card_elevation">
-
-        <TextView
-            android:id="@+id/textViewNoPluginYet"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:fontFamily="@font/nanumsquare_round_bold"
-            android:text="@string/nothing_yet"
-            android:textSize="18sp"
-            android:visibility="gone" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewProjectList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            />
+            android:layout_marginStart="@dimen/card_margin"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="@dimen/card_margin"
+            android:layout_marginBottom="@dimen/card_margin"
+            app:cardCornerRadius="@dimen/card_radius"
+            app:cardElevation="@dimen/card_elevation">
+
+        <TextView
+                android:id="@+id/textViewNoPluginYet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:fontFamily="@font/nanumsquare_round_bold"
+                android:text="@string/nothing_yet"
+                android:textSize="18sp"
+                android:visibility="gone"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewProjectList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false" android:paddingTop="16dp"/>
     </androidx.cardview.widget.CardView>
 </LinearLayout>

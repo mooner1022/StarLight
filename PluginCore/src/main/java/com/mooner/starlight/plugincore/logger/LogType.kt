@@ -9,5 +9,6 @@ enum class LogType(
     INFO(Log.INFO),
     ERROR(Log.ERROR),
     CRITICAL(Log.ERROR),
-    DEBUG(Log.DEBUG)
+    DEBUG(Log.DEBUG),
+    VERBOSE(Log.VERBOSE)
 }

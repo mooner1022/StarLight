@@ -1,6 +1,8 @@
 package com.mooner.starlight.ui.debugroom
 
 import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -12,13 +14,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.models.DebugRoomMessage
-import com.skydoves.needs.textForm
+
 
 class DebugRoomChatAdapter(
     val context: Context,
-    private val chatList: ArrayList<DebugRoomMessage>
+    private val chatList: MutableList<DebugRoomMessage>
 ) : RecyclerView.Adapter<DebugRoomChatAdapter.ViewHolder>() {
 
     companion object {
@@ -27,6 +30,8 @@ class DebugRoomChatAdapter(
         const val CHAT_SELF_LONG = 2
         const val CHAT_BOT_LONG = 3
     }
+
+    private val clipboard: ClipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         var view: View? = null
@@ -58,15 +63,23 @@ class DebugRoomChatAdapter(
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val messageData = chatList[position]
+        val isSentAgain: Boolean = chatList.size != 1 && position != 0 && chatList[position - 1].viewType in arrayOf(CHAT_BOT, CHAT_BOT_LONG)
 
         when (messageData.viewType) {
             CHAT_SELF -> {
                 holder.message.text = messageData.message
             }
             CHAT_BOT -> {
-                holder.sender.text = "BOT"
+                if (isSentAgain) {
+                    holder.sender.visibility = View.GONE
+                    holder.profileImage.visibility = View.INVISIBLE
+                } else {
+                    holder.sender.visibility = View.VISIBLE
+                    holder.profileImage.visibility = View.VISIBLE
+                    holder.sender.text = messageData.sender
+                    holder.profileImage.setImageResource(R.drawable.default_profile)
+                }
                 holder.message.text = messageData.message
-                holder.profileImage.setImageResource(R.drawable.default_profile)
             }
             CHAT_SELF_LONG -> {
                 holder.message.text = messageData.message
@@ -86,11 +99,19 @@ class DebugRoomChatAdapter(
                 }
             }
             CHAT_BOT_LONG -> {
-                holder.sender.text = "BOT"
+                if (isSentAgain) {
+                    holder.sender.visibility = View.GONE
+                    holder.profileImage.visibility = View.INVISIBLE
+                } else {
+                    holder.sender.visibility = View.VISIBLE
+                    holder.profileImage.visibility = View.VISIBLE
+                    holder.sender.text = messageData.sender
+                    holder.profileImage.setImageResource(R.drawable.default_profile)
+                }
+
                 holder.message.text = messageData.message
                     .substring(0..500)
                     .replace("\u200B", "") + "..."
-                holder.profileImage.setImageResource(R.drawable.default_profile)
                 holder.showAllButton.setOnClickListener {
                     MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                         cornerRadius(25f)
@@ -105,13 +126,20 @@ class DebugRoomChatAdapter(
                 }
             }
         }
+
+        holder.message.setOnLongClickListener {
+            val clip = ClipData.newPlainText("copied text", holder.message.text)
+            clipboard.setPrimaryClip(clip)
+            Snackbar.make(it, "텍스트를 클립보드에 복사했어요.", Snackbar.LENGTH_SHORT).show()
+            true
+        }
     }
 
     inner class ViewHolder(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
+
         lateinit var sender: TextView
         lateinit var message: TextView
         lateinit var profileImage: ImageView
-        lateinit var text: TextView
         lateinit var showAllButton: Button
 
         init {

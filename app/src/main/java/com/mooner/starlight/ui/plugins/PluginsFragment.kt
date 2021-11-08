@@ -16,35 +16,18 @@ import com.afollestad.materialdialogs.customview.customView
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentPluginsBinding
 import com.mooner.starlight.models.Align
-import com.mooner.starlight.plugincore.core.GeneralConfig
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.core.Session.globalConfig
+import com.mooner.starlight.plugincore.core.Session.pluginManager
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
-import com.mooner.starlight.utils.Utils
 import com.mooner.starlight.utils.Utils.Companion.formatStringRes
-import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 
 class PluginsFragment : Fragment() {
 
-    private var _binding: FragmentPluginsBinding? = null
-    private val binding get() = _binding!!
-
-    private lateinit var listAdapter: PluginsListAdapter
-    private lateinit var plugins: List<Plugin>
-
-    private val aligns = arrayOf(
-        ALIGN_GANADA,
-        ALIGN_FILE_SIZE,
-    )
-    private var alignState: Align<Plugin> = getAlignByName(
-        Session.generalConfig[GeneralConfig.CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name]
-    )?: DEFAULT_ALIGN
-    private var isReversed: Boolean = Session.generalConfig[GeneralConfig.CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
-
     companion object {
-        private val ALIGN_GANADA = Align<Plugin>(
+        @JvmStatic
+        private val ALIGN_GANADA: Align<Plugin> = Align(
             name = "가나다 순",
             reversedName = "가나다 역순",
             icon = R.drawable.ic_round_sort_by_alpha_24,
@@ -53,7 +36,8 @@ class PluginsFragment : Fragment() {
             }
         )
 
-        private val ALIGN_FILE_SIZE = Align<Plugin>(
+        @JvmStatic
+        private val ALIGN_FILE_SIZE: Align<Plugin> = Align(
             name = "파일 크기 순",
             reversedName = "파일 크기 역순",
             icon = R.drawable.ic_round_plugins_24,
@@ -62,8 +46,29 @@ class PluginsFragment : Fragment() {
             }
         )
 
+        @JvmStatic
         private val DEFAULT_ALIGN = ALIGN_GANADA
+
+        const val CONFIG_PLUGINS_ALIGN = "plugins_align_state"
+        const val CONFIG_PLUGINS_REVERSED = "plugins_align_reversed"
     }
+
+    private var _binding: FragmentPluginsBinding? = null
+    private val binding get() = _binding!!
+
+    private var listAdapter: PluginsListAdapter? = null
+    private val plugins: List<Plugin> by lazy {
+        pluginManager.getPlugins().toList()
+    }
+
+    private val aligns = arrayOf(
+        ALIGN_GANADA,
+        ALIGN_FILE_SIZE,
+    )
+    private var alignState: Align<Plugin> = getAlignByName(
+        globalConfig[CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name]
+    )?: DEFAULT_ALIGN
+    private var isReversed: Boolean = globalConfig[CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -71,34 +76,28 @@ class PluginsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentPluginsBinding.inflate(inflater, container, false)
-        plugins = Session.pluginLoader.getPlugins().toList()
 
         if (plugins.isEmpty()) {
-            Logger.d(javaClass.simpleName, "No plugins detected!")
             with(binding.textViewNoPluginYet) {
                 visibility = View.VISIBLE
-                text = requireContext().formatStringRes(
-                    R.string.nothing_yet,
-                    mapOf(
-                        "name" to "플러그인이",
-                        "emoji" to "(>_<｡)\uD83D\uDCA6"
+                text = if (globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
+                    "플러그인 안전 모드가 켜져있어요."
+                } else {
+                    requireContext().formatStringRes(
+                        R.string.nothing_yet,
+                        mapOf(
+                            "name" to "플러그인이",
+                            "emoji" to "(>_<｡)\uD83D\uDCA6"
+                        )
                     )
-                )
+                }
             }
         }
-
-        binding.textViewPluginAlignState.text = requireContext().formatStringRes(
-            R.string.plugin_align_state,
-            mapOf(
-                "state" to if (isReversed) alignState.reversedName else alignState.name
-            )
-        )
-        binding.imageViewPluginAlignState.setImageResource(alignState.icon)
 
         binding.cardViewPluginAlign.setOnClickListener {
             MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                 cornerRadius(25f)
-                gridItems(getGridItems(*aligns)) { dialog, _, item ->
+                gridItems(aligns.toGridItems()) { dialog, _, item ->
                     alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
                     isReversed = dialog.findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked
                     update()
@@ -109,9 +108,13 @@ class PluginsFragment : Fragment() {
             }
         }
 
+        binding.alignState.text = if (isReversed) alignState.reversedName else alignState.name
+        binding.alignStateIcon.setImageResource(alignState.icon)
+
         listAdapter = PluginsListAdapter(requireContext())
-        listAdapter.data = plugins
-        listAdapter.notifyItemRangeInserted(0, plugins.size)
+        listAdapter!!.data = sortData()
+        listAdapter!!.notifyItemRangeInserted(0, plugins.size)
+
         with(binding.recyclerViewProjectList) {
             adapter = listAdapter
             layoutManager = LinearLayoutManager(requireContext())
@@ -121,25 +124,25 @@ class PluginsFragment : Fragment() {
         return binding.root
     }
 
-    private fun getAlignByName(name: String): Align<Plugin>? {
-        return aligns.find { it.name == name }
+    private fun getAlignByName(name: String): Align<Plugin>? = aligns.find { it.name == name }
+
+    private fun Array<Align<Plugin>>.toGridItems(): List<BasicGridItem> = this.map { item ->
+        BasicGridItem(
+            iconRes = item.icon,
+            title = item.name
+        )
     }
 
-    private fun getGridItems(vararg items: Align<Plugin>): List<BasicGridItem> {
-        val list: MutableList<BasicGridItem> = mutableListOf()
-        for (item in items) {
-            list.add(
-                BasicGridItem(
-                    item.icon,
-                    item.name
-                )
-            )
-        }
-        return list
+    private fun sortData(): List<Plugin> {
+        val aligned = alignState.sort(
+            plugins,
+            mapOf()
+        )
+        return if (isReversed) aligned.asReversed() else aligned
     }
 
     private fun reloadList(list: List<Plugin>) {
-        with(listAdapter) {
+        listAdapter?.apply {
             val orgDataSize = data.size
             data = listOf()
             notifyItemRangeRemoved(0, orgDataSize)
@@ -148,36 +151,20 @@ class PluginsFragment : Fragment() {
         }
     }
 
-    private fun update(align: Align<Plugin> = alignState, isReversed: Boolean = this.isReversed) {
-        binding.textViewPluginAlignState.text = requireContext().formatStringRes(
-            R.string.plugin_align_state,
-            mapOf(
-                "state" to if (isReversed) align.reversedName else align.name
-            )
-        )
-        binding.imageViewPluginAlignState.setImageResource(align.icon)
-        reloadList(
-            if (isReversed) {
-                align.sort(
-                    plugins,
-                    mapOf()
-                ).asReversed()
-            } else {
-                align.sort(
-                    plugins,
-                    mapOf()
-                )
-            }
-        )
-        Session.generalConfig.also {
-            it[GeneralConfig.CONFIG_PLUGINS_ALIGN] = align.name
-            it[GeneralConfig.CONFIG_PLUGINS_REVERSED] = isReversed.toString()
-            it.push()
+    private fun update() {
+        binding.alignState.text = if (isReversed) alignState.reversedName else alignState.name
+        binding.alignStateIcon.setImageResource(alignState.icon)
+        reloadList(sortData())
+        globalConfig.apply {
+            set(CONFIG_PLUGINS_ALIGN, alignState.name)
+            set(CONFIG_PLUGINS_REVERSED, isReversed.toString())
+            push()
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        listAdapter = null
         _binding = null
     }
 }

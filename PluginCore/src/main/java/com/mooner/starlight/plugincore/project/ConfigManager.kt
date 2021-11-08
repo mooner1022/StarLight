@@ -1,6 +1,6 @@
 package com.mooner.starlight.plugincore.project
 
-import com.mooner.starlight.plugincore.core.Session.Companion.json
+import com.mooner.starlight.plugincore.core.Session.json
 import com.mooner.starlight.plugincore.models.TypedString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

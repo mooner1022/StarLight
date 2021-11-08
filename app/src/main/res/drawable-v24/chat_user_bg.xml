@@ -4,5 +4,5 @@
     android:bottomRightRadius="25dp"
     android:topRightRadius="5dp"
     android:topLeftRadius="25dp"/>
-    <solid android:color="@color/monokai_pro_black"/>
+    <solid android:color="#F6946E"/>
 </shape>

@@ -1,24 +1,27 @@
 package com.mooner.starlight.ui.plugins.config
 
 import android.os.Bundle
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
-import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityPluginConfigBinding
+import com.mooner.starlight.plugincore.config.ButtonConfigObject
+import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
+import com.mooner.starlight.plugincore.core.Session.pluginManager
 import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
+import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
+import com.mooner.starlight.utils.Utils
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-@ExperimentalSerializationApi
 class PluginConfigActivity: AppCompatActivity() {
 
     companion object {
@@ -29,6 +32,7 @@ class PluginConfigActivity: AppCompatActivity() {
 
     private val changedData: MutableMap<String, MutableMap<String, Any>> = hashMapOf()
     private lateinit var savedData: MutableMap<String, MutableMap<String, TypedString>>
+    private var recyclerAdapter: ParentAdapter? = null
 
     private lateinit var binding: ActivityPluginConfigBinding
 
@@ -42,8 +46,8 @@ class PluginConfigActivity: AppCompatActivity() {
 
         val pluginName = intent.getStringExtra(EXTRA_PLUGIN_NAME)!!
         val pluginId = intent.getStringExtra(EXTRA_PLUGIN_ID)!!
-        val plugin = pluginLoader.getPluginById(pluginId)?: error("Failed to get plugin [$pluginName]")
-        val recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
+        val plugin = pluginManager.getPluginById(pluginId)?: error("Failed to get plugin [$pluginName]")
+        recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
             if (changedData.containsKey(parentId)) {
                 changedData[parentId]!![id] = data
             } else {
@@ -70,7 +74,7 @@ class PluginConfigActivity: AppCompatActivity() {
         }
 
         fabProjectConfig.setOnClickListener { view ->
-            if (recyclerAdapter.isHavingError) {
+            if (recyclerAdapter!!.isHavingError) {
                 Snackbar.make(view, "올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
                 fabProjectConfig.hide()
                 return@setOnClickListener
@@ -85,8 +89,43 @@ class PluginConfigActivity: AppCompatActivity() {
 
         binding.leave.setOnClickListener { finish() }
 
-        recyclerAdapter.apply {
-            data = plugin.configObjects.toList()
+        recyclerAdapter!!.apply {
+            data = plugin.configObjects + config {
+                category {
+                    id = "cautious"
+                    title = "위험"
+                    textColor = color { "#FF865E" }
+                    items = items {
+                        button {
+                            id = "delete_plugin"
+                            title = "플러그인 제거"
+                            type = ButtonConfigObject.Type.FLAT
+                            onClickListener = { view ->
+                                MaterialDialog(binding.root.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                                    cornerRadius(25f)
+                                    title(text = "정말 [${pluginName}](을)를 삭제할까요?")
+                                    message(text = "주의: 삭제시 되돌릴 수 없습니다.")
+                                    positiveButton(text = "확인") { dialog ->
+                                        pluginManager.removePlugin(pluginId)
+                                        Snackbar.make(view, "플러그인을 삭제했습니다.\n앱을 재시작할까요?", Snackbar.LENGTH_LONG)
+                                            .setAction("확인") {
+                                                Utils.restartApplication(context)
+                                            }
+                                            .show()
+                                        dialog.dismiss()
+                                    }
+                                    negativeButton(text = "취소") { dialog ->
+                                        dialog.dismiss()
+                                    }
+                                }
+                            }
+                            icon = Icon.DELETE_SWEEP
+                            //backgroundColor = Color.parseColor("#B8DFD8")
+                            iconTintColor = color { "#FF5C58" }
+                        }
+                    }
+                }
+            }
             saved = savedData
             notifyDataSetChanged()
         }
@@ -95,7 +134,12 @@ class PluginConfigActivity: AppCompatActivity() {
         configRecyclerView.layoutManager = layoutManager
         configRecyclerView.adapter = recyclerAdapter
 
-        val textViewConfigProjectName: TextView = findViewById(R.id.textViewConfigProjectName)
-        textViewConfigProjectName.text = pluginName
+        binding.pluginName.text = pluginName
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        recyclerAdapter?.destroy()
+        recyclerAdapter = null
     }
 }

@@ -78,4 +78,11 @@ class ProjectManager(
             listener(projects.values.toList())
         }
     }
+
+    internal fun purge() {
+        for ((_, project) in projects) {
+            project.saveConfig()
+            project.destroy()
+        }
+    }
 }

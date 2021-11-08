@@ -1,13 +1,13 @@
 
 package com.mooner.starlight.plugincore.project
 
+import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.Companion.json
+import com.mooner.starlight.plugincore.core.Session.json
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.method.MethodManager
 import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
 import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
@@ -15,7 +15,7 @@ import java.io.File
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 
-class Project(
+class Project (
     val directory: File,
     val info: ProjectInfo
 ) {
@@ -37,9 +37,9 @@ class Project(
 
     val configManager: ConfigManager = ConfigManager(File(directory, CONFIG_FILE_NAME))
 
-    private lateinit var jobName: String
+    var threadName: String? = null
     //private lateinit var scope: CoroutineScope
-    private lateinit var context: CoroutineContext
+    private var context: CoroutineContext? = null
     val isCompiled: Boolean
         get() = engine != null
     private var engine: Any? = null
@@ -81,16 +81,24 @@ class Project(
             return
         }
 
-        if (!this::jobName.isInitialized || !this::context.isInitialized) {
-            jobName = "$tag-worker-${UUID.randomUUID()}"
-            context = newSingleThreadContext(jobName)
-            Logger.d("Allocated thread $jobName to project ${info.name}")
+        if (threadName == null || context == null) {
+            if (context != null) {
+                context?.cancel()
+                context = null
+
+            }
+            threadName = "$tag-thread"
+            context = newSingleThreadContext(threadName!!)
+            Logger.d("Allocated thread $threadName to project ${info.name}")
         }
 
-        val job = CoroutineScope(context).launch {
-            lang.callFunction(engine!!, name, args)
+        val jobName: String = UUID.randomUUID().toString()
+        val job = CoroutineScope(context!!).launch {
+            lang.callFunction(engine!!, name, args) {
+
+            }
         }
-        JobLocker.registerJob(
+        JobLocker.withParent(threadName!!).registerJob(
             key = jobName,
             job = job
         ) { e ->
@@ -152,10 +160,10 @@ class Project(
                 lang.release(engine!!)
                 logger.d(tag, "engine released")
             }
-            logger.d(tag, "compile() called, methods= ${MethodManager.getMethods().joinToString { it.name }}")
+            logger.d(tag, "compile() called, methods= ${ApiManager.getApis().joinToString { it.name }}")
             engine = lang.compile(
                 code = rawCode,
-                methods = MethodManager.getMethods(),
+                apis = ApiManager.getApis(),
                 project = this
             )
         } catch (e: Exception) {
@@ -166,19 +174,28 @@ class Project(
     }
 
     fun saveConfig() {
-        val str = json.encodeToString(info)
-        logger.d(info.name, "Flushed project config: $str")
-        File(directory.path, INFO_FILE_NAME).writeText(str, Charsets.UTF_8)
+        CoroutineScope(Dispatchers.IO).launch {
+            val str = synchronized(info) { json.encodeToString(info) }
+            File(directory.path, INFO_FILE_NAME).writeText(str, Charsets.UTF_8)
+        }
     }
 
     fun getLanguage(): ILanguage {
         return lang
     }
 
+    fun activeJobs(): Int {
+        return if (context == null || threadName == null) 0
+        else JobLocker.withParent(threadName!!).activeJobs()
+    }
+
     fun destroy() {
-        if (this::context.isInitialized) {
-            JobLocker.forceRelease(jobName)
+        if (context != null) {
+            if (threadName != null) {
+                JobLocker.withParent(threadName!!).purge()
+            }
             (context as CoroutineDispatcher).cancel()
+            context = null
         }
     }
 }

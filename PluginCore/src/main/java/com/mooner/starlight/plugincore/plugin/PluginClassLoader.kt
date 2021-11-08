@@ -1,13 +1,13 @@
 package com.mooner.starlight.plugincore.plugin
 
-import com.mooner.starlight.plugincore.core.Session.Companion.projectLoader
+import com.mooner.starlight.plugincore.core.Session.projectLoader
 import dalvik.system.PathClassLoader
 import java.io.File
 
 class PluginClassLoader(
     private val loader: PluginLoader,
     parent: ClassLoader,
-    private val config: PluginConfig,
+    private val config: PluginInfo,
     private val dataDir: File,
     private val file: File,
 ): PathClassLoader(file.path, parent){

@@ -1,7 +1,6 @@
 package com.mooner.starlight
 
 import android.animation.LayoutTransition
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -23,19 +22,14 @@ import com.google.android.material.chip.ChipGroup
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.core.ForegroundTask
 import com.mooner.starlight.databinding.ActivityMainBinding
-import com.mooner.starlight.plugincore.core.Session.Companion.languageManager
-import com.mooner.starlight.plugincore.core.Session.Companion.pluginLoader
-import com.mooner.starlight.plugincore.core.Session.Companion.projectManager
-import com.mooner.starlight.plugincore.logger.LogType
+import com.mooner.starlight.plugincore.core.Session.languageManager
+import com.mooner.starlight.plugincore.core.Session.pluginManager
+import com.mooner.starlight.plugincore.core.Session.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.ViewPagerAdapter
-import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import com.mooner.starlight.utils.Utils
 import com.mooner.starlight.utils.Utils.Companion.formatStringRes
 import kotlin.math.abs
 
-
-@SuppressLint("StaticFieldLeak")
 class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
@@ -167,20 +161,6 @@ class MainActivity : AppCompatActivity() {
                     binding.imageViewLogo.alpha = percent
                 }
         )
-
-
-        val logs = Logger.filterNot(LogType.DEBUG)
-        val logsAdapter = LogsRecyclerViewAdapter(applicationContext)
-        if (logs.isNotEmpty()) {
-            logsAdapter.data = logs.toMutableList()
-            logsAdapter.notifyItemRangeInserted(0, logs.size)
-        }
-
-        Logger.bindListener(T) {
-            if (it.type != LogType.DEBUG) {
-                logsAdapter.pushLog(it)
-            }
-        }
     }
 
     fun onPageChanged(id: Int) {
@@ -202,7 +182,7 @@ class MainActivity : AppCompatActivity() {
                 updateFab(isShown = true)
             }
             R.id.nav_plugins -> {
-                val count = pluginLoader.getPlugins().size
+                val count = pluginManager.getPlugins().size
                 binding.titleText.text = applicationContext.getText(R.string.title_plugins)
                 binding.statusText.text = applicationContext.formatStringRes(
                     R.string.subtitle_plugins,
@@ -230,11 +210,6 @@ class MainActivity : AppCompatActivity() {
                 binding.fabNewProject.hide()
             }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Logger.unbindListener(T)
     }
 
     override fun onSupportNavigateUp(): Boolean {

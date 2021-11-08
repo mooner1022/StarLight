@@ -20,7 +20,8 @@ class WidgetsAdapter (
             WidgetSize.Slim.viewType   -> R.layout.card_widget_slim
             WidgetSize.Medium.viewType -> R.layout.card_widget_medium
             WidgetSize.Large.viewType  -> R.layout.card_widget_large
-            WidgetSize.XLarge.viewType   -> R.layout.card_widget_xlarge
+            WidgetSize.XLarge.viewType -> R.layout.card_widget_xlarge
+            WidgetSize.Wrap.viewType   -> R.layout.card_widget_wrap
             else                       -> R.layout.card_widget_medium
         }
         val view = LayoutInflater.from(context).inflate(layout, parent, false)
@@ -53,10 +54,6 @@ class WidgetsAdapter (
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var view: View
-
-        init {
-            view = itemView.findViewById(R.id.view)
-        }
+        val view: View = itemView.findViewById(R.id.view)
     }
 }
