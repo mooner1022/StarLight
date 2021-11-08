@@ -1,13 +1,11 @@
 package com.mooner.starlight.utils
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import org.jsoup.Jsoup
+import android.os.Environment
 import java.io.File
 
 class FileUtils {
     companion object {
+        @Suppress("DEPRECATION")
+        fun getInternalDirectory() = File(Environment.getExternalStorageDirectory(), "StarLight/")
     }
 }
