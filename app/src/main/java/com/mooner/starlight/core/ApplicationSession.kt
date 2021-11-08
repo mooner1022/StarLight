@@ -58,8 +58,11 @@ object ApplicationSession {
             //addLanguage(GraalVMLang())
         }
 
-
-        pluginLoader.loadPlugins { onPhaseChanged(String.format(context.getString(R.string.step_plugins), it)) }
+        if (!Session.globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
+            pluginLoader.loadPlugins { onPhaseChanged(String.format(context.getString(R.string.step_plugins), it)) }
+        } else {
+            Logger.i("PluginLoader", "Skipping plugin load...")
+        }
 
         onPhaseChanged(context.getString(R.string.step_projects))
         Session.projectLoader.loadProjects()
