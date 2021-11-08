@@ -152,7 +152,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                     title = "프로젝트 제거"
                     type = ButtonConfigObject.Type.FLAT
                     onClickListener = {
-                        MaterialDialog(it.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                        MaterialDialog(binding.root.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                             cornerRadius(25f)
                             cancelOnTouchOutside(true)
                             noAutoDismiss()
@@ -161,7 +161,9 @@ class ProjectConfigActivity: AppCompatActivity() {
                             message(text = "주의: 프로젝트 제거시 복구가 불가합니다.")
                             positiveButton(text = context.getString(R.string.delete)) {
                                 Session.projectManager.removeProject(project, removeFiles = true)
+                                Snackbar.make(binding.root, "프로젝트를 제거했어요.", Snackbar.LENGTH_SHORT).show()
                                 dismiss()
+                                finish()
                             }
                             negativeButton(text = context.getString(R.string.close)) {
                                 dismiss()

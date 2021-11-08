@@ -35,6 +35,7 @@ class ProjectInfoActivity : AppCompatActivity() {
             category {
                 id = "general"
                 title = "기본"
+                textColor = color { "#706EB9" }
                 items = items {
                     button {
                         id = "name"
@@ -88,6 +89,7 @@ class ProjectInfoActivity : AppCompatActivity() {
             category {
                 id = "lang"
                 title = "언어"
+                textColor = color { "#706EB9" }
                 items = items {
                     button {
                         id = "name"
@@ -118,6 +120,7 @@ class ProjectInfoActivity : AppCompatActivity() {
             category {
                 id = "state"
                 title = "상태"
+                textColor = color { "#706EB9" }
                 items = items {
                     button {
                         id = "threadName"

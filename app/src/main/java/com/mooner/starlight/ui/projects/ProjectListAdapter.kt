@@ -99,7 +99,7 @@ class ProjectListAdapter(
                     it.context,
                     DebugRoomActivity::class.java
                 ).apply {
-                    putExtra("roomName", info.name)
+                    putExtra("projectName", info.name)
                 }
             )
         }

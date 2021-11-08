@@ -17,7 +17,7 @@ import com.afollestad.materialdialogs.customview.customView
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentProjectsBinding
 import com.mooner.starlight.models.Align
-import com.mooner.starlight.plugincore.core.Session.generalConfig
+import com.mooner.starlight.plugincore.core.Session.globalConfig
 import com.mooner.starlight.plugincore.core.Session.projectManager
 import com.mooner.starlight.plugincore.project.Project
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
@@ -91,10 +91,10 @@ class ProjectsFragment : Fragment() {
         ALIGN_COMPILED
     )
     private var alignState: Align<Project> = getAlignByName(
-        generalConfig[CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name]
+        globalConfig[CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name]
     )?: DEFAULT_ALIGN
-    private var isReversed: Boolean = generalConfig[CONFIG_PROJECTS_REVERSED, "false"].toBoolean()
-    private var isActiveFirst: Boolean = generalConfig[CONFIG_PROJECTS_ACTIVE_FIRST, "false"].toBoolean()
+    private var isReversed: Boolean = globalConfig[CONFIG_PROJECTS_REVERSED, "false"].toBoolean()
+    private var isActiveFirst: Boolean = globalConfig[CONFIG_PROJECTS_ACTIVE_FIRST, "false"].toBoolean()
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -172,7 +172,7 @@ class ProjectsFragment : Fragment() {
         binding.alignStateIcon.load(drawableResId = alignState.icon)
         reloadList(sortData())
 
-        generalConfig.apply {
+        globalConfig.apply {
             set(CONFIG_PROJECTS_ALIGN, alignState.name)
             set(CONFIG_PROJECTS_REVERSED, isReversed.toString())
             set(CONFIG_PROJECTS_ACTIVE_FIRST, isActiveFirst.toString())

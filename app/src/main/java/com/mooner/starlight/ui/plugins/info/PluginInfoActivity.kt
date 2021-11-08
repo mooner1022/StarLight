@@ -36,6 +36,7 @@ class PluginInfoActivity : AppCompatActivity() {
             category {
                 id = "general"
                 title = "기본"
+                textColor = color { "#706EB9" }
                 items = items {
                     button {
                         id = "name"
@@ -58,6 +59,7 @@ class PluginInfoActivity : AppCompatActivity() {
             category {
                 id = "info"
                 title = "등록 정보"
+                textColor = color { "#706EB9" }
                 items = items {
                     button {
                         id = "author"
@@ -88,12 +90,13 @@ class PluginInfoActivity : AppCompatActivity() {
             category {
                 id = "file"
                 title = "파일"
+                textColor = color { "#706EB9" }
                 items = items {
                     button {
                         id = "name"
                         title = plugin.fileName
                         icon = Icon.FOLDER
-                        iconTintColor = color { "#BCFFB9" }
+                        iconTintColor = color { "#7A69C7" }
                         onClickListener = {}
                     }
                     button {
@@ -109,6 +112,7 @@ class PluginInfoActivity : AppCompatActivity() {
             category {
                 id = "library"
                 title = "라이브러리"
+                textColor = color { "#706EB9" }
                 items = items {
                     button {
                         id = "pluginCoreVersion"
