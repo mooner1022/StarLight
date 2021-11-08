@@ -3,7 +3,7 @@ package com.mooner.starlight.plugincore.core
 import android.os.Build
 import android.os.Environment
 import com.mooner.starlight.plugincore.api.ApiManager
-import com.mooner.starlight.plugincore.config.GeneralConfig
+import com.mooner.starlight.plugincore.config.GlobalConfig
 import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.plugin.PluginManager
@@ -39,8 +39,8 @@ object Session {
         get() = mJson.get()!!
 
     @Suppress("DEPRECATION")
-    val generalConfig: GeneralConfig =
-        GeneralConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
+    val globalConfig: GlobalConfig =
+        GlobalConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
 
     private var mLanguageManager: LanguageManager? = null
     val languageManager get() = mLanguageManager!!
@@ -82,7 +82,7 @@ object Session {
             throw IllegalAccessException("Illegal access to internal function shutdown()")
         }
 
-        generalConfig.push()
+        globalConfig.push()
 
         NetworkUtil.purge()
         ApiManager.purge()

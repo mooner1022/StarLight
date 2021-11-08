@@ -10,6 +10,7 @@ data class TypedString(
     val value: String
 ) {
     companion object {
+
         fun parse(value: Any): TypedString {
             return TypedString(
                 type = value::class.simpleName!!,

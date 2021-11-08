@@ -20,7 +20,10 @@ import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.ActivitySplashBinding
+import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.ui.crash.FatalErrorActivity
 import com.mooner.starlight.ui.editor.EditorActivity
+import com.mooner.starlight.utils.FileUtils
 import com.mooner.starlight.utils.Utils
 import com.skydoves.needs.NeedsAnimation
 import com.skydoves.needs.NeedsItem
@@ -29,6 +32,8 @@ import com.skydoves.needs.showNeeds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.serialization.decodeFromString
+import java.io.File
 import java.util.*
 import kotlin.concurrent.schedule
 
@@ -134,6 +139,20 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun init(intent: Intent) {
+        val startupFile = File(FileUtils.getInternalDirectory(), "STARTUP.info")
+        if (startupFile.exists() && startupFile.isFile) {
+            val startupData: Map<String, String> = Session.json.decodeFromString(startupFile.readText())
+            if (startupData.containsKey("last_error")) {
+                val errorIntent = Intent(this, FatalErrorActivity::class.java).apply {
+                    putExtra("errorMessage", startupData["last_error"])
+                }
+                startupFile.delete()
+                startActivity(errorIntent)
+                finish()
+                return
+            }
+        }
+
         val initMillis = System.currentTimeMillis()
 
         val webview = WebView(applicationContext)
