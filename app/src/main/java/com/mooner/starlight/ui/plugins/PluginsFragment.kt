@@ -16,9 +16,8 @@ import com.afollestad.materialdialogs.customview.customView
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentPluginsBinding
 import com.mooner.starlight.models.Align
-import com.mooner.starlight.plugincore.core.Session.generalConfig
+import com.mooner.starlight.plugincore.core.Session.globalConfig
 import com.mooner.starlight.plugincore.core.Session.pluginManager
-import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.utils.Utils.Companion.formatStringRes
@@ -67,9 +66,9 @@ class PluginsFragment : Fragment() {
         ALIGN_FILE_SIZE,
     )
     private var alignState: Align<Plugin> = getAlignByName(
-        generalConfig[CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name]
+        globalConfig[CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name]
     )?: DEFAULT_ALIGN
-    private var isReversed: Boolean = generalConfig[CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
+    private var isReversed: Boolean = globalConfig[CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -79,16 +78,19 @@ class PluginsFragment : Fragment() {
         _binding = FragmentPluginsBinding.inflate(inflater, container, false)
 
         if (plugins.isEmpty()) {
-            Logger.d(javaClass.simpleName, "No plugins detected!")
             with(binding.textViewNoPluginYet) {
                 visibility = View.VISIBLE
-                text = requireContext().formatStringRes(
-                    R.string.nothing_yet,
-                    mapOf(
-                        "name" to "플러그인이",
-                        "emoji" to "(>_<｡)\uD83D\uDCA6"
+                text = if (globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
+                    "플러그인 안전 모드가 켜져있어요."
+                } else {
+                    requireContext().formatStringRes(
+                        R.string.nothing_yet,
+                        mapOf(
+                            "name" to "플러그인이",
+                            "emoji" to "(>_<｡)\uD83D\uDCA6"
+                        )
                     )
-                )
+                }
             }
         }
 
@@ -153,7 +155,7 @@ class PluginsFragment : Fragment() {
         binding.alignState.text = if (isReversed) alignState.reversedName else alignState.name
         binding.alignStateIcon.setImageResource(alignState.icon)
         reloadList(sortData())
-        generalConfig.apply {
+        globalConfig.apply {
             set(CONFIG_PLUGINS_ALIGN, alignState.name)
             set(CONFIG_PLUGINS_REVERSED, isReversed.toString())
             push()
