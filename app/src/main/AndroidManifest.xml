@@ -28,9 +28,23 @@
             android:supportsRtl="true"
             android:theme="@style/Theme.StarLight"
             tools:replace="android:icon">
-        <activity android:name=".ui.projects.info.ProjectInfoActivity">
+        <activity android:name="com.mooner.starlight.ui.settings.dev.DevModeActivity">
         </activity>
-        <activity android:name=".ui.plugins.info.PluginInfoActivity">
+        <activity
+                android:name=".ui.settings.info.AppInfoActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar">
+        </activity>
+        <activity
+                android:name=".ui.crash.FatalErrorActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar">
+        </activity>
+        <activity
+                android:name=".ui.projects.info.ProjectInfoActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar">
+        </activity>
+        <activity
+                android:name=".ui.plugins.info.PluginInfoActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar">
         </activity>
 
         <provider
