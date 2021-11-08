@@ -1,6 +1,7 @@
 package com.mooner.starlight.models
 
 data class DebugRoomMessage(
-    val message : String,
-    var viewType : Int
+    val sender: String,
+    val message: String,
+    var viewType: Int
 )

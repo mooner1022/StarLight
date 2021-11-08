@@ -21,7 +21,7 @@ class NotificationListener: NotificationListenerService() {
 
     private val sessions: MutableMap<String, Notification.Action> = WeakHashMap()
     private val isGlobalPowerOn: Boolean
-        get() = Session.generalConfig["global_power", "true"].toBoolean()
+        get() = Session.globalConfig["global_power", "true"].toBoolean()
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
@@ -68,7 +68,7 @@ class NotificationListener: NotificationListenerService() {
                 for (project in projects) {
                     project.callEvent("onMessage", arrayOf(data))
                 }
-                stopSelf()
+                //stopSelf()
             }
         }
     }

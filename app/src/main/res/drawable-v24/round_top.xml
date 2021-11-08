@@ -10,8 +10,8 @@
     <shape android:shape="rectangle">
         <solid android:color="@color/cardview_gray" />
         <corners
-            android:topRightRadius="25dp"
-            android:topLeftRadius="25dp"
+            android:topRightRadius="20dp"
+            android:topLeftRadius="20dp"
             />
     </shape>
 </item>

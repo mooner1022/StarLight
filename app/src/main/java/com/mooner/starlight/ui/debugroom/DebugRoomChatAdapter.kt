@@ -63,15 +63,23 @@ class DebugRoomChatAdapter(
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val messageData = chatList[position]
+        val isSentAgain: Boolean = chatList.size != 1 && position != 0 && chatList[position - 1].viewType in arrayOf(CHAT_BOT, CHAT_BOT_LONG)
 
         when (messageData.viewType) {
             CHAT_SELF -> {
                 holder.message.text = messageData.message
             }
             CHAT_BOT -> {
-                holder.sender.text = "BOT"
+                if (isSentAgain) {
+                    holder.sender.visibility = View.GONE
+                    holder.profileImage.visibility = View.INVISIBLE
+                } else {
+                    holder.sender.visibility = View.VISIBLE
+                    holder.profileImage.visibility = View.VISIBLE
+                    holder.sender.text = messageData.sender
+                    holder.profileImage.setImageResource(R.drawable.default_profile)
+                }
                 holder.message.text = messageData.message
-                holder.profileImage.setImageResource(R.drawable.default_profile)
             }
             CHAT_SELF_LONG -> {
                 holder.message.text = messageData.message
@@ -91,11 +99,19 @@ class DebugRoomChatAdapter(
                 }
             }
             CHAT_BOT_LONG -> {
-                holder.sender.text = "BOT"
+                if (isSentAgain) {
+                    holder.sender.visibility = View.GONE
+                    holder.profileImage.visibility = View.INVISIBLE
+                } else {
+                    holder.sender.visibility = View.VISIBLE
+                    holder.profileImage.visibility = View.VISIBLE
+                    holder.sender.text = messageData.sender
+                    holder.profileImage.setImageResource(R.drawable.default_profile)
+                }
+
                 holder.message.text = messageData.message
                     .substring(0..500)
                     .replace("\u200B", "") + "..."
-                holder.profileImage.setImageResource(R.drawable.default_profile)
                 holder.showAllButton.setOnClickListener {
                     MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                         cornerRadius(25f)
