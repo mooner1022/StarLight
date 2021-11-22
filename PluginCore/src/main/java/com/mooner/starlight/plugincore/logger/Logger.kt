@@ -35,6 +35,7 @@ object Logger {
      * Binds a listener, which is called when a log is created, to the logger
      *
      * @param key an id for the listener, used to remove or release the listener
+     * @param listener called when a log is created
      */
     fun bindListener(key: String, listener: (log: LogData) -> Unit) {
         listeners[key] = listener
@@ -114,13 +115,15 @@ object Logger {
 
     fun log(data: LogData) {
         Log.println(data.type.priority, data.tag?: data.type.name, data.message)
-        logs.add(data)
+        synchronized(logs) {
+            logs += data
+        }
 
         for ((_, listener) in listeners) {
             listener(data)
         }
 
-        if (data.type != LogType.DEBUG) {
+        if (data.type.priority >= LogType.DEBUG.priority) {
             CoroutineScope(Dispatchers.IO).launch {
                 val timestamp = TimeUtils.getTimestamp(fullTimestamp = true)
                 val log = data.toString()
