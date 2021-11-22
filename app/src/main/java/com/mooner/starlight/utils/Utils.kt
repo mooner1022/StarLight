@@ -18,11 +18,12 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.customview.customView
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.logger.LogData
+import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.core.Session.globalConfig
+import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import com.mooner.starlight.ui.splash.SplashActivity
-import jp.wasabeef.recyclerview.animators.FadeInLeftAnimator
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
@@ -91,8 +92,12 @@ class Utils {
             exitProcess(0)
         }
 
-        fun showLogsDialog(context: Context, logs: List<LogData>? = null): MaterialDialog {
-            val mLogs = logs?: Logger.logs
+        fun showLogsDialog(context: Context): MaterialDialog {
+            val mLogs = if (Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false))
+                Logger.logs
+            else
+                Logger.filterNot(LogType.VERBOSE)
+
             val mAdapter = LogsRecyclerViewAdapter(context).apply {
                 data = mLogs.toMutableList()
             }
@@ -118,17 +123,16 @@ class Utils {
                 }
                 mAdapter.notifyItemRangeInserted(0, mLogs.size)
 
-                if (logs == null) {
-                    val key = randomAlphanumeric(8)
-                    Logger.bindListener(key) {
-                        mAdapter.pushLog(it)
-                        recycler.post {
-                            recycler.smoothScrollToPosition(mAdapter.data.size - 1)
-                        }
+                val key = randomAlphanumeric(8)
+                Logger.bindListener(key) {
+                    if (it.type == LogType.VERBOSE && !globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)) return@bindListener
+                    mAdapter.pushLog(it)
+                    recycler.post {
+                        recycler.smoothScrollToPosition(mAdapter.data.size - 1)
                     }
-                    onDismiss {
-                        Logger.unbindListener(key)
-                    }
+                }
+                onDismiss {
+                    Logger.unbindListener(key)
                 }
             }
         }
