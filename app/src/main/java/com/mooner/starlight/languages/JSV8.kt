@@ -13,6 +13,9 @@ import com.eclipsesource.v8.V8Value
 import com.eclipsesource.v8.utils.V8ObjectUtils
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.api.Api
+import com.mooner.starlight.plugincore.api.ApiFunction
+import com.mooner.starlight.plugincore.api.ApiObject
+import com.mooner.starlight.plugincore.api.ApiValue
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.Language
@@ -89,7 +92,7 @@ class JSV8: Language() {
                     id = "button_test"
                     title = "버튼 테스트"
                     onClickListener = {
-                        Logger.d("JSV8_Config", "onClickListener")
+                        Logger.v("JSV8_Config", "onClickListener")
                     }
                     backgroundColor = Color.parseColor("#ffa361")
                     icon = Icon.ADD
@@ -121,12 +124,11 @@ class JSV8: Language() {
         val v8 = V8.createV8Runtime()
         try {
             v8.apply {
-                for (methodBlock in apis) {
+                for (api in apis) {
                     addClass(
-                        methodBlock.name,
-                        methodBlock.getInstance(project!!),
-                        methodBlock.functions.map { it.name }.toTypedArray(),
-                        methodBlock.functions.map { it.args }.toTypedArray()
+                        api.name,
+                        api.getInstance(project!!),
+                        api.objects
                     )
                 }
                 executeScript(code)
@@ -194,18 +196,36 @@ class JSV8: Language() {
         }
     }
 
-    private fun V8.addClass(name: String, clazz: Any, methods: Array<String>, args: Array<Array<Class<*>>>) {
+    private fun V8.addClass(name: String, clazz: Any, objects: List<ApiObject>) {
         val obj = V8Object(this)
         this.add(name, obj)
 
-        for ((i, method) in methods.withIndex()) {
-            obj.registerJavaMethod(
-                clazz,
-                method,
-                method,
-                args[i]
-            )
+        for (aObj in objects) {
+            when(aObj) {
+                is ApiFunction -> {
+                    obj.registerJavaMethod(
+                        clazz,
+                        aObj.name,
+                        aObj.name,
+                        aObj.args
+                    )
+                }
+                is ApiValue -> {
+                    val functionName = aObj.name.toGetterFunctionName()
+                    obj.registerJavaMethod(
+                        clazz,
+                        functionName,
+                        functionName,
+                        emptyArray()
+                    )
+                }
+            }
         }
         obj.close()
+    }
+
+    private fun String.toGetterFunctionName(): String {
+        val firstWord = this.substring(0..1)
+        return "get${firstWord.uppercase()}${this.drop(1)}"
     }
 }
