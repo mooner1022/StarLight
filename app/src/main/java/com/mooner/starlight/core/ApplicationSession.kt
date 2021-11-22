@@ -28,12 +28,18 @@ object ApplicationSession {
         get() = mInitMillis
 
     var isInitComplete: Boolean = false
+    var isAfterInit: Boolean = false
 
     internal fun init(context: Context, onPhaseChanged: (phase: String) -> Unit = {}, onFinished: () -> Unit = {}) {
         if (isInitComplete) {
             onFinished()
             return
         }
+        if (isAfterInit) {
+            Logger.w("ApplicationSession", "Rejecting re-init of ApplicationSession")
+            return
+        }
+        isAfterInit = true
 
         @Suppress("DEPRECATION")
         val starlightDir = File(Environment.getExternalStorageDirectory(), "StarLight/")
