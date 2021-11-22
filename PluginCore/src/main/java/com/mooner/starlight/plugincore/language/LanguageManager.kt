@@ -1,5 +1,7 @@
 package com.mooner.starlight.plugincore.language
 
+import com.mooner.starlight.plugincore.logger.Logger
+
 class LanguageManager {
 
     private val languages: MutableSet<ILanguage> = HashSet()
@@ -11,8 +13,9 @@ class LanguageManager {
         if (languages.contains(lang)) {
             throw IllegalArgumentException("Duplicated language: ${lang.name}")
         }
-        languages.add(lang)
+        languages += lang
         languageAssetPaths[lang.id] = assetPath
+        Logger.v("LanguageManager", "Added language ${lang.name}(${lang.id})")
     }
 
     fun getLanguage(id: String, newInstance: Boolean = true): ILanguage? {

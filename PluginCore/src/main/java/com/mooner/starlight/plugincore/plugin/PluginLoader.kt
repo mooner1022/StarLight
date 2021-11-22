@@ -125,7 +125,7 @@ class PluginLoader {
                     }
                     writeFile.parentFile?.mkdirs()
                     writeFile.writeBytes(entStream.readBytes())
-                    Logger.d(T, "Loaded asset [${fileName}] from plugin [${plugin.info.fullName}]")
+                    Logger.v(T, "Loaded asset [${fileName}] from plugin [${plugin.info.fullName}]")
                 }
             }
         } catch (e: IOException) {
@@ -159,15 +159,17 @@ class PluginLoader {
         if (cachedClass != null) {
             return cachedClass
         } else {
-            for (current in loaders.keys) {
-                val loader = loaders[current]
-                try {
-                    cachedClass = loader!!.findClass(name, false)
-                } catch (cnfe: ClassNotFoundException) {
+            synchronized(loaders) {
+                for (current in loaders.keys) {
+                    val loader = loaders[current]
+                    try {
+                        cachedClass = loader!!.findClass(name, false)
+                    } catch (cnfe: ClassNotFoundException) {
 
-                }
-                if (cachedClass != null) {
-                    return cachedClass
+                    }
+                    if (cachedClass != null) {
+                        return cachedClass
+                    }
                 }
             }
         }

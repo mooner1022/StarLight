@@ -63,7 +63,7 @@ class NotificationListener: NotificationListenerService() {
                     hasMention = hasMention
                 )
 
-                Logger.d("NotificationListenerService", "message : $message sender : $sender nRoom : $room nSession : $act")
+                Logger.v("NotificationListenerService", "message : $message sender : $sender nRoom : $room nSession : $act")
 
                 for (project in projects) {
                     project.callEvent("onMessage", arrayOf(data))
@@ -71,6 +71,12 @@ class NotificationListener: NotificationListenerService() {
                 //stopSelf()
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Logger.v("NotificationListener", "onDestroy() called")
+        sessions.clear()
     }
 
     private fun Drawable.toBase64(): String {
