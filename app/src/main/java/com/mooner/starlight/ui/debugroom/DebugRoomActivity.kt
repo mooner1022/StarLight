@@ -16,24 +16,41 @@ import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.globalConfig
+import com.mooner.starlight.plugincore.core.Session.json
 import com.mooner.starlight.plugincore.models.ChatSender
 import com.mooner.starlight.plugincore.models.DebugChatRoom
 import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
+import com.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF
+import com.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF_LONG
+import com.mooner.starlight.utils.PACKAGE_KAKAO_TALK
 import jp.wasabeef.recyclerview.animators.FadeInAnimator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import java.io.File
+import java.util.*
 
 class DebugRoomActivity: AppCompatActivity() {
 
     companion object {
-        private const val RESULT_BOT = 100
-        private const val RESULT_USER = 101
+        private const val RESULT_BOT      = 100
+        private const val RESULT_USER     = 101
+
+        private const val CHATS_FILE_NAME = "chats.json"
     }
 
-    private val chatList: MutableList<DebugRoomMessage> = mutableListOf()
+    private lateinit var chatList: MutableList<DebugRoomMessage>
     private var userChatAdapter: DebugRoomChatAdapter? = null
+    val dir: File by lazy {
+        val directory = project.directory.resolve("debugroom")
+        if (!directory.exists()) directory.mkdirs()
+        directory
+    }
 
     private var roomName: String = "undefined"
     private var sender: String = "debug_sender"
@@ -79,12 +96,21 @@ class DebugRoomActivity: AppCompatActivity() {
 
         updateConfig()
 
+        val listFile = dir.resolve(CHATS_FILE_NAME)
+        chatList = if (listFile.exists() && listFile.isFile)
+            json.decodeFromString(listFile.readText())
+        else
+            mutableListOf()
+
         userChatAdapter = DebugRoomChatAdapter(this, chatList)
 
         binding.chatRecyclerView.apply {
             adapter = userChatAdapter
             layoutManager = LinearLayoutManager(this@DebugRoomActivity)
             itemAnimator = FadeInAnimator()
+            if (chatList.isNotEmpty()) {
+                scrollToPosition(chatList.size - 1)
+            }
         }
 
         binding.sendButton.setOnClickListener {
@@ -115,14 +141,8 @@ class DebugRoomActivity: AppCompatActivity() {
     }
 
     private fun send(message: String) {
-        addMessage(
-            sender,
-            message,
-            if (message.length >= 500)
-                DebugRoomChatAdapter.CHAT_SELF_LONG
-            else
-                DebugRoomChatAdapter.CHAT_SELF
-        )
+        val viewType = if (message.length >= 500) CHAT_SELF_LONG else CHAT_SELF
+        addMessage(sender, message, viewType)
         val data = Message(
             message = message,
             sender = ChatSender(
@@ -146,19 +166,37 @@ class DebugRoomActivity: AppCompatActivity() {
     }
 
     private fun addMessage(sender: String, msg: String, viewType: Int) {
-        runOnUiThread {
-            chatList.add(
+        chatList.add(
+            if (msg.length >= 500) {
+                val fileName = UUID.randomUUID().toString() + ".chat"
+                File(dir, "chats").apply {
+                    mkdirs()
+                    resolve(fileName).writeText(msg)
+                }
+                DebugRoomMessage(
+                    sender = sender,
+                    message = msg.substring(0..500).replace("\u200b", ""),
+                    fileName = fileName,
+                    viewType = viewType
+                )
+            } else {
                 DebugRoomMessage(
                     sender = sender,
                     message = msg,
                     viewType = viewType
                 )
-            )
+            }
+        )
+        runOnUiThread {
             userChatAdapter?.notifyItemInserted(chatList.size)
             binding.messageInput.setText("")
             binding.chatRecyclerView.post {
                 binding.chatRecyclerView.smoothScrollToPosition(chatList.size - 1)
             }
+        }
+        CoroutineScope(Dispatchers.IO).launch {
+            val encoded = synchronized(chatList) {json.encodeToString(chatList)}
+            File(dir, CHATS_FILE_NAME).writeText(encoded)
         }
     }
 
@@ -221,6 +259,21 @@ class DebugRoomActivity: AppCompatActivity() {
                             if (text.isBlank()) "이름을 입력해주세요."
                             else null
                         }
+                    }
+                    string {
+                        id = "package"
+                        title = "앱 패키지"
+                        icon = Icon.LIST_BULLETED
+                        hint = "ex) $PACKAGE_KAKAO_TALK"
+                        defaultValue = PACKAGE_KAKAO_TALK
+                        iconTintColor = color { "#706EB9" }
+                    }
+                    toggle {
+                        id = "is_group_chat"
+                        title = "isGroupChat"
+                        icon = Icon.MARK_CHAT_UNREAD
+                        iconTintColor = color { "#706EB9" }
+                        defaultValue = false
                     }
                 }
             }
@@ -315,7 +368,9 @@ class DebugRoomActivity: AppCompatActivity() {
                         id = "clear_chat"
                         title = "대화 기록 초기화"
                         onClickListener = {
-
+                            dir.deleteRecursively()
+                            chatList.clear()
+                            userChatAdapter?.notifyDataSetChanged()
                         }
                         icon = Icon.LAYERS_CLEAR
                         //backgroundColor = Color.parseColor("#B8DFD8")
