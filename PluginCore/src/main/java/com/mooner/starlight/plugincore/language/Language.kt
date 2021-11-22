@@ -1,5 +1,7 @@
 package com.mooner.starlight.plugincore.language
 
+import com.mooner.starlight.plugincore.config.ConfigCategory
+import com.mooner.starlight.plugincore.config.ConfigCategoryImpl
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.json
 import com.mooner.starlight.plugincore.models.TypedString
@@ -13,16 +15,17 @@ abstract class Language: ILanguage {
         configFile = path
     }
 
-    protected fun getLanguageConfig(): Map<String, Any> {
-        return if (configFile == null || !configFile!!.isFile || !configFile!!.exists()) mapOf() else {
+    protected fun getLanguageConfig(): ConfigCategory {
+        val data = if (configFile == null || !configFile!!.isFile || !configFile!!.exists()) mapOf() else {
             val raw = configFile!!.readText()
             val typed: Map<String, Map<String, TypedString>> =
                 if (raw.isNotBlank())
                     json.decodeFromString(raw)
                 else
                     emptyMap()
-            (typed[id]?: emptyMap()).mapValues { it.value.cast()!! }
+            typed[id]?: emptyMap()
         }
+        return ConfigCategoryImpl(data)
     }
 
     protected fun getAsset(directory: String): File = File(Session.languageManager.getAssetPath(id), directory)
