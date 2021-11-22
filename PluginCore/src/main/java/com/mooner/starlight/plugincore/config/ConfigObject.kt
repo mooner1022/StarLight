@@ -80,7 +80,7 @@ data class StringConfigObject(
     override val title: String,
     override val description: String? = null,
     val hint: String,
-    private val defaultValue: String = "",
+    val defaultValue: String? = null,
     val inputType: Int = InputType.TYPE_CLASS_TEXT,
     val require: (String) -> String? = { null },
     override val icon: Icon? = null,
@@ -91,7 +91,7 @@ data class StringConfigObject(
     override val dependency: String? = null
 ): ConfigObject {
     override val default: Any
-        get() = defaultValue
+        get() = defaultValue?: ""
     override val type: ConfigObjectType
         get() = ConfigObjectType.STRING
     override val viewType: Int

@@ -223,6 +223,7 @@ class ConfigItemBuilder {
 
     inner class StringConfigBuilder: ConfigBuilder() {
         var hint: String? = null
+        var defaultValue: String? = null
         var inputType: Int = InputType.TYPE_CLASS_TEXT
         var require: (String) -> String? = { null }
 
@@ -240,6 +241,7 @@ class ConfigItemBuilder {
                 title = title!!,
                 description = description,
                 hint = hint ?: "",
+                defaultValue = defaultValue,
                 inputType = inputType,
                 require = require,
                 icon = icon,
