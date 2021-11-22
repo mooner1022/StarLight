@@ -78,7 +78,8 @@ dependencies {
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
     implementation 'org.jsoup:jsoup:1.14.3'
 
-    implementation group: 'org.mozilla', name: 'rhino', version: '1.7.13'
+    //implementation group: 'org.mozilla', name: 'rhino', version: '1.7.13'
+    implementation 'com.faendir.rhino:rhino-android:1.6.0'
     implementation 'com.eclipsesource.j2v8:j2v8:6.2.1@aar'
 
     implementation project(":PluginCore")
