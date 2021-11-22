@@ -21,6 +21,7 @@ import com.mooner.starlight.R
 import com.mooner.starlight.core.ApplicationSession
 import com.mooner.starlight.databinding.ActivitySplashBinding
 import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.crash.FatalErrorActivity
 import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.utils.FileUtils
@@ -40,6 +41,8 @@ import kotlin.concurrent.schedule
 class SplashActivity : AppCompatActivity() {
 
     companion object {
+        private val T = SplashActivity::class.simpleName!!
+
         private const val MIN_LOAD_TIME = 2500L
         private const val ANIMATION_DURATION = 5000L
         private val REQUIRED_PERMISSIONS = arrayOf(
@@ -163,6 +166,7 @@ class SplashActivity : AppCompatActivity() {
             ApplicationSession.init(
                 context = applicationContext,
                 onPhaseChanged = { phase ->
+                    Logger.i(T, phase)
                     runOnUiThread {
                         binding.textViewLoadStatus.text = phase
                     }
