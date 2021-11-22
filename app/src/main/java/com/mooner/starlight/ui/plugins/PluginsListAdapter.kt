@@ -15,9 +15,9 @@ import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.ui.plugins.config.PluginConfigActivity
-import com.mooner.starlight.ui.plugins.info.PluginInfoActivity
 import com.mooner.starlight.ui.presets.ExpandableCardView
 import com.mooner.starlight.utils.Utils.Companion.trimLength
+import com.mooner.starlight.utils.startPluginInfoActivity
 import java.io.File
 
 class PluginsListAdapter(
@@ -63,11 +63,14 @@ class PluginsListAdapter(
             }
 
             buttonInfo.setOnClickListener {
+                /*
                 val intent = Intent(it.context, PluginInfoActivity::class.java).apply {
                     putExtra("pluginName", config.name)
                     putExtra("pluginId", config.id)
                 }
                 it.context.startActivity(intent)
+                */
+                context.startPluginInfoActivity(plugin)
             }
 
             /*

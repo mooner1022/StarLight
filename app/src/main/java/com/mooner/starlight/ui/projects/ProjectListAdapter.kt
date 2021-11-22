@@ -21,7 +21,7 @@ import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.ui.presets.ExpandableCardView
 import com.mooner.starlight.ui.projects.config.ProjectConfigActivity
-import com.mooner.starlight.ui.projects.info.ProjectInfoActivity
+import com.mooner.starlight.utils.startProjectInfoActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -158,6 +158,7 @@ class ProjectListAdapter(
         }
 
         holder.buttonProjectInfo.setOnClickListener {
+            /*
             val intent = Intent(
                 it.context,
                 ProjectInfoActivity::class.java
@@ -165,6 +166,8 @@ class ProjectListAdapter(
                 putExtra("projectName", info.name)
             }
             it.context.startActivity(intent)
+            */
+            context.startProjectInfoActivity(project)
         }
     }
 
