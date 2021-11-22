@@ -28,7 +28,9 @@
             android:supportsRtl="true"
             android:theme="@style/Theme.StarLight"
             tools:replace="android:icon">
-        <activity android:name="com.mooner.starlight.ui.settings.dev.DevModeActivity">
+        <activity android:name=".ui.config.ConfigActivity">
+        </activity>
+        <activity android:name=".ui.settings.dev.DevModeActivity">
         </activity>
         <activity
                 android:name=".ui.settings.info.AppInfoActivity"
@@ -57,8 +59,6 @@
                     android:resource="@xml/provider_paths"/>
         </provider>
 
-        <activity android:name=".ui.debugroom.DebugRoomSettingsActivity">
-        </activity>
         <activity
                 android:name=".ui.plugins.config.PluginConfigActivity"
                 android:theme="@style/Theme.StarLight.NoActionBar">

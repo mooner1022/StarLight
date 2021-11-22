@@ -3,30 +3,25 @@
                                                    xmlns:app="http://schemas.android.com/apk/res-auto"
                                                    android:layout_width="match_parent"
                                                    android:layout_height="wrap_content"
-                                                   android:layout_marginStart="@dimen/card_margin"
-                                                   android:layout_marginEnd="@dimen/card_margin"
+                                                   android:layout_marginTop="8dp" android:layout_marginBottom="8dp"
                                                    android:backgroundTint="@color/transparent">
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/cardViewIsEnabled"
-        android:layout_width="10dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        app:cardBackgroundColor="@color/project_card"
-        app:cardCornerRadius="3dp"
-        app:cardElevation="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+            android:id="@+id/cardViewIsEnabled"
+            android:layout_width="12dp"
+            android:layout_height="30dp"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/project_card"
+            app:cardCornerRadius="5dp"
+            app:cardElevation="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" android:layout_marginStart="8dp"/>
 
     <com.mooner.starlight.ui.presets.ExpandableCardView
             android:id="@+id/card_project"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"
             android:background="@color/project_card"
             android:backgroundTint="@color/project_card"
             app:animationDuration="200"
@@ -39,6 +34,8 @@
             app:layout_constraintTop_toTopOf="parent"
             app:showSwitch="true"
             app:startExpanded="false"
-            app:title="PROJECT_NAME"/>
+            app:title="PROJECT_NAME"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

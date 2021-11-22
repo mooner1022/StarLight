@@ -9,6 +9,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mooner.starlight.R
+import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.widget.Widget
 import com.mooner.starlight.plugincore.widget.WidgetSize
@@ -52,7 +54,10 @@ class LogsWidget: Widget() {
             layoutTransition = LayoutTransition()
             val rvLogs: RecyclerView = findViewById(R.id.rvLogs)
             val textViewNoLogsYet: TextView = findViewById(R.id.textViewNoLogsYet)
-            val logs = Logger.logs
+            val logs = if (Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false))
+                Logger.logs
+            else
+                Logger.filterNot(LogType.VERBOSE)
             mAdapter = LogsRecyclerViewAdapter(context)
 
             if (logs.isNotEmpty()) {
@@ -113,6 +118,7 @@ class LogsWidget: Widget() {
 
     private fun bindLogger() {
         Logger.bindListener(T) {
+            if (it.type == LogType.VERBOSE && !Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)) return@bindListener
             mAdapter?.pushLog(it, LOGS_MAX_SIZE)
             if (mView != null) {
                 CoroutineScope(Dispatchers.Main).launch {

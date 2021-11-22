@@ -1,10 +1,12 @@
 package com.mooner.starlight.ui.projects
 
+import android.animation.LayoutTransition
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
+import android.widget.EditText
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import coil.load
@@ -14,12 +16,17 @@ import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentProjectsBinding
 import com.mooner.starlight.models.Align
+import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.globalConfig
 import com.mooner.starlight.plugincore.core.Session.projectManager
 import com.mooner.starlight.plugincore.project.Project
+import com.mooner.starlight.utils.ViewUtils
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 
 class ProjectsFragment : Fragment() {
@@ -34,7 +41,7 @@ class ProjectsFragment : Fragment() {
             icon = R.drawable.ic_round_sort_by_alpha_24,
             sort = { list, args ->
                 val comparable = if (args["activeFirst"] == true) {
-                    compareBy<Project>({ !it.info.isEnabled }, { it.info.name })
+                    compareBy<Project> { !it.info.isEnabled }.thenBy { it.info.name }
                 } else {
                     compareBy { it.info.name }
                 }
@@ -49,7 +56,7 @@ class ProjectsFragment : Fragment() {
             icon = R.drawable.ic_baseline_edit_calendar_24,
             sort = { list, args ->
                 val comparable = if (args["activeFirst"] == true) {
-                    compareBy<Project>({ !it.info.isEnabled }, { it.info.createdMillis })
+                    compareBy<Project> { it.info.isEnabled }.thenBy { it.info.createdMillis }
                 } else {
                     compareBy { it.info.createdMillis }
                 }
@@ -64,7 +71,7 @@ class ProjectsFragment : Fragment() {
             icon = R.drawable.ic_round_refresh_24,
             sort = { list, args ->
                 val comparable = if (args["activeFirst"] == true) {
-                    compareBy<Project>({ !it.info.isEnabled }, { !it.isCompiled })
+                    compareBy<Project> { it.info.isEnabled }.thenBy { it.isCompiled }
                 } else {
                     compareBy { it.isCompiled }
                 }
@@ -121,6 +128,73 @@ class ProjectsFragment : Fragment() {
 
         binding.alignState.text = if (isReversed) alignState.reversedName else alignState.name
         binding.alignStateIcon.setImageResource(alignState.icon)
+
+        binding.fabNewProject.setOnClickListener { _ ->
+            //binding.fabNewProject.hide()
+            MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                cornerRadius(27f)
+                customView(R.layout.dialog_new_project)
+                cancelOnTouchOutside(true)
+                noAutoDismiss()
+
+                val nameEditText: EditText = findViewById(R.id.editTextNewProjectName)
+
+                //val languageSpinner: NiceSpinner
+                // = findViewById(R.id.spinnerLanguage)
+                nameEditText.text.clear()
+
+                val chipGroup: ChipGroup = this.findViewById(R.id.langSelectionGroup)
+                chipGroup.layoutTransition.enableTransitionType(LayoutTransition.CHANGING)
+                val languages = Session.languageManager.getLanguages()
+                for ((index, language) in languages.withIndex()) {
+                    val chip = Chip(this.windowContext).apply {
+                        id = index
+                        text = language.name
+                        chipMinHeight = ViewUtils.dpToPx(requireContext(), 30f)
+                        isCheckable = true
+                        if (index == 0) {
+                            isChecked = true
+                        }
+                    }
+                    chipGroup.addView(chip)
+                }
+
+                positiveButton(text = "생성") {
+                    val projectName = nameEditText.text.toString()
+                    if (projectManager.getProject(projectName) != null) {
+                        nameEditText.error = "이미 존재하는 이름이에요."
+                        nameEditText.requestFocus()
+                        return@positiveButton
+                    }
+                    if (!"(^[-_0-9A-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+\$)".toRegex().matches(projectName)) {
+                        nameEditText.error = "이름은 숫자와 -, _, 영문자, 한글만 가능해요."
+                        nameEditText.requestFocus()
+                        return@positiveButton
+                    }
+
+                    val id = chipGroup.checkedChipId
+                    if (id == View.NO_ID) {
+                        Snackbar.make(this.view, "사용할 언어를 선택해주세요.", Snackbar.LENGTH_SHORT).show()
+                        return@positiveButton
+                    }
+                    val selectedLang = Session.languageManager.getLanguages()[id]
+                    projectManager.newProject {
+                        name = projectName
+                        mainScript = "$projectName.${selectedLang.fileExtension}"
+                        languageId = selectedLang.id
+                        createdMillis = System.currentTimeMillis()
+                        listeners = hashSetOf("default")
+                    }
+                    it.dismiss()
+                }
+                negativeButton(text = "취소") {
+                    it.dismiss()
+                }
+                //onDismiss {
+                //    binding.fabNewProject.show()
+                //`}
+            }
+        }
 
         recyclerAdapter = ProjectListAdapter(requireContext())
 
