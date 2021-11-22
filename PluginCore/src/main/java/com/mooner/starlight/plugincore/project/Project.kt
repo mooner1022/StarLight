@@ -87,15 +87,36 @@ class Project (
                 context = null
 
             }
-            threadName = "$tag-thread"
-            context = newSingleThreadContext(threadName!!)
-            Logger.d("Allocated thread $threadName to project ${info.name}")
+            threadName = "$tag-worker"
+            context = newFixedThreadPoolContext(3, threadName!!)
+            Logger.v("Allocated thread $threadName with 3 threads to project ${info.name}")
+        }
+
+        fun onError(e: Throwable) {
+            logger.e(tag, "Error while running: $e")
+            val config = configManager.getConfigForId("general")
+            val key = "shutdown_on_error"
+            val shutdownOnError: Boolean = when {
+                config == null -> true
+                !config.containsKey(key) -> true
+                else -> config[key]!!.cast() as Boolean
+            }
+
+            if (shutdownOnError) {
+                logger.e(info.name, "Shutting down project [${info.name}]...")
+                info.isEnabled = false
+                if (engine != null && lang.requireRelease) {
+                    lang.release(engine!!)
+                    engine = null
+                }
+            }
+            e.printStackTrace()
         }
 
         val jobName: String = UUID.randomUUID().toString()
         val job = CoroutineScope(context!!).launch {
             lang.callFunction(engine!!, name, args) {
-
+                onError(it)
             }
         }
         JobLocker.withParent(threadName!!).registerJob(
@@ -113,24 +134,7 @@ class Project (
                         lang.release(engine!!)
                 }
                 else -> {
-                    logger.e(tag, "Error while running: $e")
-                    val config = configManager.getConfigForId("general")
-                    val key = "shutdown_on_error"
-                    val shutdownOnError: Boolean = when {
-                        config == null -> true
-                        !config.containsKey(key) -> true
-                        else -> config[key]!!.cast() as Boolean
-                    }
-
-                    if (shutdownOnError) {
-                        logger.e(info.name, "Shutting down project [${info.name}]...")
-                        info.isEnabled = false
-                        if (engine != null && lang.requireRelease) {
-                            lang.release(engine!!)
-                            engine = null
-                        }
-                    }
-                    e.printStackTrace()
+                    onError(e)
                 }
             }
         }
