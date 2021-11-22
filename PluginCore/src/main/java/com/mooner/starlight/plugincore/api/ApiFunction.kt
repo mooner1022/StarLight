@@ -1,10 +1,10 @@
 package com.mooner.starlight.plugincore.api
 
 data class ApiFunction(
-    val name: String,
-    val args: Array<Class<*>> = arrayOf(),
-    val returns: Class<*> = Unit::class.java
-) {
+    override val name: String,
+    val args: Array<Class<*>>,
+    override val returns: Class<*> = Unit::class.java
+): ApiObject {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

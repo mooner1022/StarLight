@@ -21,7 +21,7 @@ class ClientApi: Api<BotClient>() {
 
     override val instanceClass: Class<BotClient> = BotClient::class.java
 
-    override val functions: List<ApiFunction> = listOf(
+    override val objects: List<ApiFunction> = listOf(
         function {
             name = "on"
             args = arrayOf(String::class.java, Function::class.java)

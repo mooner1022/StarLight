@@ -1,7 +1,7 @@
 package com.mooner.starlight.api.helper
 
 import com.mooner.starlight.plugincore.api.Api
-import com.mooner.starlight.plugincore.api.ApiFunction
+import com.mooner.starlight.plugincore.api.ApiObject
 import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.project.Project
 import org.jsoup.Jsoup
@@ -46,6 +46,10 @@ class UtilsApi: Api<UtilsApi.Utils>() {
             }
             return arr.joinToString("")
         }
+
+        val lw: String by lazy { "\u200b".repeat(500) }
+
+        val lwLined: String = lw + "\n" + "─".repeat(20) + "\n"
     }
 
     override val name: String = "Utils"
@@ -54,7 +58,7 @@ class UtilsApi: Api<UtilsApi.Utils>() {
 
     override val instanceClass: Class<Utils> = Utils::class.java
 
-    override val functions: List<ApiFunction> = listOf(
+    override val objects: List<ApiObject> = listOf(
         function {
             name = "getWebText"
             args = arrayOf(String::class.java)
@@ -84,6 +88,14 @@ class UtilsApi: Api<UtilsApi.Utils>() {
         function {
             name = "randomAlphanumeric"
             args = arrayOf(Int::class.java)
+            returns = String::class.java
+        },
+        value {
+            name = "lw"
+            returns = String::class.java
+        },
+        value {
+            name = "lwLined"
             returns = String::class.java
         }
     )

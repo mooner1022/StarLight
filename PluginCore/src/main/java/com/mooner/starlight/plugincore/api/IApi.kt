@@ -6,7 +6,7 @@ interface IApi <T> {
 
     val name: String
 
-    val functions: List<ApiFunction>
+    val objects: List<ApiObject>
 
     val instanceClass: Class<T>
 

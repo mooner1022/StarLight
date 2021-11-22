@@ -37,8 +37,35 @@ abstract class Api <T>: IApi<T> {
         }
     }
 
+    protected class ApiValueBuilder {
+
+        var name: String? = null
+        var returns: Class<*> = Unit::class.java
+
+        @Suppress("SameParameterValue")
+        private fun required(fieldName: String, value: Any?) {
+            if (value == null) {
+                throw IllegalArgumentException("Required field '$fieldName' is null")
+            }
+        }
+
+        fun build(): ApiValue {
+            required("name", name)
+
+            return ApiValue(
+                name = name!!,
+                returns = returns
+            )
+        }
+    }
+
     protected fun function(block: ApiFunctionBuilder.() -> Unit): ApiFunction {
         val builder = ApiFunctionBuilder().apply(block)
+        return builder.build()
+    }
+
+    protected fun value(block: ApiValueBuilder.() -> Unit): ApiValue {
+        val builder = ApiValueBuilder().apply(block)
         return builder.build()
     }
 }
