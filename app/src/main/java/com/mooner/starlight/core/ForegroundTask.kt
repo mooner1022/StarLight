@@ -103,6 +103,11 @@ class ForegroundTask: Service() {
         return null
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        ApplicationSession.shutdown()
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationChannel = NotificationChannel(
