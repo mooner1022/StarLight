@@ -48,6 +48,16 @@ class LocalLogger(
     val logs: ArrayList<LogData>
         get() = this._logs
 
+    fun v(message: String) = v(tag = null, message = message)
+
+    fun v(tag: String?, message: String) = Logger.log(
+        LogData(
+            type = LogType.VERBOSE,
+            tag = tag,
+            message = message
+        )
+    )
+
     fun d(message: String) = d(tag = null, message = message)
 
     fun d(tag: String?, message: String) = Logger.log(
