@@ -87,7 +87,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     fun getDataFolder(): File = dataDir
 
-    fun getAsset(directory: String): File = File(dataDir, directory)
+    fun getAsset(directory: String): File = File(dataDir.resolve("assets"), directory)
 
     fun getProjectLoader(): ProjectLoader = projectLoader
 
