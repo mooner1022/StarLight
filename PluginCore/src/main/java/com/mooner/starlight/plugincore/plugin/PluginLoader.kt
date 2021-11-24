@@ -87,11 +87,11 @@ class PluginLoader {
             dataDir.mkdirs()
         }
 
-        Logger.i(T, "Loading plugin ${info.fullName}")
+        Logger.v(T, "Loading plugin ${info.fullName}")
         val loader: PluginClassLoader
         try {
             loader = PluginClassLoader(this, javaClass.classLoader!!, info, dataDir, file)
-            Logger.i(T, "Loaded plugin ${info.fullName} (${file.name})")
+            Logger.v(T, "Loaded plugin ${info.fullName} (${file.name})")
         } catch (e: InvalidPluginException) {
             Logger.e(T, "Failed to load plugin ${info.fullName} (${file.name}): $e")
             throw e
