@@ -61,7 +61,9 @@ class Project (
 
     fun callEvent(name: String, args: Array<Any>) {
         //logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
-        if (!isCompiled) {
+        if (engine == null) {
+            if (!isCompiled) return
+
             val thread = Thread.currentThread()
             logger.w("EventHandler", """
                 Property engine must not be null
@@ -162,9 +164,10 @@ class Project (
             )).readText(Charsets.UTF_8)
             if (engine != null && lang.requireRelease) {
                 lang.release(engine!!)
-                logger.d(tag, "engine released")
+                logger.v(tag, "engine released")
             }
-            logger.d(tag, "compile() called, methods= ${ApiManager.getApis().joinToString { it.name }}")
+            logger.v(tag, "compile() called, methods= ${ApiManager.getApis().joinToString { it.name }}")
+            logger.i("Compiling project ${info.name}...")
             engine = lang.compile(
                 code = rawCode,
                 apis = ApiManager.getApis(),
