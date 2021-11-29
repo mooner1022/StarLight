@@ -175,7 +175,7 @@ class DebugRoomActivity: AppCompatActivity() {
             }
             DebugRoomMessage(
                 sender = sender,
-                message = msg.substring(0..500).replace("\u200b", ""),
+                message = msg.substring(0..499).replace("\u200b", ""),
                 fileName = fileName,
                 viewType = viewType
             )
