@@ -13,9 +13,7 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityProjectConfigBinding
-import com.mooner.starlight.plugincore.config.ButtonConfigObject
-import com.mooner.starlight.plugincore.config.CategoryConfigObject
-import com.mooner.starlight.plugincore.config.config
+import com.mooner.starlight.plugincore.config.*
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.project.Project
@@ -71,7 +69,7 @@ class ProjectConfigActivity: AppCompatActivity() {
 
         val projectName = intent.getStringExtra("projectName")!!
         project = Session.projectManager.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
-        savedData = project.configManager.getAllConfig()
+        savedData = (project.config as FileConfig).data
 
         recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
             if (changedData.containsKey(parentId)) {
@@ -103,9 +101,13 @@ class ProjectConfigActivity: AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            project.configManager.apply {
-                update(savedData)
-                sync()
+            (project.config as FileConfig).edit {
+                for ((catId, data) in savedData) {
+                    val category = getCategory(catId)
+                    for ((key, value) in data) {
+                        (category as MutableConfigCategory)[key] = value.cast()?: error("Unable to cast value")
+                    }
+                }
             }
 
             val langConfIds = project.getLanguage().configObjectList.map { it.id }

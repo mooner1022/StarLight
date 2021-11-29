@@ -2,8 +2,11 @@
 package com.mooner.starlight.plugincore.project
 
 import com.mooner.starlight.plugincore.api.ApiManager
+import com.mooner.starlight.plugincore.config.Config
+import com.mooner.starlight.plugincore.config.FileConfig
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.json
+import com.mooner.starlight.plugincore.core.Session.projectManager
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
@@ -35,7 +38,8 @@ class Project (
         }
     }
 
-    val configManager: ConfigManager = ConfigManager(File(directory, CONFIG_FILE_NAME))
+    //val configManager: ConfigManager = ConfigManager(File(directory, CONFIG_FILE_NAME))
+    val config: Config = FileConfig(File(directory, CONFIG_FILE_NAME))
 
     var threadName: String? = null
     //private lateinit var scope: CoroutineScope
@@ -87,7 +91,6 @@ class Project (
             if (context != null) {
                 context?.cancel()
                 context = null
-
             }
             threadName = "$tag-worker"
             context = newFixedThreadPoolContext(3, threadName!!)
@@ -96,13 +99,8 @@ class Project (
 
         fun onError(e: Throwable) {
             logger.e(tag, "Error while running: $e")
-            val config = configManager.getConfigForId("general")
             val key = "shutdown_on_error"
-            val shutdownOnError: Boolean = when {
-                config == null -> true
-                !config.containsKey(key) -> true
-                else -> config[key]!!.cast() as Boolean
-            }
+            val shutdownOnError: Boolean = config["general"].getBoolean(key, true)
 
             if (shutdownOnError) {
                 logger.e(info.name, "Shutting down project [${info.name}]...")
@@ -113,6 +111,7 @@ class Project (
                 }
             }
             e.printStackTrace()
+            projectManager.onStateChanged(this)
         }
 
         val jobName: String = UUID.randomUUID().toString()
@@ -173,6 +172,7 @@ class Project (
                 apis = ApiManager.getApis(),
                 project = this
             )
+            projectManager.onStateChanged(this)
         } catch (e: Exception) {
             e.printStackTrace()
             logger.e(tag, e.toString())
@@ -180,7 +180,7 @@ class Project (
         }
     }
 
-    fun saveConfig() {
+    fun saveInfo() {
         CoroutineScope(Dispatchers.IO).launch {
             val str = synchronized(info) { json.encodeToString(info) }
             File(directory.path, INFO_FILE_NAME).writeText(str, Charsets.UTF_8)
