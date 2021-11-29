@@ -4,6 +4,7 @@ import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.api.IApi
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.Config
+import com.mooner.starlight.plugincore.config.ConfigImpl
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
@@ -79,9 +80,9 @@ abstract class StarlightPlugin: Plugin, EventListener {
     }
 
     fun getPluginConfigs(): Config {
-        return if (configPath == null || !configPath!!.isFile || !configPath!!.exists()) Config(emptyMap()) else {
+        return if (configPath == null || !configPath!!.isFile || !configPath!!.exists()) ConfigImpl(emptyMap()) else {
             val loadedMap: Map<String, Map<String, TypedString>> = Session.json.decodeFromString(configPath!!.readText())
-            Config(loadedMap)
+            ConfigImpl(loadedMap)
         }
     }
 

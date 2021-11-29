@@ -2,7 +2,7 @@ package com.mooner.starlight.plugincore.plugin
 
 import android.view.View
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
-import com.mooner.starlight.plugincore.config.Config
+import com.mooner.starlight.plugincore.config.ConfigImpl
 
 interface Plugin {
 
@@ -16,7 +16,7 @@ interface Plugin {
     )
     fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    fun onConfigUpdated(config: Config) {}
+    fun onConfigUpdated(config: ConfigImpl) {}
 
     fun onConfigChanged(id: String, view: View, data: Any) {}
 

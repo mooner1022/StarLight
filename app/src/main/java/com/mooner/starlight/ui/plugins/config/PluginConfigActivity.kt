@@ -9,7 +9,7 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.databinding.ActivityPluginConfigBinding
 import com.mooner.starlight.plugincore.config.ButtonConfigObject
-import com.mooner.starlight.plugincore.config.Config
+import com.mooner.starlight.plugincore.config.ConfigImpl
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.pluginManager
@@ -81,7 +81,7 @@ class PluginConfigActivity: AppCompatActivity() {
                 return@setOnClickListener
             }
             configFile.writeText(Session.json.encodeToString(savedData))
-            plugin.onConfigUpdated(Config(savedData))
+            plugin.onConfigUpdated(ConfigImpl(savedData))
             plugin.onConfigUpdated(changedData)
             Snackbar.make(view, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
             fabProjectConfig.hide()
