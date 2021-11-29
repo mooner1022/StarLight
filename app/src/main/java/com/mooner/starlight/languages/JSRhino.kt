@@ -1,7 +1,7 @@
 package com.mooner.starlight.languages
 
 import com.faendir.rhino_android.RhinoAndroidHelper
-import com.mooner.starlight.plugincore.api.Api
+import com.mooner.starlight.plugincore.api.IApi
 import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.config
@@ -53,7 +53,7 @@ class JSRhino: Language() {
                     id = CONF_OPTIMIZATION_LEVEL
                     title = "최적화 레벨"
                     dependency = CONF_OPTIMIZE_CODE
-                    max = 10
+                    max = 9
                     icon = Icon.COMPRESS
                     iconTintColor = color { "#57837B" }
                     defaultValue = 1
@@ -91,7 +91,7 @@ class JSRhino: Language() {
 
     override fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    override fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any {
+    override fun compile(code: String, apis: List<IApi<Any>>, project: Project?): Any {
         val config = getLanguageConfig()
         val optLevel = if (config.getBoolean(CONF_OPTIMIZE_CODE, false))
             config.getInt(CONF_OPTIMIZATION_LEVEL, 0)

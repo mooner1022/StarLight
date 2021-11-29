@@ -12,10 +12,10 @@ import com.eclipsesource.v8.V8Object
 import com.eclipsesource.v8.V8Value
 import com.eclipsesource.v8.utils.V8ObjectUtils
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.api.ApiFunction
 import com.mooner.starlight.plugincore.api.ApiObject
 import com.mooner.starlight.plugincore.api.ApiValue
+import com.mooner.starlight.plugincore.api.IApi
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.Language
@@ -23,7 +23,6 @@ import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
-
 
 class JSV8: Language() {
 
@@ -120,7 +119,7 @@ class JSV8: Language() {
         Logger.i("JSV8", "updated: $updated")
     }
 
-    override fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any {
+    override fun compile(code: String, apis: List<IApi<Any>>, project: Project?): Any {
         val v8 = V8.createV8Runtime()
         try {
             v8.apply {
@@ -225,7 +224,7 @@ class JSV8: Language() {
     }
 
     private fun String.toGetterFunctionName(): String {
-        val firstWord = this.substring(0..1)
+        val firstWord = this.substring(0, 1)
         return "get${firstWord.uppercase()}${this.drop(1)}"
     }
 }
