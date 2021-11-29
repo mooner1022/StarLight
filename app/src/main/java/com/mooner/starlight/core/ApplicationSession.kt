@@ -56,15 +56,6 @@ object ApplicationSession {
             //addApi(TimerApi())
         }
 
-        NetworkUtil.registerNetworkStatusListener(context)
-        NetworkUtil.addOnNetworkStateChangedListener { state ->
-            if (pluginManager.getPlugins().isNotEmpty()) {
-                for (plugin in pluginManager.getPlugins()) {
-                    (plugin as StarlightPlugin).onNetworkStateChanged(state)
-                }
-            }
-        }
-
         onPhaseChanged(context.getString(R.string.step_plugincore_init))
         Session.init(starlightDir)
         Session.languageManager.apply {
@@ -87,6 +78,15 @@ object ApplicationSession {
             addWidget(UptimeWidgetDefault())
             addWidget(UptimeWidgetSlim())
             addWidget(LogsWidget())
+        }
+
+        NetworkUtil.registerNetworkStatusListener(context)
+        NetworkUtil.addOnNetworkStateChangedListener { state ->
+            if (pluginManager.getPlugins().isNotEmpty()) {
+                for (plugin in pluginManager.getPlugins()) {
+                    (plugin as StarlightPlugin).onNetworkStateChanged(state)
+                }
+            }
         }
 
         isInitComplete = true
