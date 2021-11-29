@@ -1,12 +1,10 @@
 package com.mooner.starlight.api.helper
 
-import com.mooner.starlight.plugincore.api.Api
-import com.mooner.starlight.plugincore.api.ApiFunction
-import com.mooner.starlight.plugincore.api.InstanceType
-import com.mooner.starlight.plugincore.project.JobLocker
-import com.mooner.starlight.plugincore.project.Project
-import kotlin.concurrent.schedule
+/*
+ * TODO: 콜백 함수 구현 문제 해결. 각 언어별 Implementation?
+ */
 
+/*
 class TimerApi: Api<TimerApi.Timer>() {
 
     interface TimerCallback {
@@ -68,3 +66,4 @@ class TimerApi: Api<TimerApi.Timer>() {
     }
 
 }
+*/

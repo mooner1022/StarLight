@@ -3,9 +3,10 @@ package com.mooner.starlight.core
 import android.content.Context
 import android.os.Environment
 import com.mooner.starlight.R
-import com.mooner.starlight.api.core.ClientApi
-import com.mooner.starlight.api.core.EventApi
-import com.mooner.starlight.api.helper.*
+import com.mooner.starlight.api.helper.LanguagesApi
+import com.mooner.starlight.api.helper.ProjectLoggerApi
+import com.mooner.starlight.api.helper.ProjectsApi
+import com.mooner.starlight.api.helper.UtilsApi
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.plugincore.api.ApiManager
@@ -24,8 +25,7 @@ import java.io.File
 
 object ApplicationSession {
     private var mInitMillis: Long = 0L
-    val initMillis: Long
-        get() = mInitMillis
+    val initMillis get() = mInitMillis
 
     var isInitComplete: Boolean = false
     var isAfterInit: Boolean = false
@@ -51,12 +51,21 @@ object ApplicationSession {
             addApi(ProjectLoggerApi())
             addApi(ProjectsApi())
             addApi(UtilsApi())
-            addApi(ClientApi())
-            addApi(EventApi())
-            addApi(TimerApi())
+            //addApi(ClientApi())
+            //addApi(EventApi())
+            //addApi(TimerApi())
         }
-        onPhaseChanged(context.getString(R.string.step_plugincore_init))
 
+        NetworkUtil.registerNetworkStatusListener(context)
+        NetworkUtil.addOnNetworkStateChangedListener { state ->
+            if (pluginManager.getPlugins().isNotEmpty()) {
+                for (plugin in pluginManager.getPlugins()) {
+                    (plugin as StarlightPlugin).onNetworkStateChanged(state)
+                }
+            }
+        }
+
+        onPhaseChanged(context.getString(R.string.step_plugincore_init))
         Session.init(starlightDir)
         Session.languageManager.apply {
             addLanguage("", JSV8())
@@ -83,15 +92,6 @@ object ApplicationSession {
         isInitComplete = true
         onFinished()
         mInitMillis = System.currentTimeMillis()
-
-        NetworkUtil.registerNetworkStatusListener(context)
-        NetworkUtil.addOnNetworkStateChangedListener { state ->
-            if (pluginManager.getPlugins().isNotEmpty()) {
-                for (plugin in pluginManager.getPlugins()) {
-                    (plugin as StarlightPlugin).onNetworkStateChanged(state)
-                }
-            }
-        }
     }
 
     internal fun shutdown() {
