@@ -1,5 +1,7 @@
 package com.mooner.starlight.plugincore.plugin
 
+import com.mooner.starlight.plugincore.api.ApiManager
+import com.mooner.starlight.plugincore.api.IApi
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.Config
 import com.mooner.starlight.plugincore.core.Session
@@ -113,6 +115,8 @@ abstract class StarlightPlugin: Plugin, EventListener {
     }
 
     fun addWidget(widget: IWidget) = Session.widgetManager.addWidget(widget)
+
+    fun <T> addApi(api: IApi<T>) = ApiManager.addApi(api)
 
     override fun toString(): String = info.fullName
 
