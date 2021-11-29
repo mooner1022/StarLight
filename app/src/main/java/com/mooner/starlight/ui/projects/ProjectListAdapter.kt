@@ -66,7 +66,7 @@ class ProjectListAdapter(
         holder.expandable.setOnSwitchChangeListener { _, isChecked ->
             if (info.isEnabled != isChecked) {
                 info.isEnabled = isChecked
-                project.saveConfig()
+                project.saveInfo()
             }
             holder.cardViewIsEnabled.setCardBackgroundColor(getCardColor())
             holder.expandable.apply {
