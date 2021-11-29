@@ -30,5 +30,12 @@ abstract class Language: ILanguage {
 
     protected fun getAsset(directory: String): File = File(Session.languageManager.getAssetPath(id), directory)
 
+    protected fun getAssetOrNull(directory: String): File? = with(getAsset(directory)) {
+        if (exists() && canRead()) this
+        else null
+    }
+
     fun getIconFile(): File = getAsset("icon.png")
+
+    fun getIconFileOrNull(): File? = getAssetOrNull("icon.png")
 }
