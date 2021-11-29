@@ -280,13 +280,13 @@ class ProjectsFragment : Fragment() {
     }
 
     private fun bindListener() {
-        projectManager.bindListener(T) { projects ->
+        projectManager.addOnListUpdatedListener(T) { projects ->
             this.projects = projects
             update()
         }
     }
 
     private fun unbindListener() {
-        projectManager.unbindListener(T)
+        projectManager.removeOnListUpdatedListener(T)
     }
 }

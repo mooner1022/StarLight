@@ -89,16 +89,25 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_home -> {
                 binding.titleText.text = applicationContext.getText(R.string.app_name)
                 binding.statusText.text = applicationContext.getText(R.string.app_version)
+                projectManager.removeOnStateChangedListener(T)
             }
             R.id.nav_projects -> {
-                val count = projectManager.getProjects().count { it.info.isEnabled }
                 binding.titleText.text = applicationContext.getText(R.string.title_projects)
-                binding.statusText.text = applicationContext.formatStringRes(
-                    R.string.subtitle_projects,
-                    mapOf(
-                        "count" to count.toString()
+
+                fun updateCount() {
+                    val count = projectManager.getProjects().count { it.info.isEnabled }
+                    binding.statusText.text = applicationContext.formatStringRes(
+                        R.string.subtitle_projects,
+                        mapOf(
+                            "count" to count.toString()
+                        )
                     )
-                )
+                }
+                projectManager.addOnStateChangedListener(T) {
+                    runOnUiThread {
+                        updateCount()
+                    }
+                }
             }
             R.id.nav_plugins -> {
                 val count = pluginManager.getPlugins().size
@@ -109,10 +118,12 @@ class MainActivity : AppCompatActivity() {
                         "count" to count.toString()
                     )
                 )
+                projectManager.removeOnStateChangedListener(T)
             }
             R.id.nav_settings -> {
                 binding.titleText.text = applicationContext.getText(R.string.title_settings)
                 binding.statusText.text = ""
+                projectManager.removeOnStateChangedListener(T)
             }
         }
     }

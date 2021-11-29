@@ -6,23 +6,37 @@ class ProjectManager(
     private val projectDir: File
 ) {
 
-    internal val listeners: MutableMap<String, (projects: List<Project>) -> Unit> = hashMapOf()
+    private val stateChangeListeners: MutableMap<String, (project: Project) -> Unit> = hashMapOf()
+    private val listUpdateListeners: MutableMap<String, (projects: List<Project>) -> Unit> = hashMapOf()
     internal var projects: MutableMap<String, Project> = hashMapOf()
 
     fun getEnabledProjects(): List<Project> {
         return projects.values.filter { it.info.isEnabled }
     }
 
-    fun bindListener(key: String, listener: (projects: List<Project>) -> Unit) {
-        if (!listeners.containsKey(key)) {
-            listeners[key] = listener
-        }
+    internal fun onStateChanged(project: Project) {
+        for (listener in stateChangeListeners.values)
+            listener(project)
     }
 
-    fun unbindListener(key: String) {
-        if (listeners.containsKey(key)) {
-            listeners.remove(key)
-        }
+    fun addOnStateChangedListener(key: String, listener: (project: Project) -> Unit) {
+        if (key !in stateChangeListeners)
+            stateChangeListeners[key] = listener
+    }
+
+    fun removeOnStateChangedListener(key: String) {
+        if (key in stateChangeListeners)
+            stateChangeListeners -= key
+    }
+
+    fun addOnListUpdatedListener(key: String, listener: (projects: List<Project>) -> Unit) {
+        if (key !in listUpdateListeners)
+            listUpdateListeners[key] = listener
+    }
+
+    fun removeOnListUpdatedListener(key: String) {
+        if (key in listUpdateListeners)
+            listUpdateListeners -= key
     }
 
     fun getProjects(): List<Project> {
@@ -36,7 +50,7 @@ class ProjectManager(
     fun updateProjectConfig(name: String, callListener: Boolean = false, block: ProjectInfo.() -> Unit) {
         val project = projects[name]?: throw IllegalArgumentException("Cannot find project [$name]")
         project.info.block()
-        project.saveConfig()
+        project.saveInfo()
         if (callListener) {
             callListeners()
         }
@@ -74,14 +88,18 @@ class ProjectManager(
     }
 
     private fun callListeners() {
-        for ((_, listener) in listeners) {
-            listener(projects.values.toList())
+        val projects = projects.values.toList()
+        for ((_, listener) in listUpdateListeners) {
+            listener(projects)
         }
     }
 
     internal fun purge() {
+        listUpdateListeners.clear()
+        stateChangeListeners.clear()
+
         for ((_, project) in projects) {
-            project.saveConfig()
+            //project.saveConfig()   ...Occurs file content loss
             project.destroy()
         }
     }

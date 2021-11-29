@@ -62,6 +62,7 @@ class PluginLoader {
                 val plugin = loadPlugin(info, file)
                 if (!Version.fromString(info.apiVersion).isCompatibleWith(Info.PLUGINCORE_VERSION)) {
                     Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin [${plugin.name}]")
+                    continue
                 }
                 plugins.add(plugin)
                 plugin.onEnable()
