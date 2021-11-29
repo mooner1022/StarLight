@@ -77,21 +77,20 @@
     </LinearLayout>
 
     <androidx.cardview.widget.CardView
-            android:id="@+id/cardProjectList"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_marginStart="16dp"
             android:layout_marginTop="10dp"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="30dp"
             app:cardElevation="@dimen/card_elevation" android:background="@android:color/white"
-            app:cardBackgroundColor="@android:color/white">
+            app:cardBackgroundColor="@android:color/white" android:nestedScrollingEnabled="false">
 
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewProjectList"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:clipToPadding="false" android:paddingTop="16dp"
                 android:paddingBottom="8dp"
                 android:paddingStart="8dp" android:paddingEnd="8dp"/>

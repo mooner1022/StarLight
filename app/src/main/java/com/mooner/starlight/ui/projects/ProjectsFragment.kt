@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import coil.load
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
@@ -27,7 +26,12 @@ import com.mooner.starlight.plugincore.core.Session.globalConfig
 import com.mooner.starlight.plugincore.core.Session.projectManager
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.utils.ViewUtils
+import com.mooner.starlight.utils.toGridItems
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ProjectsFragment : Fragment() {
     
@@ -198,9 +202,17 @@ class ProjectsFragment : Fragment() {
 
         recyclerAdapter = ProjectListAdapter(requireContext())
 
-        projects = projectManager.getProjects()
-        recyclerAdapter!!.data = sortData()
-        recyclerAdapter!!.notifyItemRangeInserted(0, recyclerAdapter!!.data.size)
+        CoroutineScope(Dispatchers.Default).launch {
+            projects = projectManager.getProjects()
+            val sortedData = sortData()
+
+            withContext(Dispatchers.Main) {
+                recyclerAdapter!!.apply {
+                    data = sortedData
+                    notifyItemRangeInserted(0, data.size)
+                }
+            }
+        }
 
         with(binding.recyclerViewProjectList) {
             itemAnimator = FadeInUpAnimator()
@@ -213,13 +225,6 @@ class ProjectsFragment : Fragment() {
     }
 
     private fun getAlignByName(name: String): Align<Project>? = aligns.find { it.name == name }
-
-    private fun Array<Align<Project>>.toGridItems(): List<BasicGridItem> = this.map { item ->
-        BasicGridItem(
-            iconRes = item.icon,
-            title = item.name
-        )
-    }
 
     private fun sortData(): List<Project> {
         val aligned = alignState.sort(

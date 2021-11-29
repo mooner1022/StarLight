@@ -73,15 +73,26 @@
             app:cardCornerRadius="@dimen/card_radius"
             app:cardElevation="@dimen/card_elevation">
 
-        <TextView
-                android:id="@+id/textViewNoPluginYet"
+        <LinearLayout
+                android:orientation="vertical"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:fontFamily="@font/nanumsquare_round_bold"
-                android:text="@string/nothing_yet"
-                android:textSize="18sp"
-                android:visibility="gone"/>
+                android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"
+                android:id="@+id/noPluginWrapper">
+            <ImageView
+                    android:src="@drawable/ic_box_empty"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_gravity="center" android:id="@+id/imageViewEmpty"/>
+            <TextView
+                    android:id="@+id/textViewNoPluginYet"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:fontFamily="@font/nanumsquare_round_bold"
+                    android:text="@string/nothing_yet"
+                    android:textSize="18sp"
+                    android:visibility="visible"/>
+        </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewProjectList"

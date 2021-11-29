@@ -78,22 +78,18 @@
         app:layout_collapseMode="parallax"
         app:srcCompat="@drawable/svg_top_title_sunset"/>
 
-    <androidx.core.widget.NestedScrollView
-            android:id="@+id/nestedScrollView"
+    <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPager"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:paddingTop="20dp"
+            android:paddingBottom="20dp"
             android:background="@color/transparent"
             android:elevation="0dp"
             android:overScrollMode="never"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            android:clipToPadding="false" android:fillViewport="true">
-
-        <androidx.viewpager2.widget.ViewPager2
-                android:id="@+id/viewPager"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
-    </androidx.core.widget.NestedScrollView>
+            android:clipToPadding="true" android:fillViewport="true" android:fitsSystemWindows="true">
+    </androidx.viewpager2.widget.ViewPager2>
 
     <github.com.st235.lib_expandablebottombar.ExpandableBottomBar
             android:id="@+id/bottom_bar"

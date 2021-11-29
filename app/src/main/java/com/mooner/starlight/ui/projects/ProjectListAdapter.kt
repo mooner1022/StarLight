@@ -6,10 +6,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
-import coil.load
-import coil.size.Scale
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
@@ -21,6 +22,8 @@ import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.ui.presets.ExpandableCardView
 import com.mooner.starlight.ui.projects.config.ProjectConfigActivity
+import com.mooner.starlight.utils.ViewUtils.Companion.graceProgress
+import com.mooner.starlight.utils.ViewUtils.Companion.loadAnyWithTint
 import com.mooner.starlight.utils.startProjectInfoActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +37,7 @@ class ProjectListAdapter(
     var data = listOf<Project>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectListViewHolder {
-        val view = LayoutInflater.from(context).inflate(R.layout.card_project_list, parent, false)
+        val view = LayoutInflater.from(context).inflate(R.layout.card_projects, parent, false)
         return ProjectListViewHolder(view)
     }
 
@@ -78,13 +81,16 @@ class ProjectListAdapter(
         }
 
         holder.expandable.setIcon {
-            when(project.getLanguage().id) {
-                "JS_RHINO" -> it.load(R.drawable.ic_js)
-                "JS_V8" -> it.load(R.drawable.ic_v8)
-                else -> it.load((project.getLanguage() as Language).getIconFile()) {
-                    scale(Scale.FIT)
-                }
+            val icon: Any? = when(project.getLanguage().id) {
+                "JS_RHINO" -> R.drawable.ic_js
+                "JS_V8" -> R.drawable.ic_v8
+                else -> (project.getLanguage() as Language).getIconFileOrNull()
             }
+            val tint = if (icon == null) R.color.main_purple else null
+            it.loadAnyWithTint(
+                data = icon?: R.drawable.ic_round_developer_mode_24,
+                tintColor = tint
+            )
         }
 
         holder.expandable.setTitle(titleText = info.name)
@@ -126,7 +132,13 @@ class ProjectListAdapter(
             it.context.startActivity(intent)
         }
 
+        fun showProgress(show: Boolean) {
+            holder.buttonWrapper.visibility = if (show) View.GONE else View.VISIBLE
+            holder.progressWrapper.visibility = if (!show) View.GONE else View.VISIBLE
+        }
+
         holder.buttonRecompile.setOnClickListener { view ->
+            showProgress(true)
             CoroutineScope(Dispatchers.Default).launch {
                 try {
                     project.compile(true)
@@ -134,6 +146,7 @@ class ProjectListAdapter(
                         Snackbar.make(view, "${info.name} 컴파일 완료!", Snackbar.LENGTH_SHORT).show()
                         holder.cardViewIsEnabled.setCardBackgroundColor(getCardColor())
                         holder.expandable.setSwitchEnabled(true)
+                        holder.progressBar.graceProgress = 100
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
@@ -152,6 +165,10 @@ class ProjectListAdapter(
                             }
                         }.show()
                         holder.expandable.setSwitchEnabled(false)
+                    }
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        showProgress(false)
                     }
                 }
             }
@@ -172,7 +189,12 @@ class ProjectListAdapter(
     }
 
     inner class ProjectListViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val context: Context = itemView.context
+        val buttonWrapper: LinearLayout      = itemView.findViewById(R.id.buttonWrapper)
+        val progressWrapper: LinearLayout    = itemView.findViewById(R.id.progressWrapper)
+
+        val progressBar: ProgressBar         = itemView.findViewById(R.id.progressBar)
+        val progressState: TextView          = itemView.findViewById(R.id.progressState)
+
         val expandable: ExpandableCardView   = itemView.findViewById(R.id.card_project)
         val cardViewIsEnabled: CardView      = itemView.findViewById(R.id.cardViewIsEnabled)
         val buttonDebugRoom: ImageButton     = itemView.findViewById(R.id.buttonDebugRoom)
