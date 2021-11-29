@@ -5,6 +5,7 @@ import android.os.Environment
 import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.config.GlobalConfig
 import com.mooner.starlight.plugincore.language.LanguageManager
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.plugin.PluginManager
 import com.mooner.starlight.plugincore.project.ProjectLoader
@@ -15,6 +16,9 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 object Session {
+
+    @JvmStatic
+    private var isInit = false
 
     private val mJson: ThreadLocal<Json> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         ThreadLocal.withInitial {
@@ -61,10 +65,17 @@ object Session {
     const val isDebugging: Boolean = true
 
     fun init(baseDir: File) {
+        if (isInit) {
+            Logger.w("Session", "Rejecting re-init of Session")
+            return
+        }
+
         val preStack = Thread.currentThread().stackTrace[2]
         if (!preStack.className.startsWith("com.mooner.starlight")) {
-            throw IllegalAccessException("Illegal access to internal function init()")
+            throw IllegalAccessException("Illegal access to internal function init() from $preStack")
         }
+
+        isInit = true
 
         val projectDir = File(baseDir, "projects/")
 
