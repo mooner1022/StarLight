@@ -1,16 +1,9 @@
 package com.mooner.starlight.plugincore.config
 
-import com.mooner.starlight.plugincore.models.TypedString
+interface Config {
+    operator fun get(id: String): ConfigCategory
 
-class Config(
-    private val data: Map<String, Map<String, TypedString>>
-) {
+    fun getCategory(id: String): ConfigCategory
 
-    fun getCategory(id: String): ConfigCategory? {
-        val categoryData = data[id]
-        return if (categoryData == null)
-            null
-        else
-            ConfigCategoryImpl(categoryData)
-    }
+    fun getCategoryOrNull(id: String): ConfigCategory?
 }
