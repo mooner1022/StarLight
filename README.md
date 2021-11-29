@@ -18,9 +18,9 @@ Currently in development!
 </p>
 
 <p align="center">
-    + Watch `dev` branch for recent updates :)
+    + Watch `dev` branch for recent updates :)</br>
+    ✔ All PRs are welcome!
 </p>
-
 
 # License
 ```
