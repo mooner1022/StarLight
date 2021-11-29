@@ -26,10 +26,11 @@ import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF
 import com.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF_LONG
 import com.mooner.starlight.utils.PACKAGE_KAKAO_TALK
-import jp.wasabeef.recyclerview.animators.FadeInAnimator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -44,6 +45,7 @@ class DebugRoomActivity: AppCompatActivity() {
         private const val CHATS_FILE_NAME = "chats.json"
     }
 
+    private val mutex: Mutex by lazy { Mutex(locked = false) }
     private lateinit var chatList: MutableList<DebugRoomMessage>
     private var userChatAdapter: DebugRoomChatAdapter? = null
     val dir: File by lazy {
@@ -107,7 +109,6 @@ class DebugRoomActivity: AppCompatActivity() {
         binding.chatRecyclerView.apply {
             adapter = userChatAdapter
             layoutManager = LinearLayoutManager(this@DebugRoomActivity)
-            itemAnimator = FadeInAnimator()
             if (chatList.isNotEmpty()) {
                 scrollToPosition(chatList.size - 1)
             }
@@ -166,27 +167,25 @@ class DebugRoomActivity: AppCompatActivity() {
     }
 
     private fun addMessage(sender: String, msg: String, viewType: Int) {
-        chatList.add(
-            if (msg.length >= 500) {
-                val fileName = UUID.randomUUID().toString() + ".chat"
-                File(dir, "chats").apply {
-                    mkdirs()
-                    resolve(fileName).writeText(msg)
-                }
-                DebugRoomMessage(
-                    sender = sender,
-                    message = msg.substring(0..500).replace("\u200b", ""),
-                    fileName = fileName,
-                    viewType = viewType
-                )
-            } else {
-                DebugRoomMessage(
-                    sender = sender,
-                    message = msg,
-                    viewType = viewType
-                )
+        chatList += if (msg.length >= 500) {
+            val fileName = UUID.randomUUID().toString() + ".chat"
+            File(dir, "chats").apply {
+                mkdirs()
+                resolve(fileName).writeText(msg)
             }
-        )
+            DebugRoomMessage(
+                sender = sender,
+                message = msg.substring(0..500).replace("\u200b", ""),
+                fileName = fileName,
+                viewType = viewType
+            )
+        } else {
+            DebugRoomMessage(
+                sender = sender,
+                message = msg,
+                viewType = viewType
+            )
+        }
         runOnUiThread {
             userChatAdapter?.notifyItemInserted(chatList.size)
             binding.messageInput.setText("")
@@ -195,7 +194,9 @@ class DebugRoomActivity: AppCompatActivity() {
             }
         }
         CoroutineScope(Dispatchers.IO).launch {
-            val encoded = synchronized(chatList) {json.encodeToString(chatList)}
+            val encoded = mutex.withLock {
+                json.encodeToString(chatList.toList())
+            }
             File(dir, CHATS_FILE_NAME).writeText(encoded)
         }
     }
