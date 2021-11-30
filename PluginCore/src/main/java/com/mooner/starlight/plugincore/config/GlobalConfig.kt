@@ -20,11 +20,16 @@ class GlobalConfig(
     }
 
     private val configs: MutableMap<String, MutableMap<String, TypedString>> by lazy {
-        if (!file.isFile || !file.exists()) {
-            path.mkdirs()
-            hashMapOf()
+        if (!file.exists() || !file.isFile) {
+            file.parentFile?.mkdirs()
+            file.createNewFile()
+            mutableMapOf()
         } else {
-            json.decodeFromString<HashMap<String, MutableMap<String, TypedString>>>(file.readText())
+            val raw = file.readText()
+            if (raw.isBlank())
+                mutableMapOf()
+            else
+                json.decodeFromString(raw)
         }
     }
     private var file = File(path, FILE_NAME)

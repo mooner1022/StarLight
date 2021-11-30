@@ -22,8 +22,13 @@ class FileConfig(
             file.parentFile?.mkdirs()
             file.createNewFile()
             mutableMapOf()
-        } else
-            json.decodeFromString(file.readText())
+        } else {
+            val raw = file.readText()
+            if (raw.isBlank())
+                mutableMapOf()
+            else
+                json.decodeFromString(raw)
+        }
     }
 
     override operator fun get(id: String): ConfigCategory = getCategory(id)
