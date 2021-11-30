@@ -93,7 +93,7 @@ object Session {
             throw IllegalAccessException("Illegal access to internal function shutdown()")
         }
 
-        globalConfig.push()
+        //globalConfig.push()
 
         NetworkUtil.purge()
         ApiManager.purge()
