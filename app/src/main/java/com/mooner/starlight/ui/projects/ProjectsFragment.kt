@@ -24,6 +24,7 @@ import com.mooner.starlight.models.Align
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.globalConfig
 import com.mooner.starlight.plugincore.core.Session.projectManager
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.utils.ViewUtils
 import com.mooner.starlight.utils.toGridItems
@@ -93,6 +94,9 @@ class ProjectsFragment : Fragment() {
 
     private var _binding: FragmentProjectsBinding? = null
     private val binding get() = _binding!!
+
+    private var isPaused = false
+    private val updatedProjects: MutableSet<Project> = hashSetOf()
 
     private lateinit var projects: List<Project>
     private var recyclerAdapter: ProjectListAdapter? = null
@@ -220,6 +224,21 @@ class ProjectsFragment : Fragment() {
             adapter = recyclerAdapter
         }
 
+        projectManager.addOnStateChangedListener(T) { project ->
+            if (isPaused)
+                updatedProjects += project
+            else {
+                val index = recyclerAdapter!!.data.indexOf(project)
+                if (index == -1) {
+                    Logger.v(T, "Failed to update project list: index not found")
+                    return@addOnStateChangedListener
+                }
+                CoroutineScope(Dispatchers.Main).launch {
+                    recyclerAdapter!!.notifyItemChanged(index)
+                }
+            }
+        }
+
         bindListener()
         return binding.root
     }
@@ -261,21 +280,35 @@ class ProjectsFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
+        isPaused = true
         unbindListener()
     }
 
     override fun onResume() {
         super.onResume()
+        isPaused = false
         bindListener()
         if (this.projects.size != projectManager.getProjects().size) {
             this.projects = projectManager.getProjects()
             update()
+        }
+        if (updatedProjects.isNotEmpty()) {
+            for (project in updatedProjects) {
+                val index = recyclerAdapter!!.data.indexOf(project)
+                if (index == -1) {
+                    Logger.v(T, "Failed to update project list: index not found")
+                    continue
+                }
+                recyclerAdapter!!.notifyItemChanged(index)
+            }
+            updatedProjects.clear()
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         unbindListener()
+        projectManager.removeOnStateChangedListener(T)
         recyclerAdapter = null
     }
 

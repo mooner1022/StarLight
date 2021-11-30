@@ -164,6 +164,7 @@ class ProjectListAdapter(
                                 }
                             }
                         }.show()
+                        holder.cardViewIsEnabled.setCardBackgroundColor(getCardColor())
                         holder.expandable.setSwitchEnabled(false)
                     }
                 } finally {
