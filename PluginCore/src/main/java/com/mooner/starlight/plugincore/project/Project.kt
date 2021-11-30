@@ -63,7 +63,7 @@ class Project (
         (lang as Language).setConfigFile(confFile)
     }
 
-    fun callEvent(name: String, args: Array<Any>) {
+    fun callEvent(name: String, args: Array<Any>, onException: (Throwable) -> Unit = {}) {
         //logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
         if (engine == null) {
             if (!isCompiled) return
@@ -94,7 +94,7 @@ class Project (
             }
             threadName = "$tag-worker"
             context = newFixedThreadPoolContext(3, threadName!!)
-            Logger.v("Allocated thread $threadName with 3 threads to project ${info.name}")
+            Logger.v("Allocated thread pool $threadName with 3 threads to project ${info.name}")
         }
 
         fun onError(e: Throwable) {
@@ -112,13 +112,12 @@ class Project (
             }
             e.printStackTrace()
             projectManager.onStateChanged(this)
+            onException(e)
         }
 
         val jobName: String = UUID.randomUUID().toString()
         val job = CoroutineScope(context!!).launch {
-            lang.callFunction(engine!!, name, args) {
-                onError(it)
-            }
+            lang.callFunction(engine!!, name, args, ::onError)
         }
         JobLocker.withParent(threadName!!).registerJob(
             key = jobName,

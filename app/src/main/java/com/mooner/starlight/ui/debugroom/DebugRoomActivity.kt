@@ -8,6 +8,9 @@ import android.view.KeyEvent
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.databinding.ActivityDebugRoomBinding
@@ -17,6 +20,7 @@ import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.core.Session.globalConfig
 import com.mooner.starlight.plugincore.core.Session.json
+import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.models.ChatSender
 import com.mooner.starlight.plugincore.models.DebugChatRoom
 import com.mooner.starlight.plugincore.models.Message
@@ -163,7 +167,22 @@ class DebugRoomActivity: AppCompatActivity() {
         project.callEvent(
             name = "onMessage",
             args = arrayOf(data)
-        )
+        ) { e ->
+            Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
+                setAction("자세히 보기") {
+                    MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                        cornerRadius(25f)
+                        cancelOnTouchOutside(false)
+                        noAutoDismiss()
+                        title(text = project.info.name + " 에러 로그")
+                        message(text = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString())
+                        positiveButton(text = "닫기") {
+                            dismiss()
+                        }
+                    }
+                }
+            }.show()
+        }
     }
 
     private fun addMessage(sender: String, msg: String, viewType: Int) {
@@ -401,7 +420,7 @@ class DebugRoomActivity: AppCompatActivity() {
                 Toast.makeText(this, ImagePicker.getError(data), Toast.LENGTH_SHORT).show()
             }
             else -> {
-                Toast.makeText(this, "Task Cancelled", Toast.LENGTH_SHORT).show()
+                Logger.v(this::class.simpleName, "Image select task canceled")
             }
         }
     }
