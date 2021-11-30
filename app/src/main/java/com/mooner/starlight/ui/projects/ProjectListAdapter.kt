@@ -22,9 +22,9 @@ import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.ui.presets.ExpandableCardView
 import com.mooner.starlight.ui.projects.config.ProjectConfigActivity
+import com.mooner.starlight.ui.projects.info.startProjectInfoActivity
 import com.mooner.starlight.utils.ViewUtils.Companion.graceProgress
 import com.mooner.starlight.utils.ViewUtils.Companion.loadAnyWithTint
-import com.mooner.starlight.utils.startProjectInfoActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

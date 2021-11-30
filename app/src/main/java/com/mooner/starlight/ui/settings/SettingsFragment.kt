@@ -14,9 +14,9 @@ import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
+import com.mooner.starlight.ui.settings.dev.startDevModeActivity
 import com.mooner.starlight.ui.settings.info.AppInfoActivity
 import com.mooner.starlight.utils.Utils
-import com.mooner.starlight.utils.startDevModeActivity
 
 class SettingsFragment : Fragment() {
 
