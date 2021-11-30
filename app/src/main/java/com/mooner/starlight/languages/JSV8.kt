@@ -12,10 +12,10 @@ import com.eclipsesource.v8.V8Object
 import com.eclipsesource.v8.V8Value
 import com.eclipsesource.v8.utils.V8ObjectUtils
 import com.mooner.starlight.R
+import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.api.ApiFunction
 import com.mooner.starlight.plugincore.api.ApiObject
 import com.mooner.starlight.plugincore.api.ApiValue
-import com.mooner.starlight.plugincore.api.IApi
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.Language
@@ -116,10 +116,10 @@ class JSV8: Language() {
 
 
     override fun onConfigUpdated(updated: Map<String, Any>) {
-        Logger.i("JSV8", "updated: $updated")
+        Logger.v("JSV8", "updated: $updated")
     }
 
-    override fun compile(code: String, apis: List<IApi<Any>>, project: Project?): Any {
+    override fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any {
         val v8 = V8.createV8Runtime()
         try {
             v8.apply {

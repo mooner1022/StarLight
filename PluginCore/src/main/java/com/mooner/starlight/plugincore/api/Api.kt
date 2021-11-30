@@ -1,6 +1,8 @@
 package com.mooner.starlight.plugincore.api
 
-abstract class Api <T>: IApi<T> {
+import com.mooner.starlight.plugincore.project.Project
+
+abstract class Api <T> {
 
     /*
     private var _project: Project? = null
@@ -68,4 +70,14 @@ abstract class Api <T>: IApi<T> {
         val builder = ApiValueBuilder().apply(block)
         return builder.build()
     }
+
+    abstract val name: String
+
+    abstract val objects: List<ApiObject>
+
+    abstract val instanceClass: Class<T>
+
+    abstract val instanceType: InstanceType
+
+    abstract fun getInstance(project: Project): Any
 }

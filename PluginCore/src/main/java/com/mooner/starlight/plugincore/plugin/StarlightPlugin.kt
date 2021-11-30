@@ -1,7 +1,7 @@
 package com.mooner.starlight.plugincore.plugin
 
+import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.api.ApiManager
-import com.mooner.starlight.plugincore.api.IApi
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.Config
 import com.mooner.starlight.plugincore.config.ConfigImpl
@@ -79,7 +79,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
         configPath = path
     }
 
-    fun getPluginConfigs(): Config {
+    fun getPluginConfig(): Config {
         return if (configPath == null || !configPath!!.isFile || !configPath!!.exists()) ConfigImpl(emptyMap()) else {
             val loadedMap: Map<String, Map<String, TypedString>> = Session.json.decodeFromString(configPath!!.readText())
             ConfigImpl(loadedMap)
@@ -117,7 +117,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     fun addWidget(widget: IWidget) = Session.widgetManager.addWidget(widget)
 
-    fun <T> addApi(api: IApi<T>) = ApiManager.addApi(api)
+    fun <T> addApi(api: Api<T>) = ApiManager.addApi(api)
 
     override fun toString(): String = info.fullName
 
