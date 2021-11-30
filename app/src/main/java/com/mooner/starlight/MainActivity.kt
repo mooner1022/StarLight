@@ -108,6 +108,7 @@ class MainActivity : AppCompatActivity() {
                         updateCount()
                     }
                 }
+                updateCount()
             }
             R.id.nav_plugins -> {
                 val count = pluginManager.getPlugins().size
