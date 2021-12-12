@@ -131,13 +131,15 @@ class JSRhino: Language() {
         super.release(engine)
         try {
             Context.exit()
-        } catch (e: IllegalStateException) {}
+        } catch (e: IllegalStateException) {
+            Logger.e(T, "Failed to release engine: ${e.message}")
+        }
     }
 
     override fun callFunction(
         engine: Any,
         functionName: String,
-        args: Array<Any>,
+        args: Array<out Any>,
         onError: (e: Exception) -> Unit
     ) {
         try {

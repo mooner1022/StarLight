@@ -16,11 +16,11 @@ import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.api.ApiFunction
 import com.mooner.starlight.plugincore.api.ApiObject
 import com.mooner.starlight.plugincore.api.ApiValue
+import com.mooner.starlight.plugincore.chat.Message
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
 
@@ -148,7 +148,12 @@ class JSV8: Language() {
         }
     }
 
-    override fun callFunction(engine: Any, functionName: String, args: Array<Any>, onError: (e: Exception) -> Unit) {
+    override fun callFunction(
+        engine: Any,
+        functionName: String,
+        args: Array<out Any>,
+        onError: (e: Exception) -> Unit
+    ) {
         val v8 = engine as V8
         v8.locker.acquire()
         var messageArg: Message? = null

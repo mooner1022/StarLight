@@ -1,6 +1,6 @@
-package com.mooner.starlight.plugincore.models
+package com.mooner.starlight.plugincore.config
 
-import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.Session
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 
@@ -10,10 +10,13 @@ data class TypedString(
     val value: String
 ) {
     companion object {
+        private val castable: Array<String> = arrayOf("String", "Boolean", "Float", "Int", "Long", "Double")
 
         fun parse(value: Any): TypedString {
+            val className = value::class.simpleName
+            require(className in castable) { "Un-castable type: $className" }
             return TypedString(
-                type = value::class.simpleName!!,
+                type = className!!,
                 value = value.toString()
             )
         }
@@ -28,9 +31,11 @@ data class TypedString(
                 "Int" -> value.toInt()
                 "Long" -> value.toLong()
                 "Double" -> value.toDouble()
+                //else -> Class.forName(type).cast(value)
                 else -> null
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             null
         }
     }

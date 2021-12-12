@@ -1,8 +1,6 @@
 package com.mooner.starlight.plugincore.config
 
-import com.mooner.starlight.plugincore.core.Session.json
-import com.mooner.starlight.plugincore.models.TypedString
-import com.mooner.starlight.plugincore.models.typed
+import com.mooner.starlight.plugincore.Session.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,11 +30,20 @@ class GlobalConfig(
                 json.decodeFromString(raw)
         }
     }
+    private val cachedCategories: MutableMap<String, MutableConfigCategory> = hashMapOf()
     private var file = File(path, FILE_NAME)
     private var isSaved: Boolean = false
 
+    @Deprecated(
+        message = "Retained for legacy compatability. Use getCategory(id).",
+        replaceWith = ReplaceWith("this.getCategory(id)")
+    )
     operator fun get(id: String): String? = configs[DEFAULT_CATEGORY]?.get(id)?.value
 
+    @Deprecated(
+        message = "Retained for legacy compatability. Use getCategory(id).",
+        replaceWith = ReplaceWith("this.getCategory(id)")
+    )
     operator fun get(id: String, def: String): String = get(id)?: def
 
     operator fun set(id: String, value: TypedString) {
@@ -50,12 +57,7 @@ class GlobalConfig(
         set(id, value typed "String")
     }
 
-    fun getCategory(id: String): MutableConfigCategory {
-        if (!configs.containsKey(id)) {
-            configs[id] = mutableMapOf()
-        }
-        return MutableConfigCategory(configs[id]!!)
-    }
+    fun getCategory(id: String): MutableConfigCategory = getOrCreateCategory(id)
 
     fun getAllConfigs(): Map<String, Map<String, TypedString>> = configs
 
@@ -86,5 +88,16 @@ class GlobalConfig(
             File(path, FILE_NAME).writeText(str)
         }
         */
+    }
+
+    private fun getOrCreateCategory(id: String): MutableConfigCategory {
+        return when (id) {
+            in cachedCategories -> cachedCategories[id]!!
+            in configs -> MutableConfigCategory(configs[id]!!)
+            else -> {
+                configs[id] = mutableMapOf()
+                MutableConfigCategory(configs[id]!!)
+            }
+        }
     }
 }
