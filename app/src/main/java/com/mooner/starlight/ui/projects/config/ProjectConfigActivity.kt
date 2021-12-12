@@ -1,8 +1,9 @@
 package com.mooner.starlight.ui.projects.config
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.provider.DocumentsContract
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
@@ -13,14 +14,14 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityProjectConfigBinding
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.config.*
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
 import java.io.File
+
 
 class ProjectConfigActivity: AppCompatActivity() {
 
@@ -34,9 +35,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                     title = "폴더 열기"
                     type = ButtonConfigObject.Type.FLAT
                     onClickListener = {
-                        println("dir= ${project.directory.path}")
-                        val result = openFolderInExplorer(project.directory)
-                        println(result)
+                        openFolderInExplorer(this@ProjectConfigActivity, project.directory)
                     }
                     icon = Icon.FOLDER
                     //backgroundColor = Color.parseColor("#B8DFD8")
@@ -71,7 +70,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         project = Session.projectManager.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
         savedData = (project.config as FileConfig).data
 
-        recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
+        recyclerAdapter = ParentAdapter(binding.root.context) { parentId, id, view, data ->
             if (changedData.containsKey(parentId)) {
                 changedData[parentId]!![id] = data
             } else {
@@ -91,7 +90,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         }.apply {
             data = (commonConfigs + project.getLanguage().configObjectList + getCautiousConfigs())
             saved = savedData
-            notifyDataSetChanged()
+            notifyItemRangeInserted(0, data.size)
         }
 
         fabProjectConfig.setOnClickListener { view ->
@@ -105,7 +104,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                 for ((catId, data) in savedData) {
                     val category = getCategory(catId)
                     for ((key, value) in data) {
-                        (category as MutableConfigCategory)[key] = value.cast()?: error("Unable to cast value")
+                        (category as MutableConfigCategory)[key] = value.cast()?: error("Unable to cast $key")
                     }
                 }
             }
@@ -129,6 +128,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         textViewConfigProjectName.text = projectName
     }
 
+    @SuppressLint("CheckResult")
     private fun getCautiousConfigs(): List<CategoryConfigObject> = config {
         category {
             id = "cautious"
@@ -180,18 +180,11 @@ class ProjectConfigActivity: AppCompatActivity() {
         }
     }
 
-    private fun openFolderInExplorer(path: File): Boolean {
-        val uri = FileProvider.getUriForFile(applicationContext, "$packageName.provider", path)
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri,  DocumentsContract.Document.MIME_TYPE_DIR)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        return if (intent.resolveActivityInfo(packageManager, 0) != null) {
-            startActivity(intent)
-            true
-        } else
-            false
+    private fun openFolderInExplorer(context: Context, file: File) {
+        val intent = Intent(Intent.ACTION_VIEW)
+        val uri = FileProvider.getUriForFile(context, "$packageName.provider", file)
+        intent.setDataAndType(uri, "*/*")
+        startActivity(Intent.createChooser(intent, "폴더 열기"))
     }
 
     override fun onDestroy() {
