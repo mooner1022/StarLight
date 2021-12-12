@@ -18,9 +18,10 @@ import coil.request.repeatCount
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession
+import com.mooner.starlight.core.session.ApplicationSession
+import com.mooner.starlight.core.session.SessionInitListener
 import com.mooner.starlight.databinding.ActivitySplashBinding
-import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.crash.FatalErrorActivity
 import com.mooner.starlight.ui.editor.EditorActivity
@@ -30,9 +31,6 @@ import com.skydoves.needs.NeedsAnimation
 import com.skydoves.needs.NeedsItem
 import com.skydoves.needs.createNeeds
 import com.skydoves.needs.showNeeds
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import java.io.File
 import java.util.*
@@ -161,36 +159,33 @@ class SplashActivity : AppCompatActivity() {
         val webview = WebView(applicationContext)
         webview.loadUrl(EditorActivity.ENTRY_POINT)
 
-        CoroutineScope(Dispatchers.Default).launch {
-            //ApplicationSession.context = applicationContext
-            ApplicationSession.init(
-                context = applicationContext,
-                onPhaseChanged = { phase ->
-                    Logger.i(T, phase)
-                    runOnUiThread {
-                        binding.textViewLoadStatus.text = phase
-                    }
-                },
-                onFinished = {
-                    val currentMillis = System.currentTimeMillis()
-                    if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
-                        val delay = if (!ApplicationSession.isInitComplete)
-                            ANIMATION_DURATION - (currentMillis - initMillis)
-                        else
-                            MIN_LOAD_TIME - (currentMillis - initMillis)
-
-                        loadTimer = Timer().apply {
-                            schedule(delay) {
-                                loadTimer = null
-                                startMainActivity(intent)
-                            }
-                        }
-                    } else {
-                        startMainActivity(intent)
-                    }
+        ApplicationSession.setOnInitListener(object : SessionInitListener {
+            override fun onPhaseChanged(phase: String) {
+                Logger.i(T, phase)
+                runOnUiThread {
+                    binding.textViewLoadStatus.text = phase
                 }
-            )
-        }
+            }
+
+            override fun onFinished() {
+                val currentMillis = System.currentTimeMillis()
+                if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
+                    val delay = if (!ApplicationSession.isInitComplete)
+                        ANIMATION_DURATION - (currentMillis - initMillis)
+                    else
+                        MIN_LOAD_TIME - (currentMillis - initMillis)
+
+                    loadTimer = Timer().apply {
+                        schedule(delay) {
+                            loadTimer = null
+                            startMainActivity(intent)
+                        }
+                    }
+                } else {
+                    startMainActivity(intent)
+                }
+            }
+        })
     }
 
     private fun startMainActivity(intent: Intent) = runOnUiThread {
