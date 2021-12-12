@@ -1,12 +1,12 @@
 package com.mooner.starlight.plugincore.config
 
-import com.mooner.starlight.plugincore.models.TypedString
-
 class ConfigCategoryImpl(
     private val data: Map<String, TypedString>
 ): ConfigCategory {
 
     override operator fun contains(key: String): Boolean = data.containsKey(key)
+
+    override operator fun get(key: String): Any? = data[key]?.cast()
 
     override fun getInt(key: String): Int? = data[key]?.castAs()
 
