@@ -1,4 +1,4 @@
-package com.mooner.starlight.models
+package com.mooner.starlight.utils.align
 
 import androidx.annotation.DrawableRes
 

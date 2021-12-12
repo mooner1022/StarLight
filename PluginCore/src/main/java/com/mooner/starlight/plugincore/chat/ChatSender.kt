@@ -1,4 +1,4 @@
-package com.mooner.starlight.plugincore.models
+package com.mooner.starlight.plugincore.chat
 
 data class ChatSender(
     val name: String,

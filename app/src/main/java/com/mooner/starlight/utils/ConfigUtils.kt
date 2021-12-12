@@ -4,8 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
+import com.mooner.starlight.plugincore.config.TypedString
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.ui.config.ConfigActivity
 import com.mooner.starlight.ui.config.ParentAdapter
 import java.util.*
@@ -18,7 +18,7 @@ const val EXTRA_ACTIVITY_ID = "activityId"
 private data class DataHolder(
     val items: List<CategoryConfigObject>,
     val saved: Map<String, Map<String, TypedString>>,
-    val listener: (parentId: String, id: String, view: View, data: Any) -> Unit,
+    val listener: (parentId: String, id: String, view: View?, data: Any) -> Unit,
     val onDestroy: () -> Unit,
     var instance: ConfigActivity? = null
 )
@@ -31,7 +31,7 @@ fun Context.startConfigActivity(
     subTitle: String,
     items: List<CategoryConfigObject>,
     saved: Map<String, Map<String, TypedString>> = mapOf(),
-    onConfigChanged: (parentId: String, id: String, view: View, data: Any) -> Unit = { _, _, _, _ -> },
+    onConfigChanged: (parentId: String, id: String, view: View?, data: Any) -> Unit = { _, _, _, _ -> },
     onDestroy: () -> Unit = {}
 ) {
     val activityId = id ?: UUID.randomUUID().toString()
@@ -64,12 +64,12 @@ internal fun ConfigActivity.initAdapter() {
     val activityId = intent.getStringExtra(EXTRA_ACTIVITY_ID)!!
     val holder = holders[activityId]?: error("Failed to find holder with id $activityId")
     recyclerAdapter = ParentAdapter(
-        context = this,
+        context = binding.root.context,
         onConfigChanged = holder.listener
     ).apply {
         data = holder.items
         saved = holder.saved
-        notifyDataSetChanged()
+        notifyItemRangeInserted(0, data.size)
     }
     holder.instance = this
 }

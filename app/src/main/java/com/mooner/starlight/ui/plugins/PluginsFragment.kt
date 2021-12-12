@@ -1,5 +1,6 @@
 package com.mooner.starlight.ui.plugins
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,14 +15,15 @@ import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
+import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentPluginsBinding
-import com.mooner.starlight.models.Align
-import com.mooner.starlight.plugincore.core.Session.globalConfig
-import com.mooner.starlight.plugincore.core.Session.pluginManager
+import com.mooner.starlight.plugincore.Session.globalConfig
+import com.mooner.starlight.plugincore.Session.pluginManager
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.utils.Utils.Companion.formatStringRes
+import com.mooner.starlight.utils.align.Align
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -75,6 +77,7 @@ class PluginsFragment : Fragment() {
     )?: DEFAULT_ALIGN
     private var isReversed: Boolean = globalConfig[CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
 
+    @SuppressLint("CheckResult")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -103,6 +106,7 @@ class PluginsFragment : Fragment() {
         binding.cardViewPluginAlign.setOnClickListener {
             MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                 cornerRadius(25f)
+                lifecycleOwner(this@PluginsFragment)
                 gridItems(aligns.toGridItems()) { dialog, _, item ->
                     alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
                     isReversed = dialog.findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked

@@ -1,7 +1,5 @@
 package com.mooner.starlight.plugincore.config
 
-import com.mooner.starlight.plugincore.models.TypedString
-
 class ConfigImpl(
     private val data: Map<String, Map<String, TypedString>>
 ): Config {

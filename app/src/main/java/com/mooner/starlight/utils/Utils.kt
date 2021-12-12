@@ -18,8 +18,8 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.customview.customView
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.globalConfig
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.globalConfig
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter

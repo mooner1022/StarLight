@@ -1,10 +1,10 @@
 package com.mooner.starlight.plugincore.language
 
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.json
 import com.mooner.starlight.plugincore.config.ConfigCategory
 import com.mooner.starlight.plugincore.config.ConfigCategoryImpl
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.json
-import com.mooner.starlight.plugincore.models.TypedString
+import com.mooner.starlight.plugincore.config.TypedString
 import kotlinx.serialization.decodeFromString
 import java.io.File
 

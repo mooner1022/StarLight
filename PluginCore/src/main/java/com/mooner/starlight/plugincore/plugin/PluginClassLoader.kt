@@ -1,6 +1,6 @@
 package com.mooner.starlight.plugincore.plugin
 
-import com.mooner.starlight.plugincore.core.Session.projectLoader
+import com.mooner.starlight.plugincore.Session.projectLoader
 import dalvik.system.PathClassLoader
 import java.io.File
 

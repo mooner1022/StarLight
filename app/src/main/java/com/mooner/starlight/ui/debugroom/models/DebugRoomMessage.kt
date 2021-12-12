@@ -1,4 +1,4 @@
-package com.mooner.starlight.models
+package com.mooner.starlight.ui.debugroom.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

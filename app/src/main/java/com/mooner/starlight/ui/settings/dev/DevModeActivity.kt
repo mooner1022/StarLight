@@ -1,8 +1,8 @@
 package com.mooner.starlight.ui.settings.dev
 
 import android.content.Context
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.config.config
-import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.utils.finishConfigActivity
 import com.mooner.starlight.utils.startConfigActivity

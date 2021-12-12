@@ -1,7 +1,6 @@
 package com.mooner.starlight.plugincore.config
 
-import com.mooner.starlight.plugincore.core.Session.json
-import com.mooner.starlight.plugincore.models.TypedString
+import com.mooner.starlight.plugincore.Session.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

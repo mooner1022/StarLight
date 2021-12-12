@@ -1,4 +1,4 @@
-package com.mooner.starlight.plugincore.interfaces
+package com.mooner.starlight.plugincore.chat
 
 interface ChatRoom {
     val name: String

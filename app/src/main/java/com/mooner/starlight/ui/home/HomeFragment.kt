@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mooner.starlight.databinding.FragmentHomeBinding
-import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.Session
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 
 class HomeFragment : Fragment() {

@@ -8,12 +8,12 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.databinding.ActivityPluginConfigBinding
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.pluginManager
 import com.mooner.starlight.plugincore.config.ButtonConfigObject
 import com.mooner.starlight.plugincore.config.ConfigImpl
+import com.mooner.starlight.plugincore.config.TypedString
 import com.mooner.starlight.plugincore.config.config
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.pluginManager
-import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
@@ -48,7 +48,7 @@ class PluginConfigActivity: AppCompatActivity() {
         val pluginName = intent.getStringExtra(EXTRA_PLUGIN_NAME)!!
         val pluginId = intent.getStringExtra(EXTRA_PLUGIN_ID)!!
         val plugin = pluginManager.getPluginById(pluginId)?: error("Failed to get plugin [$pluginName]")
-        recyclerAdapter = ParentAdapter(applicationContext) { parentId, id, view, data ->
+        recyclerAdapter = ParentAdapter(binding.root.context) { parentId, id, view, data ->
             if (changedData.containsKey(parentId)) {
                 changedData[parentId]!![id] = data
             } else {
@@ -81,7 +81,7 @@ class PluginConfigActivity: AppCompatActivity() {
                 return@setOnClickListener
             }
             configFile.writeText(Session.json.encodeToString(savedData))
-            plugin.onConfigUpdated(ConfigImpl(savedData))
+            plugin.onConfigUpdated(ConfigImpl(savedData), changedData.keys)
             plugin.onConfigUpdated(changedData)
             Snackbar.make(view, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
             fabProjectConfig.hide()

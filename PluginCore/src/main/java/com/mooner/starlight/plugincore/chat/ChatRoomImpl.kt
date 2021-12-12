@@ -1,4 +1,4 @@
-package com.mooner.starlight.plugincore.models
+package com.mooner.starlight.plugincore.chat
 
 import android.app.Notification
 import android.app.PendingIntent
@@ -6,10 +6,9 @@ import android.app.RemoteInput
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import com.mooner.starlight.plugincore.interfaces.ChatRoom
 import com.mooner.starlight.plugincore.logger.Logger
 
-data class ChatRoom(
+data class ChatRoomImpl(
     override val name: String,
     override val isGroupChat: Boolean,
     override val isDebugRoom: Boolean = false,

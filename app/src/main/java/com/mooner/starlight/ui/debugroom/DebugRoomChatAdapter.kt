@@ -16,7 +16,7 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
-import com.mooner.starlight.models.DebugRoomMessage
+import com.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 
 
 class DebugRoomChatAdapter(
@@ -128,7 +128,7 @@ class DebugRoomChatAdapter(
         }
 
         holder.message.setOnLongClickListener {
-            val clip = ClipData.newPlainText("copied text", holder.message.text)
+            val clip = ClipData.newPlainText("디버그룸 채팅", holder.message.text)
             clipboard.setPrimaryClip(clip)
             Snackbar.make(it, "텍스트를 클립보드에 복사했어요.", Snackbar.LENGTH_SHORT).show()
             true

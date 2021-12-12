@@ -9,9 +9,9 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mooner.starlight.databinding.FragmentSettingsBinding
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.config
-import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.ui.settings.dev.startDevModeActivity
@@ -37,7 +37,7 @@ class SettingsFragment : Fragment() {
         }.apply {
             data = getConfigList()
             saved = Session.globalConfig.getAllConfigs()
-            notifyDataSetChanged()
+            notifyItemRangeInserted(0, data.size)
         }
 
         binding.configRecyclerView.apply {

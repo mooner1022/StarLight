@@ -5,7 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextSwitcher
 import com.mooner.starlight.R
-import com.mooner.starlight.core.ApplicationSession
+import com.mooner.starlight.core.session.ApplicationSession
 import com.mooner.starlight.plugincore.widget.Widget
 import com.mooner.starlight.plugincore.widget.WidgetSize
 import com.mooner.starlight.utils.Utils

@@ -1,12 +1,12 @@
 
 package com.mooner.starlight.plugincore.project
 
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.json
+import com.mooner.starlight.plugincore.Session.projectManager
 import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.config.Config
 import com.mooner.starlight.plugincore.config.FileConfig
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.json
-import com.mooner.starlight.plugincore.core.Session.projectManager
 import com.mooner.starlight.plugincore.language.ILanguage
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
@@ -63,7 +63,14 @@ class Project (
         (lang as Language).setConfigFile(confFile)
     }
 
-    fun callEvent(name: String, args: Array<Any>, onException: (Throwable) -> Unit = {}) {
+    /**
+     * Calls an event with [name] and [args] as parameter.
+     *
+     * @param name the name of function or event being called.
+     * @param args parameter values being passed to function.
+     * @param onException called when exception is occurred while calling.
+     */
+    internal fun callEvent(name: String, args: Array<out Any>, onException: (Throwable) -> Unit = {}) {
         //logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
         if (engine == null) {
             if (!isCompiled) return
@@ -155,6 +162,11 @@ class Project (
         */
     }
 
+    /**
+     * Compiles the project with configured values.
+     *
+     * @param throwException if *true*, throws exceptions occurred during compilation.
+     */
     fun compile(throwException: Boolean = false) {
         try {
             val rawCode: String = (directory.listFiles()?.find { it.isFile && it.name == info.mainScript }?: throw IllegalArgumentException(
@@ -179,6 +191,18 @@ class Project (
         }
     }
 
+    /**
+     * Requests the application to update UI of the project.
+     *
+     * Ignored if application is on background.
+     */
+    fun requestUpdate() {
+        projectManager.onStateChanged(this)
+    }
+
+    /**
+     * Saves contents of [info] to a file.
+     */
     fun saveInfo() {
         CoroutineScope(Dispatchers.IO).launch {
             val str = synchronized(info) { json.encodeToString(info) }
@@ -186,16 +210,31 @@ class Project (
         }
     }
 
+    /**
+     * Returns the language used in the project.
+     *
+     * @return language used in the project.
+     */
     fun getLanguage(): ILanguage {
         return lang
     }
 
+    /**
+     * Count of jobs currently running in thread pool of this project.
+     *
+     * @return the size of running jobs.
+     */
     fun activeJobs(): Int {
         return if (context == null || threadName == null) 0
         else JobLocker.withParent(threadName!!).activeJobs()
     }
 
-    fun destroy() {
+    /**
+     * Cancels all running jobs and releases [engine] if the project is compiled.
+     *
+     * @param requestUpdate if *true*, requests update of UI
+     */
+    fun destroy(requestUpdate: Boolean = false) {
         if (context != null) {
             if (threadName != null) {
                 JobLocker.withParent(threadName!!).purge()
@@ -203,5 +242,11 @@ class Project (
             (context as CoroutineDispatcher).cancel()
             context = null
         }
+        if (engine != null) {
+            if (lang.requireRelease)
+                lang.release(engine!!)
+            engine = null
+        }
+        if (requestUpdate) requestUpdate()
     }
 }

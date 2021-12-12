@@ -1,14 +1,12 @@
 package com.mooner.starlight.plugincore.config
 
-import com.mooner.starlight.plugincore.models.TypedString
-
 class MutableConfigCategory(
     val data: MutableMap<String, TypedString>
 ): ConfigCategory {
 
     override operator fun contains(key: String): Boolean = data.containsKey(key)
 
-    operator fun get(key: String): Any? = data[key]?.cast()
+    override operator fun get(key: String): Any? = data[key]?.cast()
 
     operator fun set(key: String, value: Any) {
         data[key] = TypedString.parse(value)

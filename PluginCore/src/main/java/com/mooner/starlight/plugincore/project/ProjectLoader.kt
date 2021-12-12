@@ -1,7 +1,7 @@
 package com.mooner.starlight.plugincore.project
 
-import com.mooner.starlight.plugincore.core.Session.json
-import com.mooner.starlight.plugincore.core.Session.projectManager
+import com.mooner.starlight.plugincore.Session.json
+import com.mooner.starlight.plugincore.Session.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
 import kotlinx.serialization.decodeFromString
 import java.io.File

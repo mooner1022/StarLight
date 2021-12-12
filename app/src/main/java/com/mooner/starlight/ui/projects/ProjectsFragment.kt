@@ -1,6 +1,7 @@
 package com.mooner.starlight.ui.projects
 
 import android.animation.LayoutTransition
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,19 +16,20 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
+import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentProjectsBinding
-import com.mooner.starlight.models.Align
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.globalConfig
-import com.mooner.starlight.plugincore.core.Session.projectManager
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.globalConfig
+import com.mooner.starlight.plugincore.Session.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.utils.ViewUtils
-import com.mooner.starlight.utils.toGridItems
+import com.mooner.starlight.utils.align.Align
+import com.mooner.starlight.utils.align.toGridItems
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -111,6 +113,7 @@ class ProjectsFragment : Fragment() {
     private var isReversed: Boolean = globalConfig[CONFIG_PROJECTS_REVERSED, "false"].toBoolean()
     private var isActiveFirst: Boolean = globalConfig[CONFIG_PROJECTS_ACTIVE_FIRST, "false"].toBoolean()
 
+    @SuppressLint("CheckResult")
     override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
@@ -121,6 +124,7 @@ class ProjectsFragment : Fragment() {
         binding.cardViewProjectAlign.setOnClickListener {
             MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                 cornerRadius(25f)
+                lifecycleOwner(this@ProjectsFragment)
                 gridItems(aligns.toGridItems()) { dialog, _, item ->
                     alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
                     isReversed = dialog.findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked

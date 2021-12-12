@@ -1,6 +1,4 @@
-package com.mooner.starlight.plugincore.models
-
-import com.mooner.starlight.plugincore.interfaces.ChatRoom
+package com.mooner.starlight.plugincore.chat
 
 data class DebugChatRoom(
     override val name: String,

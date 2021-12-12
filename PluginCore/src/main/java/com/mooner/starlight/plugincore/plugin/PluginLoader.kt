@@ -1,9 +1,9 @@
 package com.mooner.starlight.plugincore.plugin
 
 import android.os.Environment
-import com.mooner.starlight.plugincore.core.Info
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Version
+import com.mooner.starlight.plugincore.Info
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Version
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.utils.Utils.Companion.readString
 import java.io.File

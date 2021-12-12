@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.widget.Widget
@@ -54,10 +54,7 @@ class LogsWidget: Widget() {
             layoutTransition = LayoutTransition()
             val rvLogs: RecyclerView = findViewById(R.id.rvLogs)
             val textViewNoLogsYet: TextView = findViewById(R.id.textViewNoLogsYet)
-            val logs = if (Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false))
-                Logger.logs
-            else
-                Logger.filterNot(LogType.VERBOSE)
+            val logs = Logger.logs
             mAdapter = LogsRecyclerViewAdapter(context)
 
             if (logs.isNotEmpty()) {
