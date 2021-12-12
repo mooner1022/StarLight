@@ -12,6 +12,7 @@ enum class ConfigObjectType(
     TOGGLE(0),
     SLIDER(1),
     STRING(2),
+    PASSWORD(-2),
     SPINNER(3),
     BUTTON_FLAT(4),
     BUTTON_CARD(-4),
@@ -98,6 +99,25 @@ data class StringConfigObject(
         get() = type.viewType
 }
 
+data class PasswordConfigObject(
+    override val id: String,
+    override val title: String,
+    override val description: String? = null,
+    val require: (value: String) -> String? = { null },
+    val hashCode: (value: String) -> String,
+    override val icon: Icon? = null,
+    override val iconFile: File? = null,
+    override val iconResId: Int? = null,
+    @ColorInt
+    override val iconTintColor: Int?,
+    override val dependency: String? = null
+): ConfigObject {
+    override val default: Any = 0
+    override val type: ConfigObjectType = ConfigObjectType.PASSWORD
+    override val viewType: Int
+        get() = type.viewType
+}
+
 data class SpinnerConfigObject(
     override val id: String,
     override val title: String,
@@ -113,8 +133,7 @@ data class SpinnerConfigObject(
 ): ConfigObject {
     override val default: Any
         get() = defaultIndex
-    override val type: ConfigObjectType
-        get() = ConfigObjectType.SPINNER
+    override val type: ConfigObjectType = ConfigObjectType.SPINNER
     override val viewType: Int
         get() = type.viewType
 }
@@ -172,6 +191,7 @@ data class CustomConfigObject(
 data class CategoryConfigObject(
     override val id: String,
     override val title: String,
+    val isDevModeOnly: Boolean,
     @ColorInt
     val textColor: Int,
     val items: List<ConfigObject>
