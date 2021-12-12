@@ -6,14 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.widget.IWidget
+import com.mooner.starlight.plugincore.widget.Widget
 import com.mooner.starlight.plugincore.widget.WidgetSize
 
 class WidgetsAdapter (
     private val context: Context
 ): RecyclerView.Adapter<WidgetsAdapter.ViewHolder>() {
 
-    var data: List<IWidget> = mutableListOf()
+    var data: List<Widget> = mutableListOf()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layout = when(viewType) {

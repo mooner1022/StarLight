@@ -4,13 +4,29 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 
-abstract class Widget: IWidget {
+abstract class Widget {
 
-    override val size: WidgetSize = WidgetSize.Medium
+    abstract val id: String
+
+    abstract val name: String
+
+    open val size: WidgetSize = WidgetSize.Medium
+
+    abstract fun onCreateWidget(view: View)
+
+    open fun onPauseWidget() {}
+
+    open fun onResumeWidget() {}
+
+    open fun onDestroyWidget() {}
+
+    abstract fun onCreateThumbnail(view: View)
+
+    open fun onDestroyThumbnail() {}
 
     override fun equals(other: Any?): Boolean = when(other) {
         null -> false
-        is IWidget -> other.id == this.id
+        is Widget -> other.id == this.id
         else -> false
     }
 
