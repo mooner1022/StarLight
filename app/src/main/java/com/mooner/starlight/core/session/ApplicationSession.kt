@@ -1,7 +1,6 @@
-package com.mooner.starlight.core
+package com.mooner.starlight.core.session
 
 import android.content.Context
-import android.os.Environment
 import com.mooner.starlight.R
 import com.mooner.starlight.api.helper.LanguagesApi
 import com.mooner.starlight.api.helper.ProjectLoggerApi
@@ -9,10 +8,11 @@ import com.mooner.starlight.api.helper.ProjectsApi
 import com.mooner.starlight.api.helper.UtilsApi
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
+import com.mooner.starlight.listener.DefaultEvent
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.pluginLoader
+import com.mooner.starlight.plugincore.Session.pluginManager
 import com.mooner.starlight.plugincore.api.ApiManager
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.pluginLoader
-import com.mooner.starlight.plugincore.core.Session.pluginManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.EventListener
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
@@ -21,16 +21,24 @@ import com.mooner.starlight.ui.widget.DummyWidgetSlim
 import com.mooner.starlight.ui.widget.LogsWidget
 import com.mooner.starlight.ui.widget.UptimeWidgetDefault
 import com.mooner.starlight.ui.widget.UptimeWidgetSlim
-import java.io.File
+import com.mooner.starlight.utils.FileUtils
 
 object ApplicationSession {
     private var mInitMillis: Long = 0L
     val initMillis get() = mInitMillis
 
     var isInitComplete: Boolean = false
+    @JvmStatic
     var isAfterInit: Boolean = false
 
-    internal fun init(context: Context, onPhaseChanged: (phase: String) -> Unit = {}, onFinished: () -> Unit = {}) {
+    private val listeners: MutableSet<SessionInitListener> = hashSetOf()
+
+    fun setOnInitListener(listener: SessionInitListener) {
+        if (isInitComplete) listener.onFinished()
+        else listeners += listener
+    }
+
+    internal fun init(context: Context) {
         if (isInitComplete) {
             onFinished()
             return
@@ -41,8 +49,7 @@ object ApplicationSession {
         }
         isAfterInit = true
 
-        @Suppress("DEPRECATION")
-        val starlightDir = File(Environment.getExternalStorageDirectory(), "StarLight/")
+        val starlightDir = FileUtils.getInternalDirectory()
         Logger.init(starlightDir)
 
         onPhaseChanged(context.getString(R.string.step_default_lib))
@@ -63,6 +70,8 @@ object ApplicationSession {
             addLanguage("", JSRhino())
             //addLanguage(GraalVMLang())
         }
+
+        Session.eventManager.addEvent(DefaultEvent())
 
         if (!Session.globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
             pluginLoader.loadPlugins { onPhaseChanged(String.format(context.getString(R.string.step_plugins), it)) }
@@ -91,6 +100,7 @@ object ApplicationSession {
 
         isInitComplete = true
         onFinished()
+        listeners.clear()
         mInitMillis = System.currentTimeMillis()
     }
 
@@ -100,6 +110,14 @@ object ApplicationSession {
         } catch (e: Exception) {
             Logger.wtf("ApplicationSession", "Failed to gracefully shutdown Session: ${e.localizedMessage}\ncause:\n${e.stackTrace}")
         }
+    }
+
+    private fun onFinished() {
+        for (listener in listeners) listener.onFinished()
+    }
+
+    private fun onPhaseChanged(phase: String) {
+        for (listener in listeners) listener.onPhaseChanged(phase)
     }
 
     //lateinit var context: Context

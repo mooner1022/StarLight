@@ -64,6 +64,13 @@ object Session {
 
     const val isDebugging: Boolean = true
 
+    private val onInitCompleteListeners: MutableList<() -> Unit> = arrayListOf()
+
+    fun setOnInitCompleteListener(listener: () -> Unit) {
+        if (isInitComplete) listener()
+        else onInitCompleteListeners += listener
+    }
+
     fun init(baseDir: File) {
         if (isInit) {
             Logger.w("Session", "Rejecting re-init of Session")
@@ -85,6 +92,11 @@ object Session {
         mPluginManager   = PluginManager()
         mProjectManager  = ProjectManager(projectDir)
         mProjectLoader   = ProjectLoader(projectDir)
+        mEventManager    = EventManager()
+
+        for (listener in onInitCompleteListeners) listener()
+        isDuringInit = false
+        mIsInitComplete = true
     }
 
     fun shutdown() {
