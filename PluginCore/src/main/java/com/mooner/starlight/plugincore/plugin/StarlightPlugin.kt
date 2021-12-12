@@ -1,18 +1,19 @@
 package com.mooner.starlight.plugincore.plugin
 
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.Config
 import com.mooner.starlight.plugincore.config.ConfigImpl
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.language.ILanguage
+import com.mooner.starlight.plugincore.config.TypedString
+import com.mooner.starlight.plugincore.event.Event
+import com.mooner.starlight.plugincore.event.callEvent
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.models.TypedString
 import com.mooner.starlight.plugincore.project.ProjectLoader
 import com.mooner.starlight.plugincore.utils.Utils.Companion.getFileSize
-import com.mooner.starlight.plugincore.widget.IWidget
+import com.mooner.starlight.plugincore.widget.Widget
 import kotlinx.serialization.decodeFromString
 import java.io.File
 import kotlin.io.path.Path
@@ -86,8 +87,6 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    fun callEvent(eventName: String, args: Array<Any>) = Session.projectManager.callEvent(this.info.id, eventName, args)
-
     fun getDataFolder(): File = dataDir
 
     fun getAsset(directory: String): File = File(dataDir.resolve("assets"), directory)
@@ -96,13 +95,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     protected fun getClassLoader(): ClassLoader = classLoader
 
-    @Deprecated(
-        message = "Retained for legacy compatability, don't use it.",
-        replaceWith = ReplaceWith("addLanguage(language: ILanguage)", "com.mooner.starlight.plugincore.plugin.StarlightPlugin.addLanguage")
-    )
-    fun addLanguage(language: Language) = addLanguage(language as ILanguage)
-
-    fun addLanguage(language: ILanguage) {
+    fun addLanguage(language: Language) {
         var isLoadSuccess = false
         try {
             Session.languageManager.addLanguage(Path(dataDir.resolve("assets").path, language.id).pathString, language)
@@ -115,9 +108,11 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    fun addWidget(widget: IWidget) = Session.widgetManager.addWidget(widget)
+    fun addWidget(widget: Widget) = Session.widgetManager.addWidget(widget)
 
     fun <T> addApi(api: Api<T>) = ApiManager.addApi(api)
+
+    protected inline fun <reified T: Event> callEvent(args: Array<out Any>, noinline onError: (e: Throwable) -> Unit = {}): Boolean = Session.eventManager.callEvent<T>(args, onError)
 
     override fun toString(): String = info.fullName
 

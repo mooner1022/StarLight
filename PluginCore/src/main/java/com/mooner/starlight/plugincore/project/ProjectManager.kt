@@ -1,5 +1,7 @@
 package com.mooner.starlight.plugincore.project
 
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.logger.Logger
 import java.io.File
 
 class ProjectManager(
@@ -67,11 +69,15 @@ class ProjectManager(
         callListeners()
     }
 
-    fun callEvent(pluginId: String, eventName: String, args: Array<Any>) {
-        val projects = this.projects.values.filter { pluginId in it.info.listeners }
+    internal fun callEvent(eventId: String, eventName: String, args: Array<out Any>, onError: (e: Throwable) -> Unit) {
+        if (!Session.eventManager.hasEvent(eventId)) {
+            Logger.e(ProjectManager::class.simpleName, "Rejecting event call from '$eventId' which is not registered on EventManager")
+            return
+        }
+        val projects = this.projects.values.filter { eventId in it.info.listeners }
         if (projects.isEmpty()) return
         for (project in projects) {
-            project.callEvent(eventName, args)
+            project.callEvent(eventName, args, onError)
         }
     }
 

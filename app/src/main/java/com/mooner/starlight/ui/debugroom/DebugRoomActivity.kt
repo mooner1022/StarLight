@@ -1,5 +1,6 @@
 package com.mooner.starlight.ui.debugroom
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -11,24 +12,27 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.databinding.ActivityDebugRoomBinding
-import com.mooner.starlight.models.DebugRoomMessage
+import com.mooner.starlight.listener.DefaultEvent
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.globalConfig
+import com.mooner.starlight.plugincore.Session.json
+import com.mooner.starlight.plugincore.chat.ChatSender
+import com.mooner.starlight.plugincore.chat.DebugChatRoom
+import com.mooner.starlight.plugincore.chat.Message
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.config
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Session.globalConfig
-import com.mooner.starlight.plugincore.core.Session.json
+import com.mooner.starlight.plugincore.event.callEvent
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.models.ChatSender
-import com.mooner.starlight.plugincore.models.DebugChatRoom
-import com.mooner.starlight.plugincore.models.Message
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF
 import com.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF_LONG
+import com.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 import com.mooner.starlight.utils.PACKAGE_KAKAO_TALK
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,8 +47,8 @@ import java.util.*
 class DebugRoomActivity: AppCompatActivity() {
 
     companion object {
-        private const val RESULT_BOT      = 100
-        private const val RESULT_USER     = 101
+        private const val RESULT_BOT      = 0x0
+        private const val RESULT_USER     = 0x1
 
         private const val CHATS_FILE_NAME = "chats.json"
     }
@@ -58,9 +62,10 @@ class DebugRoomActivity: AppCompatActivity() {
         directory
     }
 
-    private var roomName: String = "undefined"
-    private var sender: String = "debug_sender"
-    private var botName: String = "BOT"
+    private var roomName    = "undefined"
+    private var sender      = "debug_sender"
+    private var botName     = "BOT"
+    private var sentPackage = PACKAGE_KAKAO_TALK
 
     private lateinit var project: Project
     private lateinit var binding: ActivityDebugRoomBinding
@@ -132,7 +137,7 @@ class DebugRoomActivity: AppCompatActivity() {
         }.apply {
             data = getConfig()
             saved = globalConfig.getAllConfigs()
-            notifyDataSetChanged()
+            notifyItemRangeInserted(0, data.size)
         }
 
         binding.bottomSheet.configRecyclerView.apply {
@@ -145,6 +150,7 @@ class DebugRoomActivity: AppCompatActivity() {
         }
     }
 
+    @SuppressLint("CheckResult")
     private fun send(message: String) {
         val viewType = if (message.length >= 500) CHAT_SELF_LONG else CHAT_SELF
         addMessage(sender, message, viewType)
@@ -161,19 +167,18 @@ class DebugRoomActivity: AppCompatActivity() {
                 onSend = onSend,
                 onMarkAsRead = onMarkAsRead
             ),
-            packageName = "com.kakao.talk",
+            packageName = sentPackage,
             hasMention = false
         )
-        project.callEvent(
-            name = "onMessage",
-            args = arrayOf(data)
-        ) { e ->
+
+        Session.eventManager.callEvent<DefaultEvent>(arrayOf(data)) { e ->
             Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
                 setAction("자세히 보기") {
                     MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                         cornerRadius(25f)
                         cancelOnTouchOutside(false)
                         noAutoDismiss()
+                        lifecycleOwner(this@DebugRoomActivity)
                         title(text = project.info.name + " 에러 로그")
                         message(text = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString())
                         positiveButton(text = "닫기") {
@@ -230,6 +235,7 @@ class DebugRoomActivity: AppCompatActivity() {
         roomName = globalConfig.getCategory("d_room").getString("name", "undefined")
         sender = globalConfig.getCategory("d_user").getString("name", "debug_sender")
         botName = globalConfig.getCategory("d_bot").getString("name", "BOT")
+        sentPackage = globalConfig.getCategory("d_room").getString("package", PACKAGE_KAKAO_TALK)
 
         runOnUiThread {
             binding.roomTitle.text = roomName
@@ -389,8 +395,9 @@ class DebugRoomActivity: AppCompatActivity() {
                         title = "대화 기록 초기화"
                         onClickListener = {
                             dir.deleteRecursively()
+                            val listSize = chatList.size
                             chatList.clear()
-                            userChatAdapter?.notifyDataSetChanged()
+                            userChatAdapter?.notifyItemRangeRemoved(0, listSize)
                         }
                         icon = Icon.LAYERS_CLEAR
                         //backgroundColor = Color.parseColor("#B8DFD8")

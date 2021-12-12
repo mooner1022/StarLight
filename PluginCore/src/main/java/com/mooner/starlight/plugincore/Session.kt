@@ -1,9 +1,10 @@
-package com.mooner.starlight.plugincore.core
+package com.mooner.starlight.plugincore
 
 import android.os.Build
 import android.os.Environment
 import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.config.GlobalConfig
+import com.mooner.starlight.plugincore.event.EventManager
 import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.PluginLoader
@@ -18,7 +19,11 @@ import java.io.File
 object Session {
 
     @JvmStatic
-    private var isInit = false
+    private var isDuringInit = false
+
+    @JvmStatic
+    private var mIsInitComplete = false
+    val isInitComplete get() = mIsInitComplete
 
     private val mJson: ThreadLocal<Json> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         ThreadLocal.withInitial {
@@ -62,6 +67,9 @@ object Session {
     private var mWidgetManager: WidgetManager? = null
     val widgetManager get() = mWidgetManager!!
 
+    private var mEventManager: EventManager? = null
+    val eventManager get() = mEventManager!!
+
     const val isDebugging: Boolean = true
 
     private val onInitCompleteListeners: MutableList<() -> Unit> = arrayListOf()
@@ -72,17 +80,16 @@ object Session {
     }
 
     fun init(baseDir: File) {
-        if (isInit) {
+        if (isInitComplete || isDuringInit) {
             Logger.w("Session", "Rejecting re-init of Session")
             return
         }
+        isDuringInit = true
 
         val preStack = Thread.currentThread().stackTrace[2]
         if (!preStack.className.startsWith("com.mooner.starlight")) {
             throw IllegalAccessException("Illegal access to internal function init() from $preStack")
         }
-
-        isInit = true
 
         val projectDir = File(baseDir, "projects/")
 
@@ -115,11 +122,13 @@ object Session {
         mPluginLoader?.purge()
         mPluginManager?.purge()
         mProjectManager?.purge()
+        mEventManager?.purge()
         mLanguageManager = null
         mWidgetManager = null
         mPluginManager = null
         mPluginLoader = null
         mProjectManager = null
+        mEventManager = null
 
         mJson.remove()
     }
