@@ -11,7 +11,7 @@ import com.mooner.starlight.utils.onDestroyed
 
 class ConfigActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityConfigBinding
+    lateinit var binding: ActivityConfigBinding
 
     var recyclerAdapter: ParentAdapter? = null
 
