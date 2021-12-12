@@ -1,6 +1,7 @@
 package com.mooner.starlight.plugincore.logger
 
 import android.util.Log
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.utils.TimeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,9 +15,14 @@ import java.util.*
  */
 
 object Logger {
+
     private val listeners: MutableMap<String, (log: LogData) -> Unit> = WeakHashMap()
     private lateinit var logFile: File
-    var logs: MutableList<LogData> = mutableListOf()
+
+    private var mLogs: MutableList<LogData> = mutableListOf()
+    val logs: List<LogData> get() = if (showInternalLogs) mLogs else filterNot(LogType.VERBOSE)
+
+    private val showInternalLogs get() = Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)
 
     fun init(baseDir: File) {
         val dirName = TimeUtils.formatCurrentDate("yyyy-MM-dd")
@@ -82,6 +88,8 @@ object Logger {
         )
     )
 
+    fun e(tag: String, throwable: Throwable) = e(tag, throwable.message?: "null")
+
     fun e(message: String) = e(tag = null, message = message)
 
     fun e(tag: String?, message: String) = log(
@@ -115,15 +123,16 @@ object Logger {
 
     fun log(data: LogData) {
         Log.println(data.type.priority, data.tag?: data.type.name, data.message)
-        synchronized(logs) {
-            logs += data
+        synchronized(mLogs) {
+            mLogs += data
         }
 
-        for ((_, listener) in listeners) {
-            listener(data)
-        }
+        if (data.type != LogType.VERBOSE || showInternalLogs)
+            for ((_, listener) in listeners) {
+                listener(data)
+            }
 
-        if (data.type.priority >= LogType.DEBUG.priority) {
+        if (data.type.priority >= LogType.DEBUG.priority && this::logFile.isInitialized) {
             CoroutineScope(Dispatchers.IO).launch {
                 val timestamp = TimeUtils.getTimestamp(fullTimestamp = true)
                 val log = data.toString()
@@ -134,11 +143,7 @@ object Logger {
         }
     }
 
-    fun filter(type: LogType): List<LogData> {
-        return logs.filter { it.type == type }
-    }
+    fun filter(type: LogType): List<LogData> = logs.filter { it.type == type }
 
-    fun filterNot(type: LogType): List<LogData> {
-        return logs.filterNot { it.type == type }
-    }
+    fun filterNot(type: LogType): List<LogData> = logs.filterNot { it.type == type }
 }
