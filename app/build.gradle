@@ -69,7 +69,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.6.0' // KEEP IT AS 1.6.0!
-    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation 'androidx.appcompat:appcompat:1.3.1' // KEEP IT AS 1.3.1!
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
@@ -86,6 +86,7 @@ dependencies {
     implementation "io.coil-kt:coil:$coil_version"
     implementation "io.coil-kt:coil-gif:$coil_version"
     implementation 'com.afollestad.material-dialogs:core:3.3.0'
+    implementation 'com.afollestad.material-dialogs:input:3.3.0'
     implementation 'com.afollestad.material-dialogs:bottomsheets:3.3.0'
     implementation 'com.afollestad.material-dialogs:lifecycle:3.3.0'
     implementation 'com.github.arcadefire:nice-spinner:1.4.5'
