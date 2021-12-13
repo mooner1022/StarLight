@@ -20,7 +20,6 @@ a variety of script languages and a plugin platform
     ✔ Any PRs are welcome, Watch `dev` branch for recent updates!
 </p>
 
-
 # License
 ```
 Designed and developed by 2021 mooner1022 (Minki Moon)
