@@ -1,5 +1,8 @@
-<h1 align="center">🌟<br>Project StarLight</h1>
+# <h1 align="center"><img src="./images/logo_transparent.svg" style="width:100px;height:100px;"/><br>Project StarLight</h1>
 
+<p align="center">
+!! Project StarLight is still in development, any bugs can appear !!
+</p>
 
 <p align="center">
     <a href="https://developer.android.com"><img src="https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white"></a>
@@ -13,12 +16,8 @@
 a variety of script languages and a plugin platform
 </p>
 
-<p align="center" style="color: gray">
-Currently in development!
-</p>
-
 <p align="center">
-    + Watch `dev` branch for recent updates :)
+    ✔ Any PRs are welcome, Watch `dev` branch for recent updates!
 </p>
 
 
