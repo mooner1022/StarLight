@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
-import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.edit
@@ -24,13 +23,15 @@ import com.mooner.starlight.databinding.ActivitySplashBinding
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.crash.FatalErrorActivity
-import com.mooner.starlight.ui.editor.EditorActivity
 import com.mooner.starlight.utils.FileUtils
 import com.mooner.starlight.utils.Utils
 import com.skydoves.needs.NeedsAnimation
 import com.skydoves.needs.NeedsItem
 import com.skydoves.needs.createNeeds
 import com.skydoves.needs.showNeeds
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import java.io.File
 import java.util.*
@@ -156,8 +157,12 @@ class SplashActivity : AppCompatActivity() {
 
         val initMillis = System.currentTimeMillis()
 
-        val webview = WebView(applicationContext)
-        webview.loadUrl(EditorActivity.ENTRY_POINT)
+        //val webview = WebView(applicationContext)
+        //webview.loadUrl(EditorActivity.ENTRY_POINT)
+
+        CoroutineScope(Dispatchers.Default).launch {
+            ApplicationSession.init(applicationContext)
+        }
 
         ApplicationSession.setOnInitListener(object : SessionInitListener {
             override fun onPhaseChanged(phase: String) {

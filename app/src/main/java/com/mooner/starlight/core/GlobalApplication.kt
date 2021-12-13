@@ -17,6 +17,11 @@ class GlobalApplication: Application() {
         super.onCreate()
         Logger.v(T, "Application onCreate() called")
 
+        val pref = getSharedPreferences("general", 0)
+        //pref.edit().clear().commit()
+        val isInitial = pref.getBoolean("isInitial", true)
+
+        if (isInitial) return
         CoroutineScope(Dispatchers.Default).launch {
             ApplicationSession.init(applicationContext)
         }

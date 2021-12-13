@@ -23,7 +23,6 @@ class EventManager {
 public inline fun <reified T: Event> EventManager.callEvent(args: Array<out Any>, noinline onError: (e: Throwable) -> Unit = {}): Boolean {
     Logger.v("EventManager", "Calling event ${T::class.simpleName} with args $args")
     val event = events.find { T::class.isInstance(it) }?: return false
-    Logger.v("EventManager", "event= $event")
     event.callEvent(args, onError)
     return true
 }
