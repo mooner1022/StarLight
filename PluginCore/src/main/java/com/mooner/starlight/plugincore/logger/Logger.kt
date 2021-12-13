@@ -20,9 +20,9 @@ object Logger {
     private lateinit var logFile: File
 
     private var mLogs: MutableList<LogData> = mutableListOf()
-    val logs: List<LogData> get() = if (showInternalLogs) mLogs else filterNot(LogType.VERBOSE)
+    val logs: List<LogData> get() = if (showInternalLogs) mLogs else mLogs.filterNot { it.type == LogType.VERBOSE }
 
-    private val showInternalLogs get() = Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)
+    private val showInternalLogs get() = Session.isInitComplete && Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)
 
     fun init(baseDir: File) {
         val dirName = TimeUtils.formatCurrentDate("yyyy-MM-dd")
