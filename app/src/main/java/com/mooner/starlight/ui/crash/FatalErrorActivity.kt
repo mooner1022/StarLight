@@ -5,7 +5,7 @@ import android.text.method.ScrollingMovementMethod
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ShareCompat
 import com.mooner.starlight.databinding.ActivityFatalErrorBinding
-import com.mooner.starlight.utils.Utils
+import com.mooner.starlight.utils.restartApplication
 
 class FatalErrorActivity : AppCompatActivity() {
 
@@ -24,7 +24,7 @@ class FatalErrorActivity : AppCompatActivity() {
         }
 
         binding.restart.setOnClickListener {
-            Utils.restartApplication(this)
+            restartApplication(this)
         }
 
         binding.share.setOnClickListener {

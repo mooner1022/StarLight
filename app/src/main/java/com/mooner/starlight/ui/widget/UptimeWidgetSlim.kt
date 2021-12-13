@@ -8,7 +8,7 @@ import com.mooner.starlight.R
 import com.mooner.starlight.core.session.ApplicationSession
 import com.mooner.starlight.plugincore.widget.Widget
 import com.mooner.starlight.plugincore.widget.WidgetSize
-import com.mooner.starlight.utils.Utils
+import com.mooner.starlight.utils.formatTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,9 +32,8 @@ class UptimeWidgetSlim: Widget() {
                     return
                 }
                 val diffMillis = System.currentTimeMillis() - ApplicationSession.initMillis
-                val formatStr = Utils.formatTime(diffMillis)
                 mainScope.launch {
-                    uptimeText!!.setText(formatStr)
+                    uptimeText!!.setText(formatTime(diffMillis))
                 }
             }
         }

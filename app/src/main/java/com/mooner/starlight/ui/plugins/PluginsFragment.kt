@@ -22,8 +22,8 @@ import com.mooner.starlight.plugincore.Session.globalConfig
 import com.mooner.starlight.plugincore.Session.pluginManager
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
-import com.mooner.starlight.utils.Utils.Companion.formatStringRes
 import com.mooner.starlight.utils.align.Align
+import com.mooner.starlight.utils.formatStringRes
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

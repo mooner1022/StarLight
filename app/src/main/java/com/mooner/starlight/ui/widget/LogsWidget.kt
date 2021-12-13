@@ -15,7 +15,7 @@ import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.widget.Widget
 import com.mooner.starlight.plugincore.widget.WidgetSize
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import com.mooner.starlight.utils.Utils
+import com.mooner.starlight.utils.showLogsDialog
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,12 +43,12 @@ class LogsWidget: Widget() {
         with(view) {
             val tvMoreLogs: TextView = findViewById(R.id.tvMoreLogs)
             tvMoreLogs.setOnClickListener {
-                Utils.showLogsDialog(context)
+                showLogsDialog(context)
             }
 
             val buttonMoreLogs: ImageButton = findViewById(R.id.buttonMoreLogs)
             buttonMoreLogs.setOnClickListener {
-                Utils.showLogsDialog(context)
+                showLogsDialog(context)
             }
 
             layoutTransition = LayoutTransition()

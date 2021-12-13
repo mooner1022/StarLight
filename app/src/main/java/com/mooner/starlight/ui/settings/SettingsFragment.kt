@@ -16,7 +16,7 @@ import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.ui.settings.dev.startDevModeActivity
 import com.mooner.starlight.ui.settings.info.AppInfoActivity
-import com.mooner.starlight.utils.Utils
+import com.mooner.starlight.utils.restartApplication
 
 class SettingsFragment : Fragment() {
 
@@ -126,7 +126,7 @@ class SettingsFragment : Fragment() {
                         icon = Icon.REFRESH
                         iconTintColor = color { "#FF6F3C" }
                         onClickListener = {
-                            Utils.restartApplication(it.context)
+                            restartApplication(it.context)
                         }
                         dependency = "safe_mode"
                     }

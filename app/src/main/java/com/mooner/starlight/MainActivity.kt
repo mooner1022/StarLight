@@ -15,7 +15,7 @@ import com.mooner.starlight.plugincore.Session.pluginManager
 import com.mooner.starlight.plugincore.Session.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.ViewPagerAdapter
-import com.mooner.starlight.utils.Utils.Companion.formatStringRes
+import com.mooner.starlight.utils.formatStringRes
 import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {

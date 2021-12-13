@@ -21,6 +21,8 @@ class AppInfoActivity : AppCompatActivity() {
 
     private var devModeClicks: Int = 0
 
+    private val isDevMode get() = Session.globalConfig.getCategory("dev").getBoolean("dev_mode", false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAppInfoBinding.inflate(layoutInflater)
@@ -65,16 +67,20 @@ class AppInfoActivity : AppCompatActivity() {
                         description = "starlight@mooner.dev"
                         iconTintColor = color { "#3A1C71" }
                         onClickListener = {
-                            devModeClicks++
-                            when(devModeClicks) {
-                                in 4..7 -> {
-                                    Snackbar.make(binding.root, "개발자 모드 활성화까지 ${8 - devModeClicks} 남았습니다.", Snackbar.LENGTH_SHORT).show()
-                                }
-                                8 -> {
-                                    Session.globalConfig.edit {
-                                        getCategory("dev")["dev_mode"] = true
+                            if (isDevMode) {
+                                Snackbar.make(binding.root, "이미 개발자 모드가 활성화되었습니다.", Snackbar.LENGTH_SHORT).show()
+                            } else {
+                                devModeClicks++
+                                when(devModeClicks) {
+                                    in 4..7 -> {
+                                        Snackbar.make(binding.root, "개발자 모드 활성화까지 ${8 - devModeClicks} 남았습니다.", Snackbar.LENGTH_SHORT).show()
                                     }
-                                    Snackbar.make(binding.root, "개발자 모드 활성화", Snackbar.LENGTH_SHORT).show()
+                                    8 -> {
+                                        Session.globalConfig.edit {
+                                            getCategory("dev")["dev_mode"] = true
+                                        }
+                                        Snackbar.make(binding.root, "개발자 모드 활성화", Snackbar.LENGTH_SHORT).show()
+                                    }
                                 }
                             }
                         }
@@ -90,7 +96,7 @@ class AppInfoActivity : AppCompatActivity() {
             }
         }
 
-        recyclerAdapter!!.notifyDataSetChanged()
+        recyclerAdapter!!.notifyAllItemInserted()
 
         binding.leave.setOnClickListener { finish() }
 

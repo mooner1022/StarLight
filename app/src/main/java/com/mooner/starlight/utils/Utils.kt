@@ -28,113 +28,110 @@ import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 
-class Utils {
-    companion object {
+private val alphanumericPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+fun randomAlphanumeric(length: Int): String {
+    val arr: ArrayList<Char> = arrayListOf()
+    repeat(length) {
+        arr.add(alphanumericPool.random())
+    }
+    return arr.joinToString("")
+}
 
-        private val alphanumericPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
-        fun randomAlphanumeric(length: Int): String {
-            val arr: ArrayList<Char> = arrayListOf()
-            repeat(length) {
-                arr.add(alphanumericPool.random())
-            }
-            return arr.joinToString("")
+fun isForeground(): Boolean {
+    val appProcessInfo = ActivityManager.RunningAppProcessInfo()
+    ActivityManager.getMyMemoryState(appProcessInfo)
+    return appProcessInfo.importance == IMPORTANCE_FOREGROUND || appProcessInfo.importance == IMPORTANCE_VISIBLE
+}
+
+fun Context.formatStringRes(@StringRes id: Int, map: Map<String, String>): String {
+    var string = this.getString(id)
+    for (pair in map) {
+        string = string.replace("\$${pair.key}", pair.value)
+    }
+    return string
+}
+
+fun String.trimLength(max: Int): String {
+    return if (this.length <= max) this else (this.substring(0, max) + "..")
+}
+
+fun checkPermissions(context: Context, permissions: Array<String>): Boolean {
+    for (permission in permissions) {
+        val perm = ContextCompat.checkSelfPermission(context, permission)
+        if (perm == PackageManager.PERMISSION_DENIED) return false
+    }
+    return true
+}
+
+fun formatTime(millis: Long): String {
+    val day = 1000 * 60 * 60 * 24
+    val s = TimeUnit.MILLISECONDS.toSeconds(millis) % 60
+    val m = TimeUnit.MILLISECONDS.toMinutes(millis) % 60
+    val h = TimeUnit.MILLISECONDS.toHours(millis) % 24
+    return if (millis >= day) {
+        val d = TimeUnit.MILLISECONDS.toDays(millis)
+        String.format("%d일 %d시간 %02d분 %02d초", d, h, m, s)
+    } else {
+        String.format("%d시간 %02d분 %02d초", h, m, s)
+    }
+}
+
+fun restartApplication(context: Context) {
+    val mStartActivity = Intent(context, SplashActivity::class.java)
+    val mPendingIntent = PendingIntent.getActivity(
+        context,
+        0,
+        mStartActivity,
+        PendingIntent.FLAG_CANCEL_CURRENT
+    )
+    val mgr = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    mgr[AlarmManager.RTC, System.currentTimeMillis() + 100] = mPendingIntent
+    exitProcess(0)
+}
+
+fun showLogsDialog(context: Context): MaterialDialog {
+    val mLogs = if (Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false))
+        Logger.logs
+    else
+        Logger.filterNot(LogType.VERBOSE)
+
+    val mAdapter = LogsRecyclerViewAdapter(context).apply {
+        data = mLogs.toMutableList()
+    }
+    val mLayoutManager = LinearLayoutManager(context).apply {
+        reverseLayout = true
+        stackFromEnd = true
+    }
+    return MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+        cornerRadius(25f)
+        cancelOnTouchOutside(true)
+        noAutoDismiss()
+        title(text = context.getString(R.string.title_logs))
+        customView(R.layout.dialog_logs)
+        positiveButton(text = context.getString(R.string.close)) {
+            dismiss()
         }
 
-        fun isForeground(): Boolean {
-            val appProcessInfo = ActivityManager.RunningAppProcessInfo()
-            ActivityManager.getMyMemoryState(appProcessInfo)
-            return appProcessInfo.importance == IMPORTANCE_FOREGROUND || appProcessInfo.importance == IMPORTANCE_VISIBLE
+        val recycler: RecyclerView = findViewById(R.id.rvLog)
+        recycler.apply {
+            itemAnimator = FadeInUpAnimator()
+            layoutManager = mLayoutManager
+            adapter = mAdapter
         }
+        mAdapter.notifyItemRangeInserted(0, mLogs.size)
 
-        fun Context.formatStringRes(@StringRes id: Int, map: Map<String, String>): String {
-            var string = this.getString(id)
-            for (pair in map) {
-                string = string.replace("\$${pair.key}", pair.value)
-            }
-            return string
-        }
-
-        fun String.trimLength(max: Int): String {
-            return if (this.length <= max) this else (this.substring(0, max) + "..")
-        }
-
-        fun checkPermissions(context: Context, permissions: Array<String>): Boolean {
-            for (permission in permissions) {
-                val perm = ContextCompat.checkSelfPermission(context, permission)
-                if (perm == PackageManager.PERMISSION_DENIED) return false
-            }
-            return true
-        }
-
-        fun formatTime(millis: Long): String {
-            val day = 1000 * 60 * 60 * 24
-            val s = TimeUnit.MILLISECONDS.toSeconds(millis) % 60
-            val m = TimeUnit.MILLISECONDS.toMinutes(millis) % 60
-            val h = TimeUnit.MILLISECONDS.toHours(millis) % 24
-            return if (millis >= day) {
-                val d = TimeUnit.MILLISECONDS.toDays(millis)
-                String.format("%d일 %d시간 %02d분 %02d초", d, h, m, s)
-            } else {
-                String.format("%d시간 %02d분 %02d초", h, m, s)
+        val key = randomAlphanumeric(8)
+        Logger.bindListener(key) {
+            if (it.type == LogType.VERBOSE && !globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)) return@bindListener
+            mAdapter.pushLog(it)
+            recycler.post {
+                recycler.smoothScrollToPosition(mAdapter.data.size - 1)
             }
         }
-
-        fun restartApplication(context: Context) {
-            val mStartActivity = Intent(context, SplashActivity::class.java)
-            val mPendingIntent = PendingIntent.getActivity(
-                context,
-                0,
-                mStartActivity,
-                PendingIntent.FLAG_CANCEL_CURRENT
-            )
-            val mgr = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            mgr[AlarmManager.RTC, System.currentTimeMillis() + 100] = mPendingIntent
-            exitProcess(0)
-        }
-
-        fun showLogsDialog(context: Context): MaterialDialog {
-            val mLogs = if (Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false))
-                Logger.logs
-            else
-                Logger.filterNot(LogType.VERBOSE)
-
-            val mAdapter = LogsRecyclerViewAdapter(context).apply {
-                data = mLogs.toMutableList()
-            }
-            val mLayoutManager = LinearLayoutManager(context).apply {
-                reverseLayout = true
-                stackFromEnd = true
-            }
-            return MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                cornerRadius(25f)
-                cancelOnTouchOutside(true)
-                noAutoDismiss()
-                title(text = context.getString(R.string.title_logs))
-                customView(R.layout.dialog_logs)
-                positiveButton(text = context.getString(R.string.close)) {
-                    dismiss()
-                }
-
-                val recycler: RecyclerView = findViewById(R.id.rvLog)
-                recycler.apply {
-                    itemAnimator = FadeInUpAnimator()
-                    layoutManager = mLayoutManager
-                    adapter = mAdapter
-                }
-                mAdapter.notifyItemRangeInserted(0, mLogs.size)
-
-                val key = randomAlphanumeric(8)
-                Logger.bindListener(key) {
-                    if (it.type == LogType.VERBOSE && !globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)) return@bindListener
-                    mAdapter.pushLog(it)
-                    recycler.post {
-                        recycler.smoothScrollToPosition(mAdapter.data.size - 1)
-                    }
-                }
-                onDismiss {
-                    Logger.unbindListener(key)
-                }
-            }
+        onDismiss {
+            Logger.unbindListener(key)
         }
     }
 }
+
+val isDevMode get() = Session.globalConfig.getCategory("dev").getBoolean("dev_mode", false)

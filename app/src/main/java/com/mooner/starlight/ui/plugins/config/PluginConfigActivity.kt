@@ -17,8 +17,8 @@ import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
-import com.mooner.starlight.utils.Utils
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
+import com.mooner.starlight.utils.restartApplication
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -111,7 +111,7 @@ class PluginConfigActivity: AppCompatActivity() {
                                         pluginManager.removePlugin(pluginId)
                                         Snackbar.make(view, "플러그인을 삭제했습니다.\n앱을 재시작할까요?", Snackbar.LENGTH_LONG)
                                             .setAction("확인") {
-                                                Utils.restartApplication(context)
+                                                restartApplication(context)
                                             }
                                             .show()
                                         dialog.dismiss()
