@@ -7,9 +7,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.databinding.ActivityAppInfoBinding
+import com.mooner.starlight.plugincore.Info
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.config.config
-import com.mooner.starlight.plugincore.core.Info
-import com.mooner.starlight.plugincore.core.Session
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage

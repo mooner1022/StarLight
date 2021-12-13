@@ -50,7 +50,7 @@ class EventApi: Api<Event>() {
 
     override val instanceClass: Class<Event> = Event::class.java
 
-    override val functions: List<ApiFunction> = listOf(
+    override val objects: List<ApiFunction> = listOf(
         function {
             name = "Message"
             returns = Event.Message::class.java

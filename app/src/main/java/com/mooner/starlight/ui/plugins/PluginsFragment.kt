@@ -1,5 +1,6 @@
 package com.mooner.starlight.ui.plugins
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -7,21 +8,27 @@ import android.view.ViewGroup
 import android.widget.CheckBox
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import coil.load
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
+import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.FragmentPluginsBinding
-import com.mooner.starlight.models.Align
-import com.mooner.starlight.plugincore.core.Session.globalConfig
-import com.mooner.starlight.plugincore.core.Session.pluginManager
+import com.mooner.starlight.plugincore.Session.globalConfig
+import com.mooner.starlight.plugincore.Session.pluginManager
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.utils.Utils.Companion.formatStringRes
+import com.mooner.starlight.utils.align.Align
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class PluginsFragment : Fragment() {
 
@@ -70,6 +77,7 @@ class PluginsFragment : Fragment() {
     )?: DEFAULT_ALIGN
     private var isReversed: Boolean = globalConfig[CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
 
+    @SuppressLint("CheckResult")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -78,25 +86,27 @@ class PluginsFragment : Fragment() {
         _binding = FragmentPluginsBinding.inflate(inflater, container, false)
 
         if (plugins.isEmpty()) {
-            with(binding.textViewNoPluginYet) {
-                visibility = View.VISIBLE
-                text = if (globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
-                    "플러그인 안전 모드가 켜져있어요."
-                } else {
-                    requireContext().formatStringRes(
-                        R.string.nothing_yet,
-                        mapOf(
-                            "name" to "플러그인이",
-                            "emoji" to "(>_<｡)\uD83D\uDCA6"
-                        )
+            binding.noPluginWrapper.visibility = View.VISIBLE
+
+            if (globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
+                binding.imageViewEmpty.load(R.drawable.ic_safe_mode)
+                binding.textViewNoPluginYet.text = "플러그인 안전 모드가 켜져있어요."
+            } else {
+                binding.imageViewEmpty.load(R.drawable.ic_box_empty)
+                binding.textViewNoPluginYet.text = requireContext().formatStringRes(
+                    R.string.nothing_yet,
+                    mapOf(
+                        "name" to "플러그인이",
+                        "emoji" to "(>_<｡)\uD83D\uDCA6"
                     )
-                }
+                )
             }
         }
 
         binding.cardViewPluginAlign.setOnClickListener {
             MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                 cornerRadius(25f)
+                lifecycleOwner(this@PluginsFragment)
                 gridItems(aligns.toGridItems()) { dialog, _, item ->
                     alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
                     isReversed = dialog.findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked
@@ -112,8 +122,16 @@ class PluginsFragment : Fragment() {
         binding.alignStateIcon.setImageResource(alignState.icon)
 
         listAdapter = PluginsListAdapter(requireContext())
-        listAdapter!!.data = sortData()
-        listAdapter!!.notifyItemRangeInserted(0, plugins.size)
+
+        CoroutineScope(Dispatchers.Default).launch {
+            val sortedData = sortData()
+            withContext(Dispatchers.Main) {
+                listAdapter!!.apply {
+                    listAdapter!!.data = sortedData
+                    listAdapter!!.notifyItemRangeInserted(0, plugins.size)
+                }
+            }
+        }
 
         with(binding.recyclerViewProjectList) {
             adapter = listAdapter

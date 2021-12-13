@@ -1,5 +1,6 @@
 package com.mooner.starlight.languages
 
+import com.faendir.rhino_android.RhinoAndroidHelper
 import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
@@ -12,6 +13,7 @@ import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
 import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
+import java.io.File
 
 class JSRhino: Language() {
 
@@ -20,7 +22,8 @@ class JSRhino: Language() {
 
         private const val T = "JS-라이노"
 
-        private const val CONF_OPTIMIZATION = "optimization_level"
+        private const val CONF_OPTIMIZE_CODE = "optimize_code"
+        private const val CONF_OPTIMIZATION_LEVEL = "optimization_level"
         private const val CONF_LANG_VERSION = "js_version"
         private const val LANG_DEF_VERSION = Context.VERSION_ES6
     }
@@ -39,10 +42,18 @@ class JSRhino: Language() {
             title = T
             textColor = color { "#FFC069" }
             items = items {
+                toggle {
+                    id = CONF_OPTIMIZE_CODE
+                    title = "코드 최적화"
+                    description = "코드를 컴파일 과정에서 최적화합니다. 컴파일 속도가 느려지지만 실행 속도가 빨라집니다."
+                    defaultValue = false
+                    icon = Icon.CHECK
+                }
                 slider {
-                    id = CONF_OPTIMIZATION
+                    id = CONF_OPTIMIZATION_LEVEL
                     title = "최적화 레벨"
-                    max = 10
+                    dependency = CONF_OPTIMIZE_CODE
+                    max = 9
                     icon = Icon.COMPRESS
                     iconTintColor = color { "#57837B" }
                     defaultValue = 1
@@ -82,18 +93,17 @@ class JSRhino: Language() {
 
     override fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any {
         val config = getLanguageConfig()
-        context = Context.enter().apply {
-            optimizationLevel = -1
-            languageVersion = with(config) {
-                if (containsKey(CONF_LANG_VERSION)) {
-                    val version = get(CONF_LANG_VERSION)
-                    if (version is Int) {
-                        indexToVersion(version)
-                    } else {
-                        LANG_DEF_VERSION
-                    }
-                } else LANG_DEF_VERSION
-            }
+        val optLevel = if (config.getBoolean(CONF_OPTIMIZE_CODE, false))
+            config.getInt(CONF_OPTIMIZATION_LEVEL, 0)
+        else
+            -1
+        context = RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")).enterContext().apply {
+            optimizationLevel = optLevel
+            val langVersionIndex = config.getInt(CONF_LANG_VERSION)
+            languageVersion = if (langVersionIndex == null)
+                LANG_DEF_VERSION
+            else
+                indexToVersion(langVersionIndex)
         }
         val shared = context.initStandardObjects()
         val scope = context.newObject(shared)
@@ -121,13 +131,15 @@ class JSRhino: Language() {
         super.release(engine)
         try {
             Context.exit()
-        } catch (e: IllegalStateException) {}
+        } catch (e: IllegalStateException) {
+            Logger.e(T, "Failed to release engine: ${e.message}")
+        }
     }
 
     override fun callFunction(
         engine: Any,
         functionName: String,
-        args: Array<Any>,
+        args: Array<out Any>,
         onError: (e: Exception) -> Unit
     ) {
         try {
@@ -148,18 +160,20 @@ class JSRhino: Language() {
     }
 
     override fun eval(code: String): Any {
-        val context = Context.enter().apply {
-            optimizationLevel = -1
-            languageVersion = with(getLanguageConfig()) {
-                if (containsKey(CONF_LANG_VERSION)) {
-                    val version = get(CONF_LANG_VERSION)
-                    if (version is Int) {
-                        version
-                    } else {
-                        LANG_DEF_VERSION
-                    }
-                } else LANG_DEF_VERSION
-            }
+        val config = getLanguageConfig()
+
+        val optLevel = if (config.getBoolean(CONF_OPTIMIZE_CODE, false))
+            config.getInt(CONF_OPTIMIZATION_LEVEL, 0)
+        else
+            -1
+
+        val context = RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")).enterContext().apply {
+            optimizationLevel = optLevel
+            val langVersionIndex = config.getInt(CONF_LANG_VERSION)
+            languageVersion = if (langVersionIndex == null)
+                LANG_DEF_VERSION
+            else
+                indexToVersion(langVersionIndex)
         }
         val shared = context.initSafeStandardObjects()
         val scope = context.newObject(shared)

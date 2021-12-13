@@ -52,19 +52,19 @@ object JobLocker {
             if (!runningJobs.containsKey(key)) {
                 runningJobs[key] = data
             }
-            Logger.d(T, "Registered job $key")
+            Logger.v(T, "Registered job $key")
             job.invokeOnCompletion {
                 if (it != null) {
-                    Logger.d(T, "Released job $key with exception")
+                    Logger.v(T, "Released job $key with exception")
                     runningJobs.remove(key)
                     onRelease(it)
                 } else {
                     if (data.releaseCounter <= 0) {
                         runningJobs.remove(key)
                         onRelease(null)
-                        Logger.d(T, "Released job $key")
+                        Logger.v(T, "Released job $key")
                     } else {
-                        Logger.d(T, "Postponed release of job $key")
+                        Logger.v(T, "Postponed release of job $key")
                     }
                 }
             }
@@ -74,7 +74,7 @@ object JobLocker {
         fun requestLock(key: String = Thread.currentThread().name) {
             if (runningJobs.containsKey(key)) {
                 runningJobs[key]!!.releaseCounter++
-                Logger.d(T, "Locked job $key")
+                Logger.v(T, "Locked job $key")
             } else {
                 Logger.w(T, "Failed to lock job: job $key is not registered or already released")
             }
@@ -92,7 +92,7 @@ object JobLocker {
                 }
                 if (isReleased) {
                     runningJobs.remove(key)
-                    Logger.d(T, "Released job $key")
+                    Logger.v(T, "Released job $key")
                 }
             } else {
                 Logger.w(T, "Failed to release job: job $key is not registered or already released")

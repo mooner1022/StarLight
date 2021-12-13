@@ -27,11 +27,13 @@
 
     <style name="Theme.StarLight.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
-    <style name="overrideExpandableCardViewSwitch">
+    <style name="overrideExpandableCardViewSwitch" parent="Widget.MaterialComponents.CompoundButton.Switch">
         <item name="android:background">@null</item>
         <item name="android:padding">16dp</item>
         <item name="useMaterialThemeColors">false</item>
         <item name="android:thumb">@drawable/switch_thumb</item>
+        <item name="thumbTint">@color/switch_thumb_selector</item>
+        <item name="trackTint">@color/switch_track_selector</item>
         <item name="track">@drawable/switch_track_selector</item>
     </style>
 

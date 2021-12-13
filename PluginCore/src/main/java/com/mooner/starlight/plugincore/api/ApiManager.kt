@@ -11,7 +11,7 @@ object ApiManager {
         synchronized(mApis) {
             if (mApis.find { it.name == api.name } != null) return
             mApis += api as Api<Any>
-            Logger.d("MethodManager", "Added method ${api.name}")
+            Logger.v("MethodManager", "Added method ${api.name}")
         }
     }
 

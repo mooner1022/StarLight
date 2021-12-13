@@ -13,8 +13,9 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.mooner.starlight.MainActivity
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.core.Info
-import com.mooner.starlight.plugincore.core.Session
+import com.mooner.starlight.core.session.ApplicationSession
+import com.mooner.starlight.plugincore.Info
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.utils.FileUtils
 import kotlinx.serialization.encodeToString
@@ -54,6 +55,7 @@ class ForegroundTask: Service() {
                 cause   : ${paramThrowable.cause}
                 ┉┉┉┉┉┉┉┉┉┉
                 stackTrace:
+                
             """.trimIndent() + paramThrowable.stackTraceToString() + "\n──────────"
             Logger.wtf("StarLight-core", errMsg)
 
@@ -101,6 +103,11 @@ class ForegroundTask: Service() {
 
     override fun onBind(intent: Intent): IBinder? {
         return null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ApplicationSession.shutdown()
     }
 
     private fun createNotificationChannel() {

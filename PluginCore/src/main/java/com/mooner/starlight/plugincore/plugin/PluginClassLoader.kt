@@ -1,6 +1,6 @@
 package com.mooner.starlight.plugincore.plugin
 
-import com.mooner.starlight.plugincore.core.Session.projectLoader
+import com.mooner.starlight.plugincore.Session.projectLoader
 import dalvik.system.PathClassLoader
 import java.io.File
 
@@ -14,13 +14,13 @@ class PluginClassLoader(
     private var pluginInit: StarlightPlugin? = null
     private var pluginState: java.lang.IllegalStateException? = null
     val plugin: StarlightPlugin
-    private val classes: HashMap<String, Class<*>> = HashMap()
+    private val classes: MutableMap<String, Class<*>> = HashMap()
 
     init {
         try {
             val jarClass: Class<*>
             try {
-                jarClass = Class.forName(config.mainClass, true, this)
+                jarClass = Class.forName(config.mainClass, false, this)
             } catch (e: ClassNotFoundException) {
                 throw InvalidPluginException("Cannot find main class [${config.mainClass}]")
             }

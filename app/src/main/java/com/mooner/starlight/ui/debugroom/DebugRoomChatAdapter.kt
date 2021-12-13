@@ -16,11 +16,11 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
-import com.mooner.starlight.models.DebugRoomMessage
+import com.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 
 
 class DebugRoomChatAdapter(
-    val context: Context,
+    private val debugRoomActivity: DebugRoomActivity,
     private val chatList: MutableList<DebugRoomMessage>
 ) : RecyclerView.Adapter<DebugRoomChatAdapter.ViewHolder>() {
 
@@ -30,6 +30,8 @@ class DebugRoomChatAdapter(
         const val CHAT_SELF_LONG = 2
         const val CHAT_BOT_LONG = 3
     }
+
+    private val context = debugRoomActivity as Context
 
     private val clipboard: ClipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
@@ -82,16 +84,15 @@ class DebugRoomChatAdapter(
                 holder.message.text = messageData.message
             }
             CHAT_SELF_LONG -> {
-                holder.message.text = messageData.message
-                    .substring(0..500)
-                    .replace("\u200B", "") + "..."
+                holder.message.text = messageData.message + "..."
                 holder.showAllButton.setOnClickListener {
+                    val fullMessage = debugRoomActivity.dir.resolve("chats").resolve(messageData.fileName!!).readText()
                     MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                         cornerRadius(25f)
                         cancelOnTouchOutside(true)
                         noAutoDismiss()
                         title(text = context.getString(R.string.title_show_all))
-                        message(text = messageData.message)
+                        message(text = fullMessage)
                         positiveButton(text = context.getString(R.string.close)) {
                             dismiss()
                         }
@@ -109,16 +110,15 @@ class DebugRoomChatAdapter(
                     holder.profileImage.setImageResource(R.drawable.default_profile)
                 }
 
-                holder.message.text = messageData.message
-                    .substring(0..500)
-                    .replace("\u200B", "") + "..."
+                holder.message.text = messageData.message + "..."
+                val fullMessage = debugRoomActivity.dir.resolve("chats").resolve(messageData.fileName!!).readText()
                 holder.showAllButton.setOnClickListener {
                     MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                         cornerRadius(25f)
                         cancelOnTouchOutside(true)
                         noAutoDismiss()
                         title(text = context.getString(R.string.title_show_all))
-                        message(text = messageData.message)
+                        message(text = fullMessage)
                         positiveButton(text = context.getString(R.string.close)) {
                             dismiss()
                         }
@@ -128,7 +128,7 @@ class DebugRoomChatAdapter(
         }
 
         holder.message.setOnLongClickListener {
-            val clip = ClipData.newPlainText("copied text", holder.message.text)
+            val clip = ClipData.newPlainText("디버그룸 채팅", holder.message.text)
             clipboard.setPrimaryClip(clip)
             Snackbar.make(it, "텍스트를 클립보드에 복사했어요.", Snackbar.LENGTH_SHORT).show()
             true

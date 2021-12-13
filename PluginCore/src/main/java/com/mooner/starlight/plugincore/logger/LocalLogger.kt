@@ -1,6 +1,6 @@
 package com.mooner.starlight.plugincore.logger
 
-import com.mooner.starlight.plugincore.core.Session.json
+import com.mooner.starlight.plugincore.Session.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -9,7 +9,7 @@ import kotlinx.serialization.encodeToString
 import java.io.File
 
 class LocalLogger(
-    private var _logs: ArrayList<LogData>,
+    private var _logs: MutableList<LogData>,
     private val file: File
 ) {
 
@@ -28,7 +28,7 @@ class LocalLogger(
             }
             val raw = file.readText()
             if (raw.isBlank()) return create(file.parentFile!!)
-            val logs: ArrayList<LogData> = try {
+            val logs: MutableList<LogData> = try {
                 json.decodeFromString(raw)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -45,8 +45,18 @@ class LocalLogger(
         flush()
     }
 
-    val logs: ArrayList<LogData>
+    val logs: MutableList<LogData>
         get() = this._logs
+
+    fun v(message: String) = v(tag = null, message = message)
+
+    fun v(tag: String?, message: String) = Logger.log(
+        LogData(
+            type = LogType.VERBOSE,
+            tag = tag,
+            message = message
+        )
+    )
 
     fun d(message: String) = d(tag = null, message = message)
 

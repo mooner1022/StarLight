@@ -78,35 +78,18 @@
         app:layout_collapseMode="parallax"
         app:srcCompat="@drawable/svg_top_title_sunset"/>
 
-    <androidx.core.widget.NestedScrollView
-            android:id="@+id/nestedScrollView"
+    <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPager"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:paddingTop="20dp"
+            android:paddingBottom="20dp"
             android:background="@color/transparent"
             android:elevation="0dp"
-            android:fillViewport="true"
             android:overScrollMode="never"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior" android:clipToPadding="false">
-
-        <androidx.viewpager2.widget.ViewPager2
-                android:id="@+id/viewPager"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-    </androidx.core.widget.NestedScrollView>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabNewProject"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="@dimen/card_margin"
-        android:layout_marginBottom="@dimen/fab_margin"
-        android:foregroundGravity="center"
-        android:padding="16dp"
-        android:src="@drawable/ic_round_add_white_24"
-        app:layout_anchorGravity="center"
-        app:tint="@color/white"/>
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            android:clipToPadding="true" android:fillViewport="true" android:fitsSystemWindows="true">
+    </androidx.viewpager2.widget.ViewPager2>
 
     <github.com.st235.lib_expandablebottombar.ExpandableBottomBar
             android:id="@+id/bottom_bar"
@@ -115,12 +98,12 @@
             android:layout_gravity="bottom|center_horizontal"
             android:layout_margin="@dimen/card_margin"
             app:exb_backgroundColor="#2e2e2e"
-            app:exb_backgroundCornerRadius="20dp"
+            app:exb_backgroundCornerRadius="24dp"
             app:exb_itemInactiveColor="#fff"
             app:exb_items="@menu/activity_main_drawer"
             app:layout_behavior="github.com.st235.lib_expandablebottombar.behavior.ExpandableBottomBarScrollableBehavior"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"/>
+            app:layout_constraintStart_toStartOf="parent" app:exb_elevation="0dp"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

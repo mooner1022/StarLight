@@ -24,6 +24,11 @@ class ConfigBuilder {
         objects.add(category.build())
     }
 
+    fun devModeCategory(block: DevCategoryConfigBuilder.() -> Unit) {
+        val category = DevCategoryConfigBuilder().apply(block)
+        objects.add(category.build())
+    }
+
     fun build(flush: Boolean = true): List<CategoryConfigObject> {
         val list = objects.toList()
         if (flush) {
@@ -58,6 +63,29 @@ class ConfigBuilder {
             return CategoryConfigObject(
                 id = id!!,
                 title = title?: "",
+                isDevModeOnly = false,
+                textColor = textColor,
+                items = items
+            )
+        }
+    }
+
+    inner class DevCategoryConfigBuilder {
+        var id: String? = null
+        var title: String? = null
+        @ColorInt
+        var textColor: Int = Color.parseColor("#000000")
+        var items: List<ConfigObject> = arrayListOf()
+
+        fun build(): CategoryConfigObject {
+            required("id", id)
+            //required("title", title)
+            require(items.isNotEmpty()) { "Field 'items' must not be empty" }
+
+            return CategoryConfigObject(
+                id = id!!,
+                title = title?: "",
+                isDevModeOnly = true,
                 textColor = textColor,
                 items = items
             )
@@ -70,34 +98,43 @@ class ConfigItemBuilder {
 
     inline fun color(color: () -> String): Int = Color.parseColor(color())
 
+    private fun add(builder: ConfigBuilder) {
+        objects += builder.build()
+    }
+
     fun button(block: ButtonConfigBuilder.() -> Unit) {
         val button = ButtonConfigBuilder().apply(block)
-        objects.add(button.build())
+        add(button)
     }
 
     fun toggle(block: ToggleConfigBuilder.() -> Unit) {
         val toggle = ToggleConfigBuilder().apply(block)
-        objects.add(toggle.build())
+        add(toggle)
     }
 
     fun slider(block: SliderConfigBuilder.() -> Unit) {
         val slider = SliderConfigBuilder().apply(block)
-        objects.add(slider.build())
+        add(slider)
     }
 
     fun string(block: StringConfigBuilder.() -> Unit) {
         val string = StringConfigBuilder().apply(block)
-        objects.add(string.build())
+        add(string)
+    }
+
+    fun password(block: PasswordConfigBuilder.() -> Unit) {
+        val pw = PasswordConfigBuilder().apply(block)
+        add(pw)
     }
 
     fun spinner(block: SpinnerConfigBuilder.() -> Unit) {
         val spinner = SpinnerConfigBuilder().apply(block)
-        objects.add(spinner.build())
+        add(spinner)
     }
 
     fun custom(block: CustomConfigBuilder.() -> Unit) {
         val custom = CustomConfigBuilder().apply(block)
-        objects.add(custom.build())
+        add(custom)
     }
 
     fun build(flush: Boolean = true): List<ConfigObject> {
@@ -144,6 +181,8 @@ class ConfigItemBuilder {
                 iconResId != null -> this.iconResId = iconResId
             }
         }
+
+        abstract fun build(): ConfigObject
     }
 
     inner class ButtonConfigBuilder: ConfigBuilder() {
@@ -152,7 +191,7 @@ class ConfigItemBuilder {
         @ColorInt
         var backgroundColor: Int? = null
 
-        fun build(): ButtonConfigObject {
+        override fun build(): ButtonConfigObject {
             required("id", id)
             required("title", title)
             required("onClickListener", onClickListener)
@@ -177,7 +216,7 @@ class ConfigItemBuilder {
     inner class ToggleConfigBuilder: ConfigBuilder() {
         var defaultValue: Boolean = false
 
-        fun build(): ToggleConfigObject {
+        override fun build(): ToggleConfigObject {
             required("id", id)
             required("title", title)
             required("icon, iconFile, iconResId", icon, iconFile, iconResId)
@@ -200,7 +239,7 @@ class ConfigItemBuilder {
         var max: Int? = null
         var defaultValue: Int = 0
 
-        fun build(): SliderConfigObject {
+        override fun build(): SliderConfigObject {
             required("id", id)
             required("title", title)
             required("max", max)
@@ -223,14 +262,11 @@ class ConfigItemBuilder {
 
     inner class StringConfigBuilder: ConfigBuilder() {
         var hint: String? = null
+        var defaultValue: String? = null
         var inputType: Int = InputType.TYPE_CLASS_TEXT
         var require: (String) -> String? = { null }
 
-        fun setIcon(icon: Icon? = null, iconFile: File? = null) {
-
-        }
-
-        fun build(): StringConfigObject{
+        override fun build(): StringConfigObject{
             required("id", id)
             required("title", title)
             required("icon, iconFile, iconResId", icon, iconFile, iconResId)
@@ -240,8 +276,34 @@ class ConfigItemBuilder {
                 title = title!!,
                 description = description,
                 hint = hint ?: "",
+                defaultValue = defaultValue,
                 inputType = inputType,
                 require = require,
+                icon = icon,
+                iconFile = iconFile,
+                iconResId = iconResId,
+                iconTintColor = iconTintColor,
+                dependency = dependency
+            )
+        }
+    }
+
+    inner class PasswordConfigBuilder: ConfigBuilder() {
+        var require: (value: String) -> String? = { null }
+        var hashCode: ((value: String) -> String)? = null
+
+        override fun build(): PasswordConfigObject{
+            required("id", id)
+            required("title", title)
+            required("hashCode", hashCode)
+            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
+
+            return PasswordConfigObject(
+                id = id!!,
+                title = title!!,
+                description = description,
+                require = require,
+                hashCode = hashCode!!,
                 icon = icon,
                 iconFile = iconFile,
                 iconResId = iconResId,
@@ -255,7 +317,7 @@ class ConfigItemBuilder {
         var items: List<String>? = null
         var defaultIndex: Int = 0
 
-        fun build(): SpinnerConfigObject {
+        override fun build(): SpinnerConfigObject {
             required("id", id)
             required("title", title)
             required("items", items)
@@ -276,11 +338,10 @@ class ConfigItemBuilder {
         }
     }
 
-    inner class CustomConfigBuilder {
-        var id: String? = null
+    inner class CustomConfigBuilder: ConfigBuilder(){
         var onInflate: ((view: View) -> Unit)? = null
 
-        fun build(): CustomConfigObject {
+        override fun build(): CustomConfigObject {
             required("id", id)
             required("onInflate", onInflate)
 

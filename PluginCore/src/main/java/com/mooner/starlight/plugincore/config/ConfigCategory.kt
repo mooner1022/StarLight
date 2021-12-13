@@ -3,6 +3,8 @@ package com.mooner.starlight.plugincore.config
 interface ConfigCategory {
     operator fun contains(key: String): Boolean
 
+    operator fun get(key: String): Any?
+
     fun getInt(key: String): Int?
 
     fun getInt(key: String, default: Int): Int = getInt(key)?: default

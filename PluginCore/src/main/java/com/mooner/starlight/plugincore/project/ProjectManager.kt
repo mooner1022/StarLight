@@ -1,28 +1,44 @@
 package com.mooner.starlight.plugincore.project
 
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.logger.Logger
 import java.io.File
 
 class ProjectManager(
     private val projectDir: File
 ) {
 
-    internal val listeners: MutableMap<String, (projects: List<Project>) -> Unit> = hashMapOf()
+    private val stateChangeListeners: MutableMap<String, (project: Project) -> Unit> = hashMapOf()
+    private val listUpdateListeners: MutableMap<String, (projects: List<Project>) -> Unit> = hashMapOf()
     internal var projects: MutableMap<String, Project> = hashMapOf()
 
     fun getEnabledProjects(): List<Project> {
         return projects.values.filter { it.info.isEnabled }
     }
 
-    fun bindListener(key: String, listener: (projects: List<Project>) -> Unit) {
-        if (!listeners.containsKey(key)) {
-            listeners[key] = listener
-        }
+    internal fun onStateChanged(project: Project) {
+        for (listener in stateChangeListeners.values)
+            listener(project)
     }
 
-    fun unbindListener(key: String) {
-        if (listeners.containsKey(key)) {
-            listeners.remove(key)
-        }
+    fun addOnStateChangedListener(key: String, listener: (project: Project) -> Unit) {
+        if (key !in stateChangeListeners)
+            stateChangeListeners[key] = listener
+    }
+
+    fun removeOnStateChangedListener(key: String) {
+        if (key in stateChangeListeners)
+            stateChangeListeners -= key
+    }
+
+    fun addOnListUpdatedListener(key: String, listener: (projects: List<Project>) -> Unit) {
+        if (key !in listUpdateListeners)
+            listUpdateListeners[key] = listener
+    }
+
+    fun removeOnListUpdatedListener(key: String) {
+        if (key in listUpdateListeners)
+            listUpdateListeners -= key
     }
 
     fun getProjects(): List<Project> {
@@ -36,7 +52,7 @@ class ProjectManager(
     fun updateProjectConfig(name: String, callListener: Boolean = false, block: ProjectInfo.() -> Unit) {
         val project = projects[name]?: throw IllegalArgumentException("Cannot find project [$name]")
         project.info.block()
-        project.saveConfig()
+        project.saveInfo()
         if (callListener) {
             callListeners()
         }
@@ -53,11 +69,15 @@ class ProjectManager(
         callListeners()
     }
 
-    fun callEvent(pluginId: String, eventName: String, args: Array<Any>) {
-        val projects = this.projects.values.filter { pluginId in it.info.listeners }
+    internal fun callEvent(eventId: String, eventName: String, args: Array<out Any>, onError: (e: Throwable) -> Unit) {
+        if (!Session.eventManager.hasEvent(eventId)) {
+            Logger.e(ProjectManager::class.simpleName, "Rejecting event call from '$eventId' which is not registered on EventManager")
+            return
+        }
+        val projects = this.projects.values.filter { eventId in it.info.listeners }
         if (projects.isEmpty()) return
         for (project in projects) {
-            project.callEvent(eventName, args)
+            project.callEvent(eventName, args, onError)
         }
     }
 
@@ -74,14 +94,18 @@ class ProjectManager(
     }
 
     private fun callListeners() {
-        for ((_, listener) in listeners) {
-            listener(projects.values.toList())
+        val projects = projects.values.toList()
+        for ((_, listener) in listUpdateListeners) {
+            listener(projects)
         }
     }
 
     internal fun purge() {
+        listUpdateListeners.clear()
+        stateChangeListeners.clear()
+
         for ((_, project) in projects) {
-            project.saveConfig()
+            //project.saveConfig()   ...Occurs file content loss
             project.destroy()
         }
     }

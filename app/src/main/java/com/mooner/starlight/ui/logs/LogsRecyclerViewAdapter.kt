@@ -1,13 +1,17 @@
 package com.mooner.starlight.ui.logs
 
 import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.logger.LogData
 import com.mooner.starlight.plugincore.logger.LogType
@@ -17,16 +21,17 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-@SuppressLint("SimpleDateFormat")
+@SuppressLint("ConstantLocale")
 class LogsRecyclerViewAdapter(
     private val context: Context,
 ): RecyclerView.Adapter<LogsRecyclerViewAdapter.LogsViewHolder>() {
 
     companion object {
-        private val fullDateFormat = SimpleDateFormat("MM/dd HH:mm")
-        private val hourDateFormat = SimpleDateFormat("HH:mm:ss")
+        private val fullDateFormat = SimpleDateFormat("MM/dd HH:mm", Locale.getDefault())
+        private val hourDateFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     }
 
+    private val clipboard: ClipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     var data: MutableList<LogData> = arrayListOf()
     private val calendar = Calendar.getInstance()
     private val mainScope: CoroutineScope
@@ -54,6 +59,12 @@ class LogsRecyclerViewAdapter(
         holder.title.text = viewData.tag?: viewData.type.name
         holder.content.text = viewData.message
         holder.timestamp.text = formatDate(viewData.millis)
+        holder.root.setOnLongClickListener {
+            val clip = ClipData.newPlainText("로그", viewData.toString())
+            clipboard.setPrimaryClip(clip)
+            Snackbar.make(it, "로그를 클립보드에 복사했어요.", Snackbar.LENGTH_SHORT).show()
+            true
+        }
     }
 
     fun pushLog(log: LogData, limit: Int = 0) {
@@ -82,9 +93,10 @@ class LogsRecyclerViewAdapter(
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     inner class LogsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val stateColor: CardView = itemView.findViewById(R.id.logInfoColor)
-        val title: TextView = itemView.findViewById(R.id.logTitleText)
-        val content: TextView = itemView.findViewById(R.id.logContentText)
-        val timestamp: TextView = itemView.findViewById(R.id.logTimeStampText)
+        val root: ConstraintLayout = itemView.findViewById(R.id.rootLayout)
+        val stateColor: CardView   = itemView.findViewById(R.id.logInfoColor)
+        val title: TextView        = itemView.findViewById(R.id.logTitleText)
+        val content: TextView      = itemView.findViewById(R.id.logContentText)
+        val timestamp: TextView    = itemView.findViewById(R.id.logTimeStampText)
     }
 }

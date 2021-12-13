@@ -1,9 +1,9 @@
 package com.mooner.starlight.plugincore.plugin
 
 import android.os.Environment
-import com.mooner.starlight.plugincore.core.Info
-import com.mooner.starlight.plugincore.core.Session
-import com.mooner.starlight.plugincore.core.Version
+import com.mooner.starlight.plugincore.Info
+import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Version
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.utils.Utils.Companion.readString
 import java.io.File
@@ -62,6 +62,7 @@ class PluginLoader {
                 val plugin = loadPlugin(info, file)
                 if (!Version.fromString(info.apiVersion).isCompatibleWith(Info.PLUGINCORE_VERSION)) {
                     Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin [${plugin.name}]")
+                    continue
                 }
                 plugins.add(plugin)
                 plugin.onEnable()
@@ -87,11 +88,11 @@ class PluginLoader {
             dataDir.mkdirs()
         }
 
-        Logger.i(T, "Loading plugin ${info.fullName}")
+        Logger.v(T, "Loading plugin ${info.fullName}")
         val loader: PluginClassLoader
         try {
             loader = PluginClassLoader(this, javaClass.classLoader!!, info, dataDir, file)
-            Logger.i(T, "Loaded plugin ${info.fullName} (${file.name})")
+            Logger.v(T, "Loaded plugin ${info.fullName} (${file.name})")
         } catch (e: InvalidPluginException) {
             Logger.e(T, "Failed to load plugin ${info.fullName} (${file.name}): $e")
             throw e
@@ -125,7 +126,7 @@ class PluginLoader {
                     }
                     writeFile.parentFile?.mkdirs()
                     writeFile.writeBytes(entStream.readBytes())
-                    Logger.d(T, "Loaded asset [${fileName}] from plugin [${plugin.info.fullName}]")
+                    Logger.v(T, "Loaded asset [${fileName}] from plugin [${plugin.info.fullName}]")
                 }
             }
         } catch (e: IOException) {
@@ -159,15 +160,17 @@ class PluginLoader {
         if (cachedClass != null) {
             return cachedClass
         } else {
-            for (current in loaders.keys) {
-                val loader = loaders[current]
-                try {
-                    cachedClass = loader!!.findClass(name, false)
-                } catch (cnfe: ClassNotFoundException) {
+            synchronized(loaders) {
+                for (current in loaders.keys) {
+                    val loader = loaders[current]
+                    try {
+                        cachedClass = loader!!.findClass(name, false)
+                    } catch (cnfe: ClassNotFoundException) {
 
-                }
-                if (cachedClass != null) {
-                    return cachedClass
+                    }
+                    if (cachedClass != null) {
+                        return cachedClass
+                    }
                 }
             }
         }

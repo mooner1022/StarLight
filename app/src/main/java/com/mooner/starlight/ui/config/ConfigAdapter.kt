@@ -15,15 +15,20 @@ import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.size.Scale
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.input.getInputField
+import com.afollestad.materialdialogs.input.input
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.config.*
-import com.mooner.starlight.plugincore.models.TypedString
+import com.mooner.starlight.plugincore.logger.Logger
 import org.angmarch.views.NiceSpinner
 
 class ConfigAdapter(
     private val context: Context,
-    private val onConfigChanged: (id: String, view: View, data: Any) -> Unit
+    private val onConfigChanged: (id: String, view: View?, data: Any) -> Unit
 ): RecyclerView.Adapter<ConfigAdapter.ConfigViewHolder>() {
     var data: List<ConfigObject> = mutableListOf()
     var saved: MutableMap<String, TypedString> = hashMapOf()
@@ -36,7 +41,8 @@ class ConfigAdapter(
             ConfigObjectType.SLIDER.viewType -> R.layout.config_slider
             ConfigObjectType.STRING.viewType -> R.layout.config_string
             ConfigObjectType.SPINNER.viewType -> R.layout.config_spinner
-            ConfigObjectType.BUTTON_FLAT.viewType -> R.layout.config_button_flat
+            ConfigObjectType.BUTTON_FLAT.viewType,
+            ConfigObjectType.PASSWORD.viewType -> R.layout.config_button_flat
             ConfigObjectType.BUTTON_CARD.viewType -> R.layout.config_button_card
             ConfigObjectType.CUSTOM.viewType -> R.layout.config_custom
             else -> 0
@@ -51,6 +57,7 @@ class ConfigAdapter(
         return data[position].viewType
     }
 
+    @SuppressLint("CheckResult")
     override fun onBindViewHolder(holder: ConfigViewHolder, position: Int) {
         val viewData = data[position]
         fun getDefault(): Any {
@@ -146,6 +153,32 @@ class ConfigAdapter(
                     }
                 }
             }
+            ConfigObjectType.PASSWORD.viewType -> {
+                val data = viewData as PasswordConfigObject
+                holder.layoutButton.setOnClickListener {
+                    if (!holder.layoutButton.isEnabled) return@setOnClickListener
+                    MaterialDialog(it.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                        cornerRadius(25f)
+                        title(text = data.title)
+                        input(waitForPositiveButton = false) { dialog, text ->
+                            val require = data.require(text.toString())
+                            if (require != null) {
+                                dialog.getInputField().error = require
+                                return@input
+                            }
+                        }
+                        positiveButton(text = "설정") { dialog ->
+                            val password = dialog.getInputField().text.toString()
+                            val encoded = data.hashCode(password)
+                            Logger.v("password= $password, encoded= $encoded")
+                            onConfigChanged(viewData.id, null, encoded)
+                        }
+                        negativeButton(text = "취소") { dialog ->
+                            dialog.dismiss()
+                        }
+                    }
+                }
+            }
             ConfigObjectType.SPINNER.viewType -> {
                 holder.spinner.apply {
                     setBackgroundColor(context.getColor(R.color.transparent))
@@ -156,22 +189,23 @@ class ConfigAdapter(
                     selectedIndex = getDefault() as Int
                 }
             }
-            ConfigObjectType.BUTTON_FLAT.viewType -> {
-                val langConf = viewData as ButtonConfigObject
+            ConfigObjectType.BUTTON_FLAT.viewType,
+            ConfigObjectType.PASSWORD.viewType -> {
+                val data = viewData as ButtonConfigObject
                 holder.layoutButton.setOnClickListener {
-                    if (holder.layoutButton.isEnabled) langConf.onClickListener(it)
+                    if (holder.layoutButton.isEnabled) data.onClickListener(it)
                 }
-                if (langConf.backgroundColor != null) {
-                    holder.layoutButton.setBackgroundColor(langConf.backgroundColor!!)
+                if (data.backgroundColor != null) {
+                    holder.layoutButton.setBackgroundColor(data.backgroundColor!!)
                 }
             }
             ConfigObjectType.BUTTON_CARD.viewType -> {
-                val langConf = viewData as ButtonConfigObject
+                val data = viewData as ButtonConfigObject
                 holder.cardViewButton.setOnClickListener {
-                    if (holder.cardViewButton.isEnabled) langConf.onClickListener(it)
+                    if (holder.cardViewButton.isEnabled) data.onClickListener(it)
                 }
-                if (langConf.backgroundColor != null) {
-                    holder.cardViewButton.setCardBackgroundColor(langConf.backgroundColor!!)
+                if (data.backgroundColor != null) {
+                    holder.cardViewButton.setCardBackgroundColor(data.backgroundColor!!)
                 }
             }
             ConfigObjectType.CUSTOM.viewType -> {
@@ -264,7 +298,8 @@ class ConfigAdapter(
                 ConfigObjectType.SPINNER.viewType -> {
                     spinner = itemView.findViewById(R.id.spinner)
                 }
-                ConfigObjectType.BUTTON_FLAT.viewType -> {
+                ConfigObjectType.BUTTON_FLAT.viewType,
+                ConfigObjectType.PASSWORD.viewType -> {
                     layoutButton = itemView.findViewById(R.id.layout_configButton)
                 }
                 ConfigObjectType.BUTTON_CARD.viewType -> {

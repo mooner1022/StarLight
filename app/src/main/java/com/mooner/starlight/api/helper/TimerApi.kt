@@ -1,38 +1,38 @@
 package com.mooner.starlight.api.helper
 
-import com.mooner.starlight.plugincore.api.Api
-import com.mooner.starlight.plugincore.api.ApiFunction
-import com.mooner.starlight.plugincore.api.InstanceType
-import com.mooner.starlight.plugincore.project.Project
-import java.util.*
-import java.util.function.Consumer
+/*
+ * TODO: 콜백 함수 구현 문제 해결. 각 언어별 Implementation?
+ */
 
+/*
 class TimerApi: Api<TimerApi.Timer>() {
 
+    interface TimerCallback {
+        fun run()
+    }
+
     class Timer {
-        fun schedule(millis: Long): java.util.Timer {
+        fun schedule(millis: Long, callback: TimerCallback): java.util.Timer {
             /*
             locker.acquire -> run                   -> if(Timer.isRunning()) else -> locker.reease()
                                 |--   Timer.schedule() --|->       await          ->-|
              */
-            /*
+
             val threadName = Thread.currentThread().name
             JobLocker.withParent(threadName).requestLock()
             return java.util.Timer().apply {
                 schedule(millis) {
-                    //callback.accept(null)
                     println("timer called")
-                    JobLocker.requestRelease(jobName)
+                    callback.run()
+                    JobLocker.withParent(threadName).requestRelease()
                 }
             }
-
-             */
-            return java.util.Timer()
         }
 
         /*
          * 메모리 존나샘
          */
+        /*
         fun schedule(initialDelay: Long, period: Long): java.util.Timer {
             /*
             val jobName = Thread.currentThread().name
@@ -47,14 +47,15 @@ class TimerApi: Api<TimerApi.Timer>() {
              */
             return java.util.Timer()
         }
+         */
     }
 
     override val name: String = "Timer"
     override val instanceType: InstanceType = InstanceType.OBJECT
-    override val functions: List<ApiFunction> = listOf(
+    override val objects: List<ApiFunction> = listOf(
         function {
             name = "schedule"
-            args = arrayOf(Long::class.java, Consumer::class.java)
+            args = arrayOf(Long::class.java, Function0::class.java)
             returns = java.util.Timer::class.java
         }
     )
@@ -65,3 +66,4 @@ class TimerApi: Api<TimerApi.Timer>() {
     }
 
 }
+*/
