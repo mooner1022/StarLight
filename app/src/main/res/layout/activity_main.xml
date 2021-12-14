@@ -91,19 +91,20 @@
             android:overScrollMode="never"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
             android:clipToPadding="true" android:fillViewport="true" android:fitsSystemWindows="true">
-        <github.com.st235.lib_expandablebottombar.ExpandableBottomBar
-                android:id="@+id/bottom_bar"
-                android:layout_width="match_parent"
-                android:layout_height="70dp"
-                android:layout_gravity="bottom|center_horizontal"
-                app:exb_backgroundColor="@color/main_purple"
-                app:exb_backgroundCornerRadius="@dimen/card_radius"
-                app:exb_itemInactiveColor="#fff"
-                app:exb_items="@menu/activity_main_drawer"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" app:exb_elevation="5dp"
-                android:layout_margin="16dp"/>
     </androidx.viewpager2.widget.ViewPager2>
+
+    <github.com.st235.lib_expandablebottombar.ExpandableBottomBar
+            android:id="@+id/bottom_bar"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:layout_gravity="bottom|center_horizontal"
+            app:exb_backgroundColor="@color/main_purple"
+            app:exb_backgroundCornerRadius="@dimen/card_radius"
+            app:exb_itemInactiveColor="#fff"
+            app:exb_items="@menu/activity_main_drawer"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" app:exb_elevation="5dp"
+            android:layout_margin="16dp"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
