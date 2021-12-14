@@ -74,10 +74,14 @@ tools:context=".ui.config.ConfigActivity">
 <ImageView
         android:id="@+id/imageViewLogo"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_gravity="top|end"
-        android:scaleType="fitStart"
+        android:layout_height="wrap_content"
+        android:scaleType="fitEnd"
+        android:layout_alignParentEnd="true"
+        android:foregroundGravity="right"
         app:layout_collapseMode="parallax"
+        android:adjustViewBounds="true"
+        android:layout_gravity="end"
+        android:maxHeight="200dp"
         app:srcCompat="@drawable/svg_top_title_sunset"/>
 
 <ImageView
