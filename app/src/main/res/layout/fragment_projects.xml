@@ -19,12 +19,11 @@
             android:layout_height="wrap_content">
         <androidx.cardview.widget.CardView
                 android:id="@+id/cardViewProjectAlign"
-                android:layout_width="308dp"
                 android:layout_height="@dimen/card_height"
                 android:layout_marginStart="@dimen/card_margin"
                 app:cardCornerRadius="@dimen/card_radius"
                 app:cardElevation="0dp"
-                app:cardMaxElevation="0dp">
+                app:cardMaxElevation="0dp" android:layout_weight="1" android:layout_width="0dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
@@ -73,7 +72,8 @@
                 android:src="@drawable/ic_round_add_white_24"
                 app:tint="@color/white" app:elevation="0dp"
                 app:rippleColor="@color/main_purple" app:backgroundTint="@color/main_purple"
-                android:layout_marginStart="8dp"/>
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="@dimen/card_margin"/>
     </LinearLayout>
 
     <androidx.cardview.widget.CardView
