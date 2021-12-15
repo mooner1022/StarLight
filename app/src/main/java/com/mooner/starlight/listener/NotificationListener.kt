@@ -21,7 +21,19 @@ import java.util.*
 
 class NotificationListener: NotificationListenerService() {
 
-    private val sessions: MutableMap<String, Notification.Action> = WeakHashMap()
+    companion object {
+        private val chatRooms: MutableMap<String, ChatRoom> = WeakHashMap()
+        private var lastReceivedRoom: ChatRoom? = null
+
+        fun hasRoom(roomName: String): Boolean = roomName in chatRooms
+
+        fun send(message: String): Boolean = lastReceivedRoom?.send(message)?: false
+        fun sendTo(roomName: String, message: String): Boolean = chatRooms[roomName]?.send(message)?: false
+
+        fun markAsRead(): Boolean = lastReceivedRoom?.markAsRead()?: false
+        fun markAsRead(roomName: String): Boolean = chatRooms[roomName]?.markAsRead()?: false
+    }
+
     private val isGlobalPowerOn: Boolean
         get() = Session.globalConfig.getCategory("general").getBoolean("global_power", true)
 
@@ -39,11 +51,18 @@ class NotificationListener: NotificationListenerService() {
                     val message = notification.extras["android.text"].toString()
                     val sender = notification.extras.getString("android.title").toString()
                     val room = act.title.toString().replaceFirst("답장 (", "").dropLast(1)
-                    val base64 = notification.getLargeIcon().loadDrawable(applicationContext).toBase64()
+                    //val base64 = notification.getLargeIcon().loadDrawable(applicationContext).toBase64()
+                    val profileBitmap = (notification.getLargeIcon().loadDrawable(applicationContext) as BitmapDrawable).bitmap
                     val isGroupChat = notification.extras["android.text"] is SpannableString
                     val hasMention = notification.extras["android.text"] is SpannableString
-                    if (!sessions.containsKey(room)) {
-                        sessions[room] = act
+
+                    if (room !in chatRooms) {
+                        chatRooms[room] = ChatRoomImpl(
+                            name = room,
+                            isGroupChat = isGroupChat,
+                            session = act,
+                            context = applicationContext
+                        )
                     }
 
                     val data = Message(
@@ -52,12 +71,7 @@ class NotificationListener: NotificationListenerService() {
                             name = sender,
                             profileBitmap = profileBitmap
                         ),
-                        room = ChatRoomImpl(
-                            name = room,
-                            isGroupChat = isGroupChat,
-                            session = act,
-                            context = applicationContext
-                        ),
+                        room = chatRooms[room]!!,
                         packageName = sbn.packageName,
                         hasMention = hasMention
                     )
@@ -95,20 +109,5 @@ class NotificationListener: NotificationListenerService() {
                 }
             }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Logger.v("NotificationListener", "onDestroy() called")
-        sessions.clear()
-    }
-
-    private fun Drawable.toBase64(): String {
-        val bitDw = this as BitmapDrawable
-        val bitmap = bitDw.bitmap
-        val stream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-        val bitmapByte = stream.toByteArray()
-        return Base64.encodeToString(bitmapByte, Base64.DEFAULT)
     }
 }
