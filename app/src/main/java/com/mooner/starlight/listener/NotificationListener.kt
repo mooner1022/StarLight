@@ -50,8 +50,7 @@ class NotificationListener: NotificationListenerService() {
                         message = message,
                         sender = ChatSender(
                             name = sender,
-                            profileBase64 = base64,
-                            profileHash = base64.hashCode()
+                            profileBitmap = profileBitmap
                         ),
                         room = ChatRoomImpl(
                             name = room,
