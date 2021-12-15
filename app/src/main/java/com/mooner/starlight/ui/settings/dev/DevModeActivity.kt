@@ -57,7 +57,7 @@ fun Context.startDevModeActivity() {
         },
         onConfigChanged = { parentId, id, _, data ->
             Session.globalConfig.edit {
-                getCategory(parentId)[id] = data
+                getCategory(parentId).setAny(id, data)
             }
         }
     )

@@ -34,17 +34,17 @@ class PluginsFragment : Fragment() {
 
     companion object {
         @JvmStatic
-        private val ALIGN_GANADA: Align<Plugin> = Align(
+        private val ALIGN_GANADA: Align<StarlightPlugin> = Align(
             name = "가나다 순",
             reversedName = "가나다 역순",
             icon = R.drawable.ic_round_sort_by_alpha_24,
             sort = { list, _ ->
-                list.sortedBy { it.name }
+                list.sortedBy { it.info.name }
             }
         )
 
         @JvmStatic
-        private val ALIGN_FILE_SIZE: Align<Plugin> = Align(
+        private val ALIGN_FILE_SIZE: Align<StarlightPlugin> = Align(
             name = "파일 크기 순",
             reversedName = "파일 크기 역순",
             icon = R.drawable.ic_round_plugins_24,
@@ -64,7 +64,7 @@ class PluginsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var listAdapter: PluginsListAdapter? = null
-    private val plugins: List<Plugin> by lazy {
+    private val plugins: List<StarlightPlugin> by lazy {
         pluginManager.getPlugins().toList()
     }
 
@@ -72,7 +72,7 @@ class PluginsFragment : Fragment() {
         ALIGN_GANADA,
         ALIGN_FILE_SIZE,
     )
-    private var alignState: Align<Plugin> = getAlignByName(
+    private var alignState: Align<StarlightPlugin> = getAlignByName(
         globalConfig[CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name]
     )?: DEFAULT_ALIGN
     private var isReversed: Boolean = globalConfig[CONFIG_PLUGINS_REVERSED, "false"].toBoolean()
@@ -142,16 +142,16 @@ class PluginsFragment : Fragment() {
         return binding.root
     }
 
-    private fun getAlignByName(name: String): Align<Plugin>? = aligns.find { it.name == name }
+    private fun getAlignByName(name: String): Align<StarlightPlugin>? = aligns.find { it.name == name }
 
-    private fun Array<Align<Plugin>>.toGridItems(): List<BasicGridItem> = this.map { item ->
+    private fun Array<Align<StarlightPlugin>>.toGridItems(): List<BasicGridItem> = this.map { item ->
         BasicGridItem(
             iconRes = item.icon,
             title = item.name
         )
     }
 
-    private fun sortData(): List<Plugin> {
+    private fun sortData(): List<StarlightPlugin> {
         val aligned = alignState.sort(
             plugins,
             mapOf()

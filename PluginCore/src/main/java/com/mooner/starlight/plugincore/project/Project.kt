@@ -10,7 +10,7 @@ import com.mooner.starlight.plugincore.config.FileConfig
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.utils.Utils.Companion.hasFile
+import com.mooner.starlight.plugincore.utils.hasFile
 import kotlinx.coroutines.*
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -166,7 +166,7 @@ class Project (
      *
      * @param throwException if *true*, throws exceptions occurred during compilation.
      */
-    fun compile(throwException: Boolean = false) {
+    fun compile(throwException: Boolean = false): Boolean {
         try {
             val rawCode: String = (directory.listFiles()?.find { it.isFile && it.name == info.mainScript }?: throw IllegalArgumentException(
                     "Cannot find main script ${info.mainScript} for project ${info.name}"
@@ -187,7 +187,20 @@ class Project (
             e.printStackTrace()
             logger.e(tag, e.toString())
             if (throwException) throw e
+            return false
         }
+        return true
+    }
+
+    fun setEnabled(enabled: Boolean): Boolean {
+        if (isCompiled) {
+            if (info.isEnabled) return true
+            info.isEnabled = true
+            saveInfo()
+            requestUpdate()
+            return true
+        }
+        return false
     }
 
     /**
@@ -228,12 +241,7 @@ class Project (
         else JobLocker.withParent(threadName!!).activeJobs()
     }
 
-    /**
-     * Cancels all running jobs and releases [engine] if the project is compiled.
-     *
-     * @param requestUpdate if *true*, requests update of UI
-     */
-    fun destroy(requestUpdate: Boolean = false) {
+    fun stopAllJobs() {
         if (context != null) {
             if (threadName != null) {
                 JobLocker.withParent(threadName!!).purge()
@@ -241,6 +249,15 @@ class Project (
             (context as CoroutineDispatcher).cancel()
             context = null
         }
+    }
+
+    /**
+     * Cancels all running jobs and releases [engine] if the project is compiled.
+     *
+     * @param requestUpdate if *true*, requests update of UI
+     */
+    fun destroy(requestUpdate: Boolean = false) {
+        stopAllJobs()
         if (engine != null) {
             if (lang.requireRelease)
                 lang.release(engine!!)

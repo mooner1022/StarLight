@@ -12,7 +12,7 @@ import com.mooner.starlight.plugincore.event.callEvent
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.ProjectLoader
-import com.mooner.starlight.plugincore.utils.Utils.Companion.getFileSize
+import com.mooner.starlight.plugincore.utils.getFileSize
 import com.mooner.starlight.plugincore.widget.Widget
 import kotlinx.serialization.decodeFromString
 import java.io.File
@@ -59,9 +59,6 @@ abstract class StarlightPlugin: Plugin, EventListener {
     }
 
     override val configObjects: List<CategoryConfigObject> = listOf()
-
-    override val name: String
-        get() = info.fullName
 
     override fun isEnabled(): Boolean = isEnabled
 
@@ -146,7 +143,6 @@ abstract class StarlightPlugin: Plugin, EventListener {
         result = 31 * result + info.hashCode()
         result = 31 * result + fileSize.hashCode()
         result = 31 * result + configObjects.hashCode()
-        result = 31 * result + name.hashCode()
         return result
     }
 }

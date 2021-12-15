@@ -6,8 +6,6 @@ import com.mooner.starlight.plugincore.config.Config
 
 interface Plugin {
 
-    val name: String
-
     val configObjects: List<CategoryConfigObject>
 
     @Deprecated(

@@ -108,18 +108,20 @@ class JSRhino: Language() {
         val shared = context.initStandardObjects()
         val scope = context.newObject(shared)
         //val engine = ScriptEngineManager().getEngineByName("rhino")!!
-        for(methodBlock in apis) {
-            val instance = methodBlock.getInstance(project!!)
+        if (project != null) {
+            for(methodBlock in apis) {
+                val instance = methodBlock.getInstance(project)
 
-            when(methodBlock.instanceType) {
-                InstanceType.CLASS -> {
-                    context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
+                when(methodBlock.instanceType) {
+                    InstanceType.CLASS -> {
+                        context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
+                    }
+                    InstanceType.OBJECT -> {
+                        ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(instance, scope))
+                    }
                 }
-                InstanceType.OBJECT -> {
-                    ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(instance, scope))
-                }
+                //engine.put(methodBlock.blockName, methodBlock.instance)
             }
-            //engine.put(methodBlock.blockName, methodBlock.instance)
         }
         //engine.eval(code)
         context.evaluateString(scope, code, project?.info?.name?: name, 1, null)

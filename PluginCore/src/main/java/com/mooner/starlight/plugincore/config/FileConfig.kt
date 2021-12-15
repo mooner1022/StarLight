@@ -32,13 +32,13 @@ class FileConfig(
 
     override operator fun get(id: String): ConfigCategory = getCategory(id)
 
-    override fun getCategory(id: String): ConfigCategory {
+    override fun getCategory(id: String): MutableConfigCategory {
         if (id !in data)
             data[id] = mutableMapOf()
         return getCategoryOrNull(id)!!
     }
 
-    override fun getCategoryOrNull(id: String): ConfigCategory? {
+    override fun getCategoryOrNull(id: String): MutableConfigCategory? {
         val categoryData = data[id]
         return if (categoryData == null)
             null
