@@ -1,18 +1,27 @@
 
 package com.mooner.starlight.ui.home
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mooner.starlight.databinding.FragmentHomeBinding
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.widget.Widget
+import com.mooner.starlight.ui.widget.config.WidgetConfigActivity
+import com.mooner.starlight.ui.widget.config.WidgetsAdapter
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
+import kotlinx.serialization.decodeFromString
 
 class HomeFragment : Fragment() {
 
+    private lateinit var resultLauncher: ActivityResultLauncher<Intent>
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
@@ -81,14 +90,30 @@ class HomeFragment : Fragment() {
         */
 
         widgetsAdapter = WidgetsAdapter(requireContext()).apply {
-            data = Session.widgetManager.getWidgets()
-            notifyItemRangeInserted(0, data.size)
+            data = getWidgets()
+            notifyAllItemInserted()
         }
 
         with(binding.widgets) {
             itemAnimator = FadeInUpAnimator()
             layoutManager = LinearLayoutManager(requireContext())
             adapter = widgetsAdapter
+        }
+
+        resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == WidgetConfigActivity.RESULT_EDITED) {
+                widgetsAdapter!!.apply {
+                    onDestroy()
+                    notifyItemRangeRemoved(0, data.size)
+                    data = getWidgets()
+                    notifyItemRangeInserted(0, data.size)
+                }
+                Logger.v("List updated")
+            }
+        }
+        binding.cardViewConfigWidget.setOnClickListener {
+            val intent = Intent(requireActivity(), WidgetConfigActivity::class.java)
+            resultLauncher.launch(intent)
         }
 
         return binding.root
@@ -112,6 +137,19 @@ class HomeFragment : Fragment() {
         unbindLogger()
     }
     */
+
+    private fun getWidgets(): List<Widget> {
+        val widgetIds: List<String> = Session.json.decodeFromString(Session.globalConfig.getCategory("widgets").getString("ids", "[]"))
+        Logger.v("ids= $widgetIds")
+        val widgets: MutableList<Widget> = mutableListOf()
+        for (id in widgetIds) {
+            with(Session.widgetManager.getWidgetById(id)) {
+                if (this != null)
+                    widgets += this
+            }
+        }
+        return widgets
+    }
 
     override fun onPause() {
         super.onPause()
