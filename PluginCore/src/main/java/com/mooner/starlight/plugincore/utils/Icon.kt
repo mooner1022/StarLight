@@ -7,6 +7,9 @@ enum class Icon(
     @DrawableRes
     val drawableRes: Int
 ) {
+    NONE(
+        drawableRes = -1
+    ),
     REFRESH(
         drawableRes = R.drawable.ic_round_refresh_24
     ),
