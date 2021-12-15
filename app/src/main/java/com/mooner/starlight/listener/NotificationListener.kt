@@ -1,21 +1,22 @@
 package com.mooner.starlight.listener
 
 import android.app.Notification
-import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.text.SpannableString
-import android.util.Base64
+import android.widget.Toast
+import com.mooner.starlight.listener.legacy.ImageDB
+import com.mooner.starlight.listener.legacy.LegacyEvent
+import com.mooner.starlight.listener.legacy.Replier
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.chat.ChatRoom
 import com.mooner.starlight.plugincore.chat.ChatRoomImpl
 import com.mooner.starlight.plugincore.chat.ChatSender
 import com.mooner.starlight.plugincore.chat.Message
 import com.mooner.starlight.plugincore.event.callEvent
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.utils.PACKAGE_KAKAO_TALK
-import java.io.ByteArrayOutputStream
 import java.util.*
 
 class NotificationListener: NotificationListenerService() {
@@ -67,6 +68,26 @@ class NotificationListener: NotificationListenerService() {
                     Session.eventManager.callEvent<DefaultEvent>(arrayOf(data)) { e ->
                         e.printStackTrace()
                         Logger.e("NotificationListener", e)
+                    }
+
+                    if (Session.globalConfig.getCategory("legacy").getBoolean("use_legacy_event", false)) {
+                        val replier = Replier { roomName, msg, hideToast ->
+                            val chatRoom = if (roomName == null) lastReceivedRoom else chatRooms[roomName]
+                            if (chatRoom == null) {
+                                if (!hideToast)
+                                    Toast.makeText(applicationContext, "메세지가 수신되지 않은 방 '$roomName' 에 메세지를 보낼 수 없습니다.", Toast.LENGTH_LONG).show()
+                                false
+                            } else {
+                                chatRoom.send(msg)
+                            }
+                        }
+
+                        val imageDB = ImageDB(profileBitmap)
+
+                        Session.eventManager.callEvent<LegacyEvent>(arrayOf(room, message, sender, isGroupChat, replier, imageDB)) { e ->
+                            e.printStackTrace()
+                            Logger.e("NotificationListener", e)
+                        }
                     }
                     //stopSelf()
                 } catch (e: Exception) {

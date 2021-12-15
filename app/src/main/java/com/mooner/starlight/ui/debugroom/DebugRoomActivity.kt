@@ -17,6 +17,9 @@ import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.databinding.ActivityDebugRoomBinding
 import com.mooner.starlight.listener.DefaultEvent
+import com.mooner.starlight.listener.legacy.ImageDB
+import com.mooner.starlight.listener.legacy.LegacyEvent
+import com.mooner.starlight.listener.legacy.Replier
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.globalConfig
 import com.mooner.starlight.plugincore.Session.json
@@ -187,6 +190,33 @@ class DebugRoomActivity: AppCompatActivity() {
                     }
                 }
             }.show()
+        }
+
+        if (globalConfig.getCategory("legacy").getBoolean("use_legacy_event", false)) {
+            val replier = Replier { _, msg, _ ->
+                onSend(msg)
+                true
+            }
+
+            val imageDB = ImageDB(selfProfileBitmap)
+
+            Session.eventManager.callEvent<LegacyEvent>(arrayOf(roomName, message, sender, isGroupChat, replier, imageDB)) { e ->
+                Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
+                    setAction("자세히 보기") {
+                        MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                            cornerRadius(25f)
+                            cancelOnTouchOutside(false)
+                            noAutoDismiss()
+                            lifecycleOwner(this@DebugRoomActivity)
+                            title(text = project.info.name + " 에러 로그")
+                            message(text = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString())
+                            positiveButton(text = "닫기") {
+                                dismiss()
+                            }
+                        }
+                    }
+                }.show()
+            }
         }
     }
 

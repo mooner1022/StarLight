@@ -8,6 +8,11 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -134,4 +139,10 @@ fun showLogsDialog(context: Context): MaterialDialog {
     }
 }
 
-val isDevMode get() = Session.globalConfig.getCategory("dev").getBoolean("dev_mode", false)
+fun Uri.toBitmap(context: Context): Bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, this))
+} else {
+    MediaStore.Images.Media.getBitmap(context.contentResolver, this)
+}
+
+val isDevMode get() = globalConfig.getCategory("dev").getBoolean("dev_mode", false)

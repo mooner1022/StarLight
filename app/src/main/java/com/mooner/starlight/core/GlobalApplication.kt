@@ -1,6 +1,8 @@
 package com.mooner.starlight.core
 
+import android.annotation.SuppressLint
 import android.app.Application
+import android.content.Context
 import com.mooner.starlight.core.session.ApplicationSession
 import com.mooner.starlight.plugincore.logger.Logger
 import kotlinx.coroutines.CoroutineScope
@@ -11,11 +13,18 @@ class GlobalApplication: Application() {
 
     companion object {
         private val T = GlobalApplication::class.simpleName
+
+        @SuppressLint("StaticFieldLeak")
+        @JvmStatic
+        private var mContext: Context? = null
+        fun requireContext(): Context = mContext!!
     }
 
     override fun onCreate() {
         super.onCreate()
         Logger.v(T, "Application onCreate() called")
+
+        mContext = applicationContext
 
         val pref = getSharedPreferences("general", 0)
         //pref.edit().clear().commit()
