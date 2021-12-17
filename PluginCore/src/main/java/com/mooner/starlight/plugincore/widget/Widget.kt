@@ -36,8 +36,8 @@ abstract class Widget {
         assert(this@Widget.size == WidgetSize.Wrap) { "Widget size should be WidgetSize.Wrap to use updateHeight()" }
         assert(Thread.currentThread().name == "main") { "View function should only be accessed from main thread" }
         params {
-            width = ViewGroup.LayoutParams.WRAP_CONTENT
-            height = ViewGroup.LayoutParams.MATCH_PARENT
+            width = ViewGroup.LayoutParams.MATCH_PARENT
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
         }
         requestLayout()
     }
