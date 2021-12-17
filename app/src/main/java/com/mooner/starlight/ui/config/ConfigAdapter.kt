@@ -162,7 +162,8 @@ class ConfigAdapter(
                 holder.layoutButton.setOnClickListener {
                     if (!holder.layoutButton.isEnabled) return@setOnClickListener
                     MaterialDialog(it.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                        cornerRadius(25f)
+                        cornerRadius(context.resources.getDimension(R.dimen.card_radius))
+                        maxWidth(res = R.dimen.dialog_width)
                         title(text = data.title)
                         input(waitForPositiveButton = false) { dialog, text ->
                             val require = data.require(text.toString())

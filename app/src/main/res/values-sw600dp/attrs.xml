@@ -20,5 +20,5 @@
         <attr name="expandableCardRadius" format="dimension"/>
     </declare-styleable>
 
-    <integer name="layoutMode">0</integer>
+    <integer name="layoutMode">1</integer>
 </resources>

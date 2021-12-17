@@ -10,12 +10,16 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.mooner.starlight.databinding.FragmentHomeBinding
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.widget.Widget
 import com.mooner.starlight.ui.widget.config.WidgetConfigActivity
 import com.mooner.starlight.ui.widget.config.WidgetsAdapter
+import com.mooner.starlight.utils.LAYOUT_DEFAULT
+import com.mooner.starlight.utils.LAYOUT_TABLET
+import com.mooner.starlight.utils.layoutMode
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.serialization.decodeFromString
 
@@ -50,53 +54,22 @@ class HomeFragment : Fragment() {
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
-        /*
-        val logs = Logger.filterNot(LogType.DEBUG)
-        mAdapter = LogsRecyclerViewAdapter(requireContext())
+        val context = requireContext()
 
-        if (logs.isNotEmpty()) {
-            val mLayoutManager = LinearLayoutManager(requireContext()).apply {
-                reverseLayout = true
-                stackFromEnd = true
-            }
-            mAdapter.data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
-            binding.rvLogs.apply {
-                itemAnimator = FadeInLeftAnimator()
-                layoutManager = mLayoutManager
-                adapter = mAdapter
-                visibility = View.VISIBLE
-            }
-            binding.textViewNoLogsYet.visibility = View.GONE
-            mAdapter.notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
-        }
-
-        bindLogger(mAdapter)
-
-        binding.projectsRecyclerView
-
-        binding.tvMoreLogs.setOnClickListener {
-            Utils.showLogsDialog(requireContext())
-        }
-
-        binding.buttonMoreLogs.setOnClickListener {
-            Utils.showLogsDialog(requireContext())
-        }
-
-        binding.uptimeText.setInAnimation(requireContext(), R.anim.text_fade_in)
-        binding.uptimeText.setOutAnimation(requireContext(), R.anim.text_fade_out)
-
-        uptimeTimer = Timer()
-        uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
-        */
-
-        widgetsAdapter = WidgetsAdapter(requireContext()).apply {
+        widgetsAdapter = WidgetsAdapter(context).apply {
             data = getWidgets()
             notifyAllItemInserted()
         }
 
+        val mLayoutManager = when(context.layoutMode) {
+            LAYOUT_DEFAULT -> LinearLayoutManager(context)
+            LAYOUT_TABLET -> StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+            else -> LinearLayoutManager(context)
+        }
+
         with(binding.widgets) {
             itemAnimator = FadeInUpAnimator()
-            layoutManager = LinearLayoutManager(requireContext())
+            layoutManager = mLayoutManager
             adapter = widgetsAdapter
         }
 
@@ -118,29 +91,9 @@ class HomeFragment : Fragment() {
 
         return binding.root
     }
-    /*
-    override fun onResume() {
-        super.onResume()
-        if (uptimeTimer == null) {
-            uptimeTimer = Timer()
-            uptimeTimer!!.schedule(updateUpTimeTask, 0, 1000)
-        }
-        bindLogger(mAdapter)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        if (uptimeTimer != null) {
-            uptimeTimer!!.cancel()
-            uptimeTimer = null
-        }
-        unbindLogger()
-    }
-    */
 
     private fun getWidgets(): List<Widget> {
         val widgetIds: List<String> = Session.json.decodeFromString(Session.globalConfig.getCategory("widgets").getString("ids", "[]"))
-        Logger.v("ids= $widgetIds")
         val widgets: MutableList<Widget> = mutableListOf()
         for (id in widgetIds) {
             with(Session.widgetManager.getWidgetById(id)) {
@@ -165,13 +118,6 @@ class HomeFragment : Fragment() {
         super.onDestroyView()
         widgetsAdapter?.onDestroy()
         widgetsAdapter = null
-        /*
-        if (uptimeTimer != null) {
-            uptimeTimer!!.cancel()
-            uptimeTimer = null
-        }
-        unbindLogger()
-        */
         _binding = null
     }
 }
