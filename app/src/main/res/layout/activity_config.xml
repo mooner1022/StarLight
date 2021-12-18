@@ -28,7 +28,7 @@ tools:context=".ui.config.ConfigActivity">
                     android:id="@+id/title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="30dp"
+                    android:layout_marginStart="@dimen/title_margin_start"
                     android:layout_marginTop="80dp"
                     android:fontFamily="@font/nanumsquare_round_bold"
                     android:text="TITLE"
@@ -39,7 +39,7 @@ tools:context=".ui.config.ConfigActivity">
                     android:id="@+id/subTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="34dp"
+                    android:layout_marginStart="@dimen/title_margin_start"
                     android:layout_marginBottom="30dp"
                     android:elevation="1dp"
                     android:fontFamily="@font/nanumsquare_round_regular"
@@ -63,8 +63,9 @@ tools:context=".ui.config.ConfigActivity">
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" android:layout_marginStart="8dp"
-                    android:layout_marginEnd="8dp" android:layout_marginBottom="8dp"/>
+                    app:layout_constraintTop_toTopOf="parent" android:layout_marginStart="@dimen/card_margin_horizontal"
+                    android:layout_marginEnd="@dimen/card_margin_horizontal"
+                    android:layout_marginBottom="@dimen/card_margin_horizontal"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -74,10 +75,14 @@ tools:context=".ui.config.ConfigActivity">
 <ImageView
         android:id="@+id/imageViewLogo"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_gravity="top|end"
-        android:scaleType="fitStart"
+        android:layout_height="wrap_content"
+        android:scaleType="fitEnd"
+        android:layout_alignParentEnd="true"
+        android:foregroundGravity="right"
         app:layout_collapseMode="parallax"
+        android:adjustViewBounds="true"
+        android:layout_gravity="end"
+        android:maxHeight="200dp"
         app:srcCompat="@drawable/svg_top_title_sunset"/>
 
 <ImageView

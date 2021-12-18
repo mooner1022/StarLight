@@ -5,7 +5,7 @@ import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Version
 import com.mooner.starlight.plugincore.logger.Logger
-import com.mooner.starlight.plugincore.utils.Utils.Companion.readString
+import com.mooner.starlight.plugincore.utils.readString
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -48,7 +48,7 @@ class PluginLoader {
             }
         }
 
-        val plugins: MutableSet<Plugin> = hashSetOf()
+        val plugins: MutableSet<StarlightPlugin> = hashSetOf()
         for ((file: File, info: PluginInfo) in pluginInfos.values) {
             try {
                 for (dependency in info.depend) {
@@ -61,7 +61,7 @@ class PluginLoader {
                 if (onPluginLoad != null) onPluginLoad(info.name)
                 val plugin = loadPlugin(info, file)
                 if (!Version.fromString(info.apiVersion).isCompatibleWith(Info.PLUGINCORE_VERSION)) {
-                    Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin [${plugin.name}]")
+                    Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin [${plugin.info.fullName}]")
                     continue
                 }
                 plugins.add(plugin)
@@ -107,8 +107,7 @@ class PluginLoader {
         return plugin
     }
 
-    fun loadAssets(file: File, plugin: Plugin, force: Boolean = false) {
-        require(plugin is StarlightPlugin) { "Plugin [${plugin.name}] does not extend StarlightPlugin" }
+    fun loadAssets(file: File, plugin: StarlightPlugin, force: Boolean = false) {
         var jar: JarFile? = null
         try {
             jar = JarFile(file)

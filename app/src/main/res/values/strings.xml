@@ -14,6 +14,9 @@
     <string name="title_logs">로그</string>
     <string name="title_show_all">전체 보기</string>
 
+    <string name="title_widgets">위젯</string>
+    <string name="subtitle_widgets">$count개의 위젯이 있어요.</string>
+
     <string name="open">열기</string>
     <string name="close">닫기</string>
     <string name="ok">확인</string>

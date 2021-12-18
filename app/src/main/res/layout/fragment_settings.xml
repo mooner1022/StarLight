@@ -9,9 +9,13 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:overScrollMode="never"
+            android:layout_marginStart="@dimen/card_margin_horizontal"
+            android:layout_marginEnd="@dimen/card_margin_horizontal"
+            android:paddingBottom="@dimen/bottom_bar_total_height"
+            android:clipToPadding="false"
+            android:paddingTop="@dimen/fragment_top_padding"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" android:layout_marginStart="16dp" android:layout_marginEnd="16dp"
-            android:layout_marginBottom="8dp"/>
+            app:layout_constraintTop_toTopOf="parent"/>
 </FrameLayout>

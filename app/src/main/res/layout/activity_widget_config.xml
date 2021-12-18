@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".ui.widget.config.WidgetConfigActivity">
+
+    <androidx.core.widget.NestedScrollView
+            android:id="@+id/scroll"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/background">
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:orientation="vertical">
+
+                <TextView
+                        android:id="@+id/title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="30dp"
+                        android:layout_marginTop="80dp"
+                        android:fontFamily="@font/nanumsquare_round_bold"
+                        android:text="@string/title_widgets"
+                        android:textColor="#4C4C4C"
+                        android:textSize="28sp"/>
+
+                <TextView
+                        android:id="@+id/subTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="34dp"
+                        android:layout_marginBottom="30dp"
+                        android:elevation="1dp"
+                        android:fontFamily="@font/nanumsquare_round_regular"
+                        android:textColor="#4C4C4C"
+                        android:textSize="14sp"
+                        app:layout_collapseMode="parallax" android:text="@string/subtitle_widgets"/>
+
+            </LinearLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginTop="25dp"
+                        android:overScrollMode="never"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" android:layout_marginStart="8dp"
+                        android:layout_marginEnd="8dp" app:layout_constraintBottom_toTopOf="@+id/cardViewAddWidget"
+                        android:layout_marginBottom="16dp">
+                </androidx.recyclerview.widget.RecyclerView>
+                <androidx.cardview.widget.CardView
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/card_height" app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent" app:cardCornerRadius="@dimen/card_radius"
+                        app:cardElevation="@dimen/card_elevation" app:cardBackgroundColor="@color/main_purple_light"
+                        android:id="@+id/cardViewAddWidget" android:layout_marginStart="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginBottom="16dp">
+                    <TextView
+                            android:text="위젯 추가하기"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" android:fontFamily="@font/nanumsquare_round_bold"
+                            android:textSize="16sp" android:layout_gravity="center" android:textColor="@color/white"/>
+                </androidx.cardview.widget.CardView>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <ImageView
+            android:id="@+id/imageViewLogo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scaleType="fitEnd"
+            android:layout_alignParentEnd="true"
+            android:foregroundGravity="right"
+            app:layout_collapseMode="parallax"
+            android:adjustViewBounds="true"
+            android:layout_gravity="end"
+            android:maxHeight="200dp"
+            app:srcCompat="@drawable/svg_top_title_sunset"/>
+
+    <ImageView
+            android:id="@+id/leave"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:src="@drawable/ic_round_arrow_left_24"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

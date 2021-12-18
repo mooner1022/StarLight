@@ -9,25 +9,25 @@
             android:id="@+id/nav_home"
             android:enabled="true"
             android:icon="@drawable/ic_round_home_24"
-            app:exb_color="@color/monokai_pro_orange"
+            app:exb_color="@color/white"
             android:title="@string/menu_home" />
         <item
             android:id="@+id/nav_projects"
             android:enabled="true"
             android:icon="@drawable/ic_round_projects_24"
-            app:exb_color="@color/orange"
+            app:exb_color="@color/white"
             android:title="@string/menu_projects" />
         <item
             android:id="@+id/nav_plugins"
             android:enabled="true"
             android:icon="@drawable/ic_round_plugins_24"
-            app:exb_color="@color/monokai_pro_sky"
+            app:exb_color="@color/white"
             android:title="@string/menu_plugins" />
         <item
             android:id="@+id/nav_settings"
             android:enabled="true"
             android:icon="@drawable/ic_round_settings_24"
-            app:exb_color="@color/toolbar"
+            app:exb_color="@color/white"
             android:title="@string/menu_settings" />
     </group>
 </menu>

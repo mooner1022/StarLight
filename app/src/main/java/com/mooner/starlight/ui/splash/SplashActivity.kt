@@ -24,7 +24,7 @@ import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.ui.crash.FatalErrorActivity
 import com.mooner.starlight.utils.FileUtils
-import com.mooner.starlight.utils.Utils
+import com.mooner.starlight.utils.checkPermissions
 import com.skydoves.needs.NeedsAnimation
 import com.skydoves.needs.NeedsItem
 import com.skydoves.needs.createNeeds
@@ -67,7 +67,7 @@ class SplashActivity : AppCompatActivity() {
         val intent = Intent(this@SplashActivity, MainActivity::class.java)
         intent.putExtra("isInitial", isInitial)
 
-        if (isInitial || !Utils.checkPermissions(this, REQUIRED_PERMISSIONS)) {
+        if (isInitial || !checkPermissions(this, REQUIRED_PERMISSIONS)) {
             val needs = createNeeds(this) {
                 setTitleIconResource(R.mipmap.ic_logo)
                 title = "시작하기에 앞서,\nStarLight를 사용하기 위해 아래 권한들이 필요해요!"

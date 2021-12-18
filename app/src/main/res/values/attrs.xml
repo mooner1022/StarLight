@@ -19,4 +19,6 @@
         <attr name="expandableCardElevation" format="dimension"/>
         <attr name="expandableCardRadius" format="dimension"/>
     </declare-styleable>
+
+    <integer name="layoutMode">0</integer>
 </resources>

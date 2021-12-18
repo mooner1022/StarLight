@@ -10,12 +10,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.logger.LogData
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.widget.Widget
 import com.mooner.starlight.plugincore.widget.WidgetSize
 import com.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import com.mooner.starlight.utils.Utils
+import com.mooner.starlight.utils.showLogsDialog
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +35,7 @@ class LogsWidget: Widget() {
     override val size: WidgetSize = WidgetSize.Wrap
 
     private var mAdapter: LogsRecyclerViewAdapter? = null
+    private var mThumbnailAdapter: LogsRecyclerViewAdapter? = null
     private var mView: View? = null
 
     override fun onCreateWidget(view: View) {
@@ -43,12 +45,12 @@ class LogsWidget: Widget() {
         with(view) {
             val tvMoreLogs: TextView = findViewById(R.id.tvMoreLogs)
             tvMoreLogs.setOnClickListener {
-                Utils.showLogsDialog(context)
+                showLogsDialog(context)
             }
 
             val buttonMoreLogs: ImageButton = findViewById(R.id.buttonMoreLogs)
             buttonMoreLogs.setOnClickListener {
-                Utils.showLogsDialog(context)
+                showLogsDialog(context)
             }
 
             layoutTransition = LayoutTransition()
@@ -111,6 +113,41 @@ class LogsWidget: Widget() {
 
     override fun onCreateThumbnail(view: View) {
         LayoutInflater.from(view.context).inflate(R.layout.widget_logs, view as ViewGroup, true)
+
+        val dummyLog = LogData(
+            type = LogType.DEBUG,
+            message = "This is a test log.\nMessage is shown here."
+        )
+
+        with(view) {
+            val rvLogs: RecyclerView = findViewById(R.id.rvLogs)
+            val textViewNoLogsYet: TextView = findViewById(R.id.textViewNoLogsYet)
+            val logs: List<LogData> = listOf(dummyLog, dummyLog, dummyLog)
+            mThumbnailAdapter = LogsRecyclerViewAdapter(context)
+
+            val mLayoutManager = LinearLayoutManager(context).apply {
+                reverseLayout = true
+                stackFromEnd = true
+            }
+            mThumbnailAdapter!!.apply {
+                data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
+                notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
+            }
+            rvLogs.apply {
+                layoutManager = mLayoutManager
+                adapter = mThumbnailAdapter
+                visibility = View.VISIBLE
+            }
+            view.updateHeight()
+            textViewNoLogsYet.visibility = View.GONE
+
+            bindLogger()
+        }
+    }
+
+    override fun onDestroyThumbnail() {
+        super.onDestroyThumbnail()
+        mThumbnailAdapter = null
     }
 
     private fun bindLogger() {

@@ -195,7 +195,8 @@ class ConfigItemBuilder {
             required("id", id)
             required("title", title)
             required("onClickListener", onClickListener)
-            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
+
+            if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return ButtonConfigObject(
                 id = id!!,
@@ -219,7 +220,8 @@ class ConfigItemBuilder {
         override fun build(): ToggleConfigObject {
             required("id", id)
             required("title", title)
-            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
+
+            if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return ToggleConfigObject(
                 id = id!!,
@@ -243,7 +245,8 @@ class ConfigItemBuilder {
             required("id", id)
             required("title", title)
             required("max", max)
-            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
+
+            if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return SliderConfigObject(
                 id = id!!,
@@ -269,7 +272,8 @@ class ConfigItemBuilder {
         override fun build(): StringConfigObject{
             required("id", id)
             required("title", title)
-            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
+
+            if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return StringConfigObject(
                 id = id!!,
@@ -296,7 +300,8 @@ class ConfigItemBuilder {
             required("id", id)
             required("title", title)
             required("hashCode", hashCode)
-            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
+
+            if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return PasswordConfigObject(
                 id = id!!,
@@ -321,7 +326,8 @@ class ConfigItemBuilder {
             required("id", id)
             required("title", title)
             required("items", items)
-            required("icon, iconFile, iconResId", icon, iconFile, iconResId)
+
+            if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return SpinnerConfigObject(
                 id = id!!,

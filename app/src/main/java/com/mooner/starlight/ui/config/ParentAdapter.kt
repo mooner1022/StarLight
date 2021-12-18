@@ -9,10 +9,10 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.ConfigObjectType
 import com.mooner.starlight.plugincore.config.TypedString
+import com.mooner.starlight.utils.isDevMode
 
 class ParentAdapter(
     private val context: Context,
@@ -20,7 +20,6 @@ class ParentAdapter(
 ): RecyclerView.Adapter<ParentAdapter.ViewHolder>() {
 
     private var recyclerAdapter: ConfigAdapter? = null
-    private val isDevMode get() = Session.globalConfig.getCategory("dev").getBoolean("dev_mode", false)
 
     var data: List<CategoryConfigObject> = mutableListOf()
     var saved: Map<String, Map<String, TypedString>> = mutableMapOf()
@@ -73,6 +72,10 @@ class ParentAdapter(
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val categoryTitle: TextView     = itemView.findViewById(R.id.title)
         val categoryItems: RecyclerView = itemView.findViewById(R.id.recyclerViewCategory)
+    }
+
+    fun notifyAllItemInserted() {
+        notifyItemRangeInserted(0, data.size)
     }
 
     fun destroy() {

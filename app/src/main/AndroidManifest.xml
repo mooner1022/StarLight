@@ -18,10 +18,10 @@
     </queries>
 
     <application
+            android:name=".core.GlobalApplication"
             android:allowBackup="true"
             android:extractNativeLibs="false"
             android:fullBackupContent="@xml/backup_descriptor"
-            android:name=".core.GlobalApplication"
             android:icon="@mipmap/ic_logo"
             android:label="@string/app_name"
             android:requestLegacyExternalStorage="true"
@@ -29,6 +29,10 @@
             android:supportsRtl="true"
             android:theme="@style/Theme.StarLight"
             tools:replace="android:icon">
+        <activity
+                android:name=".ui.widget.config.WidgetConfigActivity"
+                android:exported="true"/>
+
         <provider
                 android:name="androidx.core.content.FileProvider"
                 android:authorities="${applicationId}.provider"
@@ -36,10 +40,12 @@
                 android:grantUriPermissions="true">
             <meta-data
                     android:name="android.support.FILE_PROVIDER_PATHS"
-                    android:resource="@xml/provider_paths" />
+                    android:resource="@xml/provider_paths"/>
         </provider>
-        <activity android:name=".ui.config.ConfigActivity"
-                  android:theme="@style/Theme.StarLight.NoActionBar">
+
+        <activity
+                android:name=".ui.config.ConfigActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar">
         </activity>
         <activity
                 android:name=".ui.settings.info.AppInfoActivity"
@@ -49,6 +55,7 @@
                 android:name=".ui.crash.FatalErrorActivity"
                 android:theme="@style/Theme.StarLight.NoActionBar">
         </activity>
+
         <provider
                 android:name="androidx.core.content.FileProvider"
                 android:authorities="${applicationId}.provider"

@@ -6,11 +6,35 @@ class MutableConfigCategory(
 
     override operator fun contains(key: String): Boolean = data.containsKey(key)
 
-    override operator fun get(key: String): Any? = data[key]?.cast()
+    private operator fun get(key: String): Any? = data[key]?.cast()
 
-    operator fun set(key: String, value: Any) {
+    fun setAny(key: String, value: Any) {
         data[key] = TypedString.parse(value)
     }
+
+    fun setInt(key: String, value: Int) = setAny(key, value)
+
+    operator fun set(key: String, value: Int) = setInt(key, value)
+
+    fun setLong(key: String, value: Long) = setAny(key, value)
+
+    operator fun set(key: String, value: Long) = setLong(key, value)
+
+    fun setBoolean(key: String, value: Boolean) = setAny(key, value)
+
+    operator fun set(key: String, value: Boolean) = setBoolean(key, value)
+
+    fun setString(key: String, value: String) = setAny(key, value)
+
+    operator fun set(key: String, value: String) = setString(key, value)
+
+    fun setFloat(key: String, value: Float) = setAny(key, value)
+
+    operator fun set(key: String, value: Float) = setFloat(key, value)
+
+    fun setDouble(key: String, value: Double) = setAny(key, value)
+
+    operator fun set(key: String, value: Double) = setDouble(key, value)
 
     fun remove(key: String) {
         if (data.containsKey(key))

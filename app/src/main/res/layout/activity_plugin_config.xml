@@ -25,27 +25,27 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="30dp"
-                    android:layout_marginTop="80dp"
-                    android:fontFamily="@font/nanumsquare_round_bold"
-                    android:text="설정"
-                    android:textColor="#4C4C4C"
-                    android:textSize="28sp"/>
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/title_margin_start"
+                        android:layout_marginTop="80dp"
+                        android:fontFamily="@font/nanumsquare_round_bold"
+                        android:text="설정"
+                        android:textColor="#4C4C4C"
+                        android:textSize="28sp"/>
 
                 <TextView
-                    android:id="@+id/pluginName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="34dp"
-                    android:layout_marginBottom="30dp"
-                    android:elevation="1dp"
-                    android:fontFamily="@font/nanumsquare_round_regular"
-                    android:text="PLUGIN_NAME"
-                    android:textColor="#4C4C4C"
-                    android:textSize="14sp"
-                    app:layout_collapseMode="parallax"/>
+                        android:id="@+id/pluginName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/title_margin_start"
+                        android:layout_marginBottom="30dp"
+                        android:elevation="1dp"
+                        android:fontFamily="@font/nanumsquare_round_regular"
+                        android:text="PLUGIN_NAME"
+                        android:textColor="#4C4C4C"
+                        android:textSize="14sp"
+                        app:layout_collapseMode="parallax"/>
 
             </LinearLayout>
 
@@ -62,8 +62,10 @@
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" android:layout_marginStart="8dp"
-                        android:layout_marginEnd="8dp" android:layout_marginBottom="8dp"/>
+                        app:layout_constraintTop_toTopOf="parent"
+                        android:layout_marginStart="@dimen/card_margin_horizontal"
+                        android:layout_marginEnd="@dimen/card_margin_horizontal"
+                        android:layout_marginBottom="@dimen/card_margin_horizontal"/>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -73,10 +75,14 @@
     <ImageView
         android:id="@+id/imageViewLogo"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_gravity="top|end"
-        android:scaleType="fitStart"
+        android:layout_height="wrap_content"
+        android:scaleType="fitEnd"
+        android:layout_alignParentEnd="true"
+        android:foregroundGravity="right"
         app:layout_collapseMode="parallax"
+        android:adjustViewBounds="true"
+        android:layout_gravity="end"
+        android:maxHeight="200dp"
         app:srcCompat="@drawable/svg_top_title_sunset"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton

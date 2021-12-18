@@ -3,10 +3,13 @@ package com.mooner.starlight.ui.debugroom
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.Toast
+import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.afollestad.materialdialogs.LayoutMode
@@ -15,8 +18,12 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.snackbar.Snackbar
+import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityDebugRoomBinding
 import com.mooner.starlight.listener.DefaultEvent
+import com.mooner.starlight.listener.legacy.ImageDB
+import com.mooner.starlight.listener.legacy.LegacyEvent
+import com.mooner.starlight.listener.legacy.Replier
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.globalConfig
 import com.mooner.starlight.plugincore.Session.json
@@ -34,11 +41,11 @@ import com.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SEL
 import com.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF_LONG
 import com.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 import com.mooner.starlight.utils.PACKAGE_KAKAO_TALK
+import com.mooner.starlight.utils.toBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -66,6 +73,10 @@ class DebugRoomActivity: AppCompatActivity() {
     private var sender      = "debug_sender"
     private var botName     = "BOT"
     private var sentPackage = PACKAGE_KAKAO_TALK
+    private var isGroupChat = false
+
+    private lateinit var botProfileBitmap: Bitmap
+    private lateinit var selfProfileBitmap: Bitmap
 
     private lateinit var project: Project
     private lateinit var binding: ActivityDebugRoomBinding
@@ -87,6 +98,20 @@ class DebugRoomActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDebugRoomBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        val selfProfilePath = globalConfig.getCategory("d_user").getString("profile_image_path")
+        selfProfileBitmap = if (selfProfilePath == null) {
+            loadBitmapFromResource(R.drawable.default_profile)
+        } else {
+            loadBitmapFromFile(File(selfProfilePath))
+        }
+
+        val botProfilePath = globalConfig.getCategory("d_bot").getString("profile_image_path")
+        botProfileBitmap = if (botProfilePath == null) {
+            loadBitmapFromResource(R.drawable.default_profile)
+        } else {
+            loadBitmapFromFile(File(botProfilePath))
+        }
 
         binding.messageInput.setOnKeyListener { _, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
@@ -131,7 +156,7 @@ class DebugRoomActivity: AppCompatActivity() {
 
         recyclerAdapter = ParentAdapter(this) { parentId, id, _, data ->
             globalConfig.edit {
-                getCategory(parentId)[id] = data
+                getCategory(parentId).setAny(id, data)
             }
             updateConfig()
         }.apply {
@@ -150,6 +175,10 @@ class DebugRoomActivity: AppCompatActivity() {
         }
     }
 
+    private fun loadBitmapFromResource(@DrawableRes res: Int): Bitmap = BitmapFactory.decodeResource(resources, res)
+
+    private fun loadBitmapFromFile(file: File): Bitmap = Uri.fromFile(file).toBitmap(applicationContext)
+
     @SuppressLint("CheckResult")
     private fun send(message: String) {
         val viewType = if (message.length >= 500) CHAT_SELF_LONG else CHAT_SELF
@@ -158,12 +187,11 @@ class DebugRoomActivity: AppCompatActivity() {
             message = message,
             sender = ChatSender(
                 name = sender,
-                profileBase64 = "",
-                profileHash = imageHash
+                profileBitmap = selfProfileBitmap
             ),
             room = DebugChatRoom(
                 name = roomName,
-                isGroupChat = false,
+                isGroupChat = isGroupChat,
                 onSend = onSend,
                 onMarkAsRead = onMarkAsRead
             ),
@@ -187,6 +215,33 @@ class DebugRoomActivity: AppCompatActivity() {
                     }
                 }
             }.show()
+        }
+
+        if (globalConfig.getCategory("legacy").getBoolean("use_legacy_event", false)) {
+            val replier = Replier { _, msg, _ ->
+                onSend(msg)
+                true
+            }
+
+            val imageDB = ImageDB(selfProfileBitmap)
+
+            Session.eventManager.callEvent<LegacyEvent>(arrayOf(roomName, message, sender, isGroupChat, replier, imageDB)) { e ->
+                Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
+                    setAction("자세히 보기") {
+                        MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                            cornerRadius(25f)
+                            cancelOnTouchOutside(false)
+                            noAutoDismiss()
+                            lifecycleOwner(this@DebugRoomActivity)
+                            title(text = project.info.name + " 에러 로그")
+                            message(text = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString())
+                            positiveButton(text = "닫기") {
+                                dismiss()
+                            }
+                        }
+                    }
+                }.show()
+            }
         }
     }
 
@@ -218,10 +273,10 @@ class DebugRoomActivity: AppCompatActivity() {
             }
         }
         CoroutineScope(Dispatchers.IO).launch {
-            val encoded = mutex.withLock {
-                json.encodeToString(chatList.toList())
-            }
+            mutex.lock()
+            val encoded = json.encodeToString(chatList.toList())
             File(dir, CHATS_FILE_NAME).writeText(encoded)
+            mutex.unlock()
         }
     }
 
@@ -236,6 +291,7 @@ class DebugRoomActivity: AppCompatActivity() {
         sender = globalConfig.getCategory("d_user").getString("name", "debug_sender")
         botName = globalConfig.getCategory("d_bot").getString("name", "BOT")
         sentPackage = globalConfig.getCategory("d_room").getString("package", PACKAGE_KAKAO_TALK)
+        isGroupChat = globalConfig.getCategory("d_room").getBoolean("is_group_chat", false)
 
         runOnUiThread {
             binding.roomTitle.text = roomName
@@ -420,6 +476,15 @@ class DebugRoomActivity: AppCompatActivity() {
                         else -> return@edit
                     }
                     category["profile_image_path"] = uri.path!!
+                }
+                val bitmap = uri.toBitmap(applicationContext)
+                when(requestCode) {
+                    RESULT_BOT -> {
+                        botProfileBitmap = bitmap
+                    }
+                    RESULT_USER -> {
+                        selfProfileBitmap = bitmap
+                    }
                 }
                 reloadConfig()
             }

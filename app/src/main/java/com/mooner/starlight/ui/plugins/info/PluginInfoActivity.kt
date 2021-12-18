@@ -19,7 +19,7 @@ fun Context.startPluginInfoActivity(
             items = items {
                 button {
                     id = "name"
-                    title = plugin.name
+                    title = plugin.info.name
                     description = "id: ${info.id}"
                     icon = Icon.LAYERS
                     iconTintColor = color { "#6455A1" }

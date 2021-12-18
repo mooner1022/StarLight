@@ -1,11 +1,12 @@
 package com.mooner.starlight.ui.settings.dev
 
 import android.content.Context
+import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.globalConfig
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.utils.Icon
-import com.mooner.starlight.utils.finishConfigActivity
-import com.mooner.starlight.utils.startConfigActivity
+import com.mooner.starlight.utils.*
 import java.util.*
 
 fun Context.startDevModeActivity() {
@@ -54,11 +55,32 @@ fun Context.startDevModeActivity() {
                     }
                 }
             }
-        },
-        onConfigChanged = { parentId, id, _, data ->
-            Session.globalConfig.edit {
-                getCategory(parentId)[id] = data
+            category {
+                id = "debug_info"
+                title = "debug info"
+                textColor = color { "#706EB9" }
+                items = items {
+                    fun debugInfo(title: String, value: String) = button {
+                        id = title
+                        this.title = title
+                        description = value
+                        onClickListener = {}
+                    }
+                    val layoutModeString = when(layoutMode) {
+                        LAYOUT_DEFAULT -> "LAYOUT_DEFAULT"
+                        LAYOUT_TABLET -> "LAYOUT_TABLET"
+                        else -> "UNKNOWN"
+                    }
+                    debugInfo("globalPower", globalConfig.getCategory("general").getBoolean("global_power").toString())
+                    debugInfo("layoutMode", "$layoutMode ($layoutModeString)")
+                    debugInfo("pluginSafeMode", globalConfig.getCategory("plugin").getBoolean("safe_mode").toString())
+                    debugInfo("baseDirectory", FileUtils.getInternalDirectory().path)
+                    debugInfo("PLUGINCORE_VERSION", Info.PLUGINCORE_VERSION.toString())
+                }
             }
+        },
+        onConfigChanged = { parentId, id, view, data ->
+            globalConfig.onSaveConfigAdapter(parentId, id, view, data)
         }
     )
 }

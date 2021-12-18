@@ -6,7 +6,7 @@ class ConfigCategoryImpl(
 
     override operator fun contains(key: String): Boolean = data.containsKey(key)
 
-    override operator fun get(key: String): Any? = data[key]?.cast()
+    private operator fun get(key: String): Any? = data[key]?.cast()
 
     override fun getInt(key: String): Int? = data[key]?.castAs()
 

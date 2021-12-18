@@ -6,9 +6,11 @@ import com.mooner.starlight.api.helper.LanguagesApi
 import com.mooner.starlight.api.helper.ProjectLoggerApi
 import com.mooner.starlight.api.helper.ProjectsApi
 import com.mooner.starlight.api.helper.UtilsApi
+import com.mooner.starlight.api.legacy.LegacyApi
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.listener.DefaultEvent
+import com.mooner.starlight.listener.legacy.LegacyEvent
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.pluginLoader
 import com.mooner.starlight.plugincore.Session.pluginManager
@@ -58,6 +60,7 @@ object ApplicationSession {
             addApi(ProjectLoggerApi())
             addApi(ProjectsApi())
             addApi(UtilsApi())
+            addApi(LegacyApi())
             //addApi(ClientApi())
             //addApi(EventApi())
             //addApi(TimerApi())
@@ -71,7 +74,10 @@ object ApplicationSession {
             //addLanguage(GraalVMLang())
         }
 
-        Session.eventManager.addEvent(DefaultEvent())
+        Session.eventManager.apply {
+            addEvent(DefaultEvent())
+            addEvent(LegacyEvent())
+        }
 
         if (!Session.globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
             pluginLoader.loadPlugins { onPhaseChanged(String.format(context.getString(R.string.step_plugins), it)) }

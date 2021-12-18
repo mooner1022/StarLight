@@ -24,6 +24,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.config.*
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.utils.Icon
 import org.angmarch.views.NiceSpinner
 
 class ConfigAdapter(
@@ -74,7 +75,10 @@ class ConfigAdapter(
             }
             holder.icon.apply {
                 when {
-                    viewData.icon != null -> load(viewData.icon!!.drawableRes)
+                    viewData.icon != null -> when(viewData.icon) {
+                        Icon.NONE -> setImageDrawable(null)
+                        else -> load(viewData.icon!!.drawableRes)
+                    }
                     viewData.iconFile != null -> load(viewData.iconFile!!) {
                         scale(Scale.FIT)
                     }
@@ -158,7 +162,8 @@ class ConfigAdapter(
                 holder.layoutButton.setOnClickListener {
                     if (!holder.layoutButton.isEnabled) return@setOnClickListener
                     MaterialDialog(it.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                        cornerRadius(25f)
+                        cornerRadius(context.resources.getDimension(R.dimen.card_radius))
+                        maxWidth(res = R.dimen.dialog_width)
                         title(text = data.title)
                         input(waitForPositiveButton = false) { dialog, text ->
                             val require = data.require(text.toString())

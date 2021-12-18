@@ -1,19 +1,22 @@
-package com.mooner.starlight.ui.home
+package com.mooner.starlight.ui.widget.config
 
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.widget.Widget
 import com.mooner.starlight.plugincore.widget.WidgetSize
+import java.util.*
 
-class WidgetsAdapter (
-    private val context: Context
-): RecyclerView.Adapter<WidgetsAdapter.ViewHolder>() {
+class WidgetsThumbnailAdapter (
+    private val context: Context,
+    private val onEdited: (data: List<Widget>) -> Unit
+): RecyclerView.Adapter<WidgetsThumbnailAdapter.ViewHolder>() {
 
-    var data: List<Widget> = mutableListOf()
+    var data: MutableList<Widget> = mutableListOf()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layout = when(viewType) {
@@ -38,22 +41,35 @@ class WidgetsAdapter (
     
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val viewData = data[position]
-        viewData.onCreateWidget(holder.view)
+        holder.title.apply {
+            visibility = View.VISIBLE
+            text = viewData.name
+        }
+        viewData.onCreateThumbnail(holder.view)
     }
 
-    fun onResume() {
-        data.forEach { it.onResumeWidget() }
+    fun removeData(position: Int) {
+        data.removeAt(position)
+        notifyItemRemoved(position)
+        onEdited(data)
     }
 
-    fun onPause() {
-        data.forEach { it.onPauseWidget() }
+    fun swapData(fromPos: Int, toPos: Int) {
+        Collections.swap(data, fromPos, toPos)
+        notifyItemMoved(fromPos, toPos)
+        onEdited(data)
     }
 
     fun onDestroy() {
-        data.forEach { it.onDestroyWidget() }
+        data.forEach { it.onDestroyThumbnail() }
+    }
+
+    fun notifyAllItemInserted() {
+        notifyItemRangeInserted(0, data.size)
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val view: View = itemView.findViewById(R.id.view)
+        val title: TextView = itemView.findViewById(R.id.title)
     }
 }

@@ -17,7 +17,7 @@ import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.ui.plugins.config.PluginConfigActivity
 import com.mooner.starlight.ui.plugins.info.startPluginInfoActivity
 import com.mooner.starlight.ui.presets.ExpandableCardView
-import com.mooner.starlight.utils.Utils.Companion.trimLength
+import com.mooner.starlight.utils.trimLength
 import java.io.File
 
 class PluginsListAdapter(

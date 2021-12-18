@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ExpandableCardView">
+        <attr name="title" format="string"/>
+        <attr name="icon" format="reference"/>
+        <attr name="inner_view" format="reference"/>
+        <attr name="expandOnClick" format="boolean"/>
+        <attr name="showSwitch" format="boolean"/>
+        <attr name="animationDuration" format="integer"/>
+        <attr name="startExpanded" format="boolean"/>
+        <attr name="expandableCardRipple" format="boolean"/>
+        <attr name="expandableCardTitleBold" format="boolean"/>
+        <attr name="expandableCardStrokeWidth" format="dimension"/>
+        <attr name="expandableCardTitleSize" format="dimension"/>
+        <attr name="expandableCardColor" format="reference"/>
+        <attr name="expandableCardStrokeColor" format="reference"/>
+        <attr name="expandableCardArrowColor" format="reference"/>
+        <attr name="expandableCardTitleColor" format="reference"/>
+        <attr name="expandableCardElevation" format="dimension"/>
+        <attr name="expandableCardRadius" format="dimension"/>
+    </declare-styleable>
+
+    <integer name="layoutMode">1</integer>
+</resources>

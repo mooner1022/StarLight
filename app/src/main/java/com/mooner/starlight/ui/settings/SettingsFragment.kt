@@ -16,7 +16,7 @@ import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.ui.settings.dev.startDevModeActivity
 import com.mooner.starlight.ui.settings.info.AppInfoActivity
-import com.mooner.starlight.utils.Utils
+import com.mooner.starlight.utils.restartApplication
 
 class SettingsFragment : Fragment() {
 
@@ -32,7 +32,7 @@ class SettingsFragment : Fragment() {
 
         recyclerAdapter = ParentAdapter(requireContext()) { parentId, id, _, data ->
             Session.globalConfig.edit {
-                getCategory(parentId)[id] = data
+                getCategory(parentId).setAny(id, data)
             }
         }.apply {
             data = getConfigList()
@@ -126,9 +126,24 @@ class SettingsFragment : Fragment() {
                         icon = Icon.REFRESH
                         iconTintColor = color { "#FF6F3C" }
                         onClickListener = {
-                            Utils.restartApplication(it.context)
+                            restartApplication(it.context)
                         }
                         dependency = "safe_mode"
+                    }
+                }
+            }
+            category {
+                id = "legacy"
+                title = "레거시"
+                textColor = color { "#706EB9" }
+                items = items {
+                    toggle {
+                        id = "use_legacy_event"
+                        title = "레거시 이벤트 사용"
+                        description = "메신저봇이나 채자봇과 호환되는 이벤트를 사용합니다."
+                        icon = Icon.LINK
+                        iconTintColor = color { "#62D2A2" }
+                        defaultValue = false
                     }
                 }
             }

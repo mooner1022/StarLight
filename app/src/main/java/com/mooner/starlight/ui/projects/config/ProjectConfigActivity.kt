@@ -104,7 +104,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                 for ((catId, data) in savedData) {
                     val category = getCategory(catId)
                     for ((key, value) in data) {
-                        (category as MutableConfigCategory)[key] = value.cast()?: error("Unable to cast $key")
+                        category.setAny(key, value.cast()?: error("Unable to cast $key"))
                     }
                 }
             }
@@ -142,7 +142,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                     type = ButtonConfigObject.Type.FLAT
                     onClickListener = {
                         val active = project.activeJobs()
-                        project.destroy()
+                        project.stopAllJobs()
                         Snackbar.make(it, "${active}개의 작업을 강제 종료하고 할당 해제했어요.", Snackbar.LENGTH_SHORT).show()
                     }
                     icon = Icon.LAYERS_CLEAR
