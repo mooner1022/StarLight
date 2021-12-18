@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.logger.LogData
 import com.mooner.starlight.plugincore.logger.LogType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.widget.Widget
@@ -34,6 +35,7 @@ class LogsWidget: Widget() {
     override val size: WidgetSize = WidgetSize.Wrap
 
     private var mAdapter: LogsRecyclerViewAdapter? = null
+    private var mThumbnailAdapter: LogsRecyclerViewAdapter? = null
     private var mView: View? = null
 
     override fun onCreateWidget(view: View) {
@@ -111,6 +113,41 @@ class LogsWidget: Widget() {
 
     override fun onCreateThumbnail(view: View) {
         LayoutInflater.from(view.context).inflate(R.layout.widget_logs, view as ViewGroup, true)
+
+        val dummyLog = LogData(
+            type = LogType.DEBUG,
+            message = "This is a test log.\nMessage is shown here."
+        )
+
+        with(view) {
+            val rvLogs: RecyclerView = findViewById(R.id.rvLogs)
+            val textViewNoLogsYet: TextView = findViewById(R.id.textViewNoLogsYet)
+            val logs: List<LogData> = listOf(dummyLog, dummyLog, dummyLog)
+            mThumbnailAdapter = LogsRecyclerViewAdapter(context)
+
+            val mLayoutManager = LinearLayoutManager(context).apply {
+                reverseLayout = true
+                stackFromEnd = true
+            }
+            mThumbnailAdapter!!.apply {
+                data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
+                notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
+            }
+            rvLogs.apply {
+                layoutManager = mLayoutManager
+                adapter = mThumbnailAdapter
+                visibility = View.VISIBLE
+            }
+            view.updateHeight()
+            textViewNoLogsYet.visibility = View.GONE
+
+            bindLogger()
+        }
+    }
+
+    override fun onDestroyThumbnail() {
+        super.onDestroyThumbnail()
+        mThumbnailAdapter = null
     }
 
     private fun bindLogger() {

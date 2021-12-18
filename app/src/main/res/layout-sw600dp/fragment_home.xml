@@ -13,19 +13,28 @@
     <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="16dp" android:layout_marginEnd="16dp"
-            android:id="@+id/widgets" app:layout_constraintBottom_toTopOf="@+id/cardViewConfigWidget"
-            android:overScrollMode="never" android:layout_marginBottom="16dp"/>
-    <androidx.cardview.widget.CardView
-            android:layout_width="0dp"
-            android:layout_height="@dimen/card_height" app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" app:cardCornerRadius="@dimen/card_radius"
-            app:cardElevation="@dimen/card_elevation" app:cardBackgroundColor="@color/main_purple_light"
-            android:id="@+id/cardViewConfigWidget" android:layout_marginStart="16dp" android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp">
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"
+            android:id="@+id/widgets"
+            app:layout_constraintBottom_toTopOf="@+id/cardViewConfigWidget"
+            android:overScrollMode="never"
+            android:layout_marginBottom="16dp"/>
+    <androidx.cardview.widget.CardView
+            android:layout_width="256dp"
+            android:layout_height="@dimen/card_height"
+            android:id="@+id/cardViewConfigWidget"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:cardCornerRadius="@dimen/card_radius"
+            app:cardElevation="@dimen/card_elevation"
+            app:cardBackgroundColor="@color/main_purple_light">
         <TextView
                 android:text="위젯 설정"
                 android:layout_width="wrap_content"

@@ -11,19 +11,13 @@
     <dimen name="card_height">54dp</dimen>
     <dimen name="card_radius">27dp</dimen>
     <dimen name="card_elevation">0dp</dimen>
-    <dimen name="card_margin_horizontal">20dp</dimen>
+    <dimen name="card_margin_horizontal">64dp</dimen>
     <dimen name="card_margin_vertical">20dp</dimen>
 
-    <dimen name="title_margin_start">30dp</dimen>
+    <dimen name="title_margin_start">64dp</dimen>
 
     <dimen name="default_card_height">50dp</dimen>
     <dimen name="default_vertical_padding">10dp</dimen>
 
-    <dimen name="custom_match_parent">-1px</dimen>
-
-    <dimen name="dialog_width">@dimen/custom_match_parent</dimen>
-
-    <dimen name="bottom_bar_total_height">130dp</dimen>
-
-    <dimen name="fragment_top_padding">20dp</dimen>
+    <dimen name="dialog_width">480dp</dimen>
 </resources>

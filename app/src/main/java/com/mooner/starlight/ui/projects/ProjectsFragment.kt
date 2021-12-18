@@ -121,8 +121,10 @@ class ProjectsFragment : Fragment() {
     ): View {
         _binding = FragmentProjectsBinding.inflate(inflater, container, false)
 
+        val context = requireContext()
+
         binding.cardViewProjectAlign.setOnClickListener {
-            MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                 cornerRadius(25f)
                 lifecycleOwner(this@ProjectsFragment)
                 gridItems(aligns.toGridItems()) { dialog, _, item ->
@@ -144,7 +146,8 @@ class ProjectsFragment : Fragment() {
         binding.fabNewProject.setOnClickListener { _ ->
             //binding.fabNewProject.hide()
             MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                cornerRadius(27f)
+                cornerRadius(res = R.dimen.card_radius)
+                maxWidth(res = R.dimen.dialog_width)
                 customView(R.layout.dialog_new_project)
                 cancelOnTouchOutside(true)
                 noAutoDismiss()
@@ -162,7 +165,7 @@ class ProjectsFragment : Fragment() {
                     val chip = Chip(this.windowContext).apply {
                         id = index
                         text = language.name
-                        chipMinHeight = ViewUtils.dpToPx(requireContext(), 30f)
+                        chipMinHeight = ViewUtils.dpToPx(context, 30f)
                         isCheckable = true
                         if (index == 0) {
                             isChecked = true
@@ -208,7 +211,7 @@ class ProjectsFragment : Fragment() {
             }
         }
 
-        recyclerAdapter = ProjectListAdapter(requireContext())
+        recyclerAdapter = ProjectListAdapter(context)
 
         CoroutineScope(Dispatchers.Default).launch {
             projects = projectManager.getProjects()
@@ -222,9 +225,18 @@ class ProjectsFragment : Fragment() {
             }
         }
 
+        /*
+        val mLayoutManager = when(context.layoutMode) {
+            LAYOUT_DEFAULT -> LinearLayoutManager(context)
+            LAYOUT_TABLET -> StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
+            else -> LinearLayoutManager(context)
+        }
+         */
+        val mLayoutManager =LinearLayoutManager(context)
+
         with(binding.recyclerViewProjectList) {
             itemAnimator = FadeInUpAnimator()
-            layoutManager = LinearLayoutManager(requireContext())
+            layoutManager = mLayoutManager
             adapter = recyclerAdapter
         }
 

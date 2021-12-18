@@ -1,5 +1,6 @@
 package com.mooner.starlight.plugincore.config
 
+import android.view.View
 import com.mooner.starlight.plugincore.Session.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -88,6 +89,12 @@ class GlobalConfig(
             File(path, FILE_NAME).writeText(str)
         }
         */
+    }
+
+    fun onSaveConfigAdapter(parentId: String, id: String, view: View?, data: Any) {
+        edit {
+            getCategory(parentId).setAny(id, data)
+        }
     }
 
     private fun getOrCreateCategory(id: String): MutableConfigCategory {

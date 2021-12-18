@@ -7,6 +7,8 @@
     android:layout_height="match_parent"
     android:background="@color/transparent"
     android:orientation="vertical"
+    android:clipToPadding="false"
+    android:paddingTop="@dimen/fragment_top_padding"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
@@ -20,10 +22,12 @@
         <androidx.cardview.widget.CardView
                 android:id="@+id/cardViewProjectAlign"
                 android:layout_height="@dimen/card_height"
-                android:layout_marginStart="@dimen/card_margin"
+                android:layout_marginStart="@dimen/card_margin_horizontal"
+                android:layout_weight="1"
+                android:layout_width="0dp"
                 app:cardCornerRadius="@dimen/card_radius"
                 app:cardElevation="0dp"
-                app:cardMaxElevation="0dp" android:layout_weight="1" android:layout_width="0dp">
+                app:cardMaxElevation="0dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
@@ -73,26 +77,29 @@
                 app:tint="@color/white" app:elevation="0dp"
                 app:rippleColor="@color/main_purple" app:backgroundTint="@color/main_purple"
                 android:layout_marginStart="8dp"
-                android:layout_marginEnd="@dimen/card_margin"/>
+                android:layout_marginEnd="@dimen/card_margin_horizontal"/>
     </LinearLayout>
 
     <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="@dimen/card_margin_horizontal"
             android:layout_marginTop="10dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="30dp"
-            app:cardElevation="@dimen/card_elevation" android:background="@android:color/white"
-            app:cardBackgroundColor="@android:color/white" android:nestedScrollingEnabled="false">
+            android:layout_marginEnd="@dimen/card_margin_horizontal"
+            android:layout_marginBottom="@dimen/bottom_bar_total_height"
+            android:background="@android:color/white"
+            android:nestedScrollingEnabled="false"
+            app:cardCornerRadius="@dimen/card_radius"
+            app:cardElevation="@dimen/card_elevation"
+            app:cardBackgroundColor="@android:color/white">
 
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewProjectList"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:clipToPadding="false" android:paddingTop="16dp"
-                android:paddingBottom="8dp"
-                android:paddingStart="8dp" android:paddingEnd="8dp"/>
+                android:clipToPadding="false"
+                android:paddingTop="16dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"/>
     </androidx.cardview.widget.CardView>
 </LinearLayout>

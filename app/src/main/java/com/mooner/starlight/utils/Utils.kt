@@ -87,7 +87,7 @@ fun restartApplication(context: Context) {
         context,
         0,
         mStartActivity,
-        PendingIntent.FLAG_CANCEL_CURRENT
+        PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
     val mgr = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     mgr[AlarmManager.RTC, System.currentTimeMillis() + 100] = mPendingIntent
@@ -108,7 +108,8 @@ fun showLogsDialog(context: Context): MaterialDialog {
         stackFromEnd = true
     }
     return MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-        cornerRadius(25f)
+        cornerRadius(res = R.dimen.card_radius)
+        //maxWidth(res = R.dimen.dialog_width)
         cancelOnTouchOutside(true)
         noAutoDismiss()
         title(text = context.getString(R.string.title_logs))
@@ -146,3 +147,8 @@ fun Uri.toBitmap(context: Context): Bitmap = if (Build.VERSION.SDK_INT >= Build.
 }
 
 val isDevMode get() = globalConfig.getCategory("dev").getBoolean("dev_mode", false)
+
+const val LAYOUT_DEFAULT = 0
+const val LAYOUT_TABLET  = 1
+
+val Context.layoutMode get() = resources.getInteger(R.integer.layoutMode)
