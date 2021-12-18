@@ -42,7 +42,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="start|center_vertical"
-                    android:layout_marginStart="30dp"
+                    android:layout_marginStart="@dimen/title_margin_start"
                     android:layout_marginTop="20dp"
                     android:elevation="1dp"
                     android:fontFamily="@font/nanumsquare_round_bold"
@@ -56,7 +56,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="start|center_vertical"
-                    android:layout_marginStart="30dp"
+                    android:layout_marginStart="@dimen/title_margin_start"
                     android:layout_marginTop="50dp"
                     android:elevation="1dp"
                     android:fontFamily="@font/nanumsquare_round_regular"
@@ -84,27 +84,27 @@
             android:id="@+id/viewPager"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingTop="20dp"
-            android:paddingBottom="110dp"
             android:background="@color/transparent"
             android:elevation="0dp"
             android:overScrollMode="never"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            android:clipToPadding="true" android:fillViewport="true" android:fitsSystemWindows="true">
-    </androidx.viewpager2.widget.ViewPager2>
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:fitsSystemWindows="true"/>
 
     <github.com.st235.lib_expandablebottombar.ExpandableBottomBar
             android:id="@+id/bottom_bar"
             android:layout_width="@dimen/dialog_width"
             android:layout_height="70dp"
             android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="16dp"
             app:exb_backgroundColor="@color/main_purple"
             app:exb_backgroundCornerRadius="@dimen/card_radius"
             app:exb_itemInactiveColor="#fff"
             app:exb_items="@menu/activity_main_drawer"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" app:exb_elevation="5dp"
-            android:layout_marginBottom="16dp"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:exb_elevation="5dp"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
