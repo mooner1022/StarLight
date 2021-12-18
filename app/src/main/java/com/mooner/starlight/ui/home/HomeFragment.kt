@@ -19,6 +19,7 @@ import com.mooner.starlight.ui.widget.config.WidgetConfigActivity
 import com.mooner.starlight.ui.widget.config.WidgetsAdapter
 import com.mooner.starlight.utils.LAYOUT_DEFAULT
 import com.mooner.starlight.utils.LAYOUT_TABLET
+import com.mooner.starlight.utils.WIDGET_DEF_STRING
 import com.mooner.starlight.utils.layoutMode
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.serialization.decodeFromString
@@ -48,9 +49,9 @@ class HomeFragment : Fragment() {
      */
 
     override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
@@ -93,12 +94,14 @@ class HomeFragment : Fragment() {
     }
 
     private fun getWidgets(): List<Widget> {
-        val widgetIds: List<String> = Session.json.decodeFromString(Session.globalConfig.getCategory("widgets").getString("ids", "[]"))
+        val widgetIds: List<String> = Session.json.decodeFromString(Session.globalConfig.getCategory("widgets").getString("ids", WIDGET_DEF_STRING))
         val widgets: MutableList<Widget> = mutableListOf()
         for (id in widgetIds) {
             with(Session.widgetManager.getWidgetById(id)) {
                 if (this != null)
                     widgets += this
+                else
+                    Logger.w(HomeFragment::class.simpleName, "Skipping unknown widget: $id")
             }
         }
         return widgets
