@@ -10,7 +10,6 @@ import android.widget.CheckBox
 import android.widget.EditText
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import coil.load
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
@@ -28,12 +27,9 @@ import com.mooner.starlight.plugincore.Session.globalConfig
 import com.mooner.starlight.plugincore.Session.projectManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.Project
-import com.mooner.starlight.utils.LAYOUT_DEFAULT
-import com.mooner.starlight.utils.LAYOUT_TABLET
 import com.mooner.starlight.utils.ViewUtils
 import com.mooner.starlight.utils.align.Align
 import com.mooner.starlight.utils.align.toGridItems
-import com.mooner.starlight.utils.layoutMode
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -229,11 +225,14 @@ class ProjectsFragment : Fragment() {
             }
         }
 
+        /*
         val mLayoutManager = when(context.layoutMode) {
             LAYOUT_DEFAULT -> LinearLayoutManager(context)
             LAYOUT_TABLET -> StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
             else -> LinearLayoutManager(context)
         }
+         */
+        val mLayoutManager =LinearLayoutManager(context)
 
         with(binding.recyclerViewProjectList) {
             itemAnimator = FadeInUpAnimator()
