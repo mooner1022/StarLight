@@ -9,15 +9,13 @@ import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
-import org.mozilla.javascript.Context
+import org.mozilla.javascript.*
 import org.mozilla.javascript.Function
-import org.mozilla.javascript.Scriptable
-import org.mozilla.javascript.ScriptableObject
 import java.io.File
 
 class JSRhino: Language() {
 
-    private lateinit var context: Context
+    //private lateinit var context: Context
     companion object {
 
         private const val T = "JS-라이노"
@@ -92,30 +90,40 @@ class JSRhino: Language() {
 
     override fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    override fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any {
+    private fun enterContext(): Context {
         val config = getLanguageConfig()
         val optLevel = if (config.getBoolean(CONF_OPTIMIZE_CODE, false))
             config.getInt(CONF_OPTIMIZATION_LEVEL, 0)
         else
             -1
-        context = RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")).enterContext().apply {
+        val context = RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")).enterContext().apply {
             optimizationLevel = optLevel
             val langVersionIndex = config.getInt(CONF_LANG_VERSION)
             languageVersion = if (langVersionIndex == null)
                 LANG_DEF_VERSION
             else
                 indexToVersion(langVersionIndex)
+            wrapFactory = PrimitiveWrapFactory()
         }
-        val shared = context.initStandardObjects()
-        val scope = context.newObject(shared)
+        return context
+    }
+
+    override fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any {
+        val context = enterContext()
+        val scope = context.initStandardObjects(ImporterTopLevel())
+        //val scope = context.newObject(shared)
         //val engine = ScriptEngineManager().getEngineByName("rhino")!!
         if (project != null) {
+            var importLines: StringBuilder? = null
             for(methodBlock in apis) {
                 val instance = methodBlock.getInstance(project)
 
                 when(methodBlock.instanceType) {
                     InstanceType.CLASS -> {
-                        context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
+                        val line = "const ${methodBlock.name} = ${methodBlock.instanceClass.name};\n"
+                        if (importLines == null) importLines = StringBuilder(line)
+                        else importLines.append(line)
+                        //context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
                     }
                     InstanceType.OBJECT -> {
                         ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(instance, scope))
@@ -123,10 +131,14 @@ class JSRhino: Language() {
                 }
                 //engine.put(methodBlock.blockName, methodBlock.instance)
             }
+            if (importLines != null) {
+                context.evaluateString(scope, importLines.toString(), "import", 1, null)
+            }
         }
         //engine.eval(code)
         context.evaluateString(scope, code, project?.info?.name?: name, 1, null)
         //scope.put()
+        Context.exit()
         return scope
     }
 
@@ -135,7 +147,7 @@ class JSRhino: Language() {
         try {
             Context.exit()
         } catch (e: IllegalStateException) {
-            Logger.e(T, "Failed to release engine: ${e.message}")
+            Logger.v(T, "Failed to release engine: ${e.message}")
         }
     }
 
@@ -147,7 +159,7 @@ class JSRhino: Language() {
     ) {
         try {
             val rhino = engine as Scriptable
-            Context.enter()
+            val context = enterContext()
             val function = rhino.get(functionName, engine)
             if (function == Scriptable.NOT_FOUND || function !is Function) {
                 Logger.e(T, "Unable to locate function [$functionName]")

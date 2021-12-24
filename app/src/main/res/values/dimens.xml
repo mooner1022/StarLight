@@ -28,4 +28,6 @@
     <dimen name="fragment_top_padding">20dp</dimen>
 
     <dimen name="debugroom_profile_corner_radius">12dp</dimen>
+
+    <dimen name="lang_icon_corner_radius">6dp</dimen>
 </resources>
