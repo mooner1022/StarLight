@@ -16,7 +16,6 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
@@ -84,7 +83,7 @@ class ProjectListAdapter(
             val icon: Any? = when(project.getLanguage().id) {
                 "JS_RHINO" -> R.drawable.ic_js
                 "JS_V8" -> R.drawable.ic_v8
-                else -> (project.getLanguage() as Language).getIconFileOrNull()
+                else -> project.getLanguage().getIconFileOrNull()
             }
             val tint = if (icon == null) R.color.main_purple else null
             it.loadAnyWithTint(

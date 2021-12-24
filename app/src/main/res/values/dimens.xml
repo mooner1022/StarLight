@@ -26,4 +26,6 @@
     <dimen name="bottom_bar_total_height">130dp</dimen>
 
     <dimen name="fragment_top_padding">20dp</dimen>
+
+    <dimen name="debugroom_profile_corner_radius">12dp</dimen>
 </resources>

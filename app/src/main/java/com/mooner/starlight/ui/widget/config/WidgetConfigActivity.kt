@@ -6,19 +6,27 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.callbacks.onDismiss
+import com.afollestad.materialdialogs.customview.customView
+import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityWidgetConfigBinding
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.json
+import com.mooner.starlight.plugincore.Session.widgetManager
+import com.mooner.starlight.plugincore.config.CategoryConfigObject
+import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.widget.Widget
-import com.mooner.starlight.utils.LAYOUT_DEFAULT
-import com.mooner.starlight.utils.LAYOUT_TABLET
-import com.mooner.starlight.utils.formatStringRes
-import com.mooner.starlight.utils.layoutMode
+import com.mooner.starlight.ui.config.ParentAdapter
+import com.mooner.starlight.utils.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.util.*
 
 class WidgetConfigActivity : AppCompatActivity() {
 
@@ -37,11 +45,11 @@ class WidgetConfigActivity : AppCompatActivity() {
 
         val context = this
 
-        val widgetIds: List<String> = json.decodeFromString(Session.globalConfig.getCategory("widgets").getString("ids", "[]"))
+        val widgetIds: List<String> = json.decodeFromString(Session.globalConfig.getCategory("widgets").getString("ids", WIDGET_DEF_STRING))
         Logger.v("ids= $widgetIds")
         val widgets: MutableList<Widget> = mutableListOf()
         for (id in widgetIds) {
-            with(Session.widgetManager.getWidgetById(id)) {
+            with(widgetManager.getWidgetById(id)) {
                 if (this != null)
                     widgets += this
             }
@@ -64,11 +72,28 @@ class WidgetConfigActivity : AppCompatActivity() {
         binding.leave.setOnClickListener { finish() }
 
         binding.cardViewAddWidget.setOnClickListener {
-            recyclerAdapter!!.apply {
-                data += Session.widgetManager.getWidgetById("widget_uptime_default")!!
-                notifyItemInserted(data.size)
+            MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                cornerRadius(res = R.dimen.card_radius)
+                maxWidth(res = R.dimen.dialog_width)
+                lifecycleOwner(this@WidgetConfigActivity)
+                customView(R.layout.dialog_logs)
 
-                notifyDataEdited(data)
+                var recyclerAdapter: ParentAdapter? = ParentAdapter(this@WidgetConfigActivity) { _, _, _, _ ->
+                }.apply {
+                    data = getWidgetConfigList(::dismiss)
+                    notifyItemRangeInserted(0, data.size)
+                }
+
+                val recycler: RecyclerView = findViewById(R.id.rvLog)
+                recycler.apply {
+                    layoutManager = LinearLayoutManager(this@WidgetConfigActivity)
+                    adapter = recyclerAdapter
+                }
+
+                onDismiss {
+                    recyclerAdapter?.destroy()
+                    recyclerAdapter = null
+                }
             }
         }
 
@@ -122,11 +147,51 @@ class WidgetConfigActivity : AppCompatActivity() {
         }
     }
 
+    private fun addWidget(widget: Widget) {
+        recyclerAdapter!!.apply {
+            data += widget
+            notifyItemInserted(data.size)
+
+            notifyDataEdited(data)
+        }
+    }
+
+    /*
+    private fun addWidget(widgetId: String) {
+        val widget = widgetManager.getWidgetById(widgetId)?: error("Unable to find widget with id: $widgetId")
+        addWidget(widget)
+    }
+     */
+
     private fun notifyDataEdited(data: List<Widget>) {
         Session.globalConfig.edit {
             getCategory("widgets")["ids"] = Json.encodeToString(data.map { it.id })
         }
         setResult(RESULT_EDITED)
+    }
+
+    private fun getWidgetConfigList(onDismiss: () -> Unit): List<CategoryConfigObject> = config {
+        val widgets = widgetManager.getWidgets()
+
+        for ((pluginName, _widgets) in widgets) {
+            category {
+                id = UUID.randomUUID().toString()
+                title = pluginName
+                textColor = getColorCompat(R.color.main_purple)
+                items = items {
+                    for (widget in _widgets) {
+                        button {
+                            id = widget.id
+                            title = widget.name
+                            onClickListener = {
+                                addWidget(widget)
+                                onDismiss()
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun onDestroy() {

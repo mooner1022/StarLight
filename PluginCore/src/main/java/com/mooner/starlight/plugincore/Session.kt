@@ -6,6 +6,9 @@ import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.config.GlobalConfig
 import com.mooner.starlight.plugincore.event.EventManager
 import com.mooner.starlight.plugincore.language.LanguageManager
+import com.mooner.starlight.plugincore.library.LibraryLoader
+import com.mooner.starlight.plugincore.library.LibraryManager
+import com.mooner.starlight.plugincore.library.LibraryManagerApi
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.PluginLoader
 import com.mooner.starlight.plugincore.plugin.PluginManager
@@ -15,6 +18,7 @@ import com.mooner.starlight.plugincore.utils.NetworkUtil
 import com.mooner.starlight.plugincore.widget.WidgetManager
 import kotlinx.serialization.json.Json
 import java.io.File
+import kotlin.properties.Delegates
 
 object Session {
 
@@ -70,6 +74,14 @@ object Session {
     private var mEventManager: EventManager? = null
     val eventManager get() = mEventManager!!
 
+    private var mLibraryLoader: LibraryLoader? = null
+    private var mLibraryManager: LibraryManager? = null
+    private val libraryLoader: LibraryLoader? get() = mLibraryLoader
+    val libraryManager: LibraryManager? get() = mLibraryManager
+
+    private var mApiManager: ApiManager by Delegates.notNull()
+    val apiManager get() = mApiManager
+
     const val isDebugging: Boolean = true
 
     private val onInitCompleteListeners: MutableList<() -> Unit> = arrayListOf()
@@ -100,6 +112,13 @@ object Session {
         mProjectManager  = ProjectManager(projectDir)
         mProjectLoader   = ProjectLoader(projectDir)
         mEventManager    = EventManager()
+        mApiManager      = ApiManager()
+
+        if (globalConfig.getCategory("beta_features").getBoolean("load_external_dex_libs", false)) {
+            mLibraryLoader = LibraryLoader()
+            mLibraryManager = LibraryManager(libraryLoader!!.loadLibraries(baseDir).toMutableSet())
+            apiManager.addApi(LibraryManagerApi())
+        }
 
         for (listener in onInitCompleteListeners) listener()
         isDuringInit = false
@@ -115,7 +134,7 @@ object Session {
         //globalConfig.push()
 
         NetworkUtil.purge()
-        ApiManager.purge()
+        apiManager.purge()
 
         mLanguageManager?.purge()
         mWidgetManager?.purge()

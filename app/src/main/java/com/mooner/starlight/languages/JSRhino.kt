@@ -49,10 +49,11 @@ class JSRhino: Language() {
                     defaultValue = false
                     icon = Icon.CHECK
                 }
-                slider {
+                seekbar {
                     id = CONF_OPTIMIZATION_LEVEL
                     title = "최적화 레벨"
                     dependency = CONF_OPTIMIZE_CODE
+                    min = 1
                     max = 9
                     icon = Icon.COMPRESS
                     iconTintColor = color { "#57837B" }

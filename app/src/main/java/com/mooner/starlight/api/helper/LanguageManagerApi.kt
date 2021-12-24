@@ -7,30 +7,35 @@ import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.project.Project
 
-class LanguagesApi: Api<LanguagesApi.Languages>() {
+class LanguageManagerApi: Api<LanguageManagerApi.LanguageManager>() {
 
-    class Languages(
+    class LanguageManager(
         private val project: Project
     ) {
-        fun get(): Language = project.getLanguage()
+        fun getLanguage(): Language = project.getLanguage()
 
-        fun get(id: String): Language? {
+        fun getLanguage(id: String): Language? {
             return Session.languageManager.getLanguage(id)
         }
     }
 
-    override val name: String = "Languages"
+    override val name: String = "LanguageManager"
 
     override val instanceType: InstanceType = InstanceType.OBJECT
 
-    override val instanceClass: Class<Languages> = Languages::class.java
+    override val instanceClass: Class<LanguageManager> = LanguageManager::class.java
 
     override val objects: List<ApiFunction> = listOf(
-        ApiFunction(
-            name = "get",
+        function {
+            name = "getLanguage"
+            returns = Language::class.java
+        },
+        function {
+            name = "getLanguage"
             args = arrayOf(String::class.java)
-        )
+            returns = Language::class.java
+        }
     )
 
-    override fun getInstance(project: Project): Any = Languages(project)
+    override fun getInstance(project: Project): Any = LanguageManager(project)
 }

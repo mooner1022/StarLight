@@ -24,6 +24,7 @@ import java.util.*
 @SuppressLint("ConstantLocale")
 class LogsRecyclerViewAdapter(
     private val context: Context,
+    private val copyOnLongClick: Boolean = true,
 ): RecyclerView.Adapter<LogsRecyclerViewAdapter.LogsViewHolder>() {
 
     companion object {
@@ -59,11 +60,13 @@ class LogsRecyclerViewAdapter(
         holder.title.text = viewData.tag?: viewData.type.name
         holder.content.text = viewData.message
         holder.timestamp.text = formatDate(viewData.millis)
-        holder.root.setOnLongClickListener {
-            val clip = ClipData.newPlainText("로그", viewData.toString())
-            clipboard.setPrimaryClip(clip)
-            Snackbar.make(it, "로그를 클립보드에 복사했어요.", Snackbar.LENGTH_SHORT).show()
-            true
+        if (copyOnLongClick) {
+            holder.root.setOnLongClickListener {
+                val clip = ClipData.newPlainText("로그", viewData.toString())
+                clipboard.setPrimaryClip(clip)
+                Snackbar.make(it, "로그를 클립보드에 복사했어요.", Snackbar.LENGTH_SHORT).show()
+                true
+            }
         }
     }
 

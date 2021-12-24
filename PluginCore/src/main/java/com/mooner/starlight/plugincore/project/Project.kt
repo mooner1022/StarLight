@@ -2,9 +2,9 @@
 package com.mooner.starlight.plugincore.project
 
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.apiManager
 import com.mooner.starlight.plugincore.Session.json
 import com.mooner.starlight.plugincore.Session.projectManager
-import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.config.Config
 import com.mooner.starlight.plugincore.config.FileConfig
 import com.mooner.starlight.plugincore.language.Language
@@ -26,6 +26,8 @@ class Project (
         private const val CONFIG_FILE_NAME  = "config.json"
         private const val INFO_FILE_NAME    = "project.json"
         private const val LOGS_FILE_NAME    = "logs-local.json"
+
+        private const val DEF_THREAD_POOL_SIZE = 3
 
         fun create(dir: File, config: ProjectInfo): Project {
             val folder = File(dir.path, config.name)
@@ -69,7 +71,7 @@ class Project (
      * @param args parameter values being passed to function.
      * @param onException called when exception is occurred while calling.
      */
-    internal fun callEvent(name: String, args: Array<out Any>, onException: (Throwable) -> Unit = {}) {
+    fun callEvent(name: String, args: Array<out Any>, onException: (Throwable) -> Unit = {}) {
         //logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
         if (engine == null) {
             if (!isCompiled) return
@@ -99,8 +101,9 @@ class Project (
                 context = null
             }
             threadName = "$tag-worker"
-            context = newFixedThreadPoolContext(3, threadName!!)
-            Logger.v("Allocated thread pool $threadName with 3 threads to project ${info.name}")
+            val poolSize = getThreadPoolSize()
+            context = newFixedThreadPoolContext(poolSize, threadName!!)
+            Logger.v("Allocated thread pool $threadName with $poolSize threads to project ${info.name}")
         }
 
         fun onError(e: Throwable) {
@@ -175,11 +178,10 @@ class Project (
                 lang.release(engine!!)
                 logger.v(tag, "engine released")
             }
-            logger.v(tag, "compile() called, methods= ${ApiManager.getApis().joinToString { it.name }}")
             logger.i("Compiling project ${info.name}...")
             engine = lang.compile(
                 code = rawCode,
-                apis = ApiManager.getApis(),
+                apis = apiManager.getApis(),
                 project = this
             )
             projectManager.onStateChanged(this)
@@ -194,8 +196,8 @@ class Project (
 
     fun setEnabled(enabled: Boolean): Boolean {
         if (isCompiled) {
-            if (info.isEnabled) return true
-            info.isEnabled = true
+            if (info.isEnabled == enabled) return true
+            info.isEnabled = enabled
             saveInfo()
             requestUpdate()
             return true
@@ -265,4 +267,6 @@ class Project (
         }
         if (requestUpdate) requestUpdate()
     }
+
+    private fun getThreadPoolSize(): Int = config.getCategory("beta_features").getInt("thread_pool_size", DEF_THREAD_POOL_SIZE)
 }
