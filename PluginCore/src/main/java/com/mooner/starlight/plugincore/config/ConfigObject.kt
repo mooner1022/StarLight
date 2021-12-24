@@ -10,7 +10,7 @@ enum class ConfigObjectType(
     val viewType: Int
 ) {
     TOGGLE(0),
-    SLIDER(1),
+    SEEKBAR(1),
     STRING(2),
     PASSWORD(-2),
     SPINNER(3),
@@ -55,7 +55,7 @@ data class ToggleConfigObject(
         get() = type.viewType
 }
 
-data class SliderConfigObject(
+data class SeekbarConfigObject(
     override val id: String,
     override val title: String,
     override val description: String? = null,
@@ -68,12 +68,8 @@ data class SliderConfigObject(
     override val iconTintColor: Int?,
     override val dependency: String? = null
 ): ConfigObject {
-    override val default: Any
-        get() = defaultValue
-    override val type: ConfigObjectType
-        get() = ConfigObjectType.SLIDER
-    override val viewType: Int
-        get() = type.viewType
+    override val type = ConfigObjectType.SEEKBAR
+    override val viewType = type.viewType
 }
 
 data class StringConfigObject(

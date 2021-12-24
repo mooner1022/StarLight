@@ -112,9 +112,9 @@ class ConfigItemBuilder {
         add(toggle)
     }
 
-    fun slider(block: SliderConfigBuilder.() -> Unit) {
-        val slider = SliderConfigBuilder().apply(block)
-        add(slider)
+    fun seekbar(block: SeekbarConfigBuilder.() -> Unit) {
+        val seekbar = SeekbarConfigBuilder().apply(block)
+        add(seekbar)
     }
 
     fun string(block: StringConfigBuilder.() -> Unit) {
@@ -237,18 +237,19 @@ class ConfigItemBuilder {
         }
     }
 
-    inner class SliderConfigBuilder: ConfigBuilder() {
+    inner class SeekbarConfigBuilder: ConfigBuilder() {
         var max: Int? = null
+        var min: Int = 0
         var defaultValue: Int = 0
 
-        override fun build(): SliderConfigObject {
+        override fun build(): SeekbarConfigObject {
             required("id", id)
             required("title", title)
             required("max", max)
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
-            return SliderConfigObject(
+            return SeekbarConfigObject(
                 id = id!!,
                 title = title!!,
                 description = description,
