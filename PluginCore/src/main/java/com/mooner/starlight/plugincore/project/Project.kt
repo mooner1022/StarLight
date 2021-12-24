@@ -69,7 +69,7 @@ class Project (
      * @param args parameter values being passed to function.
      * @param onException called when exception is occurred while calling.
      */
-    internal fun callEvent(name: String, args: Array<out Any>, onException: (Throwable) -> Unit = {}) {
+    fun callEvent(name: String, args: Array<out Any>, onException: (Throwable) -> Unit = {}) {
         //logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
         if (engine == null) {
             if (!isCompiled) return
