@@ -2,22 +2,16 @@ package com.mooner.starlight.core.session
 
 import android.content.Context
 import com.mooner.starlight.R
-import com.mooner.starlight.api.helper.LanguagesApi
-import com.mooner.starlight.api.helper.ProjectLoggerApi
-import com.mooner.starlight.api.helper.ProjectsApi
-import com.mooner.starlight.api.helper.UtilsApi
+import com.mooner.starlight.api.helper.*
 import com.mooner.starlight.api.legacy.LegacyApi
 import com.mooner.starlight.languages.JSRhino
-import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.listener.DefaultEvent
 import com.mooner.starlight.listener.legacy.LegacyEvent
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.pluginLoader
 import com.mooner.starlight.plugincore.Session.pluginManager
-import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.EventListener
-import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
 import com.mooner.starlight.ui.widget.DummyWidgetSlim
 import com.mooner.starlight.ui.widget.LogsWidget
@@ -69,7 +63,7 @@ object ApplicationSession {
         onPhaseChanged(context.getString(R.string.step_plugincore_init))
         Session.init(starlightDir)
         Session.languageManager.apply {
-            addLanguage("", JSV8())
+            //addLanguage("", JSV8())
             addLanguage("", JSRhino())
             //addLanguage(GraalVMLang())
         }
