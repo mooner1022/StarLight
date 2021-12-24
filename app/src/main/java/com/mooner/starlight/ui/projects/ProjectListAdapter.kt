@@ -11,6 +11,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
+import coil.transform.RoundedCornersTransformation
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
@@ -89,7 +90,9 @@ class ProjectListAdapter(
             it.loadAnyWithTint(
                 data = icon?: R.drawable.ic_round_developer_mode_24,
                 tintColor = tint
-            )
+            ) {
+                transformations(RoundedCornersTransformation(context.resources.getDimension(R.dimen.lang_icon_corner_radius)))
+            }
         }
 
         holder.expandable.setTitle(titleText = info.name)
