@@ -4,6 +4,7 @@ import android.content.Context
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.globalConfig
+import com.mooner.starlight.plugincore.Session.pluginManager
 import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.utils.*
@@ -104,6 +105,9 @@ fun Context.startDevModeActivity() {
                     }
                     debugInfo("globalPower", globalConfig.getCategory("general").getBoolean("global_power").toString())
                     debugInfo("layoutMode", "$layoutMode ($layoutModeString)")
+                    debugInfo("widgets", globalConfig.getCategory("widgets").getString("ids", WIDGET_DEF_STRING))
+                    debugInfo("plugins", pluginManager.getPlugins().joinToString { it.info.id })
+                    //debugInfo("libs", )
                     debugInfo("pluginSafeMode", globalConfig.getCategory("plugin").getBoolean("safe_mode").toString())
                     debugInfo("baseDirectory", FileUtils.getInternalDirectory().path)
                     debugInfo("PLUGINCORE_VERSION", Info.PLUGINCORE_VERSION.toString())
