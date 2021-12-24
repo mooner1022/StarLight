@@ -10,13 +10,18 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import coil.transform.RoundedCornersTransformation
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
+import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.ui.debugroom.models.DebugRoomMessage
+import java.io.File
 
 
 class DebugRoomChatAdapter(
@@ -71,18 +76,6 @@ class DebugRoomChatAdapter(
             CHAT_SELF -> {
                 holder.message.text = messageData.message
             }
-            CHAT_BOT -> {
-                if (isSentAgain) {
-                    holder.sender.visibility = View.GONE
-                    holder.profileImage.visibility = View.INVISIBLE
-                } else {
-                    holder.sender.visibility = View.VISIBLE
-                    holder.profileImage.visibility = View.VISIBLE
-                    holder.sender.text = messageData.sender
-                    holder.profileImage.setImageResource(R.drawable.default_profile)
-                }
-                holder.message.text = messageData.message
-            }
             CHAT_SELF_LONG -> {
                 holder.message.text = messageData.message + "..."
                 holder.showAllButton.setOnClickListener {
@@ -99,7 +92,7 @@ class DebugRoomChatAdapter(
                     }
                 }
             }
-            CHAT_BOT_LONG -> {
+            CHAT_BOT, CHAT_BOT_LONG -> {
                 if (isSentAgain) {
                     holder.sender.visibility = View.GONE
                     holder.profileImage.visibility = View.INVISIBLE
@@ -107,20 +100,36 @@ class DebugRoomChatAdapter(
                     holder.sender.visibility = View.VISIBLE
                     holder.profileImage.visibility = View.VISIBLE
                     holder.sender.text = messageData.sender
-                    holder.profileImage.setImageResource(R.drawable.default_profile)
+
+                    holder.profileImage.apply {
+                        val profileFilePath = Session.globalConfig.getCategory("d_bot").getString("profile_image_path")
+                        if (profileFilePath != null) {
+                            load(File(profileFilePath)) {
+                                transformations(RoundedCornersTransformation(resources.getDimension(R.dimen.debugroom_profile_corner_radius)))
+                            }
+                            colorFilter = null
+                        } else {
+                            load(R.drawable.default_profile)
+                            setColorFilter(ContextCompat.getColor(context, R.color.main_purple))
+                        }
+                    }
                 }
 
-                holder.message.text = messageData.message + "..."
-                val fullMessage = debugRoomActivity.dir.resolve("chats").resolve(messageData.fileName!!).readText()
-                holder.showAllButton.setOnClickListener {
-                    MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                        cornerRadius(25f)
-                        cancelOnTouchOutside(true)
-                        noAutoDismiss()
-                        title(text = context.getString(R.string.title_show_all))
-                        message(text = fullMessage)
-                        positiveButton(text = context.getString(R.string.close)) {
-                            dismiss()
+                if (messageData.viewType == CHAT_BOT) {
+                    holder.message.text = messageData.message
+                } else {
+                    holder.message.text = messageData.message + "..."
+                    val fullMessage = debugRoomActivity.dir.resolve("chats").resolve(messageData.fileName!!).readText()
+                    holder.showAllButton.setOnClickListener {
+                        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                            cornerRadius(25f)
+                            cancelOnTouchOutside(true)
+                            noAutoDismiss()
+                            title(text = context.getString(R.string.title_show_all))
+                            message(text = fullMessage)
+                            positiveButton(text = context.getString(R.string.close)) {
+                                dismiss()
+                            }
                         }
                     }
                 }
