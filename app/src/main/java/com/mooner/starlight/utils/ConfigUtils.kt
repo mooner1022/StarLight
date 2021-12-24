@@ -19,7 +19,7 @@ private data class DataHolder(
     val items: List<CategoryConfigObject>,
     val saved: Map<String, Map<String, TypedString>>,
     val listener: (parentId: String, id: String, view: View?, data: Any) -> Unit,
-    val onDestroy: () -> Unit,
+    val onDestroyed: () -> Unit,
     var instance: ConfigActivity? = null
 )
 
@@ -76,8 +76,8 @@ internal fun ConfigActivity.initAdapter() {
 
 internal fun ConfigActivity.onDestroyed() {
     val activityId = intent.getStringExtra(EXTRA_ACTIVITY_ID)!!
-    if (holders.containsKey(activityId)) {
-        holders[activityId]!!.onDestroy()
+    if (activityId in holders) {
+        holders[activityId]!!.onDestroyed()
         holders -= activityId
         Logger.v(T, "onDestroyed() called from config activity with ID: $activityId")
     }
