@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
+import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.webkit.JavascriptInterface
@@ -33,7 +34,7 @@ class EditorActivity : AppCompatActivity() {
     private var isCodeChanged = false
     private lateinit var binding: ActivityEditorBinding
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityEditorBinding.inflate(layoutInflater)
@@ -192,19 +193,28 @@ class EditorActivity : AppCompatActivity() {
         return super.onCreateOptionsMenu(menu)
     }
 
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN &&
+            event.isCtrlPressed &&
+            event.keyCode == KeyEvent.KEYCODE_S) {
+            saveCode()
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    private fun saveCode() {
+        if (isCodeChanged) {
+            if (fileDir.isFile) fileDir.writeText(this.code)
+            else Logger.e(T, "Destination '${fileDir.path}' is not a file")
+            isCodeChanged = false
+        }
+        Snackbar.make(window.decorView.findViewById(android.R.id.content), "$name 저장 완료", Snackbar.LENGTH_LONG).show()
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.menu_save -> {
-                if (isCodeChanged) {
-                    if (fileDir.isFile) fileDir.writeText(this.code)
-                    else Logger.e(T, "Target [${fileDir.path}] is not a file")
-                    isCodeChanged = false
-                }
-                Snackbar.make(window.decorView.findViewById(android.R.id.content), "$name 저장 완료", Snackbar.LENGTH_LONG).show()
-            }
-            android.R.id.home -> { // 메뉴 버튼
-                finish()
-            }
+            R.id.menu_save -> saveCode()
+            android.R.id.home -> finish()
             //R.id.text_undo ->
             //R.id.text_redo ->
         }
