@@ -74,7 +74,7 @@ class ProjectManager(
             Logger.e(ProjectManager::class.simpleName, "Rejecting event call from '$eventId' which is not registered on EventManager")
             return
         }
-        val projects = this.projects.values.filter { eventId in it.info.listeners }
+        val projects = this.projects.values.filter { it.isCompiled && it.info.isEnabled && eventId in it.info.listeners }
         if (projects.isEmpty()) return
         for (project in projects) {
             project.callEvent(eventName, args, onError)
