@@ -18,6 +18,7 @@ import com.mooner.starlight.plugincore.utils.NetworkUtil
 import com.mooner.starlight.plugincore.widget.WidgetManager
 import kotlinx.serialization.json.Json
 import java.io.File
+import kotlin.properties.Delegates
 
 object Session {
 
@@ -133,7 +134,7 @@ object Session {
         //globalConfig.push()
 
         NetworkUtil.purge()
-        ApiManager.purge()
+        apiManager.purge()
 
         mLanguageManager?.purge()
         mWidgetManager?.purge()

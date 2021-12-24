@@ -2,9 +2,9 @@
 package com.mooner.starlight.plugincore.project
 
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.apiManager
 import com.mooner.starlight.plugincore.Session.json
 import com.mooner.starlight.plugincore.Session.projectManager
-import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.config.Config
 import com.mooner.starlight.plugincore.config.FileConfig
 import com.mooner.starlight.plugincore.language.Language
@@ -178,11 +178,10 @@ class Project (
                 lang.release(engine!!)
                 logger.v(tag, "engine released")
             }
-            logger.v(tag, "compile() called, methods= ${ApiManager.getApis().joinToString { it.name }}")
             logger.i("Compiling project ${info.name}...")
             engine = lang.compile(
                 code = rawCode,
-                apis = ApiManager.getApis(),
+                apis = apiManager.getApis(),
                 project = this
             )
             projectManager.onStateChanged(this)

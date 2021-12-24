@@ -48,18 +48,6 @@ object ApplicationSession {
         val starlightDir = FileUtils.getInternalDirectory()
         Logger.init(starlightDir)
 
-        onPhaseChanged(context.getString(R.string.step_default_lib))
-        ApiManager.apply {
-            addApi(LanguagesApi())
-            addApi(ProjectLoggerApi())
-            addApi(ProjectsApi())
-            addApi(UtilsApi())
-            addApi(LegacyApi())
-            //addApi(ClientApi())
-            //addApi(EventApi())
-            //addApi(TimerApi())
-        }
-
         onPhaseChanged(context.getString(R.string.step_plugincore_init))
         Session.init(starlightDir)
         Session.languageManager.apply {
@@ -81,6 +69,19 @@ object ApplicationSession {
 
         onPhaseChanged(context.getString(R.string.step_projects))
         Session.projectLoader.loadProjects()
+
+        onPhaseChanged(context.getString(R.string.step_default_lib))
+        Session.apiManager.apply {
+            addApi(LanguageManagerApi())
+            addApi(ProjectLoggerApi())
+            addApi(ProjectManagerApi())
+            addApi(PluginManagerApi())
+            addApi(UtilsApi())
+            addApi(LegacyApi())
+            //addApi(ClientApi())
+            //addApi(EventApi())
+            //addApi(TimerApi())
+        }
 
         Session.widgetManager.apply {
             addWidget(DummyWidgetSlim())
