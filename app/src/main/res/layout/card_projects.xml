@@ -10,7 +10,7 @@
             android:id="@+id/cardViewIsEnabled"
             android:layout_width="12dp"
             android:layout_height="30dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="14dp"
             app:cardBackgroundColor="@color/project_card"
             app:cardCornerRadius="5dp"
             app:cardElevation="0dp"
