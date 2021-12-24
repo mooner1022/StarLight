@@ -13,6 +13,7 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import androidx.annotation.ColorRes
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -152,3 +153,5 @@ const val LAYOUT_DEFAULT = 0
 const val LAYOUT_TABLET  = 1
 
 val Context.layoutMode get() = resources.getInteger(R.integer.layoutMode)
+
+fun Context.getColorCompat(@ColorRes res: Int): Int = ContextCompat.getColor(this, res)

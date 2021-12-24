@@ -125,7 +125,8 @@ class ProjectsFragment : Fragment() {
 
         binding.cardViewProjectAlign.setOnClickListener {
             MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                cornerRadius(25f)
+                cornerRadius(res = R.dimen.card_radius)
+                maxWidth(res = R.dimen.dialog_width)
                 lifecycleOwner(this@ProjectsFragment)
                 gridItems(aligns.toGridItems()) { dialog, _, item ->
                     alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
@@ -149,6 +150,7 @@ class ProjectsFragment : Fragment() {
                 cornerRadius(res = R.dimen.card_radius)
                 maxWidth(res = R.dimen.dialog_width)
                 customView(R.layout.dialog_new_project)
+                lifecycleOwner(this@ProjectsFragment)
                 cancelOnTouchOutside(true)
                 noAutoDismiss()
 

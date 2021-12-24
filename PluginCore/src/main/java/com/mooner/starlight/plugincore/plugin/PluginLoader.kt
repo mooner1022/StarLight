@@ -107,7 +107,7 @@ class PluginLoader {
         return plugin
     }
 
-    fun loadAssets(file: File, plugin: StarlightPlugin, force: Boolean = false) {
+    private fun loadAssets(file: File, plugin: StarlightPlugin, force: Boolean = false) {
         var jar: JarFile? = null
         try {
             jar = JarFile(file)
