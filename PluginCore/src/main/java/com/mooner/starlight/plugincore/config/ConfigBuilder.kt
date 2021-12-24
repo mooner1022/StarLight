@@ -247,6 +247,16 @@ class ConfigItemBuilder {
             required("title", title)
             required("max", max)
 
+            if (max!! <= 0) {
+                throw IllegalArgumentException("Value of parameter 'max' should be positive.")
+            }
+            if (min > max!!) {
+                throw IllegalArgumentException("Value of parameter 'min' should be smaller than 'max'.")
+            }
+            if (defaultValue !in min..max!!) {
+                throw IllegalArgumentException("Value of parameter 'defaultValue' should be in range $min~$max.")
+            }
+
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return SeekbarConfigObject(
@@ -254,7 +264,8 @@ class ConfigItemBuilder {
                 title = title!!,
                 description = description,
                 max = max!!,
-                defaultValue = defaultValue,
+                min = min,
+                default = defaultValue,
                 icon = icon,
                 iconFile = iconFile,
                 iconResId = iconResId,
