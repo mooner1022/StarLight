@@ -27,6 +27,8 @@ class Project (
         private const val INFO_FILE_NAME    = "project.json"
         private const val LOGS_FILE_NAME    = "logs-local.json"
 
+        private const val DEF_THREAD_POOL_SIZE = 3
+
         fun create(dir: File, config: ProjectInfo): Project {
             val folder = File(dir.path, config.name)
             folder.mkdirs()
@@ -99,8 +101,9 @@ class Project (
                 context = null
             }
             threadName = "$tag-worker"
-            context = newFixedThreadPoolContext(3, threadName!!)
-            Logger.v("Allocated thread pool $threadName with 3 threads to project ${info.name}")
+            val poolSize = getThreadPoolSize()
+            context = newFixedThreadPoolContext(poolSize, threadName!!)
+            Logger.v("Allocated thread pool $threadName with $poolSize threads to project ${info.name}")
         }
 
         fun onError(e: Throwable) {
@@ -265,4 +268,6 @@ class Project (
         }
         if (requestUpdate) requestUpdate()
     }
+
+    private fun getThreadPoolSize(): Int = config.getCategory("beta_features").getInt("thread_pool_size", DEF_THREAD_POOL_SIZE)
 }
