@@ -196,8 +196,8 @@ class Project (
 
     fun setEnabled(enabled: Boolean): Boolean {
         if (isCompiled) {
-            if (info.isEnabled) return true
-            info.isEnabled = true
+            if (info.isEnabled == enabled) return true
+            info.isEnabled = enabled
             saveInfo()
             requestUpdate()
             return true
