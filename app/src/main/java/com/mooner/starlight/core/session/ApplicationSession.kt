@@ -84,17 +84,18 @@ object ApplicationSession {
         }
 
         Session.widgetManager.apply {
-            addWidget(DummyWidgetSlim())
-            addWidget(UptimeWidgetDefault())
-            addWidget(UptimeWidgetSlim())
-            addWidget(LogsWidget())
+            val name = "기본 위젯"
+            addWidget(name, DummyWidgetSlim())
+            addWidget(name, UptimeWidgetDefault())
+            addWidget(name, UptimeWidgetSlim())
+            addWidget(name, LogsWidget())
         }
 
         NetworkUtil.registerNetworkStatusListener(context)
         NetworkUtil.addOnNetworkStateChangedListener { state ->
             if (pluginManager.getPlugins().isNotEmpty()) {
                 for (plugin in pluginManager.getPlugins()) {
-                    (plugin as StarlightPlugin).onNetworkStateChanged(state)
+                    plugin.onNetworkStateChanged(state)
                 }
             }
         }
