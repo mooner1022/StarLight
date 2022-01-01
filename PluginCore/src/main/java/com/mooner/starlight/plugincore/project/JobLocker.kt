@@ -70,6 +70,7 @@ object JobLocker {
                 Logger.v("Postponed release of job $key")
                 data.latch.await()
             }
+            runningJobs -= key
             Logger.v(T, "Released job $key")
         }
 
@@ -121,18 +122,18 @@ object JobLocker {
 
         fun requestRelease(key: String = defaultKey) {
             if (key in runningJobs) {
-                var isReleased = false
+                //var isReleased = false
                 runningJobs[key]!!.also {
                     it.releaseCounter--
                     if (it.canRelease) {
                         Logger.v(T, "Releasing locked job $key")
                         //it.listener(null)
                         it.latch.countDown()
-                        isReleased = true
+                        //isReleased = true
                     }
                 }
-                if (isReleased)
-                    runningJobs -= key
+                //if (isReleased)
+                //    runningJobs -= key
             } else {
                 Logger.w(T, "Failed to release job: job $key is not registered or already released")
             }
@@ -149,7 +150,7 @@ object JobLocker {
                     it.listener(ForceReleasedException("Job force released"))
                      */
                 }
-                runningJobs -= key
+                //runningJobs -= key
                 Logger.w(T, "Force released job $key, this might not be a normal behavior")
             }
         }
