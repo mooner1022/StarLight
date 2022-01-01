@@ -2,8 +2,13 @@ package com.mooner.starlight.core.session
 
 import android.content.Context
 import com.mooner.starlight.R
-import com.mooner.starlight.api.helper.*
-import com.mooner.starlight.api.legacy.LegacyApi
+import com.mooner.starlight.api.api2.AppApi
+import com.mooner.starlight.api.legacy.*
+import com.mooner.starlight.api.original.LanguageManagerApi
+import com.mooner.starlight.api.original.PluginManagerApi
+import com.mooner.starlight.api.original.ProjectLoggerApi
+import com.mooner.starlight.api.original.ProjectManagerApi
+import com.mooner.starlight.api.unused.TimerApi
 import com.mooner.starlight.languages.JSRhino
 import com.mooner.starlight.listener.DefaultEvent
 import com.mooner.starlight.listener.legacy.LegacyEvent
@@ -72,12 +77,24 @@ object ApplicationSession {
 
         onPhaseChanged(context.getString(R.string.step_default_lib))
         Session.apiManager.apply {
+            // Original Apis
             addApi(LanguageManagerApi())
             addApi(ProjectLoggerApi())
             addApi(ProjectManagerApi())
             addApi(PluginManagerApi())
+            addApi(TimerApi())
+
+            // Legacy Apis
             addApi(UtilsApi())
             addApi(LegacyApi())
+            addApi(BridgeApi())
+            addApi(FileStreamApi())
+            addApi(DataBaseApi())
+            addApi(DeviceApi())
+
+            // Api2 Apis
+            addApi(AppApi())
+
             //addApi(ClientApi())
             //addApi(EventApi())
             //addApi(TimerApi())
