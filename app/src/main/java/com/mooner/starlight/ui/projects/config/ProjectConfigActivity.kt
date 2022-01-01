@@ -15,6 +15,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityProjectConfigBinding
 import com.mooner.starlight.plugincore.Session
+import com.mooner.starlight.plugincore.Session.globalConfig
 import com.mooner.starlight.plugincore.config.*
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
@@ -29,6 +30,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         category {
             id = "general"
             title = "일반"
+            textColor = color { "#706EB9" }
             items = items {
                 button {
                     id = "open_folder"
@@ -130,6 +132,24 @@ class ProjectConfigActivity: AppCompatActivity() {
 
     @SuppressLint("CheckResult")
     private fun getCautiousConfigs(): List<CategoryConfigObject> = config {
+        if (globalConfig.getCategory("beta_features").getBoolean("change_thread_pool_size", false)) {
+            category {
+                id = "beta_features"
+                title = "실험적 기능"
+                textColor = color { "#706EB9" }
+                items = items {
+                    seekbar {
+                        id = "thread_pool_size"
+                        title = "Thread pool 크기"
+                        min = 1
+                        max = 10
+                        defaultValue = 3
+                        icon = Icon.COMPRESS
+                        iconTintColor = color { "#57837B" }
+                    }
+                }
+            }
+        }
         category {
             id = "cautious"
             title = "위험"

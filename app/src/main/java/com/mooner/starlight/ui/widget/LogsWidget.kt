@@ -123,7 +123,7 @@ class LogsWidget: Widget() {
             val rvLogs: RecyclerView = findViewById(R.id.rvLogs)
             val textViewNoLogsYet: TextView = findViewById(R.id.textViewNoLogsYet)
             val logs: List<LogData> = listOf(dummyLog, dummyLog, dummyLog)
-            mThumbnailAdapter = LogsRecyclerViewAdapter(context)
+            mThumbnailAdapter = LogsRecyclerViewAdapter(context, false)
 
             val mLayoutManager = LinearLayoutManager(context).apply {
                 reverseLayout = true

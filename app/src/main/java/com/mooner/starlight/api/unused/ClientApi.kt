@@ -1,4 +1,4 @@
-package com.mooner.starlight.api.core
+package com.mooner.starlight.api.unused
 
 /*
  * TODO: 콜백 함수 구현 문제 해결. 각 언어별 Implementation?

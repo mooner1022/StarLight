@@ -11,13 +11,13 @@ import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
+import org.mozilla.javascript.ImporterTopLevel
 import org.mozilla.javascript.Scriptable
-import org.mozilla.javascript.ScriptableObject
 import java.io.File
 
 class JSRhino: Language() {
 
-    private lateinit var context: Context
+    //private lateinit var context: Context
     companion object {
 
         private const val T = "JS-라이노"
@@ -49,10 +49,11 @@ class JSRhino: Language() {
                     defaultValue = false
                     icon = Icon.CHECK
                 }
-                slider {
+                seekbar {
                     id = CONF_OPTIMIZATION_LEVEL
                     title = "최적화 레벨"
                     dependency = CONF_OPTIMIZE_CODE
+                    min = 1
                     max = 9
                     icon = Icon.COMPRESS
                     iconTintColor = color { "#57837B" }
@@ -91,68 +92,83 @@ class JSRhino: Language() {
 
     override fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    override fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any {
+    private fun enterContext(): Context {
         val config = getLanguageConfig()
         val optLevel = if (config.getBoolean(CONF_OPTIMIZE_CODE, false))
             config.getInt(CONF_OPTIMIZATION_LEVEL, 0)
         else
             -1
-        context = RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")).enterContext().apply {
+        val context = RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")).enterContext().apply {
             optimizationLevel = optLevel
             val langVersionIndex = config.getInt(CONF_LANG_VERSION)
             languageVersion = if (langVersionIndex == null)
                 LANG_DEF_VERSION
             else
                 indexToVersion(langVersionIndex)
+            wrapFactory = PrimitiveWrapFactory()
         }
-        val shared = context.initStandardObjects()
-        val scope = context.newObject(shared)
+        return context
+    }
+
+    override fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any {
+        val context = enterContext()
+        val scope = context.initStandardObjects(ImporterTopLevel(context))
+        //val scope = context.newObject(shared)
         //val engine = ScriptEngineManager().getEngineByName("rhino")!!
         if (project != null) {
+            var importLines: StringBuilder? = null
             for(methodBlock in apis) {
                 val instance = methodBlock.getInstance(project)
 
                 when(methodBlock.instanceType) {
                     InstanceType.CLASS -> {
-                        context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
+                        val line = "const ${methodBlock.name} = ${methodBlock.instanceClass.name};\n"
+                        if (importLines == null) importLines = StringBuilder(line)
+                        else importLines.append(line)
+                        //context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
                     }
                     InstanceType.OBJECT -> {
-                        ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(instance, scope))
+                        scope.put(methodBlock.name, scope, instance)
+                        //ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(instance, scope))
                     }
                 }
                 //engine.put(methodBlock.blockName, methodBlock.instance)
             }
+            if (importLines != null) {
+                context.evaluateString(scope, importLines.toString(), "import", 0, null)
+            }
         }
         //engine.eval(code)
-        context.evaluateString(scope, code, project?.info?.name?: name, 1, null)
+        context.evaluateString(scope, code, project?.info?.name?: name, 0, null)
         //scope.put()
+        Context.exit()
         return scope
     }
 
-    override fun release(engine: Any) {
-        super.release(engine)
+    override fun release(scope: Any) {
+        super.release(scope)
         try {
             Context.exit()
         } catch (e: IllegalStateException) {
-            Logger.e(T, "Failed to release engine: ${e.message}")
+            Logger.v(T, "Failed to release engine: ${e.message}")
         }
     }
 
     override fun callFunction(
-        engine: Any,
+        scope: Any,
         functionName: String,
         args: Array<out Any>,
         onError: (e: Exception) -> Unit
     ) {
         try {
-            val rhino = engine as Scriptable
-            Context.enter()
-            val function = rhino.get(functionName, engine)
+            val rhino = scope as Scriptable
+            val context = enterContext()
+            val function = rhino.get(functionName, scope)
             if (function == Scriptable.NOT_FOUND || function !is Function) {
-                Logger.e(T, "Unable to locate function [$functionName]")
+                Logger.v(T, "Unable to locate function: $functionName")
                 return
             }
-            function.call(context, engine, engine, args)
+            function.call(context, scope, scope, args)
         } catch (e: Exception) {
             onError(e)
         }
@@ -162,24 +178,9 @@ class JSRhino: Language() {
     }
 
     override fun eval(code: String): Any {
-        val config = getLanguageConfig()
-
-        val optLevel = if (config.getBoolean(CONF_OPTIMIZE_CODE, false))
-            config.getInt(CONF_OPTIMIZATION_LEVEL, 0)
-        else
-            -1
-
-        val context = RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")).enterContext().apply {
-            optimizationLevel = optLevel
-            val langVersionIndex = config.getInt(CONF_LANG_VERSION)
-            languageVersion = if (langVersionIndex == null)
-                LANG_DEF_VERSION
-            else
-                indexToVersion(langVersionIndex)
-        }
-        val shared = context.initSafeStandardObjects()
-        val scope = context.newObject(shared)
-        val result = context.evaluateString(scope, code, "eval", 1, null)
+        val context = enterContext()
+        val scope = context.initStandardObjects(ImporterTopLevel(context))
+        val result = context.evaluateString(scope, code, "eval", 0, null)
         Context.exit()
         return result
         //val engine = ScriptEngineManager().getEngineByName("rhino")!!

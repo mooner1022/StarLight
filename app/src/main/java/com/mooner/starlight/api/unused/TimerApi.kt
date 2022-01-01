@@ -1,30 +1,33 @@
-package com.mooner.starlight.api.helper
+package com.mooner.starlight.api.unused
+
+import com.mooner.starlight.plugincore.api.Api
+import com.mooner.starlight.plugincore.api.ApiFunction
+import com.mooner.starlight.plugincore.api.InstanceType
+import com.mooner.starlight.plugincore.project.JobLocker
+import com.mooner.starlight.plugincore.project.Project
+import kotlin.concurrent.schedule
 
 /*
  * TODO: 콜백 함수 구현 문제 해결. 각 언어별 Implementation?
  */
 
-/*
 class TimerApi: Api<TimerApi.Timer>() {
 
-    interface TimerCallback {
-        fun run()
-    }
-
-    class Timer {
-        fun schedule(millis: Long, callback: TimerCallback): java.util.Timer {
+    class Timer(
+        private val project: Project
+    ) {
+        fun schedule(millis: Long, callback: Runnable): java.util.Timer {
             /*
-            locker.acquire -> run                   -> if(Timer.isRunning()) else -> locker.reease()
-                                |--   Timer.schedule() --|->       await          ->-|
+             * locker.acquire -> run                   -> if(Timer.isRunning()) else -> locker.release()
+             *                   |--   Timer.schedule() --|->       await          ->-|
              */
 
-            val threadName = Thread.currentThread().name
-            JobLocker.withParent(threadName).requestLock()
+            val parentName = project.threadPoolName!!
+            val key = JobLocker.withParent(parentName).requestLock()
             return java.util.Timer().apply {
                 schedule(millis) {
-                    println("timer called")
                     callback.run()
-                    JobLocker.withParent(threadName).requestRelease()
+                    JobLocker.withParent(parentName).requestRelease(key)
                 }
             }
         }
@@ -55,15 +58,12 @@ class TimerApi: Api<TimerApi.Timer>() {
     override val objects: List<ApiFunction> = listOf(
         function {
             name = "schedule"
-            args = arrayOf(Long::class.java, Function0::class.java)
+            args = arrayOf(Long::class.java, Runnable::class.java)
             returns = java.util.Timer::class.java
         }
     )
     override val instanceClass: Class<Timer> = Timer::class.java
 
-    override fun getInstance(project: Project): Any {
-        return Timer()
-    }
+    override fun getInstance(project: Project): Any = Timer(project)
 
 }
-*/

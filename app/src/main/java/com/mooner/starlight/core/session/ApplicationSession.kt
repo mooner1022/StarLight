@@ -2,22 +2,21 @@ package com.mooner.starlight.core.session
 
 import android.content.Context
 import com.mooner.starlight.R
-import com.mooner.starlight.api.helper.LanguagesApi
-import com.mooner.starlight.api.helper.ProjectLoggerApi
-import com.mooner.starlight.api.helper.ProjectsApi
-import com.mooner.starlight.api.helper.UtilsApi
-import com.mooner.starlight.api.legacy.LegacyApi
+import com.mooner.starlight.api.api2.AppApi
+import com.mooner.starlight.api.legacy.*
+import com.mooner.starlight.api.original.LanguageManagerApi
+import com.mooner.starlight.api.original.PluginManagerApi
+import com.mooner.starlight.api.original.ProjectLoggerApi
+import com.mooner.starlight.api.original.ProjectManagerApi
+import com.mooner.starlight.api.unused.TimerApi
 import com.mooner.starlight.languages.JSRhino
-import com.mooner.starlight.languages.JSV8
 import com.mooner.starlight.listener.DefaultEvent
 import com.mooner.starlight.listener.legacy.LegacyEvent
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.pluginLoader
 import com.mooner.starlight.plugincore.Session.pluginManager
-import com.mooner.starlight.plugincore.api.ApiManager
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.plugin.EventListener
-import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.NetworkUtil
 import com.mooner.starlight.ui.widget.DummyWidgetSlim
 import com.mooner.starlight.ui.widget.LogsWidget
@@ -54,22 +53,10 @@ object ApplicationSession {
         val starlightDir = FileUtils.getInternalDirectory()
         Logger.init(starlightDir)
 
-        onPhaseChanged(context.getString(R.string.step_default_lib))
-        ApiManager.apply {
-            addApi(LanguagesApi())
-            addApi(ProjectLoggerApi())
-            addApi(ProjectsApi())
-            addApi(UtilsApi())
-            addApi(LegacyApi())
-            //addApi(ClientApi())
-            //addApi(EventApi())
-            //addApi(TimerApi())
-        }
-
         onPhaseChanged(context.getString(R.string.step_plugincore_init))
         Session.init(starlightDir)
         Session.languageManager.apply {
-            addLanguage("", JSV8())
+            //addLanguage("", JSV8())
             addLanguage("", JSRhino())
             //addLanguage(GraalVMLang())
         }
@@ -88,18 +75,44 @@ object ApplicationSession {
         onPhaseChanged(context.getString(R.string.step_projects))
         Session.projectLoader.loadProjects()
 
+        onPhaseChanged(context.getString(R.string.step_default_lib))
+        Session.apiManager.apply {
+            // Original Apis
+            addApi(LanguageManagerApi())
+            addApi(ProjectLoggerApi())
+            addApi(ProjectManagerApi())
+            addApi(PluginManagerApi())
+            addApi(TimerApi())
+
+            // Legacy Apis
+            addApi(UtilsApi())
+            addApi(LegacyApi())
+            addApi(BridgeApi())
+            addApi(FileStreamApi())
+            addApi(DataBaseApi())
+            addApi(DeviceApi())
+
+            // Api2 Apis
+            addApi(AppApi())
+
+            //addApi(ClientApi())
+            //addApi(EventApi())
+            //addApi(TimerApi())
+        }
+
         Session.widgetManager.apply {
-            addWidget(DummyWidgetSlim())
-            addWidget(UptimeWidgetDefault())
-            addWidget(UptimeWidgetSlim())
-            addWidget(LogsWidget())
+            val name = "기본 위젯"
+            addWidget(name, DummyWidgetSlim())
+            addWidget(name, UptimeWidgetDefault())
+            addWidget(name, UptimeWidgetSlim())
+            addWidget(name, LogsWidget())
         }
 
         NetworkUtil.registerNetworkStatusListener(context)
         NetworkUtil.addOnNetworkStateChangedListener { state ->
             if (pluginManager.getPlugins().isNotEmpty()) {
                 for (plugin in pluginManager.getPlugins()) {
-                    (plugin as StarlightPlugin).onNetworkStateChanged(state)
+                    plugin.onNetworkStateChanged(state)
                 }
             }
         }

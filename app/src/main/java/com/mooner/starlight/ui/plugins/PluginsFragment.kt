@@ -27,6 +27,7 @@ import com.mooner.starlight.utils.formatStringRes
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -49,7 +50,7 @@ class PluginsFragment : Fragment() {
             reversedName = "파일 크기 역순",
             icon = R.drawable.ic_round_plugins_24,
             sort = { list, _ ->
-                list.sortedByDescending { (it as StarlightPlugin).fileSize }
+                list.sortedByDescending { it.fileSize }
             }
         )
 
@@ -124,11 +125,12 @@ class PluginsFragment : Fragment() {
         listAdapter = PluginsListAdapter(requireContext())
 
         CoroutineScope(Dispatchers.Default).launch {
-            val sortedData = sortData()
-            withContext(Dispatchers.Main) {
-                listAdapter!!.apply {
-                    listAdapter!!.data = sortedData
-                    listAdapter!!.notifyItemRangeInserted(0, plugins.size)
+            flowOf(sortData()).collect { sorted ->
+                withContext(Dispatchers.Main) {
+                    listAdapter!!.apply {
+                        listAdapter!!.data = sorted
+                        listAdapter!!.notifyItemRangeInserted(0, plugins.size)
+                    }
                 }
             }
         }

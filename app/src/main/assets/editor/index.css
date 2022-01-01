@@ -18,8 +18,20 @@ body {
     overflow: hidden;
 }
 
+#placeholder {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: #2D2C2D;
+}
+
+#placeholder img {
+    width: 100px;
+    height: 100px;
+}
+
 #editor {
     width: 100%;
     height: 100%;
-    margin: 0px;
+    margin: 0;
 }

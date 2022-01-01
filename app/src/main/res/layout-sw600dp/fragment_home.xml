@@ -13,15 +13,15 @@
     <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:layout_marginStart="@dimen/widget_card_margin_horizontal"
+            android:layout_marginEnd="@dimen/widget_card_margin_horizontal"
+            android:id="@+id/widgets"
+            android:overScrollMode="never"
+            android:layout_marginBottom="16dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
-            android:id="@+id/widgets"
-            app:layout_constraintBottom_toTopOf="@+id/cardViewConfigWidget"
-            android:overScrollMode="never"
-            android:layout_marginBottom="16dp"/>
+            app:layout_constraintBottom_toTopOf="@+id/cardViewConfigWidget"/>
     <androidx.cardview.widget.CardView
             android:layout_width="256dp"
             android:layout_height="@dimen/card_height"
@@ -38,7 +38,10 @@
         <TextView
                 android:text="위젯 설정"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:fontFamily="@font/nanumsquare_round_bold"
-                android:textSize="16sp" android:layout_gravity="center" android:textColor="@color/white"/>
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/nanumsquare_round_bold"
+                android:textSize="16sp"
+                android:layout_gravity="center"
+                android:textColor="@color/white"/>
     </androidx.cardview.widget.CardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

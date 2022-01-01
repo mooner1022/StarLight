@@ -9,7 +9,7 @@
         android:orientation="horizontal"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
-        android:showDividers="middle">
+        android:showDividers="middle" android:background="@color/transparent">
     <TextView
             android:text="v0.0.1"
             android:layout_width="wrap_content"
@@ -20,10 +20,12 @@
             android:text="설정"
             android:layout_width="wrap_content"
             android:layout_height="48dp" android:id="@+id/buttonConfig" app:icon="@drawable/ic_round_settings_24"
-            app:iconGravity="end" android:background="#00FFFFFF" android:elevation="0dp"/>
+            app:iconGravity="end" android:background="#00FFFFFF" android:elevation="0dp"
+            android:textColor="@color/text" app:iconTint="@color/text"/>
     <Button
             android:text="정보"
             android:layout_width="wrap_content"
             android:layout_height="48dp" android:id="@+id/buttonInfo" app:icon="@drawable/ic_round_info_24"
-            app:iconGravity="end" android:background="#00FFFFFF" android:elevation="0dp"/>
+            app:iconGravity="end" android:background="#00FFFFFF" android:elevation="0dp"
+            android:textColor="@color/text" app:iconTint="@color/text"/>
 </LinearLayout>

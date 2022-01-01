@@ -10,7 +10,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="@dimen/card_radius"
-            app:cardElevation="0dp">
+            app:cardElevation="0dp" app:cardBackgroundColor="@color/cardview">
 
         <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
@@ -46,13 +46,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:backgroundTint="@color/cardview_gray"
                     app:cardCornerRadius="@dimen/card_radius"
                     app:cardElevation="0dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/logTitleText" android:id="@+id/cardView">
+                    app:layout_constraintTop_toBottomOf="@+id/logTitleText" android:id="@+id/cardView"
+                    app:cardBackgroundColor="@color/cardview_gray">
 
                 <TextView
                         android:id="@+id/logContentText"

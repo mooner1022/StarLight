@@ -1,4 +1,4 @@
-package com.mooner.starlight.api.helper
+package com.mooner.starlight.api.original
 
 import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.api.ApiFunction
@@ -8,7 +8,7 @@ import com.mooner.starlight.plugincore.project.Project
 
 class ProjectLoggerApi: Api<LocalLogger>() {
 
-    override val name: String = "Logger"
+    override val name: String = "Log"
 
     override val instanceType: InstanceType = InstanceType.OBJECT
 

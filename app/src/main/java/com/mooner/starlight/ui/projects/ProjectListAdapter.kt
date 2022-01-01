@@ -11,12 +11,12 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
+import coil.transform.RoundedCornersTransformation
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import com.mooner.starlight.R
-import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.ui.debugroom.DebugRoomActivity
 import com.mooner.starlight.ui.editor.EditorActivity
@@ -84,13 +84,15 @@ class ProjectListAdapter(
             val icon: Any? = when(project.getLanguage().id) {
                 "JS_RHINO" -> R.drawable.ic_js
                 "JS_V8" -> R.drawable.ic_v8
-                else -> (project.getLanguage() as Language).getIconFileOrNull()
+                else -> project.getLanguage().getIconFileOrNull()
             }
             val tint = if (icon == null) R.color.main_purple else null
             it.loadAnyWithTint(
                 data = icon?: R.drawable.ic_round_developer_mode_24,
                 tintColor = tint
-            )
+            ) {
+                transformations(RoundedCornersTransformation(context.resources.getDimension(R.dimen.lang_icon_corner_radius)))
+            }
         }
 
         holder.expandable.setTitle(titleText = info.name)

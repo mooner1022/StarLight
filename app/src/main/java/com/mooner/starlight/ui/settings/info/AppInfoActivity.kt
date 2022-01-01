@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
+import com.mikepenz.aboutlibraries.LibsBuilder
 import com.mooner.starlight.databinding.ActivityAppInfoBinding
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
@@ -13,6 +14,7 @@ import com.mooner.starlight.plugincore.config.config
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
+import com.mooner.starlight.utils.openWebUrl
 
 class AppInfoActivity : AppCompatActivity() {
 
@@ -55,6 +57,14 @@ class AppInfoActivity : AppCompatActivity() {
                         iconTintColor = color { "#C073A0" }
                         onClickListener = {}
                     }
+                    button {
+                        id = "github"
+                        title = "GitHub"
+                        icon = Icon.GITHUB
+                        onClickListener = {
+                            openWebUrl("https://github.com/mooner1022/StarLight")
+                        }
+                    }
                 }
             }
             category {
@@ -64,7 +74,7 @@ class AppInfoActivity : AppCompatActivity() {
                         id = "dev"
                         title = "무너"
                         icon = Icon.DEVELOPER_BOARD
-                        description = "starlight@mooner.dev"
+                        description = "ariel@mooner.dev"
                         iconTintColor = color { "#3A1C71" }
                         onClickListener = {
                             if (isDevMode) {
@@ -86,11 +96,27 @@ class AppInfoActivity : AppCompatActivity() {
                         }
                     }
                     button {
+                        id = "github"
+                        title = "GitHub"
+                        icon = Icon.GITHUB
+                        onClickListener = {
+                            openWebUrl("https://github.com/mooner1022")
+                        }
+                    }
+                    button {
                         id = "opensource_license"
                         title = "오픈소스 라이센스"
                         icon = Icon.DEVELOPER_MODE
                         iconTintColor = color { "#D76D77" }
-                        onClickListener = {}
+                        onClickListener = {
+                            LibsBuilder().apply {
+                                withShowLoadingProgress(true)
+                                withAboutIconShown(true)
+                                withAboutVersionShown(true)
+                                withAboutAppName("Project StarLight")
+                                withEdgeToEdge(true)
+                            }.start(this@AppInfoActivity)
+                        }
                     }
                 }
             }

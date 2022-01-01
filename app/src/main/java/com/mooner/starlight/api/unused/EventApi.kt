@@ -1,4 +1,4 @@
-package com.mooner.starlight.api.core
+package com.mooner.starlight.api.unused
 
 import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.api.ApiFunction

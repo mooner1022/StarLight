@@ -2,7 +2,7 @@ package com.mooner.starlight.plugincore.api
 
 import com.mooner.starlight.plugincore.logger.Logger
 
-object ApiManager {
+class ApiManager {
 
     private val mApis: MutableList<Api<Any>> = arrayListOf()
 
@@ -11,7 +11,7 @@ object ApiManager {
         synchronized(mApis) {
             if (mApis.find { it.name == api.name } != null) return
             mApis += api as Api<Any>
-            Logger.v("MethodManager", "Added method ${api.name}")
+            Logger.v("ApiManager", "Added api ${api.name}")
         }
     }
 

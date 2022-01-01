@@ -5,28 +5,37 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
-        android:background="@android:color/transparent">
+        android:background="@android:color/transparent"
+        android:paddingStart="@dimen/widget_padding_horizontal"
+        android:paddingEnd="@dimen/widget_padding_horizontal">
 
     <TextView
-            android:text="TextView"
+            android:text="@string/default_placeholder"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/title"
-            app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent"
-            android:layout_marginStart="27dp" android:layout_marginTop="8dp" android:paddingBottom="4dp"
-            android:visibility="visible" android:fontFamily="@font/nanumsquare_round_bold"/>
+            android:layout_height="wrap_content"
+            android:id="@+id/title"
+            android:layout_marginStart="27dp"
+            android:layout_marginTop="8dp"
+            android:paddingBottom="4dp"
+            android:visibility="visible"
+            android:fontFamily="@font/nanumsquare_round_bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
 
     <androidx.cardview.widget.CardView
             android:layout_width="0dp"
-            android:layout_height="192dp" app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_height="@dimen/widget_large_height"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" app:cardCornerRadius="@dimen/card_radius"
-            app:cardElevation="@dimen/card_elevation" app:cardBackgroundColor="#FFFFFF"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:cardCornerRadius="@dimen/card_radius"
+            app:cardElevation="@dimen/card_elevation"
+            app:cardBackgroundColor="@color/cardview"
             app:layout_constraintTop_toBottomOf="@+id/title">
         <FrameLayout
                 android:id="@+id/view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" android:background="#FFFFFF">
-
+                android:layout_height="match_parent">
         </FrameLayout>
     </androidx.cardview.widget.CardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

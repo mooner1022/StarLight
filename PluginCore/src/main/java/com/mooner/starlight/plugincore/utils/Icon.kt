@@ -199,4 +199,7 @@ enum class Icon(
     ACCOUNT_BOX(
         drawableRes = R.drawable.ic_round_account_box_24
     ),
+    GITHUB(
+        drawableRes = R.drawable.ic_github
+    ),
 }

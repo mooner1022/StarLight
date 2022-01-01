@@ -96,7 +96,7 @@ fun Context.startPluginInfoActivity(
                 button {
                     id = "pluginCoreVersion"
                     title = "PluginCore 버전"
-                    description = info.apiVersion
+                    description = info.apiVersion.toString()
                     icon = Icon.BRANCH
                     iconTintColor = color { "#3A1C71" }
                     onClickListener = {}
@@ -106,7 +106,7 @@ fun Context.startPluginInfoActivity(
                     title = "의존성(필수)"
                     icon = Icon.CHECK
                     iconTintColor = color { "#D76D77" }
-                    description = if (info.depend.isEmpty()) "없음" else info.depend.joinToString("\n")
+                    description = if (info.dependency.isEmpty()) "없음" else info.dependency.joinToString("\n")
                     onClickListener = {}
                 }
                 button {
@@ -114,7 +114,7 @@ fun Context.startPluginInfoActivity(
                     title = "의존성(soft)"
                     icon = Icon.CHECK
                     iconTintColor = color { "#FFAF7B" }
-                    description = if (info.softDepend.isEmpty()) "없음" else info.softDepend.joinToString("\n")
+                    description = if (info.softDependency.isEmpty()) "없음" else info.softDependency.joinToString("\n")
                     onClickListener = {}
                 }
             }

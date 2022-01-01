@@ -32,9 +32,9 @@ import com.mooner.starlight.plugincore.chat.DebugChatRoom
 import com.mooner.starlight.plugincore.chat.Message
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
 import com.mooner.starlight.plugincore.config.config
-import com.mooner.starlight.plugincore.event.callEvent
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.Project
+import com.mooner.starlight.plugincore.project.callEvent
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF
@@ -75,7 +75,7 @@ class DebugRoomActivity: AppCompatActivity() {
     private var sentPackage = PACKAGE_KAKAO_TALK
     private var isGroupChat = false
 
-    private lateinit var botProfileBitmap: Bitmap
+    //private lateinit var botProfileBitmap: Bitmap
     private lateinit var selfProfileBitmap: Bitmap
 
     private lateinit var project: Project
@@ -98,28 +98,6 @@ class DebugRoomActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDebugRoomBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        val selfProfilePath = globalConfig.getCategory("d_user").getString("profile_image_path")
-        selfProfileBitmap = if (selfProfilePath == null) {
-            loadBitmapFromResource(R.drawable.default_profile)
-        } else {
-            loadBitmapFromFile(File(selfProfilePath))
-        }
-
-        val botProfilePath = globalConfig.getCategory("d_bot").getString("profile_image_path")
-        botProfileBitmap = if (botProfilePath == null) {
-            loadBitmapFromResource(R.drawable.default_profile)
-        } else {
-            loadBitmapFromFile(File(botProfilePath))
-        }
-
-        binding.messageInput.setOnKeyListener { _, keyCode, event ->
-            if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
-                send(binding.messageInput.text.toString())
-            }
-            false
-        }
-
         /*
         imageHash = intent.getIntExtra("imageHash", 0)
         sender = intent.getStringExtra("sender")?: "debug_sender"
@@ -132,6 +110,22 @@ class DebugRoomActivity: AppCompatActivity() {
 
         updateConfig()
 
+        val selfProfilePath = globalConfig.getCategory("d_user").getString("profile_image_path")
+        selfProfileBitmap = if (selfProfilePath == null) {
+            loadBitmapFromResource(R.drawable.default_profile)
+        } else {
+            loadBitmapFromFile(File(selfProfilePath))
+        }
+
+        /*
+        val botProfilePath = globalConfig.getCategory("d_bot").getString("profile_image_path")
+        botProfileBitmap = if (botProfilePath == null) {
+            loadBitmapFromResource(R.drawable.default_profile)
+        } else {
+            loadBitmapFromFile(File(botProfilePath))
+        }
+         */
+
         val listFile = dir.resolve(CHATS_FILE_NAME)
         chatList = if (listFile.exists() && listFile.isFile)
             json.decodeFromString(listFile.readText())
@@ -139,6 +133,13 @@ class DebugRoomActivity: AppCompatActivity() {
             mutableListOf()
 
         userChatAdapter = DebugRoomChatAdapter(this, chatList)
+
+        binding.messageInput.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
+                send(binding.messageInput.text.toString())
+            }
+            false
+        }
 
         binding.chatRecyclerView.apply {
             adapter = userChatAdapter
@@ -199,7 +200,7 @@ class DebugRoomActivity: AppCompatActivity() {
             hasMention = false
         )
 
-        Session.eventManager.callEvent<DefaultEvent>(arrayOf(data)) { e ->
+        project.callEvent<DefaultEvent>(arrayOf(data)) { e ->
             Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
                 setAction("자세히 보기") {
                     MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
@@ -225,7 +226,7 @@ class DebugRoomActivity: AppCompatActivity() {
 
             val imageDB = ImageDB(selfProfileBitmap)
 
-            Session.eventManager.callEvent<LegacyEvent>(arrayOf(roomName, message, sender, isGroupChat, replier, imageDB)) { e ->
+            project.callEvent<LegacyEvent>(arrayOf(roomName, message, sender, isGroupChat, replier, imageDB)) { e ->
                 Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
                     setAction("자세히 보기") {
                         MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
@@ -464,6 +465,7 @@ class DebugRoomActivity: AppCompatActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when (resultCode) {
@@ -479,9 +481,9 @@ class DebugRoomActivity: AppCompatActivity() {
                 }
                 val bitmap = uri.toBitmap(applicationContext)
                 when(requestCode) {
-                    RESULT_BOT -> {
-                        botProfileBitmap = bitmap
-                    }
+                    //RESULT_BOT -> {
+                    //    botProfileBitmap = bitmap
+                    //}
                     RESULT_USER -> {
                         selfProfileBitmap = bitmap
                     }

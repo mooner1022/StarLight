@@ -39,7 +39,7 @@ class ConfigAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ConfigViewHolder {
         val layout = when(viewType) {
             ConfigObjectType.TOGGLE.viewType -> R.layout.config_toggle
-            ConfigObjectType.SLIDER.viewType -> R.layout.config_slider
+            ConfigObjectType.SEEKBAR.viewType -> R.layout.config_slider
             ConfigObjectType.STRING.viewType -> R.layout.config_string
             ConfigObjectType.SPINNER.viewType -> R.layout.config_spinner
             ConfigObjectType.BUTTON_FLAT.viewType,
@@ -64,7 +64,6 @@ class ConfigAdapter(
         fun getDefault(): Any {
             return if (saved.containsKey(viewData.id)) saved[viewData.id]!!.cast()!! else viewData.default
         }
-
         if (viewData !is CustomConfigObject && viewData !is CategoryConfigObject) {
             holder.title.text = viewData.title
             if (viewData.description != null) {
@@ -104,25 +103,27 @@ class ConfigAdapter(
                     }
                 }
             }
-            ConfigObjectType.SLIDER.viewType -> {
+            ConfigObjectType.SEEKBAR.viewType -> {
                 holder.seekBar.progress = getDefault() as Int
-                holder.seekBar.max = (viewData as SliderConfigObject).max
+                val offset = (viewData as SeekbarConfigObject).min
+
+                holder.seekBar.max = viewData.max - offset
                 holder.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                     override fun onProgressChanged(
                         seekBar: SeekBar?,
                         progress: Int,
                         fromUser: Boolean
                     ) {
-                        holder.seekBarIndex.text = progress.toString()
+                        holder.seekBarIndex.text = (progress + offset).toString()
                     }
 
                     override fun onStartTrackingTouch(seekBar: SeekBar?) {}
 
                     override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                        onConfigChanged(viewData.id, holder.seekBar, seekBar!!.progress)
+                        onConfigChanged(viewData.id, holder.seekBar, seekBar!!.progress + offset)
                     }
                 })
-                holder.seekBarIndex.text = holder.seekBar.progress.toString()
+                holder.seekBarIndex.text = (holder.seekBar.progress + offset).toString()
             }
             ConfigObjectType.STRING.viewType -> {
                 val data = viewData as StringConfigObject
@@ -235,7 +236,7 @@ class ConfigAdapter(
                     ConfigObjectType.TOGGLE.viewType -> {
                         holder.toggle.isEnabled = isEnabled
                     }
-                    ConfigObjectType.SLIDER.viewType -> {
+                    ConfigObjectType.SEEKBAR.viewType -> {
                         holder.seekBar.isEnabled = isEnabled
                     }
                     ConfigObjectType.STRING.viewType -> {
@@ -259,6 +260,17 @@ class ConfigAdapter(
 
             if (toggleValues.containsKey(viewData.dependency)) {
                 setEnabled(toggleValues[viewData.dependency]!!)
+            }
+        }
+    }
+
+    fun destroy() {
+        toggleValues.clear()
+        for (view in data) {
+            //Logger.v(view.id)
+            if (view is ToggleConfigObject) {
+                Logger.v("Released listeners from ${view.id}")
+                view.listeners.clear()
             }
         }
     }
@@ -293,7 +305,7 @@ class ConfigAdapter(
                 ConfigObjectType.TOGGLE.viewType -> {
                     toggle = itemView.findViewById(R.id.toggle)
                 }
-                ConfigObjectType.SLIDER.viewType -> {
+                ConfigObjectType.SEEKBAR.viewType -> {
                     seekBarIndex = itemView.findViewById(R.id.index)
                     seekBar = itemView.findViewById(R.id.slider)
                 }

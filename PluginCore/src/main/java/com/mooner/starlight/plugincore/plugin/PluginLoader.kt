@@ -3,9 +3,10 @@ package com.mooner.starlight.plugincore.plugin
 import android.os.Environment
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
-import com.mooner.starlight.plugincore.Version
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.plugin.PluginDependency.Companion.VERSION_ANY
 import com.mooner.starlight.plugincore.utils.readString
+import com.mooner.starlight.plugincore.version.Version
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -44,27 +45,31 @@ class PluginLoader {
                 Logger.e(T, e.toString())
                 //throw InvalidPluginException(e.toString())
             } catch (e: Exception) {
-                Logger.e(T, "Unexpected error while loading info: $e")
+                Logger.e(T, "Unexpected error while loading plugin info: $e")
             }
         }
 
         val plugins: MutableSet<StarlightPlugin> = hashSetOf()
         for ((file: File, info: PluginInfo) in pluginInfos.values) {
             try {
-                for (dependency in info.depend) {
-                    if (!pluginInfos.containsKey(dependency)) {
-                        throw DependencyNotFoundException("Unable to find plugin [$dependency] for plugin [${info.name}]")
+                for (dependency in info.dependency) {
+                    if (dependency.pluginId !in pluginInfos) {
+                        throw DependencyNotFoundException("Unable to find dependency '$dependency' for plugin [${info.name}]")
                         //Logger.e(T, "Unable to find plugin [$dependency] for plugin ${config.fullName}")
+                    }
+                    val pluginInfo = pluginInfos[dependency.pluginId]!!.second
+                    if (dependency.supportedVersion != VERSION_ANY && Version.fromString(dependency.supportedVersion) incompatibleWith pluginInfo.version) {
+                        Logger.w(javaClass.simpleName,"Incompatible dependency version(required: ${dependency.supportedVersion}, found: ${pluginInfo.version}) found on plugin: ${info.name}")
                     }
                 }
 
                 if (onPluginLoad != null) onPluginLoad(info.name)
                 val plugin = loadPlugin(info, file)
-                if (!Version.fromString(info.apiVersion).isCompatibleWith(Info.PLUGINCORE_VERSION)) {
-                    Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin [${plugin.info.fullName}]")
+                if (info.apiVersion incompatibleWith Info.PLUGINCORE_VERSION) {
+                    Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin: ${info.fullName}")
                     continue
                 }
-                plugins.add(plugin)
+                plugins += plugin
                 plugin.onEnable()
             } catch (e: Exception) {
                 Logger.e(T, e.toString())
@@ -107,16 +112,17 @@ class PluginLoader {
         return plugin
     }
 
-    fun loadAssets(file: File, plugin: StarlightPlugin, force: Boolean = false) {
+    private fun loadAssets(file: File, plugin: StarlightPlugin, force: Boolean = false) {
         var jar: JarFile? = null
         try {
             jar = JarFile(file)
             val entries = jar.entries()
+            val parent = plugin.getDataFolder().resolve("assets/")
             while (entries.hasMoreElements()) {
                 val entry = entries.nextElement() ?: break
                 if (!entry.name.startsWith("assets/")) continue
                 val fileName = entry.name.split("assets/").last()
-                val writeFile = File(plugin.getDataFolder().resolve("assets/"), fileName)
+                val writeFile = File(parent, fileName)
 
                 if (force || !writeFile.exists()) {
                     val entStream = jar.getInputStream(entry)
@@ -130,7 +136,7 @@ class PluginLoader {
             }
         } catch (e: IOException) {
             e.printStackTrace()
-            throw IllegalStateException("Failed to load asset")
+            throw IllegalStateException("Failed to load asset: $e")
         } finally {
             jar?.close()
         }
@@ -147,7 +153,7 @@ class PluginLoader {
             stream = jar.getInputStream(ent)
             return PluginInfo.decode(stream.readString())
         } catch (e: IOException) {
-            throw IllegalStateException("Cannot open starlight.json")
+            throw IllegalStateException("Cannot open starlight.json: $e")
         } finally {
             jar?.close()
             stream?.close()
@@ -164,7 +170,7 @@ class PluginLoader {
                     val loader = loaders[current]
                     try {
                         cachedClass = loader!!.findClass(name, false)
-                    } catch (cnfe: ClassNotFoundException) {
+                    } catch (_: ClassNotFoundException) {
 
                     }
                     if (cachedClass != null) {
@@ -210,14 +216,14 @@ class PluginLoader {
     }
 
     fun setClass(name: String, clazz: Class<*>) {
-        if (!classes.containsKey(name)) {
+        if (name !in classes) {
             classes[name] = clazz
         }
     }
 
     private fun removeClass(name: String) {
-        if (classes.containsKey(name)) {
-            classes.remove(name)
+        if (name in classes) {
+            classes -= name
         }
     }
 

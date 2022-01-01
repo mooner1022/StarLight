@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.size.Scale
+import coil.transform.RoundedCornersTransformation
 import com.mooner.starlight.R
 import com.mooner.starlight.plugincore.plugin.Plugin
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
@@ -49,6 +50,7 @@ class PluginsListAdapter(
                 card.setIcon {
                     it.load(iconFile) {
                         scale(Scale.FIT)
+                        transformations(RoundedCornersTransformation(context.resources.getDimension(R.dimen.lang_icon_corner_radius)))
                     }
                 }
             }

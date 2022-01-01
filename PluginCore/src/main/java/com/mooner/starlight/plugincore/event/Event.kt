@@ -12,7 +12,7 @@ abstract class Event {
 
     open val compatibleLanguageId: List<String> = listOf()
 
-    fun callEvent(args: Array<out Any>, onError: (e: Throwable) -> Unit) = Session.projectManager.callEvent(id, eventName, args, onError)
+    fun callEvent(args: Array<out Any>, onException: (e: Throwable) -> Unit) = Session.projectManager.callEvent(id, eventName, args, onException)
 
     override fun equals(other: Any?): Boolean = other is Event && other.id == id
 
