@@ -10,6 +10,11 @@ import com.mooner.starlight.plugincore.api.ApiObject
 import com.mooner.starlight.plugincore.api.InstanceType
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.project.Project
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.Callable
 
 class LegacyApi: Api<LegacyApi.Api>() {
 
@@ -111,7 +116,7 @@ class LegacyApi: Api<LegacyApi.Api>() {
         }
 
         /*
-         * makeNoti, papagoTranslate
+         * TODO: makeNoti, papagoTranslate
          */
 
         fun gc() {
@@ -119,9 +124,24 @@ class LegacyApi: Api<LegacyApi.Api>() {
             System.gc()
         }
 
-        /*
-         * Unsupported: UIThread(func: Function, onComplete: Function)
-         */
+        fun UIThread(func: Callable<Any>, onComplete: (error: Throwable?, result: Any?) -> Unit) {
+            runBlocking {
+                val flow = flow<Any> {
+                    try {
+                        emit(func.call())
+                    } catch (e: Throwable) {
+                        emit(e)
+                    }
+                }.flowOn(Dispatchers.Main)
+                flow.collect { result ->
+                    if (result is Throwable) {
+                        onComplete(result, null)
+                    } else {
+                        onComplete(null, result)
+                    }
+                }
+            }
+        }
 
         fun getActiveThreadsCount(): Int {
             return getActiveThreadsCount(project.info.name)
