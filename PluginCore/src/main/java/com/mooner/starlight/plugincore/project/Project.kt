@@ -42,7 +42,7 @@ class Project (
     //val configManager: ConfigManager = ConfigManager(File(directory, CONFIG_FILE_NAME))
     val config: Config = FileConfig(File(directory, CONFIG_FILE_NAME))
 
-    var threadName: String? = null
+    var threadPoolName: String? = null
     //private lateinit var scope: CoroutineScope
     private var context: CoroutineContext? = null
     val isCompiled: Boolean
@@ -95,15 +95,15 @@ class Project (
             return
         }
 
-        if (threadName == null || context == null) {
+        if (threadPoolName == null || context == null) {
             if (context != null) {
                 context?.cancel()
                 context = null
             }
-            threadName = "$tag-worker"
+            threadPoolName = "$tag-worker"
             val poolSize = getThreadPoolSize()
-            context = newFixedThreadPoolContext(poolSize, threadName!!)
-            Logger.v("Allocated thread pool $threadName with $poolSize threads to project ${info.name}")
+            context = newFixedThreadPoolContext(poolSize, threadPoolName!!)
+            Logger.v("Allocated thread pool $threadPoolName with $poolSize threads to project ${info.name}")
         }
 
         fun onError(e: Throwable) {
@@ -239,14 +239,14 @@ class Project (
      * @return the size of running jobs.
      */
     fun activeJobs(): Int {
-        return if (context == null || threadName == null) 0
-        else JobLocker.withParent(threadName!!).activeJobs()
+        return if (context == null || threadPoolName == null) 0
+        else JobLocker.withParent(threadPoolName!!).activeJobs()
     }
 
     fun stopAllJobs() {
         if (context != null) {
-            if (threadName != null) {
-                JobLocker.withParent(threadName!!).purge()
+            if (threadPoolName != null) {
+                JobLocker.withParent(threadPoolName!!).purge()
             }
             (context as CoroutineDispatcher).cancel()
             context = null

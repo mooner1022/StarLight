@@ -109,7 +109,7 @@ fun Context.startProjectInfoActivity(
                     title = "스레드"
                     icon = Icon.LAYERS
                     iconTintColor = color { "#3A1C71" }
-                    description = project.threadName?: "할당되지 않음"
+                    description = project.threadPoolName?: "할당되지 않음"
                     onClickListener = {}
                 }
                 button {
