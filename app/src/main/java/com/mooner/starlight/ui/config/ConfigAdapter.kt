@@ -64,7 +64,6 @@ class ConfigAdapter(
         fun getDefault(): Any {
             return if (saved.containsKey(viewData.id)) saved[viewData.id]!!.cast()!! else viewData.default
         }
-
         if (viewData !is CustomConfigObject && viewData !is CategoryConfigObject) {
             holder.title.text = viewData.title
             if (viewData.description != null) {
@@ -124,7 +123,7 @@ class ConfigAdapter(
                         onConfigChanged(viewData.id, holder.seekBar, seekBar!!.progress + offset)
                     }
                 })
-                holder.seekBarIndex.text = holder.seekBar.progress.toString()
+                holder.seekBarIndex.text = (holder.seekBar.progress + offset).toString()
             }
             ConfigObjectType.STRING.viewType -> {
                 val data = viewData as StringConfigObject
@@ -268,7 +267,9 @@ class ConfigAdapter(
     fun destroy() {
         toggleValues.clear()
         for (view in data) {
+            //Logger.v(view.id)
             if (view is ToggleConfigObject) {
+                Logger.v("Released listeners from ${view.id}")
                 view.listeners.clear()
             }
         }
