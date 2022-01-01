@@ -3,9 +3,9 @@ package com.mooner.starlight.plugincore.plugin
 import android.os.Environment
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
-import com.mooner.starlight.plugincore.Version
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.utils.readString
+import com.mooner.starlight.plugincore.version.Version
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -56,12 +56,16 @@ class PluginLoader {
                         throw DependencyNotFoundException("Unable to find plugin [$dependency] for plugin [${info.name}]")
                         //Logger.e(T, "Unable to find plugin [$dependency] for plugin ${config.fullName}")
                     }
+                    val pluginInfo = pluginInfos[dependency.pluginId]!!.second
+                    if (dependency.supportedVersion != VERSION_ANY && Version.fromString(dependency.supportedVersion) incompatibleWith pluginInfo.version) {
+                        Logger.w(javaClass.simpleName,"Incompatible dependency version(required: ${dependency.supportedVersion}, found: ${pluginInfo.version}) found on plugin: ${info.name}")
+                    }
                 }
 
                 if (onPluginLoad != null) onPluginLoad(info.name)
                 val plugin = loadPlugin(info, file)
-                if (!Version.fromString(info.apiVersion).isCompatibleWith(Info.PLUGINCORE_VERSION)) {
-                    Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin [${plugin.info.fullName}]")
+                if (info.apiVersion incompatibleWith Info.PLUGINCORE_VERSION) {
+                    Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin: ${info.fullName}")
                     continue
                 }
                 plugins.add(plugin)

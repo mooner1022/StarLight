@@ -1,6 +1,7 @@
 package com.mooner.starlight.plugincore.plugin
 
 import com.mooner.starlight.plugincore.Session.json
+import com.mooner.starlight.plugincore.version.Version
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -12,7 +13,7 @@ data class PluginInfo(
     val name: String,
     @SerialName("main_class")
     val mainClass: String,
-    val version: String,
+    val version: Version,
     @SerialName("api_version")
     val apiVersion: String,
     val depend: List<String> = listOf(),
