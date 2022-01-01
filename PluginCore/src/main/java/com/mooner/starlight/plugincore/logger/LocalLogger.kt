@@ -1,9 +1,12 @@
 package com.mooner.starlight.plugincore.logger
 
 import com.mooner.starlight.plugincore.Session.json
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -119,13 +122,12 @@ class LocalLogger(
         }
     }
 
-    private fun flush() {
-        CoroutineScope(Dispatchers.IO).launch {
-            synchronized(_logs) {
-                val logs = _logs.filterNot { it.type == LogType.DEBUG }
-                val encoded = json.encodeToString(logs)
-                file.writeText(encoded)
-            }
+    private fun flush() = runBlocking {
+        withContext(Dispatchers.IO) {
+            val logs = _logs.filterNot { it.type == LogType.DEBUG }
+            flowOf(json.encodeToString(logs))
+                .flowOn(Dispatchers.Default)
+                .collect(file::writeText)
         }
     }
 }

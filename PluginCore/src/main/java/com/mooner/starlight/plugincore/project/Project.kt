@@ -12,9 +12,11 @@ import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.logger.Logger
 import com.mooner.starlight.plugincore.utils.hasFile
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.serialization.encodeToString
 import java.io.File
-import java.util.*
 import kotlin.coroutines.CoroutineContext
 
 class Project (
@@ -217,10 +219,11 @@ class Project (
     /**
      * Saves contents of [info] to a file.
      */
-    fun saveInfo() {
-        CoroutineScope(Dispatchers.IO).launch {
-            val str = synchronized(info) { json.encodeToString(info) }
-            File(directory.path, INFO_FILE_NAME).writeText(str, Charsets.UTF_8)
+    fun saveInfo() = runBlocking {
+        withContext(Dispatchers.IO) {
+            flowOf(json.encodeToString(info))
+                .flowOn(Dispatchers.Default)
+                .collect(File(directory.path, INFO_FILE_NAME)::writeText)
         }
     }
 
