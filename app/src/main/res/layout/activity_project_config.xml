@@ -32,7 +32,7 @@
                         android:layout_marginTop="80dp"
                         android:fontFamily="@font/nanumsquare_round_bold"
                         android:text="설정"
-                        android:textColor="#4C4C4C"
+                        android:textColor="@color/text"
                         android:textSize="28sp"/>
 
                 <TextView
@@ -44,7 +44,7 @@
                         android:elevation="1dp"
                         android:fontFamily="@font/nanumsquare_round_regular"
                         android:text="PROJECT_NAME"
-                        android:textColor="#4C4C4C"
+                        android:textColor="@color/text"
                         android:textSize="14sp"
                         app:layout_collapseMode="parallax"/>
 
@@ -106,6 +106,7 @@
         android:layout_marginStart="10dp"
         android:layout_marginTop="10dp"
         android:layout_marginBottom="10dp"
-        android:src="@drawable/ic_round_arrow_left_24"/>
+        android:src="@drawable/ic_round_arrow_left_24"
+        android:tint="@color/text"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

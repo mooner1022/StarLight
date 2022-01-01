@@ -78,7 +78,7 @@
             android:paddingBottom="16dp"
             android:layout_marginBottom="@dimen/bottom_bar_total_height"
             app:cardCornerRadius="@dimen/card_radius"
-            app:cardElevation="@dimen/card_elevation">
+            app:cardElevation="@dimen/card_elevation" app:cardBackgroundColor="@color/cardview">
 
         <LinearLayout
                 android:orientation="vertical"

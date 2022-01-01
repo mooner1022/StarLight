@@ -3,33 +3,45 @@
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
+        tools:context=".ui.home.HomeFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/transparent"
         android:clipToPadding="false"
         android:paddingTop="@dimen/fragment_top_padding"
-        tools:context=".ui.home.HomeFragment"
         android:paddingBottom="@dimen/bottom_bar_total_height">
     <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:id="@+id/widgets"
+            android:overScrollMode="never"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="16dp" android:layout_marginEnd="16dp"
-            android:id="@+id/widgets" app:layout_constraintBottom_toTopOf="@+id/cardViewConfigWidget"
-            android:overScrollMode="never" android:layout_marginBottom="16dp"/>
+            app:layout_constraintBottom_toTopOf="@+id/cardViewConfigWidget"/>
     <androidx.cardview.widget.CardView
             android:layout_width="0dp"
-            android:layout_height="@dimen/card_height" app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_height="@dimen/card_height"
+            android:id="@+id/cardViewConfigWidget"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" app:cardCornerRadius="@dimen/card_radius"
-            app:cardElevation="@dimen/card_elevation" app:cardBackgroundColor="@color/main_purple_light"
-            android:id="@+id/cardViewConfigWidget" android:layout_marginStart="16dp" android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp">
+            app:layout_constraintEnd_toEndOf="parent"
+            app:cardCornerRadius="@dimen/card_radius"
+            app:cardElevation="@dimen/card_elevation"
+            app:cardBackgroundColor="@color/main_purple_light">
         <TextView
                 android:text="위젯 설정"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:fontFamily="@font/nanumsquare_round_bold"
-                android:textSize="16sp" android:layout_gravity="center" android:textColor="@color/white"/>
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/nanumsquare_round_bold"
+                android:textSize="16sp"
+                android:layout_gravity="center"
+                android:textColor="@color/white"/>
     </androidx.cardview.widget.CardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

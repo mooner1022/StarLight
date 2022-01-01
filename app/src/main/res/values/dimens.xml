@@ -16,6 +16,8 @@
 
     <dimen name="title_margin_start">30dp</dimen>
 
+    <dimen name="widget_config_button_width">0dp</dimen>
+
     <dimen name="default_card_height">50dp</dimen>
     <dimen name="default_vertical_padding">10dp</dimen>
 
@@ -30,4 +32,11 @@
     <dimen name="debugroom_profile_corner_radius">12dp</dimen>
 
     <dimen name="lang_icon_corner_radius">6dp</dimen>
+
+    <dimen name="widget_card_margin_horizontal">20dp</dimen>
+    <dimen name="widget_padding_horizontal">0dp</dimen>
+    <dimen name="widget_slim_height">@dimen/card_height</dimen>
+    <dimen name="widget_medium_height">96dp</dimen>
+    <dimen name="widget_large_height">192dp</dimen>
+    <dimen name="widget_xlarge_height">384dp</dimen>
 </resources>

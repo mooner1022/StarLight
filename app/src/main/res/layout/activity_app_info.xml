@@ -48,14 +48,14 @@ tools:context=".ui.settings.info.AppInfoActivity">
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/nanumsquare_round_bold"
                         android:text="Project StarLight"
-                        android:textColor="#4C4C4C"
+                        android:textColor="@color/text"
                         android:textSize="28sp" android:layout_gravity="center_horizontal"/>
 
                 <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/nanumsquare_round_regular"
-                        android:textColor="#4C4C4C"
+                        android:textColor="@color/text"
                         android:textSize="14sp"
                         app:layout_collapseMode="parallax" android:text="@string/app_version"
                         android:layout_gravity="center_horizontal"/>
