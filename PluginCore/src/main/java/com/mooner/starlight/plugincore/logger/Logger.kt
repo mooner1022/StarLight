@@ -3,6 +3,7 @@ package com.mooner.starlight.plugincore.logger
 import android.util.Log
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.utils.TimeUtils
+import com.mooner.starlight.plugincore.utils.currentThread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -23,6 +24,7 @@ object Logger {
     val logs: List<LogData> get() = if (showInternalLogs) mLogs else mLogs.filterNot { it.type == LogType.VERBOSE }
 
     private val showInternalLogs get() = Session.isInitComplete && Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)
+    private val writeInternalLogs get() = Session.isInitComplete && Session.globalConfig.getCategory("dev_mode_config").getBoolean("write_internal_log", false)
 
     fun init(baseDir: File) {
         val dirName = TimeUtils.formatCurrentDate("yyyy-MM-dd")
@@ -36,6 +38,8 @@ object Logger {
         val fileName = "$fileIndex.log"
         logFile = File(dir, fileName)
     }
+
+    private val callSite get() = currentThread.stackTrace[4].className.split(".").last()
 
     /**
      * Binds a listener, which is called when a log is created, to the logger
@@ -58,7 +62,7 @@ object Logger {
         }
     }
 
-    fun v(message: String) = v(tag = null, message = message)
+    fun v(message: String) = v(tag = callSite, message = message)
 
     fun v(tag: String?, message: String) = log(
         LogData(
@@ -68,7 +72,7 @@ object Logger {
         )
     )
 
-    fun d(message: String) = d(tag = null, message = message)
+    fun d(message: String) = d(tag = callSite, message = message)
 
     fun d(tag: String?, message: String) = log(
         LogData(
@@ -78,7 +82,7 @@ object Logger {
         )
     )
 
-    fun i(message: String) = i(tag = null, message = message)
+    fun i(message: String) = i(tag = callSite, message = message)
 
     fun i(tag: String?, message: String) = log(
         LogData(
@@ -90,7 +94,7 @@ object Logger {
 
     fun e(tag: String, throwable: Throwable) = e(tag, throwable.message?: "null")
 
-    fun e(message: String) = e(tag = null, message = message)
+    fun e(message: String) = e(tag = callSite, message = message)
 
     fun e(tag: String?, message: String) = log(
         LogData(
@@ -101,7 +105,7 @@ object Logger {
     )
 
     // What a Terrible Failure!
-    fun wtf(message: String) = wtf(tag = null, message = message)
+    fun wtf(message: String) = wtf(tag = callSite, message = message)
 
     fun wtf(tag: String?, message: String) = log(
         LogData(
@@ -111,7 +115,7 @@ object Logger {
         )
     )
 
-    fun w(message: String) = w(tag = null, message = message)
+    fun w(message: String) = w(tag = callSite, message = message)
 
     fun w(tag: String?, message: String) = log(
         LogData(
@@ -132,13 +136,10 @@ object Logger {
                 listener(data)
             }
 
-        if (data.type.priority >= LogType.DEBUG.priority && this::logFile.isInitialized) {
+        if ((data.type.priority >= LogType.DEBUG.priority || writeInternalLogs) && this::logFile.isInitialized) {
             CoroutineScope(Dispatchers.IO).launch {
-                val timestamp = TimeUtils.getTimestamp(fullTimestamp = true)
                 val log = data.toString()
-                synchronized(logFile) {
-                    logFile.appendText("[$timestamp]$log\n")
-                }
+                logFile.appendText(log + "\n")
             }
         }
     }
