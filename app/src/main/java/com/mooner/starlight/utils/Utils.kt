@@ -8,6 +8,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -155,3 +156,10 @@ const val LAYOUT_TABLET  = 1
 val Context.layoutMode get() = resources.getInteger(R.integer.layoutMode)
 
 fun Context.getColorCompat(@ColorRes res: Int): Int = ContextCompat.getColor(this, res)
+
+val Context.nightModeFlags get() = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+
+fun Context.openWebUrl(url: String) {
+    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+    startActivity(browserIntent)
+}
