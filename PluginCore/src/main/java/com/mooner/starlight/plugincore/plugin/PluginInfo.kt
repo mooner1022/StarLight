@@ -15,16 +15,16 @@ data class PluginInfo(
     val mainClass: String,
     val version: Version,
     @SerialName("api_version")
-    val apiVersion: String,
-    val depend: List<String> = listOf(),
-    @SerialName("soft_depend")
-    val softDepend: List<String> = listOf(),
+    val apiVersion: Version,
+    val dependency: List<PluginDependency> = listOf(),
+    @SerialName("soft_dependency")
+    val softDependency: List<PluginDependency> = listOf(),
     val authors: List<String>,
     val description: String
 ) {
     companion object {
         fun decode(str: String): PluginInfo {
-            if (str.isBlank() || !str.startsWith("{") || !str.endsWith("}")) throw IllegalArgumentException("Illegal String argument: $str")
+            if (str.isBlank() || !str.startsWith("{") || !str.endsWith("}")) throw IllegalArgumentException("Illegal plugin info string: $str")
             return json.decodeFromString(str)
         }
     }
