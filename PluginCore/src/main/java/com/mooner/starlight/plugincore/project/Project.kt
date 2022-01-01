@@ -48,8 +48,8 @@ class Project (
     //private lateinit var scope: CoroutineScope
     private var context: CoroutineContext? = null
     val isCompiled: Boolean
-        get() = engine != null
-    private var engine: Any? = null
+        get() = langScope != null
+    private var langScope: Any? = null
     private val lang: Language = Session.languageManager.getLanguage(info.languageId)?: throw IllegalArgumentException("Cannot find language ${info.languageId}")
 
     val logger: LocalLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
@@ -75,7 +75,7 @@ class Project (
      */
     fun callEvent(name: String, args: Array<out Any>, onException: (Throwable) -> Unit = {}) {
         //logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
-        if (engine == null) {
+        if (langScope == null) {
             if (!isCompiled) return
 
             val thread = Thread.currentThread()
@@ -114,11 +114,11 @@ class Project (
             val shutdownOnError: Boolean = config["general"].getBoolean(key, true)
 
             if (shutdownOnError) {
-                logger.e(info.name, "Shutting down project [${info.name}]...")
+                logger.e(info.name, "Shutting down project '${info.name}'...")
                 info.isEnabled = false
-                if (engine != null && lang.requireRelease) {
-                    lang.release(engine!!)
-                    engine = null
+                if (langScope != null && lang.requireRelease) {
+                    lang.release(langScope!!)
+                    langScope = null
                 }
             }
             e.printStackTrace()
@@ -126,30 +126,39 @@ class Project (
             onException(e)
         }
 
-        val jobName: String = UUID.randomUUID().toString()
-        val job = CoroutineScope(context!!).launch {
-            lang.callFunction(engine!!, name, args, ::onError)
+        CoroutineScope(context!!).launch {
+            try {
+                JobLocker.withLock(threadPoolName!!) {
+                    lang.callFunction(langScope!!, name, args, ::onError)
+                }
+                if (langScope != null && lang.requireRelease)
+                    lang.release(langScope!!)
+            } catch (e: Error) {
+                onError(e)
+            }
         }
-        JobLocker.withParent(threadName!!).registerJob(
+
+        /*
+        JobLocker.withParent(threadPoolName!!).registerJob(
             key = jobName,
             job = job
         ) { e ->
             when(e) {
                 is ForceReleasedException, is CancellationException -> {
-                    Logger.w(tag, "Task $jobName canceled")
-                    if (engine != null)
-                        lang.release(engine!!)
+                    Logger.w(tag, "Task ${currentThread.name} canceled")
+                    if (langScope != null && lang.requireRelease)
+                        lang.release(langScope!!)
                 }
                 null -> {
-                    if (engine != null)
-                        lang.release(engine!!)
+                    if (langScope != null && lang.requireRelease)
+                        lang.release(langScope!!)
                 }
                 else -> {
                     onError(e)
                 }
             }
         }
-
+         */
         /*
         when(config.language) {
             Languages.JS_RHINO -> {
@@ -176,12 +185,12 @@ class Project (
             val rawCode: String = (directory.listFiles()?.find { it.isFile && it.name == info.mainScript }?: throw IllegalArgumentException(
                     "Cannot find main script ${info.mainScript} for project ${info.name}"
             )).readText(Charsets.UTF_8)
-            if (engine != null && lang.requireRelease) {
-                lang.release(engine!!)
+            if (langScope != null && lang.requireRelease) {
+                lang.release(langScope!!)
                 logger.v(tag, "engine released")
             }
             logger.i("Compiling project ${info.name}...")
-            engine = lang.compile(
+            langScope = lang.compile(
                 code = rawCode,
                 apis = apiManager.getApis(),
                 project = this
@@ -237,6 +246,15 @@ class Project (
     }
 
     /**
+     * Returns the scope instance if project is compiled, else null.
+     *
+     * @return scope returned on compile
+     */
+    fun getScope(): Any? {
+        return langScope
+    }
+
+    /**
      * Count of jobs currently running in thread pool of this project.
      *
      * @return the size of running jobs.
@@ -246,6 +264,10 @@ class Project (
         else JobLocker.withParent(threadPoolName!!).activeJobs()
     }
 
+
+    /**
+     * Cancels all running jobs.
+     */
     fun stopAllJobs() {
         if (context != null) {
             if (threadPoolName != null) {
@@ -257,18 +279,23 @@ class Project (
     }
 
     /**
-     * Cancels all running jobs and releases [engine] if the project is compiled.
+     * Cancels all running jobs and releases [langScope] if the project is compiled.
      *
      * @param requestUpdate if *true*, requests update of UI
      */
     fun destroy(requestUpdate: Boolean = false) {
         stopAllJobs()
-        if (engine != null) {
+        if (langScope != null) {
             if (lang.requireRelease)
-                lang.release(engine!!)
-            engine = null
+                lang.release(langScope!!)
+            langScope = null
         }
         if (requestUpdate) requestUpdate()
+    }
+
+    fun getDataDirectory(): File = with(directory.resolve("data")) {
+        if (!exists() || !isDirectory) mkdirs()
+        this
     }
 
     private fun getThreadPoolSize(): Int = config.getCategory("beta_features").getInt("thread_pool_size", DEF_THREAD_POOL_SIZE)

@@ -1,10 +1,10 @@
 package com.mooner.starlight.plugincore.project
 
 import com.mooner.starlight.plugincore.logger.Logger
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
+import com.mooner.starlight.plugincore.utils.currentThread
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+import java.util.concurrent.CountDownLatch
 
 object JobLocker {
 
@@ -16,6 +16,13 @@ object JobLocker {
     private const val T = "JobLocker"
 
     private val parents: ConcurrentMap<String, Parent> = ConcurrentHashMap()
+
+    fun withLock(parentName: String, task: () -> Unit) {
+        val parent = withParent(parentName)
+        parent.registerJob()
+        task()
+        parent.awaitRelease()
+    }
 
     fun withParent(name: String): Parent {
         return if (parents.containsKey(name)) {
@@ -30,17 +37,45 @@ object JobLocker {
     class Parent(
         val name: String
     ) {
+        //internal val jobName: ThreadLocal<String> = ThreadLocal()
+        private val defaultKey get() = currentThread.name
 
         private data class LockedJob(
-            val job: Job,
-            val listener: (Throwable?) -> Unit,
+            val latch: CountDownLatch = CountDownLatch(1),
             var releaseCounter: Short = 0
-        )
+        ) {
+            val canRelease get() = releaseCounter <= 0
+        }
 
         private val runningJobs: ConcurrentMap<String, LockedJob> = ConcurrentHashMap()
 
+        fun registerJob() {
+            val data = LockedJob()
+            val key = defaultKey
+            runningJobs[key] = data
+
+            Logger.v(T, "Registered job $key")
+        }
+
+        fun awaitRelease() {
+            val key = defaultKey
+
+            if (key !in runningJobs) {
+                Logger.w("Failed to await for release: task $key is not registered or already released")
+                return
+            }
+            val data = runningJobs[key]!!
+
+            if (!data.canRelease) {
+                Logger.v("Postponed release of job $key")
+                data.latch.await()
+            }
+            Logger.v(T, "Released job $key")
+        }
+
+        /*
         fun registerJob(
-            key: String = Thread.currentThread().name,
+            key: String = UUID.randomUUID().toString(),
             job: Job,
             onRelease: (Throwable?) -> Unit
         ): String {
@@ -49,18 +84,20 @@ object JobLocker {
                 job = job,
                 listener = onRelease
             )
-            if (!runningJobs.containsKey(key)) {
+            if (key !in runningJobs) {
                 runningJobs[key] = data
             }
             Logger.v(T, "Registered job $key")
             job.invokeOnCompletion {
                 if (it != null) {
                     Logger.v(T, "Released job $key with exception")
-                    runningJobs.remove(key)
+                    runningJobs -= key
+                    jobName.remove()
                     onRelease(it)
                 } else {
                     if (data.releaseCounter <= 0) {
-                        runningJobs.remove(key)
+                        runningJobs -= key
+                        jobName.remove()
                         onRelease(null)
                         Logger.v(T, "Released job $key")
                     } else {
@@ -70,44 +107,49 @@ object JobLocker {
             }
             return key
         }
+         */
 
-        fun requestLock(key: String = Thread.currentThread().name) {
-            if (runningJobs.containsKey(key)) {
+        fun requestLock(key: String = defaultKey): String {
+            if (key in runningJobs) {
                 runningJobs[key]!!.releaseCounter++
                 Logger.v(T, "Locked job $key")
             } else {
                 Logger.w(T, "Failed to lock job: job $key is not registered or already released")
             }
+            return key
         }
 
-        fun requestRelease(key: String = Thread.currentThread().name) {
-            if (runningJobs.containsKey(key)) {
+        fun requestRelease(key: String = defaultKey) {
+            if (key in runningJobs) {
                 var isReleased = false
                 runningJobs[key]!!.also {
                     it.releaseCounter--
-                    if (it.releaseCounter <= 0) {
-                        it.listener(null)
+                    if (it.canRelease) {
+                        Logger.v(T, "Releasing locked job $key")
+                        //it.listener(null)
+                        it.latch.countDown()
                         isReleased = true
                     }
                 }
-                if (isReleased) {
-                    runningJobs.remove(key)
-                    Logger.v(T, "Released job $key")
-                }
+                if (isReleased)
+                    runningJobs -= key
             } else {
                 Logger.w(T, "Failed to release job: job $key is not registered or already released")
             }
         }
 
-        fun forceRelease(key: String = Thread.currentThread().name) {
-            if (runningJobs.containsKey(key)) {
+        fun forceRelease(key: String = defaultKey) {
+            if (key in runningJobs) {
                 runningJobs[key]!!.also {
+                    it.latch.countDown()
+                    /*
                     if (it.job.isActive) {
                         it.job.cancel("Job force released")
                     }
                     it.listener(ForceReleasedException("Job force released"))
+                     */
                 }
-                runningJobs.remove(key)
+                runningJobs -= key
                 Logger.w(T, "Force released job $key, this might not be a normal behavior")
             }
         }
@@ -117,10 +159,13 @@ object JobLocker {
         fun purge() {
             if (runningJobs.isNotEmpty()) {
                 for ((_, data) in runningJobs) {
+                    data.latch.countDown()
+                    /*
                     if (data.job.isActive) {
                         data.job.cancel("Job force released")
                     }
                     data.listener(ForceReleasedException("Job force released"))
+                     */
                 }
                 runningJobs.clear()
                 Logger.w(T, "Released all jobs of parent $name")
