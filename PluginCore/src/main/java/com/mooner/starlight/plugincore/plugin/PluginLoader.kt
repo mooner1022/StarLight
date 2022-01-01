@@ -4,6 +4,7 @@ import android.os.Environment
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.logger.Logger
+import com.mooner.starlight.plugincore.plugin.PluginDependency.Companion.VERSION_ANY
 import com.mooner.starlight.plugincore.utils.readString
 import com.mooner.starlight.plugincore.version.Version
 import java.io.File
@@ -51,9 +52,9 @@ class PluginLoader {
         val plugins: MutableSet<StarlightPlugin> = hashSetOf()
         for ((file: File, info: PluginInfo) in pluginInfos.values) {
             try {
-                for (dependency in info.depend) {
-                    if (!pluginInfos.containsKey(dependency)) {
-                        throw DependencyNotFoundException("Unable to find plugin [$dependency] for plugin [${info.name}]")
+                for (dependency in info.dependency) {
+                    if (dependency.pluginId !in pluginInfos) {
+                        throw DependencyNotFoundException("Unable to find dependency '$dependency' for plugin [${info.name}]")
                         //Logger.e(T, "Unable to find plugin [$dependency] for plugin ${config.fullName}")
                     }
                     val pluginInfo = pluginInfos[dependency.pluginId]!!.second
