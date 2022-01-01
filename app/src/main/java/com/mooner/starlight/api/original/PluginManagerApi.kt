@@ -1,4 +1,4 @@
-package com.mooner.starlight.api.helper
+package com.mooner.starlight.api.original
 
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.api.Api
