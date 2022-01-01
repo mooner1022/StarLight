@@ -51,7 +51,7 @@ class LogsRecyclerViewAdapter(
         val color = when(viewData.type) {
             LogType.INFO -> R.color.code_string
             LogType.DEBUG -> R.color.code_purple
-            LogType.WARNING -> R.color.code_yellow
+            LogType.WARN -> R.color.code_yellow
             LogType.ERROR -> R.color.code_orange
             LogType.CRITICAL -> R.color.code_error
             LogType.VERBOSE -> R.color.monokai_pro_sky

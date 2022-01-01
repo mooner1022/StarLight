@@ -106,7 +106,7 @@ class LocalLogger(
 
     fun w(tag: String?, message: String) = Logger.log(
         LogData(
-            type = LogType.WARNING,
+            type = LogType.WARN,
             tag = tag,
             message = message
         )
