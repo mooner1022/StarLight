@@ -1,6 +1,7 @@
 package com.mooner.starlight.ui.settings.dev
 
 import android.content.Context
+import android.content.res.Configuration
 import com.mooner.starlight.plugincore.Info
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.globalConfig
@@ -29,6 +30,15 @@ fun Context.startDevModeActivity() {
                         title = "내부 로그 표시"
                         description = "앱 내부의 디버깅용 로그를 표시합니다."
                         icon = Icon.MARK_CHAT_UNREAD
+                        iconTintColor = color { "#87AAAA" }
+                        defaultValue = false
+                    }
+                    toggle {
+                        dependency = "show_internal_log"
+                        id = "write_internal_log"
+                        title = "내부 로그 기록"
+                        description = "앱 내부의 디버깅용 로그를 로그 파일에 기록합니다."
+                        icon = Icon.EDIT
                         iconTintColor = color { "#87AAAA" }
                         defaultValue = false
                     }
@@ -103,8 +113,16 @@ fun Context.startDevModeActivity() {
                         LAYOUT_TABLET -> "LAYOUT_TABLET"
                         else -> "UNKNOWN"
                     }
+                    val uiMode = nightModeFlags
+                    val uiModeString = when(uiMode) {
+                        Configuration.UI_MODE_NIGHT_YES -> "UI_MODE_NIGHT_YES"
+                        Configuration.UI_MODE_NIGHT_NO -> "UI_MODE_NIGHT_NO"
+                        Configuration.UI_MODE_NIGHT_UNDEFINED -> "UI_MODE_NIGHT_UNDEFINED"
+                        else -> "UNKNOWN"
+                    }
                     debugInfo("globalPower", globalConfig.getCategory("general").getBoolean("global_power").toString())
                     debugInfo("layoutMode", "$layoutMode ($layoutModeString)")
+                    debugInfo("uiMode", "$uiMode ($uiModeString)")
                     debugInfo("widgets", globalConfig.getCategory("widgets").getString("ids", WIDGET_DEF_STRING))
                     debugInfo("plugins", pluginManager.getPlugins().joinToString { it.info.id })
                     //debugInfo("libs", )
