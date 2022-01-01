@@ -79,6 +79,7 @@ class ParentAdapter(
     }
 
     fun destroy() {
+        recyclerAdapter?.destroy()
         recyclerAdapter = null
     }
 }

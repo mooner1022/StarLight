@@ -114,12 +114,11 @@ class LocalLogger(
 
     private fun log(data: LogData) {
         synchronized(_logs) {
-            _logs.add(data)
+            _logs += data
         }
         Logger.log(data)
-        if (data.type != LogType.DEBUG) {
+        if (data.type != LogType.DEBUG)
             flush()
-        }
     }
 
     private fun flush() = runBlocking {

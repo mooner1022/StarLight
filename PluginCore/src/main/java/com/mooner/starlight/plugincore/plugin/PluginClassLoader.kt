@@ -21,14 +21,14 @@ class PluginClassLoader(
             try {
                 jarClass = Class.forName(config.mainClass, false, this)
             } catch (e: ClassNotFoundException) {
-                throw InvalidPluginException("Cannot find main class [${config.mainClass}]")
+                throw InvalidPluginException("Cannot find main class: ${config.mainClass}")
             }
 
             val pluginClass: Class<out StarlightPlugin>
             try {
                 pluginClass = jarClass.asSubclass(StarlightPlugin::class.java)
             } catch (e: ClassCastException) {
-                throw InvalidPluginException("Main class [${config.mainClass}] does not extend StarlightPlugin")
+                throw InvalidPluginException("Main class '${config.mainClass}' does not extend StarlightPlugin")
             }
 
             plugin = pluginClass.newInstance()
@@ -44,7 +44,7 @@ class PluginClassLoader(
     }
 
     fun findClass(name: String, checkGlobal: Boolean): Class<*> {
-        if (name.startsWith("com.mooner.starlight.")) throw ClassNotFoundException(name)
+        if (name.startsWith("com.mooner.starlight.") && name.split(".")[3] != "plugincore") throw ClassNotFoundException(name)
         var result = classes[name]
 
         if (result == null) {
@@ -69,11 +69,11 @@ class PluginClassLoader(
             "Cannot initialize plugin outside of this class loader"
         }
 
-        if (this.pluginInit != null) {
+        if (pluginInit != null) {
             throw IllegalArgumentException("Plugin already initialized!", pluginState)
         }
         pluginState = IllegalStateException("Initial initialization")
-        this.pluginInit = plugin
+        pluginInit = plugin
         plugin.init(config, dataDir, file, this)
     }
 }

@@ -45,7 +45,7 @@ class PluginLoader {
                 Logger.e(T, e.toString())
                 //throw InvalidPluginException(e.toString())
             } catch (e: Exception) {
-                Logger.e(T, "Unexpected error while loading info: $e")
+                Logger.e(T, "Unexpected error while loading plugin info: $e")
             }
         }
 
@@ -69,7 +69,7 @@ class PluginLoader {
                     Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin: ${info.fullName}")
                     continue
                 }
-                plugins.add(plugin)
+                plugins += plugin
                 plugin.onEnable()
             } catch (e: Exception) {
                 Logger.e(T, e.toString())
@@ -117,11 +117,12 @@ class PluginLoader {
         try {
             jar = JarFile(file)
             val entries = jar.entries()
+            val parent = plugin.getDataFolder().resolve("assets/")
             while (entries.hasMoreElements()) {
                 val entry = entries.nextElement() ?: break
                 if (!entry.name.startsWith("assets/")) continue
                 val fileName = entry.name.split("assets/").last()
-                val writeFile = File(plugin.getDataFolder().resolve("assets/"), fileName)
+                val writeFile = File(parent, fileName)
 
                 if (force || !writeFile.exists()) {
                     val entStream = jar.getInputStream(entry)
@@ -135,7 +136,7 @@ class PluginLoader {
             }
         } catch (e: IOException) {
             e.printStackTrace()
-            throw IllegalStateException("Failed to load asset")
+            throw IllegalStateException("Failed to load asset: $e")
         } finally {
             jar?.close()
         }
@@ -152,7 +153,7 @@ class PluginLoader {
             stream = jar.getInputStream(ent)
             return PluginInfo.decode(stream.readString())
         } catch (e: IOException) {
-            throw IllegalStateException("Cannot open starlight.json")
+            throw IllegalStateException("Cannot open starlight.json: $e")
         } finally {
             jar?.close()
             stream?.close()
@@ -169,7 +170,7 @@ class PluginLoader {
                     val loader = loaders[current]
                     try {
                         cachedClass = loader!!.findClass(name, false)
-                    } catch (cnfe: ClassNotFoundException) {
+                    } catch (_: ClassNotFoundException) {
 
                     }
                     if (cachedClass != null) {
@@ -215,14 +216,14 @@ class PluginLoader {
     }
 
     fun setClass(name: String, clazz: Class<*>) {
-        if (!classes.containsKey(name)) {
+        if (name !in classes) {
             classes[name] = clazz
         }
     }
 
     private fun removeClass(name: String) {
-        if (classes.containsKey(name)) {
-            classes.remove(name)
+        if (name in classes) {
+            classes -= name
         }
     }
 
