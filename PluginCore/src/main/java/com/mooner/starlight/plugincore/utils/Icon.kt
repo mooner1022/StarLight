@@ -202,4 +202,7 @@ enum class Icon(
     GITHUB(
         drawableRes = R.drawable.ic_github
     ),
+    ARCHIVE(
+        drawableRes = R.drawable.ic_round_archive_24
+    ),
 }
