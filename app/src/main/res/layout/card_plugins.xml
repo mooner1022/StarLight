@@ -6,7 +6,7 @@
         android:layout_height="wrap_content"
         android:backgroundTint="@color/transparent">
 
-    <com.mooner.starlight.ui.presets.ExpandableCardView
+    <dev.mooner.starlight.ui.presets.ExpandableCardView
             android:id="@+id/card_plugin"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

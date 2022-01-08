@@ -20,7 +20,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"/>
 
-    <com.mooner.starlight.ui.presets.ExpandableCardView
+    <dev.mooner.starlight.ui.presets.ExpandableCardView
             android:id="@+id/card_project"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
