@@ -1,4 +1,4 @@
-package com.mooner.starlight.plugincore.config
+package com.mooner.starlight.plugincore.config.data
 
 interface ConfigCategory {
     operator fun contains(key: String): Boolean

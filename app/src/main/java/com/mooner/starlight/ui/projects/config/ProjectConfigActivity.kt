@@ -1,3 +1,9 @@
+/*
+ * Created by Minki Moon(mooner1022)
+ * Copyright (c) mooner1022. all rights reserved.
+ * This code is licensed under the GNU General Public License v3.0.
+ */
+
 package com.mooner.starlight.ui.projects.config
 
 import android.annotation.SuppressLint
@@ -16,13 +22,16 @@ import com.mooner.starlight.R
 import com.mooner.starlight.databinding.ActivityProjectConfigBinding
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.globalConfig
-import com.mooner.starlight.plugincore.config.*
+import com.mooner.starlight.plugincore.config.ButtonConfigObject
+import com.mooner.starlight.plugincore.config.CategoryConfigObject
+import com.mooner.starlight.plugincore.config.TypedString
+import com.mooner.starlight.plugincore.config.config
+import com.mooner.starlight.plugincore.config.data.FileConfig
 import com.mooner.starlight.plugincore.project.Project
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter
 import com.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
 import java.io.File
-
 
 class ProjectConfigActivity: AppCompatActivity() {
 

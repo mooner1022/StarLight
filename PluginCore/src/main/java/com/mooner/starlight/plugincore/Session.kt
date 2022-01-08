@@ -3,7 +3,7 @@ package com.mooner.starlight.plugincore
 import android.os.Build
 import android.os.Environment
 import com.mooner.starlight.plugincore.api.ApiManager
-import com.mooner.starlight.plugincore.config.GlobalConfig
+import com.mooner.starlight.plugincore.config.data.GlobalConfig
 import com.mooner.starlight.plugincore.event.EventManager
 import com.mooner.starlight.plugincore.language.LanguageManager
 import com.mooner.starlight.plugincore.library.LibraryLoader

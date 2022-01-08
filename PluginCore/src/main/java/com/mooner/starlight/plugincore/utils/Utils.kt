@@ -36,3 +36,9 @@ fun Bitmap.toBase64(): String {
     val bitmapByte = stream.toByteArray()
     return Base64.encodeToString(bitmapByte, Base64.DEFAULT)
 }
+
+fun requiredField(fieldName: String, value: Any?) {
+    if (value == null) {
+        throw IllegalArgumentException("Required field '$fieldName' is null")
+    }
+}

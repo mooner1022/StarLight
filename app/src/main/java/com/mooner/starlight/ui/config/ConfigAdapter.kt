@@ -11,7 +11,6 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.size.Scale
@@ -84,10 +83,10 @@ class ConfigAdapter(
                     viewData.iconResId != null -> load(viewData.iconResId!!)
                 }
 
-                if (viewData.iconTintColor != null)
-                    ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(viewData.iconTintColor!!))
+                imageTintList = if (viewData.iconTintColor != null)
+                    ColorStateList.valueOf(viewData.iconTintColor!!)
                 else
-                    ImageViewCompat.setImageTintList(this, null)
+                    null
                 //setColorFilter(viewData.iconTintColor, android.graphics.PorterDuff.Mode.SRC_IN)
             }
         }

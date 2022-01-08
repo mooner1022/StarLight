@@ -11,9 +11,9 @@ import com.mooner.starlight.databinding.ActivityPluginConfigBinding
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.pluginManager
 import com.mooner.starlight.plugincore.config.ButtonConfigObject
-import com.mooner.starlight.plugincore.config.ConfigImpl
 import com.mooner.starlight.plugincore.config.TypedString
 import com.mooner.starlight.plugincore.config.config
+import com.mooner.starlight.plugincore.config.data.ConfigImpl
 import com.mooner.starlight.plugincore.plugin.StarlightPlugin
 import com.mooner.starlight.plugincore.utils.Icon
 import com.mooner.starlight.ui.config.ParentAdapter

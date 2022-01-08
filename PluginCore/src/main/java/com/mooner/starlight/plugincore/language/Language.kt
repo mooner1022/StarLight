@@ -5,9 +5,9 @@ import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.json
 import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
-import com.mooner.starlight.plugincore.config.ConfigCategory
-import com.mooner.starlight.plugincore.config.ConfigCategoryImpl
 import com.mooner.starlight.plugincore.config.TypedString
+import com.mooner.starlight.plugincore.config.data.ConfigCategory
+import com.mooner.starlight.plugincore.config.data.ConfigCategoryImpl
 import com.mooner.starlight.plugincore.project.Project
 import kotlinx.serialization.decodeFromString
 import java.io.File

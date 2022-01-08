@@ -36,14 +36,14 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/nanumsquare_round_bold"
                 android:text="Project StarLight"
-                android:textColor="#4C4C4C"
+                android:textColor="@color/text"
                 android:textSize="28sp" android:layout_gravity="center_horizontal"/>
 
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/nanumsquare_round_regular"
-                android:textColor="#4C4C4C"
+                android:textColor="@color/text"
                 android:textSize="14sp"
                 app:layout_collapseMode="parallax" android:text="@string/app_version"
                 android:layout_gravity="center_horizontal"/>
@@ -54,7 +54,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/nanumsquare_round_bold"
             android:text="마지막 종료에서 치명적인 오류가 발생했습니다."
-            android:textColor="#4C4C4C"
+            android:textColor="@color/text"
             android:textSize="16sp" android:layout_gravity="center_horizontal"
             app:layout_constraintTop_toBottomOf="@+id/imageView6"
             android:layout_marginTop="8dp" android:textAlignment="center" app:layout_constraintEnd_toEndOf="parent"
@@ -66,7 +66,7 @@
             app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent"
             app:cardCornerRadius="@dimen/card_radius"
             app:cardElevation="@dimen/card_elevation" app:layout_constraintBottom_toTopOf="@+id/buttons"
-            android:layout_marginStart="8dp" android:layout_marginEnd="8dp">
+            android:layout_marginStart="8dp" android:layout_marginEnd="8dp" app:cardBackgroundColor="@color/cardview">
         <TextView
                 android:text="ERR"
                 android:layout_width="match_parent"
@@ -86,12 +86,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:id="@+id/share"
                 app:icon="@drawable/ic_round_ios_share_24" android:background="#00FFFFFF"
-                android:layout_marginStart="8dp" android:layout_marginEnd="8dp"/>
+                android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:textColor="@color/text"
+                app:iconTint="@color/text"/>
         <Button
                 android:text="앱 재시작"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" android:id="@+id/restart"
                 app:icon="@drawable/ic_round_refresh_24" android:background="#00FFFFFF"
-                android:layout_marginStart="8dp" android:layout_marginEnd="8dp"/>
+                android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:textColor="@color/text"
+                app:iconTint="@color/text"/>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

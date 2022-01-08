@@ -1,12 +1,11 @@
-
 package com.mooner.starlight.plugincore.project
 
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.Session.apiManager
 import com.mooner.starlight.plugincore.Session.json
 import com.mooner.starlight.plugincore.Session.projectManager
-import com.mooner.starlight.plugincore.config.Config
-import com.mooner.starlight.plugincore.config.FileConfig
+import com.mooner.starlight.plugincore.config.data.Config
+import com.mooner.starlight.plugincore.config.data.FileConfig
 import com.mooner.starlight.plugincore.language.Language
 import com.mooner.starlight.plugincore.logger.LocalLogger
 import com.mooner.starlight.plugincore.logger.Logger

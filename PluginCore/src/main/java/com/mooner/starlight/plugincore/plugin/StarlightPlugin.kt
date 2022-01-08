@@ -3,9 +3,9 @@ package com.mooner.starlight.plugincore.plugin
 import com.mooner.starlight.plugincore.Session
 import com.mooner.starlight.plugincore.api.Api
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
-import com.mooner.starlight.plugincore.config.Config
-import com.mooner.starlight.plugincore.config.ConfigImpl
 import com.mooner.starlight.plugincore.config.TypedString
+import com.mooner.starlight.plugincore.config.data.Config
+import com.mooner.starlight.plugincore.config.data.ConfigImpl
 import com.mooner.starlight.plugincore.event.Event
 import com.mooner.starlight.plugincore.event.callEvent
 import com.mooner.starlight.plugincore.language.Language

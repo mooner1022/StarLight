@@ -2,7 +2,7 @@ package com.mooner.starlight.plugincore.plugin
 
 import android.view.View
 import com.mooner.starlight.plugincore.config.CategoryConfigObject
-import com.mooner.starlight.plugincore.config.Config
+import com.mooner.starlight.plugincore.config.data.Config
 
 interface Plugin {
 

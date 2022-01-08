@@ -71,7 +71,7 @@ class PluginLoader {
                 }
                 plugins += plugin
                 plugin.onEnable()
-            } catch (e: Exception) {
+            } catch (e: Error) {
                 Logger.e(T, e.toString())
                 if (Session.isDebugging) e.printStackTrace()
             }

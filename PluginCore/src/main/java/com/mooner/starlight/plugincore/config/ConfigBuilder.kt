@@ -6,6 +6,7 @@ import android.view.View
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import com.mooner.starlight.plugincore.utils.Icon
+import com.mooner.starlight.plugincore.utils.requiredField
 import java.io.File
 
 fun config(block: ConfigBuilder.() -> Unit): List<CategoryConfigObject> {
