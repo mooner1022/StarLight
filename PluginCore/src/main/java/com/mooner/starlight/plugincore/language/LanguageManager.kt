@@ -18,7 +18,7 @@ class LanguageManager {
         Logger.v("LanguageManager", "Added language ${lang.name}(${lang.id})")
     }
 
-    fun getLanguage(id: String, newInstance: Boolean = true): Language? {
+    fun getLanguage(id: String, newInstance: Boolean = false): Language? {
         for (lang in languages) {
             if (lang.id == id) {
                 return if (newInstance) lang.javaClass.newInstance() else lang
