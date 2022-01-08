@@ -26,65 +26,66 @@ class JSRhino: Language() {
         private const val CONF_OPTIMIZATION_LEVEL = "optimization_level"
         private const val CONF_LANG_VERSION = "js_version"
         private const val LANG_DEF_VERSION = Context.VERSION_ES6
-    }
 
-    override val id: String
-        get() = "JS_RHINO"
-    override val name: String
-        get() = "자바스크립트(라이노)"
-    override val fileExtension: String
-        get() = "js"
-    override val requireRelease: Boolean = true
-
-    override val configObjectList: List<CategoryConfigObject> = config {
-        category {
-            id = T
-            title = T
-            textColor = color { "#FFC069" }
-            items = items {
-                toggle {
-                    id = CONF_OPTIMIZE_CODE
-                    title = "코드 최적화"
-                    description = "코드를 컴파일 과정에서 최적화합니다. 컴파일 속도가 느려지지만 실행 속도가 빨라집니다."
-                    defaultValue = false
-                    icon = Icon.CHECK
-                }
-                seekbar {
-                    id = CONF_OPTIMIZATION_LEVEL
-                    title = "최적화 레벨"
-                    dependency = CONF_OPTIMIZE_CODE
-                    min = 1
-                    max = 9
-                    icon = Icon.COMPRESS
-                    iconTintColor = color { "#57837B" }
-                    defaultValue = 1
-                }
-                spinner {
-                    id = CONF_LANG_VERSION
-                    title = "JS 버전"
-                    items = listOf(
-                        "JavaScript 1.0",
-                        "JavaScript 1.1",
-                        "JavaScript 1.2",
-                        "JavaScript 1.3",
-                        "JavaScript 1.4",
-                        "JavaScript 1.5",
-                        "JavaScript 1.6",
-                        "JavaScript 1.7",
-                        "JavaScript 1.8",
-                        "ECMAScript 6 (ES6)",
-                        "DEFAULT",
-                    )
-                    icon = Icon.LAYERS
-                    iconTintColor = color { "#C6B4CE" }
-                    defaultIndex = 9
+        private val configs = config {
+            category {
+                id = T
+                title = T
+                textColor = color { "#FFC069" }
+                items = items {
+                    toggle {
+                        id = CONF_OPTIMIZE_CODE
+                        title = "코드 최적화"
+                        description = "코드를 컴파일 과정에서 최적화합니다. 컴파일 속도가 느려지지만 실행 속도가 빨라집니다."
+                        defaultValue = false
+                        icon = Icon.CHECK
+                    }
+                    seekbar {
+                        id = CONF_OPTIMIZATION_LEVEL
+                        title = "최적화 레벨"
+                        dependency = CONF_OPTIMIZE_CODE
+                        min = 1
+                        max = 9
+                        icon = Icon.COMPRESS
+                        iconTintColor = color { "#57837B" }
+                        defaultValue = 1
+                    }
+                    spinner {
+                        id = CONF_LANG_VERSION
+                        title = "JS 버전"
+                        items = listOf(
+                            "JavaScript 1.0",
+                            "JavaScript 1.1",
+                            "JavaScript 1.2",
+                            "JavaScript 1.3",
+                            "JavaScript 1.4",
+                            "JavaScript 1.5",
+                            "JavaScript 1.6",
+                            "JavaScript 1.7",
+                            "JavaScript 1.8",
+                            "ECMAScript 6 (ES6)",
+                            "DEFAULT",
+                        )
+                        icon = Icon.LAYERS
+                        iconTintColor = color { "#C6B4CE" }
+                        defaultIndex = 9
+                    }
                 }
             }
         }
     }
 
-    override val defaultCode: String
-        get() = """
+    override val id: String = "JS_RHINO"
+
+    override val name: String = "자바스크립트(라이노)"
+
+    override val fileExtension: String = "js"
+
+    override val requireRelease: Boolean = true
+
+    override val configObjectList: List<CategoryConfigObject> = configs
+
+    override val defaultCode: String = """
             function onMessage(event) {
                 
             }
