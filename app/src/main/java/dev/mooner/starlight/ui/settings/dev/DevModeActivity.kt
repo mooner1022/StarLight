@@ -1,5 +1,5 @@
 /*
- * DevModeActivity.kt created by Minki Moon(mooner1022) on 22. 1. 8. 오후 7:23
+ * DevModeActivity.kt created by Minki Moon(mooner1022)
  * Copyright (c) mooner1022. all rights reserved.
  * This code is licensed under the GNU General Public License v3.0.
  */
@@ -22,7 +22,7 @@ fun Context.startDevModeActivity() {
         id = activityId,
         title = "설정",
         subTitle = "개발자 모드",
-        saved = dev.mooner.starlight.plugincore.Session.globalConfig.getAllConfigs(),
+        saved = globalConfig.getAllConfigs(),
         items = config {
             category {
                 id = "dev_mode_config"
@@ -62,7 +62,7 @@ fun Context.startDevModeActivity() {
                         icon = Icon.DEVELOPER_BOARD_OFF
                         iconTintColor = color { "#FF8243" }
                         onClickListener = {
-                            dev.mooner.starlight.plugincore.Session.globalConfig.edit {
+                            globalConfig.edit {
                                 getCategory("dev")["dev_mode"] = false
                             }
                             finishConfigActivity(activityId)

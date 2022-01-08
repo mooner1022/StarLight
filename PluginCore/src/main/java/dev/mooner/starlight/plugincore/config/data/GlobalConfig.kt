@@ -1,5 +1,5 @@
 /*
- * GlobalConfig.kt created by Minki Moon(mooner1022) on 22. 1. 8. 오후 7:23
+ * GlobalConfig.kt created by Minki Moon(mooner1022)
  * Copyright (c) mooner1022. all rights reserved.
  * This code is licensed under the GNU General Public License v3.0.
  */
@@ -18,7 +18,7 @@ import kotlinx.serialization.encodeToString
 import java.io.File
 
 class GlobalConfig(
-    private val path: File
+    path: File
 ) {
 
     companion object {

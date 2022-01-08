@@ -1,5 +1,5 @@
 /*
- * PluginConfigActivity.kt created by Minki Moon(mooner1022) on 22. 1. 8. 오후 7:23
+ * PluginConfigActivity.kt created by Minki Moon(mooner1022)
  * Copyright (c) mooner1022. all rights reserved.
  * This code is licensed under the GNU General Public License v3.0.
  */
@@ -19,7 +19,6 @@ import dev.mooner.starlight.plugincore.config.ButtonConfigObject
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.config.data.ConfigImpl
-import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ParentAdapter
 import dev.mooner.starlight.utils.ViewUtils.Companion.bindFadeImage
@@ -72,7 +71,7 @@ class PluginConfigActivity: AppCompatActivity() {
             plugin.onConfigChanged(id, view, data)
         }
 
-        val configFile = File((plugin as StarlightPlugin).getDataFolder(), PLUGIN_CONFIG_FILE_NAME)
+        val configFile = File(plugin.getDataFolder(), PLUGIN_CONFIG_FILE_NAME)
         savedData = try {
             dev.mooner.starlight.plugincore.Session.json.decodeFromString(configFile.readText())
         } catch (e: Exception) {
