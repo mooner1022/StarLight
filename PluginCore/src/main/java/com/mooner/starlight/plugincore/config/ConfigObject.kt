@@ -4,6 +4,7 @@ import android.text.InputType
 import android.view.View
 import androidx.annotation.ColorInt
 import com.mooner.starlight.plugincore.utils.Icon
+import com.mooner.starlight.plugincore.utils.hasFlag
 import java.io.File
 
 enum class ConfigObjectType(
@@ -17,7 +18,8 @@ enum class ConfigObjectType(
     BUTTON_FLAT(4),
     BUTTON_CARD(-4),
     CUSTOM(5),
-    CATEGORY(6)
+    CATEGORY(6),
+    CATEGORY_NESTED(-6)
 }
 
 interface ConfigObject {
@@ -188,17 +190,31 @@ data class CustomConfigObject(
 data class CategoryConfigObject(
     override val id: String,
     override val title: String,
-    val isDevModeOnly: Boolean,
+    val flags: Int = FLAG_NONE,
     @ColorInt
-    val textColor: Int,
+    val textColor: Int?,
+    override val icon: Icon? = null,
+    override val iconFile: File? = null,
+    override val iconResId: Int? = null,
+    @ColorInt
+    override val iconTintColor: Int?,
     val items: List<ConfigObject>
 ): ConfigObject {
+
+    companion object {
+
+        const val FLAG_NONE: Int = 0x0
+
+        const val FLAG_DEV_MODE_ONLY: Int = 0x1
+
+        const val FLAG_NESTED: Int = 0x2
+    }
+
+    val isDevModeOnly get() = flags hasFlag FLAG_DEV_MODE_ONLY
+    val isNested get() = flags hasFlag FLAG_NESTED
+
     override val default: Any = 0
     override val description: String? = null
-    override val icon: Icon? = null
-    override val iconFile: File? = null
-    override val iconResId: Int? = null
-    override val iconTintColor: Int = 0x0
     override val type: ConfigObjectType = ConfigObjectType.CATEGORY
     override val viewType: Int = type.viewType
     override val dependency: String? = null

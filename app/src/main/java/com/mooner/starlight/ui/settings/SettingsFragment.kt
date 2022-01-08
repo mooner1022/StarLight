@@ -65,14 +65,17 @@ class SettingsFragment : Fragment() {
             category {
                 id = "general"
                 title = "일반"
-                textColor = color { "#706EB9" }
+                icon = Icon.SETTINGS
+                iconTintColor = color { "#5584AC" }
+                //textColor = color { "#706EB9" }
+                flags = CategoryConfigObject.FLAG_NESTED
                 items = items {
                     toggle {
                         id = "global_power"
                         title = "전역 전원"
                         description = "모든 봇의 전원을 관리합니다."
                         icon = Icon.POWER
-                        iconTintColor = color { "#62D2A2" }
+                        iconTintColor = color { "#5584AC" }
                         defaultValue = false
                     }
                     button {
@@ -89,7 +92,10 @@ class SettingsFragment : Fragment() {
             category {
                 id = "plugin"
                 title = "플러그인"
-                textColor = color { "#706EB9" }
+                icon = Icon.ARCHIVE
+                iconTintColor = color { "#95D1CC" }
+                //textColor = color { "#706EB9" }
+                flags = CategoryConfigObject.FLAG_NESTED
                 items = items {
                     string {
                         id = "load_timeout"
@@ -116,7 +122,7 @@ class SettingsFragment : Fragment() {
                         title = "안전 모드 (재시작 필요)"
                         description = "플러그인 안전 모드를 활성화합니다. 모든 플러그인을 로드하지 않습니다."
                         icon = Icon.LAYERS_CLEAR
-                        iconTintColor = color { "#62D2A2" }
+                        iconTintColor = color { "#95D1CC" }
                         defaultValue = false
                     }
                     button {
@@ -135,14 +141,17 @@ class SettingsFragment : Fragment() {
             category {
                 id = "legacy"
                 title = "레거시"
-                textColor = color { "#706EB9" }
+                icon = Icon.BOOKMARK
+                iconTintColor = color { "#98BAE7" }
+                //textColor = color { "#706EB9" }
+                flags = CategoryConfigObject.FLAG_NESTED
                 items = items {
                     toggle {
                         id = "use_legacy_event"
                         title = "레거시 이벤트 사용"
                         description = "메신저봇이나 채자봇과 호환되는 이벤트를 사용합니다."
-                        icon = Icon.LINK
-                        iconTintColor = color { "#62D2A2" }
+                        icon = Icon.BOOKMARK
+                        iconTintColor = color("#98BAE7")
                         defaultValue = false
                     }
                 }
