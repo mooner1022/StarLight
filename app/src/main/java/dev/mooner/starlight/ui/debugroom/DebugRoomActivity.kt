@@ -30,6 +30,7 @@ import dev.mooner.starlight.listener.DefaultEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.LegacyEvent
 import dev.mooner.starlight.listener.legacy.Replier
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.chat.ChatSender
@@ -111,7 +112,7 @@ class DebugRoomActivity: AppCompatActivity() {
         val projectName = intent.getStringExtra("projectName")?: "undefined"
         binding.roomTitle.text = roomName
 
-        project = dev.mooner.starlight.plugincore.Session.projectManager.getProject(projectName)!!
+        project = Session.projectManager.getProject(projectName)!!
 
         updateConfig()
 
