@@ -119,16 +119,15 @@ class JSRhino: Language() {
         if (project != null) {
             var importLines: StringBuilder? = null
             for(methodBlock in apis) {
-                val instance = methodBlock.getInstance(project)
-
                 when(methodBlock.instanceType) {
                     InstanceType.CLASS -> {
-                        val line = "const ${methodBlock.name} = ${methodBlock.instanceClass.name};\n"
+                        val line = "const ${methodBlock.name} = Packages.${methodBlock.instanceClass.name};\n"
                         if (importLines == null) importLines = StringBuilder(line)
                         else importLines.append(line)
                         //context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
                     }
                     InstanceType.OBJECT -> {
+                        val instance = methodBlock.getInstance(project)
                         scope.put(methodBlock.name, scope, instance)
                         //ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(instance, scope))
                     }
@@ -136,11 +135,12 @@ class JSRhino: Language() {
                 //engine.put(methodBlock.blockName, methodBlock.instance)
             }
             if (importLines != null) {
+                Logger.v(importLines.toString())
                 context.evaluateString(scope, importLines.toString(), "import", 1, null)
             }
         }
         //engine.eval(code)
-        context.evaluateString(scope, code, project?.info?.name?: name, 1, null)
+        context.evaluateString(scope, code, project?.info?.name ?: name, 1, null)
         //scope.put()
         Context.exit()
         return scope
