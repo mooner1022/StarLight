@@ -3,9 +3,10 @@
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
-        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:minHeight="60dp" android:paddingTop="8dp"
+        android:layout_height="wrap_content"
+        android:minHeight="60dp"
+        android:paddingTop="8dp"
         android:paddingBottom="8dp">
 
     <ImageView
@@ -13,11 +14,12 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_marginStart="16dp"
+            android:src="@drawable/ic_round_keyboard_arrow_right_24"
             android:tint="@color/text"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_round_add_24"/>
+            app:srcCompat="@drawable/ic_round_keyboard_arrow_right_24"/>
 
     <TextView
             android:id="@+id/title"
@@ -55,5 +57,6 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:ignore="UseSwitchCompatOrMaterialXml" android:minWidth="48dp" android:minHeight="48dp"/>
+            tools:ignore="UseSwitchCompatOrMaterialXml" android:minWidth="48dp" android:minHeight="48dp"
+            android:theme="@style/Theme.StarLight.NoActionBar" app:useMaterialThemeColors="false"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

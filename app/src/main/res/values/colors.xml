@@ -4,8 +4,8 @@
     <color name="main_purple_light">#C5BDEF</color>
     <color name="sub_purple">#F3F0FF</color>
 
-    <color name="background">#EBEBEC</color>
-    <color name="cardview">#F5F4F5</color>
+    <color name="background">#F0F0F0</color>
+    <color name="cardview">#FFFFFF</color>
     <color name="bottom_sheet">#74FFFFFF</color>
 
     <color name="text">#4c4c4c</color>
