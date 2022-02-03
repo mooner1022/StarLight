@@ -20,7 +20,7 @@ import dev.mooner.starlight.plugincore.config.CategoryConfigObject
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.widget.Widget
-import dev.mooner.starlight.ui.config.ParentAdapter
+import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.utils.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -77,21 +77,15 @@ class WidgetConfigActivity : AppCompatActivity() {
                 lifecycleOwner(this@WidgetConfigActivity)
                 customView(R.layout.dialog_logs)
 
-                var recyclerAdapter: ParentAdapter? = ParentAdapter(this@WidgetConfigActivity) { _, _, _, _ ->
-                }.apply {
-                    data = getWidgetConfigList(::dismiss)
-                    notifyItemRangeInserted(0, data.size)
-                }
-
                 val recycler: RecyclerView = findViewById(R.id.rvLog)
-                recycler.apply {
-                    layoutManager = LinearLayoutManager(this@WidgetConfigActivity)
-                    adapter = recyclerAdapter
-                }
+
+                val configAdapter = ConfigAdapter.Builder(this@WidgetConfigActivity) {
+                    bind(recycler)
+                    configs { getWidgetConfigList(::dismiss) }
+                }.build()
 
                 onDismiss {
-                    recyclerAdapter?.destroy()
-                    recyclerAdapter = null
+                    configAdapter.destroy()
                 }
             }
         }

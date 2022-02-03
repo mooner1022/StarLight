@@ -7,12 +7,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.LinearLayoutManager
 import dev.mooner.starlight.databinding.FragmentSettingsBinding
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.CategoryConfigObject
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.ui.config.ParentAdapter
+import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.settings.dev.startDevModeActivity
 import dev.mooner.starlight.ui.settings.info.AppInfoActivity
 import dev.mooner.starlight.utils.restartApplication
@@ -21,7 +21,7 @@ class SettingsFragment : Fragment() {
 
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
-    private var recyclerAdapter: ParentAdapter? = null
+    private var configAdapter: ConfigAdapter? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -29,35 +29,21 @@ class SettingsFragment : Fragment() {
     ): View {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
 
-        recyclerAdapter = ParentAdapter(requireContext()) { parentId, id, _, data ->
-            dev.mooner.starlight.plugincore.Session.globalConfig.edit {
-                getCategory(parentId).setAny(id, data)
+        configAdapter = ConfigAdapter.Builder(requireActivity()) {
+            bind(binding.configRecyclerView)
+            configs { getConfigList() }
+            savedData(Session.globalConfig.getAllConfigs())
+            onConfigChanged { parentId, id, _, data ->
+                Session.globalConfig.edit {
+                    getCategory(parentId).setAny(id, data)
+                }
             }
-        }.apply {
-            data = getConfigList()
-            saved = dev.mooner.starlight.plugincore.Session.globalConfig.getAllConfigs()
-            notifyItemRangeInserted(0, data.size)
-        }
-
-        binding.configRecyclerView.apply {
-            layoutManager = LinearLayoutManager(requireContext())
-            adapter = recyclerAdapter
-        }
+        }.build()
 
         return binding.root
     }
 
-    private fun reloadConfigList() {
-        if (recyclerAdapter != null) {
-            with(recyclerAdapter!!) {
-                val preSize = data.size
-                data = listOf()
-                notifyItemRangeRemoved(0, preSize)
-                data = getConfigList()
-                notifyItemRangeRemoved(0, data.size)
-            }
-        }
-    }
+    private fun reloadConfigList() = configAdapter?.reload()
 
     private fun getConfigList(): List<CategoryConfigObject> {
         return config {
@@ -131,7 +117,7 @@ class SettingsFragment : Fragment() {
                         icon = Icon.REFRESH
                         iconTintColor = color { "#FF6F3C" }
                         onClickListener = {
-                            restartApplication(it.context)
+                            requireContext().restartApplication()
                         }
                         dependency = "safe_mode"
                     }
@@ -178,7 +164,7 @@ class SettingsFragment : Fragment() {
                             startActivity(Intent(context, AppInfoActivity::class.java))
                         }
                     }
-                    if (dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("dev").getBoolean("dev_mode") == true) {
+                    if (Session.globalConfig.getCategory("dev").getBoolean("dev_mode") == true) {
                         button {
                             id = "developer_mode"
                             title = "개발자 모드"
@@ -195,8 +181,7 @@ class SettingsFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        configAdapter?.destroy()
         super.onDestroyView()
-        recyclerAdapter?.destroy()
-        recyclerAdapter = null
     }
 }

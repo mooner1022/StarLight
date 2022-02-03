@@ -40,9 +40,9 @@ import dev.mooner.starlight.plugincore.config.CategoryConfigObject
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
-import dev.mooner.starlight.plugincore.project.callEvent
 import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.ui.config.ParentAdapter
+import dev.mooner.starlight.plugincore.utils.fireEvent
+import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF
 import dev.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF_LONG
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
@@ -86,7 +86,7 @@ class DebugRoomActivity: AppCompatActivity() {
 
     private lateinit var project: Project
     private lateinit var binding: ActivityDebugRoomBinding
-    private var recyclerAdapter: ParentAdapter? = null
+    private var configAdapter: ConfigAdapter? = null
     private var imageHash: Int = 0
 
     private val onSend: (msg: String) -> Unit = { msg ->
@@ -161,21 +161,17 @@ class DebugRoomActivity: AppCompatActivity() {
             binding.messageInput.setText("")
         }
 
-        recyclerAdapter = ParentAdapter(this) { parentId, id, _, data ->
-            globalConfig.edit {
-                getCategory(parentId).setAny(id, data)
+        configAdapter = ConfigAdapter.Builder(this) {
+            bind(binding.bottomSheet.configRecyclerView)
+            configs { getConfig() }
+            savedData(globalConfig.getAllConfigs())
+            onConfigChanged { parentId, id, _, data ->
+                globalConfig.edit {
+                    getCategory(parentId).setAny(id, data)
+                }
+                updateConfig()
             }
-            updateConfig()
-        }.apply {
-            data = getConfig()
-            saved = globalConfig.getAllConfigs()
-            notifyItemRangeInserted(0, data.size)
-        }
-
-        binding.bottomSheet.configRecyclerView.apply {
-            layoutManager = LinearLayoutManager(this@DebugRoomActivity)
-            adapter = recyclerAdapter
-        }
+        }.build()
 
         binding.leave.setOnClickListener {
             finish()
@@ -288,9 +284,10 @@ class DebugRoomActivity: AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         userChatAdapter = null
-        recyclerAdapter = null
+        configAdapter?.destroy()
+        configAdapter = null
+        super.onDestroy()
     }
 
     private fun updateConfig() {
@@ -321,17 +318,7 @@ class DebugRoomActivity: AppCompatActivity() {
         }.start(resultCode)
     }
 
-    private fun reloadConfig() {
-        if (recyclerAdapter != null) {
-            with(recyclerAdapter!!) {
-                val preSize = data.size
-                data = listOf()
-                notifyItemRangeRemoved(0, preSize)
-                data = getConfig()
-                notifyItemRangeRemoved(0, data.size)
-            }
-        }
-    }
+    private fun reloadConfig() = configAdapter?.reload()
 
     private fun getConfig(): List<CategoryConfigObject> {
         return config {
