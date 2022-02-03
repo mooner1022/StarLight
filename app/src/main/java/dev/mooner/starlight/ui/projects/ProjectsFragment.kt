@@ -32,9 +32,9 @@ import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
-import dev.mooner.starlight.utils.ViewUtils
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
+import dev.mooner.starlight.utils.dpToPx
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -172,7 +172,7 @@ class ProjectsFragment : Fragment() {
                     val chip = Chip(this.windowContext).apply {
                         id = index
                         text = language.name
-                        chipMinHeight = ViewUtils.dpToPx(context, 30f)
+                        chipMinHeight = dpToPx(context, 30f)
                         isCheckable = true
                         if (index == 0) {
                             isChecked = true
@@ -204,8 +204,6 @@ class ProjectsFragment : Fragment() {
                         name = projectName
                         mainScript = "$projectName.${selectedLang.fileExtension}"
                         languageId = selectedLang.id
-                        createdMillis = System.currentTimeMillis()
-                        listeners = hashSetOf("default")
                     }
                     it.dismiss()
                 }
@@ -301,6 +299,18 @@ class ProjectsFragment : Fragment() {
         }
     }
 
+    private fun scrollTo(project: Project) {
+        val index = recyclerAdapter!!.data.indexOf(project)
+        if (index == -1) {
+            Logger.v("Failed to scroll to project: index not found")
+            return
+        }
+        Logger.v("scrollTo= $index")
+        binding.recyclerViewProjectList.postDelayed({
+            binding.recyclerViewProjectList.smoothScrollToPosition(index)
+        }, 500)
+    }
+
     override fun onPause() {
         super.onPause()
         isPaused = true
@@ -336,9 +346,12 @@ class ProjectsFragment : Fragment() {
     }
 
     private fun bindListener() {
-        projectManager.addOnListUpdatedListener(T) { projects ->
+        projectManager.addOnListUpdatedListener(T) { projects, project ->
             this.projects = projects
-            update()
+            CoroutineScope(Dispatchers.Main).launch {
+                update()
+                project?.let { scrollTo(it) }
+            }
         }
     }
 

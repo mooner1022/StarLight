@@ -42,3 +42,5 @@ fun requiredField(fieldName: String, value: Any?) {
         throw IllegalArgumentException("Required field '$fieldName' is null")
     }
 }
+
+fun <A, B> pairOf(first: A, second: B): Pair<A, B> = Pair(first, second)

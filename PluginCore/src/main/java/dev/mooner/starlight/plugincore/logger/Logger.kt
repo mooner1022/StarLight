@@ -99,6 +99,8 @@ object Logger {
 
     fun e(tag: String, throwable: Throwable) = e(tag, throwable.message?: "null")
 
+    fun e(throwable: Throwable) = e(throwable.message?: "null")
+
     fun e(message: String) = e(tag = callSite, message = message)
 
     fun e(tag: String?, message: String) = log(

@@ -24,7 +24,7 @@ class FatalErrorActivity : AppCompatActivity() {
         }
 
         binding.restart.setOnClickListener {
-            restartApplication(this)
+            restartApplication()
         }
 
         binding.share.setOnClickListener {

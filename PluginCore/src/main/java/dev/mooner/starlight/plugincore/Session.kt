@@ -61,24 +61,24 @@ object Session {
     val globalConfig: GlobalConfig =
         GlobalConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
 
-    private var mLanguageManager: LanguageManager? = null
-    val languageManager get() = mLanguageManager!!
+    private var mLanguageManager: LanguageManager by Delegates.notNull()
+    val languageManager get() = mLanguageManager
 
-    private var mProjectLoader: ProjectLoader? = null
-    private var mProjectManager: ProjectManager? = null
-    val projectManager get() = mProjectManager!!
-    val projectLoader get() = mProjectLoader!!
+    private var mProjectLoader: ProjectLoader by Delegates.notNull()
+    private var mProjectManager: ProjectManager by Delegates.notNull()
+    val projectManager get() = mProjectManager
+    val projectLoader get() = mProjectLoader
 
-    private var mPluginLoader: PluginLoader? = null
-    private var mPluginManager: PluginManager? = null
-    val pluginLoader get() = mPluginLoader!!
-    val pluginManager get() = mPluginManager!!
+    private var mPluginLoader: PluginLoader by Delegates.notNull()
+    private var mPluginManager: PluginManager by Delegates.notNull()
+    val pluginLoader get() = mPluginLoader
+    val pluginManager get() = mPluginManager
 
-    private var mWidgetManager: WidgetManager? = null
-    val widgetManager get() = mWidgetManager!!
+    private var mWidgetManager: WidgetManager by Delegates.notNull()
+    val widgetManager get() = mWidgetManager
 
-    private var mEventManager: EventManager? = null
-    val eventManager get() = mEventManager!!
+    private var mEventManager: EventManager by Delegates.notNull()
+    val eventManager get() = mEventManager
 
     private var mLibraryLoader: LibraryLoader? = null
     private var mLibraryManager: LibraryManager? = null
@@ -142,18 +142,11 @@ object Session {
         NetworkUtil.purge()
         apiManager.purge()
 
-        mLanguageManager?.purge()
-        mWidgetManager?.purge()
-        mPluginLoader?.purge()
-        mPluginManager?.purge()
-        mProjectManager?.purge()
-        mEventManager?.purge()
-        mLanguageManager = null
-        mWidgetManager = null
-        mPluginManager = null
-        mPluginLoader = null
-        mProjectManager = null
-        mEventManager = null
+        languageManager.purge()
+        widgetManager.purge()
+        pluginLoader.purge()
+        pluginManager.purge()
+        projectManager.purge()
 
         mJson.remove()
     }

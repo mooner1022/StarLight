@@ -6,15 +6,16 @@
 
 package dev.mooner.starlight.plugincore.plugin
 
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.config.CategoryConfigObject
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.config.data.Config
 import dev.mooner.starlight.plugincore.config.data.ConfigImpl
-import dev.mooner.starlight.plugincore.event.Event
-import dev.mooner.starlight.plugincore.event.callEvent
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import dev.mooner.starlight.plugincore.project.fireEvent
 import dev.mooner.starlight.plugincore.utils.getFileSize
 import dev.mooner.starlight.plugincore.widget.Widget
 import kotlinx.serialization.decodeFromString
@@ -79,7 +80,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     protected fun getPluginConfig(): Config {
         return if (configPath == null || !configPath!!.isFile || !configPath!!.exists()) ConfigImpl(emptyMap()) else {
-            val loadedMap: Map<String, Map<String, TypedString>> = dev.mooner.starlight.plugincore.Session.json.decodeFromString(configPath!!.readText())
+            val loadedMap: Map<String, Map<String, TypedString>> = Session.json.decodeFromString(configPath!!.readText())
             ConfigImpl(loadedMap)
         }
     }
@@ -93,7 +94,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
     fun addLanguage(language: Language) {
         var isLoadSuccess = false
         try {
-            dev.mooner.starlight.plugincore.Session.languageManager.addLanguage(Path(dataDir.resolve("assets").path, language.id).pathString, language)
+            Session.languageManager.addLanguage(Path(dataDir.resolve("assets").path, language.id).pathString, language)
             isLoadSuccess = true
         } catch (e: IllegalStateException) {
             Logger.e(T, e.toString())
@@ -103,9 +104,9 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    fun addWidget(widget: Widget) = dev.mooner.starlight.plugincore.Session.widgetManager.addWidget(this.info.name, widget)
+    fun addWidget(widget: Widget) = Session.widgetManager.addWidget(this.info.name, widget)
 
-    protected fun <T> addApi(api: Api<T>) = dev.mooner.starlight.plugincore.Session.apiManager.addApi(api)
+    protected fun <T> addApi(api: Api<T>) = Session.apiManager.addApi(api)
 
     protected inline fun <reified T: ProjectEvent> fireProjectEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean = Session.projectManager.fireEvent<T>(args, onFailure = onFailure)
 

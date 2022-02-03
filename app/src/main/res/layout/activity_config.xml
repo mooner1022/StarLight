@@ -63,7 +63,8 @@ tools:context=".ui.config.ConfigActivity">
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" android:layout_marginStart="@dimen/card_margin_horizontal"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:layout_marginStart="@dimen/card_margin_horizontal"
                     android:layout_marginEnd="@dimen/card_margin_horizontal"
                     android:layout_marginBottom="@dimen/card_margin_horizontal"/>
 

@@ -25,7 +25,7 @@ data class ChatRoomImpl(
             )
             RemoteInput.addResultsToIntent(session.remoteInputs, sendIntent, msg)
             session.actionIntent.send(context, 0, sendIntent)
-            Logger.d("ChatRoom", "send() success: $message")
+            Logger.v("ChatRoom", "send() success: $message")
             true
         } catch (e: PendingIntent.CanceledException) {
             false
