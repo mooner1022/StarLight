@@ -14,6 +14,8 @@ import dev.mooner.starlight.plugincore.config.data.FileConfig
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LocalLogger
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.pipeline.CompilePipeline
+import dev.mooner.starlight.plugincore.pipeline.PipelineInfo
 import dev.mooner.starlight.plugincore.utils.hasFile
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flowOf
@@ -21,6 +23,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.serialization.encodeToString
 import java.io.File
 import kotlin.coroutines.CoroutineContext
+
+typealias StageChangeListener = (stage: String, percentage: Int) -> Unit
 
 class Project (
     val directory: File,
@@ -183,7 +187,18 @@ class Project (
      *
      * @param throwException if *true*, throws exceptions occurred during compilation.
      */
-    fun compile(throwException: Boolean = false): Boolean {
+    fun compile(throwException: Boolean = false, onStageChanged: StageChangeListener? = null): Boolean {
+        val pipeline = CompilePipeline(
+            project = this,
+            info = PipelineInfo(
+                stages = hashSetOf(
+                    //DemoPipelineStage(),
+                    //DemoPipelineStage()
+                )
+            )
+        ) { stage, perc ->
+            if (onStageChanged != null) onStageChanged(stage.name, perc)
+        }
         try {
             val rawCode: String = (directory.listFiles()?.find { it.isFile && it.name == info.mainScript }?: throw IllegalArgumentException(
                     "Cannot find main script ${info.mainScript} for project ${info.name}"
@@ -193,11 +208,15 @@ class Project (
                 logger.v(tag, "engine released")
             }
             logger.i("Compiling project ${info.name}...")
+            langScope = pipeline.run(rawCode)
+            /*
             langScope = lang.compile(
                 code = rawCode,
                 apis = apiManager.getApis(),
                 project = this
             )
+             */
+            eventManager.fireEventWithContext(Events.Project.ProjectCompileEvent(project = this))
             projectManager.onStateChanged(this)
         } catch (e: Exception) {
             e.printStackTrace()
