@@ -16,8 +16,6 @@ import dev.mooner.starlight.api.original.ProjectLoggerApi
 import dev.mooner.starlight.api.original.ProjectManagerApi
 import dev.mooner.starlight.api.unused.TimerApi
 import dev.mooner.starlight.languages.JSRhino
-import dev.mooner.starlight.listener.DefaultEvent
-import dev.mooner.starlight.listener.legacy.LegacyEvent
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginLoader
 import dev.mooner.starlight.plugincore.Session.pluginManager
@@ -67,19 +65,11 @@ object ApplicationSession {
             //addLanguage(GraalVMLang())
         }
 
-        Session.eventManager.apply {
-            addEvent(DefaultEvent())
-            addEvent(LegacyEvent())
-        }
-
         if (!Session.globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
             pluginLoader.loadPlugins { onPhaseChanged(String.format(context.getString(R.string.step_plugins), it)) }
         } else {
             Logger.i("PluginLoader", "Skipping plugin load...")
         }
-
-        onPhaseChanged(context.getString(R.string.step_projects))
-        Session.projectLoader.loadProjects()
 
         onPhaseChanged(context.getString(R.string.step_default_lib))
         Session.apiManager.apply {
@@ -113,6 +103,9 @@ object ApplicationSession {
             addWidget(name, UptimeWidgetSlim())
             addWidget(name, LogsWidget())
         }
+
+        onPhaseChanged(context.getString(R.string.step_projects))
+        Session.projectLoader.loadProjects()
 
         NetworkUtil.registerNetworkStatusListener(context)
         NetworkUtil.addOnNetworkStateChangedListener { state ->
