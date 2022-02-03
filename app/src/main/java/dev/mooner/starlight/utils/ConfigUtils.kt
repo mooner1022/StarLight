@@ -7,7 +7,7 @@ import dev.mooner.starlight.plugincore.config.CategoryConfigObject
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.ui.config.ConfigActivity
-import dev.mooner.starlight.ui.config.ParentAdapter
+import dev.mooner.starlight.ui.config.ParentRecyclerAdapter
 import java.util.*
 
 private const val T = "ConfigUtils"
@@ -61,15 +61,15 @@ fun finishConfigActivity(id: String): Boolean {
 }
 
 internal fun ConfigActivity.initAdapter() {
-    val activityId = intent.getStringExtra(EXTRA_ACTIVITY_ID)!!
+    activityId = intent.getStringExtra(EXTRA_ACTIVITY_ID)!!
     val holder = holders[activityId]?: error("Failed to find holder with id $activityId")
-    recyclerAdapter = ParentAdapter(
+    recyclerAdapter = ParentRecyclerAdapter(
         context = binding.root.context,
+        configs = holder.items,
+        savedData = holder.saved,
         onConfigChanged = holder.listener
     ).apply {
-        data = holder.items
-        saved = holder.saved
-        notifyItemRangeInserted(0, data.size)
+        notifyAllItemInserted()
     }
     holder.instance = this
 }
