@@ -23,17 +23,20 @@ import dev.mooner.starlight.ui.editor.EditorActivity
 import dev.mooner.starlight.ui.presets.ExpandableCardView
 import dev.mooner.starlight.ui.projects.config.ProjectConfigActivity
 import dev.mooner.starlight.ui.projects.info.startProjectInfoActivity
-import dev.mooner.starlight.utils.ViewUtils.Companion.graceProgress
-import dev.mooner.starlight.utils.ViewUtils.Companion.loadAnyWithTint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import dev.mooner.starlight.utils.graceProgress
+import dev.mooner.starlight.utils.loadAnyWithTint
+import kotlinx.coroutines.*
 import java.io.File
+import kotlin.system.measureTimeMillis
 
 class ProjectListAdapter(
     private val context: Context
 ) : RecyclerView.Adapter<ProjectListAdapter.ProjectListViewHolder>() {
+
+    companion object {
+        private const val MIN_COMPILE_TIME = 400
+    }
+
     var data = listOf<Project>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectListViewHolder {
@@ -143,12 +146,24 @@ class ProjectListAdapter(
             showProgress(true)
             CoroutineScope(Dispatchers.Default).launch {
                 try {
-                    project.compile(true)
+                    val compileTimeMillis = measureTimeMillis {
+                        project.compile(true) { stage, percentage ->
+                            CoroutineScope(Dispatchers.Main).launch {
+                                holder.progressState.text = stage
+                                holder.progressBar.graceProgress = percentage
+                            }
+                        }
+                    }
+                    withContext(Dispatchers.Main) {
+                        holder.progressBar.graceProgress = 100
+                    }
+                    if (compileTimeMillis < MIN_COMPILE_TIME) {
+                        delay(MIN_COMPILE_TIME - compileTimeMillis)
+                    }
                     withContext(Dispatchers.Main) {
                         Snackbar.make(view, "${info.name} 컴파일 완료!", Snackbar.LENGTH_SHORT).show()
                         holder.cardViewIsEnabled.setCardBackgroundColor(getCardColor())
                         holder.expandable.setSwitchEnabled(true)
-                        holder.progressBar.graceProgress = 100
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
