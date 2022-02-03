@@ -45,7 +45,6 @@
         </provider>
 
         <activity
-                android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
                 android:name=".ui.config.ConfigActivity"
                 android:theme="@style/Theme.StarLight.NoActionBar">
         </activity>

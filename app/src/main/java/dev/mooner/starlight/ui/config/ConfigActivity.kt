@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import dev.mooner.starlight.databinding.ActivityConfigBinding
+import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.utils.EXTRA_SUBTITLE
 import dev.mooner.starlight.utils.EXTRA_TITLE
 import dev.mooner.starlight.utils.initAdapter
@@ -13,7 +14,9 @@ class ConfigActivity : AppCompatActivity() {
 
     lateinit var binding: ActivityConfigBinding
 
-    var recyclerAdapter: ParentAdapter? = null
+    var recyclerAdapter: ParentRecyclerAdapter? = null
+    private var bypassDestroy: Boolean = false
+    lateinit var activityId: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,10 +49,21 @@ class ConfigActivity : AppCompatActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // Bypass onDestroyed()
+        Logger.v("onSaveInstanceState called, bypassing onDestroyed() call on ID: $activityId")
+        bypassDestroy = true
+    }
+
     override fun onDestroy() {
-        super.onDestroy()
-        onDestroyed()
         recyclerAdapter?.destroy()
         recyclerAdapter = null
+        super.onDestroy()
+        if (bypassDestroy) {
+            bypassDestroy = false
+            return
+        }
+        onDestroyed()
     }
 }
