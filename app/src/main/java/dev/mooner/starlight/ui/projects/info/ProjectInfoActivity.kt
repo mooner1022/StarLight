@@ -47,15 +47,7 @@ fun Context.startProjectInfoActivity(
                     title = "리스너"
                     icon = Icon.ARROW_LEFT
                     iconTintColor = color { "#98DDCA" }
-                    description = info.listeners.joinToString()
-                    onClickListener = {}
-                }
-                button {
-                    id = "plugins"
-                    title = "플러그인"
-                    icon = Icon.LAYERS
-                    iconTintColor = color { "#70AF85" }
-                    description = info.pluginIds.joinToString()
+                    description = info.allowedEventIds.joinToString()
                     onClickListener = {}
                 }
                 button {

@@ -1,50 +1,36 @@
 package dev.mooner.starlight.plugincore.project
 
 import kotlinx.serialization.Serializable
+import kotlin.properties.Delegates
 
 @Serializable
-data class ProjectInfo(
+data class ProjectInfo (
+    val version: Int = 0,
     val name: String,
     val mainScript: String,
     val languageId: String,
     var isEnabled: Boolean,
-    val createdMillis: Long = 0L,
-    val listeners: MutableSet<String>,
-    val pluginIds: MutableSet<String>,
+    var trust: Boolean = true,
+    val createdMillis: Long = System.currentTimeMillis(),
+    val allowedEventIds: MutableSet<String> = hashSetOf("default"),
     val packages: MutableSet<String>
 )
 
 class ProjectInfoBuilder {
-    var name: String? = null
-    var mainScript: String? = null
-    var languageId: String? = null
-    var isEnabled: Boolean = false
-    var createdMillis: Long = 0L
-    var listeners: MutableSet<String> = mutableSetOf()
-    var pluginIds: MutableSet<String> = mutableSetOf()
-    var packages: MutableSet<String> = mutableSetOf()
+    var name: String by Delegates.notNull()
+    var mainScript: String by Delegates.notNull()
+    var languageId: String by Delegates.notNull()
+    var trust: Boolean = true
+    var allowedEventIds: MutableSet<String> = hashSetOf("default")
+    var packages: MutableSet<String> = hashSetOf("com.kakao.talk")
 
-    private fun required(fieldName: String, value: Any?) {
-        if (value == null) {
-            throw IllegalArgumentException("Required field '$fieldName' is null")
-        }
-    }
-
-    fun build(): ProjectInfo {
-
-        required("name", name)
-        required("mainScript", mainScript)
-        required("languageId", languageId)
-
-        return ProjectInfo(
-            name = name!!,
-            mainScript = mainScript!!,
-            languageId = languageId!!,
-            isEnabled = isEnabled,
-            createdMillis = createdMillis,
-            listeners = listeners,
-            pluginIds = pluginIds,
-            packages = packages
-        )
-    }
+    fun build() = ProjectInfo(
+        name = name,
+        mainScript = mainScript,
+        languageId = languageId,
+        isEnabled = false,
+        trust = trust,
+        allowedEventIds = allowedEventIds,
+        packages = packages
+    )
 }

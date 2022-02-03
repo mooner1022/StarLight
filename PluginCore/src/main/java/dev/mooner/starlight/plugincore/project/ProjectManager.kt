@@ -69,9 +69,8 @@ class ProjectManager(
     }
 
     fun newProject(dir: File = projectDir, block: ProjectInfoBuilder.() -> Unit) {
-        val config = ProjectInfoBuilder().apply(block).build()
-        projects[config.name] = Project.create(dir, config)
-        callListeners()
+        val info = ProjectInfoBuilder().apply(block).build()
+        newProject(info, dir)
     }
 
     internal fun callEvent(eventId: String, eventName: String, args: Array<out Any>, onError: (e: Throwable) -> Unit) {

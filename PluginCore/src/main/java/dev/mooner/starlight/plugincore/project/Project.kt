@@ -6,11 +6,13 @@
 
 package dev.mooner.starlight.plugincore.project
 
-import dev.mooner.starlight.plugincore.Session.apiManager
+import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.Session.eventManager
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.config.data.Config
 import dev.mooner.starlight.plugincore.config.data.FileConfig
+import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LocalLogger
 import dev.mooner.starlight.plugincore.logger.Logger
@@ -54,6 +56,7 @@ class Project (
     var threadPoolName: String? = null
     //private lateinit var scope: CoroutineScope
     private var context: CoroutineContext? = null
+
     val isCompiled: Boolean
         get() = langScope != null
     private var langScope: Any? = null
@@ -96,8 +99,7 @@ class Project (
                 args      : $args
                 ┉┉┉┉┉┉┉┉┉┉
                 language  : ${info.languageId}
-                listeners : ${info.listeners}
-                plugins   : ${info.pluginIds}
+                listeners : ${info.allowedEventIds}
                 packages  : ${info.packages}
                 ──────────
             """.trimIndent())
@@ -256,6 +258,7 @@ class Project (
                 .flowOn(Dispatchers.Default)
                 .collect(File(directory.path, INFO_FILE_NAME)::writeText)
         }
+        eventManager.fireEventWithContext(Events.Project.ProjectInfoUpdateEvent(project = this@Project))
     }
 
     /**
@@ -321,4 +324,6 @@ class Project (
     }
 
     private fun getThreadPoolSize(): Int = config.getCategory("beta_features").getInt("thread_pool_size", DEF_THREAD_POOL_SIZE)
+
+    fun isEventCallAllowed(eventId: String): Boolean = info.allowedEventIds.isEmpty() || eventId in info.allowedEventIds
 }
