@@ -31,7 +31,7 @@ typealias StageChangeListener = (stage: String, percentage: Int) -> Unit
 class Project (
     val directory: File,
     val info: ProjectInfo
-) {
+): CoroutineScope {
 
     companion object {
         private const val CONFIG_FILE_NAME  = "config.json"
@@ -44,7 +44,7 @@ class Project (
             val folder = File(dir.path, config.name)
             folder.mkdirs()
             File(folder.path, INFO_FILE_NAME).writeText(json.encodeToString(config), Charsets.UTF_8)
-            val language = dev.mooner.starlight.plugincore.Session.languageManager.getLanguage(config.languageId)?: throw IllegalArgumentException("Cannot find language ${config.languageId}")
+            val language = Session.languageManager.getLanguage(config.languageId)?: throw IllegalArgumentException("Cannot find language ${config.languageId}")
             File(folder.path, config.mainScript).writeText(language.defaultCode, Charsets.UTF_8)
             return Project(folder, config)
         }
@@ -55,12 +55,26 @@ class Project (
 
     var threadPoolName: String? = null
     //private lateinit var scope: CoroutineScope
+
+    override val coroutineContext: CoroutineContext by lazy {
+        if (threadPoolName == null || context == null) {
+            if (context != null) {
+                context?.cancel()
+                context = null
+            }
+            threadPoolName = "$tag-worker"
+            val poolSize = getThreadPoolSize()
+            context = newFixedThreadPoolContext(poolSize, threadPoolName!!)
+            Logger.v("Allocated thread pool $threadPoolName with $poolSize threads to project ${info.name}")
+        }
+        SupervisorJob() + context!!
+    }
     private var context: CoroutineContext? = null
 
     val isCompiled: Boolean
         get() = langScope != null
     private var langScope: Any? = null
-    private val lang: Language = dev.mooner.starlight.plugincore.Session.languageManager.getLanguage(info.languageId)?: throw IllegalArgumentException("Cannot find language ${info.languageId}")
+    private val lang: Language = Session.languageManager.getLanguage(info.languageId)?: throw IllegalArgumentException("Cannot find language ${info.languageId}")
 
     val logger: LocalLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
         LocalLogger.fromFile(File(directory, LOGS_FILE_NAME))
@@ -77,7 +91,7 @@ class Project (
     }
 
     /**
-     * Calls an event with [name] and [args] as parameter.
+     * Calls an event with [name] and passes [args] as parameter.
      *
      * @param name the name of function or event being called.
      * @param args parameter values being passed to function.
