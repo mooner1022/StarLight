@@ -6,15 +6,23 @@
 
 package dev.mooner.starlight.plugincore.project
 
+import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import java.io.File
+import kotlin.reflect.full.createInstance
+import kotlin.reflect.jvm.jvmName
+
+typealias StateChangeListener = (project: Project) -> Unit
+typealias ListUpdateListener = (projects: List<Project>, project: Project?) -> Unit
 
 class ProjectManager(
     private val projectDir: File
 ) {
 
-    private val stateChangeListeners: MutableMap<String, (project: Project) -> Unit> = hashMapOf()
-    private val listUpdateListeners: MutableMap<String, (projects: List<Project>) -> Unit> = hashMapOf()
+    private val stateChangeListeners: MutableMap<String, StateChangeListener> = hashMapOf()
+    private val listUpdateListeners: MutableMap<String, ListUpdateListener> = hashMapOf()
     internal var projects: MutableMap<String, Project> = hashMapOf()
 
     fun getEnabledProjects(): List<Project> {
@@ -36,7 +44,7 @@ class ProjectManager(
             stateChangeListeners -= key
     }
 
-    fun addOnListUpdatedListener(key: String, listener: (projects: List<Project>) -> Unit) {
+    fun addOnListUpdatedListener(key: String, listener: ListUpdateListener) {
         if (key !in listUpdateListeners)
             listUpdateListeners[key] = listener
     }
@@ -59,13 +67,16 @@ class ProjectManager(
         project.info.block()
         project.saveInfo()
         if (callListener) {
-            callListeners()
+            callListeners(project)
         }
     }
 
-    fun newProject(config: ProjectInfo, dir: File = projectDir) {
-        projects[config.name] = Project.create(dir, config)
-        callListeners()
+    fun newProject(info: ProjectInfo, dir: File = projectDir) {
+        Project.create(dir, info).also { project ->
+            projects[info.name] = project
+            callListeners(project)
+            Session.eventManager.fireEventSync(Events.Project.ProjectCreateEvent(project))
+        }
     }
 
     fun newProject(dir: File = projectDir, block: ProjectInfoBuilder.() -> Unit) {
@@ -73,15 +84,15 @@ class ProjectManager(
         newProject(info, dir)
     }
 
-    internal fun callEvent(eventId: String, eventName: String, args: Array<out Any>, onError: (e: Throwable) -> Unit) {
-        if (!dev.mooner.starlight.plugincore.Session.eventManager.hasEvent(eventId)) {
-            Logger.e(ProjectManager::class.simpleName, "Rejecting event call from '$eventId' which is not registered on EventManager")
-            return
-        }
-        val projects = this.projects.values.filter { it.isCompiled && it.info.isEnabled && eventId in it.info.listeners }
+    fun fireEvent(eventId: String, functionName: String, args: Array<out Any>, onFailure: (e: Throwable) -> Unit) {
+        //if (!Session.eventManager.hasEvent(eventId)) {
+        //    Logger.e(ProjectManager::class.simpleName, "Rejecting event call from '$eventId' which is not registered on EventManager")
+        //    return
+        //}
+        val projects = this.projects.values.filter { it.isCompiled && it.info.isEnabled && it.isEventCallAllowed(eventId) }
         if (projects.isEmpty()) return
         for (project in projects) {
-            project.callEvent(eventName, args, onError)
+            project.callFunction(functionName, args, onFailure)
         }
     }
 
@@ -94,13 +105,13 @@ class ProjectManager(
             if (removeFiles) projects[name]!!.directory.deleteRecursively()
             projects -= name
         }
-        callListeners()
+        callListeners(null)
     }
 
-    private fun callListeners() {
+    private fun callListeners(project: Project?) {
         val projects = projects.values.toList()
         for ((_, listener) in listUpdateListeners) {
-            listener(projects)
+            listener(projects, project)
         }
     }
 
@@ -113,4 +124,16 @@ class ProjectManager(
             project.destroy()
         }
     }
+}
+
+inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean {
+    val event = T::class.createInstance().also { event ->
+        for ((index, arg) in event.argTypes.withIndex()) {
+            Logger.v("${arg.jvmName}, ${args[index]::class.jvmName}")
+            if (arg != args[index]::class)
+                error("Passed argument types [${args.joinToString { clazz -> clazz::class.simpleName.toString() }}] do not match the required argument types: [${event.argTypes.joinToString { clazz -> clazz.simpleName.toString() }}]")
+        }
+    }
+    this.fireEvent(event.id, event.functionName, args, onFailure)
+    return true
 }

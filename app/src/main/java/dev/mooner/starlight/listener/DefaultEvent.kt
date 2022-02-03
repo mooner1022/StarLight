@@ -1,11 +1,16 @@
 package dev.mooner.starlight.listener
 
-import dev.mooner.starlight.plugincore.event.Event
+import dev.mooner.starlight.plugincore.chat.Message
+import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import kotlin.reflect.KClass
 
-class DefaultEvent: Event() {
+class DefaultEvent: ProjectEvent() {
 
     override val id: String = "default"
+
     override val name: String = "기본 이벤트"
-    override val eventName: String = "onMessage"
-    override val compatibleLanguageId: List<String> = listOf("JS_RHINO")
+
+    override val functionName: String = "onMessage"
+
+    override val argTypes: Array<KClass<*>> = arrayOf(Message::class)
 }

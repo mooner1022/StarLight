@@ -87,7 +87,7 @@ class NotificationListener: NotificationListenerService() {
 
                     Logger.v("NotificationListenerService", "message : $message sender : $sender room : $room session : $act")
 
-                    dev.mooner.starlight.plugincore.Session.eventManager.callEvent<DefaultEvent>(arrayOf(data)) { e ->
+                    Session.projectManager.fireEvent<DefaultEvent>(data) { e ->
                         e.printStackTrace()
                         Logger.e("NotificationListener", e)
                     }
@@ -106,7 +106,7 @@ class NotificationListener: NotificationListenerService() {
 
                         val imageDB = ImageDB(profileBitmap)
 
-                        dev.mooner.starlight.plugincore.Session.eventManager.callEvent<LegacyEvent>(arrayOf(room, message, sender, isGroupChat, replier, imageDB)) { e ->
+                        Session.projectManager.fireEvent<LegacyEvent>(room, message, sender, isGroupChat, replier, imageDB) { e ->
                             e.printStackTrace()
                             Logger.e("NotificationListener", e)
                         }

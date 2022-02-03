@@ -107,7 +107,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     protected fun <T> addApi(api: Api<T>) = dev.mooner.starlight.plugincore.Session.apiManager.addApi(api)
 
-    protected inline fun <reified T: Event> callEvent(args: Array<out Any>, noinline onError: (e: Throwable) -> Unit = {}): Boolean = dev.mooner.starlight.plugincore.Session.eventManager.callEvent<T>(args, onError)
+    protected inline fun <reified T: ProjectEvent> fireProjectEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean = Session.projectManager.fireEvent<T>(args, onFailure = onFailure)
 
     override fun toString(): String = info.fullName
 
