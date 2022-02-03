@@ -64,6 +64,8 @@ class DebugRoomActivity: AppCompatActivity() {
         private const val RESULT_USER     = 0x1
 
         private const val CHATS_FILE_NAME = "chats.json"
+
+        private val mentionRegex = "<@(.*?)>".toRegex()
     }
 
     private val mutex: Mutex by lazy { Mutex(locked = false) }
@@ -80,6 +82,7 @@ class DebugRoomActivity: AppCompatActivity() {
     private var botName     = "BOT"
     private var sentPackage = PACKAGE_KAKAO_TALK
     private var isGroupChat = false
+    private var sendOnEnter = false
 
     //private lateinit var botProfileBitmap: Bitmap
     private lateinit var selfProfileBitmap: Bitmap
@@ -140,13 +143,6 @@ class DebugRoomActivity: AppCompatActivity() {
 
         userChatAdapter = DebugRoomChatAdapter(this, chatList)
 
-        binding.messageInput.setOnKeyListener { _, keyCode, event ->
-            if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
-                send(binding.messageInput.text.toString())
-            }
-            false
-        }
-
         binding.chatRecyclerView.apply {
             adapter = userChatAdapter
             layoutManager = LinearLayoutManager(this@DebugRoomActivity)
@@ -183,7 +179,17 @@ class DebugRoomActivity: AppCompatActivity() {
     private fun loadBitmapFromFile(file: File): Bitmap = Uri.fromFile(file).toBitmap(applicationContext)
 
     @SuppressLint("CheckResult")
-    private fun send(message: String) {
+    private fun send(_message: String) {
+        val hasMention = mentionRegex.containsMatchIn(_message)
+        val message: String = if (hasMention) {
+            val mentionedNames = mentionRegex.findAll(_message).map { it.value.drop(2).dropLast(1) }
+            var mMsg: String = _message
+            for (name in mentionedNames)
+                mMsg = mMsg.replace("<@$name>", "@$name")
+            mMsg
+        } else
+            _message
+
         val viewType = if (message.length >= 500) CHAT_SELF_LONG else CHAT_SELF
         addMessage(sender, message, viewType)
         val data = Message(
@@ -199,10 +205,11 @@ class DebugRoomActivity: AppCompatActivity() {
                 onMarkAsRead = onMarkAsRead
             ),
             packageName = sentPackage,
-            hasMention = false
+            hasMention = hasMention,
+            chatLogId = -1L
         )
 
-        project.callEvent<DefaultEvent>(arrayOf(data)) { e ->
+        project.fireEvent<DefaultEvent>(data) { e ->
             Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
                 setAction("자세히 보기") {
                     MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
@@ -228,7 +235,7 @@ class DebugRoomActivity: AppCompatActivity() {
 
             val imageDB = ImageDB(selfProfileBitmap)
 
-            project.callEvent<LegacyEvent>(arrayOf(roomName, message, sender, isGroupChat, replier, imageDB)) { e ->
+            project.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB) { e ->
                 Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
                     setAction("자세히 보기") {
                         MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
@@ -296,9 +303,21 @@ class DebugRoomActivity: AppCompatActivity() {
         botName = globalConfig.getCategory("d_bot").getString("name", "BOT")
         sentPackage = globalConfig.getCategory("d_room").getString("package", PACKAGE_KAKAO_TALK)
         isGroupChat = globalConfig.getCategory("d_room").getBoolean("is_group_chat", false)
+        sendOnEnter = globalConfig.getCategory("d_room").getBoolean("send_with_enter", false)
 
         runOnUiThread {
             binding.roomTitle.text = roomName
+            if (sendOnEnter) {
+                binding.messageInput.setOnKeyListener { _, keyCode, event ->
+                    if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
+                        send(binding.messageInput.text.toString())
+                        true
+                    } else
+                        false
+                }
+            } else {
+                binding.messageInput.setOnKeyListener { _, _, _ -> false }
+            }
         }
     }
 
@@ -324,6 +343,7 @@ class DebugRoomActivity: AppCompatActivity() {
         return config {
             category {
                 id = "d_room"
+                title = "일반"
                 textColor = color { "#706EB9" }
                 items = items {
                     string {
@@ -348,6 +368,13 @@ class DebugRoomActivity: AppCompatActivity() {
                         id = "is_group_chat"
                         title = "isGroupChat"
                         icon = Icon.MARK_CHAT_UNREAD
+                        iconTintColor = color { "#706EB9" }
+                        defaultValue = false
+                    }
+                    toggle {
+                        id = "send_with_enter"
+                        title = "엔터 키로 전송"
+                        icon = Icon.SEND
                         iconTintColor = color { "#706EB9" }
                         defaultValue = false
                     }
@@ -445,6 +472,7 @@ class DebugRoomActivity: AppCompatActivity() {
                         title = "대화 기록 초기화"
                         onClickListener = {
                             dir.deleteRecursively()
+                            dir.mkdirs()
                             val listSize = chatList.size
                             chatList.clear()
                             userChatAdapter?.notifyItemRangeRemoved(0, listSize)

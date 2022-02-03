@@ -5,5 +5,6 @@ data class Message(
     val sender: ChatSender,
     val room: ChatRoom,
     val packageName: String,
-    val hasMention: Boolean
+    val hasMention: Boolean,
+    val chatLogId: Long
 )

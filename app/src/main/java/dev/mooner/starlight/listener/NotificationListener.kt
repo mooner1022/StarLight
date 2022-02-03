@@ -12,15 +12,17 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.text.SpannableString
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
 import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.LegacyEvent
 import dev.mooner.starlight.listener.legacy.Replier
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ChatRoom
 import dev.mooner.starlight.plugincore.chat.ChatRoomImpl
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.Message
-import dev.mooner.starlight.plugincore.event.callEvent
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.project.fireEvent
 import dev.mooner.starlight.utils.PACKAGE_KAKAO_TALK
 import java.util.*
 
@@ -40,7 +42,7 @@ class NotificationListener: NotificationListenerService() {
     }
 
     private val isGlobalPowerOn: Boolean
-        get() = dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("general").getBoolean("global_power", true)
+        get() = Session.globalConfig.getCategory("general").getBoolean("global_power", true)
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
@@ -52,21 +54,22 @@ class NotificationListener: NotificationListenerService() {
                     return
                 }
                 try {
-                    val notification = sbn.notification
-                    val message = notification.extras["android.text"].toString()
-                    val sender = notification.extras.getString("android.title").toString()
-                    val room = act.title.toString().replaceFirst("답장 (", "").dropLast(1)
+                    val extras = sbn.notification.extras
+                    val message = extras[NotificationCompat.EXTRA_TEXT].toString()
+                    val sender = extras[NotificationCompat.EXTRA_TITLE].toString()
+                    val room = (extras[NotificationCompat.EXTRA_SUMMARY_TEXT] ?: extras[NotificationCompat.EXTRA_TITLE]).toString()
                     //val base64 = notification.getLargeIcon().loadDrawable(applicationContext).toBase64()
-                    val profileBitmap = (notification.getLargeIcon().loadDrawable(applicationContext) as BitmapDrawable).bitmap
-                    val isGroupChat = notification.extras["android.text"] is SpannableString
-                    val hasMention = notification.extras["android.text"] is SpannableString
+                    val profileBitmap = (sbn.notification.getLargeIcon().loadDrawable(applicationContext) as BitmapDrawable).bitmap
+                    val isGroupChat = extras.containsKey(NotificationCompat.EXTRA_SUMMARY_TEXT)
+                    val hasMention = extras[NotificationCompat.EXTRA_TEXT] is SpannableString
+                    val chatLogId = extras.getLong("chatLogId")
 
                     if (room !in chatRooms) {
                         chatRooms[room] = ChatRoomImpl(
                             name = room,
                             isGroupChat = isGroupChat,
                             session = act,
-                            context = applicationContext
+                            context = this
                         )
                     }
 
@@ -78,7 +81,8 @@ class NotificationListener: NotificationListenerService() {
                         ),
                         room = chatRooms[room]!!,
                         packageName = sbn.packageName,
-                        hasMention = hasMention
+                        hasMention = hasMention,
+                        chatLogId = chatLogId
                     )
 
                     Logger.v("NotificationListenerService", "message : $message sender : $sender room : $room session : $act")
@@ -88,7 +92,7 @@ class NotificationListener: NotificationListenerService() {
                         Logger.e("NotificationListener", e)
                     }
 
-                    if (dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("legacy").getBoolean("use_legacy_event", false)) {
+                    if (Session.globalConfig.getCategory("legacy").getBoolean("use_legacy_event", false)) {
                         val replier = Replier { roomName, msg, hideToast ->
                             val chatRoom = if (roomName == null) lastReceivedRoom else chatRooms[roomName]
                             if (chatRoom == null) {
