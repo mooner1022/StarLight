@@ -9,6 +9,10 @@ import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.requiredField
 import java.io.File
 
+@DslMarker
+public annotation class ConfigBuilderDsl
+
+@ConfigBuilderDsl
 fun config(block: ConfigBuilder.() -> Unit): List<CategoryConfigObject> {
     val builder = ConfigBuilder().apply(block)
     return builder.build(flush = true)
@@ -20,6 +24,7 @@ class ConfigBuilder {
 
     inline fun color(color: () -> String): Int = Color.parseColor(color())
 
+    @ConfigBuilderDsl
     fun category(block: CategoryConfigBuilder.() -> Unit) {
         val category = CategoryConfigBuilder().apply(block)
         objects.add(category.build())
@@ -33,6 +38,7 @@ class ConfigBuilder {
         return list
     }
 
+    @ConfigBuilderDsl
     fun items(block: ConfigItemBuilder.() -> Unit): List<ConfigObject> {
         val builder = ConfigItemBuilder().apply(block)
         return builder.build(flush = true)
@@ -109,36 +115,43 @@ class ConfigItemBuilder {
         objects += builder.build()
     }
 
+    @ConfigBuilderDsl
     fun button(block: ButtonConfigBuilder.() -> Unit) {
         val button = ButtonConfigBuilder().apply(block)
         add(button)
     }
 
+    @ConfigBuilderDsl
     fun toggle(block: ToggleConfigBuilder.() -> Unit) {
         val toggle = ToggleConfigBuilder().apply(block)
         add(toggle)
     }
 
+    @ConfigBuilderDsl
     fun seekbar(block: SeekbarConfigBuilder.() -> Unit) {
         val seekbar = SeekbarConfigBuilder().apply(block)
         add(seekbar)
     }
 
+    @ConfigBuilderDsl
     fun string(block: StringConfigBuilder.() -> Unit) {
         val string = StringConfigBuilder().apply(block)
         add(string)
     }
 
+    @ConfigBuilderDsl
     fun password(block: PasswordConfigBuilder.() -> Unit) {
         val pw = PasswordConfigBuilder().apply(block)
         add(pw)
     }
 
+    @ConfigBuilderDsl
     fun spinner(block: SpinnerConfigBuilder.() -> Unit) {
         val spinner = SpinnerConfigBuilder().apply(block)
         add(spinner)
     }
 
+    @ConfigBuilderDsl
     fun custom(block: CustomConfigBuilder.() -> Unit) {
         val custom = CustomConfigBuilder().apply(block)
         add(custom)
