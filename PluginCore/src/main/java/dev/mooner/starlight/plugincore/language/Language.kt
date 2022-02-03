@@ -7,12 +7,15 @@
 package dev.mooner.starlight.plugincore.language
 
 import android.view.View
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.config.CategoryConfigObject
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.config.data.ConfigCategory
 import dev.mooner.starlight.plugincore.config.data.ConfigCategoryImpl
+import dev.mooner.starlight.plugincore.pipeline.stage.LanguageStage
+import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
 import dev.mooner.starlight.plugincore.project.Project
 import kotlinx.serialization.decodeFromString
 import java.io.File
@@ -135,4 +138,12 @@ abstract class Language {
     fun getIconFile(): File = getAsset("icon.png")
 
     fun getIconFileOrNull(): File? = getAssetOrNull("icon.png")
+
+    fun toPipelineStage(): PipelineStage<Pair<Project, String>, Any> = LanguageStage(
+        id = this.id,
+        name = this.name,
+        run = { project, code ->
+            compile(code, Session.apiManager.getApis(), project)
+        }
+    )
 }
