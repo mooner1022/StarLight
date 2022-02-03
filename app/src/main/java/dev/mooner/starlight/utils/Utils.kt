@@ -3,8 +3,6 @@ package dev.mooner.starlight.utils
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -29,10 +27,8 @@ import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import dev.mooner.starlight.ui.splash.SplashActivity
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import java.util.concurrent.TimeUnit
-import kotlin.system.exitProcess
 
 private val alphanumericPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 fun randomAlphanumeric(length: Int): String {
@@ -82,17 +78,12 @@ fun formatTime(millis: Long): String {
     }
 }
 
-fun restartApplication(context: Context) {
-    val mStartActivity = Intent(context, SplashActivity::class.java)
-    val mPendingIntent = PendingIntent.getActivity(
-        context,
-        0,
-        mStartActivity,
-        PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-    val mgr = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    mgr[AlarmManager.RTC, System.currentTimeMillis() + 100] = mPendingIntent
-    exitProcess(0)
+fun Context.restartApplication() {
+    val intent = packageManager.getLaunchIntentForPackage(packageName)
+    val componentName = intent!!.component
+    val mainIntent = Intent.makeRestartActivityTask(componentName)
+    startActivity(mainIntent)
+    Runtime.getRuntime().exit(0)
 }
 
 fun showLogsDialog(context: Context): MaterialDialog {
