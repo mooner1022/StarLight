@@ -35,7 +35,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="start"
                     android:layout_marginStart="8dp"
-                    android:fontFamily="@font/nanumsquare_round_bold"
+                    android:fontFamily="@font/nanumsquare_round_extrabold"
                     android:gravity="center"
                     android:text="DEBUG ROOM"
                     android:textSize="18sp"
@@ -88,10 +88,10 @@
             android:paddingBottom="5dp"
             android:textColor="@color/gray"
             android:textSize="18sp"
-            android:minHeight="40dp" android:maxHeight="180dp"
+            android:minHeight="48dp" android:maxHeight="180dp"
             app:layout_constraintEnd_toStartOf="@+id/sendButton"
             app:layout_constraintStart_toStartOf="parent" app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginBottom="16dp" android:layout_marginStart="16dp" android:layout_marginEnd="8dp"/>
+            android:layout_marginBottom="12dp" android:layout_marginStart="16dp" android:layout_marginEnd="8dp"/>
     <ImageView
             android:id="@+id/sendButton"
             android:layout_width="48dp"
@@ -100,6 +100,6 @@
             android:layout_marginBottom="12dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:srcCompat="@drawable/send_icon"/>
+            app:srcCompat="@drawable/ic_send"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

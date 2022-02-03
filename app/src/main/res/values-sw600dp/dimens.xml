@@ -9,7 +9,7 @@
     <dimen name="icon_width">24dp</dimen>
 
     <dimen name="card_height">54dp</dimen>
-    <dimen name="card_radius">27dp</dimen>
+    <dimen name="card_radius">28dp</dimen>
     <dimen name="card_elevation">0dp</dimen>
     <dimen name="card_margin_horizontal">64dp</dimen>
     <dimen name="card_margin_vertical">20dp</dimen>
