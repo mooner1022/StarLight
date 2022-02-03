@@ -4,6 +4,9 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import dev.mooner.starlight.core.session.ApplicationSession
+import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.event.Events
+import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +36,21 @@ class GlobalApplication: Application() {
         if (isInitial) return
         CoroutineScope(Dispatchers.Default).launch {
             ApplicationSession.init(applicationContext)
+            Session.eventManager.on(callback = ::onProjectCreated)
+            Session.eventManager.on(callback = ::onProjectInfoUpdated)
+            Session.eventManager.on(callback = ::onProjectCompiled)
         }
+    }
+
+    private fun onProjectCreated(event: Events.Project.ProjectCreateEvent) {
+        Logger.v("ProjectCreateEvent called, event= $event, project= ${event.project}")
+    }
+
+    private fun onProjectInfoUpdated(event: Events.Project.ProjectInfoUpdateEvent) {
+        Logger.v("ProjectInfoUpdateEvent called, event= $event, project= ${event.project}")
+    }
+
+    private fun onProjectCompiled(event: Events.Project.ProjectCompileEvent) {
+        Logger.v("ProjectCompileEvent called, event= $event, project= ${event.project}")
     }
 }

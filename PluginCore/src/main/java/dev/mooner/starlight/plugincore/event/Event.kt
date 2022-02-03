@@ -6,19 +6,6 @@
 
 package dev.mooner.starlight.plugincore.event
 
-abstract class Event {
+import kotlinx.coroutines.CoroutineScope
 
-    abstract val id: String
-
-    abstract val name: String
-
-    abstract val eventName: String
-
-    open val compatibleLanguageId: List<String> = listOf()
-
-    fun callEvent(args: Array<out Any>, onException: (e: Throwable) -> Unit) = dev.mooner.starlight.plugincore.Session.projectManager.callEvent(id, eventName, args, onException)
-
-    override fun equals(other: Any?): Boolean = other is Event && other.id == id
-
-    override fun hashCode(): Int = name.hashCode() + id.hashCode()
-}
+interface Event: CoroutineScope

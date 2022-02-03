@@ -1,28 +1,38 @@
 package dev.mooner.starlight.plugincore.event
 
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.logger.Logger
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import kotlin.coroutines.CoroutineContext
 
-class EventManager {
+class EventManager: CoroutineScope {
 
-    private val mEvents: MutableSet<Event> = hashSetOf()
-    val events: Set<Event> get() = mEvents
+    override val coroutineContext: CoroutineContext = SupervisorJob() + Dispatchers.Default
+    private var _eventFlow: MutableSharedFlow<Event> = MutableSharedFlow()
+    val eventFlow: SharedFlow<Event> get() = _eventFlow.asSharedFlow()
 
-    fun addEvent(event: Event) {
-        mEvents += event
-    }
+    suspend fun fireEvent(event: Event) = _eventFlow.emit(event)
 
-    fun hasEvent(id: String): Boolean = events.any { it.id == id }
+    fun fireEventWithContext(event: Event, context: CoroutineContext = coroutineContext) = CoroutineScope(context).launch { fireEvent(event) }
 
-    inline fun <reified T: Event> EventManager.hasEvent(): Boolean = events.any { T::class.isInstance(it) }
-
-    internal fun purge() {
-        mEvents.clear()
+    fun fireEventSync(event: Event) = runBlocking(coroutineContext) {
+        _eventFlow.emit(event)
     }
 }
 
-public inline fun <reified T: Event> EventManager.callEvent(args: Array<out Any>, noinline onException: (e: Throwable) -> Unit = {}): Boolean {
-    Logger.v("EventManager", "Calling event ${T::class.simpleName}")
-    val event = events.find { T::class.isInstance(it) }?: return false
-    event.callEvent(args, onException)
-    return true
-}
+internal val eventCoroutineScope get() = CoroutineScope(Session.eventManager.coroutineContext + SupervisorJob(Session.eventManager.coroutineContext.job))
+
+public inline fun <reified T: Event> EventManager.on(
+    scope: CoroutineScope = this,
+    noinline callback: suspend T.() -> Unit
+): Job = eventFlow.buffer()
+    .filterIsInstance<T>()
+    .onEach { event ->
+        scope.launch(event.coroutineContext) {
+            runCatching {
+                callback(event)
+            }.onFailure { Logger.e(it) }
+        }
+    }
+    .launchIn(scope)
