@@ -48,7 +48,6 @@ data class ToggleConfigObject(
     override val iconTintColor: Int?,
     override val dependency: String? = null
 ): ConfigObject {
-    val listeners: ArrayList<(isEnabled: Boolean) -> Unit> = arrayListOf()
     override val default: Any
         get() = defaultValue
     override val type: ConfigObjectType
