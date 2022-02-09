@@ -9,6 +9,9 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.starlight.R
+import dev.mooner.starlight.plugincore.Session.eventManager
+import dev.mooner.starlight.plugincore.event.Events
+import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.plugincore.logger.Logger
@@ -17,16 +20,14 @@ import dev.mooner.starlight.plugincore.widget.WidgetSize
 import dev.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import dev.mooner.starlight.utils.showLogsDialog
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.lang.Integer.min
 
 class LogsWidget: Widget() {
 
     companion object {
+
         private const val LOGS_MAX_SIZE = 3
-        private const val T = "LogsWidget"
     }
 
     override val id: String = "widget_logs"
@@ -35,6 +36,8 @@ class LogsWidget: Widget() {
 
     private var pauseUpdate: Boolean = false
     private var stackedLogs: MutableList<LogData> = mutableListOf()
+
+    private var job: CompletableJob? = null
 
     private var mAdapter: LogsRecyclerViewAdapter? = null
     private var mThumbnailAdapter: LogsRecyclerViewAdapter? = null
@@ -173,23 +176,31 @@ class LogsWidget: Widget() {
     }
 
     private fun bindLogger() {
-        Logger.bindListener(T) {
-            if (it.type == LogType.VERBOSE && !dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)) return@bindListener
-
-            if (pauseUpdate) {
-                stackedLogs += it
-            } else {
-                mAdapter?.pushLog(it, LOGS_MAX_SIZE)
-                if (mView != null) {
-                    CoroutineScope(Dispatchers.Main).launch {
-                        mView!!.updateHeight()
-                    }
-                }
-            }
+        val mJob = job ?: let {
+            val newJob = SupervisorJob()
+            job = newJob
+            newJob
+        }
+        CoroutineScope(Dispatchers.Default + mJob).launch {
+            eventManager.on(this, ::onLogCreated)
         }
     }
 
-    private fun unbindLogger() {
-        Logger.unbindListener(T)
+    private fun unbindLogger() = job?.cancel()
+
+    private fun onLogCreated(event: Events.Log.LogCreateEvent) {
+        val log = event.log
+        if (log.type == LogType.VERBOSE && !dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)) return
+
+        if (pauseUpdate) {
+            stackedLogs += log
+        } else {
+            mAdapter?.pushLog(log, LOGS_MAX_SIZE)
+            if (mView != null) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    mView!!.updateHeight()
+                }
+            }
+        }
     }
 }
