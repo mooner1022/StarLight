@@ -26,5 +26,10 @@ sealed class Events {
             val project: dev.mooner.starlight.plugincore.project.Project,
             val coroutineScope: CoroutineScope = eventCoroutineScope
         ): Event, CoroutineScope by coroutineScope
+
+        class ProjectDeleteEvent(
+            val projectName: String,
+            val coroutineScope: CoroutineScope = eventCoroutineScope
+        ): Event, CoroutineScope by coroutineScope
     }
 }

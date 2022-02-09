@@ -9,7 +9,6 @@ package dev.mooner.starlight.plugincore.project
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.eventManager
 import dev.mooner.starlight.plugincore.Session.json
-import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.config.data.Config
 import dev.mooner.starlight.plugincore.config.data.FileConfig
 import dev.mooner.starlight.plugincore.event.Events
@@ -18,6 +17,7 @@ import dev.mooner.starlight.plugincore.logger.LocalLogger
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.pipeline.CompilePipeline
 import dev.mooner.starlight.plugincore.pipeline.PipelineInfo
+import dev.mooner.starlight.plugincore.pipeline.stage.DemoPipelineStage
 import dev.mooner.starlight.plugincore.utils.hasFile
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flowOf
@@ -139,13 +139,14 @@ class Project (
             if (shutdownOnError) {
                 logger.e(info.name, "Shutting down project '${info.name}'...")
                 info.isEnabled = false
+                saveInfo()
                 if (langScope != null && lang.requireRelease) {
                     lang.release(langScope!!)
                     langScope = null
                 }
             }
             e.printStackTrace()
-            projectManager.onStateChanged(this)
+            //projectManager.onStateChanged(this)
             onException(e)
         }
 
@@ -198,6 +199,8 @@ class Project (
         */
     }
 
+    fun compile(throwException: Boolean = false) = compile(throwException, null)
+
     /**
      * Compiles the project with configured values.
      *
@@ -209,7 +212,7 @@ class Project (
             info = PipelineInfo(
                 stages = hashSetOf(
                     //DemoPipelineStage(),
-                    //DemoPipelineStage()
+                    DemoPipelineStage()
                 )
             )
         ) { stage, perc ->
@@ -233,7 +236,7 @@ class Project (
             )
              */
             eventManager.fireEventWithContext(Events.Project.ProjectCompileEvent(project = this))
-            projectManager.onStateChanged(this)
+            //projectManager.onStateChanged(this)
         } catch (e: Exception) {
             e.printStackTrace()
             logger.e(tag, e.toString())
@@ -260,7 +263,7 @@ class Project (
      * Ignored if application is on background.
      */
     fun requestUpdate() {
-        projectManager.onStateChanged(this)
+        eventManager.fireEventWithContext(Events.Project.ProjectInfoUpdateEvent(project = this))
     }
 
     /**
