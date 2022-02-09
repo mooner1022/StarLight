@@ -14,7 +14,6 @@ import android.view.ViewGroup
 import android.widget.CheckBox
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import coil.load
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
@@ -93,20 +92,22 @@ class PluginsFragment : Fragment() {
         _binding = FragmentPluginsBinding.inflate(inflater, container, false)
 
         if (plugins.isEmpty()) {
-            binding.noPluginWrapper.visibility = View.VISIBLE
+            with(binding.textViewNoPluginYet) {
+                visibility = View.VISIBLE
 
-            if (globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
-                binding.imageViewEmpty.load(R.drawable.ic_safe_mode)
-                binding.textViewNoPluginYet.text = "플러그인 안전 모드가 켜져있어요."
-            } else {
-                binding.imageViewEmpty.load(R.drawable.ic_box_empty)
-                binding.textViewNoPluginYet.text = requireContext().formatStringRes(
-                    R.string.nothing_yet,
-                    mapOf(
-                        "name" to "플러그인이",
-                        "emoji" to "(>_<｡)\uD83D\uDCA6"
+                text = if (globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
+                    setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_safe_mode, 0, 0)
+                    "플러그인 안전 모드가 켜져있어요."
+                } else {
+                    setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_box_empty, 0, 0)
+                    requireContext().formatStringRes(
+                        R.string.nothing_yet,
+                        mapOf(
+                            "name" to "플러그인이",
+                            "emoji" to "(>_<｡)\uD83D\uDCA6"
+                        )
                     )
-                )
+                }
             }
         }
 
@@ -125,7 +126,7 @@ class PluginsFragment : Fragment() {
             }
         }
 
-        binding.alignState.text = if (isReversed) alignState.reversedName else alignState.name
+        binding.textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
         binding.alignStateIcon.setImageResource(alignState.icon)
 
         listAdapter = PluginsListAdapter(requireContext())
@@ -178,7 +179,7 @@ class PluginsFragment : Fragment() {
     }
 
     private fun update() {
-        binding.alignState.text = if (isReversed) alignState.reversedName else alignState.name
+        binding.textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
         binding.alignStateIcon.setImageResource(alignState.icon)
         reloadList(sortData())
         globalConfig.apply {

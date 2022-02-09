@@ -30,11 +30,11 @@ class GlobalConfig(
         if (!file.exists() || !file.isFile) {
             file.parentFile?.mkdirs()
             file.createNewFile()
-            mutableMapOf()
+            hashMapOf()
         } else {
             val raw = file.readText()
             if (raw.isBlank())
-                mutableMapOf()
+                hashMapOf()
             else
                 json.decodeFromString(raw)
         }
@@ -56,7 +56,7 @@ class GlobalConfig(
     operator fun get(id: String, def: String): String = get(id)?: def
 
     operator fun set(id: String, value: TypedString) {
-        if (configs.containsKey(DEFAULT_CATEGORY))
+        if (DEFAULT_CATEGORY in configs)
             configs[DEFAULT_CATEGORY]!![id] = value
         else
             configs[DEFAULT_CATEGORY] = mutableMapOf(id to value)
@@ -65,6 +65,8 @@ class GlobalConfig(
     operator fun set(id: String, value: String) {
         set(id, value typed "String")
     }
+
+    fun getDefaultCategory(): MutableConfigCategory = getOrCreateCategory(DEFAULT_CATEGORY)
 
     fun getCategory(id: String): MutableConfigCategory = getOrCreateCategory(id)
 
@@ -108,10 +110,14 @@ class GlobalConfig(
     private fun getOrCreateCategory(id: String): MutableConfigCategory {
         return when (id) {
             in cachedCategories -> cachedCategories[id]!!
-            in configs -> MutableConfigCategory(configs[id]!!)
+            in configs -> MutableConfigCategory(configs[id]!!).also {
+                cachedCategories[id] = it
+            }
             else -> {
                 configs[id] = mutableMapOf()
-                MutableConfigCategory(configs[id]!!)
+                MutableConfigCategory(configs[id]!!).also {
+                    cachedCategories[id] = it
+                }
             }
         }
     }

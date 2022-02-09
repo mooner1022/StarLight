@@ -23,6 +23,7 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.customview.customView
 import dev.mooner.starlight.R
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.plugincore.logger.Logger
@@ -57,9 +58,9 @@ fun String.trimLength(max: Int): String {
     return if (this.length <= max) this else (this.substring(0, max) + "..")
 }
 
-fun checkPermissions(context: Context, permissions: Array<String>): Boolean {
+fun Context.checkPermissions(permissions: Array<String>): Boolean {
     for (permission in permissions) {
-        val perm = ContextCompat.checkSelfPermission(context, permission)
+        val perm = ContextCompat.checkSelfPermission(this, permission)
         if (perm == PackageManager.PERMISSION_DENIED) return false
     }
     return true
@@ -138,7 +139,7 @@ fun Uri.toBitmap(context: Context): Bitmap = if (Build.VERSION.SDK_INT >= Build.
     MediaStore.Images.Media.getBitmap(context.contentResolver, this)
 }
 
-val isDevMode get() = globalConfig.getCategory("dev").getBoolean("dev_mode", false)
+val isDevMode get() = Session.isInitComplete && globalConfig.getCategory("dev").getBoolean("dev_mode", false)
 
 const val LAYOUT_DEFAULT = 0
 const val LAYOUT_TABLET  = 1

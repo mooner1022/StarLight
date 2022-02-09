@@ -17,7 +17,7 @@ import dev.mooner.starlight.plugincore.plugin.Plugin
 import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.ui.plugins.config.PluginConfigActivity
 import dev.mooner.starlight.ui.plugins.info.startPluginInfoActivity
-import dev.mooner.starlight.ui.presets.ExpandableCardView
+import dev.mooner.starlight.ui.presets.ExpandableCard
 import dev.mooner.starlight.utils.trimLength
 import java.io.File
 
@@ -41,7 +41,7 @@ class PluginsListAdapter(
         val config = plugin.info
 
         with(holder) {
-            card.setTitle(titleText = config.name.trimLength(17))
+            card.title = config.name.trimLength(17)
             version.text = "v${config.version}"
             fileSize.text = String.format("%.2f MB", plugin.fileSize)
 

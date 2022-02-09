@@ -16,14 +16,13 @@ fun Context.startPluginInfoActivity(
             id = "general"
             title = "기본"
             textColor = color { "#706EB9" }
-            items = items {
+            items {
                 button {
                     id = "name"
                     title = plugin.info.name
                     description = "id: ${info.id}"
                     icon = Icon.LAYERS
                     iconTintColor = color { "#6455A1" }
-                    onClickListener = {}
                 }
                 button {
                     id = "version"
@@ -31,7 +30,6 @@ fun Context.startPluginInfoActivity(
                     icon = Icon.BRANCH
                     iconTintColor = color { "#C073A0" }
                     description = "v${info.version}"
-                    onClickListener = {}
                 }
             }
         }
@@ -39,14 +37,13 @@ fun Context.startPluginInfoActivity(
             id = "info"
             title = "등록 정보"
             textColor = color { "#706EB9" }
-            items = items {
+            items {
                 button {
                     id = "author"
                     title = "개발자"
                     icon = Icon.DEVELOPER_BOARD
                     iconTintColor = color { "#D47E97" }
                     description = info.authors.joinToString()
-                    onClickListener = {}
                 }
                 button {
                     id = "desc"
@@ -54,7 +51,6 @@ fun Context.startPluginInfoActivity(
                     description = info.description
                     icon = Icon.LIST_BULLETED
                     iconTintColor = color { "#F59193" }
-                    onClickListener = {}
                 }
                 button {
                     id = "mainClass"
@@ -62,7 +58,6 @@ fun Context.startPluginInfoActivity(
                     icon = Icon.EXIT_TO_APP
                     iconTintColor = color { "#F9AE91" }
                     description = info.mainClass
-                    onClickListener = {}
                 }
             }
         }
@@ -70,13 +65,12 @@ fun Context.startPluginInfoActivity(
             id = "file"
             title = "파일"
             textColor = color { "#706EB9" }
-            items = items {
+            items {
                 button {
                     id = "name"
                     title = plugin.fileName
                     icon = Icon.FOLDER
                     iconTintColor = color { "#7A69C7" }
-                    onClickListener = {}
                 }
                 button {
                     id = "size"
@@ -84,7 +78,6 @@ fun Context.startPluginInfoActivity(
                     icon = Icon.COMPRESS
                     iconTintColor = color { "#4568DC" }
                     description = "${plugin.fileSize}mb"
-                    onClickListener = {}
                 }
             }
         }
@@ -92,14 +85,13 @@ fun Context.startPluginInfoActivity(
             id = "library"
             title = "라이브러리"
             textColor = color { "#706EB9" }
-            items = items {
+            items {
                 button {
                     id = "pluginCoreVersion"
                     title = "PluginCore 버전"
                     description = info.apiVersion.toString()
                     icon = Icon.BRANCH
                     iconTintColor = color { "#3A1C71" }
-                    onClickListener = {}
                 }
                 button {
                     id = "dependency"
@@ -107,7 +99,6 @@ fun Context.startPluginInfoActivity(
                     icon = Icon.CHECK
                     iconTintColor = color { "#D76D77" }
                     description = if (info.dependency.isEmpty()) "없음" else info.dependency.joinToString("\n")
-                    onClickListener = {}
                 }
                 button {
                     id = "softDependency"
@@ -115,7 +106,6 @@ fun Context.startPluginInfoActivity(
                     icon = Icon.CHECK
                     iconTintColor = color { "#FFAF7B" }
                     description = if (info.softDependency.isEmpty()) "없음" else info.softDependency.joinToString("\n")
-                    onClickListener = {}
                 }
             }
         }

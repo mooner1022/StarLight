@@ -101,8 +101,9 @@ class ProjectManager(
     }
 
     fun removeProject(name: String, removeFiles: Boolean = true) {
-        if (projects.containsKey(name)) {
-            if (removeFiles) projects[name]!!.directory.deleteRecursively()
+        projects[name]?.let {
+            if (removeFiles)
+                it.directory.deleteRecursively()
             projects -= name
         }
         callListeners(null)
@@ -115,15 +116,7 @@ class ProjectManager(
         }
     }
 
-    internal fun purge() {
-        listUpdateListeners.clear()
-        stateChangeListeners.clear()
-
-        for ((_, project) in projects) {
-            //project.saveConfig()   ...Occurs file content loss
-            project.destroy()
-        }
-    }
+    internal fun purge() = projects.forEach { (_, u) -> u.destroy(requestUpdate = true) }
 }
 
 inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean {

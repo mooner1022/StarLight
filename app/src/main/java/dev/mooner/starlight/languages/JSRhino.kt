@@ -32,7 +32,7 @@ class JSRhino: Language() {
                 id = T
                 title = T
                 textColor = color { "#FFC069" }
-                items = items {
+                items {
                     toggle {
                         id = CONF_OPTIMIZE_CODE
                         title = "코드 최적화"
@@ -135,7 +135,7 @@ class JSRhino: Language() {
                 //engine.put(methodBlock.blockName, methodBlock.instance)
             }
             if (importLines != null) {
-                Logger.v(importLines.toString())
+                //Logger.v(importLines.toString())
                 context.evaluateString(scope, importLines.toString(), "import", 1, null)
             }
         }

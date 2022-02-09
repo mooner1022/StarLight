@@ -8,6 +8,7 @@ import androidx.annotation.DrawableRes
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.requiredField
 import java.io.File
+import kotlin.properties.Delegates.notNull
 
 @DslMarker
 public annotation class ConfigBuilderDsl
@@ -20,9 +21,24 @@ fun config(block: ConfigBuilder.() -> Unit): List<CategoryConfigObject> {
 
 class ConfigBuilder {
 
+    companion object {
+
+        @JvmStatic
+        private val colorCache: MutableMap<String, Int> = hashMapOf()
+    }
+
     private val objects: MutableList<CategoryConfigObject> = arrayListOf()
 
-    inline fun color(color: () -> String): Int = Color.parseColor(color())
+    fun color(color: () -> String): Int {
+        val hex = color()
+        return color(hex)
+    }
+
+    fun color(color: String): Int = colorCache[color] ?: let {
+        val colorInt = Color.parseColor(color)
+        colorCache[color] = colorInt
+        colorInt
+    }
 
     @ConfigBuilderDsl
     fun category(block: CategoryConfigBuilder.() -> Unit) {
@@ -38,14 +54,8 @@ class ConfigBuilder {
         return list
     }
 
-    @ConfigBuilderDsl
-    fun items(block: ConfigItemBuilder.() -> Unit): List<ConfigObject> {
-        val builder = ConfigItemBuilder().apply(block)
-        return builder.build(flush = true)
-    }
-
     inner class CategoryConfigBuilder {
-        var id: String? = null
+        var id: String by notNull()
         var title: String? = null
         @ColorInt
         var textColor: Int? = null
@@ -57,7 +67,7 @@ class ConfigBuilder {
         var iconResId: Int? = null
 
         @ColorInt
-        var iconTintColor: Int? = Color.parseColor("#000000")
+        var iconTintColor: Int? = null
 
         fun setIcon(icon: Icon? = null, iconFile: File? = null, @DrawableRes iconResId: Int? = null) {
             when {
@@ -70,13 +80,11 @@ class ConfigBuilder {
         var items: List<ConfigObject> = arrayListOf()
 
         fun build(): CategoryConfigObject {
-            requiredField("id", id)
-            //required("title", title)
             require(items.isNotEmpty()) { "Field 'items' must not be empty" }
 
             return CategoryConfigObject(
-                id = id!!,
-                title = title?: "",
+                id = id,
+                title = title ?: "",
                 icon = icon,
                 iconFile = iconFile,
                 iconResId = iconResId,
@@ -91,25 +99,7 @@ class ConfigBuilder {
 
 class ConfigItemBuilder {
 
-    companion object {
-
-        @JvmStatic
-        private val colorCache: MutableMap<String, Int> = hashMapOf()
-    }
-
     private val objects: MutableList<ConfigObject> = arrayListOf()
-
-    fun color(color: () -> String): Int {
-        val hex = color()
-        return color(hex)
-    }
-
-    fun color(color: String): Int {
-        if (color !in colorCache) {
-            colorCache[color] = Color.parseColor(color)
-        }
-        return colorCache[color]!!
-    }
 
     private fun add(builder: ConfigBuilder) {
         objects += builder.build()
@@ -166,7 +156,7 @@ class ConfigItemBuilder {
     }
 
     abstract inner class ConfigBuilder {
-        var id: String? = null
+        var id: String by notNull()
         var title: String? = null
         var description: String? = null
 
@@ -176,7 +166,7 @@ class ConfigItemBuilder {
         var iconResId: Int? = null
 
         @ColorInt
-        var iconTintColor: Int? = Color.parseColor("#000000")
+        var iconTintColor: Int? = null
 
         var dependency: String? = null
 
@@ -192,23 +182,25 @@ class ConfigItemBuilder {
     }
 
     inner class ButtonConfigBuilder: ConfigBuilder() {
-        var onClickListener: ((view: View) -> Unit)? = null
+        private var mOnClickListener: ((view: View) -> Unit)? = null
         var type: ButtonConfigObject.Type = ButtonConfigObject.Type.FLAT
         @ColorInt
         var backgroundColor: Int? = null
 
+        fun setOnClickListener(listener: (view: View) -> Unit) {
+            mOnClickListener = listener
+        }
+
         override fun build(): ButtonConfigObject {
-            requiredField("id", id)
             requiredField("title", title)
-            requiredField("onClickListener", onClickListener)
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return ButtonConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
-                onClickListener = onClickListener!!,
+                onClickListener = mOnClickListener,
                 buttonType = type,
                 icon = icon,
                 iconFile = iconFile,
@@ -224,13 +216,12 @@ class ConfigItemBuilder {
         var defaultValue: Boolean = false
 
         override fun build(): ToggleConfigObject {
-            requiredField("id", id)
             requiredField("title", title)
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return ToggleConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
                 defaultValue = defaultValue,
@@ -244,32 +235,30 @@ class ConfigItemBuilder {
     }
 
     inner class SeekbarConfigBuilder: ConfigBuilder() {
-        var max: Int? = null
+        var max: Int by notNull()
         var min: Int = 0
         var defaultValue: Int = 0
 
         override fun build(): SeekbarConfigObject {
-            requiredField("id", id)
             requiredField("title", title)
-            requiredField("max", max)
 
-            if (max!! <= 0) {
+            if (max <= 0) {
                 throw IllegalArgumentException("Value of parameter 'max' should be positive.")
             }
-            if (min > max!!) {
+            if (min > max) {
                 throw IllegalArgumentException("Value of parameter 'min' should be smaller than 'max'.")
             }
-            if (defaultValue !in min..max!!) {
+            if (defaultValue !in min..max) {
                 throw IllegalArgumentException("Value of parameter 'defaultValue' should be in range $min~$max.")
             }
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return SeekbarConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
-                max = max!!,
+                max = max,
                 min = min,
                 default = defaultValue,
                 icon = icon,
@@ -288,13 +277,12 @@ class ConfigItemBuilder {
         var require: (String) -> String? = { null }
 
         override fun build(): StringConfigObject{
-            requiredField("id", id)
             requiredField("title", title)
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return StringConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
                 hint = hint ?: "",
@@ -312,21 +300,19 @@ class ConfigItemBuilder {
 
     inner class PasswordConfigBuilder: ConfigBuilder() {
         var require: (value: String) -> String? = { null }
-        var hashCode: ((value: String) -> String)? = null
+        var hashCode: ((value: String) -> String) by notNull()
 
         override fun build(): PasswordConfigObject {
-            requiredField("id", id)
             requiredField("title", title)
-            requiredField("hashCode", hashCode)
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return PasswordConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
                 require = require,
-                hashCode = hashCode!!,
+                hashCode = hashCode,
                 icon = icon,
                 iconFile = iconFile,
                 iconResId = iconResId,
@@ -337,21 +323,20 @@ class ConfigItemBuilder {
     }
 
     inner class SpinnerConfigBuilder: ConfigBuilder() {
-        var items: List<String>? = null
+        var items: List<String> by notNull()
         var defaultIndex: Int = 0
 
         override fun build(): SpinnerConfigObject {
-            requiredField("id", id)
             requiredField("title", title)
-            requiredField("items", items)
+            require(items.isNotEmpty()) { "Field 'items' must not be empty" }
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return SpinnerConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
-                items = items!!,
+                items = items,
                 defaultIndex = defaultIndex,
                 icon = icon,
                 iconFile = iconFile,
@@ -363,16 +348,11 @@ class ConfigItemBuilder {
     }
 
     inner class CustomConfigBuilder: ConfigBuilder(){
-        var onInflate: ((view: View) -> Unit)? = null
+        var onInflate: ((view: View) -> Unit) by notNull()
 
-        override fun build(): CustomConfigObject {
-            requiredField("id", id)
-            requiredField("onInflate", onInflate)
-
-            return CustomConfigObject(
-                id = id!!,
-                onInflate = onInflate!!
-            )
-        }
+        override fun build() = CustomConfigObject(
+            id = id,
+            onInflate = onInflate
+        )
     }
 }

@@ -22,7 +22,7 @@
             android:allowBackup="true"
             android:extractNativeLibs="false"
             android:fullBackupContent="@xml/backup_descriptor"
-            android:icon="@mipmap/ic_logo"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
             android:requestLegacyExternalStorage="true"
             android:roundIcon="@mipmap/ic_launcher_round"
@@ -73,6 +73,7 @@
         </activity>
         <activity
                 android:name=".ui.splash.SplashActivity"
+                android:exported="true"
                 android:theme="@style/Theme.StarLight.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -100,6 +101,7 @@
                 android:stopWithTask="false"/>
         <service
                 android:name=".listener.NotificationListener"
+                android:exported="false"
                 android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService"/>

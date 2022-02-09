@@ -9,6 +9,8 @@ package dev.mooner.starlight.ui.projects.config
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
@@ -18,6 +20,7 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityProjectConfigBinding
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.config.ButtonConfigObject
 import dev.mooner.starlight.plugincore.config.CategoryConfigObject
@@ -45,7 +48,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         val fabProjectConfig = binding.fabProjectConfig
 
         val projectName = intent.getStringExtra("projectName")!!
-        project = dev.mooner.starlight.plugincore.Session.projectManager.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
+        project = Session.projectManager.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
         savedData = (project.config as FileConfig).data
 
         configAdapter = ConfigAdapter.Builder(this) {
@@ -112,12 +115,12 @@ class ProjectConfigActivity: AppCompatActivity() {
                 id = "general"
                 title = "일반"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     button {
                         id = "open_folder"
                         title = "폴더 열기"
                         type = ButtonConfigObject.Type.FLAT
-                        onClickListener = {
+                        setOnClickListener {
                             openFolderInExplorer(this@ProjectConfigActivity, project.directory)
                         }
                         icon = Icon.FOLDER
@@ -144,12 +147,13 @@ class ProjectConfigActivity: AppCompatActivity() {
         } +
         project.getLanguage().configObjectList +
         config {
-            if (globalConfig.getCategory("beta_features").getBoolean("change_thread_pool_size", false)) {
+            val betaFeatureCategory = globalConfig.getCategory("beta_features")
+            if (betaFeatureCategory.getBoolean("change_thread_pool_size", false)) {
                 category {
                     id = "beta_features"
                     title = "실험적 기능"
-                    textColor = color { "#706EB9" }
-                    items = items {
+                    textColor = color("#706EB9")
+                    items {
                         seekbar {
                             id = "thread_pool_size"
                             title = "Thread pool 크기"
@@ -166,13 +170,13 @@ class ProjectConfigActivity: AppCompatActivity() {
                 id = "cautious"
                 title = "위험"
                 textColor = color { "#FF865E" }
-                items = items {
+                items {
                     button {
                         id = "interrupt_thread"
                         title = "프로젝트 스레드 강제 종료"
                         description = "${project.activeJobs()}개의 작업이 실행중이에요."
                         type = ButtonConfigObject.Type.FLAT
-                        onClickListener = {
+                        setOnClickListener {
                             val active = project.activeJobs()
                             project.stopAllJobs()
                             Snackbar.make(it, "${active}개의 작업을 강제 종료하고 할당 해제했어요.", Snackbar.LENGTH_SHORT).show()
@@ -185,7 +189,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                         id = "delete_project"
                         title = "프로젝트 제거"
                         type = ButtonConfigObject.Type.FLAT
-                        onClickListener = {
+                        setOnClickListener {
                             MaterialDialog(binding.root.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                                 cornerRadius(25f)
                                 cancelOnTouchOutside(true)
@@ -194,7 +198,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                                 title(text = "프로젝트를 정말로 제거할까요?")
                                 message(text = "주의: 프로젝트 제거시 복구가 불가합니다.")
                                 positiveButton(text = context.getString(R.string.delete)) {
-                                    dev.mooner.starlight.plugincore.Session.projectManager.removeProject(project, removeFiles = true)
+                                    Session.projectManager.removeProject(project, removeFiles = true)
                                     Snackbar.make(binding.root, "프로젝트를 제거했어요.", Snackbar.LENGTH_SHORT).show()
                                     dismiss()
                                     finish()

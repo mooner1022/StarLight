@@ -13,18 +13,12 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
 import dev.mooner.starlight.core.session.ApplicationSession
-import dev.mooner.starlight.plugincore.logger.Logger
-import dev.mooner.starlight.utils.FileUtils
-import kotlinx.serialization.encodeToString
-import java.io.File
-import kotlin.system.exitProcess
 
 class ForegroundTask: Service() {
 
@@ -38,39 +32,6 @@ class ForegroundTask: Service() {
     @SuppressLint("InflateParams")
     override fun onCreate() {
         super.onCreate()
-
-        Thread.setDefaultUncaughtExceptionHandler { paramThread, paramThrowable ->
-            val pInfo: PackageInfo = applicationContext.packageManager.getPackageInfo(applicationContext.packageName, 0)
-            val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-                pInfo.longVersionCode
-            else
-                pInfo.versionCode
-
-            val errMsg = """
-                *** 치명적인 오류가 발생했습니다. 앱을 종료하는 중... ***
-                [버그 제보시 아래 메세지를 첨부해주세요.]
-                ──────────
-                StarLight v${pInfo.versionName}(build ${versionCode})
-                PluginCore v${dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION}
-                Build.VERSION.SDK_INT: ${Build.VERSION.SDK_INT}
-                Build.DEVICE: ${Build.DEVICE}
-                thread  : ${paramThread.name}
-                message : ${paramThrowable.localizedMessage}
-                cause   : ${paramThrowable.cause}
-                ┉┉┉┉┉┉┉┉┉┉
-                stackTrace:
-                
-            """.trimIndent() + paramThrowable.stackTraceToString() + "\n──────────"
-            Logger.wtf("StarLight-core", errMsg)
-
-            val startupData = dev.mooner.starlight.plugincore.Session.json.encodeToString(mapOf("last_error" to errMsg))
-            File(FileUtils.getInternalDirectory(), "STARTUP.info").writeText(startupData)
-            stopForeground(true)
-            ApplicationSession.shutdown()
-            stopSelf()
-            exitProcess(2)
-        }
-
         /*
         if (!ApplicationSession.isInitComplete) {
             //ApplicationSession.context = applicationContext
@@ -81,13 +42,13 @@ class ForegroundTask: Service() {
         createNotificationChannel()
         val pendingIntent: PendingIntent =
             Intent(this, MainActivity::class.java).let { notificationIntent ->
-                PendingIntent.getActivity(this, 0, notificationIntent, 0)
+                PendingIntent.getActivity(this, 0, notificationIntent, 0 or PendingIntent.FLAG_IMMUTABLE)
             }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("StarLight 실행중")
                 .setSubText("당신만을 위한 봇들을 관리중이에요 :)")
-                .setSmallIcon(R.mipmap.ic_logo)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentIntent(pendingIntent)
                 .setShowWhen(false)
                 .build()
@@ -96,7 +57,7 @@ class ForegroundTask: Service() {
             val notification = NotificationCompat.Builder(this)
                 .setContentTitle("StarLight 실행중")
                 .setSubText("당신만을 위한 봇들을 관리중이에요 :)")
-                .setSmallIcon(R.mipmap.ic_logo)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentIntent(pendingIntent)
                 .setShowWhen(false)
                 .build()

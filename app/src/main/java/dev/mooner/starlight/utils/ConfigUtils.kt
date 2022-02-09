@@ -10,7 +10,7 @@ import dev.mooner.starlight.ui.config.ConfigActivity
 import dev.mooner.starlight.ui.config.ParentRecyclerAdapter
 import java.util.*
 
-private const val T = "ConfigUtils"
+private const val TAG = "ConfigUtils"
 const val EXTRA_TITLE = "title"
 const val EXTRA_SUBTITLE = "subTitle"
 const val EXTRA_ACTIVITY_ID = "activityId"
@@ -42,14 +42,14 @@ fun Context.startConfigActivity(
         putExtra(EXTRA_ACTIVITY_ID, activityId)
     }
     startActivity(intent)
-    Logger.v(T, "Starting new config activity with ID: $activityId")
+    Logger.v(TAG, "Starting new config activity with ID: $activityId")
 }
 
 fun finishConfigActivity(id: String): Boolean {
     if (id in holders) {
         val holder = holders[id]!!
         if (holder.instance != null) {
-            Logger.v(T, "Finishing config activity with ID: $id")
+            Logger.v(TAG, "Finishing config activity with ID: $id")
             holder.instance!!.apply {
                 onDestroyed()
                 finish()
@@ -79,6 +79,6 @@ internal fun ConfigActivity.onDestroyed() {
     if (activityId in holders) {
         holders[activityId]!!.onDestroyed()
         holders -= activityId
-        Logger.v(T, "onDestroyed() called from config activity with ID: $activityId")
+        Logger.v(TAG, "onDestroyed() called from config activity with ID: $activityId")
     }
 }

@@ -3,7 +3,10 @@ package dev.mooner.starlight.utils
 import android.animation.ValueAnimator
 import android.content.Context
 import android.content.res.ColorStateList
+import android.content.res.Resources
 import android.util.TypedValue
+import android.view.View
+import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import android.widget.ProgressBar
@@ -17,6 +20,7 @@ import coil.loadAny
 import coil.request.Disposable
 import coil.request.ImageRequest
 import dev.mooner.starlight.plugincore.logger.Logger
+import kotlin.reflect.full.createInstance
 
 fun NestedScrollView.bindFadeImage(imageView: ImageView) {
     setOnScrollChangeListener { _, _, scrollY, _, _ ->
@@ -66,3 +70,24 @@ var ProgressBar.graceProgress: Int
     set(value) {
         setProgressGraceful(value)
     }
+
+private val Number.toPx get() = TypedValue.applyDimension(
+    TypedValue.COMPLEX_UNIT_DIP,
+    this.toFloat(),
+    Resources.getSystem().displayMetrics
+).toInt()
+
+fun dp(value: Int): Int = value.toPx
+
+public inline fun View.applyLayoutParams(block: ViewGroup.LayoutParams.() -> Unit) {
+    applyLayoutParams<ViewGroup.LayoutParams>(block)
+}
+
+@JvmName("applyLayoutParamsTyped")
+public inline fun <reified T : ViewGroup.LayoutParams> View.applyLayoutParams(
+    block: T.() -> Unit
+) {
+    val params = (layoutParams?: T::class.createInstance()) as T
+    block(params)
+    layoutParams = params
+}

@@ -43,7 +43,7 @@ class SettingsFragment : Fragment() {
         return binding.root
     }
 
-    private fun reloadConfigList() = configAdapter?.reload()
+    private fun reloadConfigList(view: View) = configAdapter?.reload()
 
     private fun getConfigList(): List<CategoryConfigObject> {
         return config {
@@ -54,7 +54,7 @@ class SettingsFragment : Fragment() {
                 iconTintColor = color { "#5584AC" }
                 //textColor = color { "#706EB9" }
                 flags = CategoryConfigObject.FLAG_NESTED
-                items = items {
+                items {
                     toggle {
                         id = "global_power"
                         title = "전역 전원"
@@ -68,9 +68,7 @@ class SettingsFragment : Fragment() {
                         title = "설정 목록 새로고침"
                         icon = Icon.REFRESH
                         iconTintColor = color { "#FF8243" }
-                        onClickListener = {
-                            reloadConfigList()
-                        }
+                        setOnClickListener(::reloadConfigList)
                     }
                 }
             }
@@ -81,7 +79,7 @@ class SettingsFragment : Fragment() {
                 iconTintColor = color { "#95D1CC" }
                 //textColor = color { "#706EB9" }
                 flags = CategoryConfigObject.FLAG_NESTED
-                items = items {
+                items {
                     string {
                         id = "load_timeout"
                         title = "플러그인 로드 시간 제한(ms)"
@@ -116,7 +114,7 @@ class SettingsFragment : Fragment() {
                         description = "안전모드 활성화 후 앱을 재시작합니다."
                         icon = Icon.REFRESH
                         iconTintColor = color { "#FF6F3C" }
-                        onClickListener = {
+                        setOnClickListener {
                             requireContext().restartApplication()
                         }
                         dependency = "safe_mode"
@@ -130,7 +128,7 @@ class SettingsFragment : Fragment() {
                 iconTintColor = color { "#98BAE7" }
                 //textColor = color { "#706EB9" }
                 flags = CategoryConfigObject.FLAG_NESTED
-                items = items {
+                items {
                     toggle {
                         id = "use_legacy_event"
                         title = "레거시 이벤트 사용"
@@ -145,22 +143,19 @@ class SettingsFragment : Fragment() {
                 id = "info"
                 title = "정보"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     button {
                         id = "check_update"
                         title = "업데이트 확인"
                         icon = Icon.CLOUD_DOWNLOAD
                         iconTintColor = color { "#A7D0CD" }
-                        onClickListener = {
-
-                        }
                     }
                     button {
                         id = "app_info"
                         title = "앱 정보"
                         icon = Icon.INFO
                         iconTintColor = color { "#F1CA89" }
-                        onClickListener = {
+                        setOnClickListener {
                             startActivity(Intent(context, AppInfoActivity::class.java))
                         }
                     }
@@ -170,7 +165,7 @@ class SettingsFragment : Fragment() {
                             title = "개발자 모드"
                             icon = Icon.DEVELOPER_MODE
                             iconTintColor = color { "#93B5C6" }
-                            onClickListener = {
+                            setOnClickListener {
                                 requireContext().startDevModeActivity()
                             }
                         }

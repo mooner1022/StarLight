@@ -110,12 +110,12 @@ class PluginConfigActivity: AppCompatActivity() {
             id = "cautious"
             title = "위험"
             textColor = color { "#FF865E" }
-            items = items {
+            items {
                 button {
                     id = "delete_plugin"
                     title = "플러그인 제거"
                     type = ButtonConfigObject.Type.FLAT
-                    onClickListener = { view ->
+                    setOnClickListener { view ->
                         MaterialDialog(binding.root.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                             cornerRadius(25f)
                             title(text = "정말 [${plugin.info.fullName}](을)를 삭제할까요?")

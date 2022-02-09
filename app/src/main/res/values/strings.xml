@@ -72,8 +72,12 @@
     <string name="line_number_visibility">줄 번호 표시</string>
     <string name="save">저장</string>
 
-    <string name="expandable_card_view_image_content_description">Arrow to expand card</string>
-    <string name="expandable_card_view_icon_content_description">Card icon</string>
+    <string name="step_permission">기본 권한 설정</string>
+    <string name="step_read_notification">알림 읽기 허용</string>
+    <string name="step_install_wearable">위치 정보 정책</string>
+    <string name="step_set_basics">기초 설정</string>
+    <string name="action_previous_step">이전</string>
+    <string name="action_next_step">다음</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

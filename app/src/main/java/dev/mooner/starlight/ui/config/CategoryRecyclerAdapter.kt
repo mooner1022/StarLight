@@ -202,8 +202,10 @@ class CategoryRecyclerAdapter(
             ConfigObjectType.BUTTON_FLAT.viewType,
             ConfigObjectType.PASSWORD.viewType -> {
                 val data = viewData as ButtonConfigObject
-                holder.layoutButton.setOnClickListener {
-                    if (holder.layoutButton.isEnabled) data.onClickListener(it)
+                if (data.onClickListener != null) {
+                    holder.layoutButton.setOnClickListener {
+                        if (holder.layoutButton.isEnabled) data.onClickListener!!(it)
+                    }
                 }
                 if (data.backgroundColor != null) {
                     holder.layoutButton.setBackgroundColor(data.backgroundColor!!)
@@ -211,8 +213,10 @@ class CategoryRecyclerAdapter(
             }
             ConfigObjectType.BUTTON_CARD.viewType -> {
                 val data = viewData as ButtonConfigObject
-                holder.cardViewButton.setOnClickListener {
-                    if (holder.cardViewButton.isEnabled) data.onClickListener(it)
+                if (data.onClickListener != null) {
+                    holder.cardViewButton.setOnClickListener {
+                        if (holder.cardViewButton.isEnabled) data.onClickListener!!(it)
+                    }
                 }
                 if (data.backgroundColor != null) {
                     holder.cardViewButton.setCardBackgroundColor(data.backgroundColor!!)
@@ -305,7 +309,7 @@ class CategoryRecyclerAdapter(
         lateinit var cardViewButton: CardView
         lateinit var layoutButton: ConstraintLayout
 
-        lateinit var customLayout: LinearLayout
+        lateinit var customLayout: FrameLayout
 
         init {
             if (viewType != ConfigObjectType.CUSTOM.viewType) {

@@ -54,7 +54,7 @@ class ProjectLoader(
                         }
                     } catch (e: IllegalArgumentException) {
                         e.printStackTrace()
-                        Logger.e(T, e.toString())
+                        Logger.e(T, e)
                         continue
                     }
                     projects[info.name] = project

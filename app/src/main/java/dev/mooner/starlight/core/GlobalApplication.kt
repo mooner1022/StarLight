@@ -25,7 +25,7 @@ class GlobalApplication: Application() {
 
     override fun onCreate() {
         super.onCreate()
-        Logger.v(T, "Application onCreate() called")
+        //Logger.v(T, "Application onCreate() called")
 
         mContext = applicationContext
 
@@ -34,6 +34,7 @@ class GlobalApplication: Application() {
         val isInitial = pref.getBoolean("isInitial", true)
 
         if (isInitial) return
+        //return
         CoroutineScope(Dispatchers.Default).launch {
             ApplicationSession.init(applicationContext)
             Session.eventManager.on(callback = ::onProjectCreated)

@@ -140,7 +140,7 @@ data class ButtonConfigObject(
     override val id: String,
     override val title: String,
     override val description: String? = null,
-    val onClickListener: (view: View) -> Unit,
+    val onClickListener: ((view: View) -> Unit)?,
     private val buttonType: Type = Type.FLAT,
     override val icon: Icon? = null,
     override val iconFile: File? = null,

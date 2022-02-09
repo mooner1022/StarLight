@@ -171,12 +171,12 @@ class WidgetConfigActivity : AppCompatActivity() {
                 id = UUID.randomUUID().toString()
                 title = pluginName
                 textColor = getColorCompat(R.color.main_purple)
-                items = items {
+                items {
                     for (widget in _widgets) {
                         button {
                             id = widget.id
                             title = widget.name
-                            onClickListener = {
+                            setOnClickListener {
                                 addWidget(widget)
                                 onDismiss()
                             }
