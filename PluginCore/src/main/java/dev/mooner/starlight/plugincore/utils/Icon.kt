@@ -205,4 +205,37 @@ enum class Icon(
     ARCHIVE(
         drawableRes = R.drawable.ic_round_archive_24
     ),
+    BATTERY_0_BAR(
+        drawableRes = R.drawable.ic_round_battery_0_bar_24
+    ),
+    BATTERY_1_BAR(
+        drawableRes = R.drawable.ic_round_battery_1_bar_24
+    ),
+    BATTERY_2_BAR(
+        drawableRes = R.drawable.ic_round_battery_2_bar_24
+    ),
+    BATTERY_3_BAR(
+        drawableRes = R.drawable.ic_round_battery_3_bar_24
+    ),
+    BATTERY_4_BAR(
+        drawableRes = R.drawable.ic_round_battery_4_bar_24
+    ),
+    BATTERY_5_BAR(
+        drawableRes = R.drawable.ic_round_battery_5_bar_24
+    ),
+    BATTERY_6_BAR(
+        drawableRes = R.drawable.ic_round_battery_6_bar_24
+    ),
+    BATTERY_ALERT(
+        drawableRes = R.drawable.ic_round_battery_alert_24
+    ),
+    BATTERY_FULL(
+        drawableRes = R.drawable.ic_round_battery_full_24
+    ),
+    BATTERY_SAVER(
+        drawableRes = R.drawable.ic_round_battery_saver_24
+    ),
+    BATTERY_UNKNOWN(
+        drawableRes = R.drawable.ic_round_battery_unknown_24
+    ),
 }
