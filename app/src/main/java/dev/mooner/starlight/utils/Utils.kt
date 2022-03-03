@@ -88,7 +88,9 @@ fun Context.restartApplication() {
 }
 
 fun showLogsDialog(context: Context): MaterialDialog {
-    val mLogs = if (dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false))
+    val job = Job()
+
+    val mLogs = if (globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false))
         Logger.logs
     else
         Logger.filterNot(LogType.VERBOSE)
@@ -119,16 +121,17 @@ fun showLogsDialog(context: Context): MaterialDialog {
         }
         mAdapter.notifyItemRangeInserted(0, mLogs.size)
 
-        val key = randomAlphanumeric(8)
-        Logger.bindListener(key) {
-            if (it.type == LogType.VERBOSE && !globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)) return@bindListener
-            mAdapter.pushLog(it)
-            recycler.post {
-                recycler.smoothScrollToPosition(mAdapter.data.size - 1)
+        CoroutineScope(Dispatchers.Main + job).launch {
+            Session.eventManager.on<Events.Log.LogCreateEvent>(this) {
+                if (log.type == LogType.VERBOSE && !globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)) return@on
+                mAdapter.pushLog(log)
+                recycler.post {
+                    recycler.smoothScrollToPosition(mAdapter.data.size - 1)
+                }
             }
         }
         onDismiss {
-            Logger.unbindListener(key)
+            job.cancel()
         }
     }
 }
