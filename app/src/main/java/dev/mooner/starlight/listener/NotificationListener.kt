@@ -42,7 +42,7 @@ class NotificationListener: NotificationListenerService() {
     }
 
     private val isGlobalPowerOn: Boolean
-        get() = Session.globalConfig.getCategory("general").getBoolean("global_power", true)
+        get() = Session.globalConfig.category("general").getBoolean("global_power", true)
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
@@ -92,7 +92,7 @@ class NotificationListener: NotificationListenerService() {
                         Logger.e("NotificationListener", e)
                     }
 
-                    if (Session.globalConfig.getCategory("legacy").getBoolean("use_legacy_event", false)) {
+                    if (Session.globalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
                         val replier = Replier { roomName, msg, hideToast ->
                             val chatRoom = if (roomName == null) lastReceivedRoom else chatRooms[roomName]
                             if (chatRoom == null) {

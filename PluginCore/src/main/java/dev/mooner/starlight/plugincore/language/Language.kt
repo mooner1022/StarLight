@@ -128,7 +128,7 @@ abstract class Language {
         return ConfigCategoryImpl(data)
     }
 
-    protected fun getAsset(directory: String): File = File(dev.mooner.starlight.plugincore.Session.languageManager.getAssetPath(id), directory)
+    protected fun getAsset(directory: String): File = File(Session.languageManager.getAssetPath(id), directory)
 
     protected fun getAssetOrNull(directory: String): File? = with(getAsset(directory)) {
         if (exists() && canRead()) this

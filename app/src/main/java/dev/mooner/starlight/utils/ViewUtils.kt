@@ -11,7 +11,6 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import android.widget.ProgressBar
 import androidx.annotation.ColorRes
-import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import androidx.core.widget.NestedScrollView
 import coil.ImageLoader
@@ -43,7 +42,7 @@ inline fun ImageView.loadAnyWithTint(
     tintColor: Int?,
     builder: ImageRequest.Builder.() -> Unit = {}
 ): Disposable {
-    ImageViewCompat.setImageTintList(this, if (tintColor == null) null else ColorStateList.valueOf(ContextCompat.getColor(context, tintColor)))
+    ImageViewCompat.setImageTintList(this, if (tintColor == null) null else ColorStateList.valueOf(context.getColor(tintColor)))
     return loadAny(data, imageLoader, builder)
 }
 
@@ -79,12 +78,12 @@ private val Number.toPx get() = TypedValue.applyDimension(
 
 fun dp(value: Int): Int = value.toPx
 
-public inline fun View.applyLayoutParams(block: ViewGroup.LayoutParams.() -> Unit) {
+inline fun View.applyLayoutParams(block: ViewGroup.LayoutParams.() -> Unit) {
     applyLayoutParams<ViewGroup.LayoutParams>(block)
 }
 
 @JvmName("applyLayoutParamsTyped")
-public inline fun <reified T : ViewGroup.LayoutParams> View.applyLayoutParams(
+inline fun <reified T : ViewGroup.LayoutParams> View.applyLayoutParams(
     block: T.() -> Unit
 ) {
     val params = (layoutParams?: T::class.createInstance()) as T

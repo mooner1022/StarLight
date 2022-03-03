@@ -140,9 +140,9 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun init(intent: Intent) {
-        val startupFile = File(FileUtils.getInternalDirectory(), "STARTUP.info")
+        val startupFile = File(getInternalDirectory(), "STARTUP.info")
         if (startupFile.exists() && startupFile.isFile) {
-            val startupData: Map<String, String> = dev.mooner.starlight.plugincore.Session.json.decodeFromString(startupFile.readText())
+            val startupData: Map<String, String> = Session.json.decodeFromString(startupFile.readText())
             if (startupData.containsKey("last_error")) {
                 val errorIntent = Intent(this, FatalErrorActivity::class.java).apply {
                     putExtra("errorMessage", startupData["last_error"])

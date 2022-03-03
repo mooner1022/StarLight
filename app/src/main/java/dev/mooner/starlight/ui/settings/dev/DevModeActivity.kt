@@ -63,7 +63,7 @@ fun Context.startDevModeActivity() {
                         iconTintColor = color { "#FF8243" }
                         setOnClickListener {
                             globalConfig.edit {
-                                getCategory("dev")["dev_mode"] = false
+                                category("dev")["dev_mode"] = false
                             }
                             finishConfigActivity(activityId)
                         }
@@ -122,20 +122,18 @@ fun Context.startDevModeActivity() {
                         Configuration.UI_MODE_NIGHT_UNDEFINED -> "UI_MODE_NIGHT_UNDEFINED"
                         else -> "UNKNOWN"
                     }
-                    debugInfo("globalPower", globalConfig.getCategory("general").getBoolean("global_power").toString())
+                    debugInfo("globalPower", globalConfig.category("general").getBoolean("global_power").toString())
                     debugInfo("layoutMode", "$layoutMode ($layoutModeString)")
                     debugInfo("uiMode", "$uiMode ($uiModeString)")
-                    debugInfo("widgets", globalConfig.getCategory("widgets").getString("ids", WIDGET_DEF_STRING))
+                    debugInfo("widgets", globalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
                     debugInfo("plugins", pluginManager.getPlugins().joinToString { it.info.id })
                     //debugInfo("libs", )
-                    debugInfo("pluginSafeMode", globalConfig.getCategory("plugin").getBoolean("safe_mode").toString())
+                    debugInfo("pluginSafeMode", globalConfig.category("plugin").getBoolean("safe_mode").toString())
                     debugInfo("baseDirectory", getInternalDirectory().path)
                     debugInfo("PLUGINCORE_VERSION", dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION.toString())
                 }
             }
         },
-        onConfigChanged = { parentId, id, view, data ->
-            globalConfig.onSaveConfigAdapter(parentId, id, view, data)
-        }
+        onConfigChanged = globalConfig::onSaveConfigAdapter
     )
 }

@@ -95,7 +95,7 @@ class PluginsFragment : Fragment() {
             with(binding.textViewNoPluginYet) {
                 visibility = View.VISIBLE
 
-                text = if (globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
+                text = if (globalConfig.category("plugin").getBoolean("safe_mode", false)) {
                     setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_safe_mode, 0, 0)
                     "플러그인 안전 모드가 켜져있어요."
                 } else {

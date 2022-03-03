@@ -163,7 +163,7 @@ class DebugRoomActivity: AppCompatActivity() {
             savedData(globalConfig.getAllConfigs())
             onConfigChanged { parentId, id, _, data ->
                 globalConfig.edit {
-                    getCategory(parentId).setAny(id, data)
+                    category(parentId).setAny(id, data)
                 }
                 updateConfig()
             }
@@ -227,7 +227,7 @@ class DebugRoomActivity: AppCompatActivity() {
             }.show()
         }
 
-        if (globalConfig.getCategory("legacy").getBoolean("use_legacy_event", false)) {
+        if (globalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
             val replier = Replier { _, msg, _ ->
                 onSend(msg)
                 true
@@ -298,12 +298,12 @@ class DebugRoomActivity: AppCompatActivity() {
     }
 
     private fun updateConfig() {
-        roomName = globalConfig.getCategory("d_room").getString("name", "undefined")
-        sender = globalConfig.getCategory("d_user").getString("name", "debug_sender")
-        botName = globalConfig.getCategory("d_bot").getString("name", "BOT")
-        sentPackage = globalConfig.getCategory("d_room").getString("package", PACKAGE_KAKAO_TALK)
-        isGroupChat = globalConfig.getCategory("d_room").getBoolean("is_group_chat", false)
-        sendOnEnter = globalConfig.getCategory("d_room").getBoolean("send_with_enter", false)
+        roomName = globalConfig.category("d_room").getString("name", "undefined")
+        sender = globalConfig.category("d_user").getString("name", "debug_sender")
+        botName = globalConfig.category("d_bot").getString("name", "BOT")
+        sentPackage = globalConfig.category("d_room").getString("package", PACKAGE_KAKAO_TALK)
+        isGroupChat = globalConfig.category("d_room").getBoolean("is_group_chat", false)
+        sendOnEnter = globalConfig.category("d_room").getBoolean("send_with_enter", false)
 
         runOnUiThread {
             binding.roomTitle.text = roomName
@@ -345,7 +345,7 @@ class DebugRoomActivity: AppCompatActivity() {
                 id = "d_room"
                 title = "일반"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     string {
                         id = "name"
                         title = "방 이름"
@@ -384,7 +384,7 @@ class DebugRoomActivity: AppCompatActivity() {
                 id = "d_bot"
                 title = "봇"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     string {
                         id = "name"
                         title = "이름"
@@ -398,7 +398,7 @@ class DebugRoomActivity: AppCompatActivity() {
                     button {
                         id = "set_profile_image"
                         title = "프로필 이미지 설정"
-                        val profileImagePath = globalConfig.getCategory("d_bot").getString("profile_image_path")
+                        val profileImagePath = globalConfig.category("d_bot").getString("profile_image_path")
                         if (profileImagePath == null) {
                             setIcon(icon = Icon.ACCOUNT_BOX)
                             iconTintColor = color { "#706EB9" }
@@ -409,13 +409,13 @@ class DebugRoomActivity: AppCompatActivity() {
                                 iconTintColor = null
                             } else {
                                 globalConfig.edit {
-                                    getCategory("d_bot") -= "profile_image_path"
+                                    category("d_bot") -= "profile_image_path"
                                 }
                                 setIcon(icon = Icon.ACCOUNT_BOX)
                                 iconTintColor = color { "#706EB9" }
                             }
                         }
-                        onClickListener = {
+                        setOnClickListener {
                             openImagePicker(RESULT_BOT)
                         }
                     }
@@ -425,7 +425,7 @@ class DebugRoomActivity: AppCompatActivity() {
                 id = "d_user"
                 title = "전송자"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     string {
                         id = "name"
                         title = "이름"
@@ -439,7 +439,7 @@ class DebugRoomActivity: AppCompatActivity() {
                     button {
                         id = "set_profile_image"
                         title = "프로필 이미지 설정"
-                        val profileImagePath = globalConfig.getCategory("d_user").getString("profile_image_path")
+                        val profileImagePath = globalConfig.category("d_user").getString("profile_image_path")
                         if (profileImagePath == null) {
                             setIcon(icon = Icon.ACCOUNT_BOX)
                             iconTintColor = color { "#706EB9" }
@@ -450,13 +450,13 @@ class DebugRoomActivity: AppCompatActivity() {
                                 iconTintColor = null
                             } else {
                                 globalConfig.edit {
-                                    getCategory("d_user") -= "profile_image_path"
+                                    category("d_user") -= "profile_image_path"
                                 }
                                 setIcon(icon = Icon.ACCOUNT_BOX)
                                 iconTintColor = color { "#706EB9" }
                             }
                         }
-                        onClickListener = {
+                        setOnClickListener {
                             openImagePicker(RESULT_USER)
                         }
                     }
@@ -466,11 +466,11 @@ class DebugRoomActivity: AppCompatActivity() {
                 id = "d_cautious"
                 title = "위험"
                 textColor = color { "#FF865E" }
-                items = items {
+                items {
                     button {
                         id = "clear_chat"
                         title = "대화 기록 초기화"
-                        onClickListener = {
+                        setOnClickListener {
                             dir.deleteRecursively()
                             dir.mkdirs()
                             val listSize = chatList.size
@@ -494,8 +494,8 @@ class DebugRoomActivity: AppCompatActivity() {
                 val uri: Uri = data?.data!!
                 globalConfig.edit {
                     val category = when(requestCode) {
-                        RESULT_BOT -> getCategory("d_bot")
-                        RESULT_USER -> getCategory("d_user")
+                        RESULT_BOT -> category("d_bot")
+                        RESULT_USER -> category("d_user")
                         else -> return@edit
                     }
                     category["profile_image_path"] = uri.path!!

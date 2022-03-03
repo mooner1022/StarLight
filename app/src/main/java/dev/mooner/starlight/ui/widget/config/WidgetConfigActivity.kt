@@ -14,6 +14,7 @@ import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityWidgetConfigBinding
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.widgetManager
 import dev.mooner.starlight.plugincore.config.CategoryConfigObject
@@ -44,7 +45,7 @@ class WidgetConfigActivity : AppCompatActivity() {
 
         val context = this
 
-        val widgetIds: List<String> = json.decodeFromString(dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("widgets").getString("ids", WIDGET_DEF_STRING))
+        val widgetIds: List<String> = json.decodeFromString(Session.globalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
         Logger.v("ids= $widgetIds")
         val widgets: MutableList<Widget> = mutableListOf()
         for (id in widgetIds) {
@@ -157,8 +158,8 @@ class WidgetConfigActivity : AppCompatActivity() {
      */
 
     private fun notifyDataEdited(data: List<Widget>) {
-        dev.mooner.starlight.plugincore.Session.globalConfig.edit {
-            getCategory("widgets")["ids"] = Json.encodeToString(data.map { it.id })
+        Session.globalConfig.edit {
+            category("widgets")["ids"] = Json.encodeToString(data.map { it.id })
         }
         setResult(RESULT_EDITED)
     }

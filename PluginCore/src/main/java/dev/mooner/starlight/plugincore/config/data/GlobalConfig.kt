@@ -68,7 +68,7 @@ class GlobalConfig(
 
     fun getDefaultCategory(): MutableConfigCategory = getOrCreateCategory(DEFAULT_CATEGORY)
 
-    fun getCategory(id: String): MutableConfigCategory = getOrCreateCategory(id)
+    fun category(id: String): MutableConfigCategory = getOrCreateCategory(id)
 
     fun getAllConfigs(): Map<String, Map<String, TypedString>> = configs
 
@@ -103,7 +103,7 @@ class GlobalConfig(
 
     fun onSaveConfigAdapter(parentId: String, id: String, view: View?, data: Any) {
         edit {
-            getCategory(parentId).setAny(id, data)
+            category(parentId).setAny(id, data)
         }
     }
 

@@ -7,6 +7,7 @@
 package dev.mooner.starlight.plugincore.plugin
 
 import android.os.Environment
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.plugin.PluginDependency.Companion.VERSION_ANY
 import dev.mooner.starlight.plugincore.utils.readString
@@ -77,11 +78,11 @@ class PluginLoader {
                 plugin.onEnable()
             } catch (e: Error) {
                 Logger.e(T, e.toString())
-                if (dev.mooner.starlight.plugincore.Session.isDebugging) e.printStackTrace()
+                if (Session.isDebugging) e.printStackTrace()
             }
         }
 
-        dev.mooner.starlight.plugincore.Session.pluginManager.plugins = plugins
+        Session.pluginManager.plugins = plugins
         return plugins
     }
 
@@ -110,8 +111,8 @@ class PluginLoader {
         val plugin = loader.plugin
         plugin.setConfigPath(File(plugin.getDataFolder(), "config-plugin.json"))
         loadAssets(file, plugin)
-        if (plugin !in dev.mooner.starlight.plugincore.Session.pluginManager.plugins) {
-            dev.mooner.starlight.plugincore.Session.pluginManager.plugins += plugin
+        if (plugin !in Session.pluginManager.plugins) {
+            Session.pluginManager.plugins += plugin
         }
         return plugin
     }

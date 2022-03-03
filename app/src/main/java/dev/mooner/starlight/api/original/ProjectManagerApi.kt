@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.api.original
 
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiFunction
 import dev.mooner.starlight.plugincore.api.InstanceType
@@ -20,7 +21,7 @@ class ProjectManagerApi: Api<ProjectManagerApi.ProjectManager>() {
         fun getProject(): Project = project
 
         fun getProject(name: String): Project? {
-            return dev.mooner.starlight.plugincore.Session.projectManager.getProject(name)
+            return Session.projectManager.getProject(name)
         }
     }
 

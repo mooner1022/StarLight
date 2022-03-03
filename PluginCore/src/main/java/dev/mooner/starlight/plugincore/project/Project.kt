@@ -56,20 +56,8 @@ class Project (
     var threadPoolName: String? = null
     //private lateinit var scope: CoroutineScope
 
-    override val coroutineContext: CoroutineContext by lazy {
-        if (threadPoolName == null || context == null) {
-            if (context != null) {
-                context?.cancel()
-                context = null
-            }
-            threadPoolName = "$tag-worker"
-            val poolSize = getThreadPoolSize()
-            context = newFixedThreadPoolContext(poolSize, threadPoolName!!)
-            Logger.v("Allocated thread pool $threadPoolName with $poolSize threads to project ${info.name}")
-        }
-        SupervisorJob() + context!!
-    }
-    private var context: CoroutineContext? = null
+    override val coroutineContext get() = mContext!!
+    private var mContext: CoroutineContext? = null
 
     val isCompiled: Boolean
         get() = langScope != null
@@ -120,16 +108,8 @@ class Project (
             return
         }
 
-        if (threadPoolName == null || context == null) {
-            if (context != null) {
-                context?.cancel()
-                context = null
-            }
-            threadPoolName = "$tag-worker"
-            val poolSize = getThreadPoolSize()
-            context = newFixedThreadPoolContext(poolSize, threadPoolName!!)
-            Logger.v("Allocated thread pool $threadPoolName with $poolSize threads to project ${info.name}")
-        }
+        if (threadPoolName == null || mContext == null)
+            mContext = createContext()
 
         fun onError(e: Throwable) {
             logger.e(tag, "Error while running: $e")
@@ -150,7 +130,7 @@ class Project (
             onException(e)
         }
 
-        CoroutineScope(context!!).launch {
+        CoroutineScope(mContext!!).launch {
             try {
                 JobLocker.withLock(threadPoolName!!) {
                     lang.callFunction(langScope!!, name, args, ::onError)
@@ -302,7 +282,7 @@ class Project (
      * @return the size of running jobs.
      */
     fun activeJobs(): Int {
-        return if (context == null || threadPoolName == null) 0
+        return if (mContext == null || threadPoolName == null) 0
         else JobLocker.withParent(threadPoolName!!).activeJobs()
     }
 
@@ -311,12 +291,12 @@ class Project (
      * Cancels all running jobs.
      */
     fun stopAllJobs() {
-        if (context != null) {
+        if (mContext != null) {
             if (threadPoolName != null) {
                 JobLocker.withParent(threadPoolName!!).purge()
             }
-            (context as CoroutineDispatcher).cancel()
-            context = null
+            (mContext as CoroutineDispatcher).cancel()
+            mContext = null
         }
     }
 
@@ -338,6 +318,20 @@ class Project (
     fun getDataDirectory(): File = with(directory.resolve("data")) {
         if (!exists() || !isDirectory) mkdirs()
         this
+    }
+
+    private fun createContext(): CoroutineContext {
+        if (threadPoolName == null || mContext == null) {
+            if (mContext != null) {
+                mContext?.cancel()
+                mContext = null
+            }
+            threadPoolName = "$tag-worker"
+            val poolSize = getThreadPoolSize()
+            mContext = newFixedThreadPoolContext(poolSize, threadPoolName!!)
+            Logger.v("Allocated thread pool $threadPoolName with $poolSize threads to project ${info.name}")
+        }
+        return mContext!!
     }
 
     private fun getThreadPoolSize(): Int = config.getCategory("beta_features").getInt("thread_pool_size", DEF_THREAD_POOL_SIZE)

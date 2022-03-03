@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.plugincore.config
 
+import dev.mooner.starlight.plugincore.Session
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 
@@ -48,7 +49,7 @@ data class TypedString(
     @Suppress("UNCHECKED_CAST")
     fun <T> castAs(): T = cast() as T
 
-    fun encode(): String = dev.mooner.starlight.plugincore.Session.json.encodeToString(this)
+    fun encode(): String = Session.json.encodeToString(this)
 }
 
 infix fun String.typed(type: String): TypedString = TypedString(type, this)

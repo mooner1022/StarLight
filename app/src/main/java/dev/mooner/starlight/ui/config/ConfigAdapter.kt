@@ -34,8 +34,8 @@ class ConfigAdapter private constructor(
         }
     }
 
-    fun reload(with: DataBlock) {
-        this.dataBlock = with
+    fun reload(replaceWith: DataBlock) {
+        this.dataBlock = replaceWith
         reload()
     }
 

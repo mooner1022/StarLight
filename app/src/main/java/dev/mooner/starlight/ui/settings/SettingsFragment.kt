@@ -35,7 +35,7 @@ class SettingsFragment : Fragment() {
             savedData(Session.globalConfig.getAllConfigs())
             onConfigChanged { parentId, id, _, data ->
                 Session.globalConfig.edit {
-                    getCategory(parentId).setAny(id, data)
+                    category(parentId).setAny(id, data)
                 }
             }
         }.build()

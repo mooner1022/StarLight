@@ -120,7 +120,7 @@ object Session {
         mEventManager = EventManager()
         mApiManager = ApiManager()
 
-        if (globalConfig.getCategory("beta_features").getBoolean("load_external_dex_libs", false)) {
+        if (globalConfig.category("beta_features").getBoolean("load_external_dex_libs", false)) {
             mLibraryLoader = LibraryLoader()
             mLibraryManager = LibraryManager(libraryLoader!!.loadLibraries(baseDir).toMutableSet())
             apiManager.addApi(LibraryManagerApi())

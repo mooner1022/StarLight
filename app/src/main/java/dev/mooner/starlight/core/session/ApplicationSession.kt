@@ -101,7 +101,7 @@ object ApplicationSession {
             //addLanguage(GraalVMLang())
         }
 
-        if (!Session.globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
+        if (!Session.globalConfig.category("plugin").getBoolean("safe_mode", false)) {
             pluginLoader.loadPlugins { onPhaseChanged(String.format(context.getString(R.string.step_plugins), it)) }
         } else {
             Logger.i("PluginLoader", "Skipping plugin load...")

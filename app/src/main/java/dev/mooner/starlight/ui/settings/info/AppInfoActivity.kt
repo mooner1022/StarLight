@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.aboutlibraries.LibsBuilder
 import dev.mooner.starlight.databinding.ActivityAppInfoBinding
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
@@ -26,7 +27,7 @@ class AppInfoActivity : AppCompatActivity() {
 
     private var devModeClicks: Int = 0
 
-    private val isDevMode get() = dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("dev").getBoolean("dev_mode", false)
+    private val isDevMode get() = Session.globalConfig.category("dev").getBoolean("dev_mode", false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,8 +99,8 @@ class AppInfoActivity : AppCompatActivity() {
                                     Snackbar.make(binding.root, "개발자 모드 활성화까지 ${8 - devModeClicks} 남았습니다.", Snackbar.LENGTH_SHORT).show()
                                 }
                                 8 -> {
-                                    dev.mooner.starlight.plugincore.Session.globalConfig.edit {
-                                        getCategory("dev")["dev_mode"] = true
+                                    Session.globalConfig.edit {
+                                        category("dev")["dev_mode"] = true
                                     }
                                     Snackbar.make(binding.root, "개발자 모드 활성화", Snackbar.LENGTH_SHORT).show()
                                 }

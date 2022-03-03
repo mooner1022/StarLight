@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.plugincore.library
 
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
@@ -28,6 +29,6 @@ class LibraryManagerApi: Api<LibraryManager>() {
     override val instanceType: InstanceType = InstanceType.OBJECT
 
     override fun getInstance(project: Project): Any {
-        return dev.mooner.starlight.plugincore.Session.libraryManager!!
+        return Session.libraryManager!!
     }
 }

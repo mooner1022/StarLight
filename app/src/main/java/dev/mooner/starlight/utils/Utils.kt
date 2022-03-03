@@ -25,10 +25,16 @@ import com.afollestad.materialdialogs.customview.customView
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.globalConfig
+import dev.mooner.starlight.plugincore.event.Events
+import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 private val alphanumericPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
@@ -142,7 +148,7 @@ fun Uri.toBitmap(context: Context): Bitmap = if (Build.VERSION.SDK_INT >= Build.
     MediaStore.Images.Media.getBitmap(context.contentResolver, this)
 }
 
-val isDevMode get() = Session.isInitComplete && globalConfig.getCategory("dev").getBoolean("dev_mode", false)
+val isDevMode get() = Session.isInitComplete && globalConfig.category("dev").getBoolean("dev_mode", false)
 
 const val LAYOUT_DEFAULT = 0
 const val LAYOUT_TABLET  = 1

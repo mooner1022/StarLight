@@ -7,6 +7,7 @@
 package dev.mooner.starlight.plugincore.logger
 
 import android.util.Log
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.eventManager
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.utils.TimeUtils
@@ -30,8 +31,8 @@ object Logger {
     private var mLogs: MutableList<LogData> = mutableListOf()
     val logs: List<LogData> get() = if (showInternalLogs) mLogs else mLogs.filterNot { it.type == LogType.VERBOSE }
 
-    private val showInternalLogs get() = dev.mooner.starlight.plugincore.Session.isInitComplete && dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)
-    private val writeInternalLogs get() = dev.mooner.starlight.plugincore.Session.isInitComplete && dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("dev_mode_config").getBoolean("write_internal_log", false)
+    private val showInternalLogs get() = Session.isInitComplete && Session.globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)
+    private val writeInternalLogs get() = Session.isInitComplete && Session.globalConfig.category("dev_mode_config").getBoolean("write_internal_log", false)
 
     fun init(baseDir: File) {
         val dirName = TimeUtils.formatCurrentDate("yyyy-MM-dd")

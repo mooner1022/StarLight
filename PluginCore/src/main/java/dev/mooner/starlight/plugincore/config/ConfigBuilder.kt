@@ -79,6 +79,12 @@ class ConfigBuilder {
 
         var items: List<ConfigObject> = arrayListOf()
 
+        @ConfigBuilderDsl
+        fun items(block: ConfigItemBuilder.() -> Unit) {
+            val builder = ConfigItemBuilder().apply(block)
+            items = builder.build(flush = true)
+        }
+
         fun build(): CategoryConfigObject {
             require(items.isNotEmpty()) { "Field 'items' must not be empty" }
 

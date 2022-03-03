@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.plugincore.event
 
+import dev.mooner.starlight.plugincore.logger.LogData
 import kotlinx.coroutines.CoroutineScope
 
 sealed class Events {
@@ -29,6 +30,14 @@ sealed class Events {
 
         class ProjectDeleteEvent(
             val projectName: String,
+            val coroutineScope: CoroutineScope = eventCoroutineScope
+        ): Event, CoroutineScope by coroutineScope
+    }
+
+    sealed class Log {
+
+        class LogCreateEvent(
+            val log: LogData,
             val coroutineScope: CoroutineScope = eventCoroutineScope
         ): Event, CoroutineScope by coroutineScope
     }
