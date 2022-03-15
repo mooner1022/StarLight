@@ -7,8 +7,8 @@
 <p align="center">
     <a href="https://developer.android.com"><img src="https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white"></a>
     <a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/Kotlin-0095D5?&style=for-the-badge&logo=kotlin&logoColor=white"></a>
-    <a href="./"><img src="https://img.shields.io/github/repo-size/mooner1022/AutoSelfCheck?&style=for-the-badge"></a>
-    <a href="./LICENSE"><img src="https://img.shields.io/github/license/mooner1022/AutoSelfCheck?&style=for-the-badge"></a>
+    <a href="./"><img src="https://img.shields.io/github/repo-size/mooner1022/StarLight?&style=for-the-badge"></a>
+    <a href="./LICENSE"><img src="https://img.shields.io/github/license/mooner1022/StarLight?&style=for-the-badge"></a>
 </p>
 
 <p align="center">
