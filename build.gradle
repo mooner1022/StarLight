@@ -2,7 +2,7 @@
 buildscript {
     ext.kotlin_version = "1.6.10"
     ext.coil_version = "1.4.0"
-    ext.latestAboutLibsRelease = "10.0.0-b06"
+    ext.latestAboutLibsRelease = "10.0.1"
     repositories {
         google()
         mavenCentral()
