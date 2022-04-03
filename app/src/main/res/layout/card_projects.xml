@@ -20,7 +20,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"/>
 
-    <dev.mooner.starlight.ui.presets.ExpandableCardView
+    <dev.mooner.starlight.ui.presets.ExpandableCard
             android:id="@+id/card_project"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -30,16 +30,12 @@
             android:layout_marginBottom="4dp"
             app:animationDuration="200"
             app:expandOnClick="true"
-            app:inner_view="@layout/card_project_buttons"
+            app:innerView="@layout/card_project_buttons"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/cardViewIsEnabled"
             app:layout_constraintTop_toTopOf="parent"
-            app:showSwitch="true"
             app:startExpanded="false"
-            app:title="PROJECT_NAME"
-            app:expandableCardTitleColor="@color/text"
-            app:expandableCardColor="@color/cardview"
-            app:expandableCardArrowColor="@color/text"/>
+            app:title="PROJECT_NAME"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

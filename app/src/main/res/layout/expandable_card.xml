@@ -6,12 +6,9 @@
         android:id="@+id/card_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:backgroundTint="@color/cardview"
         android:paddingTop="@dimen/default_vertical_padding"
-        android:paddingBottom="@dimen/default_vertical_padding"
-        app:cardBackgroundColor="@color/cardview"
-        app:cardElevation="0dp"
-        app:rippleColor="#00FFFFFF">
+        android:paddingBottom="@dimen/default_vertical_padding" app:cardBackgroundColor="@color/transparent"
+        app:cardElevation="0dp" app:cardMaxElevation="0dp">
 
     <LinearLayout
             android:id="@+id/card_container"
@@ -35,7 +32,9 @@
                     android:layout_centerVertical="true"
                     android:layout_marginStart="15dp"
                     android:background="#00FFFFFF"
-                    android:visibility="visible" android:layout_alignParentStart="true"/>
+                    android:visibility="visible"
+                    android:layout_alignParentStart="true"
+                    tools:ignore="ContentDescription"/>
 
             <TextView
                     android:id="@+id/card_title"
@@ -51,7 +50,7 @@
                     android:maxLines="1"
                     android:singleLine="true"
                     android:textSize="18sp"
-                    tools:text="Prova"/>
+                    tools:text="PLACEHOLDER"/>
 
             <LinearLayout
                     android:id="@+id/LL_switch_button"
@@ -71,14 +70,14 @@
                         android:layout_marginEnd="8dp"/>
 
                 <ImageButton
-
                         android:id="@+id/card_arrow"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="20dp"
                         android:background="@drawable/arrow_background_round"
                         android:src="@drawable/ic_round_keyboard_arrow_down_24"
-                        app:tint="?attr/colorControlNormal"/>
+                        app:tint="@color/text"
+                        tools:ignore="ContentDescription,TouchTargetSizeCheck"/>
             </LinearLayout>
 
         </RelativeLayout>
@@ -87,7 +86,8 @@
                 android:id="@+id/card_stub"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:inflatedId="@+id/innerView"/>
+                android:inflatedId="@+id/innerView" android:visibility="visible"
+                android:layout="@layout/card_project_buttons"/>
 
 
     </LinearLayout>
