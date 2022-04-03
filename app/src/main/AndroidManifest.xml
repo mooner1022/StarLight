@@ -3,11 +3,14 @@
           xmlns:tools="http://schemas.android.com/tools"
           package="dev.mooner.starlight">
 
+    <uses-permission
+            android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+            tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
 
@@ -31,7 +34,12 @@
             android:usesCleartextTraffic="true"
             tools:replace="android:icon">
         <activity
+                android:name=".ui.splash.quickstart.QuickStartActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar"
+                android:exported="true"/>
+        <activity
                 android:name=".ui.widget.config.WidgetConfigActivity"
+                android:theme="@style/Theme.StarLight.NoActionBar"
                 android:exported="true"/>
 
         <provider
@@ -56,16 +64,6 @@
                 android:name=".ui.crash.FatalErrorActivity"
                 android:theme="@style/Theme.StarLight.NoActionBar">
         </activity>
-
-        <provider
-                android:name="androidx.core.content.FileProvider"
-                android:authorities="${applicationId}.provider"
-                android:exported="false"
-                android:grantUriPermissions="true">
-            <meta-data
-                    android:name="android.support.FILE_PROVIDER_PATHS"
-                    android:resource="@xml/provider_paths"/>
-        </provider>
 
         <activity
                 android:name=".ui.plugins.config.PluginConfigActivity"
