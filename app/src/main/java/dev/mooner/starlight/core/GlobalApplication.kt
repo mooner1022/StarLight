@@ -3,6 +3,9 @@ package dev.mooner.starlight.core
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import android.content.Intent
+import android.os.Build
+import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.core.session.ApplicationSession
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.event.Events
@@ -34,12 +37,26 @@ class GlobalApplication: Application() {
         val isInitial = pref.getBoolean("isInitial", true)
 
         if (isInitial) return
-        //return
+
+        if (!ForegroundTask.isRunning) {
+            Logger.v(T, "Starting foreground task...")
+            val intent = Intent(this, ForegroundTask::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+        }
+
         CoroutineScope(Dispatchers.Default).launch {
             ApplicationSession.init(applicationContext)
-            Session.eventManager.on(callback = ::onProjectCreated)
-            Session.eventManager.on(callback = ::onProjectInfoUpdated)
-            Session.eventManager.on(callback = ::onProjectCompiled)
+                .collect {
+                    if (it == null) {
+                        Session.eventManager.on(callback = ::onProjectCreated)
+                        Session.eventManager.on(callback = ::onProjectInfoUpdated)
+                        Session.eventManager.on(callback = ::onProjectCompiled)
+                    }
+                }
         }
     }
 

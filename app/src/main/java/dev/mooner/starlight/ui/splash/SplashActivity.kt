@@ -2,39 +2,35 @@ package dev.mooner.starlight.ui.splash
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.edit
+import androidx.lifecycle.lifecycleScope
 import coil.Coil
 import coil.ImageLoader
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.load
 import coil.request.repeatCount
-import com.google.android.material.snackbar.Snackbar
-import com.skydoves.needs.NeedsAnimation
-import com.skydoves.needs.NeedsItem
-import com.skydoves.needs.createNeeds
-import com.skydoves.needs.showNeeds
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
 import dev.mooner.starlight.core.session.ApplicationSession
-import dev.mooner.starlight.core.session.SessionInitListener
 import dev.mooner.starlight.databinding.ActivitySplashBinding
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.ui.crash.FatalErrorActivity
-import dev.mooner.starlight.utils.FileUtils
+import dev.mooner.starlight.ui.splash.quickstart.QuickStartActivity
 import dev.mooner.starlight.utils.checkPermissions
-import kotlinx.coroutines.CoroutineScope
+import dev.mooner.starlight.utils.getInternalDirectory
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import java.io.File
-import java.util.*
-import kotlin.concurrent.schedule
 
 class SplashActivity : AppCompatActivity() {
 
@@ -50,7 +46,6 @@ class SplashActivity : AppCompatActivity() {
         )
     }
     private lateinit var binding: ActivitySplashBinding
-    private var loadTimer: Timer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,63 +58,14 @@ class SplashActivity : AppCompatActivity() {
         if (isInitial) pref.edit {
             putBoolean("isInitial", false)
         }
-        val intent = Intent(this@SplashActivity, MainActivity::class.java)
-        intent.putExtra("isInitial", isInitial)
 
-        if (isInitial || !checkPermissions(this, REQUIRED_PERMISSIONS)) {
-            val needs = createNeeds(this) {
-                setTitleIconResource(R.mipmap.ic_logo)
-                title = "시작하기에 앞서,\nStarLight를 사용하기 위해 아래 권한들이 필요해요!"
-                addNeedsItem(
-                    NeedsItem(
-                        null,
-                        "· 저장소 쓰기",
-                        "(필수)",
-                        "기기의 파일에 접근하여 데이터를 저장할 수 있어요."
-                    )
-                )
-                addNeedsItem(
-                    NeedsItem(
-                        null,
-                        "· 저장소 읽기",
-                        "(필수)",
-                        "기기의 파일에 접근하여 데이터를 읽을 수 있어요."
-                    )
-                )
-                addNeedsItem(
-                    NeedsItem(
-                        null,
-                        "· 인터넷",
-                        "(필수)",
-                        "인터넷에 접속할 수 있어요."
-                    )
-                )
-                description = "위 권한들은 필수 권한으로,\n허용하지 않을 시 앱이 정상적으로 동작하지 않아요."
-                confirm = "승인"
-                needsAnimation = NeedsAnimation.FADE
-            }
-            needs.setOnConfirmListener {
-                ActivityCompat.requestPermissions(
-                    this,
-                    REQUIRED_PERMISSIONS,
-                    MODE_PRIVATE
-                )
-                ActivityCompat.OnRequestPermissionsResultCallback { _, permissions, grantResults ->
-                    if (permissions.contentEquals(REQUIRED_PERMISSIONS)) {
-                        if ((grantResults.isNotEmpty() &&
-                                    grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                            needs.dismiss()
-                            Snackbar.make(view, "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و", Snackbar.LENGTH_LONG).show()
-                            init(intent)
-                        } else {
-                            Snackbar.make(view, "권한이 승인되지 않았어요.. (´•ω•̥`)و", Snackbar.LENGTH_LONG).show()
-                            init(intent)
-                        }
-                    }
-                }
-            }
-            binding.root.showNeeds(needs)
+        val isPermissionsGrant = checkPermissions(REQUIRED_PERMISSIONS)
+
+        Logger.v("TEST_QUICK_START= $TEST_QUICK_START\nisInitial= $isInitial\nisPermissionsGrant= $isPermissionsGrant")
+        if (TEST_QUICK_START || isInitial || !isPermissionsGrant) {
+            startActivity(Intent(this, QuickStartActivity::class.java))
         } else {
+            val intent = Intent(this@SplashActivity, MainActivity::class.java)
             init(intent)
         }
 
@@ -159,37 +105,34 @@ class SplashActivity : AppCompatActivity() {
         //val webview = WebView(applicationContext)
         //webview.loadUrl(EditorActivity.ENTRY_POINT)
 
-        CoroutineScope(Dispatchers.Default).launch {
+        lifecycleScope.launchWhenCreated {
             ApplicationSession.init(applicationContext)
-        }
+                .flowOn(Dispatchers.Default)
+                .onEach { value ->
+                    value?.let {
+                        Logger.i(T, value)
+                        runOnUiThread {
+                            binding.textViewLoadStatus.text = value
+                        }
+                    } ?: let {
+                        val currentMillis = System.currentTimeMillis()
+                        if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
+                            val delay = if (!ApplicationSession.isInitComplete)
+                                ANIMATION_DURATION - (currentMillis - initMillis)
+                            else
+                                MIN_LOAD_TIME - (currentMillis - initMillis)
 
-        ApplicationSession.setOnInitListener(object : SessionInitListener {
-            override fun onPhaseChanged(phase: String) {
-                Logger.i(T, phase)
-                runOnUiThread {
-                    binding.textViewLoadStatus.text = phase
-                }
-            }
-
-            override fun onFinished() {
-                val currentMillis = System.currentTimeMillis()
-                if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
-                    val delay = if (!ApplicationSession.isInitComplete)
-                        ANIMATION_DURATION - (currentMillis - initMillis)
-                    else
-                        MIN_LOAD_TIME - (currentMillis - initMillis)
-
-                    loadTimer = Timer().apply {
-                        schedule(delay) {
-                            loadTimer = null
+                            launch {
+                                delay(delay)
+                                startMainActivity(intent)
+                            }
+                        } else {
                             startMainActivity(intent)
                         }
                     }
-                } else {
-                    startMainActivity(intent)
                 }
-            }
-        })
+                .collect()
+        }
     }
 
     private fun startMainActivity(intent: Intent) = runOnUiThread {

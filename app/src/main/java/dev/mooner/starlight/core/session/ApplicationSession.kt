@@ -23,13 +23,14 @@ import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginLoader
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.logger.Logger
-import dev.mooner.starlight.plugincore.plugin.EventListener
 import dev.mooner.starlight.plugincore.utils.NetworkUtil
 import dev.mooner.starlight.ui.widget.DummyWidgetSlim
 import dev.mooner.starlight.ui.widget.LogsWidget
 import dev.mooner.starlight.ui.widget.UptimeWidgetDefault
 import dev.mooner.starlight.ui.widget.UptimeWidgetSlim
 import dev.mooner.starlight.utils.getInternalDirectory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
 import kotlinx.serialization.encodeToString
 import java.io.File
 import kotlin.system.exitProcess
@@ -38,28 +39,113 @@ object ApplicationSession {
     private var mInitMillis: Long = 0L
     val initMillis get() = mInitMillis
 
-    var isInitComplete: Boolean = false
     @JvmStatic
-    var isAfterInit: Boolean = false
+    private var mIsInitComplete: Boolean = false
+    val isInitComplete get() = mIsInitComplete
+    @JvmStatic
+    private var isAfterInit: Boolean = false
 
-    private val listeners: MutableSet<SessionInitListener> = hashSetOf()
+    internal fun init(context: Context): Flow<String?> =
+        flow {
+            if (mIsInitComplete) {
+                emit(null)
+                return@flow
+            }
+            if (isAfterInit) {
+                Logger.w("ApplicationSession", "Rejecting re-init of ApplicationSession")
+                emit(null)
+                return@flow
+            }
+            isAfterInit = true
 
-    fun setOnInitListener(listener: SessionInitListener) {
-        if (isInitComplete) listener.onFinished()
-        else listeners += listener
+            setExceptionHandler(context)
+
+            val starlightDir = getInternalDirectory()
+            Logger.init(starlightDir)
+
+            emit(context.getString(R.string.step_plugincore_init))
+
+            Session
+                .apply { init(starlightDir) }
+                .let { session ->
+                    session.languageManager.apply {
+                        //addLanguage("", JSV8())
+                        addLanguage("", JSRhino())
+                        //addLanguage(GraalVMLang())
+                    }
+
+                    if (!session.globalConfig.category("plugin").getBoolean("safe_mode", false)) {
+                        pluginLoader.loadPlugins()
+                            .flowOn(Dispatchers.Default)
+                            .onEach { value ->
+                                if (value is String)
+                                    emit(context.getString(R.string.step_plugins).format(value))
+                            }
+                            .collect()
+                    } else {
+                        Logger.i("PluginLoader", "Skipping plugin load...")
+                    }
+                }
+
+            emit(context.getString(R.string.step_default_lib))
+            Session.apiManager.apply {
+                // Original Apis
+                addApi(LanguageManagerApi())
+                addApi(ProjectLoggerApi())
+                addApi(ProjectManagerApi())
+                addApi(PluginManagerApi())
+                addApi(TimerApi())
+
+                // Legacy Apis
+                addApi(UtilsApi())
+                addApi(LegacyApi())
+                addApi(BridgeApi())
+                addApi(FileStreamApi())
+                addApi(DataBaseApi())
+                addApi(DeviceApi())
+
+                // Api2 Apis
+                addApi(AppApi())
+            }
+
+            Session.widgetManager.apply {
+                val name = "기본 위젯"
+                addWidget(name, DummyWidgetSlim())
+                addWidget(name, UptimeWidgetDefault())
+                addWidget(name, UptimeWidgetSlim())
+                addWidget(name, LogsWidget())
+            }
+
+            emit(context.getString(R.string.step_projects))
+            Session.projectLoader.loadProjects()
+
+            setNetworkHandler(context)
+
+            mIsInitComplete = true
+            emit(null)
+            mInitMillis = System.currentTimeMillis()
+        }
+
+    internal fun shutdown() {
+        try {
+            Session.shutdown()
+        } catch (e: Exception) {
+            Logger.wtf("ApplicationSession", "Failed to gracefully shutdown Session: ${e.localizedMessage}\ncause:\n${e.stackTrace}")
+        }
     }
 
-    internal fun init(context: Context) {
-        if (isInitComplete) {
-            onFinished()
-            return
+    private fun setNetworkHandler(context: Context) {
+        NetworkUtil.registerNetworkStatusListener(context)
+        NetworkUtil.addOnNetworkStateChangedListener { state ->
+            if (pluginManager.getPlugins().isNotEmpty()) {
+                for (plugin in pluginManager.getPlugins()) {
+                    plugin.onNetworkStateChanged(state)
+                }
+            }
         }
-        if (isAfterInit) {
-            Logger.w("ApplicationSession", "Rejecting re-init of ApplicationSession")
-            return
-        }
-        isAfterInit = true
+    }
 
+    private fun setExceptionHandler(context: Context) =
         Thread.setDefaultUncaughtExceptionHandler { paramThread, paramThrowable ->
             val pInfo: PackageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
@@ -89,91 +175,4 @@ object ApplicationSession {
             shutdown()
             exitProcess(2)
         }
-
-        val starlightDir = getInternalDirectory()
-        Logger.init(starlightDir)
-
-        onPhaseChanged(context.getString(R.string.step_plugincore_init))
-        Session.init(starlightDir)
-        Session.languageManager.apply {
-            //addLanguage("", JSV8())
-            addLanguage("", JSRhino())
-            //addLanguage(GraalVMLang())
-        }
-
-        if (!Session.globalConfig.category("plugin").getBoolean("safe_mode", false)) {
-            pluginLoader.loadPlugins { onPhaseChanged(String.format(context.getString(R.string.step_plugins), it)) }
-        } else {
-            Logger.i("PluginLoader", "Skipping plugin load...")
-        }
-
-        onPhaseChanged(context.getString(R.string.step_default_lib))
-        Session.apiManager.apply {
-            // Original Apis
-            addApi(LanguageManagerApi())
-            addApi(ProjectLoggerApi())
-            addApi(ProjectManagerApi())
-            addApi(PluginManagerApi())
-            addApi(TimerApi())
-
-            // Legacy Apis
-            addApi(UtilsApi())
-            addApi(LegacyApi())
-            addApi(BridgeApi())
-            addApi(FileStreamApi())
-            addApi(DataBaseApi())
-            addApi(DeviceApi())
-
-            // Api2 Apis
-            addApi(AppApi())
-
-            //addApi(ClientApi())
-            //addApi(EventApi())
-            //addApi(TimerApi())
-        }
-
-        Session.widgetManager.apply {
-            val name = "기본 위젯"
-            addWidget(name, DummyWidgetSlim())
-            addWidget(name, UptimeWidgetDefault())
-            addWidget(name, UptimeWidgetSlim())
-            addWidget(name, LogsWidget())
-        }
-
-        onPhaseChanged(context.getString(R.string.step_projects))
-        Session.projectLoader.loadProjects()
-
-        NetworkUtil.registerNetworkStatusListener(context)
-        NetworkUtil.addOnNetworkStateChangedListener { state ->
-            if (pluginManager.getPlugins().isNotEmpty()) {
-                for (plugin in pluginManager.getPlugins()) {
-                    plugin.onNetworkStateChanged(state)
-                }
-            }
-        }
-
-        isInitComplete = true
-        onFinished()
-        listeners.clear()
-        mInitMillis = System.currentTimeMillis()
-    }
-
-    internal fun shutdown() {
-        try {
-            Session.shutdown()
-        } catch (e: Exception) {
-            Logger.wtf("ApplicationSession", "Failed to gracefully shutdown Session: ${e.localizedMessage}\ncause:\n${e.stackTrace}")
-        }
-    }
-
-    private fun onFinished() {
-        for (listener in listeners) listener.onFinished()
-    }
-
-    private fun onPhaseChanged(phase: String) {
-        for (listener in listeners) listener.onPhaseChanged(phase)
-    }
-
-    //lateinit var context: Context
-    lateinit var eventListeners: List<EventListener>
 }
