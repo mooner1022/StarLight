@@ -51,7 +51,14 @@ class PluginConfigActivity: AppCompatActivity() {
 
         val pluginName = intent.getStringExtra(EXTRA_PLUGIN_NAME)!!
         val pluginId = intent.getStringExtra(EXTRA_PLUGIN_ID)!!
-        val plugin = pluginManager.getPluginById(pluginId)?: error("Failed to find plugin with id: $pluginId")
+        val plugin = pluginManager.getPluginById(pluginId)?: error("Failed to find plugin with id: $pluginId, name: $pluginName")
+
+        val configFile = File(plugin.getDataFolder(), PLUGIN_CONFIG_FILE_NAME)
+        savedData = try {
+            Session.json.decodeFromString(configFile.readText())
+        } catch (e: Exception) {
+            mutableMapOf()
+        }
 
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.configRecyclerView)
@@ -77,13 +84,6 @@ class PluginConfigActivity: AppCompatActivity() {
             savedData(savedData)
             lifecycleOwner(this@PluginConfigActivity)
         }.build()
-
-        val configFile = File(plugin.getDataFolder(), PLUGIN_CONFIG_FILE_NAME)
-        savedData = try {
-            Session.json.decodeFromString(configFile.readText())
-        } catch (e: Exception) {
-            mutableMapOf()
-        }
 
         fabProjectConfig.setOnClickListener { view ->
             if (configAdapter?.hasError == true) {

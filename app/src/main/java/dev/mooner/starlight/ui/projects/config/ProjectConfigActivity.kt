@@ -147,7 +147,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         } +
         project.getLanguage().configObjectList +
         config {
-            val betaFeatureCategory = globalConfig.getCategory("beta_features")
+            val betaFeatureCategory = globalConfig.category("beta_features")
             if (betaFeatureCategory.getBoolean("change_thread_pool_size", false)) {
                 category {
                     id = "beta_features"

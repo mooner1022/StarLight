@@ -34,17 +34,6 @@ import java.io.File
 
 class SplashActivity : AppCompatActivity() {
 
-    companion object {
-        private val T = SplashActivity::class.simpleName!!
-
-        private const val MIN_LOAD_TIME = 2500L
-        private const val ANIMATION_DURATION = 5000L
-        private val REQUIRED_PERMISSIONS = arrayOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.INTERNET,
-        )
-    }
     private lateinit var binding: ActivitySplashBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -141,11 +130,18 @@ class SplashActivity : AppCompatActivity() {
         finish()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        if (loadTimer != null) {
-            loadTimer!!.cancel()
-            loadTimer = null
-        }
+    companion object {
+        private val T = SplashActivity::class.simpleName!!
+
+        private const val MIN_LOAD_TIME = 1500L
+        private const val ANIMATION_DURATION = 5000L
+
+        private val REQUIRED_PERMISSIONS = arrayOf(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.INTERNET,
+        )
+
+        private const val TEST_QUICK_START = false
     }
 }

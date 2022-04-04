@@ -77,7 +77,7 @@ abstract class Language {
      *
      * @return scope of compilation result
      */
-    abstract fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any
+    abstract fun compile(code: String, apis: List<Api<*>>, project: Project?): Any
 
     /**
      * Releases the compiled scope

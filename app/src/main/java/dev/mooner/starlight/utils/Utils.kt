@@ -13,7 +13,6 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.annotation.ColorRes
-import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -50,14 +49,6 @@ fun isForeground(): Boolean {
     val appProcessInfo = ActivityManager.RunningAppProcessInfo()
     ActivityManager.getMyMemoryState(appProcessInfo)
     return appProcessInfo.importance == IMPORTANCE_FOREGROUND || appProcessInfo.importance == IMPORTANCE_VISIBLE
-}
-
-fun Context.formatStringRes(@StringRes id: Int, map: Map<String, String>): String {
-    var string = this.getString(id)
-    for (pair in map) {
-        string = string.replace("\$${pair.key}", pair.value)
-    }
-    return string
 }
 
 fun String.trimLength(max: Int): String {

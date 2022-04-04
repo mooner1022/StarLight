@@ -1,6 +1,7 @@
 package dev.mooner.starlight.ui.widget
 
 import android.animation.LayoutTransition
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,7 +9,9 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import dev.mooner.starlight.R
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.eventManager
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
@@ -65,17 +68,13 @@ class LogsWidget: Widget() {
             mAdapter = LogsRecyclerViewAdapter(context)
 
             if (logs.isNotEmpty()) {
-                val mLayoutManager = LinearLayoutManager(context).apply {
-                    reverseLayout = true
-                    stackFromEnd = true
-                }
                 mAdapter!!.apply {
                     data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
                     notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
                 }
                 rvLogs.apply {
                     itemAnimator = FadeInUpAnimator()
-                    layoutManager = mLayoutManager
+                    layoutManager = initLayoutManager(context)
                     adapter = mAdapter
                     visibility = View.VISIBLE
                 }
@@ -150,16 +149,12 @@ class LogsWidget: Widget() {
             val logs: List<LogData> = listOf(dummyLog, dummyLog, dummyLog)
             mThumbnailAdapter = LogsRecyclerViewAdapter(context, false)
 
-            val mLayoutManager = LinearLayoutManager(context).apply {
-                reverseLayout = true
-                stackFromEnd = true
-            }
             mThumbnailAdapter!!.apply {
                 data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
                 notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
             }
             rvLogs.apply {
-                layoutManager = mLayoutManager
+                layoutManager = initLayoutManager(context)
                 adapter = mThumbnailAdapter
                 visibility = View.VISIBLE
             }
@@ -174,6 +169,12 @@ class LogsWidget: Widget() {
         super.onDestroyThumbnail()
         mThumbnailAdapter = null
     }
+
+    private fun initLayoutManager(context: Context): LayoutManager =
+        LinearLayoutManager(context).apply {
+            reverseLayout = true
+            stackFromEnd = true
+        }
 
     private fun bindLogger() {
         val mJob = job ?: let {
@@ -190,7 +191,7 @@ class LogsWidget: Widget() {
 
     private fun onLogCreated(event: Events.Log.LogCreateEvent) {
         val log = event.log
-        if (log.type == LogType.VERBOSE && !dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)) return
+        if (log.type == LogType.VERBOSE && !Session.globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)) return
 
         if (pauseUpdate) {
             stackedLogs += log

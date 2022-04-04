@@ -6,27 +6,18 @@
 
 package dev.mooner.starlight
 
-import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.appbar.AppBarLayout
-import dev.mooner.starlight.core.ForegroundTask
 import dev.mooner.starlight.databinding.ActivityMainBinding
 import dev.mooner.starlight.plugincore.Session.pluginManager
-import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.ui.ViewPagerAdapter
-import dev.mooner.starlight.utils.formatStringRes
 import github.com.st235.lib_expandablebottombar.MenuItem
 import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
-
-    companion object {
-        private const val T = "MainActivity"
-    }
 
     lateinit var binding: ActivityMainBinding
 
@@ -71,16 +62,6 @@ class MainActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
-        if (!ForegroundTask.isRunning) {
-            Logger.v(T, "Starting foreground task...")
-            val intent = Intent(this, ForegroundTask::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
-        }
-
         binding.apply {
             viewPager.adapter = ViewPagerAdapter(this@MainActivity)
             viewPager.registerOnPageChangeCallback(onPageChangeCallback)
@@ -98,16 +79,12 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.nav_projects -> {
                 binding.titleText.text = applicationContext.getText(R.string.title_projects)
+                binding.statusText.text = getString(R.string.subtitle_projects).format(0)
             }
             R.id.nav_plugins -> {
                 val count = pluginManager.getPlugins().size
                 binding.titleText.text = applicationContext.getText(R.string.title_plugins)
-                binding.statusText.text = applicationContext.formatStringRes(
-                    R.string.subtitle_plugins,
-                    mapOf(
-                        "count" to count.toString()
-                    )
-                )
+                binding.statusText.text = getString(R.string.subtitle_plugins).format(count)
                 //projectManager.removeOnStateChangedListener(T)
             }
             R.id.nav_settings -> {

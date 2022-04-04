@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.plugincore.plugin
 
+import android.view.View
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.config.CategoryConfigObject
@@ -14,6 +15,7 @@ import dev.mooner.starlight.plugincore.config.data.Config
 import dev.mooner.starlight.plugincore.config.data.ConfigImpl
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.fireEvent
 import dev.mooner.starlight.plugincore.utils.getFileSize
@@ -23,7 +25,7 @@ import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.pathString
 
-abstract class StarlightPlugin: Plugin, EventListener {
+abstract class StarlightPlugin: EventListener {
 
     internal lateinit var file: File
     private lateinit var dataDir: File
@@ -59,9 +61,19 @@ abstract class StarlightPlugin: Plugin, EventListener {
         init(config, dataDir, file, classLoader!!)
     }
 
-    override val configObjects: List<CategoryConfigObject> = listOf()
+    open val configObjects: List<CategoryConfigObject> = listOf()
 
-    override fun isEnabled(): Boolean = isEnabled
+    @Deprecated(
+        message = "Retained for legacy compatability, don't use it.",
+        replaceWith = ReplaceWith("onConfigUpdated(config: Config)", "dev.mooner.starlight.plugincore.plugin.onConfigUpdated")
+    )
+    open fun onConfigUpdated(updated: Map<String, Any>) {}
+
+    open fun onConfigUpdated(config: Config, updated: Set<String>) {}
+
+    open fun onConfigChanged(id: String, view: View?, data: Any) {}
+
+    open fun isEnabled(): Boolean = isEnabled
 
     protected fun setEnabled(enabled: Boolean) {
         if (isEnabled != enabled) {
@@ -91,7 +103,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     protected fun getClassLoader(): ClassLoader = classLoader
 
-    fun addLanguage(language: Language) {
+    protected fun addLanguage(language: Language) {
         var isLoadSuccess = false
         try {
             Session.languageManager.addLanguage(Path(dataDir.resolve("assets").path, language.id).pathString, language)
@@ -104,11 +116,14 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    fun addWidget(widget: Widget) = Session.widgetManager.addWidget(this.info.name, widget)
+    protected fun addWidget(widget: Widget) =
+        Session.widgetManager.addWidget(this.info.name, widget)
 
-    protected fun <T> addApi(api: Api<T>) = Session.apiManager.addApi(api)
+    protected fun <T> addApi(api: Api<T>) =
+        Session.apiManager.addApi(api)
 
-    protected inline fun <reified T: ProjectEvent> fireProjectEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean = Session.projectManager.fireEvent<T>(args, onFailure = onFailure)
+    protected inline fun <reified T: ProjectEvent> fireProjectEvent(vararg args: Any, noinline onFailure: (project: Project, e: Throwable) -> Unit = { _, _ -> }) =
+        Session.projectManager.fireEvent<T>(args, onFailure = onFailure)
 
     override fun toString(): String = info.fullName
 

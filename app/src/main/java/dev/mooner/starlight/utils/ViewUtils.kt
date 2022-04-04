@@ -11,10 +11,12 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import android.widget.ProgressBar
 import androidx.annotation.ColorRes
+import androidx.annotation.DrawableRes
 import androidx.core.widget.ImageViewCompat
 import androidx.core.widget.NestedScrollView
 import coil.ImageLoader
 import coil.imageLoader
+import coil.load
 import coil.loadAny
 import coil.request.Disposable
 import coil.request.ImageRequest
@@ -33,6 +35,16 @@ fun NestedScrollView.bindFadeImage(imageView: ImageView) {
 
 fun dpToPx(context: Context, dp: Float): Float {
     return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.resources.displayMetrics)
+}
+
+inline fun ImageView.loadWithTint(
+    @DrawableRes drawableResId: Int,
+    @ColorRes tintColor: Int?,
+    imageLoader: ImageLoader = context.imageLoader,
+    builder: ImageRequest.Builder.() -> Unit = {}
+): Disposable {
+    ImageViewCompat.setImageTintList(this, if (tintColor == null) null else ColorStateList.valueOf(context.getColor(tintColor)))
+    return load(drawableResId, imageLoader, builder)
 }
 
 inline fun ImageView.loadAnyWithTint(

@@ -40,7 +40,6 @@ import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
 import dev.mooner.starlight.utils.dpToPx
-import dev.mooner.starlight.utils.formatStringRes
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
@@ -107,13 +106,8 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                             visibility = View.VISIBLE
 
                             setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_box_empty, 0, 0)
-                            text = context.formatStringRes(
-                                R.string.nothing_yet,
-                                mapOf(
-                                    "name" to "프로젝트가",
-                                    "emoji" to "(>_<｡)\uD83D\uDCA6"
-                                )
-                            )
+                            text = getString(R.string.nothing_yet)
+                                .format("프로젝트가", "(⊙_⊙;)")
                         }
                     }
                     recyclerAdapter!!.apply {
@@ -145,6 +139,10 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
     private suspend fun onProjectCompiled(event: Events.Project.ProjectCompileEvent) = updateProjectView(event.project)
 
+    private suspend fun onProjectDeleted(event: Events.Project.ProjectDeleteEvent) = updateList(null)
+
+    private suspend fun onProjectCreated(event: Events.Project.ProjectCreateEvent) = updateList(event.project)
+
     private suspend fun updateProjectView(project: Project) {
         if (isPaused)
             updatedProjects += project
@@ -160,10 +158,6 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             }
         }
     }
-
-    private suspend fun onProjectDeleted(event: Events.Project.ProjectDeleteEvent) = updateList(null)
-
-    private suspend fun onProjectCreated(event: Events.Project.ProjectCreateEvent) = updateList(event.project)
 
     private suspend fun updateList(project: Project?) {
         projects = projectManager.getProjects()
@@ -181,18 +175,11 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         val activity = activity as MainActivity
 
         val count = projects.count { it.info.isEnabled }
-        activity.binding.apply {
-            statusText.text = activity.formatStringRes(
-                R.string.subtitle_projects,
-                mapOf(
-                    "count" to count.toString()
-                )
-            )
-        }
+        activity.binding.statusText.text = getString(R.string.subtitle_projects).format(count)
     }
 
     @SuppressLint("CheckResult")
-    private fun showProjectAlignDialog() {
+    private fun showProjectAlignDialog() =
         MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
             cornerRadius(res = R.dimen.card_radius)
             maxWidth(res = R.dimen.dialog_width)
@@ -208,10 +195,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked = isReversed
             findViewById<CheckBox>(R.id.checkBoxAlignActiveFirst).isChecked = isActiveFirst
         }
-    }
 
     @SuppressLint("CheckResult")
-    private fun showNewProjectDialog() {
+    private fun showNewProjectDialog() =
         MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
             cornerRadius(res = R.dimen.card_radius)
             maxWidth(res = R.dimen.dialog_width)
@@ -275,7 +261,6 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             //    binding.fabNewProject.show()
             //`}
         }
-    }
 
     private fun getAlignByName(name: String): Align<Project>? = aligns.find { it.name == name }
 
@@ -364,10 +349,12 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             reversedName = "가나다 역순",
             icon = R.drawable.ic_round_sort_by_alpha_24,
             sort = { list, args ->
-                val comparable = if (args["activeFirst"] == true) {
-                    compareBy<Project> { !it.info.isEnabled }.thenBy { it.info.name }
-                } else {
-                    compareBy { it.info.name }
+                val comparable = with(compareBy<Project> { it.info.isPinned }) {
+                    if (args["activeFirst"] == true) {
+                        thenBy { !it.info.isEnabled }.thenBy { it.info.name }
+                    } else {
+                        compareBy { it.info.name }
+                    }
                 }
                 list.sortedWith(comparable)
             }
@@ -379,10 +366,12 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             reversedName = "생성일 역순",
             icon = R.drawable.ic_baseline_edit_calendar_24,
             sort = { list, args ->
-                val comparable = if (args["activeFirst"] == true) {
-                    compareBy<Project> { it.info.isEnabled }.thenBy { it.info.createdMillis }
-                } else {
-                    compareBy { it.info.createdMillis }
+                val comparable = with(compareBy<Project> { it.info.isPinned }) {
+                    if (args["activeFirst"] == true) {
+                        thenBy { it.info.isEnabled }.thenBy { it.info.createdMillis }
+                    } else {
+                        compareBy { it.info.createdMillis }
+                    }
                 }
                 list.sortedWith(comparable).asReversed()
             }
@@ -394,10 +383,12 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             reversedName = "미 컴파일 순",
             icon = R.drawable.ic_round_refresh_24,
             sort = { list, args ->
-                val comparable = if (args["activeFirst"] == true) {
-                    compareBy<Project> { it.info.isEnabled }.thenBy { it.isCompiled }
-                } else {
-                    compareBy { it.isCompiled }
+                val comparable = with(compareBy<Project> { it.info.isPinned }) {
+                    if (args["activeFirst"] == true) {
+                        thenBy { it.info.isEnabled }.thenBy { it.isCompiled }
+                    } else {
+                        compareBy { it.isCompiled }
+                    }
                 }
                 list.sortedWith(comparable).asReversed()
             }

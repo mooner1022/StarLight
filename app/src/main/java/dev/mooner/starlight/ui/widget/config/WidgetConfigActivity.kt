@@ -1,6 +1,7 @@
 package dev.mooner.starlight.ui.widget.config
 
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -19,7 +20,6 @@ import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.widgetManager
 import dev.mooner.starlight.plugincore.config.CategoryConfigObject
 import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.utils.*
@@ -30,24 +30,17 @@ import java.util.*
 
 class WidgetConfigActivity : AppCompatActivity() {
 
-    companion object {
-        const val RESULT_EDITED = 1
-    }
-
     private lateinit var binding: ActivityWidgetConfigBinding
 
     var recyclerAdapter: WidgetsThumbnailAdapter? = null
+    private val widgets: MutableList<Widget> = arrayListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityWidgetConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val context = this
-
         val widgetIds: List<String> = json.decodeFromString(Session.globalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
-        Logger.v("ids= $widgetIds")
-        val widgets: MutableList<Widget> = mutableListOf()
         for (id in widgetIds) {
             with(widgetManager.getWidgetById(id)) {
                 if (this != null)
@@ -55,42 +48,26 @@ class WidgetConfigActivity : AppCompatActivity() {
             }
         }
 
-        binding.subTitle.text = formatStringRes(R.string.subtitle_widgets, mapOf(
-            "count" to widgets.size.toString()
-        ))
-        binding.scroll.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-            val alpha = if (scrollY in 0..200) {
-                1f - (scrollY / 200.0f)
-            } else {
-                0f
-            }
-            binding.imageViewLogo.alpha = alpha
-            binding.title.alpha = alpha
-            binding.subTitle.alpha = alpha
-        }
-
-        binding.leave.setOnClickListener { finish() }
-
-        binding.cardViewAddWidget.setOnClickListener {
-            MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                cornerRadius(res = R.dimen.card_radius)
-                maxWidth(res = R.dimen.dialog_width)
-                lifecycleOwner(this@WidgetConfigActivity)
-                customView(R.layout.dialog_logs)
-
-                val recycler: RecyclerView = findViewById(R.id.rvLog)
-
-                val configAdapter = ConfigAdapter.Builder(this@WidgetConfigActivity) {
-                    bind(recycler)
-                    configs { getWidgetConfigList(::dismiss) }
-                }.build()
-
-                onDismiss {
-                    configAdapter.destroy()
+        binding.apply {
+            subTitle.text = getString(R.string.subtitle_widgets)
+                .format(widgets.size)
+            scroll.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+                val alpha = if (scrollY in 0..200) {
+                    1f - (scrollY / 200.0f)
+                } else {
+                    0f
                 }
+                imageViewLogo.alpha = alpha
+                title.alpha = alpha
+                subTitle.alpha = alpha
             }
+            cardViewAddWidget.setOnClickListener(::onClick)
+            leave.setOnClickListener(::onClick)
+            recyclerView.setup()
         }
+    }
 
+    private fun RecyclerView.setup() {
         recyclerAdapter = WidgetsThumbnailAdapter(binding.root.context) { data ->
             notifyDataEdited(data)
         }.apply {
@@ -98,17 +75,11 @@ class WidgetConfigActivity : AppCompatActivity() {
             notifyAllItemInserted()
         }
 
-        val dragFlags = when(layoutMode) {
+        val dragFlags = when(context.layoutMode) {
             LAYOUT_DEFAULT -> ItemTouchHelper.UP or ItemTouchHelper.DOWN
             LAYOUT_TABLET -> ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
             else -> 0
         }
-        /*
-        val swipeFlags = when(layoutMode) {
-            LAYOUT_DEFAULT -> ItemTouchHelper.RIGHT
-            else -> 0
-        }
-         */
 
         val itemTouchCallback = object : ItemTouchHelper.SimpleCallback (dragFlags, ItemTouchHelper.RIGHT){
             override fun onMove(
@@ -135,9 +106,31 @@ class WidgetConfigActivity : AppCompatActivity() {
             else -> LinearLayoutManager(context)
         }
 
-        binding.recyclerView.apply {
-            layoutManager = mLayoutManager
-            adapter = recyclerAdapter
+        layoutManager = mLayoutManager
+        adapter = recyclerAdapter
+    }
+
+    private fun onClick(view: View) {
+        when(view) {
+            binding.cardViewAddWidget -> MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT))
+                .show {
+                    cornerRadius(res = R.dimen.card_radius)
+                    maxWidth(res = R.dimen.dialog_width)
+                    lifecycleOwner(this@WidgetConfigActivity)
+                    customView(R.layout.dialog_logs)
+
+                    val recycler: RecyclerView = findViewById(R.id.rvLog)
+
+                    val configAdapter = ConfigAdapter.Builder(this@WidgetConfigActivity) {
+                        bind(recycler)
+                        configs { getWidgetConfigList(::dismiss) }
+                    }.build()
+
+                    onDismiss {
+                        configAdapter.destroy()
+                    }
+                }
+            binding.leave -> finish()
         }
     }
 
@@ -149,13 +142,6 @@ class WidgetConfigActivity : AppCompatActivity() {
             notifyDataEdited(data)
         }
     }
-
-    /*
-    private fun addWidget(widgetId: String) {
-        val widget = widgetManager.getWidgetById(widgetId)?: error("Unable to find widget with id: $widgetId")
-        addWidget(widget)
-    }
-     */
 
     private fun notifyDataEdited(data: List<Widget>) {
         Session.globalConfig.edit {
@@ -190,6 +176,11 @@ class WidgetConfigActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        widgets.forEach(Widget::onDestroyThumbnail)
         recyclerAdapter = null
+    }
+
+    companion object {
+        const val RESULT_EDITED = 1
     }
 }

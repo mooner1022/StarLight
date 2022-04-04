@@ -9,7 +9,7 @@ class PluginClassLoader(
     private val config: PluginInfo,
     private val dataDir: File,
     private val file: File,
-): PathClassLoader(file.path, parent){
+): PathClassLoader(file.path, parent) {
     private var pluginInit: StarlightPlugin? = null
     private var pluginState: java.lang.IllegalStateException? = null
     val plugin: StarlightPlugin
@@ -44,7 +44,7 @@ class PluginClassLoader(
     }
 
     fun findClass(name: String, checkGlobal: Boolean): Class<*> {
-        if (name.startsWith("dev.mooner.starlight.") && name.split(".")[3] != "plugincore") throw ClassNotFoundException(name)
+        if (name.startsWith("dev.mooner.starlight.plugincore")) throw ClassNotFoundException(name)
         var result = classes[name]
 
         if (result == null) {

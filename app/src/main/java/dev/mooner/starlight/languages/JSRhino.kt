@@ -111,7 +111,7 @@ class JSRhino: Language() {
         return context
     }
 
-    override fun compile(code: String, apis: List<Api<Any>>, project: Project?): Any {
+    override fun compile(code: String, apis: List<Api<*>>, project: Project?): Any {
         val context = enterContext()
         val scope = context.initStandardObjects(ImporterTopLevel(context))
         //val scope = context.newObject(shared)

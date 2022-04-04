@@ -107,7 +107,7 @@ class DebugRoomChatAdapter(
                     holder.sender.text = messageData.sender
 
                     holder.profileImage.apply {
-                        val profileFilePath = dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("d_bot").getString("profile_image_path")
+                        val profileFilePath = Session.globalConfig.category("d_bot").getString("profile_image_path")
                         if (profileFilePath != null) {
                             load(File(profileFilePath)) {
                                 transformations(RoundedCornersTransformation(resources.getDimension(R.dimen.debugroom_profile_corner_radius)))
