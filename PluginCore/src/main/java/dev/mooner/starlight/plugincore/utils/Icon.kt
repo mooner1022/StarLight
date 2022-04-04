@@ -238,4 +238,16 @@ enum class Icon(
     BATTERY_UNKNOWN(
         drawableRes = R.drawable.ic_round_battery_unknown_24
     ),
+    NOTIFICATIONS(
+        drawableRes = R.drawable.ic_round_notifications_24
+    ),
+    NOTIFICATIONS_ACTIVE(
+        drawableRes = R.drawable.ic_round_notifications_active_24
+    ),
+    LOCATION_ON(
+        drawableRes = R.drawable.ic_round_location_on_24
+    ),
+    LOCATION_OFF(
+        drawableRes = R.drawable.ic_round_location_off_24
+    ),
 }
