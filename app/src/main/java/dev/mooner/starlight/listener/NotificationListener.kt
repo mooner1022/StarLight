@@ -87,9 +87,9 @@ class NotificationListener: NotificationListenerService() {
 
                     Logger.v("NotificationListenerService", "message : $message sender : $sender room : $room session : $act")
 
-                    Session.projectManager.fireEvent<DefaultEvent>(data) { e ->
+                    Session.projectManager.fireEvent<DefaultEvent>(data) { project, e ->
                         e.printStackTrace()
-                        Logger.e("NotificationListener", e)
+                        Logger.e("NotificationListener", "Failed to call event on '${project.info.name}': $e")
                     }
 
                     if (Session.globalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
@@ -106,9 +106,9 @@ class NotificationListener: NotificationListenerService() {
 
                         val imageDB = ImageDB(profileBitmap)
 
-                        Session.projectManager.fireEvent<LegacyEvent>(room, message, sender, isGroupChat, replier, imageDB) { e ->
+                        Session.projectManager.fireEvent<LegacyEvent>(room, message, sender, isGroupChat, replier, imageDB) { project, e ->
                             e.printStackTrace()
-                            Logger.e("NotificationListener", e)
+                            Logger.e("NotificationListener", "Failed to call event on '${project.info.name}': $e")
                         }
                     }
                     //stopSelf()
