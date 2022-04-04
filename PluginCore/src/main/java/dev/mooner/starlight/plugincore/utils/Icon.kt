@@ -3,6 +3,7 @@ package dev.mooner.starlight.plugincore.utils
 import androidx.annotation.DrawableRes
 import dev.mooner.starlight.plugincore.R
 
+@Suppress("unused")
 enum class Icon(
     @DrawableRes
     val drawableRes: Int
