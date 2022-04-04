@@ -73,6 +73,38 @@ class SettingsFragment : Fragment() {
                 }
             }
             category {
+                id = "project"
+                title = "프로젝트"
+                icon = Icon.PROJECTS
+                iconTintColor = color { "#B4CFB0" }
+                //textColor = color { "#706EB9" }
+                flags = CategoryConfigObject.FLAG_NESTED
+                items {
+                    toggle {
+                        id = "compile_animation"
+                        title = "컴파일 애니메이션"
+                        description = "컴파일 시 프로그레스 바의 애니메이션을 부드럽게 조정합니다."
+                        icon = Icon.COMPRESS
+                        iconTintColor = color { "#FEAC5E" }
+                        defaultValue = true
+                    }
+                    toggle {
+                        id = "load_global_libraries"
+                        title = "전역 모듈 로드"
+                        description = "global_modules 폴더 내의 모듈을 컴파일 시 적용합니다. 신뢰하지 않는 코드가 실행될 수 있습니다."
+                        icon = Icon.FOLDER
+                        iconTintColor = color { "#4BC0C8" }
+                        defaultValue = false
+                        warnOnEnable {
+                            """
+                                |이 기능은 신뢰되지 않는 코드를 실행할 수 있으며, 이로 인해 발생하는 어떠한 상해나 손실도 개발자는 보상하거나 보장하지 않습니다.
+                                |기능을 활성화할까요?
+                            """.trimMargin()
+                        }
+                    }
+                }
+            }
+            category {
                 id = "plugin"
                 title = "플러그인"
                 icon = Icon.ARCHIVE
@@ -159,7 +191,7 @@ class SettingsFragment : Fragment() {
                             startActivity(Intent(context, AppInfoActivity::class.java))
                         }
                     }
-                    if (Session.globalConfig.getCategory("dev").getBoolean("dev_mode") == true) {
+                    if (Session.globalConfig.category("dev").getBoolean("dev_mode") == true) {
                         button {
                             id = "developer_mode"
                             title = "개발자 모드"
