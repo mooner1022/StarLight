@@ -16,21 +16,21 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-class LocalLogger(
+class ProjectLogger(
     private var _logs: MutableList<LogData>,
     private val file: File
 ) {
 
     companion object {
 
-        fun create(directory: File): LocalLogger {
+        fun create(directory: File): ProjectLogger {
             directory.mkdirs()
             val file = File(directory, "logs-local.json")
             file.createNewFile()
-            return LocalLogger(arrayListOf(), file)
+            return ProjectLogger(arrayListOf(), file)
         }
 
-        fun fromFile(file: File): LocalLogger {
+        fun fromFile(file: File): ProjectLogger {
             if (!file.isFile || !file.exists()) {
                 throw IllegalArgumentException("Unable to open file ${file.name}")
             }
@@ -41,10 +41,10 @@ class LocalLogger(
             } catch (e: Exception) {
                 e.printStackTrace()
                 file.delete()
-                Logger.e(LocalLogger::class.simpleName!!, "Cannot parse log file ${file.name}, removing old file")
-                arrayListOf()
+                Logger.e(ProjectLogger::class.simpleName!!, "Cannot parse log file ${file.name}, removing old file")
+                mutableListOf()
             }
-            return LocalLogger(logs, file)
+            return ProjectLogger(logs, file)
         }
     }
 

@@ -3,16 +3,16 @@ package dev.mooner.starlight.api.original
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiFunction
 import dev.mooner.starlight.plugincore.api.InstanceType
-import dev.mooner.starlight.plugincore.logger.LocalLogger
+import dev.mooner.starlight.plugincore.logger.ProjectLogger
 import dev.mooner.starlight.plugincore.project.Project
 
-class ProjectLoggerApi: Api<LocalLogger>() {
+class ProjectLoggerApi: Api<ProjectLogger>() {
 
     override val name: String = "Log"
 
     override val instanceType: InstanceType = InstanceType.OBJECT
 
-    override val instanceClass: Class<LocalLogger> = LocalLogger::class.java
+    override val instanceClass: Class<ProjectLogger> = ProjectLogger::class.java
     
     override val objects: List<ApiFunction> = listOf(
         function {

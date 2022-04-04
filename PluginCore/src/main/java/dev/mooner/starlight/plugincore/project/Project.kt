@@ -13,11 +13,10 @@ import dev.mooner.starlight.plugincore.config.data.Config
 import dev.mooner.starlight.plugincore.config.data.FileConfig
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.language.Language
-import dev.mooner.starlight.plugincore.logger.LocalLogger
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.ProjectLogger
 import dev.mooner.starlight.plugincore.pipeline.CompilePipeline
 import dev.mooner.starlight.plugincore.pipeline.PipelineInfo
-import dev.mooner.starlight.plugincore.pipeline.stage.DemoPipelineStage
 import dev.mooner.starlight.plugincore.utils.hasFile
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flowOf
@@ -64,10 +63,10 @@ class Project (
     private var langScope: Any? = null
     private val lang: Language = Session.languageManager.getLanguage(info.languageId)?: throw IllegalArgumentException("Cannot find language ${info.languageId}")
 
-    val logger: LocalLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
-        LocalLogger.fromFile(File(directory, LOGS_FILE_NAME))
+    val logger: ProjectLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
+        ProjectLogger.fromFile(File(directory, LOGS_FILE_NAME))
     } else {
-        LocalLogger.create(directory)
+        ProjectLogger.create(directory)
     }
 
     private val tag: String
@@ -192,7 +191,7 @@ class Project (
             info = PipelineInfo(
                 stages = hashSetOf(
                     //DemoPipelineStage(),
-                    DemoPipelineStage()
+                    //DemoPipelineStage()
                 )
             )
         ) { stage, perc ->
@@ -200,7 +199,7 @@ class Project (
         }
         try {
             val rawCode: String = (directory.listFiles()?.find { it.isFile && it.name == info.mainScript }?: throw IllegalArgumentException(
-                    "Cannot find main script ${info.mainScript} for project ${info.name}"
+                "Cannot find main script ${info.mainScript} for project ${info.name}"
             )).readText(Charsets.UTF_8)
             if (langScope != null && lang.requireRelease) {
                 lang.release(langScope!!)
