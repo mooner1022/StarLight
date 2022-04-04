@@ -113,17 +113,33 @@ class DebugRoomActivity: AppCompatActivity() {
          */
         imageHash = 0
         val projectName = intent.getStringExtra("projectName")?: "undefined"
-        binding.roomTitle.text = roomName
+        binding.roomTitle.text = if (roomName == "undefined") projectName else roomName
 
-        project = Session.projectManager.getProject(projectName)!!
+        Session.projectManager.getProject(projectName).let {
+            if (it == null) {
+                Toast.makeText(applicationContext, "프로젝트 '${projectName}'을 찾을 수 없어요 :(", Toast.LENGTH_LONG).show()
+                finish()
+                return
+            }
+            project = it
+        }
 
         updateConfig()
 
-        val selfProfilePath = globalConfig.getCategory("d_user").getString("profile_image_path")
+        val selfProfilePath = globalConfig.category("d_user").getString("profile_image_path")
         selfProfileBitmap = if (selfProfilePath == null) {
             loadBitmapFromResource(R.drawable.default_profile)
         } else {
-            loadBitmapFromFile(File(selfProfilePath))
+            runCatching {
+                loadBitmapFromFile(File(selfProfilePath))
+            }.onFailure {
+                Toast.makeText(this, "프로필 사진 '$selfProfilePath'를 찾을 수 없어 기본 프로필로 대체했어요.", Toast.LENGTH_LONG).show()
+                globalConfig.edit {
+                    category("d_user").remove("profile_image_path")
+                }
+            }.getOrElse {
+                loadBitmapFromResource(R.drawable.default_profile)
+            }
         }
 
         /*

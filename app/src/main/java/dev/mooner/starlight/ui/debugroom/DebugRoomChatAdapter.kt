@@ -16,6 +16,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
@@ -25,6 +26,7 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 import java.io.File
 
@@ -109,10 +111,20 @@ class DebugRoomChatAdapter(
                     holder.profileImage.apply {
                         val profileFilePath = Session.globalConfig.category("d_bot").getString("profile_image_path")
                         if (profileFilePath != null) {
-                            load(File(profileFilePath)) {
-                                transformations(RoundedCornersTransformation(resources.getDimension(R.dimen.debugroom_profile_corner_radius)))
+                            runCatching {
+                                load(File(profileFilePath)) {
+                                    transformations(RoundedCornersTransformation(resources.getDimension(R.dimen.debugroom_profile_corner_radius)))
+                                }
+                                colorFilter = null
+                            }.onFailure { e ->
+                                Toast.makeText(context, "프로필 사진 '$profileFilePath'를 불러오지 못했어요: $e", Toast.LENGTH_LONG).show()
+                                Session.globalConfig.edit {
+                                    category("d_bot").remove("profile_image_path")
+                                }
+
+                                load(R.drawable.default_profile)
+                                setColorFilter(ContextCompat.getColor(context, R.color.main_purple))
                             }
-                            colorFilter = null
                         } else {
                             load(R.drawable.default_profile)
                             setColorFilter(ContextCompat.getColor(context, R.color.main_purple))
