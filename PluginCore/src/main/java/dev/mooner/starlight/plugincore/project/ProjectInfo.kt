@@ -10,10 +10,12 @@ data class ProjectInfo (
     val mainScript: String,
     val languageId: String,
     var isEnabled: Boolean,
+    var isPinned: Boolean = false,
     var trust: Boolean = true,
     val createdMillis: Long = System.currentTimeMillis(),
     val allowedEventIds: MutableSet<String> = hashSetOf("default"),
-    val packages: MutableSet<String>
+    val packages: MutableSet<String> = hashSetOf(),
+    val buttons: MutableSet<ProjectButton> = hashSetOf()
 )
 
 class ProjectInfoBuilder {
