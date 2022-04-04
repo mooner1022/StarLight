@@ -15,18 +15,7 @@ import java.io.File
 class ProjectLoader(
     private val projectDir: File
 ) {
-
-    companion object {
-        private val T = ProjectLoader::class.simpleName!!
-    }
-
     private val projects = projectManager.projects
-
-    init {
-        if (!projectDir.exists() || !projectDir.isDirectory) {
-            projectDir.mkdirs()
-        }
-    }
 
     fun loadProjects() {
         loadProjects(false)
@@ -70,11 +59,21 @@ class ProjectLoader(
 
     private fun getProjectConfig(dir: File): ProjectInfo {
         val result = dir.listFiles()?.find { it.isFile && it.name == "project.json" }
-                ?: throw IllegalStateException("Could not find project.json from ${dir.name}")
+            ?: throw IllegalStateException("Could not find project.json from ${dir.name}")
         try {
             return json.decodeFromString(result.readText(Charsets.UTF_8))
         } catch (e: Exception) {
             throw IllegalArgumentException("Could not parse project.json from ${dir.name}")
         }
+    }
+
+    init {
+        if (!projectDir.exists() || !projectDir.isDirectory) {
+            projectDir.mkdirs()
+        }
+    }
+
+    companion object {
+        private val T = ProjectLoader::class.simpleName!!
     }
 }

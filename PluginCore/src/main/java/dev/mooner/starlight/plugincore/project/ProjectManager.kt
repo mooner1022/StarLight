@@ -52,16 +52,19 @@ class ProjectManager(
         newProject(info, dir)
     }
 
-    fun fireEvent(eventId: String, functionName: String, args: Array<out Any>, onFailure: (e: Throwable) -> Unit) {
+    fun fireEvent(eventId: String, functionName: String, args: Array<out Any>, onFailure: (project: Project, e: Throwable) -> Unit) {
         //if (!Session.eventManager.hasEvent(eventId)) {
         //    Logger.e(ProjectManager::class.simpleName, "Rejecting event call from '$eventId' which is not registered on EventManager")
         //    return
         //}
-        val projects = this.projects.values.filter { it.isCompiled && it.info.isEnabled && it.isEventCallAllowed(eventId) }
-        if (projects.isEmpty()) return
-        for (project in projects) {
-            project.callFunction(functionName, args, onFailure)
-        }
+        projects.values
+            .filter { it.isCompiled && it.info.isEnabled && it.isEventCallAllowed(eventId) }
+            .let { availableProjects ->
+                if (availableProjects.isEmpty()) return
+                for (project in availableProjects) {
+                    project.callFunction(functionName, args) { e -> onFailure(project, e) }
+                }
+            }
     }
 
     fun removeProject(project: Project, removeFiles: Boolean = true) {
@@ -80,7 +83,7 @@ class ProjectManager(
     internal fun purge() = projects.forEach { (_, u) -> u.destroy(requestUpdate = true) }
 }
 
-inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean {
+inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, noinline onFailure: (project: Project, e: Throwable) -> Unit = { _, _ -> }) {
     val event = T::class.createInstance().also { event ->
         for ((index, arg) in event.argTypes.withIndex()) {
             Logger.v("${arg.jvmName}, ${args[index]::class.jvmName}")
@@ -89,5 +92,4 @@ inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, 
         }
     }
     this.fireEvent(event.id, event.functionName, args, onFailure)
-    return true
 }
