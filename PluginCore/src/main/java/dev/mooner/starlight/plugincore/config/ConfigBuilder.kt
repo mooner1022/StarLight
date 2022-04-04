@@ -10,6 +10,8 @@ import dev.mooner.starlight.plugincore.utils.requiredField
 import java.io.File
 import kotlin.properties.Delegates.notNull
 
+typealias LazyMessage = () -> String
+
 @DslMarker
 public annotation class ConfigBuilderDsl
 
@@ -221,6 +223,21 @@ class ConfigItemBuilder {
     inner class ToggleConfigBuilder: ConfigBuilder() {
         var defaultValue: Boolean = false
 
+        private var enableWarnMsg: LazyMessage? = null
+        private var disableWarnMsg: LazyMessage? = null
+
+        fun warnOnEnable(message: String) = warnOnEnable { message}
+
+        fun warnOnEnable(lazyMessage: () -> String) {
+            enableWarnMsg = lazyMessage
+        }
+
+        fun warnOnDisable(message: String) = warnOnDisable { message }
+
+        fun warnOnDisable(lazyMessage: () -> String) {
+            disableWarnMsg = lazyMessage
+        }
+
         override fun build(): ToggleConfigObject {
             requiredField("title", title)
 
@@ -231,6 +248,8 @@ class ConfigItemBuilder {
                 title = title!!,
                 description = description,
                 defaultValue = defaultValue,
+                enableWarnMsg = enableWarnMsg,
+                disableWarnMag = disableWarnMsg,
                 icon = icon,
                 iconFile = iconFile,
                 iconResId = iconResId,

@@ -23,6 +23,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.config.*
 import dev.mooner.starlight.plugincore.utils.Icon
+import dev.mooner.starlight.ui.dialog.DialogUtils
 import org.angmarch.views.NiceSpinner
 
 class CategoryRecyclerAdapter(
@@ -95,15 +96,32 @@ class CategoryRecyclerAdapter(
         }
         when(viewData.viewType) {
             ConfigObjectType.TOGGLE.viewType -> {
-                val toggleValue = getDefault() as Boolean
-                toggleValues[viewData.id] = toggleValue
-                holder.toggle.isChecked = toggleValue
-                holder.toggle.setOnCheckedChangeListener { _, isChecked ->
+                fun callListeners(isChecked: Boolean) {
                     onConfigChanged(viewData.id, holder.toggle, isChecked)
                     if (viewData.id in toggleListeners) {
                         for (listener in toggleListeners[viewData.id]!!) {
                             listener(isChecked)
                         }
+                    }
+                }
+
+                require(viewData is ToggleConfigObject)
+                val toggleValue = getDefault() as Boolean
+                toggleValues[viewData.id] = toggleValue
+                holder.toggle.isChecked = toggleValue
+                holder.toggle.setOnCheckedChangeListener { _, isChecked ->
+                    if (viewData.enableWarnMsg != null || viewData.disableWarnMag != null) {
+                        with(viewData) { if (isChecked) enableWarnMsg else disableWarnMag }?.let { lazyMessage ->
+                            DialogUtils.showConfirmDialog(context, title = "경고", message = lazyMessage()) { isConfirmed ->
+                                if (isConfirmed) {
+                                    callListeners(isChecked)
+                                } else {
+                                    holder.toggle.isChecked = !holder.toggle.isChecked
+                                }
+                            }
+                        } ?: callListeners(isChecked)
+                    } else {
+                        callListeners(isChecked)
                     }
                 }
             }

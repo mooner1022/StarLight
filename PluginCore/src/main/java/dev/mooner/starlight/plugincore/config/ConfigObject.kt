@@ -41,6 +41,8 @@ data class ToggleConfigObject(
     override val title: String,
     override val description: String?,
     private val defaultValue: Boolean,
+    val enableWarnMsg: LazyMessage?,
+    val disableWarnMag: LazyMessage?,
     override val icon: Icon? = null,
     override val iconFile: File? = null,
     override val iconResId: Int? = null,
