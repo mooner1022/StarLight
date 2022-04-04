@@ -80,4 +80,12 @@ abstract class Api <T> {
     abstract val instanceType: InstanceType
 
     abstract fun getInstance(project: Project): Any
+
+    override fun equals(other: Any?): Boolean {
+        return when(other) {
+            null -> false
+            !is Api<*> -> false
+            else -> other.name == name
+        }
+    }
 }
