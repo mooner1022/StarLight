@@ -1,4 +1,4 @@
-package dev.mooner.starlight.plugincore.chat
+package dev.mooner.starlight.listener.chat
 
 import android.app.Notification
 import android.app.PendingIntent
@@ -6,6 +6,8 @@ import android.app.RemoteInput
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import dev.mooner.starlight.listener.NotificationListener
+import dev.mooner.starlight.plugincore.chat.ChatRoom
 import dev.mooner.starlight.plugincore.logger.Logger
 
 data class ChatRoomImpl(
@@ -15,7 +17,15 @@ data class ChatRoomImpl(
     val session: Notification.Action,
     private val context: Context
 ): ChatRoom {
+
+    private var lastReceivedId: Long = 0
+
+    fun setLastReceivedId(id: Long) {
+        lastReceivedId = id
+    }
+
     override fun send(message: String): Boolean {
+        println("send")
         return try {
             val sendIntent = Intent()
             val msg = Bundle()
@@ -23,11 +33,13 @@ data class ChatRoomImpl(
                 input.resultKey,
                 message
             )
+            NotificationListener.notifySent(lastReceivedId)
             RemoteInput.addResultsToIntent(session.remoteInputs, sendIntent, msg)
             session.actionIntent.send(context, 0, sendIntent)
             Logger.v("ChatRoom", "send() success: $message")
             true
         } catch (e: PendingIntent.CanceledException) {
+            e.printStackTrace()
             false
         }
     }
