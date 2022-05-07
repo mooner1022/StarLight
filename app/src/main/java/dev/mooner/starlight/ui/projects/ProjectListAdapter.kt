@@ -9,29 +9,33 @@ import android.widget.Toast
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import coil.transform.RoundedCornersTransformation
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.CardProjectButtonsBinding
 import dev.mooner.starlight.databinding.CardProjectsBinding
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.config.TypedString
+import dev.mooner.starlight.plugincore.editor.CodeEditorActivity
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.async.AsyncCell
 import dev.mooner.starlight.ui.debugroom.DebugRoomActivity
-import dev.mooner.starlight.ui.editor.EditorActivity
+import dev.mooner.starlight.ui.editor.DefaultEditorActivity
 import dev.mooner.starlight.ui.presets.ExpandableCard
 import dev.mooner.starlight.ui.projects.config.ProjectConfigActivity
 import dev.mooner.starlight.ui.projects.info.startProjectInfoActivity
 import dev.mooner.starlight.utils.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.serialization.decodeFromString
 import java.io.File
 import kotlin.properties.Delegates
 import kotlin.system.measureTimeMillis
 
-@Suppress("DEPRECATED_SMARTCAST")
 class ProjectListAdapter(
     private val context: Context,
     var data: List<Project> = listOf()
@@ -41,13 +45,14 @@ class ProjectListAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectListViewHolder {
         //val view = LayoutInflater.from(context).inflate(R.layout.card_projects, parent, false)
-        return ProjectListViewHolder(ProjectViewCell(parent.context).apply { inflate() })
+        return ProjectListViewHolder(ProjectViewCell(parent.context).apply(ProjectViewCell::inflate))
     }
 
     override fun getItemCount(): Int = data.size
 
     override fun getItemViewType(position: Int): Int = 0
 
+    @Suppress("DEPRECATED_SMARTCAST")
     override fun onBindViewHolder(holder: ProjectListViewHolder, position: Int) {
         (holder.itemView as ProjectViewCell).bindWhenInflated {
             val project = data[position]
@@ -108,7 +113,10 @@ class ProjectListAdapter(
                     }
 
                     val buttonBackgroundColor = context.getColor(R.color.transparent)
-                    for (button in project.info.buttons) {
+                    val customButtons: List<MutableMap<String, TypedString>> =
+                        Session.json.decodeFromString(project.config.category("beta_features").getString("custom_buttons", "[]"))
+                    for (button in customButtons) {
+                        val buttonId = button["button_id"]!!.castAs<String>()
                         val mButton = ImageButton(context).apply {
                             applyLayoutParams {
                                 width = dp(48)
@@ -116,17 +124,18 @@ class ProjectListAdapter(
                             }
                             setBackgroundColor(buttonBackgroundColor)
                             //load(button.icon.drawableRes)
-                            loadAnyWithTint(data = button.icon.drawableRes, tintColor = R.color.text)
+                            val icon = Icon.valueOf(button["button_icon"]!!.castAs())
+                            loadAnyWithTint(data = icon.drawableRes, tintColor = R.color.text)
                             setOnClickListener {
-                                Toast.makeText(context, "Button Clicked!", Toast.LENGTH_SHORT).show()
-                                project.callFunction("onProjectButtonClicked", arrayOf(button.id)) {
+                                //Toast.makeText(context, "Button Clicked!", Toast.LENGTH_SHORT).show()
+                                project.callFunction("onProjectButtonClicked", arrayOf(buttonId)) {
                                     Toast.makeText(context, "버튼 이벤트에서 오류가 발생했어요: $it", Toast.LENGTH_LONG).show()
                                     it.printStackTrace()
                                 }
                             }
                         }
 
-                        container.customButtonInstances[button.id] = mButton
+                        container.customButtonInstances[buttonId] = mButton
                         findViewById<FlexboxLayout>(R.id.innerView).addView(mButton)
                     }
                 }
@@ -204,8 +213,10 @@ class ProjectListAdapter(
                     context.startProjectInfoActivity(project)
                 R.id.buttonEditCode ->
                     context.startActivityWithExtra(
-                        EditorActivity::class.java,
+                        DefaultEditorActivity::class.java,
                         mapOf(
+                            CodeEditorActivity.KEY_BASE_DIRECTORY to project.directory.path,
+                            CodeEditorActivity.KEY_PROJECT_NAME   to project.info.name,
                             "fileDir" to File(project.directory, project.info.mainScript).path,
                             "title" to project.info.name
                         )
@@ -222,57 +233,45 @@ class ProjectListAdapter(
                 R.id.buttonRecompile -> {
                     container.showProgress(true)
                     container.binding.progressBar.progress = 0
+
+                    val compileFlow = project.compileAsync(true)
+                        .flowOn(Dispatchers.Default)
+                        .onEach { (stage, percent) ->
+                            container.binding.progressState.text = stage
+                            container.binding.progressBar.graceProgress = percent
+                        }
+                        .catch { e ->
+                            Snackbar.make(view, "[${project.info.name}]의 컴파일에 실패했어요.\n$e", Snackbar.LENGTH_LONG).apply {
+                                setAction("자세히 보기") {
+                                    view.context.showErrorLogDialog(project.info.name + " 에러 로그", e)
+                                }
+                            }.show()
+                            container.cardViewIsEnabled.setCardBackgroundColor(getCardColor(project))
+                            container.expandable.isSwitchEnabled = false
+                        }
+
                     CoroutineScope(Dispatchers.Default).launch {
-                        var compileTimeMillis = 0L
-                        runCatching {
-                            compileTimeMillis = measureTimeMillis {
-                                project.compile(throwException = true, onStageChanged = ::onCompileStateChanged)
-                            }
-                        }.onSuccess {
-                            withContext(Dispatchers.Main) {
-                                container.binding.progressBar.graceProgress = 100
-                            }
-                            if (Session.globalConfig.category("project").getBoolean("compile_animation", true) && compileTimeMillis < MIN_COMPILE_TIME) {
-                                delay(MIN_COMPILE_TIME - compileTimeMillis)
-                            }
-                            withContext(Dispatchers.Main) {
-                                Snackbar.make(view, "${project.info.name} 컴파일 완료!", Snackbar.LENGTH_SHORT).show()
-                                container.cardViewIsEnabled.setCardBackgroundColor(getCardColor(project))
-                                container.expandable.isSwitchEnabled = true
-                            }
-                        }.onFailure { e ->
-                            withContext(Dispatchers.Main) {
-                                Snackbar.make(view, "${project.info.name}의 컴파일에 실패했어요.\n$e", Snackbar.LENGTH_LONG).apply {
-                                    setAction("자세히 보기") {
-                                        MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                                            cornerRadius(25f)
-                                            cancelOnTouchOutside(false)
-                                            noAutoDismiss()
-                                            title(text = project.info.name + " 에러 로그")
-                                            message(text = e.toString() + "\n" + e.stackTraceToString())
-                                            positiveButton(text = "닫기") {
-                                                dismiss()
-                                            }
-                                        }
-                                    }
-                                }.show()
-                                container.cardViewIsEnabled.setCardBackgroundColor(getCardColor(project))
-                                container.expandable.isSwitchEnabled = false
-                            }
+                        val compileTime = measureTimeMillis { compileFlow.collect() }
+
+                        withContext(Dispatchers.Main) {
+                            container.binding.progressBar.graceProgress = 100
+                        }
+                        val awaitAnimation = Session.globalConfig.category("project").getBoolean("compile_animation", true)
+                        if (awaitAnimation && compileTime < MIN_COMPILE_TIME) {
+                            delay(MIN_COMPILE_TIME - compileTime)
                         }
                         withContext(Dispatchers.Main) {
-                            container.showProgress(false)
+                            Snackbar.make(view, "[${project.info.name}] 컴파일 완료!", Snackbar.LENGTH_SHORT).show()
+                            container.apply {
+                                cardViewIsEnabled.setCardBackgroundColor(getCardColor(project))
+                                expandable.isSwitchEnabled = true
+                                showProgress(false)
+                            }
                         }
                     }
                 }
             }
         }
-
-        private fun onCompileStateChanged(stage: String, percentage: Int) = CoroutineScope(Dispatchers.Main)
-            .launch {
-                container.binding.progressState.text = stage
-                container.binding.progressBar.graceProgress = percentage
-            }
     }
 
     private inner class ViewContainer(mBinding: CardProjectsBinding, project: Project) {
