@@ -21,6 +21,7 @@
     <style name="Theme.StarLight.NoActionBar" parent="Theme.StarLight">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <item name="aboutLibrariesStyle">@style/Theme.StarLight.NoActionBar</item>
     </style>
 
     <style name="Theme.StarLight.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />

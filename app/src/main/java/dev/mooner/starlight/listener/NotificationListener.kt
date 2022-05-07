@@ -7,104 +7,90 @@
 package dev.mooner.starlight.listener
 
 import android.app.Notification
+import android.content.Context
 import android.graphics.drawable.BitmapDrawable
+import android.os.Handler
+import android.os.Looper
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.text.SpannableString
 import android.widget.Toast
-import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationCompat.*
+import dev.mooner.starlight.listener.chat.ChatRoomImpl
+import dev.mooner.starlight.listener.event.NotificationDismissEvent
+import dev.mooner.starlight.listener.event.NotificationPostEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.LegacyEvent
 import dev.mooner.starlight.listener.legacy.Replier
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ChatRoom
-import dev.mooner.starlight.plugincore.chat.ChatRoomImpl
 import dev.mooner.starlight.plugincore.chat.ChatSender
+import dev.mooner.starlight.plugincore.chat.DeletedMessage
 import dev.mooner.starlight.plugincore.chat.Message
+import dev.mooner.starlight.plugincore.config.ConfigData
+import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.fireEvent
-import dev.mooner.starlight.utils.PACKAGE_KAKAO_TALK
+import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
+import dev.mooner.starlight.utils.getInternalDirectory
+import kotlinx.serialization.decodeFromString
 import java.util.*
 
 class NotificationListener: NotificationListenerService() {
 
-    companion object {
-        private val chatRooms: MutableMap<String, ChatRoom> = WeakHashMap()
-        private var lastReceivedRoom: ChatRoom? = null
-
-        fun hasRoom(roomName: String): Boolean = roomName in chatRooms
-
-        fun send(message: String): Boolean = lastReceivedRoom?.send(message)?: false
-        fun sendTo(roomName: String, message: String): Boolean = chatRooms[roomName]?.send(message)?: false
-
-        fun markAsRead(): Boolean = lastReceivedRoom?.markAsRead()?: false
-        fun markAsRead(roomName: String): Boolean = chatRooms[roomName]?.markAsRead()?: false
-    }
-
     private val isGlobalPowerOn: Boolean
         get() = Session.globalConfig.category("general").getBoolean("global_power", true)
+
+    private val replier = Replier { roomName, msg, hideToast ->
+        val chatRoom = if (roomName == null) lastReceivedRoom else chatRooms[roomName]
+        if (chatRoom == null) {
+            if (!hideToast) {
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(applicationContext, "메세지가 수신되지 않은 방 '$roomName' 에 메세지를 보낼 수 없습니다.", Toast.LENGTH_LONG).show()
+                }
+            }
+            false
+        } else {
+            chatRoom.send(msg)
+        }
+    }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
 
-        val wearableExtender = Notification.WearableExtender(sbn.notification)
-        for (act in wearableExtender.actions) {
-            if (act.remoteInputs != null && act.remoteInputs.isNotEmpty()) {
-                if (!isGlobalPowerOn || sbn.packageName != PACKAGE_KAKAO_TALK) {
+        val pkgName = sbn.packageName
+        val userId = sbn.userId
+
+        val ruleKey = getRuleKey(pkgName, userId)
+        if (ruleKey !in notificationRules) return
+
+        if (sbn.notification.actions == null) return
+
+        for (act in sbn.notification.actions) {
+            if (act.remoteInputs != null && act.remoteInputs.isNotEmpty() && isGlobalPowerOn) {
+                /*
+                if ( || sbn.packageName != PACKAGE_KAKAO_TALK)
                     return
-                }
+                */
                 try {
-                    val extras = sbn.notification.extras
-                    val message = extras[NotificationCompat.EXTRA_TEXT].toString()
-                    val sender = extras[NotificationCompat.EXTRA_TITLE].toString()
-                    val room = (extras[NotificationCompat.EXTRA_SUMMARY_TEXT] ?: extras[NotificationCompat.EXTRA_TITLE]).toString()
-                    //val base64 = notification.getLargeIcon().loadDrawable(applicationContext).toBase64()
-                    val profileBitmap = (sbn.notification.getLargeIcon().loadDrawable(applicationContext) as BitmapDrawable).bitmap
-                    val isGroupChat = extras.containsKey(NotificationCompat.EXTRA_SUMMARY_TEXT)
-                    val hasMention = extras[NotificationCompat.EXTRA_TEXT] is SpannableString
-                    val chatLogId = extras.getLong("chatLogId")
+                    val data = sbn.toMessage(this, act) ?: return
 
-                    if (room !in chatRooms) {
-                        chatRooms[room] = ChatRoomImpl(
-                            name = room,
-                            isGroupChat = isGroupChat,
-                            session = act,
-                            context = this
-                        )
-                    }
+                    currentChatLogId = data.chatLogId
 
-                    val data = Message(
-                        message = message,
-                        sender = ChatSender(
-                            name = sender,
-                            profileBitmap = profileBitmap
-                        ),
-                        room = chatRooms[room]!!,
-                        packageName = sbn.packageName,
-                        hasMention = hasMention,
-                        chatLogId = chatLogId
-                    )
+                    val room = data.room.name
+                    val message = data.message
+                    val sender = data.sender.name
+                    val isGroupChat = data.room.isGroupChat
 
-                    Logger.v("NotificationListenerService", "message : $message sender : $sender room : $room session : $act")
+                    Logger.v("NotificationListenerService", "message\t: $message\nsender\t: $sender\nroom\t: $room\nsession\t: $act")
 
-                    Session.projectManager.fireEvent<DefaultEvent>(data) { project, e ->
+                    Session.projectManager.fireEvent<ProjectOnMessageEvent>(data) { project, e ->
                         e.printStackTrace()
                         Logger.e("NotificationListener", "Failed to call event on '${project.info.name}': $e")
                     }
 
                     if (Session.globalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
-                        val replier = Replier { roomName, msg, hideToast ->
-                            val chatRoom = if (roomName == null) lastReceivedRoom else chatRooms[roomName]
-                            if (chatRoom == null) {
-                                if (!hideToast)
-                                    Toast.makeText(applicationContext, "메세지가 수신되지 않은 방 '$roomName' 에 메세지를 보낼 수 없습니다.", Toast.LENGTH_LONG).show()
-                                false
-                            } else {
-                                chatRoom.send(msg)
-                            }
-                        }
-
-                        val imageDB = ImageDB(profileBitmap)
+                        val imageDB = ImageDB(data.sender.profileBitmap)
 
                         Session.projectManager.fireEvent<LegacyEvent>(room, message, sender, isGroupChat, replier, imageDB) { project, e ->
                             e.printStackTrace()
@@ -118,5 +104,158 @@ class NotificationListener: NotificationListenerService() {
                 }
             }
         }
+
+        NotificationPostEvent(sbn).also(Session.eventManager::fireEventWithContext)
+    }
+
+    override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
+        super.onNotificationRemoved(sbn, rankingMap, reason)
+        Logger.v("removed, reason= $reason")
+
+        if (sbn.notification.actions == null) return
+
+        for (act in sbn.notification.actions) {
+            if (act.remoteInputs != null && act.remoteInputs.isNotEmpty() && isGlobalPowerOn) {
+                Logger.v("currentId= $currentChatLogId")
+
+                sbn.toDeletedMessage()?.let { data ->
+                    if (reason == REASON_APP_CANCEL && data.chatLogId == currentChatLogId) {
+                        Session.projectManager.fireEvent<ProjectOnMessageDeleteEvent>(data) { project, e ->
+                            e.printStackTrace()
+                            Logger.e("NotificationListener", "Failed to call event on '${project.info.name}': $e")
+                        }
+                    }
+                }
+            }
+        }
+
+        NotificationDismissEvent(sbn, rankingMap, reason).also(Session.eventManager::fireEventWithContext)
+    }
+
+    private fun StatusBarNotification.toMessage(context: Context, action: Notification.Action): Message? {
+        val extras = notification.extras ?: return null
+
+        val pkgName = packageName
+        val userId = userId
+
+        val ruleKey = getRuleKey(pkgName, userId)
+
+        val message = extras[getRuleOrDefault(ruleKey, "message", EXTRA_TEXT)].toString()
+        val sender = extras[getRuleOrDefault(ruleKey, "sender", EXTRA_TITLE)].toString()
+        val room = extras[getRuleOrDefault(ruleKey, "room", EXTRA_SUMMARY_TEXT)]?.toString() ?: sender
+
+        val profileBitmap = (notification.getLargeIcon().loadDrawable(applicationContext) as BitmapDrawable).bitmap
+        val isGroupChat = extras.containsKey(getRuleOrDefault(ruleKey, "isGroupChat", EXTRA_SUMMARY_TEXT))
+        val hasMention = extras[getRuleOrDefault(ruleKey, "hasMention", EXTRA_TEXT)] is SpannableString
+        val chatLogId = extras.getLong(getRuleOrDefault(ruleKey, "chatLogId", "chatLogId"))
+
+        val chatRoom: ChatRoom = chatRooms[room] ?: let {
+            ChatRoomImpl(
+                name = room,
+                isGroupChat = isGroupChat,
+                session = action,
+                context = context
+            ).also { nRoom ->
+                chatRooms[room] = nRoom
+            }
+        }
+
+        (chatRoom as ChatRoomImpl).setLastReceivedId(chatLogId)
+        lastReceivedRoom = chatRoom
+
+        return Message(
+            message = message,
+            sender = ChatSender(
+                name = sender,
+                profileBitmap = profileBitmap
+            ),
+            room = chatRoom,
+            packageName = pkgName,
+            hasMention = hasMention,
+            chatLogId = chatLogId
+        )
+    }
+
+    private fun StatusBarNotification.toDeletedMessage(): DeletedMessage? {
+        val extras = notification.extras ?: return null
+
+        val pkgName = packageName
+        val userId = userId
+
+        val ruleKey = getRuleKey(pkgName, userId)
+
+        val message = extras[getRuleOrDefault(ruleKey, "message", EXTRA_TEXT)].toString()
+        val sender = extras[getRuleOrDefault(ruleKey, "sender", EXTRA_TITLE)].toString()
+        val room = extras[getRuleOrDefault(ruleKey, "room", EXTRA_SUMMARY_TEXT)]?.toString() ?: sender
+
+        val chatLogId = extras.getLong(getRuleOrDefault(ruleKey, "chatLogId", "chatLogId"))
+
+        val chatRoom: ChatRoom? = chatRooms[room]
+
+        return DeletedMessage(
+            message = message,
+            sender = sender,
+            room = chatRoom,
+            packageName = pkgName,
+            chatLogId = chatLogId
+        )
+    }
+
+    init {
+        updateRules()
+    }
+
+    companion object {
+
+        private var currentChatLogId: Long = -1
+
+        fun notifySent(id: Long) {
+            currentChatLogId = -1
+        }
+
+        private var notificationRules: Map<String, Map<String, String>> = mapOf()
+
+        private fun getRuleKey(pkg: String, userId: Int): String =
+            "$pkg&$userId"
+
+        private fun getRuleOrDefault(ruleKey: String, rule: String, default: String): String =
+            notificationRules[ruleKey]?.get(rule) ?: default
+
+        fun updateRules() {
+            val file = getInternalDirectory().resolve(NotificationRulesActivity.FILE_NAME)
+            if (!file.exists() || !file.isFile || !file.canRead()) return
+
+            val data: ConfigData = Session.json.decodeFromString(file.readText())
+            val rules: List<Map<String, TypedString>> = Session.json.decodeFromString(data["notification_rules"]!!["rules"]!!.castAs())
+
+            notificationRules = rules.associate { rule ->
+                val packageName: String = rule["package_name"]!!.castAs()
+                val userId: Int = rule["user_id"]?.castAs<String>()?.toInt() ?: 0
+                val params: List<Map<String, TypedString>> = Session.json.decodeFromString(rule["params"]!!.castAs())
+                val mapped: MutableMap<String, String> = mutableMapOf()
+                for (param in params) {
+                    mapped[param["name"]!!.castAs()] = param["value"]!!.castAs()
+                }
+
+                getRuleKey(packageName, userId) to mapped
+            }
+            Logger.v("notificationRules= $notificationRules")
+        }
+
+        private val chatRooms: MutableMap<String, ChatRoom> = WeakHashMap()
+        private var lastReceivedRoom: ChatRoom? = null
+
+        fun hasRoom(roomName: String): Boolean =
+            roomName in chatRooms
+
+        fun send(message: String): Boolean =
+            lastReceivedRoom?.send(message) ?: false
+        fun sendTo(roomName: String, message: String): Boolean =
+            chatRooms[roomName]?.send(message) ?: false
+
+        fun markAsRead(): Boolean =
+            lastReceivedRoom?.markAsRead() ?: false
+        fun markAsRead(roomName: String): Boolean =
+            chatRooms[roomName]?.markAsRead() ?: false
     }
 }

@@ -8,7 +8,7 @@
     android:backgroundTint="@color/background"
     android:focusableInTouchMode="true"
     app:behavior_hideable="false"
-    app:behavior_peekHeight="24dp"
+    app:behavior_peekHeight="64dp"
     app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
     <androidx.cardview.widget.CardView
