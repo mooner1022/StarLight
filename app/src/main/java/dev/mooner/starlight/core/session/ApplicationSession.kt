@@ -12,23 +12,23 @@ import android.os.Build
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.api2.AppApi
 import dev.mooner.starlight.api.legacy.*
-import dev.mooner.starlight.api.original.LanguageManagerApi
-import dev.mooner.starlight.api.original.PluginManagerApi
-import dev.mooner.starlight.api.original.ProjectLoggerApi
-import dev.mooner.starlight.api.original.ProjectManagerApi
+import dev.mooner.starlight.api.original.*
 import dev.mooner.starlight.api.unused.TimerApi
-import dev.mooner.starlight.languages.JSRhino
+import dev.mooner.starlight.languages.rhino.JSRhino
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginLoader
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.plugin.EventListener
 import dev.mooner.starlight.plugincore.utils.NetworkUtil
+import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.ui.widget.DummyWidgetSlim
 import dev.mooner.starlight.ui.widget.LogsWidget
 import dev.mooner.starlight.ui.widget.UptimeWidgetDefault
 import dev.mooner.starlight.ui.widget.UptimeWidgetSlim
 import dev.mooner.starlight.utils.getInternalDirectory
+import dev.mooner.starlight.utils.getKakaoTalkVersion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.encodeToString
@@ -36,32 +36,38 @@ import java.io.File
 import kotlin.system.exitProcess
 
 object ApplicationSession {
+
+    private var mKakaoTalkVersion: Version? = null
+    val kakaoTalkVersion: Version? = null
+
     private var mInitMillis: Long = 0L
     val initMillis get() = mInitMillis
 
     @JvmStatic
     private var mIsInitComplete: Boolean = false
     val isInitComplete get() = mIsInitComplete
-    @JvmStatic
-    private var isAfterInit: Boolean = false
 
     internal fun init(context: Context): Flow<String?> =
         flow {
             if (mIsInitComplete) {
-                emit(null)
-                return@flow
-            }
-            if (isAfterInit) {
                 Logger.w("ApplicationSession", "Rejecting re-init of ApplicationSession")
                 emit(null)
                 return@flow
             }
-            isAfterInit = true
 
             setExceptionHandler(context)
 
             val starlightDir = getInternalDirectory()
             Logger.init(starlightDir)
+
+            emit(context.getString(R.string.step_check_kakaotalk_version))
+            context.getKakaoTalkVersion()?.let {
+                if (Version.check(it))
+                    mKakaoTalkVersion = Version.fromString(it)
+                else
+                    Logger.e("카카오톡 버전 파싱에 실패했어요. (버전: ${it})")
+            }
+            Logger.d("카카오톡 버전: $mKakaoTalkVersion")
 
             emit(context.getString(R.string.step_plugincore_init))
 
