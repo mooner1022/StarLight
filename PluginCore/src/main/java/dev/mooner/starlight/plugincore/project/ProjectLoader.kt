@@ -48,9 +48,9 @@ class ProjectLoader(
                     }
                     projects[info.name] = project
                 } catch (e: IllegalStateException) {
-                    Logger.e(T, "Failed to load project: $e")
+                    Logger.e(T, "Failed to load project '${folder.name}': $e")
                 } catch (e: IllegalArgumentException) {
-                    Logger.e(T, "Failed to load project: $e")
+                    Logger.e(T, "Failed to load project '${folder.name}': $e")
                 }
             }
         }

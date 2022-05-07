@@ -20,8 +20,8 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentSetPermissionBinding
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
 import dev.mooner.starlight.plugincore.config.ConfigItemBuilder
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
@@ -64,8 +64,8 @@ class SetPermissionFragment : Fragment() {
 
         adapter = ConfigAdapter.Builder(activity){
             bind(binding.recyclerView)
-            configs {
-                getConfig(activity)
+            structure {
+                getStructure(activity)
             }
             lifecycleOwner(this@SetPermissionFragment)
         }.build()
@@ -75,7 +75,7 @@ class SetPermissionFragment : Fragment() {
         return binding.root
     }
 
-    private fun getConfig(activity: QuickStartActivity): List<CategoryConfigObject> {
+    private fun getStructure(activity: QuickStartActivity): ConfigStructure {
         return config {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 category {
