@@ -10,13 +10,11 @@ import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
@@ -137,16 +135,7 @@ class DebugRoomChatAdapter(
                     holder.message.text = messageData.message + "..."
                     val fullMessage = debugRoomActivity.dir.resolve("chats").resolve(messageData.fileName!!).readText()
                     holder.showAllButton.setOnClickListener {
-                        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                            cornerRadius(25f)
-                            cancelOnTouchOutside(true)
-                            noAutoDismiss()
-                            title(text = context.getString(R.string.title_show_all))
-                            message(text = fullMessage)
-                            positiveButton(text = context.getString(R.string.close)) {
-                                dismiss()
-                            }
-                        }
+                        showFullMessageDialog(fullMessage)
                     }
                 }
             }
@@ -160,12 +149,26 @@ class DebugRoomChatAdapter(
         }
     }
 
+    private fun showFullMessageDialog(fullMessage: String) {
+        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            cornerRadius(25f)
+            cancelOnTouchOutside(true)
+            noAutoDismiss()
+            title(text = context.getString(R.string.title_show_all))
+            message(text = fullMessage)
+            positiveButton(text = context.getString(R.string.close)) {
+                dismiss()
+            }
+        }
+    }
+
     inner class ViewHolder(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
 
         lateinit var sender: TextView
         lateinit var message: TextView
         lateinit var profileImage: ImageView
         lateinit var showAllButton: Button
+        lateinit var backgroundLayout: LinearLayout
 
         init {
             when (viewType) {
@@ -188,6 +191,7 @@ class DebugRoomChatAdapter(
                     message = itemView.findViewById(R.id.message)
                     profileImage = itemView.findViewById(R.id.profile)
                     showAllButton = itemView.findViewById(R.id.buttonShowAll)
+                    backgroundLayout = itemView.findViewById(R.id.linearLayout)
                 }
             }
         }

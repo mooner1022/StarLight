@@ -53,12 +53,12 @@ class LogsWidget: Widget() {
         with(view) {
             val tvMoreLogs: TextView = findViewById(R.id.tvMoreLogs)
             tvMoreLogs.setOnClickListener {
-                showLogsDialog(context)
+                context.showLogsDialog()
             }
 
             val buttonMoreLogs: ImageButton = findViewById(R.id.buttonMoreLogs)
             buttonMoreLogs.setOnClickListener {
-                showLogsDialog(context)
+                context.showLogsDialog()
             }
 
             layoutTransition = LayoutTransition()

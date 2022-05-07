@@ -14,26 +14,10 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.annotation.ColorRes
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.callbacks.onDismiss
-import com.afollestad.materialdialogs.customview.customView
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.globalConfig
-import dev.mooner.starlight.plugincore.event.Events
-import dev.mooner.starlight.plugincore.event.on
-import dev.mooner.starlight.plugincore.logger.LogType
-import dev.mooner.starlight.plugincore.logger.Logger
-import dev.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
-import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import java.net.URI
 import java.util.concurrent.TimeUnit
 
 private val alphanumericPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
@@ -84,60 +68,14 @@ fun Context.restartApplication() {
     Runtime.getRuntime().exit(0)
 }
 
-fun showLogsDialog(context: Context): MaterialDialog {
-    val job = Job()
-
-    val mLogs = if (globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false))
-        Logger.logs
-    else
-        Logger.filterNot(LogType.VERBOSE)
-
-    val mAdapter = LogsRecyclerViewAdapter(context).apply {
-        data = mLogs.toMutableList()
-    }
-    val mLayoutManager = LinearLayoutManager(context).apply {
-        reverseLayout = true
-        stackFromEnd = true
-    }
-    return MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-        cornerRadius(res = R.dimen.card_radius)
-        //maxWidth(res = R.dimen.dialog_width)
-        cancelOnTouchOutside(true)
-        noAutoDismiss()
-        title(text = context.getString(R.string.title_logs))
-        customView(R.layout.dialog_logs)
-        positiveButton(text = context.getString(R.string.close)) {
-            dismiss()
-        }
-
-        val recycler: RecyclerView = findViewById(R.id.rvLog)
-        recycler.apply {
-            itemAnimator = FadeInUpAnimator()
-            layoutManager = mLayoutManager
-            adapter = mAdapter
-        }
-        mAdapter.notifyItemRangeInserted(0, mLogs.size)
-
-        CoroutineScope(Dispatchers.Main + job).launch {
-            Session.eventManager.on<Events.Log.LogCreateEvent>(this) {
-                if (log.type == LogType.VERBOSE && !globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)) return@on
-                mAdapter.pushLog(log)
-                recycler.post {
-                    recycler.smoothScrollToPosition(mAdapter.data.size - 1)
-                }
-            }
-        }
-        onDismiss {
-            job.cancel()
-        }
-    }
-}
-
 fun Uri.toBitmap(context: Context): Bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
     ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, this))
 } else {
     MediaStore.Images.Media.getBitmap(context.contentResolver, this)
 }
+
+fun Uri.toURI(): URI =
+    URI(this.toString())
 
 val isDevMode get() = Session.isInitComplete && globalConfig.category("dev").getBoolean("dev_mode", false)
 
