@@ -13,6 +13,7 @@ import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.project.Project
 
+@Suppress("unused")
 class LanguageManagerApi: Api<LanguageManagerApi.LanguageManager>() {
 
     class LanguageManager(

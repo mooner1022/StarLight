@@ -19,11 +19,11 @@
     <color name="white">#FFFFFFFF</color>
     <color name="transparent">#00FFFFFF</color>
     <color name="dialog_day">#4A515B</color>
-    <color name="main_bright">#2A2C39</color>
-    <color name="sub_bright">#191A25</color>
-    <color name="main_dark">#2A2C39</color>
+    <color name="main_bright">#C5BDEF</color>
+    <color name="sub_bright">#887AD5</color>
+    <color name="main_dark">#ab9df2</color>
     <color name="splash_background">#1B1B23</color>
-    <color name="sub_dark">#191A25</color>
+    <color name="sub_dark">#8E82C9</color>
     <color name="cardview_enabled">#DBDEFB</color>
     <color name="cardview_disabled">#C1C1C1</color>
     <color name="cardview_gray">#EAE8E8</color>

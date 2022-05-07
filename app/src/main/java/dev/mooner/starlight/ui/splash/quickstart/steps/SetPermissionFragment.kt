@@ -105,7 +105,7 @@ class SetPermissionFragment : Fragment() {
                         id = "grant_permissions"
                         title = "권한 허용하기"
                         icon = Icon.CHECK
-                        setOnClickListener {
+                        setOnClickListener { _ ->
                             requestPermissionLauncher.launch(PERMISSIONS)
                         }
                     }

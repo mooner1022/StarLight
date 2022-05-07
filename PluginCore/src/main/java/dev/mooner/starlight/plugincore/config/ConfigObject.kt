@@ -7,6 +7,10 @@ import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.hasFlag
 import java.io.File
 
+typealias ConfigStructure = List<CategoryConfigObject>
+typealias OnInflateBlock = (view: View) -> Unit
+typealias OnDrawBlock = (view: View, data: Map<String, Any>) -> Unit
+
 enum class ConfigObjectType(
     val viewType: Int
 ) {
@@ -41,6 +45,7 @@ data class ToggleConfigObject(
     override val title: String,
     override val description: String?,
     private val defaultValue: Boolean,
+    val onValueChangedListener: ToggleValueChangedListener?,
     val enableWarnMsg: LazyMessage?,
     val disableWarnMag: LazyMessage?,
     override val icon: Icon? = null,
@@ -122,6 +127,7 @@ data class SpinnerConfigObject(
     override val id: String,
     override val title: String,
     override val description: String? = null,
+    val onItemSelectedListener: SpinnerItemSelectedListener?,
     val items: List<String>,
     private val defaultIndex: Int = 0,
     override val icon: Icon? = null,
@@ -142,7 +148,7 @@ data class ButtonConfigObject(
     override val id: String,
     override val title: String,
     override val description: String? = null,
-    val onClickListener: ((view: View) -> Unit)?,
+    val onClickListener: ButtonOnClickListener?,
     private val buttonType: Type = Type.FLAT,
     override val icon: Icon? = null,
     override val iconFile: File? = null,

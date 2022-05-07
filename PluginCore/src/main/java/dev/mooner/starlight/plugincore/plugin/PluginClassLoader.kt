@@ -10,34 +10,11 @@ class PluginClassLoader(
     private val dataDir: File,
     private val file: File,
 ): PathClassLoader(file.path, parent) {
+
     private var pluginInit: StarlightPlugin? = null
     private var pluginState: java.lang.IllegalStateException? = null
+    private val classes: MutableMap<String, Class<*>> = hashMapOf()
     val plugin: StarlightPlugin
-    private val classes: MutableMap<String, Class<*>> = HashMap()
-
-    init {
-        try {
-            val jarClass: Class<*>
-            try {
-                jarClass = Class.forName(config.mainClass, false, this)
-            } catch (e: ClassNotFoundException) {
-                throw InvalidPluginException("Cannot find main class: ${config.mainClass}")
-            }
-
-            val pluginClass: Class<out StarlightPlugin>
-            try {
-                pluginClass = jarClass.asSubclass(StarlightPlugin::class.java)
-            } catch (e: ClassCastException) {
-                throw InvalidPluginException("Main class '${config.mainClass}' does not extend StarlightPlugin")
-            }
-
-            plugin = pluginClass.newInstance()
-        } catch (e: IllegalAccessException) {
-            throw InvalidPluginException("No public constructor")
-        } catch (e: InstantiationException) {
-            throw InvalidPluginException("Abnormal plugin type")
-        }
-    }
 
     override fun findClass(name: String): Class<*> {
         return findClass(name, true)
@@ -75,5 +52,29 @@ class PluginClassLoader(
         pluginState = IllegalStateException("Initial initialization")
         pluginInit = plugin
         plugin.init(config, dataDir, file, this)
+    }
+
+    init {
+        try {
+            val jarClass: Class<*>
+            try {
+                jarClass = Class.forName(config.mainClass, false, this)
+            } catch (e: ClassNotFoundException) {
+                throw InvalidPluginException("Cannot find main class: ${config.mainClass}")
+            }
+
+            val pluginClass: Class<out StarlightPlugin>
+            try {
+                pluginClass = jarClass.asSubclass(StarlightPlugin::class.java)
+            } catch (e: ClassCastException) {
+                throw InvalidPluginException("Main class '${config.mainClass}' does not extend StarlightPlugin")
+            }
+
+            plugin = pluginClass.newInstance()
+        } catch (e: IllegalAccessException) {
+            throw InvalidPluginException("No public constructor")
+        } catch (e: InstantiationException) {
+            throw InvalidPluginException("Abnormal plugin type")
+        }
     }
 }

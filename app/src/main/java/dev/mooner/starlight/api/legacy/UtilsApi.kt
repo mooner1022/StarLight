@@ -7,6 +7,7 @@ import dev.mooner.starlight.plugincore.project.Project
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 
+@Suppress("unused")
 class UtilsApi: Api<UtilsApi.Utils>() {
 
     class Utils {

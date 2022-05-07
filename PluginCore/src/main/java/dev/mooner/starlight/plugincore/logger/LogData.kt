@@ -11,7 +11,7 @@ data class LogData(
     val type: LogType,
     @SerialName("a")
     val tag: String? = null,
-    @SerialName("")
+    @SerialName("th")
     val threadName: String = Thread.currentThread().name,
     @SerialName("m")
     val message: String,

@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Callable
 
+@Suppress("unused")
 class LegacyApi: Api<LegacyApi.Api>() {
 
     class Api(
@@ -38,7 +39,17 @@ class LegacyApi: Api<LegacyApi.Api>() {
             return GlobalApplication.requireContext()
         }
 
-        fun reload(scriptName: String, throwOnError: Boolean = false): Boolean = compile(scriptName, throwOnError)
+        fun reload(): Boolean =
+            reload(false)
+
+        fun reload(throwOnError: Boolean = false): Boolean =
+            reload(project.info.name, throwOnError)
+
+        fun reload(scriptName: String, throwOnError: Boolean = false): Boolean =
+            compile(scriptName, throwOnError)
+
+        fun compile(scriptName: String): Boolean =
+            compile(scriptName, false)
 
         fun compile(scriptName: String, throwOnError: Boolean = false): Boolean {
             val project = projectManager.getProject(scriptName)?: return false
@@ -125,6 +136,10 @@ class LegacyApi: Api<LegacyApi.Api>() {
          * TODO: makeNoti, papagoTranslate
          */
 
+        fun makeNoti(title: String, content: String, id: Number?) {
+
+        }
+
         fun gc() {
             Logger.w("LegacyApi", "Java 가상 머신은 자동으로 가비지 컬렉션을 수행합니다.\n뭘 하고 계신건지 정확히 알고 실행해 주세요.")
             System.gc()
@@ -187,9 +202,7 @@ class LegacyApi: Api<LegacyApi.Api>() {
 
     override val name: String = "Api"
 
-    override val objects: List<ApiObject> = listOf(
-
-    )
+    override val objects: List<ApiObject> = listOf()
 
     override val instanceClass: Class<Api> = Api::class.java
 

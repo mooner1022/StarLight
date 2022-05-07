@@ -1,79 +1,27 @@
-package dev.mooner.starlight.languages
+package dev.mooner.starlight.languages.rhino
 
+import android.net.Uri
 import com.faendir.rhino_android.RhinoAndroidHelper
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.InstanceType
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.Icon
+import dev.mooner.starlight.utils.getInternalDirectory
+import dev.mooner.starlight.utils.toURI
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
 import org.mozilla.javascript.ImporterTopLevel
 import org.mozilla.javascript.Scriptable
+import org.mozilla.javascript.commonjs.module.Require
+import org.mozilla.javascript.commonjs.module.provider.StrongCachingModuleScriptProvider
+import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider
 import java.io.File
 
 class JSRhino: Language() {
-
-    //private lateinit var context: Context
-    companion object {
-
-        private const val T = "JS-라이노"
-
-        private const val CONF_OPTIMIZE_CODE = "optimize_code"
-        private const val CONF_OPTIMIZATION_LEVEL = "optimization_level"
-        private const val CONF_LANG_VERSION = "js_version"
-        private const val LANG_DEF_VERSION = Context.VERSION_ES6
-
-        private val configs = config {
-            category {
-                id = T
-                title = T
-                textColor = color { "#FFC069" }
-                items {
-                    toggle {
-                        id = CONF_OPTIMIZE_CODE
-                        title = "코드 최적화"
-                        description = "코드를 컴파일 과정에서 최적화합니다. 컴파일 속도가 느려지지만 실행 속도가 빨라집니다."
-                        defaultValue = false
-                        icon = Icon.CHECK
-                    }
-                    seekbar {
-                        id = CONF_OPTIMIZATION_LEVEL
-                        title = "최적화 레벨"
-                        dependency = CONF_OPTIMIZE_CODE
-                        min = 1
-                        max = 9
-                        icon = Icon.COMPRESS
-                        iconTintColor = color { "#57837B" }
-                        defaultValue = 1
-                    }
-                    spinner {
-                        id = CONF_LANG_VERSION
-                        title = "JS 버전"
-                        items = listOf(
-                            "JavaScript 1.0",
-                            "JavaScript 1.1",
-                            "JavaScript 1.2",
-                            "JavaScript 1.3",
-                            "JavaScript 1.4",
-                            "JavaScript 1.5",
-                            "JavaScript 1.6",
-                            "JavaScript 1.7",
-                            "JavaScript 1.8",
-                            "ECMAScript 6 (ES6)",
-                            "DEFAULT",
-                        )
-                        icon = Icon.LAYERS
-                        iconTintColor = color { "#C6B4CE" }
-                        defaultIndex = 9
-                    }
-                }
-            }
-        }
-    }
 
     override val id: String = "JS_RHINO"
 
@@ -83,7 +31,7 @@ class JSRhino: Language() {
 
     override val requireRelease: Boolean = true
 
-    override val configObjectList: List<CategoryConfigObject> = configs
+    override val configStructure: ConfigStructure = configs
 
     override val defaultCode: String = """
             function onMessage(event) {
@@ -139,6 +87,15 @@ class JSRhino: Language() {
                 context.evaluateString(scope, importLines.toString(), "import", 1, null)
             }
         }
+
+        val langConf = getLanguageConfig()
+        if (langConf.getBoolean("load_ext_modules", false)) {
+            Logger.v(T, "load_ext_modules")
+            val isSandboxed = langConf.getBoolean("load_ext_module_sandbox", false)
+            val require = initRequire(context, scope, isSandboxed)
+            require.install(scope)
+        }
+
         //engine.eval(code)
         context.evaluateString(scope, code, project?.info?.name ?: name, 1, null)
         //scope.put()
@@ -202,6 +159,88 @@ class JSRhino: Language() {
             9 -> Context.VERSION_ES6
             10 -> Context.VERSION_DEFAULT
             else -> LANG_DEF_VERSION
+        }
+    }
+
+    private fun initRequire(context: Context, scope: Scriptable, sandboxed: Boolean): Require {
+        val file = getInternalDirectory().resolve("modules/")
+        val scriptProvider = StrongCachingModuleScriptProvider(
+            UrlModuleSourceProvider(listOf(Uri.parse("file://${file.path}/").toURI()), null)
+        )
+        return Require(context, scope, scriptProvider, null, null, sandboxed)
+    }
+
+    companion object {
+
+        private const val T = "JS-라이노"
+
+        private const val CONF_OPTIMIZE_CODE = "optimize_code"
+        private const val CONF_OPTIMIZATION_LEVEL = "optimization_level"
+        private const val CONF_LANG_VERSION = "js_version"
+        private const val LANG_DEF_VERSION = Context.VERSION_ES6
+
+        private val configs = config {
+            category {
+                id = "JS_RHINO"
+                title = T
+                textColor = color { "#FFC069" }
+                items {
+                    toggle {
+                        id = CONF_OPTIMIZE_CODE
+                        title = "코드 최적화"
+                        description = "코드를 컴파일 과정에서 최적화합니다. 컴파일 속도가 느려지지만 실행 속도가 빨라집니다."
+                        defaultValue = false
+                        icon = Icon.CHECK
+                    }
+                    seekbar {
+                        id = CONF_OPTIMIZATION_LEVEL
+                        title = "최적화 레벨"
+                        dependency = CONF_OPTIMIZE_CODE
+                        min = 1
+                        max = 9
+                        icon = Icon.COMPRESS
+                        iconTintColor = color { "#57837B" }
+                        defaultValue = 1
+                    }
+                    toggle {
+                        id = "load_ext_modules"
+                        title = "외부 모듈 로드"
+                        description = "컴파일 시 /modules 폴더 내의 모듈을 로드합니다."
+                        defaultValue = false
+                        icon = Icon.FOLDER
+                        iconTintColor = color { "#C7B198" }
+                    }
+                    toggle {
+                        id = "load_ext_module_sandbox"
+                        dependency = "load_ext_modules"
+                        title = "샌드박스 환경에서 로드"
+                        description = "/modules 폴더 내의 모듈을 샌드박스 환경에서 실행합니다."
+                        defaultValue = true
+                        icon = Icon.LOCK
+                        iconTintColor = color { "#F8B400" }
+                    }
+                    spinner {
+                        id = CONF_LANG_VERSION
+                        title = "JS 버전"
+                        items = listOf(
+                            "JavaScript 1.0",
+                            "JavaScript 1.1",
+                            "JavaScript 1.2",
+                            "JavaScript 1.3",
+                            "JavaScript 1.4",
+                            "JavaScript 1.5",
+                            "JavaScript 1.6",
+                            "JavaScript 1.7",
+                            "JavaScript 1.8",
+                            "ECMAScript 6 (ES6)",
+                            "DEFAULT",
+                        )
+                        icon = Icon.LAYERS
+                        iconTintColor = color { "#C6B4CE" }
+                        defaultIndex = 9
+                    }
+                }
+            }
         }
     }
 }

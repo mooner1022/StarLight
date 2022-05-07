@@ -12,6 +12,7 @@ import dev.mooner.starlight.plugincore.api.ApiFunction
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.project.Project
 
+@Suppress("unused")
 class ProjectManagerApi: Api<ProjectManagerApi.ProjectManager>() {
 
     class ProjectManager(

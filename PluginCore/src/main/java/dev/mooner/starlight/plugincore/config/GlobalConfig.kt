@@ -4,12 +4,12 @@
  * This code is licensed under the GNU General Public License v3.0.
  */
 
-package dev.mooner.starlight.plugincore.config.data
+package dev.mooner.starlight.plugincore.config
 
 import android.view.View
 import dev.mooner.starlight.plugincore.Session.json
-import dev.mooner.starlight.plugincore.config.TypedString
-import dev.mooner.starlight.plugincore.config.typed
+import dev.mooner.starlight.plugincore.config.category.ConfigCategory
+import dev.mooner.starlight.plugincore.config.category.MutableConfigCategory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,14 +19,9 @@ import java.io.File
 
 class GlobalConfig(
     path: File
-) {
+): Config {
 
-    companion object {
-        private const val FILE_NAME = "config-general.json"
-        private const val DEFAULT_CATEGORY = "general"
-    }
-
-    private val configs: MutableMap<String, MutableMap<String, TypedString>> by lazy {
+    private val mData: MutableMap<String, MutableMap<String, TypedString>> by lazy {
         if (!file.exists() || !file.isFile) {
             file.parentFile?.mkdirs()
             file.createNewFile()
@@ -39,38 +34,29 @@ class GlobalConfig(
                 json.decodeFromString(raw)
         }
     }
+
     private val cachedCategories: MutableMap<String, MutableConfigCategory> = hashMapOf()
     private var file = File(path, FILE_NAME)
     private var isSaved: Boolean = false
 
-    @Deprecated(
-        message = "Retained for legacy compatability. Use getCategory(id).",
-        replaceWith = ReplaceWith("this.getCategory(id)")
-    )
-    operator fun get(id: String): String? = configs[DEFAULT_CATEGORY]?.get(id)?.value
+    override fun getData(): ConfigData = mData
 
-    @Deprecated(
-        message = "Retained for legacy compatability. Use getCategory(id).",
-        replaceWith = ReplaceWith("this.getCategory(id)")
-    )
-    operator fun get(id: String, def: String): String = get(id)?: def
+    override operator fun get(id: String): ConfigCategory =
+        category(id)
 
-    operator fun set(id: String, value: TypedString) {
-        if (DEFAULT_CATEGORY in configs)
-            configs[DEFAULT_CATEGORY]!![id] = value
-        else
-            configs[DEFAULT_CATEGORY] = mutableMapOf(id to value)
-    }
+    override fun contains(id: String): Boolean = categoryOrNull(id) != null
 
-    operator fun set(id: String, value: String) {
-        set(id, value typed "String")
-    }
+    fun getDefaultCategory(): MutableConfigCategory =
+        getOrCreateCategory(DEFAULT_CATEGORY)
 
-    fun getDefaultCategory(): MutableConfigCategory = getOrCreateCategory(DEFAULT_CATEGORY)
+    override fun category(id: String): MutableConfigCategory =
+        getOrCreateCategory(id)
 
-    fun category(id: String): MutableConfigCategory = getOrCreateCategory(id)
+    override fun categoryOrNull(id: String): MutableConfigCategory? =
+        getCategoryOrNull(id)
 
-    fun getAllConfigs(): Map<String, Map<String, TypedString>> = configs
+    fun getAllConfigs(): Map<String, Map<String, TypedString>> =
+        mData
 
     fun edit(block: GlobalConfig.() -> Unit) {
         this.apply(block)
@@ -80,7 +66,7 @@ class GlobalConfig(
     fun push() {
         isSaved = true
         CoroutineScope(Dispatchers.IO).launch {
-            val str = json.encodeToString(configs)
+            val str = json.encodeToString(mData)
             with(file) {
                 if (!exists()) {
                     mkdirs()
@@ -107,18 +93,20 @@ class GlobalConfig(
         }
     }
 
+    private fun getCategoryOrNull(id: String): MutableConfigCategory? =
+        cachedCategories[id] ?: mData[id]?.let { MutableConfigCategory(it) }
+
     private fun getOrCreateCategory(id: String): MutableConfigCategory {
-        return when (id) {
-            in cachedCategories -> cachedCategories[id]!!
-            in configs -> MutableConfigCategory(configs[id]!!).also {
+        return getCategoryOrNull(id) ?: let {
+            mData[id] = mutableMapOf()
+            MutableConfigCategory(mData[id]!!).also {
                 cachedCategories[id] = it
             }
-            else -> {
-                configs[id] = mutableMapOf()
-                MutableConfigCategory(configs[id]!!).also {
-                    cachedCategories[id] = it
-                }
-            }
         }
+    }
+
+    companion object {
+        private const val FILE_NAME = "config-general.json"
+        private const val DEFAULT_CATEGORY = "general"
     }
 }

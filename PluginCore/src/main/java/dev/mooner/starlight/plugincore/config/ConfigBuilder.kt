@@ -8,19 +8,28 @@ import androidx.annotation.DrawableRes
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.requiredField
 import java.io.File
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.properties.Delegates.notNull
 
 typealias LazyMessage = () -> String
 
+typealias SpinnerItemSelectedListener = (view: View, index: Int) -> Unit
+typealias ButtonOnClickListener       = (view: View) -> Unit
+typealias ToggleValueChangedListener  = (view: View, toggle: Boolean) -> Unit
+typealias ColorSelectedListener       = (view: View, color: Int) -> Unit
+
 @DslMarker
-public annotation class ConfigBuilderDsl
+annotation class ConfigBuilderDsl
 
 @ConfigBuilderDsl
-fun config(block: ConfigBuilder.() -> Unit): List<CategoryConfigObject> {
+fun config(block: ConfigBuilder.() -> Unit): ConfigStructure {
     val builder = ConfigBuilder().apply(block)
     return builder.build(flush = true)
 }
 
+@Suppress("unused")
 class ConfigBuilder {
 
     companion object {
@@ -45,10 +54,10 @@ class ConfigBuilder {
     @ConfigBuilderDsl
     fun category(block: CategoryConfigBuilder.() -> Unit) {
         val category = CategoryConfigBuilder().apply(block)
-        objects.add(category.build())
+        objects += category.build()
     }
 
-    fun build(flush: Boolean = true): List<CategoryConfigObject> {
+    fun build(flush: Boolean = true): ConfigStructure {
         val list = objects.toList()
         if (flush) {
             objects.clear()
@@ -56,7 +65,7 @@ class ConfigBuilder {
         return list
     }
 
-    inner class CategoryConfigBuilder {
+    class CategoryConfigBuilder {
         var id: String by notNull()
         var title: String? = null
         @ColorInt
@@ -84,7 +93,7 @@ class ConfigBuilder {
         @ConfigBuilderDsl
         fun items(block: ConfigItemBuilder.() -> Unit) {
             val builder = ConfigItemBuilder().apply(block)
-            items = builder.build(flush = true)
+            items = builder.build()
         }
 
         fun build(): CategoryConfigObject {
@@ -105,6 +114,7 @@ class ConfigBuilder {
     }
 }
 
+@Suppress("unused")
 class ConfigItemBuilder {
 
     private val objects: MutableList<ConfigObject> = arrayListOf()
@@ -114,40 +124,28 @@ class ConfigItemBuilder {
     }
 
     @ConfigBuilderDsl
-    fun button(block: ButtonConfigBuilder.() -> Unit) {
-        val button = ButtonConfigBuilder().apply(block)
-        add(button)
-    }
+    fun button(block: ButtonConfigBuilder.() -> Unit) =
+        add(ButtonConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun toggle(block: ToggleConfigBuilder.() -> Unit) {
-        val toggle = ToggleConfigBuilder().apply(block)
-        add(toggle)
-    }
+    fun toggle(block: ToggleConfigBuilder.() -> Unit) =
+        add(ToggleConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun seekbar(block: SeekbarConfigBuilder.() -> Unit) {
-        val seekbar = SeekbarConfigBuilder().apply(block)
-        add(seekbar)
-    }
+    fun seekbar(block: SeekbarConfigBuilder.() -> Unit) =
+        add(SeekbarConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun string(block: StringConfigBuilder.() -> Unit) {
-        val string = StringConfigBuilder().apply(block)
-        add(string)
-    }
+    fun string(block: StringConfigBuilder.() -> Unit) =
+        add(StringConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun password(block: PasswordConfigBuilder.() -> Unit) {
-        val pw = PasswordConfigBuilder().apply(block)
-        add(pw)
-    }
+    fun password(block: PasswordConfigBuilder.() -> Unit) =
+        add(PasswordConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun spinner(block: SpinnerConfigBuilder.() -> Unit) {
-        val spinner = SpinnerConfigBuilder().apply(block)
-        add(spinner)
-    }
+    fun spinner(block: SpinnerConfigBuilder.() -> Unit) =
+        add(SpinnerConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
     fun custom(block: CustomConfigBuilder.() -> Unit) {
@@ -155,12 +153,14 @@ class ConfigItemBuilder {
         add(custom)
     }
 
-    fun build(flush: Boolean = true): List<ConfigObject> {
-        val list = objects.toList()
-        if (flush) {
-            objects.clear()
-        }
-        return list
+    @ConfigBuilderDsl
+    fun custom(block: CustomConfigBuilder.() -> Unit) =
+        add(CustomConfigBuilder().apply(block))
+
+    internal fun build(): List<ConfigObject> {
+        val cp = objects.toList()
+        objects.clear()
+        return cp
     }
 
     abstract inner class ConfigBuilder {
@@ -190,13 +190,17 @@ class ConfigItemBuilder {
     }
 
     inner class ButtonConfigBuilder: ConfigBuilder() {
-        private var mOnClickListener: ((view: View) -> Unit)? = null
+        private var mOnClickListener: ButtonOnClickListener? = null
         var type: ButtonConfigObject.Type = ButtonConfigObject.Type.FLAT
         @ColorInt
         var backgroundColor: Int? = null
 
-        fun setOnClickListener(listener: (view: View) -> Unit) {
-            mOnClickListener = listener
+        fun setOnClickListener(callback: ButtonOnClickListener) {
+            mOnClickListener = callback
+        }
+
+        fun setOnClickListener(callback: () -> Unit) {
+            mOnClickListener = {callback()}
         }
 
         override fun build(): ButtonConfigObject {
@@ -223,8 +227,13 @@ class ConfigItemBuilder {
     inner class ToggleConfigBuilder: ConfigBuilder() {
         var defaultValue: Boolean = false
 
+        private var toggleValueChangedListener: ToggleValueChangedListener? = null
         private var enableWarnMsg: LazyMessage? = null
         private var disableWarnMsg: LazyMessage? = null
+
+        fun setOnValueChangedListener(callback: ToggleValueChangedListener) {
+            toggleValueChangedListener = callback
+        }
 
         fun warnOnEnable(message: String) = warnOnEnable { message}
 
@@ -248,6 +257,7 @@ class ConfigItemBuilder {
                 title = title!!,
                 description = description,
                 defaultValue = defaultValue,
+                onValueChangedListener = toggleValueChangedListener,
                 enableWarnMsg = enableWarnMsg,
                 disableWarnMag = disableWarnMsg,
                 icon = icon,
@@ -267,15 +277,9 @@ class ConfigItemBuilder {
         override fun build(): SeekbarConfigObject {
             requiredField("title", title)
 
-            if (max <= 0) {
-                throw IllegalArgumentException("Value of parameter 'max' should be positive.")
-            }
-            if (min > max) {
-                throw IllegalArgumentException("Value of parameter 'min' should be smaller than 'max'.")
-            }
-            if (defaultValue !in min..max) {
-                throw IllegalArgumentException("Value of parameter 'defaultValue' should be in range $min~$max.")
-            }
+            require(max > 0) { "Value of parameter 'max' should be positive." }
+            require(min < max) { "Value of parameter 'min' should be smaller than 'max'." }
+            require(defaultValue in min..max) { "Value of parameter 'defaultValue' should be in range $min~$max." }
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
@@ -351,6 +355,12 @@ class ConfigItemBuilder {
         var items: List<String> by notNull()
         var defaultIndex: Int = 0
 
+        private var onItemSelectedListener: SpinnerItemSelectedListener? = null
+
+        fun setOnItemSelectedListener(callback: SpinnerItemSelectedListener) {
+            onItemSelectedListener = callback
+        }
+
         override fun build(): SpinnerConfigObject {
             requiredField("title", title)
             require(items.isNotEmpty()) { "Field 'items' must not be empty" }
@@ -361,6 +371,7 @@ class ConfigItemBuilder {
                 id = id,
                 title = title!!,
                 description = description,
+                onItemSelectedListener = onItemSelectedListener,
                 items = items,
                 defaultIndex = defaultIndex,
                 icon = icon,

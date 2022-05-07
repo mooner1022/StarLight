@@ -74,7 +74,7 @@ class AppInfoActivity : AppCompatActivity() {
                     id = "github"
                     title = "GitHub"
                     icon = Icon.GITHUB
-                    setOnClickListener {
+                    setOnClickListener { _ ->
                         openWebUrl("https://github.com/mooner1022/StarLight")
                     }
                 }
@@ -89,7 +89,7 @@ class AppInfoActivity : AppCompatActivity() {
                     icon = Icon.DEVELOPER_BOARD
                     description = "ariel@mooner.dev"
                     iconTintColor = color { "#3A1C71" }
-                    setOnClickListener {
+                    setOnClickListener { _ ->
                         if (isDevMode) {
                             Snackbar.make(binding.root, "이미 개발자 모드가 활성화되었습니다.", Snackbar.LENGTH_SHORT).show()
                         } else {
@@ -112,7 +112,7 @@ class AppInfoActivity : AppCompatActivity() {
                     id = "github"
                     title = "GitHub"
                     icon = Icon.GITHUB
-                    setOnClickListener {
+                    setOnClickListener { _ ->
                         openWebUrl("https://github.com/mooner1022")
                     }
                 }
@@ -121,7 +121,7 @@ class AppInfoActivity : AppCompatActivity() {
                     title = "오픈소스 라이센스"
                     icon = Icon.DEVELOPER_MODE
                     iconTintColor = color { "#D76D77" }
-                    setOnClickListener {
+                    setOnClickListener { _ ->
                         LibsBuilder().apply {
                             withShowLoadingProgress(true)
                             withAboutIconShown(true)

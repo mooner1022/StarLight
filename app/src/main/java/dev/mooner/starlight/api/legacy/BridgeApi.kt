@@ -13,6 +13,7 @@ import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.project.Project
 import org.mozilla.javascript.ScriptableObject
 
+@Suppress("unused")
 class BridgeApi: Api<BridgeApi.Bridge>() {
 
     class Bridge {

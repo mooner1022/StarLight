@@ -4,7 +4,7 @@
  * This code is licensed under the GNU General Public License v3.0.
  */
 
-package dev.mooner.starlight.plugincore.config.data
+package dev.mooner.starlight.plugincore.config.category
 
 import dev.mooner.starlight.plugincore.config.TypedString
 

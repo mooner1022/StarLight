@@ -1,6 +1,5 @@
 package dev.mooner.starlight.ui.splash
 
-import android.Manifest
 import android.content.Intent
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
@@ -15,9 +14,12 @@ import coil.load
 import coil.request.repeatCount
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
+import dev.mooner.starlight.core.GlobalApplication.Companion.REQUIRED_PERMISSIONS
 import dev.mooner.starlight.core.session.ApplicationSession
 import dev.mooner.starlight.databinding.ActivitySplashBinding
+import dev.mooner.starlight.event.SessionStageUpdateEvent
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.ui.crash.FatalErrorActivity
 import dev.mooner.starlight.ui.splash.quickstart.QuickStartActivity
@@ -25,9 +27,6 @@ import dev.mooner.starlight.utils.checkPermissions
 import dev.mooner.starlight.utils.getInternalDirectory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import java.io.File
@@ -50,14 +49,6 @@ class SplashActivity : AppCompatActivity() {
 
         val isPermissionsGrant = checkPermissions(REQUIRED_PERMISSIONS)
 
-        Logger.v("TEST_QUICK_START= $TEST_QUICK_START\nisInitial= $isInitial\nisPermissionsGrant= $isPermissionsGrant")
-        if (TEST_QUICK_START || isInitial || !isPermissionsGrant) {
-            startActivity(Intent(this, QuickStartActivity::class.java))
-        } else {
-            val intent = Intent(this@SplashActivity, MainActivity::class.java)
-            init(intent)
-        }
-
         val imageLoader = ImageLoader.Builder(applicationContext)
             .componentRegistry {
                 if (SDK_INT >= 28) {
@@ -69,8 +60,14 @@ class SplashActivity : AppCompatActivity() {
             .build()
         Coil.setImageLoader(imageLoader)
 
-        binding.splashAnimImageView.load(R.drawable.splash_anim) {
-            repeatCount(0)
+        binding.splashAnimImageView.load(R.drawable.splash_anim) { repeatCount(0) }
+
+        //Logger.v("TEST_QUICK_START= $TEST_QUICK_START\nisInitial= $isInitial\nisPermissionsGrant= $isPermissionsGrant")
+        if (TEST_QUICK_START || isInitial || !isPermissionsGrant) {
+            startActivity(Intent(this, QuickStartActivity::class.java))
+        } else {
+            val intent = Intent(this@SplashActivity, MainActivity::class.java)
+            init(intent)
         }
     }
 
@@ -95,32 +92,35 @@ class SplashActivity : AppCompatActivity() {
         //webview.loadUrl(EditorActivity.ENTRY_POINT)
 
         lifecycleScope.launchWhenCreated {
-            ApplicationSession.init(applicationContext)
-                .flowOn(Dispatchers.Default)
-                .onEach { value ->
+            if (Session.isInitComplete) {
+                launch(Dispatchers.Default) {
+                    startApplication(initMillis, intent)
+                }
+            } else {
+                Session.eventManager.on<SessionStageUpdateEvent>(this) {
                     value?.let {
                         Logger.i(T, value)
                         runOnUiThread {
                             binding.textViewLoadStatus.text = value
                         }
-                    } ?: let {
-                        val currentMillis = System.currentTimeMillis()
-                        if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
-                            val delay = if (!ApplicationSession.isInitComplete)
-                                ANIMATION_DURATION - (currentMillis - initMillis)
-                            else
-                                MIN_LOAD_TIME - (currentMillis - initMillis)
-
-                            launch {
-                                delay(delay)
-                                startMainActivity(intent)
-                            }
-                        } else {
-                            startMainActivity(intent)
-                        }
-                    }
+                    } ?: startApplication(initMillis, intent)
                 }
-                .collect()
+            }
+        }
+    }
+
+    private suspend fun startApplication(initMillis: Long, intent: Intent) {
+        val currentMillis = System.currentTimeMillis()
+        if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
+            val delay = if (!ApplicationSession.isInitComplete)
+                ANIMATION_DURATION - (currentMillis - initMillis)
+            else
+                MIN_LOAD_TIME - (currentMillis - initMillis)
+
+            delay(delay)
+            startMainActivity(intent)
+        } else {
+            startMainActivity(intent)
         }
     }
 
@@ -135,12 +135,6 @@ class SplashActivity : AppCompatActivity() {
 
         private const val MIN_LOAD_TIME = 1500L
         private const val ANIMATION_DURATION = 5000L
-
-        private val REQUIRED_PERMISSIONS = arrayOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.INTERNET,
-        )
 
         private const val TEST_QUICK_START = false
     }

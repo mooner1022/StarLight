@@ -59,9 +59,7 @@ class LocationTermsFragment : Fragment() {
                         description = "앱에서 기기의 위치 정보를 확인할 수 있어요. (선택)"
                         icon = Icon.LOCATION_ON
                         iconTintColor = color("#F4D19B")
-                        setOnClickListener {
-                            requestLocationPermission()
-                        }
+                        setOnClickListener(::requestLocationPermission)
                     }
                     button {
                         id = "location_term"

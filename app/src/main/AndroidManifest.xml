@@ -4,13 +4,13 @@
           package="dev.mooner.starlight">
 
     <uses-permission
-            android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
-            tools:ignore="ScopedStorage" />
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
 
     <permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
 
@@ -21,58 +21,50 @@
     </queries>
 
     <application
-            android:name=".core.GlobalApplication"
-            android:allowBackup="true"
-            android:extractNativeLibs="false"
-            android:fullBackupContent="@xml/backup_descriptor"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/app_name"
-            android:requestLegacyExternalStorage="true"
-            android:roundIcon="@mipmap/ic_launcher_round"
-            android:supportsRtl="true"
-            android:theme="@style/Theme.StarLight"
-            android:usesCleartextTraffic="true"
-            tools:replace="android:icon">
+        android:name=".core.GlobalApplication"
+        android:allowBackup="true"
+        android:extractNativeLibs="false"
+        android:fullBackupContent="@xml/backup_descriptor"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.StarLight.NoActionBar"
+        android:usesCleartextTraffic="true"
+        tools:replace="android:icon">
         <activity
-                android:name=".ui.splash.quickstart.QuickStartActivity"
-                android:theme="@style/Theme.StarLight.NoActionBar"
-                android:exported="true"/>
+            android:name=".ui.settings.notifications.NotificationRulesActivity"
+            android:exported="true"/>
         <activity
-                android:name=".ui.widget.config.WidgetConfigActivity"
-                android:theme="@style/Theme.StarLight.NoActionBar"
-                android:exported="true"/>
+            android:name=".ui.splash.quickstart.QuickStartActivity"
+            android:exported="true"/>
+        <activity
+            android:name=".ui.widget.config.WidgetConfigActivity"
+            android:exported="true"/>
 
         <provider
-                android:name="androidx.core.content.FileProvider"
-                android:authorities="${applicationId}.provider"
-                android:exported="false"
-                android:grantUriPermissions="true">
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
             <meta-data
-                    android:name="android.support.FILE_PROVIDER_PATHS"
-                    android:resource="@xml/provider_paths"/>
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths"/>
         </provider>
 
         <activity
-                android:name=".ui.config.ConfigActivity"
-                android:theme="@style/Theme.StarLight.NoActionBar">
+            android:name=".ui.config.ConfigActivity">
         </activity>
         <activity
-                android:name=".ui.settings.info.AppInfoActivity"
-                android:theme="@style/Theme.StarLight.NoActionBar">
-        </activity>
+            android:name=".ui.settings.info.AppInfoActivity"/>
         <activity
-                android:name=".ui.crash.FatalErrorActivity"
-                android:theme="@style/Theme.StarLight.NoActionBar">
-        </activity>
-
+            android:name=".ui.crash.FatalErrorActivity"/>
         <activity
-                android:name=".ui.plugins.config.PluginConfigActivity"
-                android:theme="@style/Theme.StarLight.NoActionBar">
-        </activity>
+            android:name=".ui.plugins.config.PluginConfigActivity"/>
         <activity
-                android:name=".ui.splash.SplashActivity"
-                android:exported="true"
-                android:theme="@style/Theme.StarLight.NoActionBar">
+            android:name=".ui.splash.SplashActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -80,27 +72,25 @@
             </intent-filter>
         </activity>
         <activity
-                android:name=".ui.projects.config.ProjectConfigActivity"
-                android:theme="@style/Theme.StarLight.NoActionBar"/>
+            android:name=".ui.projects.config.ProjectConfigActivity"/>
         <activity
-                android:name=".ui.editor.EditorActivity"
-                android:theme="@style/Theme.StarLight.NoActionBar"/>
+            android:name=".ui.editor.DefaultEditorActivity"/>
         <activity
-                android:name=".ui.debugroom.DebugRoomActivity"
-                android:theme="@style/Theme.StarLight.NoActionBar"/>
+            android:name=".ui.debugroom.DebugRoomActivity"/>
         <activity
-                android:name=".MainActivity"
-                android:label="@string/app_name"
-                android:theme="@style/Theme.StarLight.NoActionBar">
-        </activity>
+            android:name=".MainActivity"
+            android:label="@string/app_name"/>
 
         <service
-                android:name=".core.ForegroundTask"
-                android:stopWithTask="false"/>
+            android:name=".core.ForegroundTask"
+            android:stopWithTask="false"/>
         <service
-                android:name=".listener.NotificationListener"
-                android:exported="false"
-                android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            android:name=".utils.NotificationEventService"
+            android:exported="false"/>
+        <service
+            android:name=".listener.NotificationListener"
+            android:exported="false"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>

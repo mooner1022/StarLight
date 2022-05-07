@@ -22,7 +22,7 @@ class EventManager: CoroutineScope {
     }
 }
 
-internal val eventCoroutineScope get() = CoroutineScope(Session.eventManager.coroutineContext + SupervisorJob(Session.eventManager.coroutineContext.job))
+val eventCoroutineScope get() = CoroutineScope(Session.eventManager.coroutineContext + SupervisorJob(Session.eventManager.coroutineContext.job))
 
 public inline fun <reified T: Event> EventManager.on(
     scope: CoroutineScope = this,

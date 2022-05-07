@@ -17,6 +17,7 @@ import android.widget.EditText
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
@@ -42,8 +43,8 @@ import dev.mooner.starlight.utils.align.toGridItems
 import dev.mooner.starlight.utils.dpToPx
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ProjectsFragment : Fragment(), View.OnClickListener {
@@ -77,6 +78,8 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         _binding = FragmentProjectsBinding.inflate(inflater, container, false)
 
         val activity = activity as MainActivity
+        recyclerAdapter = ProjectListAdapter(activity)
+
         projects = projectManager.getProjects()
 
         binding.apply {
@@ -87,35 +90,25 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
 
             alignStateIcon.load(alignState.icon)
-        }
 
-        recyclerAdapter = ProjectListAdapter(activity)
-
-        binding.recyclerViewProjectList.apply {
-            itemAnimator = FadeInUpAnimator()
-            layoutManager = LinearLayoutManager(activity)
-            adapter = recyclerAdapter
+            recyclerViewProjectList.setup()
         }
 
         lifecycleScope.launchWhenCreated {
-            flowOf(sortData())
+            updateEmptyText()
+            val sortFlow = sortDataAsync()
                 .flowOn(Dispatchers.Default)
-                .collect { sortedData ->
-                    if (projects.isEmpty()) {
-                        with(binding.textViewNoProjectYet) {
-                            visibility = View.VISIBLE
-
-                            setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_box_empty, 0, 0)
-                            text = getString(R.string.nothing_yet)
-                                .format("프로젝트가", "(⊙_⊙;)")
-                        }
-                    }
+                .onEach { list ->
                     recyclerAdapter!!.apply {
-                        data = sortedData
+                        data = list
                         notifyItemRangeInserted(0, data.size)
                     }
                     updateTitle(projects)
                 }
+
+            launch {
+                sortFlow.collect()
+            }
 
             Session.eventManager.apply {
                 on(this@launchWhenCreated, callback = ::onProjectUpdated)
@@ -143,6 +136,26 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
     private suspend fun onProjectCreated(event: Events.Project.ProjectCreateEvent) = updateList(event.project)
 
+    private fun RecyclerView.setup() {
+        itemAnimator = FadeInUpAnimator()
+        layoutManager = LinearLayoutManager(activity)
+        adapter = recyclerAdapter
+    }
+
+    private suspend fun updateEmptyText() = withContext(Dispatchers.Main) {
+        if (projects.isEmpty()) {
+            with(binding.textViewNoProjectYet) {
+                visibility = View.VISIBLE
+
+                setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_box_empty, 0, 0)
+                text = getString(R.string.nothing_yet)
+                    .format("프로젝트가", "(⊙_⊙;)")
+            }
+        } else {
+            binding.textViewNoProjectYet.visibility = View.GONE
+        }
+    }
+
     private suspend fun updateProjectView(project: Project) {
         if (isPaused)
             updatedProjects += project
@@ -166,8 +179,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             return
         }
         withContext(Dispatchers.Main) {
+            updateEmptyText()
             update()
-            project?.let { scrollTo(it) }
+            project?.let(::scrollTo)
         }
     }
 
@@ -264,6 +278,14 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
     private fun getAlignByName(name: String): Align<Project>? = aligns.find { it.name == name }
 
+    private fun sortDataAsync(): Flow<List<Project>> =
+        flow {
+            val comparable = compareByDescending<Project> { it.info.isPinned }
+                .thenByDescending { it.isCompiled }
+                .thenByDescending { it.info.name }
+            emit(projects.sortedWith(comparable))
+        }
+
     private fun sortData(): List<Project> {
         val aligned = alignState.sort(
             projects,
@@ -285,25 +307,30 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     }
 
     private fun update() {
+        val sortFlow = sortDataAsync()
+            .flowOn(Dispatchers.Default)
+            .onEach { list -> reloadList(list) }
+        lifecycleScope.launch {
+            sortFlow.collect()
+        }
+
         binding.textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
         binding.alignStateIcon.load(drawableResId = alignState.icon)
-        reloadList(sortData())
 
-        globalConfig.apply {
-            set(CONFIG_PROJECTS_ALIGN, alignState.name)
-            set(CONFIG_PROJECTS_REVERSED, isReversed.toString())
-            set(CONFIG_PROJECTS_ACTIVE_FIRST, isActiveFirst.toString())
-            push()
+        globalConfig.edit {
+            getDefaultCategory().apply {
+                set(CONFIG_PROJECTS_ALIGN, alignState.name)
+                set(CONFIG_PROJECTS_REVERSED, isReversed.toString())
+                set(CONFIG_PROJECTS_ACTIVE_FIRST, isActiveFirst.toString())
+            }
         }
     }
-
     private fun scrollTo(project: Project) {
         val index = recyclerAdapter!!.data.indexOf(project)
         if (index == -1) {
             Logger.v("Failed to scroll to project: index not found")
             return
         }
-        Logger.v("scrollTo= $index")
         binding.recyclerViewProjectList.postDelayed({
             binding.recyclerViewProjectList.smoothScrollToPosition(index)
         }, 500)
@@ -318,6 +345,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         super.onResume()
         isPaused = false
         if (requiresUpdate) {
+            lifecycleScope.launch {
+                updateEmptyText()
+            }
             update()
             requiresUpdate = false
         }

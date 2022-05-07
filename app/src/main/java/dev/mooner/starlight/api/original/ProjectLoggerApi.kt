@@ -6,6 +6,7 @@ import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.logger.ProjectLogger
 import dev.mooner.starlight.plugincore.project.Project
 
+@Suppress("unused")
 class ProjectLoggerApi: Api<ProjectLogger>() {
 
     override val name: String = "Log"

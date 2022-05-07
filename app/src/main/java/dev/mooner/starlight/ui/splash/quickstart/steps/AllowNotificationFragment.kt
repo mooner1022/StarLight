@@ -21,7 +21,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentAllowNotificationBinding
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
@@ -53,7 +53,7 @@ class AllowNotificationFragment : Fragment() {
         return binding.root
     }
 
-    private fun getConfig(activity: QuickStartActivity): List<CategoryConfigObject> {
+    private fun getStructure(activity: QuickStartActivity): ConfigStructure {
         return config {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 category {
@@ -65,7 +65,7 @@ class AllowNotificationFragment : Fragment() {
                             description = "앱이 꺼지거나 절전모드가 되지 않고 계속해서 실행될 수 있어요. (선택)"
                             icon = Icon.BATTERY_SAVER
                             iconTintColor = color("#7ACA8A")
-                            setOnClickListener {
+                            setOnClickListener { _ ->
                                 requestIgnoreBatteryOptimization(activity)
                             }
                         }
@@ -83,9 +83,9 @@ class AllowNotificationFragment : Fragment() {
                         description = "앱이 메신저의 알림을 읽을 수 있어요. (필수)"
                         icon = Icon.NOTIFICATIONS_ACTIVE
                         iconTintColor = color("#ffd866")
-                        setOnClickListener {
+                        setOnClickListener { view ->
                             if (isNotificationGranted(activity))
-                                Snackbar.make(it, "이미 권한이 승인되었어요!", Snackbar.LENGTH_SHORT).show()
+                                Snackbar.make(view, "이미 권한이 승인되었어요!", Snackbar.LENGTH_SHORT).show()
                             else
                                 requestNotificationPermission(activity)
                         }
@@ -96,11 +96,11 @@ class AllowNotificationFragment : Fragment() {
                         description = "위 권한을 허용하신 후 눌러주세요"
                         icon = Icon.CHECK
                         iconTintColor = color("#7ACA8A")
-                        setOnClickListener {
+                        setOnClickListener { view ->
                             if (isNotificationGranted(activity))
                                 activity.showButton(QuickStartActivity.Buttons.Next)
                             else {
-                                Snackbar.make(it, "아직 권한이 허용되지 않았어요.", Snackbar.LENGTH_SHORT).show()
+                                Snackbar.make(view, "아직 권한이 허용되지 않았어요.", Snackbar.LENGTH_SHORT).show()
                                 activity.hideButton(QuickStartActivity.Buttons.Next)
                             }
                         }

@@ -8,11 +8,9 @@ package dev.mooner.starlight.plugincore.project
 
 import dev.mooner.starlight.plugincore.Session.eventManager
 import dev.mooner.starlight.plugincore.event.Events
-import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import java.io.File
 import kotlin.reflect.full.createInstance
-import kotlin.reflect.jvm.jvmName
 
 class ProjectManager(
     private val projectDir: File
@@ -24,7 +22,7 @@ class ProjectManager(
     }
 
     fun getProjects(): List<Project> {
-        return this.projects.values.toList()
+        return projects.values.toList()
     }
 
     fun getProject(name: String): Project? {
@@ -86,7 +84,7 @@ class ProjectManager(
 inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, noinline onFailure: (project: Project, e: Throwable) -> Unit = { _, _ -> }) {
     val event = T::class.createInstance().also { event ->
         for ((index, arg) in event.argTypes.withIndex()) {
-            Logger.v("${arg.jvmName}, ${args[index]::class.jvmName}")
+            //Logger.v("${arg.jvmName}, ${args[index]::class.jvmName}")
             if (arg != args[index]::class)
                 error("Passed argument types [${args.joinToString { clazz -> clazz::class.simpleName.toString() }}] do not match the required argument types: [${event.argTypes.joinToString { clazz -> clazz.simpleName.toString() }}]")
         }

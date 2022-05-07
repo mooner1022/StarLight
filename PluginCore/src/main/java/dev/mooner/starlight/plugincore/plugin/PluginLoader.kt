@@ -218,7 +218,7 @@ class PluginLoader {
             val ent: JarEntry = jar.getJarEntry("res/raw/starlight.json") ?: throw FileNotFoundException("Cannot find starlight.json")
 
             stream = jar.getInputStream(ent)
-            return PluginInfo.decode(stream.readString())
+            return PluginInfo.decodeFromString(stream.readString())
         } catch (e: IOException) {
             throw IllegalStateException("Cannot open starlight.json: $e")
         } finally {

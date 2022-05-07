@@ -52,7 +52,7 @@ fun Context.startDevModeActivity() {
                         description = "고의적으로 에러를 발생시킵니다."
                         icon = Icon.ERROR
                         iconTintColor = color { "#FF5C58" }
-                        setOnClickListener {
+                        setOnClickListener { _ ->
                             throw Exception("Expected error created from dev mode")
                         }
                     }
@@ -61,7 +61,7 @@ fun Context.startDevModeActivity() {
                         title = "개발자 모드 비활성화"
                         icon = Icon.DEVELOPER_BOARD_OFF
                         iconTintColor = color { "#FF8243" }
-                        setOnClickListener {
+                        setOnClickListener { _ ->
                             globalConfig.edit {
                                 category("dev")["dev_mode"] = false
                             }

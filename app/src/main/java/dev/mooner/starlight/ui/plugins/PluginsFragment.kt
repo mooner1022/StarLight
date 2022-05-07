@@ -156,10 +156,11 @@ class PluginsFragment : Fragment() {
         binding.textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
         binding.alignStateIcon.setImageResource(alignState.icon)
         reloadList(sortData())
-        globalConfig.apply {
-            set(CONFIG_PLUGINS_ALIGN, alignState.name)
-            set(CONFIG_PLUGINS_REVERSED, isReversed.toString())
-            push()
+        globalConfig.edit {
+            getDefaultCategory().apply {
+                set(CONFIG_PLUGINS_ALIGN, alignState.name)
+                set(CONFIG_PLUGINS_REVERSED, isReversed.toString())
+            }
         }
     }
 

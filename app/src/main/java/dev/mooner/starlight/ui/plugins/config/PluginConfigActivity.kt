@@ -16,10 +16,10 @@ import dev.mooner.starlight.databinding.ActivityPluginConfigBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.ButtonConfigObject
+import dev.mooner.starlight.plugincore.config.ConfigImpl
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.config.data.ConfigImpl
-import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
+import dev.mooner.starlight.plugincore.plugin.Plugin
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.utils.bindFadeImage
@@ -63,17 +63,15 @@ class PluginConfigActivity: AppCompatActivity() {
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.configRecyclerView)
             onConfigChanged { parentId, id, view, data ->
-                if (changedData.containsKey(parentId)) {
+                if (parentId in changedData)
                     changedData[parentId]!![id] = data
-                } else {
+                else
                     changedData[parentId] = hashMapOf(id to data)
-                }
 
-                if (savedData.containsKey(parentId)) {
+                if (parentId in savedData)
                     savedData[parentId]!![id] = TypedString.parse(data)
-                } else {
+                else
                     savedData[parentId] = hashMapOf(id to TypedString.parse(data))
-                }
 
                 if (!fabProjectConfig.isShown) {
                     fabProjectConfig.show()
@@ -92,7 +90,7 @@ class PluginConfigActivity: AppCompatActivity() {
                 return@setOnClickListener
             }
             configFile.writeText(Session.json.encodeToString(savedData))
-            plugin.onConfigUpdated(ConfigImpl(savedData), changedData.keys)
+            plugin.onConfigUpdated(ConfigImpl(savedData), changedData.mapValues { it.value.keys.toSet() })
             plugin.onConfigUpdated(changedData)
             Snackbar.make(view, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
             fabProjectConfig.hide()

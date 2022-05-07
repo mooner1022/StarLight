@@ -25,21 +25,21 @@ import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.pathString
 
-abstract class StarlightPlugin: EventListener {
+@Suppress("unused")
+abstract class StarlightPlugin: Plugin, EventListener {
 
     internal lateinit var file: File
     private lateinit var dataDir: File
     private lateinit var classLoader: ClassLoader
     private var isEnabled = false
     private var configPath: File? = null
-    lateinit var info: PluginInfo
+
+    private lateinit var mInfo: PluginInfo
+    override val info: PluginInfo
+        get() = mInfo
 
     val fileSize: Float get() = file.getFileSize()
     val fileName: String get() = file.name
-
-    companion object {
-        private const val T = "StarlightPlugin"
-    }
 
     constructor() {
         val classLoader = this.javaClass.classLoader
@@ -67,13 +67,13 @@ abstract class StarlightPlugin: EventListener {
         message = "Retained for legacy compatability, don't use it.",
         replaceWith = ReplaceWith("onConfigUpdated(config: Config)", "dev.mooner.starlight.plugincore.plugin.onConfigUpdated")
     )
-    open fun onConfigUpdated(updated: Map<String, Any>) {}
+    override fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    open fun onConfigUpdated(config: Config, updated: Set<String>) {}
+    override fun onConfigUpdated(config: Config, updated: Map<String, Set<String>>) {}
 
-    open fun onConfigChanged(id: String, view: View?, data: Any) {}
+    override fun onConfigChanged(id: String, view: View?, data: Any) {}
 
-    open fun isEnabled(): Boolean = isEnabled
+    override fun isEnabled(): Boolean = isEnabled
 
     protected fun setEnabled(enabled: Boolean) {
         if (isEnabled != enabled) {
@@ -97,9 +97,39 @@ abstract class StarlightPlugin: EventListener {
         }
     }
 
-    fun getDataFolder(): File = dataDir
+    override fun getDataFolder(): File = dataDir
 
-    fun getAsset(directory: String): File = File(dataDir.resolve("assets"), directory)
+    override fun getAsset(path: String): File = File(dataDir.resolve("assets"), path)
+
+    override fun toString(): String = info.fullName
+
+    override fun equals(other: Any?): Boolean {
+        return when(other) {
+            is StarlightPlugin -> other.info.id == this.info.id
+            null -> false
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        var result = dataDir.hashCode()
+        result = 31 * result + isEnabled.hashCode()
+        result = 31 * result + info.hashCode()
+        result = 31 * result + fileSize.hashCode()
+        return result
+    }
+
+    final override fun init(
+        info: PluginInfo,
+        dataDir: File,
+        file: File,
+        classLoader: ClassLoader
+    ) {
+        this.mInfo = info
+        this.dataDir = dataDir
+        this.file = file
+        this.classLoader = classLoader
+    }
 
     protected fun getClassLoader(): ClassLoader = classLoader
 
@@ -125,34 +155,7 @@ abstract class StarlightPlugin: EventListener {
     protected inline fun <reified T: ProjectEvent> fireProjectEvent(vararg args: Any, noinline onFailure: (project: Project, e: Throwable) -> Unit = { _, _ -> }) =
         Session.projectManager.fireEvent<T>(args, onFailure = onFailure)
 
-    override fun toString(): String = info.fullName
-
-    override fun equals(other: Any?): Boolean {
-        return when(other) {
-            is StarlightPlugin -> other.info.id == this.info.id
-            null -> false
-            else -> false
-        }
-    }
-
-    fun init(
-        info: PluginInfo,
-        dataDir: File,
-        file: File,
-        classLoader: ClassLoader
-    ) {
-        this.info = info
-        this.dataDir = dataDir
-        this.file = file
-        this.classLoader = classLoader
-    }
-
-    override fun hashCode(): Int {
-        var result = dataDir.hashCode()
-        result = 31 * result + isEnabled.hashCode()
-        result = 31 * result + info.hashCode()
-        result = 31 * result + fileSize.hashCode()
-        result = 31 * result + configObjects.hashCode()
-        return result
+    companion object {
+        private const val T = "StarlightPlugin"
     }
 }

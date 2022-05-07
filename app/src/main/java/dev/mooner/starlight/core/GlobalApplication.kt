@@ -17,15 +17,6 @@ import kotlinx.coroutines.launch
 
 class GlobalApplication: Application() {
 
-    companion object {
-        private val T = GlobalApplication::class.simpleName
-
-        @SuppressLint("StaticFieldLeak")
-        @JvmStatic
-        private var mContext: Context? = null
-        fun requireContext(): Context = mContext!!
-    }
-
     override fun onCreate() {
         super.onCreate()
         //Logger.v(T, "Application onCreate() called")
@@ -70,5 +61,20 @@ class GlobalApplication: Application() {
 
     private fun onProjectCompiled(event: Events.Project.ProjectCompileEvent) {
         Logger.v("ProjectCompileEvent called, event= $event, project= ${event.project}")
+    }
+
+    companion object {
+        private val T = GlobalApplication::class.simpleName
+
+        val REQUIRED_PERMISSIONS = arrayOf(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.INTERNET,
+        )
+
+        @SuppressLint("StaticFieldLeak")
+        @JvmStatic
+        private var mContext: Context? = null
+        fun requireContext(): Context = mContext!!
     }
 }

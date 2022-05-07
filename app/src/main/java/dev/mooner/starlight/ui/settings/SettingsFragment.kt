@@ -43,7 +43,7 @@ class SettingsFragment : Fragment() {
         return binding.root
     }
 
-    private fun reloadConfigList(view: View) = configAdapter?.reload()
+    private fun reloadConfigList() = configAdapter?.reload()
 
     private fun getConfigList(): List<CategoryConfigObject> {
         return config {
@@ -97,7 +97,7 @@ class SettingsFragment : Fragment() {
                         defaultValue = false
                         warnOnEnable {
                             """
-                                |이 기능은 신뢰되지 않는 코드를 실행할 수 있으며, 이로 인해 발생하는 어떠한 상해나 손실도 개발자는 보상하거나 보장하지 않습니다.
+                                |이 기능은 신뢰되지 않는 코드를 기기에서 실행할 수 있으며, 이로 인해 발생하는 어떠한 상해나 손실도 개발자는 보상하거나 보장하지 않습니다.
                                 |기능을 활성화할까요?
                             """.trimMargin()
                         }
@@ -112,26 +112,6 @@ class SettingsFragment : Fragment() {
                 //textColor = color { "#706EB9" }
                 flags = CategoryConfigObject.FLAG_NESTED
                 items {
-                    string {
-                        id = "load_timeout"
-                        title = "플러그인 로드 시간 제한(ms)"
-                        description = "플러그인의 로드 시간을 제한합니다. 설정한 시간을 초과한 플러그인은 불러오지 않습니다."
-                        icon = Icon.TIMER_OFF
-                        iconTintColor = color { "#BE9FE1" }
-                        inputType = InputType.TYPE_CLASS_NUMBER
-                        require = { text ->
-                            when(val intVal = text.toIntOrNull()) {
-                                null -> "올바르지 않은 값입니다."
-                                else -> {
-                                    if (intVal < 500) {
-                                        "설정할 수 있는 최솟값은 500ms 입니다."
-                                    } else {
-                                        null
-                                    }
-                                }
-                            }
-                        }
-                    }
                     toggle {
                         id = "safe_mode"
                         title = "안전 모드 (재시작 필요)"
@@ -146,17 +126,15 @@ class SettingsFragment : Fragment() {
                         description = "안전모드 활성화 후 앱을 재시작합니다."
                         icon = Icon.REFRESH
                         iconTintColor = color { "#FF6F3C" }
-                        setOnClickListener {
-                            requireContext().restartApplication()
-                        }
+                        setOnClickListener(requireContext()::restartApplication)
                         dependency = "safe_mode"
                     }
                 }
             }
             category {
-                id = "legacy"
-                title = "레거시"
-                icon = Icon.BOOKMARK
+                id = "notifications"
+                title = "알림, 이벤트"
+                icon = Icon.NOTIFICATIONS
                 iconTintColor = color { "#98BAE7" }
                 //textColor = color { "#706EB9" }
                 flags = CategoryConfigObject.FLAG_NESTED
@@ -166,8 +144,18 @@ class SettingsFragment : Fragment() {
                         title = "레거시 이벤트 사용"
                         description = "메신저봇이나 채자봇과 호환되는 이벤트를 사용합니다."
                         icon = Icon.BOOKMARK
-                        iconTintColor = color("#98BAE7")
+                        iconTintColor = color { "#98BAE7" }
                         defaultValue = false
+                    }
+                    button {
+                        id = "set_package_rules"
+                        title = "패키지 규칙 설정"
+                        description = "패키지 별 알림을 수신할 규칙을 설정합니다."
+                        icon = Icon.DEVELOPER_BOARD
+                        iconTintColor = color { "#B4E197" }
+                        setOnClickListener { _ ->
+                            startActivity(Intent(activity, NotificationRulesActivity::class.java))
+                        }
                     }
                 }
             }
@@ -187,7 +175,7 @@ class SettingsFragment : Fragment() {
                         title = "앱 정보"
                         icon = Icon.INFO
                         iconTintColor = color { "#F1CA89" }
-                        setOnClickListener {
+                        setOnClickListener { _ ->
                             startActivity(Intent(context, AppInfoActivity::class.java))
                         }
                     }
@@ -197,9 +185,7 @@ class SettingsFragment : Fragment() {
                             title = "개발자 모드"
                             icon = Icon.DEVELOPER_MODE
                             iconTintColor = color { "#93B5C6" }
-                            setOnClickListener {
-                                requireContext().startDevModeActivity()
-                            }
+                            setOnClickListener(requireContext()::startDevModeActivity)
                         }
                     }
                 }

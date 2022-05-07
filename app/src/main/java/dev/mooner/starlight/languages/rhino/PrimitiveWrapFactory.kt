@@ -1,4 +1,4 @@
-package dev.mooner.starlight.languages
+package dev.mooner.starlight.languages.rhino
 
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Scriptable
