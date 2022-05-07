@@ -79,24 +79,21 @@ class DebugRoomChatAdapter(
         when (messageData.viewType) {
             CHAT_SELF -> {
                 holder.message.text = messageData.message
+                val chatColor = Session.globalConfig.category("d_user").getInt("chat_color")
+                holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
             }
             CHAT_SELF_LONG -> {
                 holder.message.text = messageData.message + "..."
                 holder.showAllButton.setOnClickListener {
                     val fullMessage = debugRoomActivity.dir.resolve("chats").resolve(messageData.fileName!!).readText()
-                    MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                        cornerRadius(25f)
-                        cancelOnTouchOutside(true)
-                        noAutoDismiss()
-                        title(text = context.getString(R.string.title_show_all))
-                        message(text = fullMessage)
-                        positiveButton(text = context.getString(R.string.close)) {
-                            dismiss()
-                        }
-                    }
+                    showFullMessageDialog(fullMessage)
                 }
+                val chatColor = Session.globalConfig.category("d_user").getInt("chat_color")
+                holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
             }
             CHAT_BOT, CHAT_BOT_LONG -> {
+                val chatColor = Session.globalConfig.category("d_bot").getInt("chat_color")
+
                 if (isSentAgain) {
                     holder.sender.visibility = View.GONE
                     holder.profileImage.visibility = View.INVISIBLE
@@ -120,18 +117,20 @@ class DebugRoomChatAdapter(
                                 }
 
                                 load(R.drawable.default_profile)
-                                setColorFilter(ContextCompat.getColor(context, R.color.main_purple))
+                                setColorFilter(chatColor ?: ContextCompat.getColor(context, R.color.main_purple))
                             }
                         } else {
                             load(R.drawable.default_profile)
-                            setColorFilter(ContextCompat.getColor(context, R.color.main_purple))
+                            setColorFilter(chatColor ?: ContextCompat.getColor(context, R.color.main_purple))
                         }
                     }
                 }
 
                 if (messageData.viewType == CHAT_BOT) {
+                    holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
                     holder.message.text = messageData.message
                 } else {
+                    holder.backgroundLayout.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
                     holder.message.text = messageData.message + "..."
                     val fullMessage = debugRoomActivity.dir.resolve("chats").resolve(messageData.fileName!!).readText()
                     holder.showAllButton.setOnClickListener {
