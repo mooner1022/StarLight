@@ -53,11 +53,12 @@ class PluginsListAdapter(
                 }
             }
 
+            holder.version.text = "v${config.version}"
+
             setOnInnerViewInflateListener {
                 with(holder) {
                     inflateInnerView(this@apply)
-                    version.text = "v${config.version}"
-                    fileSize.text = String.format("%.2f MB", plugin.fileSize)
+                    fileSize.text = "%.2f MB".format(plugin.fileSize)
 
                     buttonConfig.setOnClickListener {
                         val intent = Intent(it.context, PluginConfigActivity::class.java).apply {
@@ -77,14 +78,14 @@ class PluginsListAdapter(
 
     inner class PluginListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val card: ExpandableCard = itemView.findViewById(R.id.card_plugin)
-        val fileSize: TextView   = itemView.findViewById(R.id.pluginSizeText)
+        val version: TextView   = itemView.findViewById(R.id.textViewPluginVersion)
 
-        var version: TextView by notNull()
+        var fileSize: TextView by notNull()
         var buttonConfig: Button by notNull()
         var buttonInfo: Button by notNull()
 
         fun inflateInnerView(innerView: View) {
-            version      = innerView.findViewById(R.id.textViewVersion)
+            fileSize      = innerView.findViewById(R.id.textViewPluginSize)
             buttonConfig = innerView.findViewById(R.id.buttonConfig)
             buttonInfo   = innerView.findViewById(R.id.buttonInfo)
         }

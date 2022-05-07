@@ -2,6 +2,7 @@
 <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:divider="@drawable/card_plugin_divider"
@@ -9,23 +10,37 @@
         android:orientation="horizontal"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
-        android:showDividers="middle" android:background="@color/transparent">
+        android:showDividers="middle"
+        android:background="@color/transparent">
+
     <TextView
-            android:text="v0.0.1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/textViewVersion"
-            android:fontFamily="@font/nanumsquare_round_bold" android:textSize="16sp"
-            android:layout_marginEnd="16dp"/>
+        android:id="@+id/textViewPluginSize"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:fontFamily="@font/nanumsquare_round_bold"
+        android:textSize="16sp"
+        tools:text="0.00 MB"/>
     <Button
             android:text="설정"
             android:layout_width="wrap_content"
-            android:layout_height="48dp" android:id="@+id/buttonConfig" app:icon="@drawable/ic_round_settings_24"
-            app:iconGravity="end" android:background="#00FFFFFF" android:elevation="0dp"
-            android:textColor="@color/text" app:iconTint="@color/text"/>
+            android:layout_height="48dp"
+            android:id="@+id/buttonConfig"
+            android:background="#00FFFFFF"
+            android:elevation="0dp"
+            android:textColor="@color/text"
+            app:iconTint="@color/text"
+            app:icon="@drawable/ic_round_settings_24"
+            app:iconGravity="end" />
     <Button
             android:text="정보"
             android:layout_width="wrap_content"
-            android:layout_height="48dp" android:id="@+id/buttonInfo" app:icon="@drawable/ic_round_info_24"
-            app:iconGravity="end" android:background="#00FFFFFF" android:elevation="0dp"
-            android:textColor="@color/text" app:iconTint="@color/text"/>
+            android:layout_height="48dp"
+            android:id="@+id/buttonInfo"
+            android:background="#00FFFFFF"
+            android:elevation="0dp"
+            android:textColor="@color/text"
+            app:iconTint="@color/text"
+            app:icon="@drawable/ic_round_info_24"
+            app:iconGravity="end" />
 </LinearLayout>
