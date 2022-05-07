@@ -101,6 +101,7 @@ object ApplicationSession {
                 addApi(ProjectManagerApi())
                 addApi(PluginManagerApi())
                 addApi(TimerApi())
+                addApi(NotificationApi())
 
                 // Legacy Apis
                 addApi(UtilsApi())
@@ -177,8 +178,13 @@ object ApplicationSession {
             Logger.wtf("StarLight-core", errMsg)
 
             val startupData = Session.json.encodeToString(mapOf("last_error" to errMsg))
-            File(getInternalDirectory(), "STARTUP.info").writeText(startupData)
-            shutdown()
-            exitProcess(2)
+            try {
+                File(getInternalDirectory(), "STARTUP.info").writeText(startupData)
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            } finally {
+                shutdown()
+                exitProcess(2)
+            }
         }
 }
