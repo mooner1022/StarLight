@@ -6,6 +6,7 @@ import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.project.Project
 import java.io.File
 
+@Suppress("unused")
 class FileStreamApi: Api<FileStreamApi.FileStream>() {
 
     class FileStream {

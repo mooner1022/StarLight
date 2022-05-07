@@ -14,6 +14,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.View
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
@@ -23,10 +24,11 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.github.dhaval2404.imagepicker.ImagePicker
+import com.google.android.material.bottomsheet.BottomSheetBehavior.*
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityDebugRoomBinding
-import dev.mooner.starlight.listener.DefaultEvent
+import dev.mooner.starlight.listener.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.LegacyEvent
 import dev.mooner.starlight.listener.legacy.Replier
@@ -36,11 +38,13 @@ import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
 import dev.mooner.starlight.plugincore.chat.Message
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
+import dev.mooner.starlight.plugincore.config.ColorPickerConfigObject
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.Icon
+import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.plugincore.utils.fireEvent
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF
@@ -83,9 +87,13 @@ class DebugRoomActivity: AppCompatActivity() {
     private var sentPackage = PACKAGE_KAKAO_TALK
     private var isGroupChat = false
     private var sendOnEnter = false
+    private var senderChatColor = color { "#F6946E" }
+    private var botChatColor    = color { "#706EB9" }
 
     //private lateinit var botProfileBitmap: Bitmap
     private lateinit var selfProfileBitmap: Bitmap
+
+    private var bottomSheetState: Int = STATE_COLLAPSED
 
     private lateinit var project: Project
     private lateinit var binding: ActivityDebugRoomBinding
@@ -97,7 +105,7 @@ class DebugRoomActivity: AppCompatActivity() {
             DebugRoomChatAdapter.CHAT_BOT_LONG
         else
             DebugRoomChatAdapter.CHAT_BOT
-        addMessage(botName, msg, viewType)
+        addMessage(botName, msg, viewType, false)
     }
     private val onMarkAsRead: () -> Unit = {
         Snackbar.make(binding.root, "읽음 처리 호출됨", Snackbar.LENGTH_SHORT).show()
@@ -113,17 +121,33 @@ class DebugRoomActivity: AppCompatActivity() {
          */
         imageHash = 0
         val projectName = intent.getStringExtra("projectName")?: "undefined"
-        binding.roomTitle.text = roomName
+        binding.roomTitle.text = if (roomName == "undefined") projectName else roomName
 
-        project = Session.projectManager.getProject(projectName)!!
+        Session.projectManager.getProject(projectName).let {
+            if (it == null) {
+                Toast.makeText(applicationContext, "프로젝트 '${projectName}'을 찾을 수 없어요 :(", Toast.LENGTH_LONG).show()
+                finish()
+                return
+            }
+            project = it
+        }
 
         updateConfig()
 
-        val selfProfilePath = globalConfig.getCategory("d_user").getString("profile_image_path")
+        val selfProfilePath = globalConfig.category("d_user").getString("profile_image_path")
         selfProfileBitmap = if (selfProfilePath == null) {
             loadBitmapFromResource(R.drawable.default_profile)
         } else {
-            loadBitmapFromFile(File(selfProfilePath))
+            runCatching {
+                loadBitmapFromFile(File(selfProfilePath))
+            }.onFailure {
+                Toast.makeText(this, "프로필 사진 '$selfProfilePath'를 찾을 수 없어 기본 프로필로 대체했어요.", Toast.LENGTH_LONG).show()
+                globalConfig.edit {
+                    category("d_user").remove("profile_image_path")
+                }
+            }.getOrElse {
+                loadBitmapFromResource(R.drawable.default_profile)
+            }
         }
 
         /*
@@ -157,13 +181,21 @@ class DebugRoomActivity: AppCompatActivity() {
             binding.messageInput.setText("")
         }
 
+        from(binding.bottomSheet.root).addBottomSheetCallback(object : BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                bottomSheetState = newState
+            }
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+        })
+
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.bottomSheet.configRecyclerView)
-            configs { getConfig() }
+            structure(::getStructure)
             savedData(globalConfig.getAllConfigs())
             onConfigChanged { parentId, id, _, data ->
                 globalConfig.edit {
-                    getCategory(parentId).setAny(id, data)
+                    category(parentId).setAny(id, data)
                 }
                 updateConfig()
             }
@@ -191,7 +223,7 @@ class DebugRoomActivity: AppCompatActivity() {
             _message
 
         val viewType = if (message.length >= 500) CHAT_SELF_LONG else CHAT_SELF
-        addMessage(sender, message, viewType)
+        addMessage(sender, message, viewType, true)
         val data = Message(
             message = message,
             sender = ChatSender(
@@ -209,25 +241,9 @@ class DebugRoomActivity: AppCompatActivity() {
             chatLogId = -1L
         )
 
-        project.fireEvent<DefaultEvent>(data) { e ->
-            Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
-                setAction("자세히 보기") {
-                    MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                        cornerRadius(25f)
-                        cancelOnTouchOutside(false)
-                        noAutoDismiss()
-                        lifecycleOwner(this@DebugRoomActivity)
-                        title(text = project.info.name + " 에러 로그")
-                        message(text = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString())
-                        positiveButton(text = "닫기") {
-                            dismiss()
-                        }
-                    }
-                }
-            }.show()
-        }
+        project.fireEvent<ProjectOnMessageEvent>(data, ::showErrorSnackbar)
 
-        if (globalConfig.getCategory("legacy").getBoolean("use_legacy_event", false)) {
+        if (globalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
             val replier = Replier { _, msg, _ ->
                 onSend(msg)
                 true
@@ -235,27 +251,29 @@ class DebugRoomActivity: AppCompatActivity() {
 
             val imageDB = ImageDB(selfProfileBitmap)
 
-            project.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB) { e ->
-                Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
-                    setAction("자세히 보기") {
-                        MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                            cornerRadius(25f)
-                            cancelOnTouchOutside(false)
-                            noAutoDismiss()
-                            lifecycleOwner(this@DebugRoomActivity)
-                            title(text = project.info.name + " 에러 로그")
-                            message(text = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString())
-                            positiveButton(text = "닫기") {
-                                dismiss()
-                            }
-                        }
-                    }
-                }.show()
-            }
+            project.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB, ::showErrorSnackbar)
         }
     }
 
-    private fun addMessage(sender: String, msg: String, viewType: Int) {
+    private fun showErrorSnackbar(e: Exception) {
+        Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
+            setAction("자세히 보기") {
+                MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                    cornerRadius(25f)
+                    cancelOnTouchOutside(false)
+                    noAutoDismiss()
+                    lifecycleOwner(this@DebugRoomActivity)
+                    title(text = project.info.name + " 에러 로그")
+                    message(text = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString())
+                    positiveButton(text = "닫기") {
+                        dismiss()
+                    }
+                }
+            }
+        }.show()
+    }
+
+    private fun addMessage(sender: String, msg: String, viewType: Int, clearInput: Boolean) {
         chatList += if (msg.length >= 500) {
             val fileName = UUID.randomUUID().toString() + ".chat"
             File(dir, "chats").apply {
@@ -277,7 +295,8 @@ class DebugRoomActivity: AppCompatActivity() {
         }
         runOnUiThread {
             userChatAdapter?.notifyItemInserted(chatList.size)
-            binding.messageInput.setText("")
+            if (clearInput)
+                binding.messageInput.setText("")
             binding.chatRecyclerView.post {
                 binding.chatRecyclerView.smoothScrollToPosition(chatList.size - 1)
             }
@@ -297,13 +316,22 @@ class DebugRoomActivity: AppCompatActivity() {
         super.onDestroy()
     }
 
+    override fun onBackPressed() {
+        if (bottomSheetState != STATE_COLLAPSED && bottomSheetState != STATE_HIDDEN) {
+            from(binding.bottomSheet.root).state = STATE_COLLAPSED
+        } else
+            super.onBackPressed()
+    }
+
     private fun updateConfig() {
-        roomName = globalConfig.getCategory("d_room").getString("name", "undefined")
-        sender = globalConfig.getCategory("d_user").getString("name", "debug_sender")
-        botName = globalConfig.getCategory("d_bot").getString("name", "BOT")
-        sentPackage = globalConfig.getCategory("d_room").getString("package", PACKAGE_KAKAO_TALK)
-        isGroupChat = globalConfig.getCategory("d_room").getBoolean("is_group_chat", false)
-        sendOnEnter = globalConfig.getCategory("d_room").getBoolean("send_with_enter", false)
+        roomName = globalConfig.category("d_room").getString("name", "undefined")
+        sender = globalConfig.category("d_user").getString("name", "debug_sender")
+        botName = globalConfig.category("d_bot").getString("name", "BOT")
+        sentPackage = globalConfig.category("d_room").getString("package", PACKAGE_KAKAO_TALK)
+        isGroupChat = globalConfig.category("d_room").getBoolean("is_group_chat", false)
+        sendOnEnter = globalConfig.category("d_room").getBoolean("send_with_enter", false)
+        senderChatColor = globalConfig.category("d_user").getInt("chat_color", senderChatColor)
+        botChatColor = globalConfig.category("d_bot").getInt("chat_color", botChatColor)
 
         runOnUiThread {
             binding.roomTitle.text = roomName
@@ -339,13 +367,13 @@ class DebugRoomActivity: AppCompatActivity() {
 
     private fun reloadConfig() = configAdapter?.reload()
 
-    private fun getConfig(): List<CategoryConfigObject> {
+    private fun getStructure(): ConfigStructure {
         return config {
             category {
                 id = "d_room"
                 title = "일반"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     string {
                         id = "name"
                         title = "방 이름"
@@ -384,7 +412,7 @@ class DebugRoomActivity: AppCompatActivity() {
                 id = "d_bot"
                 title = "봇"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     string {
                         id = "name"
                         title = "이름"
@@ -398,7 +426,7 @@ class DebugRoomActivity: AppCompatActivity() {
                     button {
                         id = "set_profile_image"
                         title = "프로필 이미지 설정"
-                        val profileImagePath = globalConfig.getCategory("d_bot").getString("profile_image_path")
+                        val profileImagePath = globalConfig.category("d_bot").getString("profile_image_path")
                         if (profileImagePath == null) {
                             setIcon(icon = Icon.ACCOUNT_BOX)
                             iconTintColor = color { "#706EB9" }
@@ -409,14 +437,28 @@ class DebugRoomActivity: AppCompatActivity() {
                                 iconTintColor = null
                             } else {
                                 globalConfig.edit {
-                                    getCategory("d_bot") -= "profile_image_path"
+                                    category("d_bot") -= "profile_image_path"
                                 }
                                 setIcon(icon = Icon.ACCOUNT_BOX)
                                 iconTintColor = color { "#706EB9" }
                             }
                         }
-                        onClickListener = {
+                        setOnClickListener { _ ->
                             openImagePicker(RESULT_BOT)
+                        }
+                    }
+                    colorPicker {
+                        id = "chat_color"
+                        title = "채팅 말풍선 색 설정"
+                        icon = Icon.MARK_CHAT_READ
+                        flags = ColorPickerConfigObject.FLAG_CUSTOM_ARGB or ColorPickerConfigObject.FLAG_ALPHA_SELECTOR
+                        colors {
+                            color(color { "#706EB9" })
+                            color(color { "#F6946E" })
+                        }
+                        defaultSelection = color { "#706EB9" }
+                        setOnColorSelectedListener { _, color ->
+                            botChatColor = color
                         }
                     }
                 }
@@ -425,7 +467,7 @@ class DebugRoomActivity: AppCompatActivity() {
                 id = "d_user"
                 title = "전송자"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     string {
                         id = "name"
                         title = "이름"
@@ -439,7 +481,7 @@ class DebugRoomActivity: AppCompatActivity() {
                     button {
                         id = "set_profile_image"
                         title = "프로필 이미지 설정"
-                        val profileImagePath = globalConfig.getCategory("d_user").getString("profile_image_path")
+                        val profileImagePath = globalConfig.category("d_user").getString("profile_image_path")
                         if (profileImagePath == null) {
                             setIcon(icon = Icon.ACCOUNT_BOX)
                             iconTintColor = color { "#706EB9" }
@@ -450,14 +492,28 @@ class DebugRoomActivity: AppCompatActivity() {
                                 iconTintColor = null
                             } else {
                                 globalConfig.edit {
-                                    getCategory("d_user") -= "profile_image_path"
+                                    category("d_user") -= "profile_image_path"
                                 }
                                 setIcon(icon = Icon.ACCOUNT_BOX)
                                 iconTintColor = color { "#706EB9" }
                             }
                         }
-                        onClickListener = {
+                        setOnClickListener { _ ->
                             openImagePicker(RESULT_USER)
+                        }
+                    }
+                    colorPicker {
+                        id = "chat_color"
+                        title = "채팅 말풍선 색 설정"
+                        icon = Icon.MARK_CHAT_READ
+                        flags = ColorPickerConfigObject.FLAG_CUSTOM_ARGB or ColorPickerConfigObject.FLAG_ALPHA_SELECTOR
+                        colors {
+                            color(color { "#706EB9" })
+                            color(color { "#F6946E" })
+                        }
+                        defaultSelection = color { "#F6946E" }
+                        setOnColorSelectedListener { _, color ->
+                            senderChatColor = color
                         }
                     }
                 }
@@ -466,11 +522,11 @@ class DebugRoomActivity: AppCompatActivity() {
                 id = "d_cautious"
                 title = "위험"
                 textColor = color { "#FF865E" }
-                items = items {
+                items {
                     button {
                         id = "clear_chat"
                         title = "대화 기록 초기화"
-                        onClickListener = {
+                        setOnClickListener { _ ->
                             dir.deleteRecursively()
                             dir.mkdirs()
                             val listSize = chatList.size
@@ -486,6 +542,7 @@ class DebugRoomActivity: AppCompatActivity() {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     @Suppress("DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -494,8 +551,8 @@ class DebugRoomActivity: AppCompatActivity() {
                 val uri: Uri = data?.data!!
                 globalConfig.edit {
                     val category = when(requestCode) {
-                        RESULT_BOT -> getCategory("d_bot")
-                        RESULT_USER -> getCategory("d_user")
+                        RESULT_BOT -> category("d_bot")
+                        RESULT_USER -> category("d_user")
                         else -> return@edit
                     }
                     category["profile_image_path"] = uri.path!!

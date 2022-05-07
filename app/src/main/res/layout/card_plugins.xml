@@ -1,40 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/transparent">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:backgroundTint="@color/transparent">
 
-    <dev.mooner.starlight.ui.presets.ExpandableCardView
+    <dev.mooner.starlight.ui.presets.ExpandableCard
             android:id="@+id/card_plugin"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
             android:background="@color/cardview"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
             app:animationDuration="200"
             app:expandOnClick="true"
-            app:icon="@drawable/ic_round_plugins_24"
-            app:inner_view="@layout/card_plugin_buttons"
+            app:innerView="@layout/card_plugin_buttons"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:showSwitch="false"
+            app:icon="@drawable/ic_round_plugins_24"
             app:startExpanded="false"
-            app:title="PLUGIN_NAME"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintVertical_bias="0.0"/>
+            app:showSwitch="false"
+            app:title="PLUGIN_NAME"/>
+
     <TextView
-            android:id="@+id/pluginSizeText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="64dp"
-            android:fontFamily="@font/nanumsquare_round_bold"
-            android:text="0.00 MB"
-            android:layout_marginTop="16dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/card_plugin"/>
+        android:id="@+id/textViewPluginVersion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="64dp"
+        android:fontFamily="@font/nanumsquare_round_bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/card_plugin"
+        tools:text="v0.0.1"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

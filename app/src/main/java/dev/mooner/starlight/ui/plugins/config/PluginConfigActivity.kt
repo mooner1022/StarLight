@@ -16,10 +16,10 @@ import dev.mooner.starlight.databinding.ActivityPluginConfigBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.ButtonConfigObject
+import dev.mooner.starlight.plugincore.config.ConfigImpl
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.config.data.ConfigImpl
-import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
+import dev.mooner.starlight.plugincore.plugin.Plugin
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.utils.bindFadeImage
@@ -51,32 +51,7 @@ class PluginConfigActivity: AppCompatActivity() {
 
         val pluginName = intent.getStringExtra(EXTRA_PLUGIN_NAME)!!
         val pluginId = intent.getStringExtra(EXTRA_PLUGIN_ID)!!
-        val plugin = pluginManager.getPluginById(pluginId)?: error("Failed to find plugin with id: $pluginId")
-
-        configAdapter = ConfigAdapter.Builder(this) {
-            bind(binding.configRecyclerView)
-            onConfigChanged { parentId, id, view, data ->
-                if (changedData.containsKey(parentId)) {
-                    changedData[parentId]!![id] = data
-                } else {
-                    changedData[parentId] = hashMapOf(id to data)
-                }
-
-                if (savedData.containsKey(parentId)) {
-                    savedData[parentId]!![id] = TypedString.parse(data)
-                } else {
-                    savedData[parentId] = hashMapOf(id to TypedString.parse(data))
-                }
-
-                if (!fabProjectConfig.isShown) {
-                    fabProjectConfig.show()
-                }
-                plugin.onConfigChanged(id, view, data)
-            }
-            configs { getConfig(plugin) }
-            savedData(savedData)
-            lifecycleOwner(this@PluginConfigActivity)
-        }.build()
+        val plugin = pluginManager.getPluginById(pluginId)?: error("Failed to find plugin with id: $pluginId, name: $pluginName")
 
         val configFile = File(plugin.getDataFolder(), PLUGIN_CONFIG_FILE_NAME)
         savedData = try {
@@ -85,6 +60,29 @@ class PluginConfigActivity: AppCompatActivity() {
             mutableMapOf()
         }
 
+        configAdapter = ConfigAdapter.Builder(this) {
+            bind(binding.configRecyclerView)
+            onConfigChanged { parentId, id, view, data ->
+                if (parentId in changedData)
+                    changedData[parentId]!![id] = data
+                else
+                    changedData[parentId] = hashMapOf(id to data)
+
+                if (parentId in savedData)
+                    savedData[parentId]!![id] = TypedString.parse(data)
+                else
+                    savedData[parentId] = hashMapOf(id to TypedString.parse(data))
+
+                if (!fabProjectConfig.isShown) {
+                    fabProjectConfig.show()
+                }
+                plugin.onConfigChanged(id, view, data)
+            }
+            structure { getConfig(plugin) }
+            savedData(savedData)
+            lifecycleOwner(this@PluginConfigActivity)
+        }.build()
+
         fabProjectConfig.setOnClickListener { view ->
             if (configAdapter?.hasError == true) {
                 Snackbar.make(view, "올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
@@ -92,7 +90,7 @@ class PluginConfigActivity: AppCompatActivity() {
                 return@setOnClickListener
             }
             configFile.writeText(Session.json.encodeToString(savedData))
-            plugin.onConfigUpdated(ConfigImpl(savedData), changedData.keys)
+            plugin.onConfigUpdated(ConfigImpl(savedData), changedData.mapValues { it.value.keys.toSet() })
             plugin.onConfigUpdated(changedData)
             Snackbar.make(view, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
             fabProjectConfig.hide()
@@ -105,17 +103,17 @@ class PluginConfigActivity: AppCompatActivity() {
         binding.pluginName.text = pluginName
     }
 
-    private fun getConfig(plugin: StarlightPlugin) = plugin.configObjects + config {
+    private fun getConfig(plugin: Plugin) = plugin.getConfigStructure() + config {
         category {
             id = "cautious"
             title = "위험"
             textColor = color { "#FF865E" }
-            items = items {
+            items {
                 button {
                     id = "delete_plugin"
                     title = "플러그인 제거"
                     type = ButtonConfigObject.Type.FLAT
-                    onClickListener = { view ->
+                    setOnClickListener { view ->
                         MaterialDialog(binding.root.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                             cornerRadius(25f)
                             title(text = "정말 [${plugin.info.fullName}](을)를 삭제할까요?")

@@ -23,12 +23,12 @@ fun Context.startDevModeActivity() {
         title = "설정",
         subTitle = "개발자 모드",
         saved = globalConfig.getAllConfigs(),
-        items = config {
+        struct = config {
             category {
                 id = "dev_mode_config"
                 title = "개발자 모드"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     toggle {
                         id = "show_internal_log"
                         title = "내부 로그 표시"
@@ -52,7 +52,7 @@ fun Context.startDevModeActivity() {
                         description = "고의적으로 에러를 발생시킵니다."
                         icon = Icon.ERROR
                         iconTintColor = color { "#FF5C58" }
-                        onClickListener = {
+                        setOnClickListener { _ ->
                             throw Exception("Expected error created from dev mode")
                         }
                     }
@@ -61,9 +61,9 @@ fun Context.startDevModeActivity() {
                         title = "개발자 모드 비활성화"
                         icon = Icon.DEVELOPER_BOARD_OFF
                         iconTintColor = color { "#FF8243" }
-                        onClickListener = {
+                        setOnClickListener { _ ->
                             globalConfig.edit {
-                                getCategory("dev")["dev_mode"] = false
+                                category("dev")["dev_mode"] = false
                             }
                             finishConfigActivity(activityId)
                         }
@@ -74,14 +74,13 @@ fun Context.startDevModeActivity() {
                 id = "beta_features"
                 title = "실험적 기능"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     button {
                         id = "caution"
                         title = "주의"
                         description = "아래 설정들은 실험적이며, 사용 시 앱이 작동하지 않거나 기기에 손상을 줄 수 있습니다.\n이 기능들을 사용함으로서 발생하는 문제에 대해 개발자는 책임을 지지 않습니다."
                         icon = Icon.ERROR
                         iconTintColor = color { "#FF865E" }
-                        onClickListener = {}
                     }
                     toggle {
                         id = "load_external_dex_libs"
@@ -105,12 +104,11 @@ fun Context.startDevModeActivity() {
                 id = "debug_info"
                 title = "debug info"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     fun debugInfo(title: String, value: String) = button {
                         id = title
                         this.title = title
                         description = value
-                        onClickListener = {}
                     }
                     val layoutModeString = when(layoutMode) {
                         LAYOUT_DEFAULT -> "LAYOUT_DEFAULT"
@@ -124,20 +122,18 @@ fun Context.startDevModeActivity() {
                         Configuration.UI_MODE_NIGHT_UNDEFINED -> "UI_MODE_NIGHT_UNDEFINED"
                         else -> "UNKNOWN"
                     }
-                    debugInfo("globalPower", globalConfig.getCategory("general").getBoolean("global_power").toString())
+                    debugInfo("globalPower", globalConfig.category("general").getBoolean("global_power").toString())
                     debugInfo("layoutMode", "$layoutMode ($layoutModeString)")
                     debugInfo("uiMode", "$uiMode ($uiModeString)")
-                    debugInfo("widgets", globalConfig.getCategory("widgets").getString("ids", WIDGET_DEF_STRING))
+                    debugInfo("widgets", globalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
                     debugInfo("plugins", pluginManager.getPlugins().joinToString { it.info.id })
                     //debugInfo("libs", )
-                    debugInfo("pluginSafeMode", globalConfig.getCategory("plugin").getBoolean("safe_mode").toString())
-                    debugInfo("baseDirectory", FileUtils.getInternalDirectory().path)
+                    debugInfo("pluginSafeMode", globalConfig.category("plugin").getBoolean("safe_mode").toString())
+                    debugInfo("baseDirectory", getInternalDirectory().path)
                     debugInfo("PLUGINCORE_VERSION", dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION.toString())
                 }
             }
         },
-        onConfigChanged = { parentId, id, view, data ->
-            globalConfig.onSaveConfigAdapter(parentId, id, view, data)
-        }
+        onConfigChanged = globalConfig::onSaveConfigAdapter
     )
 }

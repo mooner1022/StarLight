@@ -22,8 +22,7 @@
             android:layout_marginStart="8dp"
             android:text="sender"
             app:layout_constraintStart_toEndOf="@+id/profile"
-            app:layout_constraintTop_toTopOf="parent"
-    />
+            app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
             android:id="@+id/linearLayout"

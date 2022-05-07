@@ -1,70 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-  <title>IDE AUTOCOMPLETE</title>
-  <link rel="stylesheet" type="text/css" href="./index.css">
-  <script type="text/javascript" src="./ace.min.js"></script>
-  <script type="text/javascript" src="./theme-tomorrow_night_eighties.js"></script>
-  <script type="text/javascript" src="./mode-javascript.js"></script>
-  <script type="text/javascript" src="./worker-javascript.js"></script>
-  <script src="./ext-error_marker.js"></script>
-  <script src="./ext-beautify.js"></script>
-  <script src="./ext-language_tools.js"></script>
-  <script src="./ext-spellcheck.js"></script>
-  <script src="./ext-prompt.js"></script>
+    <title>IDE AUTOCOMPLETE</title>
+    <link rel="stylesheet" type="text/css" href="./index.css">
+    <script src="./ace.min.js"></script>
+    <script src="keybindings/keybinding-vscode.js"></script>
+    <script src="extensions/ext-error_marker.js"></script>
+    <script src="extensions/ext-beautify.js"></script>
+    <script src="extensions/ext-language_tools.js"></script>
+    <script src="extensions/ext-spellcheck.js"></script>
+    <script src="extensions/ext-prompt.js"></script>
+    <script src="extensions/ext-keybinding_menu.js"></script>
+    <script src="extensions/ext-options.js"></script>
+    <script src="extensions/ext-searchbox.js"></script>
+    <script src="extensions/ext-statusbar.js"></script>
+    <script src="extensions/ext-themelist.js"></script>
 </head>
 <body>
-  <div id="placeholder">
+<div id="placeholder">
     <h1 align="center">
-      <img src="./assets/images/logo_transparent.svg" alt=""/><br>
-      에디터 로드중...
+        <img src="./assets/images/logo_transparent.svg" alt=""/><br>
+        에디터 로드중...
     </h1>
-    <!--
-    <img id="placeholder-logo" src="./assets/images/ic_logo_transparent.png" alt="">
-    <div id="placeholder-text">
-      에디터 로딩중...
-    </div>
-    -->
-  </div>
-  <div id="editor" onChange="onChange()"></div>
-  <script>
+</div>
+<div id="editor" onChange="onChange()"></div>
+<script>
+    ace.config.set("basePath", "./");
+    ace.config.set("themePath", "./themes/");
+    ace.config.set("modePath", "./languages/");
+    ace.config.set("workerPath", "./workers/");
+
     ace.require("ace/ext/prompt");
     ace.require("ace/ext/spellcheck");
     ace.require("ace/ext/error_marker");
     ace.require("ace/ext/language_tools");
-    //const beautify = ace.require("ace/ext/beautify");
+    ace.require("ace/ext/keybinding_menu");
+    ace.require("ace/ext/options");
+    ace.require("ace/ext/searchbox");
+    ace.require("ace/ext/statusbar");
+    ace.require("ace/ext/themelist");
+    ace.require("ace/keybinding/vscode");
+    const beautify = ace.require("ace/ext/beautify");
+
     const editor = ace.edit("editor");
-    editor.setTheme("ace/theme/tomorrow_night_eighties");
-    editor.getSession().setMode("ace/mode/javascript");
-    editor.setShowPrintMargin(false);
+
+    /*
+    editor.commands.addCommand({
+      name: "replace",
+      description: "Replace",
+      bindKey: {win: "Ctrl-R", mac: "Command-Option-F"},
+      exec: function(editor) {
+        config.loadModule("ace/ext/searchbox", function(e) {e.Search(editor, true);});
+      }
+    });
+    */
+
     editor.setOptions({
         enableBasicAutocompletion: true,
-        enableSnippets: false,
+        enableSnippets: true,
         enableLiveAutocompletion: true,
-        fontSize: "16px"
+        showPrintMargin: false,
+        scrollPastEnd: 0.2,
+        fontSize: "16px",
+        theme: "ace/theme/nord_dark",
+        mode: "ace/mode/javascript"
     });
-    editor.getSession().on("change", () => {
-      onChange();
-    })
+
+    editor.session.on("change", () => {
+        onChange();
+    });
 
     const onChange = () => {
-      const code = editor.getSession().getValue();
-      WebviewCallback.onContentChanged(code);
+        const code = editor.getSession().getValue();
+        WebviewCallback.onContentChanged(code);
     }
 
+    const decode = (text) => decodeURIComponent(atob(text))
+
     const setCode = (code) => {
-      const prcCode = atob(code);
-      //console.log("atob= "+prcCode);
-      editor.setValue(decodeURIComponent(prcCode), -1);
-      editor.clearSelection();
-      //beautify.beautify(editor.getSession());
+        editor.setValue(decode(code), -1);
+        editor.clearSelection();
+    }
+
+    const beautifyCode =
+        () => beautify.beautify(editor.getSession());
+
+    const resetUndoStack =
+        () => editor.session.getUndoManager().reset()
+
+    const undo = () =>
+        editor.session.getUndoManager().undo();
+
+    const redo = () =>
+        editor.session.getUndoManager().redo();
+
+    const setTheme = (name) =>
+        editor.setTheme(`ace/theme/${name}`);
+
+    const setLanguage = (name) =>
+        editor.session.setMode(`ace/mode/${name}`);
+
+    const appendText = (text) => {
+        let cursorPos = editor.getCursorPosition();
+        editor.session.insert(cursorPos, decode(text));
     }
 
     WebviewCallback.onLoadComplete();
     const placeHolder = document.getElementById("placeholder");
     if (placeHolder.style.display !== "none") {
-      placeHolder.style.display = "none"
+        placeHolder.style.display = "none"
     }
-  </script>
+</script>
 </body>
 </html>

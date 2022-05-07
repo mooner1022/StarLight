@@ -7,10 +7,6 @@ import dev.mooner.starlight.plugincore.project.JobLocker
 import dev.mooner.starlight.plugincore.project.Project
 import kotlin.concurrent.schedule
 
-/*
- * TODO: 콜백 함수 구현 문제 해결. 각 언어별 Implementation?
- */
-
 class TimerApi: Api<TimerApi.Timer>() {
 
     class Timer(

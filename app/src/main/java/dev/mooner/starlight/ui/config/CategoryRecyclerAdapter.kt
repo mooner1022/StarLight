@@ -11,18 +11,33 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.size.Scale
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.callbacks.onDismiss
+import com.afollestad.materialdialogs.color.colorChooser
+import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.input.getInputField
 import com.afollestad.materialdialogs.input.input
+import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.google.android.material.switchmaterial.SwitchMaterial
 import dev.mooner.starlight.R
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.*
 import dev.mooner.starlight.plugincore.utils.Icon
+import dev.mooner.starlight.plugincore.utils.hasFlag
+import dev.mooner.starlight.ui.config.list.ListRecyclerAdapter
+import dev.mooner.starlight.ui.dialog.DialogUtils
+import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.angmarch.views.NiceSpinner
 
 class CategoryRecyclerAdapter(
@@ -36,19 +51,23 @@ class CategoryRecyclerAdapter(
     private val toggleValues: MutableMap<String, Boolean> = hashMapOf()
     private val toggleListeners: MutableMap<String, MutableList<(isEnabled: Boolean) -> Unit>> = hashMapOf()
 
+    private val dumpedObjects: MutableList<Any> = mutableListOf()
+
     var isHavingError = false
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ConfigViewHolder {
         val layout = when(viewType) {
-            ConfigObjectType.TOGGLE.viewType -> R.layout.config_toggle
-            ConfigObjectType.SEEKBAR.viewType -> R.layout.config_slider
-            ConfigObjectType.STRING.viewType -> R.layout.config_string
-            ConfigObjectType.SPINNER.viewType -> R.layout.config_spinner
+            ConfigObjectType.TOGGLE.viewType       -> R.layout.config_toggle
+            ConfigObjectType.SEEKBAR.viewType      -> R.layout.config_slider
+            ConfigObjectType.STRING.viewType       -> R.layout.config_string
+            ConfigObjectType.SPINNER.viewType      -> R.layout.config_spinner
             ConfigObjectType.BUTTON_FLAT.viewType,
-            ConfigObjectType.PASSWORD.viewType -> R.layout.config_button_flat
-            ConfigObjectType.BUTTON_CARD.viewType -> R.layout.config_button_card
-            ConfigObjectType.CUSTOM.viewType -> R.layout.config_custom
-            else -> 0
+            ConfigObjectType.PASSWORD.viewType,
+            ConfigObjectType.COLOR_PICKER.viewType -> R.layout.config_button_flat
+            ConfigObjectType.BUTTON_CARD.viewType  -> R.layout.config_button_card
+            ConfigObjectType.LIST.viewType         -> R.layout.config_list
+            ConfigObjectType.CUSTOM.viewType       -> R.layout.config_custom
+            else -> error("Unhandled viewType: $viewType")
         }
         val view = LayoutInflater.from(context).inflate(layout, parent, false)
         return ConfigViewHolder(view, viewType)
@@ -95,15 +114,33 @@ class CategoryRecyclerAdapter(
         }
         when(viewData.viewType) {
             ConfigObjectType.TOGGLE.viewType -> {
-                val toggleValue = getDefault() as Boolean
-                toggleValues[viewData.id] = toggleValue
-                holder.toggle.isChecked = toggleValue
-                holder.toggle.setOnCheckedChangeListener { _, isChecked ->
+                fun callListeners(isChecked: Boolean) {
+                    (viewData as ToggleConfigObject).onValueChangedListener?.invoke(holder.toggle, isChecked)
                     onConfigChanged(viewData.id, holder.toggle, isChecked)
                     if (viewData.id in toggleListeners) {
                         for (listener in toggleListeners[viewData.id]!!) {
                             listener(isChecked)
                         }
+                    }
+                }
+
+                require(viewData is ToggleConfigObject)
+                val toggleValue = getDefault() as Boolean
+                toggleValues[viewData.id] = toggleValue
+                holder.toggle.isChecked = toggleValue
+                holder.toggle.setOnCheckedChangeListener { _, isChecked ->
+                    if (viewData.enableWarnMsg != null || viewData.disableWarnMag != null) {
+                        with(viewData) { if (isChecked) enableWarnMsg else disableWarnMag }?.let { lazyMessage ->
+                            DialogUtils.showConfirmDialog(context, title = "경고", message = lazyMessage()) { isConfirmed ->
+                                if (isConfirmed) {
+                                    callListeners(isChecked)
+                                } else {
+                                    holder.toggle.isChecked = !holder.toggle.isChecked
+                                }
+                            }
+                        } ?: callListeners(isChecked)
+                    } else {
+                        callListeners(isChecked)
                     }
                 }
             }
@@ -167,7 +204,7 @@ class CategoryRecyclerAdapter(
                 holder.layoutButton.setOnClickListener {
                     if (!holder.layoutButton.isEnabled) return@setOnClickListener
                     MaterialDialog(it.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                        cornerRadius(context.resources.getDimension(R.dimen.card_radius))
+                        cornerRadius(res = R.dimen.card_radius)
                         maxWidth(res = R.dimen.dialog_width)
                         title(text = data.title)
                         input(waitForPositiveButton = false) { dialog, text ->
@@ -183,9 +220,7 @@ class CategoryRecyclerAdapter(
                             //Logger.v("password= $password, encoded= $encoded")
                             onConfigChanged(viewData.id, null, encoded)
                         }
-                        negativeButton(text = "취소") { dialog ->
-                            dialog.dismiss()
-                        }
+                        negativeButton(text = "취소", click = MaterialDialog::dismiss)
                     }
                 }
             }
@@ -194,16 +229,18 @@ class CategoryRecyclerAdapter(
                     setBackgroundColor(context.getColor(R.color.transparent))
                     attachDataSource((viewData as SpinnerConfigObject).items)
                     setOnSpinnerItemSelectedListener { _, _, position, _ ->
+                        viewData.onItemSelectedListener?.invoke(this, position)
                         onConfigChanged(viewData.id, holder.spinner, position)
                     }
                     selectedIndex = getDefault() as Int
                 }
             }
-            ConfigObjectType.BUTTON_FLAT.viewType,
-            ConfigObjectType.PASSWORD.viewType -> {
+            ConfigObjectType.BUTTON_FLAT.viewType -> {
                 val data = viewData as ButtonConfigObject
-                holder.layoutButton.setOnClickListener {
-                    if (holder.layoutButton.isEnabled) data.onClickListener(it)
+                if (data.onClickListener != null) {
+                    holder.layoutButton.setOnClickListener {
+                        if (holder.layoutButton.isEnabled) data.onClickListener?.invoke(it)
+                    }
                 }
                 if (data.backgroundColor != null) {
                     holder.layoutButton.setBackgroundColor(data.backgroundColor!!)
@@ -211,11 +248,139 @@ class CategoryRecyclerAdapter(
             }
             ConfigObjectType.BUTTON_CARD.viewType -> {
                 val data = viewData as ButtonConfigObject
-                holder.cardViewButton.setOnClickListener {
-                    if (holder.cardViewButton.isEnabled) data.onClickListener(it)
+                if (data.onClickListener != null) {
+                    holder.cardViewButton.setOnClickListener {
+                        if (holder.cardViewButton.isEnabled) data.onClickListener?.invoke(it)
+                    }
                 }
                 if (data.backgroundColor != null) {
                     holder.cardViewButton.setCardBackgroundColor(data.backgroundColor!!)
+                }
+            }
+            ConfigObjectType.COLOR_PICKER.viewType -> {
+                val data = viewData as ColorPickerConfigObject
+
+                val colors = data.colors.keys.toIntArray()
+                val subColors = data.colors.map { it.value.toIntArray() }.toTypedArray()
+
+                val allowCustomArgb = data.flags hasFlag ColorPickerConfigObject.FLAG_CUSTOM_ARGB
+                val showAlphaSelector = allowCustomArgb && data.flags hasFlag ColorPickerConfigObject.FLAG_ALPHA_SELECTOR
+
+                val initialSelection = (getDefault() as Int).let { def -> if (def == 0x0) null else def }
+
+                holder.layoutButton.setOnClickListener { view ->
+                    MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                        var selected: Int? = null
+                        cornerRadius(res = R.dimen.card_radius)
+                        maxWidth(res = R.dimen.dialog_width)
+                        title(text = data.title)
+                        colorChooser(
+                            colors = colors,
+                            subColors = subColors,
+                            allowCustomArgb = allowCustomArgb,
+                            showAlphaSelector = showAlphaSelector,
+                            initialSelection = initialSelection
+                        ) { _, color ->
+                            selected = color
+                        }
+                        positiveButton(R.string.ok) {
+                            if (selected == null) {
+                                Toast.makeText(context, "선택된 값이 없어 저장되지 않았어요.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                holder.icon.imageTintList = selected?.let(ColorStateList::valueOf)
+                                data.onColorSelectedListener?.invoke(holder.layoutButton, selected!!)
+                                onConfigChanged(viewData.id, holder.layoutButton, selected!!)
+                            }
+                        }
+                        negativeButton(R.string.cancel)
+                    }
+                }
+
+                holder.icon.imageTintList = initialSelection?.let(ColorStateList::valueOf)
+            }
+            ConfigObjectType.LIST.viewType -> {
+                val data = viewData as ListConfigObject
+
+                val list: MutableList<Map<String, TypedString>> =
+                    Session.json.decodeFromString(getDefault() as String)
+
+                val mappedList = list.map { it.mapValues { v -> v.value.cast()!! } }.toMutableList()
+                val recyclerAdapter = let {
+                    dumpedObjects += ListRecyclerAdapter(context, data.onDraw, data.onInflate, data.structure, mappedList) { cfgList ->
+                        val encoded = Json.encodeToString(cfgList.map { it.mapValues { v -> TypedString.parse(v.value) } })
+                        onConfigChanged(viewData.id, holder.recyclerViewList, encoded)
+                    }
+                    dumpedObjects.last() as ListRecyclerAdapter
+                }
+
+                val itemTouchCallback = object : ItemTouchHelper.SimpleCallback (ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.RIGHT){
+                    override fun onMove(
+                        recyclerView: RecyclerView,
+                        viewHolder: RecyclerView.ViewHolder,
+                        target: RecyclerView.ViewHolder
+                    ): Boolean {
+                        val fromPos: Int = viewHolder.bindingAdapterPosition
+                        val toPos: Int = target.bindingAdapterPosition
+                        recyclerAdapter.swapData(fromPos, toPos)
+                        return true
+                    }
+
+                    override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                        recyclerAdapter.removeData(viewHolder.layoutPosition)
+                    }
+                }
+
+                ItemTouchHelper(itemTouchCallback).attachToRecyclerView(holder.recyclerViewList)
+
+                holder.recyclerViewList.apply {
+                    itemAnimator = FadeInUpAnimator()
+                    layoutManager = LinearLayoutManager(context)
+                    adapter = recyclerAdapter
+                }
+
+                recyclerAdapter.notifyItemRangeInserted(0, list.size)
+
+                holder.buttonAddList.setOnClickListener { view ->
+                    val configData: MutableMap<String, Any> = mutableMapOf()
+                    MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT))
+                        .show {
+                            title(res = R.string.add)
+                            cornerRadius(res = R.dimen.card_radius)
+                            maxWidth(res = R.dimen.dialog_width)
+                            lifecycleOwner(view.findViewTreeLifecycleOwner())
+                            customView(R.layout.dialog_logs)
+
+                            val recycler: RecyclerView = findViewById(R.id.rvLog)
+
+                            val configAdapter = ConfigAdapter.Builder(view.context) {
+                                bind(recycler)
+                                onConfigChanged { _, id, _, data ->
+                                    configData[id] = data
+                                }
+                                structure {
+                                    config {
+                                        category {
+                                            id = "list_structure"
+                                            items = data.structure
+                                        }
+                                    }
+                                }
+                            }.build()
+
+                            onDismiss {
+                                configAdapter.destroy()
+                            }
+
+                            positiveButton(R.string.ok) {
+                                if (configData.isNotEmpty()) {
+                                    recyclerAdapter.data += configData
+                                    recyclerAdapter.notifyItemInserted(recyclerAdapter.data.size)
+                                    val encoded = Json.encodeToString(recyclerAdapter.data.map { it.mapValues { v -> TypedString.parse(v.value) } })
+                                    onConfigChanged(viewData.id, holder.recyclerViewList, encoded)
+                                }
+                            }
+                            negativeButton(R.string.cancel)
+                        }
                 }
             }
             ConfigObjectType.CUSTOM.viewType -> {
@@ -262,11 +427,17 @@ class CategoryRecyclerAdapter(
                     ConfigObjectType.SPINNER.viewType -> {
                         holder.spinner.isEnabled = isEnabled
                     }
-                    ConfigObjectType.BUTTON_FLAT.viewType -> {
+                    ConfigObjectType.BUTTON_FLAT.viewType,
+                    ConfigObjectType.PASSWORD.viewType,
+                    ConfigObjectType.COLOR_PICKER.viewType -> {
                         holder.layoutButton.isEnabled = isEnabled
                     }
                     ConfigObjectType.BUTTON_CARD.viewType -> {
                         holder.cardViewButton.isEnabled = isEnabled
+                    }
+                    ConfigObjectType.LIST.viewType -> {
+                        holder.buttonAddList.isEnabled = isEnabled
+                        holder.recyclerViewList.isEnabled = isEnabled
                     }
                 }
             }
@@ -285,6 +456,7 @@ class CategoryRecyclerAdapter(
     fun destroy() {
         toggleValues.clear()
         toggleListeners.clear()
+        dumpedObjects.clear()
     }
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
@@ -305,7 +477,10 @@ class CategoryRecyclerAdapter(
         lateinit var cardViewButton: CardView
         lateinit var layoutButton: ConstraintLayout
 
-        lateinit var customLayout: LinearLayout
+        lateinit var buttonAddList: Button
+        lateinit var recyclerViewList: RecyclerView
+
+        lateinit var customLayout: FrameLayout
 
         init {
             if (viewType != ConfigObjectType.CUSTOM.viewType) {
@@ -328,11 +503,16 @@ class CategoryRecyclerAdapter(
                     spinner = itemView.findViewById(R.id.spinner)
                 }
                 ConfigObjectType.BUTTON_FLAT.viewType,
-                ConfigObjectType.PASSWORD.viewType -> {
+                ConfigObjectType.PASSWORD.viewType,
+                ConfigObjectType.COLOR_PICKER.viewType -> {
                     layoutButton = itemView.findViewById(R.id.layout_configButton)
                 }
                 ConfigObjectType.BUTTON_CARD.viewType -> {
                     cardViewButton = itemView.findViewById(R.id.cardView_configButton)
+                }
+                ConfigObjectType.LIST.viewType -> {
+                    buttonAddList = itemView.findViewById(R.id.buttonAdd)
+                    recyclerViewList = itemView.findViewById(R.id.recyclerView)
                 }
                 ConfigObjectType.CUSTOM.viewType -> {
                     customLayout = itemView.findViewById(R.id.container)

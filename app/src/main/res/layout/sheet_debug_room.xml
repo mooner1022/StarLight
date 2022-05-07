@@ -1,28 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/round_top"
-        app:behavior_hideable="false"
-        app:behavior_peekHeight="24dp"
-        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
-        android:backgroundTint="@color/background" android:focusableInTouchMode="true">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/round_top"
+    android:backgroundTint="@color/background"
+    android:focusableInTouchMode="true"
+    app:behavior_hideable="false"
+    app:behavior_peekHeight="24dp"
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
     <androidx.cardview.widget.CardView
-            android:layout_width="48dp"
-            android:layout_height="6dp" android:id="@+id/cardView2"
-            app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" android:layout_marginTop="8dp" app:cardElevation="0dp"
-            app:cardBackgroundColor="#7A7A7A" app:cardCornerRadius="3dp"/>
+        android:id="@+id/cardViewTopRadius"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        app:cardBackgroundColor="@color/background"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp"
+        app:cardMaxElevation="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardView2"
+        android:layout_width="48dp"
+        android:layout_height="6dp"
+        android:layout_marginTop="8dp"
+        app:cardBackgroundColor="@color/text"
+        app:cardCornerRadius="3dp"
+        app:cardElevation="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
     <androidx.recyclerview.widget.RecyclerView
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" android:layout_marginStart="@dimen/card_margin_horizontal"
-            android:layout_marginEnd="@dimen/card_margin_horizontal"
-            app:layout_constraintTop_toBottomOf="@+id/cardView2"
-            android:layout_marginTop="16dp" android:id="@+id/configRecyclerView" android:overScrollMode="never"
-            android:nestedScrollingEnabled="true" android:clipToPadding="false" android:paddingBottom="16dp"/>
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginStart="@dimen/card_margin_horizontal"
+        android:layout_marginEnd="@dimen/card_margin_horizontal"
+        android:layout_marginTop="16dp"
+        android:id="@+id/configRecyclerView"
+        android:overScrollMode="never"
+        android:nestedScrollingEnabled="true"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cardView2"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

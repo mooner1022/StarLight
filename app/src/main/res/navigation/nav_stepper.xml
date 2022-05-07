@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_stepper"
+    app:startDestination="@id/step_1_dest">
+
+    <fragment
+        android:id="@+id/step_1_dest"
+        android:name="dev.mooner.starlight.ui.splash.quickstart.steps.SetPermissionFragment"
+        android:label="@string/step_permission"
+        tools:layout="@layout/fragment_set_permission" />
+
+    <fragment
+        android:id="@+id/step_2_dest"
+        android:name="dev.mooner.starlight.ui.splash.quickstart.steps.AllowNotificationFragment"
+        android:label="@string/step_read_notification"
+        tools:layout="@layout/fragment_allow_notification" />
+
+    <fragment
+        android:id="@+id/step_3_dest"
+        android:name="dev.mooner.starlight.ui.splash.quickstart.steps.LocationTermsFragment"
+        android:label="@string/step_install_wearable"
+        tools:layout="@layout/fragment_location_terms" />
+</navigation>

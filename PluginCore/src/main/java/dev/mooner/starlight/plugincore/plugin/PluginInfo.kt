@@ -29,7 +29,7 @@ data class PluginInfo(
     val description: String
 ) {
     companion object {
-        fun decode(str: String): PluginInfo {
+        fun decodeFromString(str: String): PluginInfo {
             if (str.isBlank() || !str.startsWith("{") || !str.endsWith("}")) throw IllegalArgumentException("Illegal plugin info string: $str")
             return json.decodeFromString(str)
         }

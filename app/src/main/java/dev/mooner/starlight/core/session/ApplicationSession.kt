@@ -7,120 +7,131 @@
 package dev.mooner.starlight.core.session
 
 import android.content.Context
+import android.content.pm.PackageInfo
+import android.os.Build
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.api2.AppApi
 import dev.mooner.starlight.api.legacy.*
-import dev.mooner.starlight.api.original.LanguageManagerApi
-import dev.mooner.starlight.api.original.PluginManagerApi
-import dev.mooner.starlight.api.original.ProjectLoggerApi
-import dev.mooner.starlight.api.original.ProjectManagerApi
+import dev.mooner.starlight.api.original.*
 import dev.mooner.starlight.api.unused.TimerApi
-import dev.mooner.starlight.languages.JSRhino
+import dev.mooner.starlight.languages.rhino.JSRhino
+import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginLoader
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.plugin.EventListener
 import dev.mooner.starlight.plugincore.utils.NetworkUtil
+import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.ui.widget.DummyWidgetSlim
 import dev.mooner.starlight.ui.widget.LogsWidget
 import dev.mooner.starlight.ui.widget.UptimeWidgetDefault
 import dev.mooner.starlight.ui.widget.UptimeWidgetSlim
-import dev.mooner.starlight.utils.FileUtils
+import dev.mooner.starlight.utils.getInternalDirectory
+import dev.mooner.starlight.utils.getKakaoTalkVersion
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
+import kotlinx.serialization.encodeToString
+import java.io.File
+import kotlin.system.exitProcess
 
 object ApplicationSession {
+
+    private var mKakaoTalkVersion: Version? = null
+    val kakaoTalkVersion: Version? = null
+
     private var mInitMillis: Long = 0L
     val initMillis get() = mInitMillis
 
-    var isInitComplete: Boolean = false
     @JvmStatic
-    var isAfterInit: Boolean = false
+    private var mIsInitComplete: Boolean = false
+    val isInitComplete get() = mIsInitComplete
 
-    private val listeners: MutableSet<SessionInitListener> = hashSetOf()
-
-    fun setOnInitListener(listener: SessionInitListener) {
-        if (isInitComplete) listener.onFinished()
-        else listeners += listener
-    }
-
-    internal fun init(context: Context) {
-        if (isInitComplete) {
-            onFinished()
-            return
-        }
-        if (isAfterInit) {
-            Logger.w("ApplicationSession", "Rejecting re-init of ApplicationSession")
-            return
-        }
-        isAfterInit = true
-
-        val starlightDir = FileUtils.getInternalDirectory()
-        Logger.init(starlightDir)
-
-        onPhaseChanged(context.getString(R.string.step_plugincore_init))
-        Session.init(starlightDir)
-        Session.languageManager.apply {
-            //addLanguage("", JSV8())
-            addLanguage("", JSRhino())
-            //addLanguage(GraalVMLang())
-        }
-
-        if (!Session.globalConfig.getCategory("plugin").getBoolean("safe_mode", false)) {
-            pluginLoader.loadPlugins { onPhaseChanged(String.format(context.getString(R.string.step_plugins), it)) }
-        } else {
-            Logger.i("PluginLoader", "Skipping plugin load...")
-        }
-
-        onPhaseChanged(context.getString(R.string.step_default_lib))
-        Session.apiManager.apply {
-            // Original Apis
-            addApi(LanguageManagerApi())
-            addApi(ProjectLoggerApi())
-            addApi(ProjectManagerApi())
-            addApi(PluginManagerApi())
-            addApi(TimerApi())
-
-            // Legacy Apis
-            addApi(UtilsApi())
-            addApi(LegacyApi())
-            addApi(BridgeApi())
-            addApi(FileStreamApi())
-            addApi(DataBaseApi())
-            addApi(DeviceApi())
-
-            // Api2 Apis
-            addApi(AppApi())
-
-            //addApi(ClientApi())
-            //addApi(EventApi())
-            //addApi(TimerApi())
-        }
-
-        Session.widgetManager.apply {
-            val name = "기본 위젯"
-            addWidget(name, DummyWidgetSlim())
-            addWidget(name, UptimeWidgetDefault())
-            addWidget(name, UptimeWidgetSlim())
-            addWidget(name, LogsWidget())
-        }
-
-        onPhaseChanged(context.getString(R.string.step_projects))
-        Session.projectLoader.loadProjects()
-
-        NetworkUtil.registerNetworkStatusListener(context)
-        NetworkUtil.addOnNetworkStateChangedListener { state ->
-            if (pluginManager.getPlugins().isNotEmpty()) {
-                for (plugin in pluginManager.getPlugins()) {
-                    plugin.onNetworkStateChanged(state)
-                }
+    internal fun init(context: Context): Flow<String?> =
+        flow {
+            if (mIsInitComplete) {
+                Logger.w("ApplicationSession", "Rejecting re-init of ApplicationSession")
+                emit(null)
+                return@flow
             }
-        }
 
-        isInitComplete = true
-        onFinished()
-        listeners.clear()
-        mInitMillis = System.currentTimeMillis()
-    }
+            setExceptionHandler(context)
+
+            val starlightDir = getInternalDirectory()
+            Logger.init(starlightDir)
+
+            emit(context.getString(R.string.step_check_kakaotalk_version))
+            context.getKakaoTalkVersion()?.let {
+                if (Version.check(it))
+                    mKakaoTalkVersion = Version.fromString(it)
+                else
+                    Logger.e("카카오톡 버전 파싱에 실패했어요. (버전: ${it})")
+            }
+            Logger.d("카카오톡 버전: $mKakaoTalkVersion")
+
+            emit(context.getString(R.string.step_plugincore_init))
+
+            Session
+                .apply { init(starlightDir) }
+                .let { session ->
+                    session.languageManager.apply {
+                        //addLanguage("", JSV8())
+                        addLanguage("", JSRhino())
+                        //addLanguage(GraalVMLang())
+                    }
+
+                    if (!session.globalConfig.category("plugin").getBoolean("safe_mode", false)) {
+                        pluginLoader.loadPlugins()
+                            .flowOn(Dispatchers.Default)
+                            .onEach { value ->
+                                if (value is String)
+                                    emit(context.getString(R.string.step_plugins).format(value))
+                            }
+                            .collect()
+                    } else {
+                        Logger.i("PluginLoader", "Skipping plugin load...")
+                    }
+                }
+
+            emit(context.getString(R.string.step_default_lib))
+            Session.apiManager.apply {
+                // Original Apis
+                addApi(LanguageManagerApi())
+                addApi(ProjectLoggerApi())
+                addApi(ProjectManagerApi())
+                addApi(PluginManagerApi())
+                addApi(TimerApi())
+                addApi(NotificationApi())
+
+                // Legacy Apis
+                addApi(UtilsApi())
+                addApi(LegacyApi())
+                addApi(BridgeApi())
+                addApi(FileStreamApi())
+                addApi(DataBaseApi())
+                addApi(DeviceApi())
+
+                // Api2 Apis
+                addApi(AppApi())
+            }
+
+            Session.widgetManager.apply {
+                val name = "기본 위젯"
+                addWidget(name, DummyWidgetSlim())
+                addWidget(name, UptimeWidgetDefault())
+                addWidget(name, UptimeWidgetSlim())
+                addWidget(name, LogsWidget())
+            }
+
+            emit(context.getString(R.string.step_projects))
+            Session.projectLoader.loadProjects()
+
+            setNetworkHandler(context)
+
+            mIsInitComplete = true
+            emit(null)
+            mInitMillis = System.currentTimeMillis()
+        }
 
     internal fun shutdown() {
         try {
@@ -130,14 +141,54 @@ object ApplicationSession {
         }
     }
 
-    private fun onFinished() {
-        for (listener in listeners) listener.onFinished()
+    private fun setNetworkHandler(context: Context) {
+        NetworkUtil.registerNetworkStatusListener(context)
+        NetworkUtil.addOnNetworkStateChangedListener { state ->
+            if (pluginManager.getPlugins().isNotEmpty()) {
+                for (plugin in pluginManager.getPlugins()) {
+                    try {
+                        (plugin as EventListener).onNetworkStateChanged(state)
+                    } catch (e: Error) {
+                        Logger.e("Failed to call network event for plugin '${plugin.info.id}': $e")
+                    }
+                }
+            }
+        }
     }
 
-    private fun onPhaseChanged(phase: String) {
-        for (listener in listeners) listener.onPhaseChanged(phase)
-    }
+    private fun setExceptionHandler(context: Context) =
+        Thread.setDefaultUncaughtExceptionHandler { paramThread, paramThrowable ->
+            val pInfo: PackageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+                pInfo.longVersionCode
+            else
+                pInfo.versionCode
 
-    //lateinit var context: Context
-    lateinit var eventListeners: List<EventListener>
+            val errMsg = """
+                *** 치명적인 오류가 발생했습니다. 앱을 종료하는 중... ***
+                [버그 제보시 아래 메세지를 첨부해주세요.]
+                ──────────
+                StarLight v${pInfo.versionName}(build ${versionCode})
+                PluginCore v${Info.PLUGINCORE_VERSION}
+                Build.VERSION.SDK_INT: ${Build.VERSION.SDK_INT}
+                Build.DEVICE: ${Build.DEVICE}
+                thread  : ${paramThread.name}
+                message : ${paramThrowable.localizedMessage}
+                cause   : ${paramThrowable.cause}
+                ┉┉┉┉┉┉┉┉┉┉
+                stackTrace:
+                
+            """.trimIndent() + paramThrowable.stackTraceToString() + "\n──────────"
+            Logger.wtf("StarLight-core", errMsg)
+
+            val startupData = Session.json.encodeToString(mapOf("last_error" to errMsg))
+            try {
+                File(getInternalDirectory(), "STARTUP.info").writeText(startupData)
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            } finally {
+                shutdown()
+                exitProcess(2)
+            }
+        }
 }

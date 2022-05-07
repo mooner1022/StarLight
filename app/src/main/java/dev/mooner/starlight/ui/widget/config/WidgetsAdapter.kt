@@ -45,17 +45,14 @@ class WidgetsAdapter (
         viewData.onCreateWidget(holder.view)
     }
 
-    fun onResume() {
-        data.forEach { it.onResumeWidget() }
-    }
+    fun onResume() =
+        data.forEach(Widget::onResumeWidget)
 
-    fun onPause() {
-        data.forEach { it.onPauseWidget() }
-    }
+    fun onPause() =
+        data.forEach(Widget::onPauseWidget)
 
-    fun onDestroy() {
-        data.forEach { it.onDestroyWidget() }
-    }
+    fun onDestroy() =
+        data.forEach(Widget::onDestroyWidget)
 
     fun notifyAllItemInserted() {
         notifyItemRangeInserted(0, data.size)

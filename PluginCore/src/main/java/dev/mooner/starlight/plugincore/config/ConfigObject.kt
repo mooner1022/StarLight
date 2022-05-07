@@ -7,6 +7,10 @@ import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.hasFlag
 import java.io.File
 
+typealias ConfigStructure = List<CategoryConfigObject>
+typealias OnInflateBlock = (view: View) -> Unit
+typealias OnDrawBlock = (view: View, data: Map<String, Any>) -> Unit
+
 enum class ConfigObjectType(
     val viewType: Int
 ) {
@@ -19,7 +23,9 @@ enum class ConfigObjectType(
     BUTTON_CARD(-4),
     CUSTOM(5),
     CATEGORY(6),
-    CATEGORY_NESTED(-6)
+    CATEGORY_NESTED(-6),
+    COLOR_PICKER(7),
+    LIST(8)
 }
 
 interface ConfigObject {
@@ -41,6 +47,9 @@ data class ToggleConfigObject(
     override val title: String,
     override val description: String?,
     private val defaultValue: Boolean,
+    val onValueChangedListener: ToggleValueChangedListener?,
+    val enableWarnMsg: LazyMessage?,
+    val disableWarnMag: LazyMessage?,
     override val icon: Icon? = null,
     override val iconFile: File? = null,
     override val iconResId: Int? = null,
@@ -120,6 +129,7 @@ data class SpinnerConfigObject(
     override val id: String,
     override val title: String,
     override val description: String? = null,
+    val onItemSelectedListener: SpinnerItemSelectedListener?,
     val items: List<String>,
     private val defaultIndex: Int = 0,
     override val icon: Icon? = null,
@@ -140,7 +150,7 @@ data class ButtonConfigObject(
     override val id: String,
     override val title: String,
     override val description: String? = null,
-    val onClickListener: (view: View) -> Unit,
+    val onClickListener: ButtonOnClickListener?,
     private val buttonType: Type = Type.FLAT,
     override val icon: Icon? = null,
     override val iconFile: File? = null,
@@ -165,6 +175,58 @@ data class ButtonConfigObject(
         FLAT,
         CARD
     }
+}
+
+data class ColorPickerConfigObject(
+    override val id: String,
+    override val title: String,
+    override val description: String? = null,
+    override val icon: Icon? = null,
+    override val iconFile: File? = null,
+    override val iconResId: Int? = null,
+    override val dependency: String? = null,
+    override val default: Any = 0x0,
+    val onColorSelectedListener: ColorSelectedListener? = null,
+    val flags: Int = FLAG_NONE,
+    val colors: Map<Int, Array<Int>>
+): ConfigObject {
+    @ColorInt
+    override val iconTintColor: Int? = null
+    override val type: ConfigObjectType =
+        ConfigObjectType.COLOR_PICKER
+    override val viewType: Int
+        get() = type.viewType
+
+    companion object {
+
+        const val FLAG_NONE = 0x0
+
+        const val FLAG_CUSTOM_ARGB = 0x1
+
+        const val FLAG_ALPHA_SELECTOR = 0x2
+    }
+}
+
+data class ListConfigObject(
+    override val id: String,
+    override val title: String,
+    override val description: String? = null,
+    override val icon: Icon? = null,
+    override val iconFile: File? = null,
+    override val iconResId: Int? = null,
+    @ColorInt
+    override val iconTintColor: Int?,
+    override val dependency: String? = null,
+    override val default: Any = "[]",
+    //val items: List<Map<String, TypedString>>,
+    val onInflate: OnInflateBlock,
+    val onDraw: OnDrawBlock,
+    val structure: List<ConfigObject>
+): ConfigObject {
+    override val type: ConfigObjectType =
+        ConfigObjectType.LIST
+    override val viewType: Int
+        get() = type.viewType
 }
 
 data class CustomConfigObject(

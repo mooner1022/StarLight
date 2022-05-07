@@ -6,12 +6,14 @@
 
 package dev.mooner.starlight.api.legacy
 
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.project.Project
 import org.mozilla.javascript.ScriptableObject
 
+@Suppress("unused")
 class BridgeApi: Api<BridgeApi.Bridge>() {
 
     class Bridge {
@@ -20,7 +22,7 @@ class BridgeApi: Api<BridgeApi.Bridge>() {
 
             @JvmStatic
             fun getScopeOf(scriptName: String): ScriptableObject {
-                val project = dev.mooner.starlight.plugincore.Session.projectManager.getProject(scriptName)?: error("Unable to find project: $scriptName")
+                val project = Session.projectManager.getProject(scriptName)?: error("Unable to find project: $scriptName")
                 require(project.getLanguage().id == "JS_RHINO") { "Method 'Bridge.getScopeOf()' only supports project with language 'JS_RHINO'" }
                 return project.getScope() as ScriptableObject
             }

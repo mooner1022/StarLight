@@ -21,6 +21,7 @@
     <style name="Theme.StarLight.NoActionBar" parent="Theme.StarLight">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <item name="aboutLibrariesStyle">@style/Theme.StarLight.NoActionBar</item>
     </style>
 
     <style name="Theme.StarLight.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
@@ -46,5 +47,10 @@
     <style name="CollapsedAppBar" parent="@android:style/TextAppearance.Medium">
         <item name="android:textStyle">bold</item>
         <item name="android:fontFamily">@font/nanumsquare_round_bold</item>
+    </style>
+
+    <style name="Stepper.CardView" parent="CardView">
+        <item name="cardElevation">0dp</item>
+        <item name="cardCornerRadius">@dimen/card_radius</item>
     </style>
 </resources>

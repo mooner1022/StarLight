@@ -3,6 +3,7 @@ package dev.mooner.starlight.plugincore.event
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.logger.Logger
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.CoroutineContext
 
@@ -21,12 +22,13 @@ class EventManager: CoroutineScope {
     }
 }
 
-internal val eventCoroutineScope get() = CoroutineScope(Session.eventManager.coroutineContext + SupervisorJob(Session.eventManager.coroutineContext.job))
+val eventCoroutineScope get() = CoroutineScope(Session.eventManager.coroutineContext + SupervisorJob(Session.eventManager.coroutineContext.job))
 
 public inline fun <reified T: Event> EventManager.on(
     scope: CoroutineScope = this,
     noinline callback: suspend T.() -> Unit
-): Job = eventFlow.buffer()
+): Job = eventFlow
+    .buffer(Channel.UNLIMITED)
     .filterIsInstance<T>()
     .onEach { event ->
         scope.launch(event.coroutineContext) {

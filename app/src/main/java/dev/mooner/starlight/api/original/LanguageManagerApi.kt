@@ -6,12 +6,14 @@
 
 package dev.mooner.starlight.api.original
 
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiFunction
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.project.Project
 
+@Suppress("unused")
 class LanguageManagerApi: Api<LanguageManagerApi.LanguageManager>() {
 
     class LanguageManager(
@@ -20,7 +22,7 @@ class LanguageManagerApi: Api<LanguageManagerApi.LanguageManager>() {
         fun getLanguage(): Language = project.getLanguage()
 
         fun getLanguage(id: String): Language? {
-            return dev.mooner.starlight.plugincore.Session.languageManager.getLanguage(id)
+            return Session.languageManager.getLanguage(id)
         }
     }
 

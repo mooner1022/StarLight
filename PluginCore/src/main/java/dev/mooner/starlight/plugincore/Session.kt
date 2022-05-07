@@ -9,7 +9,7 @@ package dev.mooner.starlight.plugincore
 import android.os.Build
 import android.os.Environment
 import dev.mooner.starlight.plugincore.api.ApiManager
-import dev.mooner.starlight.plugincore.config.data.GlobalConfig
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventManager
 import dev.mooner.starlight.plugincore.language.LanguageManager
 import dev.mooner.starlight.plugincore.library.LibraryLoader
@@ -61,24 +61,16 @@ object Session {
     val globalConfig: GlobalConfig =
         GlobalConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
 
-    private var mLanguageManager: LanguageManager by Delegates.notNull()
-    val languageManager get() = mLanguageManager
+    val languageManager: LanguageManager = LanguageManager()
+    val pluginLoader: PluginLoader       = PluginLoader()
+    val pluginManager: PluginManager     = PluginManager()
+    val widgetManager: WidgetManager     = WidgetManager()
+    val eventManager: EventManager       = EventManager()
 
     private var mProjectLoader: ProjectLoader by Delegates.notNull()
     private var mProjectManager: ProjectManager by Delegates.notNull()
     val projectManager get() = mProjectManager
     val projectLoader get() = mProjectLoader
-
-    private var mPluginLoader: PluginLoader by Delegates.notNull()
-    private var mPluginManager: PluginManager by Delegates.notNull()
-    val pluginLoader get() = mPluginLoader
-    val pluginManager get() = mPluginManager
-
-    private var mWidgetManager: WidgetManager by Delegates.notNull()
-    val widgetManager get() = mWidgetManager
-
-    private var mEventManager: EventManager by Delegates.notNull()
-    val eventManager get() = mEventManager
 
     private var mLibraryLoader: LibraryLoader? = null
     private var mLibraryManager: LibraryManager? = null
@@ -89,13 +81,6 @@ object Session {
     val apiManager get() = mApiManager
 
     const val isDebugging: Boolean = true
-
-    private val onInitCompleteListeners: MutableList<() -> Unit> = arrayListOf()
-
-    fun setOnInitCompleteListener(listener: () -> Unit) {
-        if (isInitComplete) listener()
-        else onInitCompleteListeners += listener
-    }
 
     fun init(baseDir: File) {
         if (isInitComplete || isDuringInit) {
@@ -111,22 +96,15 @@ object Session {
 
         val projectDir = File(baseDir, "projects/")
 
-        mLanguageManager = LanguageManager()
-        mWidgetManager = WidgetManager()
-        mPluginLoader = PluginLoader()
-        mPluginManager = PluginManager()
         mProjectManager = ProjectManager(projectDir)
         mProjectLoader = ProjectLoader(projectDir)
-        mEventManager = EventManager()
         mApiManager = ApiManager()
 
-        if (globalConfig.getCategory("beta_features").getBoolean("load_external_dex_libs", false)) {
+        if (globalConfig.category("beta_features").getBoolean("load_external_dex_libs", false)) {
             mLibraryLoader = LibraryLoader()
             mLibraryManager = LibraryManager(libraryLoader!!.loadLibraries(baseDir).toMutableSet())
             apiManager.addApi(LibraryManagerApi())
         }
-
-        for (listener in onInitCompleteListeners) listener()
         isDuringInit = false
         mIsInitComplete = true
     }

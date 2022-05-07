@@ -39,9 +39,11 @@
                         android:layout_width="0dp"
                         android:layout_height="20dp"
                         android:src="@drawable/ic_round_sort_by_alpha_24"
-                        app:tint="#FFFFFF" app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent"
-                        android:layout_marginStart="20dp"/>
+                        android:layout_marginStart="20dp"
+                        app:tint="#FFFFFF"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"/>
                 <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -50,36 +52,39 @@
                         android:textColor="#FFFFFF"
                         android:textSize="16sp"
                         app:layout_constraintStart_toEndOf="@+id/alignStateIcon"
-                        app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintTop_toTopOf="parent"
-                />
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"/>
                 <TextView
-                        android:id="@+id/alignState"
+                        android:id="@+id/textViewAlignState"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="0.15"
                         android:fontFamily="@font/nanumsquare_round_extrabold"
                         android:text="@string/default_placeholder"
                         android:textColor="#FFFFFF"
-                        android:textSize="16sp" app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent"
-                        android:layout_marginEnd="20dp"/>
+                        android:textSize="16sp"
+                        android:layout_marginEnd="20dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"/>
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.cardview.widget.CardView>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fabNewProject"
-                android:layout_width="54dp"
-                android:layout_height="54dp"
-                android:layout_gravity="bottom|center_horizontal"
-                android:foregroundGravity="center"
-                android:padding="16dp"
-                android:src="@drawable/ic_round_add_white_24"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="@dimen/card_margin_horizontal"
-                app:tint="@color/white"
-                app:elevation="0dp"
-                app:rippleColor="@color/main_purple"
-                app:backgroundTint="@color/main_purple"/>
+            android:id="@+id/fabNewProject"
+            android:layout_width="54dp"
+            android:layout_height="54dp"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="@dimen/card_margin_horizontal"
+            android:foregroundGravity="center"
+            android:padding="16dp"
+            android:src="@drawable/ic_round_add_white_24"
+            app:backgroundTint="@color/main_purple"
+            app:elevation="0dp"
+            app:rippleColor="@color/main_purple"
+            app:tint="@color/white"
+            tools:ignore="SpeakableTextPresentCheck"/>
     </LinearLayout>
 
     <androidx.cardview.widget.CardView
@@ -93,6 +98,18 @@
             app:cardCornerRadius="@dimen/card_radius"
             app:cardElevation="@dimen/card_elevation"
             app:cardBackgroundColor="@color/cardview">
+
+        <TextView
+                android:id="@+id/textViewNoProjectYet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:fontFamily="@font/nanumsquare_round_bold"
+                android:text="@string/nothing_yet"
+                android:textSize="18sp"
+                android:drawableTop="@drawable/ic_box_empty"
+                android:visibility="gone"
+                android:textAlignment="center"/>
 
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewProjectList"

@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.aboutlibraries.LibsBuilder
 import dev.mooner.starlight.databinding.ActivityAppInfoBinding
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
@@ -26,7 +27,7 @@ class AppInfoActivity : AppCompatActivity() {
 
     private var devModeClicks: Int = 0
 
-    private val isDevMode get() = dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("dev").getBoolean("dev_mode", false)
+    private val isDevMode get() = Session.globalConfig.category("dev").getBoolean("dev_mode", false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +42,7 @@ class AppInfoActivity : AppCompatActivity() {
 
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.recyclerView)
-            configs { getConfig(pInfo, versionCode) }
+            structure { getConfig(pInfo, versionCode) }
             savedData(emptyMap())
             lifecycleOwner(this@AppInfoActivity)
         }.build()
@@ -54,14 +55,13 @@ class AppInfoActivity : AppCompatActivity() {
     private fun getConfig(pInfo: PackageInfo, versionCode: Number) = config {
         category {
             id = "general"
-            items = items {
+            items {
                 button {
                     id = "name"
                     title = "앱 버전"
                     description = "v${pInfo.versionName}(build ${versionCode})"
                     icon = Icon.STAR
                     iconTintColor = color { "#6455A1" }
-                    onClickListener = {}
                 }
                 button {
                     id = "version"
@@ -69,13 +69,12 @@ class AppInfoActivity : AppCompatActivity() {
                     description = "v${dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION}"
                     icon = Icon.LAYERS
                     iconTintColor = color { "#C073A0" }
-                    onClickListener = {}
                 }
                 button {
                     id = "github"
                     title = "GitHub"
                     icon = Icon.GITHUB
-                    onClickListener = {
+                    setOnClickListener { _ ->
                         openWebUrl("https://github.com/mooner1022/StarLight")
                     }
                 }
@@ -83,14 +82,14 @@ class AppInfoActivity : AppCompatActivity() {
         }
         category {
             id = "dev"
-            items = items {
+            items {
                 button {
                     id = "dev"
                     title = "무너"
                     icon = Icon.DEVELOPER_BOARD
                     description = "ariel@mooner.dev"
                     iconTintColor = color { "#3A1C71" }
-                    onClickListener = {
+                    setOnClickListener { _ ->
                         if (isDevMode) {
                             Snackbar.make(binding.root, "이미 개발자 모드가 활성화되었습니다.", Snackbar.LENGTH_SHORT).show()
                         } else {
@@ -100,8 +99,8 @@ class AppInfoActivity : AppCompatActivity() {
                                     Snackbar.make(binding.root, "개발자 모드 활성화까지 ${8 - devModeClicks} 남았습니다.", Snackbar.LENGTH_SHORT).show()
                                 }
                                 8 -> {
-                                    dev.mooner.starlight.plugincore.Session.globalConfig.edit {
-                                        getCategory("dev")["dev_mode"] = true
+                                    Session.globalConfig.edit {
+                                        category("dev")["dev_mode"] = true
                                     }
                                     Snackbar.make(binding.root, "개발자 모드 활성화", Snackbar.LENGTH_SHORT).show()
                                 }
@@ -113,7 +112,7 @@ class AppInfoActivity : AppCompatActivity() {
                     id = "github"
                     title = "GitHub"
                     icon = Icon.GITHUB
-                    onClickListener = {
+                    setOnClickListener { _ ->
                         openWebUrl("https://github.com/mooner1022")
                     }
                 }
@@ -122,7 +121,7 @@ class AppInfoActivity : AppCompatActivity() {
                     title = "오픈소스 라이센스"
                     icon = Icon.DEVELOPER_MODE
                     iconTintColor = color { "#D76D77" }
-                    onClickListener = {
+                    setOnClickListener { _ ->
                         LibsBuilder().apply {
                             withShowLoadingProgress(true)
                             withAboutIconShown(true)

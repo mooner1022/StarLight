@@ -3,6 +3,7 @@ package dev.mooner.starlight.ui.widget
 import android.animation.LayoutTransition
 import android.view.Gravity
 import android.view.View
+import android.widget.FrameLayout
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import dev.mooner.starlight.plugincore.utils.draw
@@ -30,7 +31,7 @@ class DummyWidgetSlim: Widget() {
         (view as FrameLayout).addView(textView)
          */
         val context = view.context
-        draw(view) {
+        draw(view as FrameLayout) {
             val chipGroup = ChipGroup(context)
             chipGroup.add(
                 width = matchParent,

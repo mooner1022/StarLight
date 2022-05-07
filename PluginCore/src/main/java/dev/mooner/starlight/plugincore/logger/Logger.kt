@@ -7,6 +7,9 @@
 package dev.mooner.starlight.plugincore.logger
 
 import android.util.Log
+import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.Session.eventManager
+import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.utils.TimeUtils
 import dev.mooner.starlight.plugincore.utils.currentThread
 import kotlinx.coroutines.CoroutineScope
@@ -28,8 +31,8 @@ object Logger {
     private var mLogs: MutableList<LogData> = mutableListOf()
     val logs: List<LogData> get() = if (showInternalLogs) mLogs else mLogs.filterNot { it.type == LogType.VERBOSE }
 
-    private val showInternalLogs get() = dev.mooner.starlight.plugincore.Session.isInitComplete && dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("dev_mode_config").getBoolean("show_internal_log", false)
-    private val writeInternalLogs get() = dev.mooner.starlight.plugincore.Session.isInitComplete && dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("dev_mode_config").getBoolean("write_internal_log", false)
+    private val showInternalLogs get() = Session.isInitComplete && Session.globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)
+    private val writeInternalLogs get() = Session.isInitComplete && Session.globalConfig.category("dev_mode_config").getBoolean("write_internal_log", false)
 
     fun init(baseDir: File) {
         val dirName = TimeUtils.formatCurrentDate("yyyy-MM-dd")
@@ -52,6 +55,7 @@ object Logger {
      * @param key an id for the listener, used to remove or release the listener
      * @param listener called when a log is created
      */
+    @Deprecated("Callback listener is deprecated. Use EventManager.on<LogCreateEvent>().")
     fun bindListener(key: String, listener: (log: LogData) -> Unit) {
         listeners[key] = listener
     }
@@ -61,6 +65,7 @@ object Logger {
      *
      * @param key an id for the listener, set when binding the listener
      */
+    @Deprecated("Callback listener is deprecated.")
     fun unbindListener(key: String) {
         if (listeners.containsKey(key)) {
             listeners.remove(key)
@@ -139,9 +144,7 @@ object Logger {
         }
 
         if (data.type != LogType.VERBOSE || showInternalLogs)
-            for ((_, listener) in listeners) {
-                listener(data)
-            }
+            eventManager.fireEventWithContext(Events.Log.LogCreateEvent(data))
 
         if ((data.type.priority >= LogType.DEBUG.priority || writeInternalLogs) && this::logFile.isInitialized) {
             CoroutineScope(Dispatchers.IO).launch {

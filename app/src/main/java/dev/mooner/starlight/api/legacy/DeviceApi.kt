@@ -10,7 +10,7 @@ import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.project.Project
 
-
+@Suppress("unused")
 class DeviceApi: Api<DeviceApi.Device>() {
 
     class Device {

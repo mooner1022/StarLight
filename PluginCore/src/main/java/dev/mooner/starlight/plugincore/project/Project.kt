@@ -9,19 +9,19 @@ package dev.mooner.starlight.plugincore.project
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.eventManager
 import dev.mooner.starlight.plugincore.Session.json
-import dev.mooner.starlight.plugincore.Session.projectManager
-import dev.mooner.starlight.plugincore.config.data.Config
-import dev.mooner.starlight.plugincore.config.data.FileConfig
+import dev.mooner.starlight.plugincore.config.FileConfig
+import dev.mooner.starlight.plugincore.config.MutableConfig
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.language.Language
-import dev.mooner.starlight.plugincore.logger.LocalLogger
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.ProjectLogger
 import dev.mooner.starlight.plugincore.pipeline.CompilePipeline
 import dev.mooner.starlight.plugincore.pipeline.PipelineInfo
 import dev.mooner.starlight.plugincore.utils.hasFile
+import dev.mooner.starlight.plugincore.utils.pairOf
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.*
 import kotlinx.serialization.encodeToString
 import java.io.File
 import kotlin.coroutines.CoroutineContext
@@ -33,53 +33,24 @@ class Project (
     val info: ProjectInfo
 ): CoroutineScope {
 
-    companion object {
-        private const val CONFIG_FILE_NAME  = "config.json"
-        private const val INFO_FILE_NAME    = "project.json"
-        private const val LOGS_FILE_NAME    = "logs-local.json"
-
-        private const val DEF_THREAD_POOL_SIZE = 3
-
-        fun create(dir: File, config: ProjectInfo): Project {
-            val folder = File(dir.path, config.name)
-            folder.mkdirs()
-            File(folder.path, INFO_FILE_NAME).writeText(json.encodeToString(config), Charsets.UTF_8)
-            val language = Session.languageManager.getLanguage(config.languageId)?: throw IllegalArgumentException("Cannot find language ${config.languageId}")
-            File(folder.path, config.mainScript).writeText(language.defaultCode, Charsets.UTF_8)
-            return Project(folder, config)
-        }
-    }
-
     //val configManager: ConfigManager = ConfigManager(File(directory, CONFIG_FILE_NAME))
-    val config: Config = FileConfig(File(directory, CONFIG_FILE_NAME))
+    val config: MutableConfig = FileConfig(File(directory, CONFIG_FILE_NAME))
 
     var threadPoolName: String? = null
     //private lateinit var scope: CoroutineScope
 
-    override val coroutineContext: CoroutineContext by lazy {
-        if (threadPoolName == null || context == null) {
-            if (context != null) {
-                context?.cancel()
-                context = null
-            }
-            threadPoolName = "$tag-worker"
-            val poolSize = getThreadPoolSize()
-            context = newFixedThreadPoolContext(poolSize, threadPoolName!!)
-            Logger.v("Allocated thread pool $threadPoolName with $poolSize threads to project ${info.name}")
-        }
-        SupervisorJob() + context!!
-    }
-    private var context: CoroutineContext? = null
+    override val coroutineContext get() = mContext!!
+    private var mContext: CoroutineContext? = null
 
     val isCompiled: Boolean
         get() = langScope != null
     private var langScope: Any? = null
-    private val lang: Language = Session.languageManager.getLanguage(info.languageId)?: throw IllegalArgumentException("Cannot find language ${info.languageId}")
+    private val lang: Language = Session.languageManager.getLanguage(info.languageId, newInstance = true)?: throw IllegalArgumentException("Cannot find language ${info.languageId} for project '${info.name}'")
 
-    val logger: LocalLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
-        LocalLogger.fromFile(File(directory, LOGS_FILE_NAME))
+    val logger: ProjectLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
+        ProjectLogger.fromFile(File(directory, LOGS_FILE_NAME))
     } else {
-        LocalLogger.create(directory)
+        ProjectLogger.create(directory)
     }
 
     private val tag: String
@@ -120,16 +91,8 @@ class Project (
             return
         }
 
-        if (threadPoolName == null || context == null) {
-            if (context != null) {
-                context?.cancel()
-                context = null
-            }
-            threadPoolName = "$tag-worker"
-            val poolSize = getThreadPoolSize()
-            context = newFixedThreadPoolContext(poolSize, threadPoolName!!)
-            Logger.v("Allocated thread pool $threadPoolName with $poolSize threads to project ${info.name}")
-        }
+        if (threadPoolName == null || mContext == null)
+            mContext = createContext()
 
         fun onError(e: Throwable) {
             logger.e(tag, "Error while running: $e")
@@ -139,17 +102,18 @@ class Project (
             if (shutdownOnError) {
                 logger.e(info.name, "Shutting down project '${info.name}'...")
                 info.isEnabled = false
+                saveInfo()
                 if (langScope != null && lang.requireRelease) {
                     lang.release(langScope!!)
                     langScope = null
                 }
             }
             e.printStackTrace()
-            projectManager.onStateChanged(this)
+            //projectManager.onStateChanged(this)
             onException(e)
         }
 
-        CoroutineScope(context!!).launch {
+        CoroutineScope(mContext!!).launch {
             try {
                 JobLocker.withLock(threadPoolName!!) {
                     lang.callFunction(langScope!!, name, args, ::onError)
@@ -198,50 +162,62 @@ class Project (
         */
     }
 
+    fun compile(throwException: Boolean = false): Boolean = runBlocking {
+        try {
+            compileAsync(true).collect()
+            true
+        } catch (e: Throwable) {
+            if (throwException) throw e
+            false
+        }
+    }
+
     /**
      * Compiles the project with configured values.
      *
      * @param throwException if *true*, throws exceptions occurred during compilation.
      */
-    fun compile(throwException: Boolean = false, onStageChanged: StageChangeListener? = null): Boolean {
-        val pipeline = CompilePipeline(
-            project = this,
-            info = PipelineInfo(
-                stages = hashSetOf(
-                    //DemoPipelineStage(),
-                    //DemoPipelineStage()
+    fun compileAsync(throwException: Boolean = false): Flow<Pair<String, Int>> =
+        callbackFlow {
+            val pipeline = CompilePipeline(
+                project = this@Project,
+                info = PipelineInfo(
+                    stages = hashSetOf(
+                        //DemoPipelineStage(),
+                        //DemoPipelineStage()
+                    )
                 )
-            )
-        ) { stage, perc ->
-            if (onStageChanged != null) onStageChanged(stage.name, perc)
-        }
-        try {
-            val rawCode: String = (directory.listFiles()?.find { it.isFile && it.name == info.mainScript }?: throw IllegalArgumentException(
-                    "Cannot find main script ${info.mainScript} for project ${info.name}"
-            )).readText(Charsets.UTF_8)
-            if (langScope != null && lang.requireRelease) {
-                lang.release(langScope!!)
-                logger.v(tag, "engine released")
+            ) { stage, perc ->
+                trySend(pairOf(stage.name, perc))
             }
-            logger.i("Compiling project ${info.name}...")
-            langScope = pipeline.run(rawCode)
-            /*
-            langScope = lang.compile(
-                code = rawCode,
-                apis = apiManager.getApis(),
-                project = this
-            )
-             */
-            eventManager.fireEventWithContext(Events.Project.ProjectCompileEvent(project = this))
-            projectManager.onStateChanged(this)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            logger.e(tag, e.toString())
-            if (throwException) throw e
-            return false
+            try {
+                val rawCode: String = (directory.listFiles()?.find { it.isFile && it.name == info.mainScript }?: throw IllegalArgumentException(
+                    "Cannot find main script ${info.mainScript} for project ${info.name}"
+                )).readText(Charsets.UTF_8)
+                if (langScope != null && lang.requireRelease) {
+                    lang.release(langScope!!)
+                    logger.v(tag, "engine released")
+                }
+                logger.i("Compiling project ${info.name}...")
+                langScope = pipeline.run(rawCode)
+                /*
+                langScope = lang.compile(
+                    code = rawCode,
+                    apis = apiManager.getApis(),
+                    project = this
+                )
+                 */
+                eventManager.fireEventWithContext(Events.Project.ProjectCompileEvent(project = this@Project))
+                //projectManager.onStateChanged(this)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                logger.e(tag, e.toString())
+                if (throwException) throw e
+            } finally {
+                close()
+            }
+            awaitClose()
         }
-        return true
-    }
 
     fun setEnabled(enabled: Boolean): Boolean {
         if (isCompiled) {
@@ -260,7 +236,7 @@ class Project (
      * Ignored if application is on background.
      */
     fun requestUpdate() {
-        projectManager.onStateChanged(this)
+        eventManager.fireEventWithContext(Events.Project.ProjectInfoUpdateEvent(project = this))
     }
 
     /**
@@ -299,7 +275,7 @@ class Project (
      * @return the size of running jobs.
      */
     fun activeJobs(): Int {
-        return if (context == null || threadPoolName == null) 0
+        return if (mContext == null || threadPoolName == null) 0
         else JobLocker.withParent(threadPoolName!!).activeJobs()
     }
 
@@ -308,12 +284,12 @@ class Project (
      * Cancels all running jobs.
      */
     fun stopAllJobs() {
-        if (context != null) {
+        if (mContext != null) {
             if (threadPoolName != null) {
                 JobLocker.withParent(threadPoolName!!).purge()
             }
-            (context as CoroutineDispatcher).cancel()
-            context = null
+            (mContext as CoroutineDispatcher).cancel()
+            mContext = null
         }
     }
 
@@ -337,7 +313,43 @@ class Project (
         this
     }
 
-    private fun getThreadPoolSize(): Int = config.getCategory("beta_features").getInt("thread_pool_size", DEF_THREAD_POOL_SIZE)
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun createContext(): CoroutineContext {
+        if (threadPoolName == null || mContext == null) {
+            if (mContext != null) {
+                mContext?.cancel()
+                mContext = null
+            }
+            threadPoolName = "$tag-worker"
+            val poolSize = getThreadPoolSize()
+            mContext = newFixedThreadPoolContext(poolSize, threadPoolName!!)
+            Logger.v("Allocated thread pool $threadPoolName with $poolSize threads to project ${info.name}")
+        }
+        return mContext!!
+    }
+
+    private fun getThreadPoolSize(): Int = config.category("beta_features").getInt("thread_pool_size", DEF_THREAD_POOL_SIZE)
 
     fun isEventCallAllowed(eventId: String): Boolean = info.allowedEventIds.isEmpty() || eventId in info.allowedEventIds
+
+    companion object {
+        private const val CONFIG_FILE_NAME  = "config.json"
+        private const val INFO_FILE_NAME    = "project.json"
+        private const val LOGS_FILE_NAME    = "logs-local.json"
+
+        private const val DEF_THREAD_POOL_SIZE = 3
+
+        fun create(dir: File, config: ProjectInfo): Project {
+            val folder = File(dir.path, config.name)
+            folder.mkdirs()
+            File(folder.path, INFO_FILE_NAME).writeText(json.encodeToString(config), Charsets.UTF_8)
+            val language = getLanguage(config)
+            File(folder.path, config.mainScript).writeText(language.defaultCode, Charsets.UTF_8)
+            return Project(folder, config)
+        }
+
+        private fun getLanguage(info: ProjectInfo): Language =
+            Session.languageManager.getLanguage(info.languageId)
+                ?: throw IllegalArgumentException("Cannot find language ${info.languageId} for project '${info.name}'")
+    }
 }

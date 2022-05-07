@@ -6,14 +6,16 @@
 
 package dev.mooner.starlight.plugincore.plugin
 
+import android.view.View
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
+import dev.mooner.starlight.plugincore.config.Config
+import dev.mooner.starlight.plugincore.config.ConfigImpl
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.TypedString
-import dev.mooner.starlight.plugincore.config.data.Config
-import dev.mooner.starlight.plugincore.config.data.ConfigImpl
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.fireEvent
 import dev.mooner.starlight.plugincore.utils.getFileSize
@@ -23,6 +25,7 @@ import java.io.File
 import kotlin.io.path.Path
 import kotlin.io.path.pathString
 
+@Suppress("unused")
 abstract class StarlightPlugin: Plugin, EventListener {
 
     internal lateinit var file: File
@@ -30,14 +33,13 @@ abstract class StarlightPlugin: Plugin, EventListener {
     private lateinit var classLoader: ClassLoader
     private var isEnabled = false
     private var configPath: File? = null
-    lateinit var info: PluginInfo
+
+    private lateinit var mInfo: PluginInfo
+    override val info: PluginInfo
+        get() = mInfo
 
     val fileSize: Float get() = file.getFileSize()
     val fileName: String get() = file.name
-
-    companion object {
-        private const val T = "StarlightPlugin"
-    }
 
     constructor() {
         val classLoader = this.javaClass.classLoader
@@ -59,7 +61,17 @@ abstract class StarlightPlugin: Plugin, EventListener {
         init(config, dataDir, file, classLoader!!)
     }
 
-    override val configObjects: List<CategoryConfigObject> = listOf()
+    override fun getConfigStructure(): ConfigStructure { return emptyList() }
+
+    @Deprecated(
+        message = "Retained for legacy compatability, don't use it.",
+        replaceWith = ReplaceWith("onConfigUpdated(config: Config)", "dev.mooner.starlight.plugincore.plugin.onConfigUpdated")
+    )
+    override fun onConfigUpdated(updated: Map<String, Any>) {}
+
+    override fun onConfigUpdated(config: Config, updated: Map<String, Set<String>>) {}
+
+    override fun onConfigChanged(id: String, view: View?, data: Any) {}
 
     override fun isEnabled(): Boolean = isEnabled
 
@@ -85,13 +97,43 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    fun getDataFolder(): File = dataDir
+    override fun getDataFolder(): File = dataDir
 
-    fun getAsset(directory: String): File = File(dataDir.resolve("assets"), directory)
+    override fun getAsset(path: String): File = File(dataDir.resolve("assets"), path)
+
+    override fun toString(): String = info.fullName
+
+    override fun equals(other: Any?): Boolean {
+        return when(other) {
+            is StarlightPlugin -> other.info.id == this.info.id
+            null -> false
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        var result = dataDir.hashCode()
+        result = 31 * result + isEnabled.hashCode()
+        result = 31 * result + info.hashCode()
+        result = 31 * result + fileSize.hashCode()
+        return result
+    }
+
+    final override fun init(
+        info: PluginInfo,
+        dataDir: File,
+        file: File,
+        classLoader: ClassLoader
+    ) {
+        this.mInfo = info
+        this.dataDir = dataDir
+        this.file = file
+        this.classLoader = classLoader
+    }
 
     protected fun getClassLoader(): ClassLoader = classLoader
 
-    fun addLanguage(language: Language) {
+    protected fun addLanguage(language: Language) {
         var isLoadSuccess = false
         try {
             Session.languageManager.addLanguage(Path(dataDir.resolve("assets").path, language.id).pathString, language)
@@ -104,40 +146,16 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    fun addWidget(widget: Widget) = Session.widgetManager.addWidget(this.info.name, widget)
+    protected fun addWidget(widget: Widget) =
+        Session.widgetManager.addWidget(this.info.name, widget)
 
-    protected fun <T> addApi(api: Api<T>) = Session.apiManager.addApi(api)
+    protected fun <T> addApi(api: Api<T>) =
+        Session.apiManager.addApi(api)
 
-    protected inline fun <reified T: ProjectEvent> fireProjectEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean = Session.projectManager.fireEvent<T>(args, onFailure = onFailure)
+    protected inline fun <reified T: ProjectEvent> fireProjectEvent(vararg args: Any, noinline onFailure: (project: Project, e: Throwable) -> Unit = { _, _ -> }) =
+        Session.projectManager.fireEvent<T>(args, onFailure = onFailure)
 
-    override fun toString(): String = info.fullName
-
-    override fun equals(other: Any?): Boolean {
-        return when(other) {
-            is StarlightPlugin -> other.info.id == this.info.id
-            null -> false
-            else -> false
-        }
-    }
-
-    fun init(
-        info: PluginInfo,
-        dataDir: File,
-        file: File,
-        classLoader: ClassLoader
-    ) {
-        this.info = info
-        this.dataDir = dataDir
-        this.file = file
-        this.classLoader = classLoader
-    }
-
-    override fun hashCode(): Int {
-        var result = dataDir.hashCode()
-        result = 31 * result + isEnabled.hashCode()
-        result = 31 * result + info.hashCode()
-        result = 31 * result + fileSize.hashCode()
-        result = 31 * result + configObjects.hashCode()
-        return result
+    companion object {
+        private const val T = "StarlightPlugin"
     }
 }

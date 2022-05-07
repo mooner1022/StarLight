@@ -10,13 +10,11 @@ import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import kotlin.reflect.full.createInstance
-import kotlin.reflect.jvm.jvmName
 
 inline fun <reified T: ProjectEvent> Project.fireEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean {
     Logger.v("EventManager", "Calling explicit event ${T::class.simpleName} for project ${this.info.name}")
     val event = T::class.createInstance().also { event ->
         for ((index, arg) in event.argTypes.withIndex()) {
-            Logger.v("${arg.jvmName}, ${args[index]::class.jvmName}")
             if (arg != args[index]::class)
                 error("Passed argument types [${args.joinToString { clazz -> clazz::class.simpleName.toString() }}] do not match the required argument types: [${event.argTypes.joinToString { clazz -> clazz.simpleName.toString() }}]")
         }

@@ -2,7 +2,6 @@ package dev.mooner.starlight.ui.settings
 
 import android.content.Intent
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,11 +9,13 @@ import androidx.fragment.app.Fragment
 import dev.mooner.starlight.databinding.FragmentSettingsBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.CategoryConfigObject
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.settings.dev.startDevModeActivity
 import dev.mooner.starlight.ui.settings.info.AppInfoActivity
+import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.utils.restartApplication
 
 class SettingsFragment : Fragment() {
@@ -31,11 +32,11 @@ class SettingsFragment : Fragment() {
 
         configAdapter = ConfigAdapter.Builder(requireActivity()) {
             bind(binding.configRecyclerView)
-            configs { getConfigList() }
+            structure(::getSettingStruct)
             savedData(Session.globalConfig.getAllConfigs())
             onConfigChanged { parentId, id, _, data ->
                 Session.globalConfig.edit {
-                    getCategory(parentId).setAny(id, data)
+                    category(parentId).setAny(id, data)
                 }
             }
         }.build()
@@ -45,7 +46,7 @@ class SettingsFragment : Fragment() {
 
     private fun reloadConfigList() = configAdapter?.reload()
 
-    private fun getConfigList(): List<CategoryConfigObject> {
+    private fun getSettingStruct(): ConfigStructure {
         return config {
             category {
                 id = "general"
@@ -54,7 +55,7 @@ class SettingsFragment : Fragment() {
                 iconTintColor = color { "#5584AC" }
                 //textColor = color { "#706EB9" }
                 flags = CategoryConfigObject.FLAG_NESTED
-                items = items {
+                items {
                     toggle {
                         id = "global_power"
                         title = "전역 전원"
@@ -68,8 +69,38 @@ class SettingsFragment : Fragment() {
                         title = "설정 목록 새로고침"
                         icon = Icon.REFRESH
                         iconTintColor = color { "#FF8243" }
-                        onClickListener = {
-                            reloadConfigList()
+                        setOnClickListener(::reloadConfigList)
+                    }
+                }
+            }
+            category {
+                id = "project"
+                title = "프로젝트"
+                icon = Icon.PROJECTS
+                iconTintColor = color { "#B4CFB0" }
+                //textColor = color { "#706EB9" }
+                flags = CategoryConfigObject.FLAG_NESTED
+                items {
+                    toggle {
+                        id = "compile_animation"
+                        title = "컴파일 애니메이션"
+                        description = "컴파일 시 프로그레스 바의 애니메이션을 부드럽게 조정합니다."
+                        icon = Icon.COMPRESS
+                        iconTintColor = color { "#FEAC5E" }
+                        defaultValue = true
+                    }
+                    toggle {
+                        id = "load_global_libraries"
+                        title = "전역 모듈 로드"
+                        description = "global_modules 폴더 내의 모듈을 컴파일 시 적용합니다. 신뢰하지 않는 코드가 실행될 수 있습니다."
+                        icon = Icon.FOLDER
+                        iconTintColor = color { "#4BC0C8" }
+                        defaultValue = false
+                        warnOnEnable {
+                            """
+                                |이 기능은 신뢰되지 않는 코드를 기기에서 실행할 수 있으며, 이로 인해 발생하는 어떠한 상해나 손실도 개발자는 보상하거나 보장하지 않습니다.
+                                |기능을 활성화할까요?
+                            """.trimMargin()
                         }
                     }
                 }
@@ -81,27 +112,7 @@ class SettingsFragment : Fragment() {
                 iconTintColor = color { "#95D1CC" }
                 //textColor = color { "#706EB9" }
                 flags = CategoryConfigObject.FLAG_NESTED
-                items = items {
-                    string {
-                        id = "load_timeout"
-                        title = "플러그인 로드 시간 제한(ms)"
-                        description = "플러그인의 로드 시간을 제한합니다. 설정한 시간을 초과한 플러그인은 불러오지 않습니다."
-                        icon = Icon.TIMER_OFF
-                        iconTintColor = color { "#BE9FE1" }
-                        inputType = InputType.TYPE_CLASS_NUMBER
-                        require = { text ->
-                            when(val intVal = text.toIntOrNull()) {
-                                null -> "올바르지 않은 값입니다."
-                                else -> {
-                                    if (intVal < 500) {
-                                        "설정할 수 있는 최솟값은 500ms 입니다."
-                                    } else {
-                                        null
-                                    }
-                                }
-                            }
-                        }
-                    }
+                items {
                     toggle {
                         id = "safe_mode"
                         title = "안전 모드 (재시작 필요)"
@@ -116,28 +127,36 @@ class SettingsFragment : Fragment() {
                         description = "안전모드 활성화 후 앱을 재시작합니다."
                         icon = Icon.REFRESH
                         iconTintColor = color { "#FF6F3C" }
-                        onClickListener = {
-                            requireContext().restartApplication()
-                        }
+                        setOnClickListener(requireContext()::restartApplication)
                         dependency = "safe_mode"
                     }
                 }
             }
             category {
-                id = "legacy"
-                title = "레거시"
-                icon = Icon.BOOKMARK
+                id = "notifications"
+                title = "알림, 이벤트"
+                icon = Icon.NOTIFICATIONS
                 iconTintColor = color { "#98BAE7" }
                 //textColor = color { "#706EB9" }
                 flags = CategoryConfigObject.FLAG_NESTED
-                items = items {
+                items {
                     toggle {
                         id = "use_legacy_event"
                         title = "레거시 이벤트 사용"
                         description = "메신저봇이나 채자봇과 호환되는 이벤트를 사용합니다."
                         icon = Icon.BOOKMARK
-                        iconTintColor = color("#98BAE7")
+                        iconTintColor = color { "#98BAE7" }
                         defaultValue = false
+                    }
+                    button {
+                        id = "set_package_rules"
+                        title = "패키지 규칙 설정"
+                        description = "패키지 별 알림을 수신할 규칙을 설정합니다."
+                        icon = Icon.DEVELOPER_BOARD
+                        iconTintColor = color { "#B4E197" }
+                        setOnClickListener { _ ->
+                            startActivity(Intent(activity, NotificationRulesActivity::class.java))
+                        }
                     }
                 }
             }
@@ -145,34 +164,29 @@ class SettingsFragment : Fragment() {
                 id = "info"
                 title = "정보"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     button {
                         id = "check_update"
                         title = "업데이트 확인"
                         icon = Icon.CLOUD_DOWNLOAD
                         iconTintColor = color { "#A7D0CD" }
-                        onClickListener = {
-
-                        }
                     }
                     button {
                         id = "app_info"
                         title = "앱 정보"
                         icon = Icon.INFO
                         iconTintColor = color { "#F1CA89" }
-                        onClickListener = {
+                        setOnClickListener { _ ->
                             startActivity(Intent(context, AppInfoActivity::class.java))
                         }
                     }
-                    if (Session.globalConfig.getCategory("dev").getBoolean("dev_mode") == true) {
+                    if (Session.globalConfig.category("dev").getBoolean("dev_mode") == true) {
                         button {
                             id = "developer_mode"
                             title = "개발자 모드"
                             icon = Icon.DEVELOPER_MODE
                             iconTintColor = color { "#93B5C6" }
-                            onClickListener = {
-                                requireContext().startDevModeActivity()
-                            }
+                            setOnClickListener(requireContext()::startDevModeActivity)
                         }
                     }
                 }

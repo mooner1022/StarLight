@@ -15,10 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.size.Scale
 import dev.mooner.starlight.R
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
-import dev.mooner.starlight.plugincore.config.ConfigObjectType
-import dev.mooner.starlight.plugincore.config.TypedString
-import dev.mooner.starlight.plugincore.config.config
+import dev.mooner.starlight.plugincore.config.*
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.utils.isDevMode
@@ -26,9 +23,9 @@ import dev.mooner.starlight.utils.startConfigActivity
 
 class ParentRecyclerAdapter(
     private val context: Context,
-    var configs: List<CategoryConfigObject> = mutableListOf(),
-    private val savedData: Map<String, Map<String, TypedString>> = mutableMapOf(),
-    private val onConfigChanged: (parentId: String, id: String, view: View?, data: Any) -> Unit
+    var configStructure: ConfigStructure = mutableListOf(),
+    private val savedData: ConfigData = mutableMapOf(),
+    private val onConfigChanged: OnConfigChangedListener
 ): RecyclerView.Adapter<ParentRecyclerAdapter.ViewHolder>() {
 
     private var recyclerAdapter: CategoryRecyclerAdapter? = null
@@ -52,19 +49,19 @@ class ParentRecyclerAdapter(
         return ViewHolder(view, viewType)
     }
 
-    override fun getItemCount(): Int = if (isDevMode) configs.size else configs.count { !it.isDevModeOnly }
+    override fun getItemCount(): Int = if (isDevMode) configStructure.size else configStructure.count { !it.isDevModeOnly }
 
     override fun getItemViewType(position: Int): Int {
-        val viewData = configs[position]
+        val viewData = configStructure[position]
         return if (viewData.isNested) ConfigObjectType.CATEGORY_NESTED.viewType
         else ConfigObjectType.CATEGORY.viewType
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val posData = configs[position]
+        val posData = configStructure[position]
         val viewData = if (posData.isDevModeOnly) {
             if (isDevMode) posData
-            else configs[position + 1]
+            else configStructure[position + 1]
         } else posData
 
         if (viewData.isNested) {
@@ -106,7 +103,7 @@ class ParentRecyclerAdapter(
                 context.startConfigActivity(
                     title = viewData.title,
                     subTitle = "설정",
-                    items = config {
+                    struct = config {
                         category {
                             id = "nested_category"
                             items = viewData.items
@@ -137,7 +134,7 @@ class ParentRecyclerAdapter(
                 onConfigChanged(viewData.id, id, view, data)
             }.apply {
                 this.data = children
-                saved = this@ParentRecyclerAdapter.savedData[viewData.id]?.toMutableMap()?: mutableMapOf()
+                saved = savedData[viewData.id]?.toMutableMap()?: mutableMapOf()
                 notifyItemRangeInserted(0, data.size)
             }
             val mLayoutManager = LinearLayoutManager(context)
@@ -173,7 +170,7 @@ class ParentRecyclerAdapter(
     }
 
     fun notifyAllItemInserted() {
-        notifyItemRangeInserted(0, configs.size)
+        notifyItemRangeInserted(0, configStructure.size)
     }
 
     fun destroy() {

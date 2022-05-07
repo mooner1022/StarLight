@@ -8,29 +8,56 @@ import androidx.annotation.DrawableRes
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.requiredField
 import java.io.File
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
+import kotlin.properties.Delegates.notNull
+
+typealias LazyMessage = () -> String
+
+typealias SpinnerItemSelectedListener = (view: View, index: Int) -> Unit
+typealias ButtonOnClickListener       = (view: View) -> Unit
+typealias ToggleValueChangedListener  = (view: View, toggle: Boolean) -> Unit
+typealias ColorSelectedListener       = (view: View, color: Int) -> Unit
 
 @DslMarker
-public annotation class ConfigBuilderDsl
+annotation class ConfigBuilderDsl
 
 @ConfigBuilderDsl
-fun config(block: ConfigBuilder.() -> Unit): List<CategoryConfigObject> {
+fun config(block: ConfigBuilder.() -> Unit): ConfigStructure {
     val builder = ConfigBuilder().apply(block)
     return builder.build(flush = true)
 }
 
+@Suppress("unused")
 class ConfigBuilder {
+
+    companion object {
+
+        @JvmStatic
+        private val colorCache: MutableMap<String, Int> = hashMapOf()
+    }
 
     private val objects: MutableList<CategoryConfigObject> = arrayListOf()
 
-    inline fun color(color: () -> String): Int = Color.parseColor(color())
+    fun color(color: () -> String): Int {
+        val hex = color()
+        return color(hex)
+    }
+
+    fun color(color: String): Int = colorCache[color] ?: let {
+        val colorInt = Color.parseColor(color)
+        colorCache[color] = colorInt
+        colorInt
+    }
 
     @ConfigBuilderDsl
     fun category(block: CategoryConfigBuilder.() -> Unit) {
         val category = CategoryConfigBuilder().apply(block)
-        objects.add(category.build())
+        objects += category.build()
     }
 
-    fun build(flush: Boolean = true): List<CategoryConfigObject> {
+    fun build(flush: Boolean = true): ConfigStructure {
         val list = objects.toList()
         if (flush) {
             objects.clear()
@@ -38,14 +65,8 @@ class ConfigBuilder {
         return list
     }
 
-    @ConfigBuilderDsl
-    fun items(block: ConfigItemBuilder.() -> Unit): List<ConfigObject> {
-        val builder = ConfigItemBuilder().apply(block)
-        return builder.build(flush = true)
-    }
-
-    inner class CategoryConfigBuilder {
-        var id: String? = null
+    class CategoryConfigBuilder {
+        var id: String by notNull()
         var title: String? = null
         @ColorInt
         var textColor: Int? = null
@@ -57,7 +78,7 @@ class ConfigBuilder {
         var iconResId: Int? = null
 
         @ColorInt
-        var iconTintColor: Int? = Color.parseColor("#000000")
+        var iconTintColor: Int? = null
 
         fun setIcon(icon: Icon? = null, iconFile: File? = null, @DrawableRes iconResId: Int? = null) {
             when {
@@ -69,14 +90,18 @@ class ConfigBuilder {
 
         var items: List<ConfigObject> = arrayListOf()
 
+        @ConfigBuilderDsl
+        fun items(block: ConfigItemBuilder.() -> Unit) {
+            val builder = ConfigItemBuilder().apply(block)
+            items = builder.build()
+        }
+
         fun build(): CategoryConfigObject {
-            requiredField("id", id)
-            //required("title", title)
             require(items.isNotEmpty()) { "Field 'items' must not be empty" }
 
             return CategoryConfigObject(
-                id = id!!,
-                title = title?: "",
+                id = id,
+                title = title ?: "",
                 icon = icon,
                 iconFile = iconFile,
                 iconResId = iconResId,
@@ -89,84 +114,59 @@ class ConfigBuilder {
     }
 }
 
+@Suppress("unused")
 class ConfigItemBuilder {
 
-    companion object {
-
-        @JvmStatic
-        private val colorCache: MutableMap<String, Int> = hashMapOf()
-    }
-
     private val objects: MutableList<ConfigObject> = arrayListOf()
-
-    fun color(color: () -> String): Int {
-        val hex = color()
-        return color(hex)
-    }
-
-    fun color(color: String): Int {
-        if (color !in colorCache) {
-            colorCache[color] = Color.parseColor(color)
-        }
-        return colorCache[color]!!
-    }
 
     private fun add(builder: ConfigBuilder) {
         objects += builder.build()
     }
 
     @ConfigBuilderDsl
-    fun button(block: ButtonConfigBuilder.() -> Unit) {
-        val button = ButtonConfigBuilder().apply(block)
-        add(button)
-    }
+    fun button(block: ButtonConfigBuilder.() -> Unit) =
+        add(ButtonConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun toggle(block: ToggleConfigBuilder.() -> Unit) {
-        val toggle = ToggleConfigBuilder().apply(block)
-        add(toggle)
-    }
+    fun toggle(block: ToggleConfigBuilder.() -> Unit) =
+        add(ToggleConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun seekbar(block: SeekbarConfigBuilder.() -> Unit) {
-        val seekbar = SeekbarConfigBuilder().apply(block)
-        add(seekbar)
-    }
+    fun seekbar(block: SeekbarConfigBuilder.() -> Unit) =
+        add(SeekbarConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun string(block: StringConfigBuilder.() -> Unit) {
-        val string = StringConfigBuilder().apply(block)
-        add(string)
-    }
+    fun string(block: StringConfigBuilder.() -> Unit) =
+        add(StringConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun password(block: PasswordConfigBuilder.() -> Unit) {
-        val pw = PasswordConfigBuilder().apply(block)
-        add(pw)
-    }
+    fun password(block: PasswordConfigBuilder.() -> Unit) =
+        add(PasswordConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun spinner(block: SpinnerConfigBuilder.() -> Unit) {
-        val spinner = SpinnerConfigBuilder().apply(block)
-        add(spinner)
-    }
+    fun spinner(block: SpinnerConfigBuilder.() -> Unit) =
+        add(SpinnerConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun custom(block: CustomConfigBuilder.() -> Unit) {
-        val custom = CustomConfigBuilder().apply(block)
-        add(custom)
-    }
+    fun colorPicker(block: ColorPickerConfigBuilder.() -> Unit) =
+        add(ColorPickerConfigBuilder().apply(block))
 
-    fun build(flush: Boolean = true): List<ConfigObject> {
-        val list = objects.toList()
-        if (flush) {
-            objects.clear()
-        }
-        return list
+    @ConfigBuilderDsl
+    fun list(block: ListConfigBuilder.() -> Unit) =
+        add(ListConfigBuilder().apply(block))
+
+    @ConfigBuilderDsl
+    fun custom(block: CustomConfigBuilder.() -> Unit) =
+        add(CustomConfigBuilder().apply(block))
+
+    internal fun build(): List<ConfigObject> {
+        val cp = objects.toList()
+        objects.clear()
+        return cp
     }
 
     abstract inner class ConfigBuilder {
-        var id: String? = null
+        var id: String by notNull()
         var title: String? = null
         var description: String? = null
 
@@ -176,7 +176,7 @@ class ConfigItemBuilder {
         var iconResId: Int? = null
 
         @ColorInt
-        var iconTintColor: Int? = Color.parseColor("#000000")
+        var iconTintColor: Int? = null
 
         var dependency: String? = null
 
@@ -192,23 +192,29 @@ class ConfigItemBuilder {
     }
 
     inner class ButtonConfigBuilder: ConfigBuilder() {
-        var onClickListener: ((view: View) -> Unit)? = null
+        private var mOnClickListener: ButtonOnClickListener? = null
         var type: ButtonConfigObject.Type = ButtonConfigObject.Type.FLAT
         @ColorInt
         var backgroundColor: Int? = null
 
+        fun setOnClickListener(callback: ButtonOnClickListener) {
+            mOnClickListener = callback
+        }
+
+        fun setOnClickListener(callback: () -> Unit) {
+            mOnClickListener = {callback()}
+        }
+
         override fun build(): ButtonConfigObject {
-            requiredField("id", id)
             requiredField("title", title)
-            requiredField("onClickListener", onClickListener)
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return ButtonConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
-                onClickListener = onClickListener!!,
+                onClickListener = mOnClickListener,
                 buttonType = type,
                 icon = icon,
                 iconFile = iconFile,
@@ -223,17 +229,39 @@ class ConfigItemBuilder {
     inner class ToggleConfigBuilder: ConfigBuilder() {
         var defaultValue: Boolean = false
 
+        private var toggleValueChangedListener: ToggleValueChangedListener? = null
+        private var enableWarnMsg: LazyMessage? = null
+        private var disableWarnMsg: LazyMessage? = null
+
+        fun setOnValueChangedListener(callback: ToggleValueChangedListener) {
+            toggleValueChangedListener = callback
+        }
+
+        fun warnOnEnable(message: String) = warnOnEnable { message}
+
+        fun warnOnEnable(lazyMessage: () -> String) {
+            enableWarnMsg = lazyMessage
+        }
+
+        fun warnOnDisable(message: String) = warnOnDisable { message }
+
+        fun warnOnDisable(lazyMessage: () -> String) {
+            disableWarnMsg = lazyMessage
+        }
+
         override fun build(): ToggleConfigObject {
-            requiredField("id", id)
             requiredField("title", title)
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return ToggleConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
                 defaultValue = defaultValue,
+                onValueChangedListener = toggleValueChangedListener,
+                enableWarnMsg = enableWarnMsg,
+                disableWarnMag = disableWarnMsg,
                 icon = icon,
                 iconFile = iconFile,
                 iconResId = iconResId,
@@ -244,32 +272,24 @@ class ConfigItemBuilder {
     }
 
     inner class SeekbarConfigBuilder: ConfigBuilder() {
-        var max: Int? = null
+        var max: Int by notNull()
         var min: Int = 0
         var defaultValue: Int = 0
 
         override fun build(): SeekbarConfigObject {
-            requiredField("id", id)
             requiredField("title", title)
-            requiredField("max", max)
 
-            if (max!! <= 0) {
-                throw IllegalArgumentException("Value of parameter 'max' should be positive.")
-            }
-            if (min > max!!) {
-                throw IllegalArgumentException("Value of parameter 'min' should be smaller than 'max'.")
-            }
-            if (defaultValue !in min..max!!) {
-                throw IllegalArgumentException("Value of parameter 'defaultValue' should be in range $min~$max.")
-            }
+            require(max > 0) { "Value of parameter 'max' should be positive." }
+            require(min < max) { "Value of parameter 'min' should be smaller than 'max'." }
+            require(defaultValue in min..max) { "Value of parameter 'defaultValue' should be in range $min~$max." }
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return SeekbarConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
-                max = max!!,
+                max = max,
                 min = min,
                 default = defaultValue,
                 icon = icon,
@@ -288,13 +308,12 @@ class ConfigItemBuilder {
         var require: (String) -> String? = { null }
 
         override fun build(): StringConfigObject{
-            requiredField("id", id)
             requiredField("title", title)
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return StringConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
                 hint = hint ?: "",
@@ -312,21 +331,19 @@ class ConfigItemBuilder {
 
     inner class PasswordConfigBuilder: ConfigBuilder() {
         var require: (value: String) -> String? = { null }
-        var hashCode: ((value: String) -> String)? = null
+        var hashCode: ((value: String) -> String) by notNull()
 
         override fun build(): PasswordConfigObject {
-            requiredField("id", id)
             requiredField("title", title)
-            requiredField("hashCode", hashCode)
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return PasswordConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
                 require = require,
-                hashCode = hashCode!!,
+                hashCode = hashCode,
                 icon = icon,
                 iconFile = iconFile,
                 iconResId = iconResId,
@@ -337,21 +354,27 @@ class ConfigItemBuilder {
     }
 
     inner class SpinnerConfigBuilder: ConfigBuilder() {
-        var items: List<String>? = null
+        var items: List<String> by notNull()
         var defaultIndex: Int = 0
 
+        private var onItemSelectedListener: SpinnerItemSelectedListener? = null
+
+        fun setOnItemSelectedListener(callback: SpinnerItemSelectedListener) {
+            onItemSelectedListener = callback
+        }
+
         override fun build(): SpinnerConfigObject {
-            requiredField("id", id)
             requiredField("title", title)
-            requiredField("items", items)
+            require(items.isNotEmpty()) { "Field 'items' must not be empty" }
 
             if (icon == null && iconFile == null && iconResId == null) icon = Icon.NONE
 
             return SpinnerConfigObject(
-                id = id!!,
+                id = id,
                 title = title!!,
                 description = description,
-                items = items!!,
+                onItemSelectedListener = onItemSelectedListener,
+                items = items,
                 defaultIndex = defaultIndex,
                 icon = icon,
                 iconFile = iconFile,
@@ -362,17 +385,103 @@ class ConfigItemBuilder {
         }
     }
 
-    inner class CustomConfigBuilder: ConfigBuilder(){
-        var onInflate: ((view: View) -> Unit)? = null
+    inner class ColorPickerConfigBuilder: ConfigBuilder() {
 
-        override fun build(): CustomConfigObject {
-            requiredField("id", id)
-            requiredField("onInflate", onInflate)
+        private var colors: Map<Int, Array<Int>> = mapOf()
 
-            return CustomConfigObject(
-                id = id!!,
-                onInflate = onInflate!!
-            )
+        private var onColorSelectedListener: ColorSelectedListener? = null
+
+        var flags: Int = ColorPickerConfigObject.FLAG_NONE
+
+        var defaultSelection: Int = 0x0
+
+        fun colors(colors: Array<Int>) {
+            this.colors = colors.associateWith { arrayOf() }
         }
+
+        fun colors(colors: Map<Int, Array<Int>>) {
+            this.colors = colors
+        }
+
+        fun setOnColorSelectedListener(callback: ColorSelectedListener) {
+            onColorSelectedListener = callback
+        }
+
+        @OptIn(ExperimentalContracts::class)
+        fun colors(builder: ColorBuilder.() -> Unit) {
+            contract {
+                callsInPlace(builder, InvocationKind.EXACTLY_ONCE)
+            }
+            this.colors = ColorBuilder().apply(builder).build()
+        }
+
+        override fun build(): ConfigObject =
+            ColorPickerConfigObject(
+                id = id,
+                title = title!!,
+                description = description,
+                icon = icon,
+                iconFile = iconFile,
+                iconResId = iconResId,
+                dependency = dependency,
+                default = defaultSelection,
+                colors = colors,
+                flags = flags,
+                onColorSelectedListener = onColorSelectedListener
+            )
+
+        inner class ColorBuilder {
+
+            private val colors: MutableMap<Int, Array<Int>> = mutableMapOf()
+
+            fun color(color: Int, vararg subColors: Int) {
+                colors[color] = subColors.toTypedArray()
+            }
+
+            internal fun build() = colors
+        }
+    }
+
+    inner class ListConfigBuilder: ConfigBuilder() {
+
+        private var onDrawBlock: OnDrawBlock by notNull()
+        private var onInflateBlock: OnInflateBlock by notNull()
+        private var configStructure: List<ConfigObject> by notNull()
+
+        fun onInflate(block: OnInflateBlock) {
+            onInflateBlock = block
+        }
+
+        fun onDraw(block: OnDrawBlock) {
+            onDrawBlock = block
+        }
+
+        fun structure(block: ConfigItemBuilder.() -> Unit) {
+            configStructure = ConfigItemBuilder().apply(block).build()
+        }
+
+        override fun build(): ConfigObject =
+            ListConfigObject(
+                id = id,
+                title = title!!,
+                description = description,
+                icon = icon,
+                iconFile = iconFile,
+                iconResId = iconResId,
+                iconTintColor = iconTintColor,
+                dependency = dependency,
+                onInflate = onInflateBlock,
+                onDraw = onDrawBlock,
+                structure = configStructure
+            )
+    }
+
+    inner class CustomConfigBuilder: ConfigBuilder() {
+        var onInflate: ((view: View) -> Unit) by notNull()
+
+        override fun build() = CustomConfigObject(
+            id = id,
+            onInflate = onInflate
+        )
     }
 }

@@ -10,12 +10,11 @@ import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
+import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
@@ -25,9 +24,9 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 import java.io.File
-
 
 class DebugRoomChatAdapter(
     private val debugRoomActivity: DebugRoomActivity,
@@ -80,24 +79,21 @@ class DebugRoomChatAdapter(
         when (messageData.viewType) {
             CHAT_SELF -> {
                 holder.message.text = messageData.message
+                val chatColor = Session.globalConfig.category("d_user").getInt("chat_color")
+                holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
             }
             CHAT_SELF_LONG -> {
                 holder.message.text = messageData.message + "..."
                 holder.showAllButton.setOnClickListener {
                     val fullMessage = debugRoomActivity.dir.resolve("chats").resolve(messageData.fileName!!).readText()
-                    MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                        cornerRadius(25f)
-                        cancelOnTouchOutside(true)
-                        noAutoDismiss()
-                        title(text = context.getString(R.string.title_show_all))
-                        message(text = fullMessage)
-                        positiveButton(text = context.getString(R.string.close)) {
-                            dismiss()
-                        }
-                    }
+                    showFullMessageDialog(fullMessage)
                 }
+                val chatColor = Session.globalConfig.category("d_user").getInt("chat_color")
+                holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
             }
             CHAT_BOT, CHAT_BOT_LONG -> {
+                val chatColor = Session.globalConfig.category("d_bot").getInt("chat_color")
+
                 if (isSentAgain) {
                     holder.sender.visibility = View.GONE
                     holder.profileImage.visibility = View.INVISIBLE
@@ -107,35 +103,38 @@ class DebugRoomChatAdapter(
                     holder.sender.text = messageData.sender
 
                     holder.profileImage.apply {
-                        val profileFilePath = dev.mooner.starlight.plugincore.Session.globalConfig.getCategory("d_bot").getString("profile_image_path")
+                        val profileFilePath = Session.globalConfig.category("d_bot").getString("profile_image_path")
                         if (profileFilePath != null) {
-                            load(File(profileFilePath)) {
-                                transformations(RoundedCornersTransformation(resources.getDimension(R.dimen.debugroom_profile_corner_radius)))
+                            runCatching {
+                                load(File(profileFilePath)) {
+                                    transformations(RoundedCornersTransformation(resources.getDimension(R.dimen.debugroom_profile_corner_radius)))
+                                }
+                                colorFilter = null
+                            }.onFailure { e ->
+                                Toast.makeText(context, "프로필 사진 '$profileFilePath'를 불러오지 못했어요: $e", Toast.LENGTH_LONG).show()
+                                Session.globalConfig.edit {
+                                    category("d_bot").remove("profile_image_path")
+                                }
+
+                                load(R.drawable.default_profile)
+                                setColorFilter(chatColor ?: ContextCompat.getColor(context, R.color.main_purple))
                             }
-                            colorFilter = null
                         } else {
                             load(R.drawable.default_profile)
-                            setColorFilter(ContextCompat.getColor(context, R.color.main_purple))
+                            setColorFilter(chatColor ?: ContextCompat.getColor(context, R.color.main_purple))
                         }
                     }
                 }
 
                 if (messageData.viewType == CHAT_BOT) {
+                    holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
                     holder.message.text = messageData.message
                 } else {
+                    holder.backgroundLayout.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
                     holder.message.text = messageData.message + "..."
                     val fullMessage = debugRoomActivity.dir.resolve("chats").resolve(messageData.fileName!!).readText()
                     holder.showAllButton.setOnClickListener {
-                        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                            cornerRadius(25f)
-                            cancelOnTouchOutside(true)
-                            noAutoDismiss()
-                            title(text = context.getString(R.string.title_show_all))
-                            message(text = fullMessage)
-                            positiveButton(text = context.getString(R.string.close)) {
-                                dismiss()
-                            }
-                        }
+                        showFullMessageDialog(fullMessage)
                     }
                 }
             }
@@ -149,12 +148,26 @@ class DebugRoomChatAdapter(
         }
     }
 
+    private fun showFullMessageDialog(fullMessage: String) {
+        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            cornerRadius(25f)
+            cancelOnTouchOutside(true)
+            noAutoDismiss()
+            title(text = context.getString(R.string.title_show_all))
+            message(text = fullMessage)
+            positiveButton(text = context.getString(R.string.close)) {
+                dismiss()
+            }
+        }
+    }
+
     inner class ViewHolder(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
 
         lateinit var sender: TextView
         lateinit var message: TextView
         lateinit var profileImage: ImageView
         lateinit var showAllButton: Button
+        lateinit var backgroundLayout: LinearLayout
 
         init {
             when (viewType) {
@@ -177,6 +190,7 @@ class DebugRoomChatAdapter(
                     message = itemView.findViewById(R.id.message)
                     profileImage = itemView.findViewById(R.id.profile)
                     showAllButton = itemView.findViewById(R.id.buttonShowAll)
+                    backgroundLayout = itemView.findViewById(R.id.linearLayout)
                 }
             }
         }

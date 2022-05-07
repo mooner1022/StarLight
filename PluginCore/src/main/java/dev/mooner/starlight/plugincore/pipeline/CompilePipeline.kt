@@ -14,16 +14,14 @@ import dev.mooner.starlight.plugincore.utils.pairOf
  * prepare() ->
  */
 
-typealias AnyStage = PipelineStage<Any, Any>
+typealias AnyStage = PipelineStage<*, *>
 
-@Suppress("UNCHECKED_CAST")
-class CompilePipeline(
+class CompilePipeline (
     private val project: Project,
     private val info: PipelineInfo,
     private val stageChangeCallback: (stage: AnyStage, percentage: Int) -> Unit
 ) {
-
-    val stageSize = info.stages.size + 1
+    private val stageSize = info.stages.size + 1
 
     fun run(code: String): Any {
         val lang = project.getLanguage()
@@ -31,7 +29,7 @@ class CompilePipeline(
         val precompiledCode = preCompile(code)
 
         val langStage = lang.toPipelineStage()
-        stageChangeCallback(langStage as AnyStage, calcPercent(stageSize - 1))
+        stageChangeCallback(langStage, getPercentage(stageSize - 1))
         return langStage.run(pairOf(project, precompiledCode))
     }
 
@@ -39,11 +37,11 @@ class CompilePipeline(
         var prevStageResult: String? = null
 
         for ((index, stage) in info.stages.withIndex()) {
-            stageChangeCallback(stage as AnyStage, calcPercent(index))
+            stageChangeCallback(stage, getPercentage(index))
             prevStageResult = stage.run(prevStageResult ?: code)
         }
         return prevStageResult ?: code
     }
 
-    private fun calcPercent(index: Int): Int = ((index.toFloat() / stageSize.toFloat()) * 100f).toInt()
+    private fun getPercentage(index: Int): Int = ((index.toFloat() / stageSize.toFloat()) * 100f).toInt()
 }

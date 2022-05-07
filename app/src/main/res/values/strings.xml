@@ -15,15 +15,21 @@
     <string name="title_show_all">전체 보기</string>
 
     <string name="title_widgets">위젯</string>
-    <string name="subtitle_widgets">$count개의 위젯이 있어요.</string>
+    <string name="subtitle_widgets">%d개의 위젯이 있어요.</string>
 
+    <string name="title_notification_rules">패키지 규칙</string>
+    <string name="subtitle_notification_rules">%d개의 규칙이 있어요.</string>
+
+    <string name="add">추가</string>
     <string name="open">열기</string>
     <string name="close">닫기</string>
     <string name="ok">확인</string>
     <string name="cancel">취소</string>
     <string name="delete">제거</string>
+    <string name="finish">끝내기</string>
 
     <string name="step_default_lib">기본 라이브러리 로드중…</string>
+    <string name="step_check_kakaotalk_version">KakaoTalk 버전 확인 중…</string>
     <string name="step_plugincore_init">PluginCore 로드중…</string>
     <string name="step_plugins">[%s] 로드중…</string>
     <string name="step_projects">프로젝트 로드중…</string>
@@ -31,8 +37,8 @@
     <string name="step_starting">앱 시작중…</string>
 
     <string name="all_project_status">전역 전원 : $state</string>
-    <string name="subtitle_projects">$count개의 프로젝트가 작동중이에요.</string>
-    <string name="subtitle_plugins">$count개의 플러그인이 설치되었어요.</string>
+    <string name="subtitle_projects">%d개의 프로젝트가 작동중이에요.</string>
+    <string name="subtitle_plugins">%d개의 플러그인이 설치되었어요.</string>
 
     <string name="menu_home">홈</string>
     <string name="menu_projects">프로젝트</string>
@@ -43,7 +49,7 @@
     <string name="plugin_align_state">플러그인 정렬</string>
     <string name="default_placeholder">DEFAULT</string>
 
-    <string name="nothing_yet">아직 $name 없는 것 같아요! $emoji</string>
+    <string name="nothing_yet">아직 %s 없는 것 같아요! %s</string>
 
     <string name="align_reversed">내림차순 정렬</string>
     <string name="align_active_first">활성화 우선</string>
@@ -56,24 +62,19 @@
     <string name="replacement">교체</string>
     <string name="home">홈</string>
     <string name="end">끝</string>
-    <string name="text_actions">코드 설정</string>
+    <string name="text_actions">코드 편집</string>
     <string name="switch_color_scheme">테마 변경</string>
-    <string name="undo">되돌리기</string>
-    <string name="redo">복구</string>
-    <string name="search_text">코드 검색</string>
-    <string name="action_mode">Action Mode</string>
-    <string name="search_panel">검색 패널</string>
-    <string name="code_navigation">코드 네비게이션</string>
-    <string name="format">format</string>
-    <string name="code_navi">코드 네비게이션</string>
-    <string name="navi_err_msg">Code navigation not prepared or unsupported</string>
+    <string name="beautify">Beautify(코드 정리)</string>
     <string name="color_scheme">테마</string>
     <string name="wordwrap">줄 넘기기</string>
     <string name="line_number_visibility">줄 번호 표시</string>
+    <string name="compile">컴파일</string>
     <string name="save">저장</string>
 
-    <string name="expandable_card_view_image_content_description">Arrow to expand card</string>
-    <string name="expandable_card_view_icon_content_description">Card icon</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="step_permission">기본 권한 설정</string>
+    <string name="step_read_notification">알림 읽기 허용</string>
+    <string name="step_install_wearable">위치 정보 정책</string>
+    <string name="step_set_basics">기초 설정</string>
+    <string name="action_previous_step">이전</string>
+    <string name="action_next_step">다음</string>
 </resources>

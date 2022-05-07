@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Callable
 
+@Suppress("unused")
 class AppApi: Api<AppApi.App>() {
 
     class App {
@@ -23,23 +24,21 @@ class AppApi: Api<AppApi.App>() {
 
             /* Incomplete implementation */
             @JvmStatic
-            fun runOnUiThread(task: Callable<Any>, onComplete: (error: Throwable?, result: Any?) -> Unit) {
-                runBlocking {
-                    val flow = flow<Any> {
-                        try {
-                            emit(task.call())
-                        } catch (e: Throwable) {
-                            emit(e)
-                        }
-                    }.flowOn(Dispatchers.Main)
-                    flow.collect { result ->
+            fun runOnUiThread(task: Callable<Any>, onComplete: (error: Throwable?, result: Any?) -> Unit) = runBlocking {
+                flow<Any> {
+                    try {
+                        emit(task.call())
+                    } catch (e: Throwable) {
+                        emit(e)
+                    }
+                }.flowOn(Dispatchers.Main)
+                    .collect { result ->
                         if (result is Throwable) {
                             onComplete(result, null)
                         } else {
                             onComplete(null, result)
                         }
                     }
-                }
             }
         }
     }

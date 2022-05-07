@@ -9,21 +9,25 @@ package dev.mooner.starlight.ui.projects.config
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import coil.load
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityProjectConfigBinding
+import dev.mooner.starlight.databinding.ConfigButtonFlatBinding
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.config.ButtonConfigObject
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
-import dev.mooner.starlight.plugincore.config.TypedString
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.config.data.FileConfig
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
@@ -32,7 +36,6 @@ import java.io.File
 
 class ProjectConfigActivity: AppCompatActivity() {
     private val changedData: MutableMap<String, MutableMap<String, Any>> = hashMapOf()
-    private lateinit var savedData: MutableMap<String, MutableMap<String, TypedString>>
     private lateinit var binding: ActivityProjectConfigBinding
     private lateinit var project: Project
     private var configAdapter: ConfigAdapter? = null
@@ -45,33 +48,24 @@ class ProjectConfigActivity: AppCompatActivity() {
         val fabProjectConfig = binding.fabProjectConfig
 
         val projectName = intent.getStringExtra("projectName")!!
-        project = dev.mooner.starlight.plugincore.Session.projectManager.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
-        savedData = (project.config as FileConfig).data
+        project = Session.projectManager.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
 
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.configRecyclerView)
             onConfigChanged { parentId, id, view, data ->
-                if (changedData.containsKey(parentId)) {
+                if (parentId in changedData)
                     changedData[parentId]!![id] = data
-                } else {
+                else
                     changedData[parentId] = hashMapOf(id to data)
-                }
 
-                if (savedData.containsKey(parentId)) {
-                    savedData[parentId]!![id] = TypedString.parse(data)
-                } else {
-                    savedData[parentId] = hashMapOf(id to TypedString.parse(data))
-                }
-
-                if (!fabProjectConfig.isShown) {
+                if (!fabProjectConfig.isShown)
                     fabProjectConfig.show()
-                }
                 project.getLanguage().onConfigChanged(id, view, data)
             }
-            configs {
+            structure {
                 getConfigs(project)
             }
-            savedData(savedData)
+            savedData(project.config.getData())
             lifecycleOwner(this@ProjectConfigActivity)
         }.build()
 
@@ -82,16 +76,15 @@ class ProjectConfigActivity: AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            (project.config as FileConfig).edit {
-                for ((catId, data) in savedData) {
-                    val category = getCategory(catId)
-                    for ((key, value) in data) {
-                        category.setAny(key, value.cast()?: error("Unable to cast $key"))
+            project.config.edit {
+                for ((catId, data) in changedData) {
+                    category(catId).apply {
+                        data.forEach(::setAny)
                     }
                 }
             }
 
-            val langConfIds = project.getLanguage().configObjectList.map { it.id }
+            val langConfIds = project.getLanguage().configStructure.map { it.id }
             val filtered = changedData.filter { it.key in langConfIds }
             if (filtered.isNotEmpty()) project.getLanguage().onConfigUpdated(filtered)
             Snackbar.make(view, "설정 저장 완료", Snackbar.LENGTH_SHORT).show()
@@ -106,18 +99,18 @@ class ProjectConfigActivity: AppCompatActivity() {
         textViewConfigProjectName.text = projectName
     }
 
-    private fun getConfigs(project: Project): List<CategoryConfigObject> {
+    private fun getConfigs(project: Project): ConfigStructure {
         val configs = config {
             category {
                 id = "general"
                 title = "일반"
                 textColor = color { "#706EB9" }
-                items = items {
+                items {
                     button {
                         id = "open_folder"
                         title = "폴더 열기"
                         type = ButtonConfigObject.Type.FLAT
-                        onClickListener = {
+                        setOnClickListener { _ ->
                             openFolderInExplorer(this@ProjectConfigActivity, project.directory)
                         }
                         icon = Icon.FOLDER
@@ -131,33 +124,65 @@ class ProjectConfigActivity: AppCompatActivity() {
                         icon = Icon.ERROR
                         iconTintColor = color { "#FF5C58" }
                     }
-                    toggle {
-                        id = "load_ext_scripts"
-                        title = "외부 스크립트 로드"
-                        description = "컴파일 시 /libs 폴더 내의 스크립트를 로드합니다."
-                        defaultValue = false
-                        icon = Icon.FOLDER
-                        iconTintColor = color { "#C7B198" }
-                    }
                 }
             }
         } +
-        project.getLanguage().configObjectList +
+        project.getLanguage().configStructure +
         config {
-            if (globalConfig.getCategory("beta_features").getBoolean("change_thread_pool_size", false)) {
+            val betaFeatureCategory = globalConfig.category("beta_features")
+            val changeThreadPoolSize = betaFeatureCategory.getBoolean("change_thread_pool_size", false)
+            val addCustomButtons = betaFeatureCategory.getBoolean("add_custom_buttons", true)
+
+            if (changeThreadPoolSize || addCustomButtons) {
                 category {
                     id = "beta_features"
                     title = "실험적 기능"
-                    textColor = color { "#706EB9" }
-                    items = items {
-                        seekbar {
-                            id = "thread_pool_size"
-                            title = "Thread pool 크기"
-                            min = 1
-                            max = 10
-                            defaultValue = 3
-                            icon = Icon.COMPRESS
-                            iconTintColor = color { "#57837B" }
+                    textColor = color("#706EB9")
+                    items {
+                        if (changeThreadPoolSize) {
+                            seekbar {
+                                id = "thread_pool_size"
+                                title = "Thread pool 크기"
+                                min = 1
+                                max = 10
+                                defaultValue = 3
+                                icon = Icon.COMPRESS
+                                iconTintColor = color { "#57837B" }
+                            }
+                        }
+                        if (addCustomButtons) {
+                            list {
+                                id = "custom_buttons"
+                                title = "사용자 지정 버튼"
+                                icon = Icon.SETTINGS
+                                iconTintColor = color { "#57837B" }
+                                structure {
+                                    string {
+                                        id = "button_id"
+                                        title = "id"
+                                        icon = null
+                                        require = { string -> if (string.isBlank()) "id를 입력하세요" else null }
+                                    }
+                                    string {
+                                        id = "button_icon"
+                                        title = "아이콘"
+                                        icon = null
+                                        require = { string -> if (string.isBlank()) "아이콘 id를 입력하세요" else null }
+                                    }
+                                }
+                                onInflate { view ->
+                                    LayoutInflater.from(view.context).inflate(R.layout.config_button_card, view as FrameLayout, true)
+                                }
+                                onDraw { view, data ->
+                                    val binding = ConfigButtonFlatBinding.bind(view.findViewById(R.id.layout_configButton))
+
+                                    binding.title.text = data["button_id"] as String
+                                    binding.description.visibility = View.GONE
+
+                                    val icon = Icon.valueOf(data["button_icon"] as String)
+                                    binding.icon.load(icon.drawableRes)
+                                }
+                            }
                         }
                     }
                 }
@@ -166,16 +191,15 @@ class ProjectConfigActivity: AppCompatActivity() {
                 id = "cautious"
                 title = "위험"
                 textColor = color { "#FF865E" }
-                items = items {
+                items {
                     button {
                         id = "interrupt_thread"
                         title = "프로젝트 스레드 강제 종료"
                         description = "${project.activeJobs()}개의 작업이 실행중이에요."
-                        type = ButtonConfigObject.Type.FLAT
-                        onClickListener = {
+                        setOnClickListener { view ->
                             val active = project.activeJobs()
                             project.stopAllJobs()
-                            Snackbar.make(it, "${active}개의 작업을 강제 종료하고 할당 해제했어요.", Snackbar.LENGTH_SHORT).show()
+                            Snackbar.make(view, "${active}개의 작업을 강제 종료하고 할당 해제했어요.", Snackbar.LENGTH_SHORT).show()
                         }
                         icon = Icon.LAYERS_CLEAR
                         //backgroundColor = Color.parseColor("#B8DFD8")
@@ -184,8 +208,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                     button {
                         id = "delete_project"
                         title = "프로젝트 제거"
-                        type = ButtonConfigObject.Type.FLAT
-                        onClickListener = {
+                        setOnClickListener { _ ->
                             MaterialDialog(binding.root.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                                 cornerRadius(25f)
                                 cancelOnTouchOutside(true)
@@ -194,7 +217,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                                 title(text = "프로젝트를 정말로 제거할까요?")
                                 message(text = "주의: 프로젝트 제거시 복구가 불가합니다.")
                                 positiveButton(text = context.getString(R.string.delete)) {
-                                    dev.mooner.starlight.plugincore.Session.projectManager.removeProject(project, removeFiles = true)
+                                    Session.projectManager.removeProject(project, removeFiles = true)
                                     Snackbar.make(binding.root, "프로젝트를 제거했어요.", Snackbar.LENGTH_SHORT).show()
                                     dismiss()
                                     finish()

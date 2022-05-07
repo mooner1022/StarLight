@@ -6,25 +6,27 @@
 
 package dev.mooner.starlight.api.original
 
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiFunction
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.plugincore.project.Project
 
+@Suppress("unused")
 class PluginManagerApi: Api<PluginManagerApi.PluginManager>() {
 
     class PluginManager {
         fun getPluginById(id: String): StarlightPlugin? {
-            return dev.mooner.starlight.plugincore.Session.pluginManager.getPluginById(id)
+            return Session.pluginManager.getPluginById(id)
         }
 
         fun getPluginByName(name: String): StarlightPlugin? {
-            return dev.mooner.starlight.plugincore.Session.pluginManager.getPluginByName(name)
+            return Session.pluginManager.getPluginByName(name)
         }
 
         fun getPlugins(): List<StarlightPlugin> {
-            return dev.mooner.starlight.plugincore.Session.pluginManager.getPlugins()
+            return Session.pluginManager.getPlugins()
         }
     }
 
