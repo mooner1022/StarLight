@@ -251,4 +251,7 @@ enum class Icon(
     LOCATION_OFF(
         drawableRes = R.drawable.ic_round_location_off_24
     ),
+    LOCK(
+        drawableRes = R.drawable.ic_round_lock_24
+    )
 }
