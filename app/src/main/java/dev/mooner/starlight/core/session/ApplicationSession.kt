@@ -146,7 +146,11 @@ object ApplicationSession {
         NetworkUtil.addOnNetworkStateChangedListener { state ->
             if (pluginManager.getPlugins().isNotEmpty()) {
                 for (plugin in pluginManager.getPlugins()) {
-                    plugin.onNetworkStateChanged(state)
+                    try {
+                        (plugin as EventListener).onNetworkStateChanged(state)
+                    } catch (e: Error) {
+                        Logger.e("Failed to call network event for plugin '${plugin.info.id}': $e")
+                    }
                 }
             }
         }
