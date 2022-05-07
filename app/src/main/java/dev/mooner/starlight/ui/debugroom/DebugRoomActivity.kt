@@ -14,6 +14,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.View
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
@@ -23,10 +24,11 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.github.dhaval2404.imagepicker.ImagePicker
+import com.google.android.material.bottomsheet.BottomSheetBehavior.*
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityDebugRoomBinding
-import dev.mooner.starlight.listener.DefaultEvent
+import dev.mooner.starlight.listener.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.LegacyEvent
 import dev.mooner.starlight.listener.legacy.Replier
@@ -36,11 +38,13 @@ import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
 import dev.mooner.starlight.plugincore.chat.Message
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
+import dev.mooner.starlight.plugincore.config.ColorPickerConfigObject
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.Icon
+import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.plugincore.utils.fireEvent
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.debugroom.DebugRoomChatAdapter.Companion.CHAT_SELF
@@ -83,9 +87,13 @@ class DebugRoomActivity: AppCompatActivity() {
     private var sentPackage = PACKAGE_KAKAO_TALK
     private var isGroupChat = false
     private var sendOnEnter = false
+    private var senderChatColor = color { "#F6946E" }
+    private var botChatColor    = color { "#706EB9" }
 
     //private lateinit var botProfileBitmap: Bitmap
     private lateinit var selfProfileBitmap: Bitmap
+
+    private var bottomSheetState: Int = STATE_COLLAPSED
 
     private lateinit var project: Project
     private lateinit var binding: ActivityDebugRoomBinding
@@ -97,7 +105,7 @@ class DebugRoomActivity: AppCompatActivity() {
             DebugRoomChatAdapter.CHAT_BOT_LONG
         else
             DebugRoomChatAdapter.CHAT_BOT
-        addMessage(botName, msg, viewType)
+        addMessage(botName, msg, viewType, false)
     }
     private val onMarkAsRead: () -> Unit = {
         Snackbar.make(binding.root, "읽음 처리 호출됨", Snackbar.LENGTH_SHORT).show()
@@ -173,9 +181,17 @@ class DebugRoomActivity: AppCompatActivity() {
             binding.messageInput.setText("")
         }
 
+        from(binding.bottomSheet.root).addBottomSheetCallback(object : BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                bottomSheetState = newState
+            }
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+        })
+
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.bottomSheet.configRecyclerView)
-            configs { getConfig() }
+            structure(::getStructure)
             savedData(globalConfig.getAllConfigs())
             onConfigChanged { parentId, id, _, data ->
                 globalConfig.edit {
@@ -207,7 +223,7 @@ class DebugRoomActivity: AppCompatActivity() {
             _message
 
         val viewType = if (message.length >= 500) CHAT_SELF_LONG else CHAT_SELF
-        addMessage(sender, message, viewType)
+        addMessage(sender, message, viewType, true)
         val data = Message(
             message = message,
             sender = ChatSender(
@@ -225,23 +241,7 @@ class DebugRoomActivity: AppCompatActivity() {
             chatLogId = -1L
         )
 
-        project.fireEvent<DefaultEvent>(data) { e ->
-            Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
-                setAction("자세히 보기") {
-                    MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                        cornerRadius(25f)
-                        cancelOnTouchOutside(false)
-                        noAutoDismiss()
-                        lifecycleOwner(this@DebugRoomActivity)
-                        title(text = project.info.name + " 에러 로그")
-                        message(text = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString())
-                        positiveButton(text = "닫기") {
-                            dismiss()
-                        }
-                    }
-                }
-            }.show()
-        }
+        project.fireEvent<ProjectOnMessageEvent>(data, ::showErrorSnackbar)
 
         if (globalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
             val replier = Replier { _, msg, _ ->
@@ -251,27 +251,29 @@ class DebugRoomActivity: AppCompatActivity() {
 
             val imageDB = ImageDB(selfProfileBitmap)
 
-            project.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB) { e ->
-                Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
-                    setAction("자세히 보기") {
-                        MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                            cornerRadius(25f)
-                            cancelOnTouchOutside(false)
-                            noAutoDismiss()
-                            lifecycleOwner(this@DebugRoomActivity)
-                            title(text = project.info.name + " 에러 로그")
-                            message(text = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString())
-                            positiveButton(text = "닫기") {
-                                dismiss()
-                            }
-                        }
-                    }
-                }.show()
-            }
+            project.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB, ::showErrorSnackbar)
         }
     }
 
-    private fun addMessage(sender: String, msg: String, viewType: Int) {
+    private fun showErrorSnackbar(e: Exception) {
+        Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
+            setAction("자세히 보기") {
+                MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                    cornerRadius(25f)
+                    cancelOnTouchOutside(false)
+                    noAutoDismiss()
+                    lifecycleOwner(this@DebugRoomActivity)
+                    title(text = project.info.name + " 에러 로그")
+                    message(text = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString())
+                    positiveButton(text = "닫기") {
+                        dismiss()
+                    }
+                }
+            }
+        }.show()
+    }
+
+    private fun addMessage(sender: String, msg: String, viewType: Int, clearInput: Boolean) {
         chatList += if (msg.length >= 500) {
             val fileName = UUID.randomUUID().toString() + ".chat"
             File(dir, "chats").apply {
@@ -293,7 +295,8 @@ class DebugRoomActivity: AppCompatActivity() {
         }
         runOnUiThread {
             userChatAdapter?.notifyItemInserted(chatList.size)
-            binding.messageInput.setText("")
+            if (clearInput)
+                binding.messageInput.setText("")
             binding.chatRecyclerView.post {
                 binding.chatRecyclerView.smoothScrollToPosition(chatList.size - 1)
             }
@@ -313,6 +316,13 @@ class DebugRoomActivity: AppCompatActivity() {
         super.onDestroy()
     }
 
+    override fun onBackPressed() {
+        if (bottomSheetState != STATE_COLLAPSED && bottomSheetState != STATE_HIDDEN) {
+            from(binding.bottomSheet.root).state = STATE_COLLAPSED
+        } else
+            super.onBackPressed()
+    }
+
     private fun updateConfig() {
         roomName = globalConfig.category("d_room").getString("name", "undefined")
         sender = globalConfig.category("d_user").getString("name", "debug_sender")
@@ -320,6 +330,8 @@ class DebugRoomActivity: AppCompatActivity() {
         sentPackage = globalConfig.category("d_room").getString("package", PACKAGE_KAKAO_TALK)
         isGroupChat = globalConfig.category("d_room").getBoolean("is_group_chat", false)
         sendOnEnter = globalConfig.category("d_room").getBoolean("send_with_enter", false)
+        senderChatColor = globalConfig.category("d_user").getInt("chat_color", senderChatColor)
+        botChatColor = globalConfig.category("d_bot").getInt("chat_color", botChatColor)
 
         runOnUiThread {
             binding.roomTitle.text = roomName
