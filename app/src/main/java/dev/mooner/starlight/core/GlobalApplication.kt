@@ -1,16 +1,18 @@
 package dev.mooner.starlight.core
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.core.session.ApplicationSession
+import dev.mooner.starlight.event.SessionStageUpdateEvent
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.utils.checkPermissions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -27,7 +29,9 @@ class GlobalApplication: Application() {
         //pref.edit().clear().commit()
         val isInitial = pref.getBoolean("isInitial", true)
 
-        if (isInitial) return
+        val isPermissionsGrant = checkPermissions(REQUIRED_PERMISSIONS)
+
+        if (isInitial || !isPermissionsGrant) return
 
         if (!ForegroundTask.isRunning) {
             Logger.v(T, "Starting foreground task...")
@@ -42,6 +46,7 @@ class GlobalApplication: Application() {
         CoroutineScope(Dispatchers.Default).launch {
             ApplicationSession.init(applicationContext)
                 .collect {
+                    Session.eventManager.fireEvent(SessionStageUpdateEvent(value = it))
                     if (it == null) {
                         Session.eventManager.on(callback = ::onProjectCreated)
                         Session.eventManager.on(callback = ::onProjectInfoUpdated)
