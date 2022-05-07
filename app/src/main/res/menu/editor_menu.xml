@@ -1,31 +1,22 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/menu_recompile"
+        android:title="@string/compile"
+        android:icon="@drawable/ic_round_refresh_24"
+        app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/menu_save"
-        android:title="저장"
+        android:title="@string/save"
         android:icon="@drawable/ic_round_save_24"
-        app:showAsAction="always"
-        />
+        app:showAsAction="ifRoom"/>
 
     <item android:title="@string/text_actions">
         <menu>
             <item
-                android:id="@+id/text_undo"
-                android:title="@string/undo" />
-            <item
-                android:id="@+id/text_redo"
-                android:title="@string/redo" />
-        </menu>
-    </item>
-    <item android:title="@string/search_text">
-        <menu>
-            <item
-                android:id="@+id/search_am"
-                android:title="@string/action_mode" />
-            <item
-                android:id="@+id/search_panel_st"
-                android:checkable="true"
-                android:title="@string/search_panel" />
+                android:id="@+id/code_beautify"
+                android:title="@string/beautify" />
         </menu>
     </item>
 </menu>
