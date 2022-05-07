@@ -114,6 +114,6 @@ fun Context.startPluginInfoActivity(
     startConfigActivity(
         title = "정보",
         subTitle = info.name,
-        items = items
+        struct = items
     )
 }

@@ -78,7 +78,7 @@ class PluginConfigActivity: AppCompatActivity() {
                 }
                 plugin.onConfigChanged(id, view, data)
             }
-            configs { getConfig(plugin) }
+            structure { getConfig(plugin) }
             savedData(savedData)
             lifecycleOwner(this@PluginConfigActivity)
         }.build()
@@ -103,7 +103,7 @@ class PluginConfigActivity: AppCompatActivity() {
         binding.pluginName.text = pluginName
     }
 
-    private fun getConfig(plugin: StarlightPlugin) = plugin.configObjects + config {
+    private fun getConfig(plugin: Plugin) = plugin.getConfigStructure() + config {
         category {
             id = "cautious"
             title = "위험"

@@ -2,7 +2,6 @@ package dev.mooner.starlight.ui.settings
 
 import android.content.Intent
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,11 +9,13 @@ import androidx.fragment.app.Fragment
 import dev.mooner.starlight.databinding.FragmentSettingsBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.CategoryConfigObject
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.settings.dev.startDevModeActivity
 import dev.mooner.starlight.ui.settings.info.AppInfoActivity
+import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.utils.restartApplication
 
 class SettingsFragment : Fragment() {
@@ -31,7 +32,7 @@ class SettingsFragment : Fragment() {
 
         configAdapter = ConfigAdapter.Builder(requireActivity()) {
             bind(binding.configRecyclerView)
-            configs { getConfigList() }
+            structure(::getSettingStruct)
             savedData(Session.globalConfig.getAllConfigs())
             onConfigChanged { parentId, id, _, data ->
                 Session.globalConfig.edit {
@@ -45,7 +46,7 @@ class SettingsFragment : Fragment() {
 
     private fun reloadConfigList() = configAdapter?.reload()
 
-    private fun getConfigList(): List<CategoryConfigObject> {
+    private fun getSettingStruct(): ConfigStructure {
         return config {
             category {
                 id = "general"

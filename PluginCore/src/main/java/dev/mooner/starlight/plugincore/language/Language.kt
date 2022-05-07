@@ -10,10 +10,10 @@ import android.view.View
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.api.Api
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.TypedString
-import dev.mooner.starlight.plugincore.config.data.ConfigCategory
-import dev.mooner.starlight.plugincore.config.data.ConfigCategoryImpl
+import dev.mooner.starlight.plugincore.config.category.ConfigCategory
+import dev.mooner.starlight.plugincore.config.category.internal.ConfigCategoryImpl
 import dev.mooner.starlight.plugincore.pipeline.stage.LanguageStage
 import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
 import dev.mooner.starlight.plugincore.project.Project
@@ -45,7 +45,7 @@ abstract class Language {
     /**
      * List of config objects injected in project config.
      */
-    open val configObjectList: List<CategoryConfigObject> = listOf()
+    open val configStructure: ConfigStructure = listOf()
 
     /**
      * Default code used when a project is created.
@@ -109,6 +109,21 @@ abstract class Language {
     internal fun setConfigFile(path: File) {
         configFile = path
     }
+
+    /*
+    private val langConfig: MutableConfigCategory by lazy {
+        val data = if (configFile == null || !configFile!!.isFile || !configFile!!.exists()) mapOf() else {
+            val raw = configFile!!.readText()
+            val typed: Map<String, Map<String, TypedString>> =
+                if (raw.isNotBlank())
+                    json.decodeFromString(raw)
+                else
+                    emptyMap()
+            typed[id]?: emptyMap()
+        }
+        MutableConfigCategory(data)
+    }
+     */
 
     /**
      * Retrieves the config of language set by user.

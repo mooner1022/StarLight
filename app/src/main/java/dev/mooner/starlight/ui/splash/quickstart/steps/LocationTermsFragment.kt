@@ -15,7 +15,7 @@ import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import dev.mooner.starlight.databinding.FragmentLocationTermsBinding
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
@@ -38,7 +38,7 @@ class LocationTermsFragment : Fragment() {
 
         adapter = ConfigAdapter.Builder(activity) {
             bind(binding.recyclerView)
-            configs(::getConfig)
+            structure(::getStruct)
             lifecycleOwner(this@LocationTermsFragment)
         }.build()
 
@@ -48,7 +48,7 @@ class LocationTermsFragment : Fragment() {
         return binding.root
     }
 
-    private fun getConfig(): List<CategoryConfigObject> =
+    private fun getStruct(): ConfigStructure =
         config {
             category {
                 id = "location_terms"

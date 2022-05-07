@@ -10,6 +10,6 @@ fun Context.startProjectInfoActivity(
     startConfigActivity(
         title = "정보",
         subTitle = project.info.name,
-        items = getProjectInfoItems(project)
+        struct = getProjectInfoItems(project)
     )
 }

@@ -30,7 +30,6 @@ import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 import java.io.File
 
-
 class DebugRoomChatAdapter(
     private val debugRoomActivity: DebugRoomActivity,
     private val chatList: MutableList<DebugRoomMessage>

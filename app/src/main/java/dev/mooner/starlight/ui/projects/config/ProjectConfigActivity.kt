@@ -26,8 +26,7 @@ import dev.mooner.starlight.databinding.ConfigButtonFlatBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.config.ButtonConfigObject
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
-import dev.mooner.starlight.plugincore.config.TypedString
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.Icon
@@ -63,7 +62,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                     fabProjectConfig.show()
                 project.getLanguage().onConfigChanged(id, view, data)
             }
-            configs {
+            structure {
                 getConfigs(project)
             }
             savedData(project.config.getData())
@@ -85,7 +84,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                 }
             }
 
-            val langConfIds = project.getLanguage().configObjectList.map { it.id }
+            val langConfIds = project.getLanguage().configStructure.map { it.id }
             val filtered = changedData.filter { it.key in langConfIds }
             if (filtered.isNotEmpty()) project.getLanguage().onConfigUpdated(filtered)
             Snackbar.make(view, "설정 저장 완료", Snackbar.LENGTH_SHORT).show()
@@ -100,7 +99,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         textViewConfigProjectName.text = projectName
     }
 
-    private fun getConfigs(project: Project): List<CategoryConfigObject> {
+    private fun getConfigs(project: Project): ConfigStructure {
         val configs = config {
             category {
                 id = "general"

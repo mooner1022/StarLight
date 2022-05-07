@@ -18,7 +18,7 @@ import dev.mooner.starlight.databinding.ActivityWidgetConfigBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.widgetManager
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.ui.config.ConfigAdapter
@@ -61,7 +61,7 @@ class WidgetConfigActivity : AppCompatActivity() {
                 title.alpha = alpha
                 subTitle.alpha = alpha
             }
-            cardViewAddWidget.setOnClickListener(::onClick)
+            fabAddWidget.setOnClickListener(::onClick)
             leave.setOnClickListener(::onClick)
             recyclerView.setup()
         }
@@ -112,7 +112,7 @@ class WidgetConfigActivity : AppCompatActivity() {
 
     private fun onClick(view: View) {
         when(view) {
-            binding.cardViewAddWidget -> MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT))
+            binding.fabAddWidget -> MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT))
                 .show {
                     cornerRadius(res = R.dimen.card_radius)
                     maxWidth(res = R.dimen.dialog_width)
@@ -123,7 +123,7 @@ class WidgetConfigActivity : AppCompatActivity() {
 
                     val configAdapter = ConfigAdapter.Builder(this@WidgetConfigActivity) {
                         bind(recycler)
-                        configs { getWidgetConfigList(::dismiss) }
+                        structure { getWidgetConfigStructure(::dismiss) }
                     }.build()
 
                     onDismiss {
@@ -150,7 +150,7 @@ class WidgetConfigActivity : AppCompatActivity() {
         setResult(RESULT_EDITED)
     }
 
-    private fun getWidgetConfigList(onDismiss: () -> Unit): List<CategoryConfigObject> = config {
+    private fun getWidgetConfigStructure(onDismiss: () -> Unit): ConfigStructure = config {
         val widgets = widgetManager.getWidgets()
 
         for ((pluginName, _widgets) in widgets) {
@@ -163,7 +163,7 @@ class WidgetConfigActivity : AppCompatActivity() {
                         button {
                             id = widget.id
                             title = widget.name
-                            setOnClickListener {
+                            setOnClickListener { _ ->
                                 addWidget(widget)
                                 onDismiss()
                             }

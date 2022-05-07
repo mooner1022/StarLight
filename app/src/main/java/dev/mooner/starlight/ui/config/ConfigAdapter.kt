@@ -6,13 +6,12 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
-import dev.mooner.starlight.plugincore.config.TypedString
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.config.ConfigData
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import kotlin.properties.Delegates
 
 typealias OnConfigChangedListener = (parentId: String, id: String, view: View?, data: Any) -> Unit
-typealias DataBlock = () -> List<CategoryConfigObject>
+typealias DataBlock = () -> ConfigStructure
 
 class ConfigAdapter private constructor(
     private var dataBlock: DataBlock
@@ -20,16 +19,16 @@ class ConfigAdapter private constructor(
 
     private var parentAdapter: ParentRecyclerAdapter? = null
 
-    private fun checkDestroyed() = assert(!isDestroyed) { "ConfigAdapter already destroyed" }
+    private fun checkDestroyed() = require(!isDestroyed) { "ConfigAdapter already destroyed" }
 
     val isDestroyed get() = parentAdapter == null
 
     fun reload() {
         checkDestroyed()
         parentAdapter!!.apply {
-            val orgDataSize = configs.size
+            val orgDataSize = configStructure.size
             notifyItemRangeRemoved(0, orgDataSize)
-            configs = dataBlock()
+            configStructure = dataBlock()
             notifyAllItemInserted()
         }
     }
@@ -47,7 +46,7 @@ class ConfigAdapter private constructor(
     }
 
     fun destroy() {
-        Logger.v("onDestroy() called")
+        //Logger.v("onDestroy() called")
         parentAdapter?.destroy()
         parentAdapter = null
     }
@@ -69,7 +68,7 @@ class ConfigAdapter private constructor(
         private var lifecycleOwner: LifecycleOwner? = null
 
         private var dataBlock: DataBlock by Delegates.notNull()
-        private var savedData: Map<String, Map<String, TypedString>> = emptyMap()
+        private var savedData: ConfigData = emptyMap()
 
         private var listener: OnConfigChangedListener = { _, _, _, _ -> }
 
@@ -81,11 +80,11 @@ class ConfigAdapter private constructor(
             this.lifecycleOwner = owner
         }
 
-        fun configs(data: () -> List<CategoryConfigObject>) {
+        fun structure(data: () -> ConfigStructure) {
             this.dataBlock = data
         }
 
-        fun savedData(data: Map<String, Map<String, TypedString>>) {
+        fun savedData(data: ConfigData) {
             savedData = data
         }
 
@@ -98,9 +97,8 @@ class ConfigAdapter private constructor(
                 if (lifecycleOwner != null)
                     lifecycleOwner!!.lifecycle.addObserver(this)
 
-                parentAdapter = ParentRecyclerAdapter(context, dataBlock(), savedData, listener).apply {
-                    notifyAllItemInserted()
-                }
+                parentAdapter = ParentRecyclerAdapter(context, dataBlock(), savedData, listener)
+                    .also(ParentRecyclerAdapter::notifyAllItemInserted)
             }
 
             val mLayoutManager = LinearLayoutManager(context)

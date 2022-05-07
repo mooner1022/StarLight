@@ -42,8 +42,8 @@ class AllowNotificationFragment : Fragment() {
 
         adapter = ConfigAdapter.Builder(activity) {
             bind(binding.recyclerView)
-            configs {
-                getConfig(activity)
+            structure {
+                getStructure(activity)
             }
             lifecycleOwner(this@AllowNotificationFragment)
         }.build()

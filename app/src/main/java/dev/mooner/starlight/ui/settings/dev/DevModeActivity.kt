@@ -23,7 +23,7 @@ fun Context.startDevModeActivity() {
         title = "설정",
         subTitle = "개발자 모드",
         saved = globalConfig.getAllConfigs(),
-        items = config {
+        struct = config {
             category {
                 id = "dev_mode_config"
                 title = "개발자 모드"

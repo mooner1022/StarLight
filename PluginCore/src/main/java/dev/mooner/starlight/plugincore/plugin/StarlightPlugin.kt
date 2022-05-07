@@ -9,10 +9,10 @@ package dev.mooner.starlight.plugincore.plugin
 import android.view.View
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
+import dev.mooner.starlight.plugincore.config.Config
+import dev.mooner.starlight.plugincore.config.ConfigImpl
+import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.TypedString
-import dev.mooner.starlight.plugincore.config.data.Config
-import dev.mooner.starlight.plugincore.config.data.ConfigImpl
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
@@ -61,7 +61,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
         init(config, dataDir, file, classLoader!!)
     }
 
-    open val configObjects: List<CategoryConfigObject> = listOf()
+    override fun getConfigStructure(): ConfigStructure { return emptyList() }
 
     @Deprecated(
         message = "Retained for legacy compatability, don't use it.",

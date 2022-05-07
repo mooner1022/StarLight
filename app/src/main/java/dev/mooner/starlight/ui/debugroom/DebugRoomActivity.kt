@@ -355,7 +355,7 @@ class DebugRoomActivity: AppCompatActivity() {
 
     private fun reloadConfig() = configAdapter?.reload()
 
-    private fun getConfig(): List<CategoryConfigObject> {
+    private fun getStructure(): ConfigStructure {
         return config {
             category {
                 id = "d_room"
@@ -431,8 +431,22 @@ class DebugRoomActivity: AppCompatActivity() {
                                 iconTintColor = color { "#706EB9" }
                             }
                         }
-                        setOnClickListener {
+                        setOnClickListener { _ ->
                             openImagePicker(RESULT_BOT)
+                        }
+                    }
+                    colorPicker {
+                        id = "chat_color"
+                        title = "채팅 말풍선 색 설정"
+                        icon = Icon.MARK_CHAT_READ
+                        flags = ColorPickerConfigObject.FLAG_CUSTOM_ARGB or ColorPickerConfigObject.FLAG_ALPHA_SELECTOR
+                        colors {
+                            color(color { "#706EB9" })
+                            color(color { "#F6946E" })
+                        }
+                        defaultSelection = color { "#706EB9" }
+                        setOnColorSelectedListener { _, color ->
+                            botChatColor = color
                         }
                     }
                 }
@@ -472,8 +486,22 @@ class DebugRoomActivity: AppCompatActivity() {
                                 iconTintColor = color { "#706EB9" }
                             }
                         }
-                        setOnClickListener {
+                        setOnClickListener { _ ->
                             openImagePicker(RESULT_USER)
+                        }
+                    }
+                    colorPicker {
+                        id = "chat_color"
+                        title = "채팅 말풍선 색 설정"
+                        icon = Icon.MARK_CHAT_READ
+                        flags = ColorPickerConfigObject.FLAG_CUSTOM_ARGB or ColorPickerConfigObject.FLAG_ALPHA_SELECTOR
+                        colors {
+                            color(color { "#706EB9" })
+                            color(color { "#F6946E" })
+                        }
+                        defaultSelection = color { "#F6946E" }
+                        setOnColorSelectedListener { _, color ->
+                            senderChatColor = color
                         }
                     }
                 }
@@ -486,7 +514,7 @@ class DebugRoomActivity: AppCompatActivity() {
                     button {
                         id = "clear_chat"
                         title = "대화 기록 초기화"
-                        setOnClickListener {
+                        setOnClickListener { _ ->
                             dir.deleteRecursively()
                             dir.mkdirs()
                             val listSize = chatList.size
@@ -502,6 +530,7 @@ class DebugRoomActivity: AppCompatActivity() {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     @Suppress("DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
