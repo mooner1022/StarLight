@@ -148,10 +148,12 @@ class ConfigItemBuilder {
         add(SpinnerConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
-    fun custom(block: CustomConfigBuilder.() -> Unit) {
-        val custom = CustomConfigBuilder().apply(block)
-        add(custom)
-    }
+    fun colorPicker(block: ColorPickerConfigBuilder.() -> Unit) =
+        add(ColorPickerConfigBuilder().apply(block))
+
+    @ConfigBuilderDsl
+    fun list(block: ListConfigBuilder.() -> Unit) =
+        add(ListConfigBuilder().apply(block))
 
     @ConfigBuilderDsl
     fun custom(block: CustomConfigBuilder.() -> Unit) =
@@ -383,7 +385,98 @@ class ConfigItemBuilder {
         }
     }
 
-    inner class CustomConfigBuilder: ConfigBuilder(){
+    inner class ColorPickerConfigBuilder: ConfigBuilder() {
+
+        private var colors: Map<Int, Array<Int>> = mapOf()
+
+        private var onColorSelectedListener: ColorSelectedListener? = null
+
+        var flags: Int = ColorPickerConfigObject.FLAG_NONE
+
+        var defaultSelection: Int = 0x0
+
+        fun colors(colors: Array<Int>) {
+            this.colors = colors.associateWith { arrayOf() }
+        }
+
+        fun colors(colors: Map<Int, Array<Int>>) {
+            this.colors = colors
+        }
+
+        fun setOnColorSelectedListener(callback: ColorSelectedListener) {
+            onColorSelectedListener = callback
+        }
+
+        @OptIn(ExperimentalContracts::class)
+        fun colors(builder: ColorBuilder.() -> Unit) {
+            contract {
+                callsInPlace(builder, InvocationKind.EXACTLY_ONCE)
+            }
+            this.colors = ColorBuilder().apply(builder).build()
+        }
+
+        override fun build(): ConfigObject =
+            ColorPickerConfigObject(
+                id = id,
+                title = title!!,
+                description = description,
+                icon = icon,
+                iconFile = iconFile,
+                iconResId = iconResId,
+                dependency = dependency,
+                default = defaultSelection,
+                colors = colors,
+                flags = flags,
+                onColorSelectedListener = onColorSelectedListener
+            )
+
+        inner class ColorBuilder {
+
+            private val colors: MutableMap<Int, Array<Int>> = mutableMapOf()
+
+            fun color(color: Int, vararg subColors: Int) {
+                colors[color] = subColors.toTypedArray()
+            }
+
+            internal fun build() = colors
+        }
+    }
+
+    inner class ListConfigBuilder: ConfigBuilder() {
+
+        private var onDrawBlock: OnDrawBlock by notNull()
+        private var onInflateBlock: OnInflateBlock by notNull()
+        private var configStructure: List<ConfigObject> by notNull()
+
+        fun onInflate(block: OnInflateBlock) {
+            onInflateBlock = block
+        }
+
+        fun onDraw(block: OnDrawBlock) {
+            onDrawBlock = block
+        }
+
+        fun structure(block: ConfigItemBuilder.() -> Unit) {
+            configStructure = ConfigItemBuilder().apply(block).build()
+        }
+
+        override fun build(): ConfigObject =
+            ListConfigObject(
+                id = id,
+                title = title!!,
+                description = description,
+                icon = icon,
+                iconFile = iconFile,
+                iconResId = iconResId,
+                iconTintColor = iconTintColor,
+                dependency = dependency,
+                onInflate = onInflateBlock,
+                onDraw = onDrawBlock,
+                structure = configStructure
+            )
+    }
+
+    inner class CustomConfigBuilder: ConfigBuilder() {
         var onInflate: ((view: View) -> Unit) by notNull()
 
         override fun build() = CustomConfigObject(
