@@ -13,7 +13,7 @@
         <item name="colorControlActivated">@color/main_bright</item>
         <item name="colorControlNormal">@color/main_dark</item>
         <!-- Status bar color. -->
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+        <item name="android:statusBarColor" tools:targetApi="l">@color/status_bar</item>
         <item name="android:actionMenuTextColor">@color/black</item>
         <!-- Customize your theme here. -->
     </style>

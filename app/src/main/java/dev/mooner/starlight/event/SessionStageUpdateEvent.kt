@@ -1,10 +1,10 @@
 package dev.mooner.starlight.event
 
 import dev.mooner.starlight.plugincore.event.Event
-import dev.mooner.starlight.plugincore.event.eventCoroutineScope
+import dev.mooner.starlight.plugincore.event.eventHandlerScope
 import kotlinx.coroutines.CoroutineScope
 
 data class SessionStageUpdateEvent(
     val value: String?,
-    val coroutineScope: CoroutineScope = eventCoroutineScope
+    val coroutineScope: CoroutineScope = eventHandlerScope()
 ): Event, CoroutineScope by coroutineScope

@@ -6,7 +6,7 @@
 
 package dev.mooner.starlight.plugincore.project
 
-import dev.mooner.starlight.plugincore.Session.eventManager
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import java.io.File
@@ -34,14 +34,14 @@ class ProjectManager(
         project.info.block()
         project.saveInfo()
         if (callListener) {
-            eventManager.fireEventWithContext(Events.Project.ProjectInfoUpdateEvent(project))
+            EventHandler.fireEventWithScope(Events.Project.ProjectInfoUpdateEvent(project))
         }
     }
 
     fun newProject(info: ProjectInfo, dir: File = projectDir) {
         Project.create(dir, info).also { project ->
             projects[info.name] = project
-            eventManager.fireEventWithContext(Events.Project.ProjectCreateEvent(project))
+            EventHandler.fireEventWithScope(Events.Project.ProjectCreateEvent(project))
         }
     }
 
@@ -51,7 +51,7 @@ class ProjectManager(
     }
 
     fun fireEvent(eventId: String, functionName: String, args: Array<out Any>, onFailure: (project: Project, e: Throwable) -> Unit) {
-        //if (!Session.eventManager.hasEvent(eventId)) {
+        //if (!EventHandler.hasEvent(eventId)) {
         //    Logger.e(ProjectManager::class.simpleName, "Rejecting event call from '$eventId' which is not registered on EventManager")
         //    return
         //}
@@ -75,7 +75,7 @@ class ProjectManager(
                 it.directory.deleteRecursively()
             projects -= name
         }
-        eventManager.fireEventWithContext(Events.Project.ProjectDeleteEvent(name))
+        EventHandler.fireEventWithScope(Events.Project.ProjectDeleteEvent(name))
     }
 
     internal fun purge() = projects.forEach { (_, u) -> u.destroy(requestUpdate = true) }

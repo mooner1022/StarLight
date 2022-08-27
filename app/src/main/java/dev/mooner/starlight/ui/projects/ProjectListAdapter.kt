@@ -52,11 +52,10 @@ class ProjectListAdapter(
 
     override fun getItemViewType(position: Int): Int = 0
 
-    @Suppress("DEPRECATED_SMARTCAST")
     override fun onBindViewHolder(holder: ProjectListViewHolder, position: Int) {
         (holder.itemView as ProjectViewCell).bindWhenInflated {
             val project = data[position]
-            val binding = holder.itemView.binding
+            val binding = (holder.itemView as ProjectViewCell).binding
 
             fun refreshState() {
                 binding.cardViewIsEnabled.setCardBackgroundColor(getCardColor(project))
@@ -84,7 +83,7 @@ class ProjectListAdapter(
                         else -> project.getLanguage().getIconFileOrNull()
                     }
                     val tint = if (icon == null) R.color.main_purple else null
-                    it.loadAnyWithTint(
+                    it.loadWithTint(
                         data = icon?: R.drawable.ic_round_developer_mode_24,
                         tintColor = tint
                     ) {
@@ -125,7 +124,7 @@ class ProjectListAdapter(
                             setBackgroundColor(buttonBackgroundColor)
                             //load(button.icon.drawableRes)
                             val icon = Icon.valueOf(button["button_icon"]!!.castAs())
-                            loadAnyWithTint(data = icon.drawableRes, tintColor = R.color.text)
+                            loadWithTint(data = icon.drawableRes, tintColor = R.color.text)
                             setOnClickListener {
                                 //Toast.makeText(context, "Button Clicked!", Toast.LENGTH_SHORT).show()
                                 project.callFunction("onProjectButtonClicked", arrayOf(buttonId)) {

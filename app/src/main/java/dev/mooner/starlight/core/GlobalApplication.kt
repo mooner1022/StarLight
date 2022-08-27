@@ -8,7 +8,7 @@ import android.content.Intent
 import android.os.Build
 import dev.mooner.starlight.core.session.ApplicationSession
 import dev.mooner.starlight.event.SessionStageUpdateEvent
-import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.Logger
@@ -46,11 +46,13 @@ class GlobalApplication: Application() {
         CoroutineScope(Dispatchers.Default).launch {
             ApplicationSession.init(applicationContext)
                 .collect {
-                    Session.eventManager.fireEvent(SessionStageUpdateEvent(value = it))
-                    if (it == null) {
-                        Session.eventManager.on(callback = ::onProjectCreated)
-                        Session.eventManager.on(callback = ::onProjectInfoUpdated)
-                        Session.eventManager.on(callback = ::onProjectCompiled)
+                    EventHandler.apply {
+                        fireEvent(SessionStageUpdateEvent(value = it))
+                        if (it == null) {
+                            on(callback = ::onProjectCreated)
+                            on(callback = ::onProjectInfoUpdated)
+                            on(callback = ::onProjectCompiled)
+                        }
                     }
                 }
         }

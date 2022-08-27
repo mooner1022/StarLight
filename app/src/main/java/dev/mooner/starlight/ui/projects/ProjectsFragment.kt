@@ -34,6 +34,7 @@ import dev.mooner.starlight.databinding.FragmentProjectsBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.Session.projectManager
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.Logger
@@ -110,7 +111,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                 sortFlow.collect()
             }
 
-            Session.eventManager.apply {
+            EventHandler.apply {
                 on(this@launchWhenCreated, callback = ::onProjectUpdated)
                 on(this@launchWhenCreated, callback = ::onProjectCompiled)
                 on(this@launchWhenCreated, callback = ::onProjectDeleted)
@@ -315,7 +316,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         }
 
         binding.textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
-        binding.alignStateIcon.load(drawableResId = alignState.icon)
+        binding.alignStateIcon.load(alignState.icon)
 
         globalConfig.edit {
             getDefaultCategory().apply {

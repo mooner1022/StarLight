@@ -27,6 +27,7 @@
     <string name="cancel">취소</string>
     <string name="delete">제거</string>
     <string name="finish">끝내기</string>
+    <string name="show_more">더보기</string>
 
     <string name="step_default_lib">기본 라이브러리 로드중…</string>
     <string name="step_check_kakaotalk_version">KakaoTalk 버전 확인 중…</string>

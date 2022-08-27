@@ -25,7 +25,7 @@
 
     <dimen name="dialog_width">@dimen/custom_match_parent</dimen>
 
-    <dimen name="bottom_bar_total_height">130dp</dimen>
+    <dimen name="bottom_bar_total_height">0dp</dimen>
 
     <dimen name="fragment_top_padding">20dp</dimen>
 

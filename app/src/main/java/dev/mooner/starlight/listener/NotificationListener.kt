@@ -29,6 +29,7 @@ import dev.mooner.starlight.plugincore.chat.DeletedMessage
 import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.config.ConfigData
 import dev.mooner.starlight.plugincore.config.TypedString
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.fireEvent
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
@@ -105,7 +106,8 @@ class NotificationListener: NotificationListenerService() {
             }
         }
 
-        NotificationPostEvent(sbn).also(Session.eventManager::fireEventWithContext)
+        NotificationPostEvent(sbn)
+            .also(EventHandler::fireEventWithScope)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
@@ -129,7 +131,8 @@ class NotificationListener: NotificationListenerService() {
             }
         }
 
-        NotificationDismissEvent(sbn, rankingMap, reason).also(Session.eventManager::fireEventWithContext)
+        NotificationDismissEvent(sbn, rankingMap, reason)
+            .also(EventHandler::fireEventWithScope)
     }
 
     private fun StatusBarNotification.toMessage(context: Context, action: Notification.Action): Message? {

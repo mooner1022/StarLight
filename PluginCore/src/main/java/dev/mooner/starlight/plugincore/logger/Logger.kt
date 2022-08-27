@@ -8,15 +8,12 @@ package dev.mooner.starlight.plugincore.logger
 
 import android.util.Log
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.eventManager
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.utils.TimeUtils
 import dev.mooner.starlight.plugincore.utils.currentThread
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.File
-import java.util.*
 
 /**
  * Internal logger for Project StarLight
@@ -25,14 +22,26 @@ import java.util.*
 
 object Logger {
 
-    private val listeners: MutableMap<String, (log: LogData) -> Unit> = WeakHashMap()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val logWriteScope: CoroutineScope =
+        CoroutineScope(Dispatchers.IO.limitedParallelism(1)) + SupervisorJob()
+
     private lateinit var logFile: File
 
     private var mLogs: MutableList<LogData> = mutableListOf()
-    val logs: List<LogData> get() = if (showInternalLogs) mLogs else mLogs.filterNot { it.type == LogType.VERBOSE }
+    val logs: List<LogData> get() =
+        if (showInternalLogs) mLogs else mLogs.filterNot { it.type == LogType.VERBOSE }
 
-    private val showInternalLogs get() = Session.isInitComplete && Session.globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)
-    private val writeInternalLogs get() = Session.isInitComplete && Session.globalConfig.category("dev_mode_config").getBoolean("write_internal_log", false)
+    private val showInternalLogs get() =
+        Session.isInitComplete &&
+                Session.globalConfig
+                    .category("dev_mode_config")
+                    .getBoolean("show_internal_log", false)
+    private val writeInternalLogs get() =
+        Session.isInitComplete &&
+                Session.globalConfig
+                    .category("dev_mode_config")
+                    .getBoolean("write_internal_log", false)
 
     fun init(baseDir: File) {
         val dirName = TimeUtils.formatCurrentDate("yyyy-MM-dd")
@@ -48,29 +57,6 @@ object Logger {
     }
 
     private val callSite get() = currentThread.stackTrace[4].className.split(".").last()
-
-    /**
-     * Binds a listener, which is called when a log is created, to the logger
-     *
-     * @param key an id for the listener, used to remove or release the listener
-     * @param listener called when a log is created
-     */
-    @Deprecated("Callback listener is deprecated. Use EventManager.on<LogCreateEvent>().")
-    fun bindListener(key: String, listener: (log: LogData) -> Unit) {
-        listeners[key] = listener
-    }
-
-    /**
-     * Unbinds a listener which is registered by key
-     *
-     * @param key an id for the listener, set when binding the listener
-     */
-    @Deprecated("Callback listener is deprecated.")
-    fun unbindListener(key: String) {
-        if (listeners.containsKey(key)) {
-            listeners.remove(key)
-        }
-    }
 
     fun v(message: String) = v(tag = callSite, message = message)
 
@@ -139,18 +125,15 @@ object Logger {
 
     fun log(data: LogData) {
         Log.println(data.type.priority, data.tag?: data.type.name, data.message)
-        synchronized(mLogs) {
+
+        logWriteScope.launch {
             mLogs += data
-        }
 
-        if (data.type != LogType.VERBOSE || showInternalLogs)
-            eventManager.fireEventWithContext(Events.Log.LogCreateEvent(data))
+            if (data.type != LogType.VERBOSE || showInternalLogs)
+                EventHandler.fireEventWithScope(Events.Log.LogCreateEvent(data), this)
 
-        if ((data.type.priority >= LogType.DEBUG.priority || writeInternalLogs) && this::logFile.isInitialized) {
-            CoroutineScope(Dispatchers.IO).launch {
-                val log = data.toString()
-                logFile.appendText(log + "\n")
-            }
+            if ((data.type.priority >= LogType.DEBUG.priority || writeInternalLogs) && this@Logger::logFile.isInitialized)
+                logFile.appendText("$data\n")
         }
     }
 

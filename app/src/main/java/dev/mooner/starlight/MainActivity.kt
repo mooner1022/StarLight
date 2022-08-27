@@ -7,14 +7,17 @@
 package dev.mooner.starlight
 
 import android.os.Bundle
-import android.view.View
+import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.transition.ChangeBounds
+import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.appbar.AppBarLayout
 import dev.mooner.starlight.databinding.ActivityMainBinding
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.ui.ViewPagerAdapter
-import github.com.st235.lib_expandablebottombar.MenuItem
+import dev.mooner.starlight.utils.LAYOUT_TABLET
+import dev.mooner.starlight.utils.layoutMode
 import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
@@ -31,12 +34,12 @@ class MainActivity : AppCompatActivity() {
                 3 -> R.id.nav_settings
                 else -> R.id.nav_home
             }
-            binding.bottomBar.menu.select(id)
+            binding.bottomMenu.setItemSelected(id, true)
             onPageChanged(id)
         }
     }
-    private val onMenuItemSelectedListener = { _: View, item: MenuItem, _: Boolean ->
-        val index = when(item.id) {
+    private val onMenuItemSelectedListener = { id: Int ->
+        val index = when(id) {
             R.id.nav_home -> 0
             R.id.nav_projects -> 1
             R.id.nav_plugins -> 2
@@ -44,7 +47,7 @@ class MainActivity : AppCompatActivity() {
             else -> 0
         }
         binding.viewPager.setCurrentItem(index, true)
-        onPageChanged(item.id)
+        onPageChanged(id)
     }
     private val onOffsetChangedListener = AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
         val percent = 1.0f - abs(
@@ -65,7 +68,23 @@ class MainActivity : AppCompatActivity() {
         binding.apply {
             viewPager.adapter = ViewPagerAdapter(this@MainActivity)
             viewPager.registerOnPageChangeCallback(onPageChangeCallback)
-            bottomBar.onItemSelectedListener = onMenuItemSelectedListener
+
+            bottomMenu.setItemSelected(R.id.nav_home, isSelected = true)
+            bottomMenu.setOnItemSelectedListener(onMenuItemSelectedListener)
+            if (layoutMode == LAYOUT_TABLET) {
+                buttonExpandMenu?.setOnClickListener {
+                    bottomMenu.let { menu ->
+                        if (menu.isExpanded()) {
+                            TransitionManager.beginDelayedTransition(root as ViewGroup, ChangeBounds())
+                            menu.collapse()
+                        } else {
+                            TransitionManager.beginDelayedTransition(root as ViewGroup, ChangeBounds())
+                            menu.expand()
+                        }
+                    }
+                }
+            }
+
             appBarLayout.addOnOffsetChangedListener(onOffsetChangedListener)
         }
     }

@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.eventManager
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogData
@@ -183,7 +183,7 @@ class LogsWidget: Widget() {
             newJob
         }
         CoroutineScope(Dispatchers.Default + mJob).launch {
-            eventManager.on(this, ::onLogCreated)
+            EventHandler.on(this, ::onLogCreated)
         }
     }
 

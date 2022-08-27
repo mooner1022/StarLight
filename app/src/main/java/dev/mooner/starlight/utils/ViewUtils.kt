@@ -17,7 +17,6 @@ import androidx.core.widget.NestedScrollView
 import coil.ImageLoader
 import coil.imageLoader
 import coil.load
-import coil.loadAny
 import coil.request.Disposable
 import coil.request.ImageRequest
 import dev.mooner.starlight.plugincore.logger.Logger
@@ -47,7 +46,7 @@ inline fun ImageView.loadWithTint(
     return load(drawableResId, imageLoader, builder)
 }
 
-inline fun ImageView.loadAnyWithTint(
+inline fun ImageView.loadWithTint(
     data: Any?,
     imageLoader: ImageLoader = context.imageLoader,
     @ColorRes
@@ -55,7 +54,7 @@ inline fun ImageView.loadAnyWithTint(
     builder: ImageRequest.Builder.() -> Unit = {}
 ): Disposable {
     ImageViewCompat.setImageTintList(this, if (tintColor == null) null else ColorStateList.valueOf(context.getColor(tintColor)))
-    return loadAny(data, imageLoader, builder)
+    return load(data, imageLoader, builder)
 }
 
 private fun ProgressBar.setProgressGraceful(to: Int) {

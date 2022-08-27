@@ -204,6 +204,7 @@ class DefaultEditorActivity : CodeEditorActivity() {
 
     private fun updateColor() {
         setupHotKeys(clear = true)
+        /*
         if (theme.toolbarColor != null) {
             theme.toolbarColor!!.let { color ->
                 supportActionBar!!.setBackgroundDrawable(ColorDrawable(color))
@@ -216,7 +217,7 @@ class DefaultEditorActivity : CodeEditorActivity() {
                 binding.scrollViewHotKeys.backgroundTintList = stateList
             }
         } else {
-            supportActionBar!!.setBackgroundDrawable(ColorDrawable(getColor(R.color.main_purple)))
+            supportActionBar!!.setBackgroundDrawable(ColorDrawable(getColor(R.color.background)))
             val stateList = ColorStateList.valueOf(getColor(R.color.background))
             binding.bottomSheet.apply {
                 root.backgroundTintList = stateList
@@ -225,6 +226,15 @@ class DefaultEditorActivity : CodeEditorActivity() {
             }
             binding.scrollViewHotKeys.backgroundTintList = stateList
         }
+         */
+        supportActionBar!!.setBackgroundDrawable(ColorDrawable(getColor(R.color.background)))
+        val stateList = ColorStateList.valueOf(getColor(R.color.background))
+        binding.bottomSheet.apply {
+            root.backgroundTintList = stateList
+            cardViewTopRadius.setCardBackgroundColor(stateList)
+            cardView2.setCardBackgroundColor(getColor(R.color.text))
+        }
+        binding.scrollViewHotKeys.backgroundTintList = stateList
     }
 
     private fun setupHotKeys(clear: Boolean = false) {
@@ -249,18 +259,12 @@ class DefaultEditorActivity : CodeEditorActivity() {
                     updatePadding(top = textPadding)
                 }
                 isHapticFeedbackEnabled = true
-                when(key) {
-                    '↺' -> setOnClickListener { view ->
-                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                        undo()
-                    }
-                    '↻' -> setOnClickListener { view ->
-                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                        redo()
-                    }
-                    else -> setOnClickListener { view ->
-                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                        appendText(key.toString())
+                setOnClickListener { view ->
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    when(key) {
+                        '↺' -> undo()
+                        '↻' -> redo()
+                        else -> appendText(key.toString())
                     }
                 }
             }

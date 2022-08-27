@@ -8,7 +8,7 @@ import android.content.Intent
 import android.os.Build
 import dev.mooner.starlight.api.original.NotificationApi
 import dev.mooner.starlight.listener.event.NotificationClickEvent
-import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.event.EventHandler
 
 fun Context.createNotificationChannel(channelId: String, channelName: String, channelDescription: String? = null, importance: Int = NotificationManager.IMPORTANCE_DEFAULT) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -39,7 +39,7 @@ class NotificationEventService: IntentService(NotificationEventService::class.ja
         if (action?.startsWith(actionPrefix) == true) {
             val id = action.drop(actionPrefix.length + 1).toInt()
 
-            NotificationClickEvent(id).also(Session.eventManager::fireEventWithContext)
+            NotificationClickEvent(id).also(EventHandler::fireEventWithScope)
         }
     }
 }

@@ -10,7 +10,6 @@ import android.os.Build
 import android.os.Environment
 import dev.mooner.starlight.plugincore.api.ApiManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.event.EventManager
 import dev.mooner.starlight.plugincore.language.LanguageManager
 import dev.mooner.starlight.plugincore.library.LibraryLoader
 import dev.mooner.starlight.plugincore.library.LibraryManager
@@ -65,7 +64,7 @@ object Session {
     val pluginLoader: PluginLoader       = PluginLoader()
     val pluginManager: PluginManager     = PluginManager()
     val widgetManager: WidgetManager     = WidgetManager()
-    val eventManager: EventManager       = EventManager()
+    //val eventManager: EventHandler       = EventHandler()
 
     private var mProjectLoader: ProjectLoader by Delegates.notNull()
     private var mProjectManager: ProjectManager by Delegates.notNull()

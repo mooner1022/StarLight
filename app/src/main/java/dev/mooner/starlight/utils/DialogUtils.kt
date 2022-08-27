@@ -13,6 +13,7 @@ import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogType
@@ -61,7 +62,7 @@ fun Context.showLogsDialog(): MaterialDialog {
         mAdapter.notifyItemRangeInserted(0, mLogs.size)
 
         CoroutineScope(Dispatchers.Main + job).launch {
-            Session.eventManager.on<Events.Log.LogCreateEvent>(this) {
+            EventHandler.on<Events.Log.LogCreateEvent>(this) {
                 if (log.type == LogType.VERBOSE && !Session.globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)) return@on
                 mAdapter.pushLog(log)
                 recycler.post {

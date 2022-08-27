@@ -7,10 +7,10 @@
 package dev.mooner.starlight.plugincore.project
 
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.eventManager
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.config.FileConfig
 import dev.mooner.starlight.plugincore.config.MutableConfig
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.Logger
@@ -207,7 +207,7 @@ class Project (
                     project = this
                 )
                  */
-                eventManager.fireEventWithContext(Events.Project.ProjectCompileEvent(project = this@Project))
+                EventHandler.fireEvent(Events.Project.ProjectCompileEvent(project = this@Project))
                 //projectManager.onStateChanged(this)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -236,7 +236,7 @@ class Project (
      * Ignored if application is on background.
      */
     fun requestUpdate() {
-        eventManager.fireEventWithContext(Events.Project.ProjectInfoUpdateEvent(project = this))
+        EventHandler.fireEventWithScope(Events.Project.ProjectInfoUpdateEvent(project = this))
     }
 
     /**
@@ -248,7 +248,7 @@ class Project (
                 .flowOn(Dispatchers.Default)
                 .collect(File(directory.path, INFO_FILE_NAME)::writeText)
         }
-        eventManager.fireEventWithContext(Events.Project.ProjectInfoUpdateEvent(project = this@Project))
+        EventHandler.fireEventWithScope(Events.Project.ProjectInfoUpdateEvent(project = this@Project))
     }
 
     /**

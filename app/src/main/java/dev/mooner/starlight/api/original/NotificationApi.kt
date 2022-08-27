@@ -11,10 +11,10 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.listener.event.NotificationClickEvent
 import dev.mooner.starlight.listener.event.NotificationDismissEvent
-import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.utils.NotificationEventService
@@ -107,7 +107,7 @@ class NotificationApi: Api<NotificationApi.Notification>() {
 
             val builder = context.buildNotification()
 
-            Session.eventManager.apply {
+            EventHandler.apply {
                 if (this@Notification.builder.onDismissListener != null)
                     on(coroutineScope, ::onDismiss)
                 if (this@Notification.builder.onClickListener != null)

@@ -19,6 +19,7 @@ import dev.mooner.starlight.core.session.ApplicationSession
 import dev.mooner.starlight.databinding.ActivitySplashBinding
 import dev.mooner.starlight.event.SessionStageUpdateEvent
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.ui.crash.FatalErrorActivity
@@ -50,11 +51,11 @@ class SplashActivity : AppCompatActivity() {
         val isPermissionsGrant = checkPermissions(REQUIRED_PERMISSIONS)
 
         val imageLoader = ImageLoader.Builder(applicationContext)
-            .componentRegistry {
+            .components {
                 if (SDK_INT >= 28) {
-                    add(ImageDecoderDecoder(applicationContext))
+                    add(ImageDecoderDecoder.Factory())
                 } else {
-                    add(GifDecoder())
+                    add(GifDecoder.Factory())
                 }
             }
             .build()
@@ -97,7 +98,7 @@ class SplashActivity : AppCompatActivity() {
                     startApplication(initMillis, intent)
                 }
             } else {
-                Session.eventManager.on<SessionStageUpdateEvent>(this) {
+                EventHandler.on<SessionStageUpdateEvent>(this) {
                     value?.let {
                         Logger.i(T, value)
                         runOnUiThread {

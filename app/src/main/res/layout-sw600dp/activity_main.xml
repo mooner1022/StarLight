@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:fitsSystemWindows="true">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp" app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toEndOf="@+id/constraintLayout2"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/background"
+            android:fitsSystemWindows="true"
+            android:foregroundGravity="center_horizontal"
+            android:theme="@style/Theme.StarLight.AppBarOverlay"
+            app:elevation="1dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <com.google.android.material.appbar.CollapsingToolbarLayout
+                android:id="@+id/collapsingToolbarLayout"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:layout_gravity="center_horizontal|start"
+                android:background="@color/background"
+                android:fitsSystemWindows="true"
+                android:foregroundGravity="center_horizontal"
+                app:contentScrim="@android:color/transparent"
+                app:expandedTitleGravity="center_vertical|left"
+                app:expandedTitleTextAppearance="@style/ExpandedAppBar"
+                app:layout_scrollFlags="scroll|exitUntilCollapsed|enterAlwaysCollapsed|snap">
+
+                <TextView
+                    android:id="@+id/titleText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start|center_vertical"
+                    android:layout_marginStart="@dimen/title_margin_start"
+                    android:layout_marginTop="20dp"
+                    android:elevation="1dp"
+                    android:fontFamily="@font/nanumsquare_round_bold"
+                    android:text="@string/app_name"
+                    android:textColor="@color/text"
+                    android:textSize="28sp"
+                    app:layout_collapseMode="parallax"/>
+
+                <TextView
+                    android:id="@+id/statusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start|center_vertical"
+                    android:layout_marginStart="@dimen/title_margin_start"
+                    android:layout_marginTop="50dp"
+                    android:elevation="1dp"
+                    android:fontFamily="@font/nanumsquare_round_regular"
+                    android:text="@string/app_version"
+                    android:textColor="@color/text"
+                    android:textSize="14sp"
+                    app:layout_collapseMode="parallax"/>
+
+            </com.google.android.material.appbar.CollapsingToolbarLayout>
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <ImageView
+            android:id="@+id/imageViewLogo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_gravity="end"
+            android:adjustViewBounds="true"
+            android:foregroundGravity="right"
+            android:maxHeight="200dp"
+            android:scaleType="fitEnd"
+            app:layout_collapseMode="parallax"
+            app:srcCompat="@drawable/svg_top_title_sunset"/>
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/transparent"
+            android:clipToPadding="false"
+            android:elevation="0dp"
+            android:fillViewport="true"
+            android:fitsSystemWindows="true"
+            android:overScrollMode="never"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent" app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintTop_toTopOf="parent"
+        android:id="@+id/constraintLayout2">
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" app:srcCompat="@drawable/ic_logo_transparent"/>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:background="@drawable/round_navigation"
+            android:layout_marginTop="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/imageView"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/buttonExpandMenu"
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="16dp"
+                android:padding="6dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_round_menu_24"
+                app:tint="@color/text"/>
+
+            <com.ismaeldivita.chipnavigation.ChipNavigationBar
+                android:id="@+id/bottom_menu"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_gravity="bottom"
+                android:layout_marginTop="8dp"
+                app:cnb_menuResource="@menu/activity_main_drawer"
+                app:cnb_orientationMode="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/buttonExpandMenu" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
