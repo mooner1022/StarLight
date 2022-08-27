@@ -80,11 +80,9 @@ internal fun ConfigActivity.initAdapter() {
 
 internal fun ConfigActivity.onDestroyed() {
     val activityId = intent.getStringExtra(EXTRA_ACTIVITY_ID)!!
-    if (activityId in holders) {
-        holders[activityId]!!.let {
-            it.onDestroyed()
-            it.instance = null
-        }
+    holders[activityId]?.let {
+        it.onDestroyed()
+        it.instance = null
         lastDestroyed = activityId
         //holders -= activityId
         Logger.v(TAG, "onDestroyed() called from config activity with ID: $activityId")

@@ -48,14 +48,13 @@ class ConfigActivity : AppCompatActivity() {
         }
     }
 
-    /*
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         // Bypass onDestroyed()
-        Logger.v("onSaveInstanceState called, bypassing onDestroyed() call on ID: $activityId")
-        bypassDestroy = true
+        //Logger.v("onSaveInstanceState called, bypassing onDestroyed() call on ID: $activityId")
+        //bypassDestroy = true
+        onDestroyed()
     }
-     */
 
     override fun onDestroy() {
         recyclerAdapter?.destroy()
