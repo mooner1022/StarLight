@@ -77,7 +77,7 @@ fun Uri.toBitmap(context: Context): Bitmap = if (Build.VERSION.SDK_INT >= Build.
 fun Uri.toURI(): URI =
     URI(this.toString())
 
-val isDevMode get() = Session.isInitComplete && globalConfig.category("dev").getBoolean("dev_mode", false)
+val isDevMode get() = Session.isInitComplete && GlobalConfig.category("dev").getBoolean("dev_mode", false)
 
 const val LAYOUT_DEFAULT = 0
 const val LAYOUT_TABLET  = 1

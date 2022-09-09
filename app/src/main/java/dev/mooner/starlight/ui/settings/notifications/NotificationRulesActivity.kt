@@ -16,9 +16,9 @@ import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.FileConfig
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
+import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.utils.PACKAGE_KAKAO_TALK
-import dev.mooner.starlight.utils.getInternalDirectory
 
 class NotificationRulesActivity : AppCompatActivity() {
 

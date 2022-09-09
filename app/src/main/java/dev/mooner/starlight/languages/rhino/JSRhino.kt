@@ -10,7 +10,7 @@ import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.utils.getInternalDirectory
+import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import dev.mooner.starlight.utils.toURI
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function

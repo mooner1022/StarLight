@@ -22,10 +22,10 @@ import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import dev.mooner.starlight.ui.crash.FatalErrorActivity
 import dev.mooner.starlight.ui.splash.quickstart.QuickStartActivity
 import dev.mooner.starlight.utils.checkPermissions
-import dev.mooner.starlight.utils.getInternalDirectory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

@@ -22,12 +22,12 @@ import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.plugin.EventListener
 import dev.mooner.starlight.plugincore.utils.NetworkUtil
+import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.ui.widget.DummyWidgetSlim
 import dev.mooner.starlight.ui.widget.LogsWidget
 import dev.mooner.starlight.ui.widget.UptimeWidgetDefault
 import dev.mooner.starlight.ui.widget.UptimeWidgetSlim
-import dev.mooner.starlight.utils.getInternalDirectory
 import dev.mooner.starlight.utils.getKakaoTalkVersion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*

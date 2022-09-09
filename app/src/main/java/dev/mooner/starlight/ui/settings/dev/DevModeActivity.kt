@@ -12,6 +12,7 @@ import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
+import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import dev.mooner.starlight.utils.*
 import java.util.*
 

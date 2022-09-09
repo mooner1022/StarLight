@@ -1,6 +1,10 @@
 package dev.mooner.starlight.plugincore.utils
 
+import android.os.Environment
 import java.io.File
+
+@Suppress("DEPRECATION")
+fun getInternalDirectory() = File(Environment.getExternalStorageDirectory(), "StarLight/")
 
 fun File.hasFile(fileName: String): Boolean {
     return this.listFiles()?.find { it.name == fileName } != null
