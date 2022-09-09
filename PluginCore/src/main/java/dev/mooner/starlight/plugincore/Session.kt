@@ -7,7 +7,6 @@
 package dev.mooner.starlight.plugincore
 
 import android.os.Build
-import android.os.Environment
 import dev.mooner.starlight.plugincore.api.ApiManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.language.LanguageManager
@@ -56,9 +55,13 @@ object Session {
     val json: Json
         get() = mJson.get()!!
 
-    @Suppress("DEPRECATION")
-    val globalConfig: GlobalConfig =
-        GlobalConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
+    @Deprecated(
+        message = "Retained for legacy code compatability, use GlobalConfig",
+        replaceWith = ReplaceWith(
+            "GlobalConfig",
+            "dev.mooner.starlight.plugincore.config.GlobalConfig")
+    )
+    val globalConfig: GlobalConfig = GlobalConfig
 
     val languageManager: LanguageManager = LanguageManager()
     val pluginLoader: PluginLoader       = PluginLoader()

@@ -10,6 +10,7 @@ import android.view.View
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.config.category.ConfigCategory
 import dev.mooner.starlight.plugincore.config.category.MutableConfigCategory
+import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -17,9 +18,10 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-class GlobalConfig(
-    path: File
-): Config {
+object GlobalConfig: Config {
+
+    private const val FILE_NAME = "config-general.json"
+    private const val DEFAULT_CATEGORY = "general"
 
     private val mData: MutableMap<String, MutableMap<String, TypedString>> by lazy {
         if (!file.exists() || !file.isFile) {
@@ -36,7 +38,7 @@ class GlobalConfig(
     }
 
     private val cachedCategories: MutableMap<String, MutableConfigCategory> = hashMapOf()
-    private var file = File(path, FILE_NAME)
+    private var file = File(getInternalDirectory(), FILE_NAME)
     private var isSaved: Boolean = false
 
     override fun getData(): ConfigData = mData
@@ -103,10 +105,5 @@ class GlobalConfig(
                 cachedCategories[id] = it
             }
         }
-    }
-
-    companion object {
-        private const val FILE_NAME = "config-general.json"
-        private const val DEFAULT_CATEGORY = "general"
     }
 }

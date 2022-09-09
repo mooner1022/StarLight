@@ -16,7 +16,7 @@ import androidx.annotation.ColorRes
 import androidx.core.content.ContextCompat
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.globalConfig
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import java.net.URI
 import java.util.concurrent.TimeUnit
 

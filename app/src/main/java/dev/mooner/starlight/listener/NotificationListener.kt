@@ -28,19 +28,20 @@ import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DeletedMessage
 import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.config.ConfigData
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.fireEvent
+import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
-import dev.mooner.starlight.utils.getInternalDirectory
 import kotlinx.serialization.decodeFromString
 import java.util.*
 
 class NotificationListener: NotificationListenerService() {
 
     private val isGlobalPowerOn: Boolean
-        get() = Session.globalConfig.category("general").getBoolean("global_power", true)
+        get() = GlobalConfig.category("general").getBoolean("global_power", true)
 
     private val replier = Replier { roomName, msg, hideToast ->
         val chatRoom = if (roomName == null) lastReceivedRoom else chatRooms[roomName]
@@ -90,7 +91,7 @@ class NotificationListener: NotificationListenerService() {
                         Logger.e("NotificationListener", "Failed to call event on '${project.info.name}': $e")
                     }
 
-                    if (Session.globalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
+                    if (GlobalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
                         val imageDB = ImageDB(data.sender.profileBitmap)
 
                         Session.projectManager.fireEvent<LegacyEvent>(room, message, sender, isGroupChat, replier, imageDB) { project, e ->

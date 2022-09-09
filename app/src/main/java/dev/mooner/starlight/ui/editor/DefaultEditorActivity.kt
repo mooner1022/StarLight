@@ -17,10 +17,11 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityDefaultEditorBinding
-import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.editor.CodeEditorActivity
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.dialog.DialogUtils
@@ -72,9 +73,9 @@ class DefaultEditorActivity : CodeEditorActivity() {
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.bottomSheet.configRecyclerView)
             structure(::getStructure)
-            savedData(Session.globalConfig.getAllConfigs())
+            savedData(GlobalConfig.getAllConfigs())
             onConfigChanged { parentId, id, _, data ->
-                Session.globalConfig.edit {
+                GlobalConfig.edit {
                     category(parentId).setAny(id, data)
                 }
             }
