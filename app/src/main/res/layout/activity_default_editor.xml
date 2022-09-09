@@ -24,7 +24,8 @@
         android:theme="?attr/actionBarTheme"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"/>
+
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/coordinatorLayout"
         android:layout_width="match_parent"
@@ -34,23 +35,29 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/editorWebView">
 
-        <include android:id="@+id/bottomSheet" layout="@layout/sheet_editor"/>
+        <include
+            android:id="@+id/bottomSheet"
+            layout="@layout/sheet_editor"
+        />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
     <HorizontalScrollView
         android:id="@+id/scrollViewHotKeys"
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:background="@color/background"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent"
-        tools:ignore="SpeakableTextPresentCheck">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" tools:ignore="SpeakableTextPresentCheck">
 
         <LinearLayout
             android:id="@+id/layoutHotKeys"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent" android:divider="@drawable/card_plugin_divider"
-            android:orientation="horizontal" android:showDividers="middle"/>
+            android:layout_height="match_parent"
+            android:divider="@drawable/card_plugin_divider"
+            android:orientation="horizontal"
+            android:showDividers="middle"/>
 
     </HorizontalScrollView>
 
