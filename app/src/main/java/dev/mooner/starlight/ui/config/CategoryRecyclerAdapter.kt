@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import android.widget.AdapterView.OnItemSelectedListener
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.findViewTreeLifecycleOwner
@@ -38,7 +39,6 @@ import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.angmarch.views.NiceSpinner
 
 class CategoryRecyclerAdapter(
     private val context: Context,
@@ -226,13 +226,18 @@ class CategoryRecyclerAdapter(
             }
             ConfigObjectType.SPINNER.viewType -> {
                 holder.spinner.apply {
+                    val items = ArrayAdapter(context, R.layout.spinner_list_item, (viewData as SpinnerConfigObject).items)
+                    adapter = items
                     setBackgroundColor(context.getColor(R.color.transparent))
-                    attachDataSource((viewData as SpinnerConfigObject).items)
-                    setOnSpinnerItemSelectedListener { _, _, position, _ ->
-                        viewData.onItemSelectedListener?.invoke(this, position)
-                        onConfigChanged(viewData.id, holder.spinner, position)
+                    onItemSelectedListener = object : OnItemSelectedListener {
+                        override fun onItemSelected(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+                            viewData.onItemSelectedListener?.invoke(this@apply, position)
+                            onConfigChanged(viewData.id, holder.spinner, position)
+                        }
+
+                        override fun onNothingSelected(p0: AdapterView<*>?) {}
                     }
-                    selectedIndex = getDefault() as Int
+                    setSelection(getDefault() as Int, true)
                 }
             }
             ConfigObjectType.BUTTON_FLAT.viewType -> {
@@ -472,7 +477,7 @@ class CategoryRecyclerAdapter(
 
         lateinit var editTextString: EditText
 
-        lateinit var spinner: NiceSpinner
+        lateinit var spinner: Spinner
 
         lateinit var cardViewButton: CardView
         lateinit var layoutButton: ConstraintLayout
