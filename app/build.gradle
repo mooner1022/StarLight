@@ -97,7 +97,7 @@ dependencies {
     implementation "jp.wasabeef:recyclerview-animators:4.0.2"
     implementation "com.github.dhaval2404:imagepicker:2.1"
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.9.1'
-    implementation 'org.jsoup:jsoup:1.15.2'
+    implementation 'org.jsoup:jsoup:1.15.3'
     implementation "com.github.acefalobi:android-stepper:58443a14ba"
     implementation "com.google.android.flexbox:flexbox:3.0.0"
     implementation 'com.github.ismaeldivita:chip-navigation-bar:1.4.0'
