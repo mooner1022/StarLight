@@ -48,6 +48,10 @@ class DefaultEditorActivity : CodeEditorActivity() {
 
     private var configAdapter: ConfigAdapter? = null
 
+    private val isHotKeyShown: Boolean get() =
+        GlobalConfig.category("e_general")
+            .getBoolean("show_hot_keys", true)
+
     @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,7 +66,7 @@ class DefaultEditorActivity : CodeEditorActivity() {
             title = name
         }
 
-        val themeOrdinal = Session.globalConfig.category("e_general").getInt("theme", Theme.NORD_DARK.ordinal)
+        val themeOrdinal = GlobalConfig.category("e_general").getInt("theme", Theme.NORD_DARK.ordinal)
         theme = Theme.values()[themeOrdinal]
 
         binding.scrollViewHotKeys.isHorizontalScrollBarEnabled = false
@@ -129,12 +133,15 @@ class DefaultEditorActivity : CodeEditorActivity() {
             loadUrl(ENTRY_POINT)
         }
 
+        setHotKeyVisibility(isHotKeyShown)
         val dp20 = dp(20)
         BottomSheetBehavior.from(binding.bottomSheet.root)
             .addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {}
 
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                if (!isHotKeyShown) return
+
                 val offsetFlip = (1f - slideOffset)
                 val radius = dp20 * offsetFlip
                 binding.bottomSheet.cardViewTopRadius.radius = radius
@@ -273,16 +280,39 @@ class DefaultEditorActivity : CodeEditorActivity() {
         }
     }
 
+    private fun setHotKeyVisibility(visible: Boolean) {
+        binding.bottomSheet.cardViewTopRadius.radius = 0f
+        val (peekHeight, visibility) = when(visible) {
+            true -> dp(64) to View.VISIBLE
+            false -> dp(24) to View.GONE
+        }
+        BottomSheetBehavior
+            .from(binding.bottomSheet.rootBottomSheet)
+            .setPeekHeight(peekHeight, true)
+        binding.scrollViewHotKeys.visibility = visibility
+        binding.layoutHotKeys.visibility = visibility
+    }
+
     private fun getStructure() = config {
         category {
             id = "e_general"
             title = "일반"
             textColor = getColor(R.color.text)
             items {
+                toggle {
+                    id = "show_hot_keys"
+                    title = "핫 키 표시"
+                    icon = Icon.KEYBOARD
+                    defaultValue = true
+                    setOnValueChangedListener { _, isEnabled ->
+                        setHotKeyVisibility(isEnabled)
+                    }
+                }
                 val themes = Theme.values()
                 spinner {
                     id = "theme"
                     title = "테마"
+                    icon = Icon.LAYERS
                     items = themes.map { it.shownName }
                     setOnItemSelectedListener { _, index ->
                         val selectedTheme = themes[index]
