@@ -3,6 +3,7 @@ buildscript {
     ext.kotlin_version = "1.7.10"
     ext.coil_version = "2.2.0"
     ext.latestAboutLibsRelease = "10.1.0"
+    ext.sheets_version = "2.2.9"
     repositories {
         google()
         mavenCentral()

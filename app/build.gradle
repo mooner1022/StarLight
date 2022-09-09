@@ -102,6 +102,10 @@ dependencies {
     implementation "com.google.android.flexbox:flexbox:3.0.0"
     implementation 'com.github.ismaeldivita:chip-navigation-bar:1.4.0'
 
+    implementation "com.maxkeppeler.sheets:core:${sheets_version}"
+    implementation "com.maxkeppeler.sheets:info:${sheets_version}"
+    implementation "com.maxkeppeler.sheets:color:${sheets_version}"
+
     implementation "com.mikepenz:aboutlibraries-core:${latestAboutLibsRelease}"
     implementation "com.mikepenz:aboutlibraries:${latestAboutLibsRelease}"
 
