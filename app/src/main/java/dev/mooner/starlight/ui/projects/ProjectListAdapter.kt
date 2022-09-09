@@ -17,6 +17,7 @@ import dev.mooner.starlight.databinding.CardProjectsBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.editor.CodeEditorActivity
+import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.async.AsyncCell
@@ -236,10 +237,13 @@ class ProjectListAdapter(
                     val compileFlow = project.compileAsync(true)
                         .flowOn(Dispatchers.Default)
                         .onEach { (stage, percent) ->
-                            container.binding.progressState.text = stage
-                            container.binding.progressBar.graceProgress = percent
+                            withContext(Dispatchers.Main) {
+                                container.binding.progressState.text = stage
+                                container.binding.progressBar.graceProgress = percent
+                            }
                         }
                         .catch { e ->
+                            Logger.e("[${project.info.name}]의 컴파일에 실패했어요.\n$e")
                             Snackbar.make(view, "[${project.info.name}]의 컴파일에 실패했어요.\n$e", Snackbar.LENGTH_LONG).apply {
                                 setAction("자세히 보기") {
                                     view.context.showErrorLogDialog(project.info.name + " 에러 로그", e)
