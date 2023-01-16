@@ -5,7 +5,9 @@ import android.text.method.ScrollingMovementMethod
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ShareCompat
 import dev.mooner.starlight.databinding.ActivityFatalErrorBinding
+import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import dev.mooner.starlight.utils.restartApplication
+import java.io.File
 
 class FatalErrorActivity : AppCompatActivity() {
 
@@ -23,16 +25,24 @@ class FatalErrorActivity : AppCompatActivity() {
             movementMethod = ScrollingMovementMethod()
         }
 
-        binding.restart.setOnClickListener {
-            restartApplication()
-        }
-
         binding.share.setOnClickListener {
             ShareCompat.IntentBuilder(this).apply {
                 setType("text/plain")
                 setText(errMsg)
                 setChooserTitle("에러 로그 공유")
             }.startChooser()
+        }
+
+        binding.exit.setOnClickListener {
+            finish()
+        }
+
+        binding.restart.setOnClickListener {
+            File(getInternalDirectory(), "STARTUP.info").also { file ->
+                if (file.exists())
+                    file.delete()
+            }
+            restartApplication()
         }
     }
 }

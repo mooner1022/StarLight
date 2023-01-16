@@ -8,9 +8,13 @@ package dev.mooner.starlight.plugincore.project
 
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
+import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import dev.mooner.starlight.plugincore.utils.joinClassNames
+import dev.mooner.starlight.plugincore.utils.runIf
 import java.io.File
 import kotlin.reflect.full.createInstance
+import kotlin.reflect.jvm.jvmName
 
 class ProjectManager(
     private val projectDir: File
@@ -34,14 +38,14 @@ class ProjectManager(
         project.info.block()
         project.saveInfo()
         if (callListener) {
-            EventHandler.fireEventWithScope(Events.Project.ProjectInfoUpdateEvent(project))
+            EventHandler.fireEventWithScope(Events.Project.InfoUpdate(project))
         }
     }
 
     fun newProject(info: ProjectInfo, dir: File = projectDir) {
         Project.create(dir, info).also { project ->
             projects[info.name] = project
-            EventHandler.fireEventWithScope(Events.Project.ProjectCreateEvent(project))
+            EventHandler.fireEventWithScope(Events.Project.Create(project))
         }
     }
 
@@ -75,19 +79,20 @@ class ProjectManager(
                 it.directory.deleteRecursively()
             projects -= name
         }
-        EventHandler.fireEventWithScope(Events.Project.ProjectDeleteEvent(name))
+        EventHandler.fireEventWithScope(Events.Project.Delete(name))
     }
 
     internal fun purge() = projects.forEach { (_, u) -> u.destroy(requestUpdate = true) }
 }
 
 inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, noinline onFailure: (project: Project, e: Throwable) -> Unit = { _, _ -> }) {
-    val event = T::class.createInstance().also { event ->
-        for ((index, arg) in event.argTypes.withIndex()) {
-            //Logger.v("${arg.jvmName}, ${args[index]::class.jvmName}")
-            if (arg != args[index]::class)
-                error("Passed argument types [${args.joinToString { clazz -> clazz::class.simpleName.toString() }}] do not match the required argument types: [${event.argTypes.joinToString { clazz -> clazz.simpleName.toString() }}]")
+    val event = T::class.createInstance()
+    event.argTypes
+        .zip(args)
+        .any { it.first != it.second::class }
+        .runIf(true) {
+            error("Argument type mismatch, registered: [${event.argTypes.joinClassNames()}], provided: [${args.joinClassNames()}]")
         }
-    }
+
     this.fireEvent(event.id, event.functionName, args, onFailure)
 }

@@ -2,9 +2,12 @@
 <resources>
     <color name="status_bar">@color/background_main</color>
 
-    <color name="main_purple">#ab9df2</color>
-    <color name="main_purple_light">#C5BDEF</color>
-    <color name="sub_purple">#F3F0FF</color>
+    <color name="main_purple">#DFC199</color>
+    <color name="main_purple_light">#D6CBBD</color>
+    <color name="sub_purple">#AD977A</color>
+    <color name="main_bright">#DFC199</color>
+    <color name="sub_bright">#D6CBBD</color>
+    <color name="main_dark">#AD977A</color>
 
     <color name="background_main">#CBCBCB</color>
     <color name="background">#F0F0F0</color>
@@ -22,9 +25,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="transparent">#00FFFFFF</color>
     <color name="dialog_day">#4A515B</color>
-    <color name="main_bright">#C5BDEF</color>
-    <color name="sub_bright">#887AD5</color>
-    <color name="main_dark">#ab9df2</color>
     <color name="splash_background">#1B1B23</color>
     <color name="sub_dark">#8E82C9</color>
     <color name="cardview_enabled">#DBDEFB</color>

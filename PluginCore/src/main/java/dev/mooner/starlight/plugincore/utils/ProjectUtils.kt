@@ -6,13 +6,12 @@
 
 package dev.mooner.starlight.plugincore.utils
 
-import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import kotlin.reflect.full.createInstance
 
 inline fun <reified T: ProjectEvent> Project.fireEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean {
-    Logger.v("EventManager", "Calling explicit event ${T::class.simpleName} for project ${this.info.name}")
+    logger.v("EventManager", "Calling explicit event ${T::class.simpleName} for project ${this.info.name}")
     val event = T::class.createInstance().also { event ->
         for ((index, arg) in event.argTypes.withIndex()) {
             if (arg != args[index]::class)

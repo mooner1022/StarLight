@@ -10,6 +10,8 @@ import android.view.View
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.config.category.ConfigCategory
 import dev.mooner.starlight.plugincore.config.category.MutableConfigCategory
+import dev.mooner.starlight.plugincore.event.EventHandler
+import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -79,7 +81,7 @@ object GlobalConfig: Config {
                 writeText(str)
             }
         }
-
+        EventHandler.fireEventWithScope(Events.Config.GlobalConfigUpdate())
         /*
         scope.launch {
             val str = Json.encodeToString(configs)

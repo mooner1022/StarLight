@@ -14,22 +14,22 @@ sealed class Events {
 
     sealed class Project {
 
-        class ProjectCreateEvent(
+        class Create(
             val project: SProject,
             val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
 
-        class ProjectInfoUpdateEvent(
+        class InfoUpdate(
             val project: SProject,
             val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
 
-        class ProjectCompileEvent(
+        class Compile(
             val project: SProject,
             val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
 
-        class ProjectDeleteEvent(
+        class Delete(
             val projectName: String,
             val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
@@ -37,8 +37,15 @@ sealed class Events {
 
     sealed class Log {
 
-        class LogCreateEvent(
+        class Create(
             val log: LogData,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+    }
+
+    sealed class Config {
+
+        class GlobalConfigUpdate(
             val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
     }

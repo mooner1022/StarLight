@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ menu_editor_drawer.xml created by Minki Moon(mooner1022) on 23. 1. 11. 오후 11:21
+  ~ Copyright (c) mooner1022. all rights reserved.
+  ~ This code is licensed under the GNU General Public License v3.0.
+  -->
+
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_file_tree"
+            android:enabled="true"
+            android:icon="@drawable/ic_round_format_list_bulleted_24"
+            android:title="@string/menu_file_tree" />
+        <item
+            android:id="@+id/nav_warnings"
+            android:enabled="true"
+            android:icon="@drawable/ic_round_error_outline_24"
+            android:title="@string/menu_warnings" />
+    </group>
+
+</menu>

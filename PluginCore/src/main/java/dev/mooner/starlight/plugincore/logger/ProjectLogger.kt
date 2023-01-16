@@ -7,6 +7,7 @@
 package dev.mooner.starlight.plugincore.logger
 
 import dev.mooner.starlight.plugincore.Session.json
+import dev.mooner.starlight.plugincore.logger.internal.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
@@ -16,16 +17,85 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-class ProjectLogger(
+class ProjectLogger private constructor(
     private var _logs: MutableList<LogData>,
     private val file: File
 ) {
+
+    val logs: MutableList<LogData>
+        get() = this._logs
+
+    fun clear() {
+        _logs.clear()
+        flush()
+    }
+
+    fun v(message: String) =
+        v(tag = null, message = message)
+
+    fun v(tag: String?, message: String) =
+        log(LogType.VERBOSE, tag, message)
+
+    fun d(message: String) =
+        d(tag = null, message = message)
+
+    fun d(tag: String?, message: String) =
+        log(LogType.DEBUG, tag, message)
+
+    fun i(message: String) =
+        i(tag = null, message = message)
+
+    fun i(tag: String?, message: String) =
+        log(LogType.INFO, tag, message)
+
+    fun w(message: String) =
+        w(tag = null, message = message)
+
+    fun w(tag: String?, message: String) =
+        log(LogType.WARN, tag, message)
+
+    fun e(message: String) =
+        e(tag = null, message = message)
+
+    fun e(tag: String?, message: String) =
+        log(LogType.ERROR, tag, message)
+
+    // What a Terrible Failure!
+    fun wtf(message: String) =
+        wtf(tag = null, message = message)
+
+    fun wtf(tag: String?, message: String) =
+        log(LogType.CRITICAL, tag, message)
+
+    private fun log(type: LogType, tag: String?, message: String) {
+        Logger.log(type, tag, message)
+
+        val data = LogData(
+            type = type,
+            tag = tag,
+            message = message
+        )
+        if (data.type != LogType.DEBUG) {
+            synchronized(_logs) {
+                _logs += data
+            }
+            flush()
+        }
+    }
+
+    private fun flush() = runBlocking {
+        withContext(Dispatchers.IO) {
+            flowOf(json.encodeToString(logs))
+                .flowOn(Dispatchers.Default)
+                .collect(file::writeText)
+        }
+    }
 
     companion object {
 
         fun create(directory: File): ProjectLogger {
             directory.mkdirs()
-            val file = File(directory, "logs-local.json")
+            val file = File(directory, "logs.json")
             file.createNewFile()
             return ProjectLogger(arrayListOf(), file)
         }
@@ -41,97 +111,10 @@ class ProjectLogger(
             } catch (e: Exception) {
                 e.printStackTrace()
                 file.delete()
-                Logger.e(ProjectLogger::class.simpleName!!, "Cannot parse log file ${file.name}, removing old file")
+                Logger.e(ProjectLogger::class.simpleName!!, "Failed to parse log file ${file.name}, removing file")
                 mutableListOf()
             }
             return ProjectLogger(logs, file)
-        }
-    }
-
-    fun clear() {
-        _logs.clear()
-        flush()
-    }
-
-    val logs: MutableList<LogData>
-        get() = this._logs
-
-    fun v(message: String) = v(tag = null, message = message)
-
-    fun v(tag: String?, message: String) = log(
-        LogData(
-            type = LogType.VERBOSE,
-            tag = tag,
-            message = message
-        )
-    )
-
-    fun d(message: String) = d(tag = null, message = message)
-
-    fun d(tag: String?, message: String) = log(
-        LogData(
-            type = LogType.DEBUG,
-            tag = tag,
-            message = message
-        )
-    )
-
-    fun i(message: String) = i(tag = null, message = message)
-
-    fun i(tag: String?, message: String) = log(
-        LogData(
-            type = LogType.INFO,
-            tag = tag,
-            message = message
-        )
-    )
-
-    fun e(message: String) = e(tag = null, message = message)
-
-    fun e(tag: String?, message: String) = log(
-        LogData(
-            type = LogType.ERROR,
-            tag = tag,
-            message = message
-        )
-    )
-
-    // What a Terrible Failure!
-    fun wtf(message: String) = wtf(tag = null, message = message)
-
-    fun wtf(tag: String?, message: String) = log(
-        LogData(
-            type = LogType.CRITICAL,
-            tag = tag,
-            message = message
-        )
-    )
-
-    fun w(message: String) = w(tag = null, message = message)
-
-    fun w(tag: String?, message: String) = log(
-        LogData(
-            type = LogType.WARN,
-            tag = tag,
-            message = message
-        )
-    )
-
-    private fun log(data: LogData) {
-        synchronized(_logs) {
-            _logs += data
-        }
-        Logger.log(data)
-        if (data.type != LogType.DEBUG)
-            flush()
-    }
-
-    private fun flush() = runBlocking {
-        withContext(Dispatchers.IO) {
-            val logs = _logs.filterNot { it.type == LogType.DEBUG }
-            flowOf(json.encodeToString(logs))
-                .flowOn(Dispatchers.Default)
-                .collect(file::writeText)
         }
     }
 }

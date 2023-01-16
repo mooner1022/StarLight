@@ -33,13 +33,13 @@ import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.LegacyEvent
 import dev.mooner.starlight.listener.legacy.Replier
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
 import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.config.ColorPickerConfigObject
 import dev.mooner.starlight.plugincore.config.ConfigStructure
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
@@ -134,7 +134,7 @@ class DebugRoomActivity: AppCompatActivity() {
 
         updateConfig()
 
-        val selfProfilePath = globalConfig.category("d_user").getString("profile_image_path")
+        val selfProfilePath = GlobalConfig.category("d_user").getString("profile_image_path")
         selfProfileBitmap = if (selfProfilePath == null) {
             loadBitmapFromResource(R.drawable.default_profile)
         } else {
@@ -142,7 +142,7 @@ class DebugRoomActivity: AppCompatActivity() {
                 loadBitmapFromFile(File(selfProfilePath))
             }.onFailure {
                 Toast.makeText(this, "프로필 사진 '$selfProfilePath'를 찾을 수 없어 기본 프로필로 대체했어요.", Toast.LENGTH_LONG).show()
-                globalConfig.edit {
+                GlobalConfig.edit {
                     category("d_user").remove("profile_image_path")
                 }
             }.getOrElse {
@@ -165,7 +165,7 @@ class DebugRoomActivity: AppCompatActivity() {
         else
             mutableListOf()
 
-        userChatAdapter = DebugRoomChatAdapter(this, chatList)
+        userChatAdapter = DebugRoomChatAdapter(this, dir, chatList)
 
         binding.chatRecyclerView.apply {
             adapter = userChatAdapter
@@ -192,9 +192,9 @@ class DebugRoomActivity: AppCompatActivity() {
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.bottomSheet.configRecyclerView)
             structure(::getStructure)
-            savedData(globalConfig.getAllConfigs())
+            savedData(GlobalConfig.getAllConfigs())
             onConfigChanged { parentId, id, _, data ->
-                globalConfig.edit {
+                GlobalConfig.edit {
                     category(parentId).setAny(id, data)
                 }
                 updateConfig()
@@ -243,7 +243,7 @@ class DebugRoomActivity: AppCompatActivity() {
 
         project.fireEvent<ProjectOnMessageEvent>(data, ::showErrorSnackbar)
 
-        if (globalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
+        if (GlobalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
             val replier = Replier { _, msg, _ ->
                 onSend(msg)
                 true
@@ -324,14 +324,14 @@ class DebugRoomActivity: AppCompatActivity() {
     }
 
     private fun updateConfig() {
-        roomName = globalConfig.category("d_room").getString("name", "undefined")
-        sender = globalConfig.category("d_user").getString("name", "debug_sender")
-        botName = globalConfig.category("d_bot").getString("name", "BOT")
-        sentPackage = globalConfig.category("d_room").getString("package", PACKAGE_KAKAO_TALK)
-        isGroupChat = globalConfig.category("d_room").getBoolean("is_group_chat", false)
-        sendOnEnter = globalConfig.category("d_room").getBoolean("send_with_enter", false)
-        senderChatColor = globalConfig.category("d_user").getInt("chat_color", senderChatColor)
-        botChatColor = globalConfig.category("d_bot").getInt("chat_color", botChatColor)
+        roomName = GlobalConfig.category("d_room").getString("name", "undefined")
+        sender = GlobalConfig.category("d_user").getString("name", "debug_sender")
+        botName = GlobalConfig.category("d_bot").getString("name", "BOT")
+        sentPackage = GlobalConfig.category("d_room").getString("package", PACKAGE_KAKAO_TALK)
+        isGroupChat = GlobalConfig.category("d_room").getBoolean("is_group_chat", false)
+        sendOnEnter = GlobalConfig.category("d_room").getBoolean("send_with_enter", false)
+        senderChatColor = GlobalConfig.category("d_user").getInt("chat_color", senderChatColor)
+        botChatColor = GlobalConfig.category("d_bot").getInt("chat_color", botChatColor)
 
         runOnUiThread {
             binding.roomTitle.text = roomName
@@ -368,17 +368,18 @@ class DebugRoomActivity: AppCompatActivity() {
     private fun reloadConfig() = configAdapter?.reload()
 
     private fun getStructure(): ConfigStructure {
+        val defaultColor = getColor(R.color.main_bright)
         return config {
             category {
                 id = "d_room"
                 title = "일반"
-                textColor = color { "#706EB9" }
+                textColor = defaultColor
                 items {
                     string {
                         id = "name"
                         title = "방 이름"
                         icon = Icon.BOOKMARK
-                        iconTintColor = color { "#706EB9" }
+                        iconTintColor = defaultColor
                         require = { text ->
                             if (text.isBlank()) "이름을 입력해주세요."
                             else null
@@ -388,22 +389,22 @@ class DebugRoomActivity: AppCompatActivity() {
                         id = "package"
                         title = "앱 패키지"
                         icon = Icon.LIST_BULLETED
+                        iconTintColor = defaultColor
                         hint = "ex) $PACKAGE_KAKAO_TALK"
                         defaultValue = PACKAGE_KAKAO_TALK
-                        iconTintColor = color { "#706EB9" }
                     }
                     toggle {
                         id = "is_group_chat"
                         title = "isGroupChat"
                         icon = Icon.MARK_CHAT_UNREAD
-                        iconTintColor = color { "#706EB9" }
+                        iconTintColor = defaultColor
                         defaultValue = false
                     }
                     toggle {
                         id = "send_with_enter"
                         title = "엔터 키로 전송"
                         icon = Icon.SEND
-                        iconTintColor = color { "#706EB9" }
+                        iconTintColor = defaultColor
                         defaultValue = false
                     }
                 }
@@ -411,13 +412,13 @@ class DebugRoomActivity: AppCompatActivity() {
             category {
                 id = "d_bot"
                 title = "봇"
-                textColor = color { "#706EB9" }
+                textColor = defaultColor
                 items {
                     string {
                         id = "name"
                         title = "이름"
                         icon = Icon.BOOKMARK
-                        iconTintColor = color { "#706EB9" }
+                        iconTintColor = defaultColor
                         require = { text ->
                             if (text.isBlank()) "이름을 입력해주세요."
                             else null
@@ -426,21 +427,21 @@ class DebugRoomActivity: AppCompatActivity() {
                     button {
                         id = "set_profile_image"
                         title = "프로필 이미지 설정"
-                        val profileImagePath = globalConfig.category("d_bot").getString("profile_image_path")
+                        val profileImagePath = GlobalConfig.category("d_bot").getString("profile_image_path")
                         if (profileImagePath == null) {
                             setIcon(icon = Icon.ACCOUNT_BOX)
-                            iconTintColor = color { "#706EB9" }
+                            iconTintColor = defaultColor
                         } else {
                             val file = File(profileImagePath)
                             if (file.exists() && file.isFile) {
                                 setIcon(iconFile = file)
                                 iconTintColor = null
                             } else {
-                                globalConfig.edit {
+                                GlobalConfig.edit {
                                     category("d_bot") -= "profile_image_path"
                                 }
                                 setIcon(icon = Icon.ACCOUNT_BOX)
-                                iconTintColor = color { "#706EB9" }
+                                iconTintColor = defaultColor
                             }
                         }
                         setOnClickListener { _ ->
@@ -453,10 +454,12 @@ class DebugRoomActivity: AppCompatActivity() {
                         icon = Icon.MARK_CHAT_READ
                         flags = ColorPickerConfigObject.FLAG_CUSTOM_ARGB or ColorPickerConfigObject.FLAG_ALPHA_SELECTOR
                         colors {
-                            color(color { "#706EB9" })
-                            color(color { "#F6946E" })
+                            color(getColor(R.color.main_bright))
+                            color(getColor(R.color.main_dark))
+                            color(color { "#789395" })
+                            color(color { "#b4cfb0" })
                         }
-                        defaultSelection = color { "#706EB9" }
+                        defaultSelection = color { "#789395" }
                         setOnColorSelectedListener { _, color ->
                             botChatColor = color
                         }
@@ -466,13 +469,13 @@ class DebugRoomActivity: AppCompatActivity() {
             category {
                 id = "d_user"
                 title = "전송자"
-                textColor = color { "#706EB9" }
+                textColor = defaultColor
                 items {
                     string {
                         id = "name"
                         title = "이름"
                         icon = Icon.BOOKMARK
-                        iconTintColor = color { "#706EB9" }
+                        iconTintColor = defaultColor
                         require = { text ->
                             if (text.isBlank()) "이름을 입력해주세요."
                             else null
@@ -481,21 +484,20 @@ class DebugRoomActivity: AppCompatActivity() {
                     button {
                         id = "set_profile_image"
                         title = "프로필 이미지 설정"
-                        val profileImagePath = globalConfig.category("d_user").getString("profile_image_path")
+                        iconTintColor = defaultColor
+                        val profileImagePath = GlobalConfig.category("d_user").getString("profile_image_path")
                         if (profileImagePath == null) {
                             setIcon(icon = Icon.ACCOUNT_BOX)
-                            iconTintColor = color { "#706EB9" }
                         } else {
                             val file = File(profileImagePath)
                             if (file.exists() && file.isFile) {
                                 setIcon(iconFile = file)
                                 iconTintColor = null
                             } else {
-                                globalConfig.edit {
+                                GlobalConfig.edit {
                                     category("d_user") -= "profile_image_path"
                                 }
                                 setIcon(icon = Icon.ACCOUNT_BOX)
-                                iconTintColor = color { "#706EB9" }
                             }
                         }
                         setOnClickListener { _ ->
@@ -506,12 +508,15 @@ class DebugRoomActivity: AppCompatActivity() {
                         id = "chat_color"
                         title = "채팅 말풍선 색 설정"
                         icon = Icon.MARK_CHAT_READ
+                        iconTintColor = defaultColor
                         flags = ColorPickerConfigObject.FLAG_CUSTOM_ARGB or ColorPickerConfigObject.FLAG_ALPHA_SELECTOR
                         colors {
-                            color(color { "#706EB9" })
-                            color(color { "#F6946E" })
+                            color(getColor(R.color.main_bright))
+                            color(getColor(R.color.main_dark))
+                            color(color { "#789395" })
+                            color(color { "#b4cfb0" })
                         }
-                        defaultSelection = color { "#F6946E" }
+                        defaultSelection = color { "#b4cfb0" }
                         setOnColorSelectedListener { _, color ->
                             senderChatColor = color
                         }
@@ -521,7 +526,7 @@ class DebugRoomActivity: AppCompatActivity() {
             category {
                 id = "d_cautious"
                 title = "위험"
-                textColor = color { "#FF865E" }
+                textColor = defaultColor
                 items {
                     button {
                         id = "clear_chat"
@@ -535,7 +540,6 @@ class DebugRoomActivity: AppCompatActivity() {
                         }
                         icon = Icon.LAYERS_CLEAR
                         //backgroundColor = Color.parseColor("#B8DFD8")
-                        iconTintColor = color { "#FF5C58" }
                     }
                 }
             }
@@ -549,7 +553,7 @@ class DebugRoomActivity: AppCompatActivity() {
         when (resultCode) {
             Activity.RESULT_OK -> {
                 val uri: Uri = data?.data!!
-                globalConfig.edit {
+                GlobalConfig.edit {
                     val category = when(requestCode) {
                         RESULT_BOT -> category("d_bot")
                         RESULT_USER -> category("d_user")

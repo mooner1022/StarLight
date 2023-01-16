@@ -13,8 +13,10 @@ data class ProjectInfo (
     var isPinned: Boolean = false,
     var trust: Boolean = true,
     val createdMillis: Long = System.currentTimeMillis(),
-    val allowedEventIds: MutableSet<String> = hashSetOf("on_message", "on_message_deleted", "default_legacy"),
-    val packages: MutableSet<String> = hashSetOf("com.kakao.talk")
+    val allowedEventIds: MutableSet<String> =
+        hashSetOf("on_message", "on_message_deleted", "default_legacy"),
+    val packages: MutableSet<String> =
+        hashSetOf("com.kakao.talk")
 )
 
 class ProjectInfoBuilder {
@@ -22,8 +24,10 @@ class ProjectInfoBuilder {
     var mainScript: String by Delegates.notNull()
     var languageId: String by Delegates.notNull()
     var trust: Boolean = true
-    var allowedEventIds: MutableSet<String> = hashSetOf("on_message", "on_message_deleted", "default_legacy")
-    var packages: MutableSet<String> = hashSetOf("com.kakao.talk")
+    var allowedEventIds: MutableSet<String> =
+        hashSetOf("on_message", "on_message_deleted", "default_legacy")
+    var packages: MutableSet<String> =
+        hashSetOf("com.kakao.talk")
 
     fun build() = ProjectInfo(
         name = name,

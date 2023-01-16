@@ -1,6 +1,6 @@
 package dev.mooner.starlight.plugincore.plugin
 
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.internal.Logger
 import dev.mooner.starlight.plugincore.version.Version
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable

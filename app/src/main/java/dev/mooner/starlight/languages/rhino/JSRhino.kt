@@ -7,8 +7,10 @@ import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.language.Language
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import dev.mooner.starlight.utils.toURI
@@ -20,6 +22,8 @@ import org.mozilla.javascript.commonjs.module.Require
 import org.mozilla.javascript.commonjs.module.provider.StrongCachingModuleScriptProvider
 import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider
 import java.io.File
+
+private val LOG = LoggerFactory.logger {  }
 
 class JSRhino: Language() {
 
@@ -90,7 +94,12 @@ class JSRhino: Language() {
 
         val langConf = getLanguageConfig()
         if (langConf.getBoolean("load_ext_modules", false)) {
-            Logger.v(T, "load_ext_modules")
+            LOG.verbose {
+                translate {
+                    Locale.ENGLISH { "[Load external modules] Option enabled" }
+                    Locale.KOREAN  { "[외부 모듈 로드] 설정 활성화됨" }
+                }
+            }
             val isSandboxed = langConf.getBoolean("load_ext_module_sandbox", false)
             val require = initRequire(context, scope, isSandboxed)
             require.install(scope)
@@ -108,7 +117,12 @@ class JSRhino: Language() {
         try {
             Context.exit()
         } catch (e: IllegalStateException) {
-            Logger.v(T, "Failed to release engine: ${e.message}")
+            LOG.error {
+                translate {
+                    Locale.ENGLISH { "Failed to release engine scope: $e" }
+                    Locale.KOREAN  { "엔진 스코프를 release 하지 못했습니다: $e" }
+                }
+            }
         }
     }
 
@@ -123,7 +137,12 @@ class JSRhino: Language() {
             val context = enterContext()
             val function = rhino.get(functionName, scope)
             if (function == Scriptable.NOT_FOUND || function !is Function) {
-                Logger.v(T, "Unable to locate function: $functionName")
+                LOG.verbose {
+                    translate {
+                        Locale.ENGLISH { "WARN: Unable to locate function: $functionName" }
+                        Locale.KOREAN  { "경고: 일치하는 함수를 찾을 수 없음: $functionName" }
+                    }
+                }
                 return
             }
             function.call(context, scope, scope, args)

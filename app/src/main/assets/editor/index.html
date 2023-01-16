@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <title>IDE AUTOCOMPLETE</title>
+    <title>StarLight Embedded Editor</title>
     <link rel="stylesheet" type="text/css" href="./index.css">
     <script src="./ace.min.js"></script>
     <script src="keybindings/keybinding-vscode.js"></script>
@@ -15,6 +15,7 @@
     <script src="extensions/ext-searchbox.js"></script>
     <script src="extensions/ext-statusbar.js"></script>
     <script src="extensions/ext-themelist.js"></script>
+    <script src="extensions/ext-textarea.js"></script>
 </head>
 <body>
 <div id="placeholder">
@@ -25,6 +26,8 @@
 </div>
 <div id="editor" onChange="onChange()"></div>
 <script>
+    const sessions = new Map();
+
     ace.config.set("basePath", "./");
     ace.config.set("themePath", "./themes/");
     ace.config.set("modePath", "./languages/");
@@ -39,21 +42,11 @@
     ace.require("ace/ext/searchbox");
     ace.require("ace/ext/statusbar");
     ace.require("ace/ext/themelist");
+    ace.require("ace/ext/textarea");
     ace.require("ace/keybinding/vscode");
     const beautify = ace.require("ace/ext/beautify");
 
     const editor = ace.edit("editor");
-
-    /*
-    editor.commands.addCommand({
-      name: "replace",
-      description: "Replace",
-      bindKey: {win: "Ctrl-R", mac: "Command-Option-F"},
-      exec: function(editor) {
-        config.loadModule("ace/ext/searchbox", function(e) {e.Search(editor, true);});
-      }
-    });
-    */
 
     editor.setOptions({
         enableBasicAutocompletion: true,
@@ -66,13 +59,44 @@
         mode: "ace/mode/javascript"
     });
 
-    editor.session.on("change", () => {
-        onChange();
-    });
+    const setSession = (sessionId, mode, code) => {
+        let nSession;
+        if (sessions.has(sessionId))
+            nSession = sessions.get(sessionId);
+        else {
+            nSession = ace.createEditSession(code ? decode(code) : "", `ace/mode/${mode}`);
+            nSession.on("change", () => {
+                onChange(sessionId);
+            });
+            sessions.set(sessionId, nSession);
+        }
+        editor.setSession(nSession);
+    }
 
-    const onChange = () => {
+    const closeSession = (sessionId, nextSessionId) => {
+        if (!sessions.has(sessionId)) return;
+        let session = sessions.get(sessionId);
+        if (editor.session === session) {
+            console.log("closing session with id " + sessionId);
+            if (nextSessionId) {
+                if (sessions.has(nextSessionId)) {
+                    let nextSession = sessions.get(nextSessionId);
+                    editor.setSession(nextSession);
+                    console.log("opened next session with id " + nextSessionId);
+                } else {
+                    WebviewCallback.requestSession(nextSessionId);
+                    console.log("next session invalid, requested id " + nextSessionId);
+                }
+            } else
+                editor.close();
+        }
+        sessions.delete(sessionId);
+        console.log("DELETED");
+    }
+
+    const onChange = (sessionId) => {
         const code = editor.getSession().getValue();
-        WebviewCallback.onContentChanged(code);
+        WebviewCallback.onContentChanged(sessionId, code);
     }
 
     const decode = (text) => decodeURIComponent(atob(text))
@@ -82,11 +106,11 @@
         editor.clearSelection();
     }
 
-    const beautifyCode =
-        () => beautify.beautify(editor.getSession());
+    const beautifyCode = () =>
+        beautify.beautify(editor.getSession());
 
-    const resetUndoStack =
-        () => editor.session.getUndoManager().reset()
+    const resetUndoStack = () =>
+        editor.session.getUndoManager().reset();
 
     const undo = () =>
         editor.session.getUndoManager().undo();

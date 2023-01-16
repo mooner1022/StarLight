@@ -6,6 +6,8 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import dev.mooner.starlight.BuildConfig
+import dev.mooner.starlight.ui.editor.DefaultEditorActivity
+import java.io.File
 
 fun Context.requestManageStoragePermission() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
@@ -18,3 +20,9 @@ fun Context.requestManageStoragePermission() {
         )
     )
 }
+
+fun getLanguageByExtension(ext: String): DefaultEditorActivity.Language? =
+    DefaultEditorActivity.Language.values().firstOrNull { ext in it.fileExt }
+
+fun String.toFile(): File =
+    File(this)

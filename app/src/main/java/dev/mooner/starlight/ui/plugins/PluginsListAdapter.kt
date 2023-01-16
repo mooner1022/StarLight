@@ -18,6 +18,7 @@ import dev.mooner.starlight.ui.plugins.config.PluginConfigActivity
 import dev.mooner.starlight.ui.plugins.info.startPluginInfoActivity
 import dev.mooner.starlight.ui.presets.ExpandableCard
 import dev.mooner.starlight.utils.trimLength
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.properties.Delegates.notNull
 

@@ -14,13 +14,15 @@ import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Callable
+
+private val LOG = LoggerFactory.logger {  }
 
 @Suppress("unused")
 class LegacyApi: Api<LegacyApi.Api>() {
@@ -141,7 +143,7 @@ class LegacyApi: Api<LegacyApi.Api>() {
         }
 
         fun gc() {
-            Logger.w("LegacyApi", "Java 가상 머신은 자동으로 가비지 컬렉션을 수행합니다.\n뭘 하고 계신건지 정확히 알고 실행해 주세요.")
+            LOG.warn { "Java 가상 머신은 자동으로 가비지 컬렉션을 수행합니다.\n뭘 하고 계신건지 정확히 알고 실행해 주세요." }
             System.gc()
         }
 

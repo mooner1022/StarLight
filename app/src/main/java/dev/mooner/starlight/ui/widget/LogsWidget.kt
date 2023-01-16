@@ -11,13 +11,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import dev.mooner.starlight.R
+import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogType
-import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.plugincore.widget.WidgetSize
 import dev.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
@@ -64,7 +64,7 @@ class LogsWidget: Widget() {
             layoutTransition = LayoutTransition()
             val rvLogs: RecyclerView = findViewById(R.id.rvLogs)
             val textViewNoLogsYet: TextView = findViewById(R.id.textViewNoLogsYet)
-            val logs = Logger.logs
+            val logs = LogCollector.logs
             mAdapter = LogsRecyclerViewAdapter(context)
 
             if (logs.isNotEmpty()) {
@@ -189,7 +189,7 @@ class LogsWidget: Widget() {
 
     private fun unbindLogger() = job?.cancel()
 
-    private fun onLogCreated(event: Events.Log.LogCreateEvent) {
+    private fun onLogCreated(event: Events.Log.Create) {
         val log = event.log
         if (log.type == LogType.VERBOSE && !Session.globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)) return
 

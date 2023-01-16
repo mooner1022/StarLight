@@ -226,7 +226,7 @@ class CategoryRecyclerAdapter(
             }
             ConfigObjectType.SPINNER.viewType -> {
                 holder.spinner.apply {
-                    val items = ArrayAdapter(context, R.layout.spinner_list_item, (viewData as SpinnerConfigObject).items)
+                    val items = ArrayAdapter(context, android.R.layout.simple_spinner_item, (viewData as SpinnerConfigObject).items)
                     adapter = items
                     setBackgroundColor(context.getColor(R.color.transparent))
                     onItemSelectedListener = object : OnItemSelectedListener {
@@ -244,7 +244,8 @@ class CategoryRecyclerAdapter(
                 val data = viewData as ButtonConfigObject
                 if (data.onClickListener != null) {
                     holder.layoutButton.setOnClickListener {
-                        if (holder.layoutButton.isEnabled) data.onClickListener?.invoke(it)
+                        if (holder.layoutButton.isEnabled)
+                            data.onClickListener?.invoke(it)
                     }
                 }
                 if (data.backgroundColor != null) {

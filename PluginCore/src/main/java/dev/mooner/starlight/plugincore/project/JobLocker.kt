@@ -1,6 +1,6 @@
 package dev.mooner.starlight.plugincore.project
 
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.internal.Logger
 import dev.mooner.starlight.plugincore.utils.currentThread
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap

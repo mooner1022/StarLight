@@ -33,7 +33,7 @@ class DummyWidgetSlim: Widget() {
         val context = view.context
         draw(view as FrameLayout) {
             val chipGroup = ChipGroup(context)
-            chipGroup.add(
+            chipGroup.place(
                 width = matchParent,
                 height = wrapContent,
             ) {

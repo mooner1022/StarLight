@@ -34,19 +34,23 @@ import dev.mooner.starlight.databinding.FragmentProjectsBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.Session.projectManager
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
 import dev.mooner.starlight.utils.dpToPx
+import dev.mooner.starlight.utils.warn
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private val LOG = LoggerFactory.logger {  }
 
 class ProjectsFragment : Fragment(), View.OnClickListener {
 
@@ -65,10 +69,10 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         ALIGN_COMPILED
     )
     private var alignState: Align<Project> = getAlignByName(
-        globalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name)
+        GlobalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name)
     )?: DEFAULT_ALIGN
-    private var isReversed: Boolean = globalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_REVERSED).toBoolean()
-    private var isActiveFirst: Boolean = globalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_ACTIVE_FIRST).toBoolean()
+    private var isReversed: Boolean = GlobalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_REVERSED).toBoolean()
+    private var isActiveFirst: Boolean = GlobalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_ACTIVE_FIRST).toBoolean()
 
     @SuppressLint("CheckResult")
     override fun onCreateView(
@@ -129,13 +133,13 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         }
     }
 
-    private suspend fun onProjectUpdated(event: Events.Project.ProjectInfoUpdateEvent) = updateProjectView(event.project)
+    private suspend fun onProjectUpdated(event: Events.Project.InfoUpdate) = updateProjectView(event.project)
 
-    private suspend fun onProjectCompiled(event: Events.Project.ProjectCompileEvent) = updateProjectView(event.project)
+    private suspend fun onProjectCompiled(event: Events.Project.Compile) = updateProjectView(event.project)
 
-    private suspend fun onProjectDeleted(event: Events.Project.ProjectDeleteEvent) = updateList(null)
+    private suspend fun onProjectDeleted(event: Events.Project.Delete) = updateList(null)
 
-    private suspend fun onProjectCreated(event: Events.Project.ProjectCreateEvent) = updateList(event.project)
+    private suspend fun onProjectCreated(event: Events.Project.Create) = updateList(event.project)
 
     private fun RecyclerView.setup() {
         itemAnimator = FadeInUpAnimator()
@@ -163,7 +167,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         else {
             val index = recyclerAdapter!!.data.indexOf(project)
             if (index == -1) {
-                Logger.w(T, "Failed to update project list: index not found")
+                with(requireContext()) {
+                    LOG.warn(R.string.log_project_list_update_failure)
+                }
                 return
             }
             withContext(Dispatchers.Main) {
@@ -243,22 +249,22 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                 chipGroup.addView(chip)
             }
 
-            positiveButton(text = "생성") {
+            positiveButton(res = R.string.create) {
                 val projectName = nameEditText.text.toString()
                 if (projectManager.getProject(projectName) != null) {
-                    nameEditText.error = "이미 존재하는 이름이에요."
+                    nameEditText.error = getString(R.string.project_duplicate_name)
                     nameEditText.requestFocus()
                     return@positiveButton
                 }
                 if (!"(^[-_0-9A-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+\$)".toRegex().matches(projectName)) {
-                    nameEditText.error = "이름은 숫자와 -, _, 영문자, 한글만 가능해요."
+                    nameEditText.error = getString(R.string.project_name_format_error)
                     nameEditText.requestFocus()
                     return@positiveButton
                 }
 
                 val id = chipGroup.checkedChipId
                 if (id == View.NO_ID) {
-                    Snackbar.make(this.view, "사용할 언어를 선택해주세요.", Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(this.view, getString(R.string.project_select_language), Snackbar.LENGTH_SHORT).show()
                     return@positiveButton
                 }
                 val selectedLang = Session.languageManager.getLanguages()[id]
@@ -269,7 +275,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                 }
                 it.dismiss()
             }
-            negativeButton(text = "취소") {
+            negativeButton(res = R.string.cancel) {
                 it.dismiss()
             }
             //onDismiss {
@@ -286,16 +292,6 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                 .thenByDescending { it.info.name }
             emit(projects.sortedWith(comparable))
         }
-
-    private fun sortData(): List<Project> {
-        val aligned = alignState.sort(
-            projects,
-            mapOf(
-                "activeFirst" to isActiveFirst
-            )
-        )
-        return if (isReversed) aligned.asReversed() else aligned
-    }
 
     private fun reloadList(list: List<Project>) {
         recyclerAdapter?.apply {
@@ -318,7 +314,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         binding.textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
         binding.alignStateIcon.load(alignState.icon)
 
-        globalConfig.edit {
+        GlobalConfig.edit {
             getDefaultCategory().apply {
                 set(CONFIG_PROJECTS_ALIGN, alignState.name)
                 set(CONFIG_PROJECTS_REVERSED, isReversed.toString())
@@ -329,7 +325,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     private fun scrollTo(project: Project) {
         val index = recyclerAdapter!!.data.indexOf(project)
         if (index == -1) {
-            Logger.v("Failed to scroll to project: index not found")
+            with(requireContext()) {
+                LOG.warn(R.string.log_project_list_update_failure)
+            }
             return
         }
         binding.recyclerViewProjectList.postDelayed({
@@ -356,7 +354,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             for (project in updatedProjects) {
                 val index = recyclerAdapter!!.data.indexOf(project)
                 if (index == -1) {
-                    Logger.w(T, "Failed to update project list: index not found")
+                    with(requireContext()) {
+                        LOG.warn(R.string.log_project_list_update_failure)
+                    }
                     continue
                 }
                 recyclerAdapter!!.notifyItemChanged(index)
@@ -372,8 +372,6 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     }
 
     companion object {
-        private const val T = "ProjectsFragment"
-
         @JvmStatic
         private val ALIGN_GANADA: Align<Project> = Align(
             name = "가나다 순",

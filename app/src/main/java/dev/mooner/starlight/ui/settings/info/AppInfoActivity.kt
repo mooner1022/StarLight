@@ -12,8 +12,10 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.aboutlibraries.LibsBuilder
+import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityAppInfoBinding
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
@@ -27,7 +29,7 @@ class AppInfoActivity : AppCompatActivity() {
 
     private var devModeClicks: Int = 0
 
-    private val isDevMode get() = Session.globalConfig.category("dev").getBoolean("dev_mode", false)
+    private val isDevMode get() = GlobalConfig.category("dev").getBoolean("dev_mode", false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +55,7 @@ class AppInfoActivity : AppCompatActivity() {
     }
 
     private fun getConfig(pInfo: PackageInfo, versionCode: Number) = config {
+        val defaultColor = getColor(R.color.main_bright)
         category {
             id = "general"
             items {
@@ -61,14 +64,14 @@ class AppInfoActivity : AppCompatActivity() {
                     title = "앱 버전"
                     description = "v${pInfo.versionName}(build ${versionCode})"
                     icon = Icon.STAR
-                    iconTintColor = color { "#6455A1" }
+                    iconTintColor = defaultColor
                 }
                 button {
                     id = "version"
                     title = "PluginCore 버전"
                     description = "v${dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION}"
                     icon = Icon.LAYERS
-                    iconTintColor = color { "#C073A0" }
+                    iconTintColor = defaultColor
                 }
                 button {
                     id = "github"
@@ -88,7 +91,7 @@ class AppInfoActivity : AppCompatActivity() {
                     title = "무너"
                     icon = Icon.DEVELOPER_BOARD
                     description = "ariel@mooner.dev"
-                    iconTintColor = color { "#3A1C71" }
+                    iconTintColor = defaultColor
                     setOnClickListener { _ ->
                         if (isDevMode) {
                             Snackbar.make(binding.root, "이미 개발자 모드가 활성화되었습니다.", Snackbar.LENGTH_SHORT).show()
@@ -99,7 +102,7 @@ class AppInfoActivity : AppCompatActivity() {
                                     Snackbar.make(binding.root, "개발자 모드 활성화까지 ${8 - devModeClicks} 남았습니다.", Snackbar.LENGTH_SHORT).show()
                                 }
                                 8 -> {
-                                    Session.globalConfig.edit {
+                                    GlobalConfig.edit {
                                         category("dev")["dev_mode"] = true
                                     }
                                     Snackbar.make(binding.root, "개발자 모드 활성화", Snackbar.LENGTH_SHORT).show()
@@ -120,7 +123,7 @@ class AppInfoActivity : AppCompatActivity() {
                     id = "opensource_license"
                     title = "오픈소스 라이센스"
                     icon = Icon.DEVELOPER_MODE
-                    iconTintColor = color { "#D76D77" }
+                    iconTintColor = defaultColor
                     setOnClickListener { _ ->
                         LibsBuilder().apply {
                             withShowLoadingProgress(true)

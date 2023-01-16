@@ -19,6 +19,7 @@ import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.widgetManager
 import dev.mooner.starlight.plugincore.config.ConfigStructure
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.ui.config.ConfigAdapter
@@ -40,7 +41,7 @@ class WidgetConfigActivity : AppCompatActivity() {
         binding = ActivityWidgetConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val widgetIds: List<String> = json.decodeFromString(Session.globalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
+        val widgetIds: List<String> = json.decodeFromString(GlobalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
         for (id in widgetIds) {
             with(widgetManager.getWidgetById(id)) {
                 if (this != null)
@@ -144,7 +145,7 @@ class WidgetConfigActivity : AppCompatActivity() {
     }
 
     private fun notifyDataEdited(data: List<Widget>) {
-        Session.globalConfig.edit {
+        GlobalConfig.edit {
             category("widgets")["ids"] = Json.encodeToString(data.map { it.id })
         }
         setResult(RESULT_EDITED)

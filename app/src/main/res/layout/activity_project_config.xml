@@ -107,6 +107,6 @@
         android:layout_marginTop="10dp"
         android:layout_marginBottom="10dp"
         android:src="@drawable/ic_round_arrow_left_24"
-        android:tint="@color/text"/>
+        app:tint="@color/text"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

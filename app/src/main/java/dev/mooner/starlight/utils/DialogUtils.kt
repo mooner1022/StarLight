@@ -10,22 +10,19 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.bottomsheets.setPeekHeight
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetBehavior.*
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.maxkeppeler.sheets.color.ColorSheet
 import com.maxkeppeler.sheets.core.Sheet
 import com.maxkeppeler.sheets.core.SheetStyle
-import com.maxkeppeler.sheets.info.InfoSheet
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.DialogLogsBinding
+import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogType
-import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.*
@@ -47,7 +44,7 @@ class CustomSheet: Sheet() {
 
         val activity = requireActivity()
 
-        val logs = Logger.logs
+        val logs = LogCollector.logs
         val mAdapter = LogsRecyclerViewAdapter(activity).apply {
             data = logs.toMutableList()
         }
@@ -64,8 +61,8 @@ class CustomSheet: Sheet() {
         mAdapter.notifyItemRangeInserted(0, logs.size)
 
         CoroutineScope(Dispatchers.Main + logUpdateJob).launch {
-            EventHandler.on<Events.Log.LogCreateEvent>(this) {
-                if (log.type == LogType.VERBOSE && !Session.globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)) return@on
+            EventHandler.on<Events.Log.Create>(this) {
+                if (log.type == LogType.VERBOSE && !GlobalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)) return@on
                 mAdapter.pushLog(log)
                 binding.rvLog.let { recycler ->
                     recycler.post {

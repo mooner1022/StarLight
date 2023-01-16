@@ -25,7 +25,7 @@
             android:layout_marginStart="10dp"
             android:src="@drawable/ic_round_arrow_left_24"
             android:layout_gravity="center_vertical"
-            android:tint="@color/text"/>
+            app:tint="@color/text"/>
 
         <LinearLayout
             android:layout_width="wrap_content"

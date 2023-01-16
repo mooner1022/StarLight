@@ -1,24 +1,28 @@
 package dev.mooner.starlight.ui.projects
 
 import android.content.Context
-import android.content.Intent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.cardview.widget.CardView
+import androidx.lifecycle.flowWithLifecycle
 import androidx.recyclerview.widget.RecyclerView
 import coil.transform.RoundedCornersTransformation
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.snackbar.Snackbar
+import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.CardProjectButtonsBinding
 import dev.mooner.starlight.databinding.CardProjectsBinding
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.editor.CodeEditorActivity
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.async.AsyncCell
 import dev.mooner.starlight.ui.debugroom.DebugRoomActivity
@@ -28,14 +32,13 @@ import dev.mooner.starlight.ui.projects.config.ProjectConfigActivity
 import dev.mooner.starlight.ui.projects.info.startProjectInfoActivity
 import dev.mooner.starlight.utils.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.serialization.decodeFromString
 import java.io.File
 import kotlin.properties.Delegates
 import kotlin.system.measureTimeMillis
+
+private val LOG = LoggerFactory.logger {  }
 
 class ProjectListAdapter(
     private val context: Context,
@@ -43,6 +46,8 @@ class ProjectListAdapter(
 ) : RecyclerView.Adapter<ProjectListAdapter.ProjectListViewHolder>() {
 
     private val containers: MutableMap<String, ViewContainer> = hashMapOf()
+    private val compileScope: CoroutineScope =
+        CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectListViewHolder {
         //val view = LayoutInflater.from(context).inflate(R.layout.card_projects, parent, false)
@@ -124,7 +129,7 @@ class ProjectListAdapter(
                             }
                             setBackgroundColor(buttonBackgroundColor)
                             //load(button.icon.drawableRes)
-                            val icon = Icon.valueOf(button["button_icon"]!!.castAs())
+                            val icon = Icon.values()[button["button_icon"]!!.castAs()]
                             loadWithTint(data = icon.drawableRes, tintColor = R.color.text)
                             setOnClickListener {
                                 //Toast.makeText(context, "Button Clicked!", Toast.LENGTH_SHORT).show()
@@ -160,17 +165,6 @@ class ProjectListAdapter(
         }
     }
 
-    private fun Context.startActivityWithExtra(clazz: Class<*>, extras: Map<String, String> = mapOf()) {
-        val intent = Intent(this, clazz).apply {
-            if (extras.isNotEmpty()) {
-                for ((name, value) in extras) {
-                    putExtra(name, value)
-                }
-            }
-        }
-        startActivity(intent)
-    }
-
     private fun ViewContainer.showProgress(show: Boolean) {
         val buttonVisibility = if (show) View.GONE else View.VISIBLE
         binding.apply {
@@ -196,7 +190,11 @@ class ProjectListAdapter(
             when(view.id) {
                 R.id.buttonDebugRoom -> {
                     if (!project.isCompiled) {
-                        Snackbar.make(view, "아직 프로젝트가 컴파일되지 않았어요.", Snackbar.LENGTH_SHORT).show()
+                        Snackbar.make(view,
+                            translate {
+                                Locale.ENGLISH { "Project isn't compiled yet." }
+                                Locale.KOREAN  { "프로젝트 컴파일이 완료된 후 사용할 수 있어요." }
+                            }, Snackbar.LENGTH_SHORT).show()
                         return
                     }
                     context.startActivityWithExtra(
@@ -234,44 +232,66 @@ class ProjectListAdapter(
                     container.showProgress(true)
                     container.binding.progressBar.progress = 0
 
-                    val compileFlow = project.compileAsync(true)
-                        .flowOn(Dispatchers.Default)
+                    val startMillis = System.currentTimeMillis()
+                    project.compileAsync()
+                        //.flowWithLifecycle((this@ProjectListAdapter.context as MainActivity).lifecycle)
+                        .buffer(3)
                         .onEach { (stage, percent) ->
                             withContext(Dispatchers.Main) {
-                                container.binding.progressState.text = stage
+                                container.binding.progressState.text = stage.name
                                 container.binding.progressBar.graceProgress = percent
                             }
                         }
-                        .catch { e ->
-                            Logger.e("[${project.info.name}]의 컴파일에 실패했어요.\n$e")
-                            Snackbar.make(view, "[${project.info.name}]의 컴파일에 실패했어요.\n$e", Snackbar.LENGTH_LONG).apply {
-                                setAction("자세히 보기") {
-                                    view.context.showErrorLogDialog(project.info.name + " 에러 로그", e)
+                        .onCompletion { e ->
+                            LOG.verbose { "onCompletion()" }
+                            withContext(Dispatchers.Main) {
+                                container.binding.progressBar.graceProgress = 100
+                            }
+                            if (e == null) {
+                                withContext(Dispatchers.Main) {
+                                    Snackbar.make(view,
+                                        translate {
+                                            Locale.ENGLISH { "Successfully compiled ${project.info.name}" }
+                                            Locale.KOREAN  { "${project.info.name} 컴파일 완료!" }
+                                        }, Snackbar.LENGTH_SHORT).show()
+                                    container.apply {
+                                        cardViewIsEnabled.setCardBackgroundColor(getCardColor(project))
+                                        expandable.isSwitchEnabled = true
+                                    }
                                 }
-                            }.show()
+                            }
+
+                            val compileTime = System.currentTimeMillis() - startMillis
+                            val awaitAnimation = GlobalConfig.category("project").getBoolean("compile_animation", true)
+                            if (awaitAnimation && compileTime < MIN_COMPILE_TIME)
+                                delay(MIN_COMPILE_TIME - compileTime)
+                            withContext(Dispatchers.Main) {
+                                container.showProgress(false)
+                            }
+                        }
+                        .catch { e ->
+                            val title = translate {
+                                Locale.ENGLISH { "Failed to compile ${project.info.name}\n$e" }
+                                Locale.KOREAN  { "${project.info.name} 컴파일 실패\n$e" }
+                            }
+                            LOG.error { title }
+                            Snackbar.make(view, title, Snackbar.LENGTH_LONG)
+                                .apply {
+                                    setAction(translate {
+                                        Locale.ENGLISH { "Show all" }
+                                        Locale.KOREAN  { "자세히 보기" }
+                                    }) {
+                                        view.context.showErrorLogDialog(
+                                            translate {
+                                                Locale.ENGLISH { "Error log of ${project.info.name}\n$e" }
+                                                Locale.KOREAN  { "${project.info.name} 에러 로그\n$e" }
+                                            }, e)
+                                    }
+                                }.show()
                             container.cardViewIsEnabled.setCardBackgroundColor(getCardColor(project))
                             container.expandable.isSwitchEnabled = false
                         }
-
-                    CoroutineScope(Dispatchers.Default).launch {
-                        val compileTime = measureTimeMillis { compileFlow.collect() }
-
-                        withContext(Dispatchers.Main) {
-                            container.binding.progressBar.graceProgress = 100
-                        }
-                        val awaitAnimation = Session.globalConfig.category("project").getBoolean("compile_animation", true)
-                        if (awaitAnimation && compileTime < MIN_COMPILE_TIME) {
-                            delay(MIN_COMPILE_TIME - compileTime)
-                        }
-                        withContext(Dispatchers.Main) {
-                            Snackbar.make(view, "[${project.info.name}] 컴파일 완료!", Snackbar.LENGTH_SHORT).show()
-                            container.apply {
-                                cardViewIsEnabled.setCardBackgroundColor(getCardColor(project))
-                                expandable.isSwitchEnabled = true
-                                showProgress(false)
-                            }
-                        }
-                    }
+                        .launchIn(compileScope)
                 }
             }
         }

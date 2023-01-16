@@ -1,6 +1,11 @@
 package dev.mooner.starlight.plugincore.language
 
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.logger.internal.Logger
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
+
+private val LOG = LoggerFactory.logger {  }
 
 class LanguageManager {
 
@@ -15,7 +20,12 @@ class LanguageManager {
         }
         languages += lang
         languageAssetPaths[lang.id] = assetPath
-        Logger.v("LanguageManager", "Added language ${lang.name}(${lang.id})")
+        LOG.verbose { 
+            translate { 
+                Locale.ENGLISH { "Added language ${lang.name}(${lang.id})" }
+                Locale.KOREAN  { "${lang.name}(${lang.id}) 언어 추가 성공" }
+            }
+        }
     }
 
     fun getLanguage(id: String, newInstance: Boolean = false): Language? {

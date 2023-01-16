@@ -44,7 +44,7 @@ class ViewBuilder(
         layoutParams = params
     }
 
-    fun <T: View> T.add(
+    fun <T: View> T.place(
         width: Int = UNDEFINED,
         height: Int = UNDEFINED,
         block: T.() -> Unit = {}

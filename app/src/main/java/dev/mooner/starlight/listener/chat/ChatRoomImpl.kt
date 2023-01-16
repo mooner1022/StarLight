@@ -8,7 +8,9 @@ import android.content.Intent
 import android.os.Bundle
 import dev.mooner.starlight.listener.NotificationListener
 import dev.mooner.starlight.plugincore.chat.ChatRoom
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
+
+private val LOG = LoggerFactory.logger {  }
 
 data class ChatRoomImpl(
     override val name: String,
@@ -36,7 +38,7 @@ data class ChatRoomImpl(
             NotificationListener.notifySent(lastReceivedId)
             RemoteInput.addResultsToIntent(session.remoteInputs, sendIntent, msg)
             session.actionIntent.send(context, 0, sendIntent)
-            Logger.v("ChatRoom", "send() success: $message")
+            LOG.verbose { "send() success: $message" }
             true
         } catch (e: PendingIntent.CanceledException) {
             e.printStackTrace()

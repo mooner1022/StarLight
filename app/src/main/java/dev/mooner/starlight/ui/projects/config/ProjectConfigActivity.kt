@@ -27,6 +27,7 @@ import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.config.ButtonConfigObject
 import dev.mooner.starlight.plugincore.config.ConfigStructure
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.Icon
@@ -48,7 +49,8 @@ class ProjectConfigActivity: AppCompatActivity() {
         val fabProjectConfig = binding.fabProjectConfig
 
         val projectName = intent.getStringExtra("projectName")!!
-        project = Session.projectManager.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
+        project = Session.projectManager.getProject(projectName)
+            ?: throw IllegalStateException("Unable to find project $projectName")
 
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.configRecyclerView)
@@ -97,6 +99,7 @@ class ProjectConfigActivity: AppCompatActivity() {
 
         val textViewConfigProjectName: TextView = findViewById(R.id.textViewConfigProjectName)
         textViewConfigProjectName.text = projectName
+        fabProjectConfig.hide()
     }
 
     private fun getConfigs(project: Project): ConfigStructure {
@@ -104,7 +107,7 @@ class ProjectConfigActivity: AppCompatActivity() {
             category {
                 id = "general"
                 title = "일반"
-                textColor = color { "#706EB9" }
+                textColor = getColor(R.color.main_bright)
                 items {
                     button {
                         id = "open_folder"
@@ -126,12 +129,47 @@ class ProjectConfigActivity: AppCompatActivity() {
                     }
                 }
             }
-        } +
-        project.getLanguage().configStructure +
-        config {
-            val betaFeatureCategory = globalConfig.category("beta_features")
-            val changeThreadPoolSize = betaFeatureCategory.getBoolean("change_thread_pool_size", false)
-            val addCustomButtons = betaFeatureCategory.getBoolean("add_custom_buttons", true)
+            category {
+                id = "events"
+                title = "이벤트"
+                textColor = getColor(R.color.main_bright)
+                items {
+                    list {
+                        id = "allowed_events"
+                        title = "호출이 허용된 이벤트"
+                        description = "이 프로젝트를 호출할 수 있는 이벤트 ID들이에요"
+                        icon = Icon.NOTIFICATIONS_ACTIVE
+                        iconTintColor = color { "#FF5C58" }
+                        structure {
+                            string {
+                                id = "event_id"
+                                title = "이벤트 ID"
+                                icon = null
+                                require = { string -> if (string.isBlank()) "이벤트 ID를 입력하세요" else null }
+                            }
+                        }
+                        onInflate { view ->
+                            LayoutInflater.from(view.context).inflate(R.layout.config_button_card, view as FrameLayout, true)
+                        }
+                        onDraw { view, data ->
+                            val binding = ConfigButtonFlatBinding.bind(view.findViewById(R.id.layout_configButton))
+
+                            binding.title.text = data["button_id"] as String
+                            binding.description.visibility = View.GONE
+
+                            val icon = Icon.valueOf(data["button_icon"] as String)
+                            binding.icon.load(icon.drawableRes)
+                        }
+                    }
+                }
+            }
+            combine(project.getLanguage().configStructure)
+
+            val (changeThreadPoolSize, addCustomButtons) = GlobalConfig.category("beta_features")
+                .run { arrayOf(
+                    getBoolean("change_thread_pool_size", false),
+                    getBoolean("add_custom_buttons", true)
+                ) }
 
             if (changeThreadPoolSize || addCustomButtons) {
                 category {
@@ -160,14 +198,16 @@ class ProjectConfigActivity: AppCompatActivity() {
                                     string {
                                         id = "button_id"
                                         title = "id"
+                                        description = "버튼 이벤트 호출 시 사용될 ID"
                                         icon = null
-                                        require = { string -> if (string.isBlank()) "id를 입력하세요" else null }
+                                        require = { string -> if (string.isBlank()) "버튼 id를 입력하세요" else null }
                                     }
-                                    string {
+                                    spinner {
                                         id = "button_icon"
                                         title = "아이콘"
                                         icon = null
-                                        require = { string -> if (string.isBlank()) "아이콘 id를 입력하세요" else null }
+                                        defaultIndex = 0
+                                        items = Icon.values().map(Icon::name)
                                     }
                                 }
                                 onInflate { view ->
@@ -179,7 +219,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                                     binding.title.text = data["button_id"] as String
                                     binding.description.visibility = View.GONE
 
-                                    val icon = Icon.valueOf(data["button_icon"] as String)
+                                    val icon = Icon.values()[data["button_icon"] as Int]
                                     binding.icon.load(icon.drawableRes)
                                 }
                             }
@@ -199,7 +239,11 @@ class ProjectConfigActivity: AppCompatActivity() {
                         setOnClickListener { view ->
                             val active = project.activeJobs()
                             project.stopAllJobs()
-                            Snackbar.make(view, "${active}개의 작업을 강제 종료하고 할당 해제했어요.", Snackbar.LENGTH_SHORT).show()
+                            Snackbar.make(
+                                view,
+                                "${active}개의 작업을 강제 종료하고 할당 해제했어요.",
+                                Snackbar.LENGTH_SHORT
+                            ).show()
                         }
                         icon = Icon.LAYERS_CLEAR
                         //backgroundColor = Color.parseColor("#B8DFD8")
@@ -209,7 +253,10 @@ class ProjectConfigActivity: AppCompatActivity() {
                         id = "delete_project"
                         title = "프로젝트 제거"
                         setOnClickListener { _ ->
-                            MaterialDialog(binding.root.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+                            MaterialDialog(
+                                binding.root.context,
+                                BottomSheet(LayoutMode.WRAP_CONTENT)
+                            ).show {
                                 cornerRadius(25f)
                                 cancelOnTouchOutside(true)
                                 noAutoDismiss()
@@ -217,8 +264,15 @@ class ProjectConfigActivity: AppCompatActivity() {
                                 title(text = "프로젝트를 정말로 제거할까요?")
                                 message(text = "주의: 프로젝트 제거시 복구가 불가합니다.")
                                 positiveButton(text = context.getString(R.string.delete)) {
-                                    Session.projectManager.removeProject(project, removeFiles = true)
-                                    Snackbar.make(binding.root, "프로젝트를 제거했어요.", Snackbar.LENGTH_SHORT).show()
+                                    Session.projectManager.removeProject(
+                                        project,
+                                        removeFiles = true
+                                    )
+                                    Snackbar.make(
+                                        binding.root,
+                                        "프로젝트를 제거했어요.",
+                                        Snackbar.LENGTH_SHORT
+                                    ).show()
                                     dismiss()
                                     finish()
                                 }

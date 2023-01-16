@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="main_purple">#ab9df2</color>
-    <color name="main_purple_light">#958FB5</color>
-    <color name="sub_purple">#706C81</color>
+    <color name="status_bar">@color/background_main</color>
 
+    <color name="background_main">#000000</color>
     <color name="background">#000000</color>
     <color name="cardview">#171717</color>
     <color name="bottom_sheet">#74FFFFFF</color>

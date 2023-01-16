@@ -8,8 +8,8 @@ package dev.mooner.starlight.ui.settings.dev
 
 import android.content.Context
 import android.content.res.Configuration
-import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.Session.pluginManager
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.getInternalDirectory
@@ -18,12 +18,11 @@ import java.util.*
 
 fun Context.startDevModeActivity() {
     val activityId = UUID.randomUUID().toString()
-
     startConfigActivity(
-        id = activityId,
+        uuid = activityId,
         title = "설정",
         subTitle = "개발자 모드",
-        saved = globalConfig.getAllConfigs(),
+        saved = GlobalConfig.getAllConfigs(),
         struct = config {
             category {
                 id = "dev_mode_config"
@@ -63,7 +62,7 @@ fun Context.startDevModeActivity() {
                         icon = Icon.DEVELOPER_BOARD_OFF
                         iconTintColor = color { "#FF8243" }
                         setOnClickListener { _ ->
-                            globalConfig.edit {
+                            GlobalConfig.edit {
                                 category("dev")["dev_mode"] = false
                             }
                             finishConfigActivity(activityId)
@@ -123,18 +122,18 @@ fun Context.startDevModeActivity() {
                         Configuration.UI_MODE_NIGHT_UNDEFINED -> "UI_MODE_NIGHT_UNDEFINED"
                         else -> "UNKNOWN"
                     }
-                    debugInfo("globalPower", globalConfig.category("general").getBoolean("global_power").toString())
+                    debugInfo("globalPower", GlobalConfig.category("general").getBoolean("global_power").toString())
                     debugInfo("layoutMode", "$layoutMode ($layoutModeString)")
                     debugInfo("uiMode", "$uiMode ($uiModeString)")
-                    debugInfo("widgets", globalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
+                    debugInfo("widgets", GlobalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
                     debugInfo("plugins", pluginManager.getPlugins().joinToString { it.info.id })
                     //debugInfo("libs", )
-                    debugInfo("pluginSafeMode", globalConfig.category("plugin").getBoolean("safe_mode").toString())
+                    debugInfo("pluginSafeMode", GlobalConfig.category("plugin").getBoolean("safe_mode").toString())
                     debugInfo("baseDirectory", getInternalDirectory().path)
                     debugInfo("PLUGINCORE_VERSION", dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION.toString())
                 }
             }
         },
-        onConfigChanged = globalConfig::onSaveConfigAdapter
+        onConfigChanged = GlobalConfig::onSaveConfigAdapter
     )
 }

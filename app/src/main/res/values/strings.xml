@@ -1,81 +1,92 @@
 <resources>
-    <string name="app_name">StarLight</string>
-    <string name="app_version">v0.0.1 Alpha</string>
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Project StarLight 🌟</string>
-    <string name="nav_header_subtitle">v0.0.1 Alpha</string>
-    <string name="nav_header_desc">Navigation header</string>
-    <string name="action_settings">Settings</string>
+    <string name="app_name" translatable="false">StarLight</string>
+    <string name="app_version" translatable="false">v0.0.1 Alpha</string>
+    <string name="nav_header_title" translatable="false">Project StarLight 🌟</string>
+    <string name="nav_header_subtitle" translatable="false">@string/app_version</string>
+    <string name="nav_header_desc">Project StarLight Logo</string>
+
+    <string name="locale_name">ENGLISH</string>
 
     <string name="title_projects">Projects</string>
     <string name="title_plugins">Plugins</string>
     <string name="title_settings">Settings</string>
-    <string name="title_logs">로그</string>
-    <string name="title_show_all">전체 보기</string>
+    <string name="title_logs">Logs</string>
+    <string name="title_show_all">Show all</string>
 
-    <string name="title_widgets">위젯</string>
-    <string name="subtitle_widgets">%d개의 위젯이 있어요.</string>
+    <string name="title_widgets">Widgets</string>
+    <string name="subtitle_widgets">There are %d Widgets.</string>
 
-    <string name="title_notification_rules">패키지 규칙</string>
-    <string name="subtitle_notification_rules">%d개의 규칙이 있어요.</string>
+    <string name="title_notification_rules">Notification Rules</string>
+    <string name="subtitle_notification_rules">There are %d Rules.</string>
 
-    <string name="add">추가</string>
-    <string name="open">열기</string>
-    <string name="close">닫기</string>
-    <string name="ok">확인</string>
-    <string name="cancel">취소</string>
-    <string name="delete">제거</string>
-    <string name="finish">끝내기</string>
-    <string name="show_more">더보기</string>
+    <string name="add">Add</string>
+    <string name="open">Open</string>
+    <string name="close">Close</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="finish">Finish</string>
+    <string name="create">Create</string>
+    <string name="show_more">Show more</string>
 
-    <string name="step_default_lib">기본 라이브러리 로드중…</string>
-    <string name="step_check_kakaotalk_version">KakaoTalk 버전 확인 중…</string>
-    <string name="step_plugincore_init">PluginCore 로드중…</string>
-    <string name="step_plugins">[%s] 로드중…</string>
-    <string name="step_projects">프로젝트 로드중…</string>
-    <string name="step_init_editor">코드 에디터 로드중…</string>
-    <string name="step_starting">앱 시작중…</string>
+    <string name="step_default_lib">Loading default libraries…</string>
+    <string name="step_check_kakaotalk_version">Checking KakaoTalk version…</string>
+    <string name="step_plugincore_init">Loading PluginCore…</string>
+    <string name="step_plugins">Loading [%s] …</string>
+    <string name="step_projects">Loading Projects…</string>
+    <string name="step_init_editor">Initializing code editor…</string>
+    <string name="step_starting">Starting Application…</string>
 
-    <string name="all_project_status">전역 전원 : $state</string>
-    <string name="subtitle_projects">%d개의 프로젝트가 작동중이에요.</string>
-    <string name="subtitle_plugins">%d개의 플러그인이 설치되었어요.</string>
+    <string name="all_project_status">Global Operation : $state</string>
+    <string name="subtitle_projects">%d active projects running.</string>
+    <string name="subtitle_plugins">%d plug-ins installed.</string>
 
-    <string name="menu_home">홈</string>
-    <string name="menu_projects">프로젝트</string>
-    <string name="menu_plugins">플러그인</string>
-    <string name="menu_settings">설정</string>
+    <string name="menu_home">Home</string>
+    <string name="menu_projects" translatable="false">@string/title_projects</string>
+    <string name="menu_plugins" translatable="false">@string/title_plugins</string>
+    <string name="menu_settings" translatable="false">@string/title_settings</string>
+    <string name="menu_file_tree">Files</string>
+    <string name="menu_warnings">Messages</string>
 
-    <string name="project_align_state">프로젝트 정렬</string>
-    <string name="plugin_align_state">플러그인 정렬</string>
-    <string name="default_placeholder">DEFAULT</string>
+    <string name="project_duplicate_name">Name cannot be duplicated.</string>
+    <string name="project_name_format_error">Name can only contain English, Korean, Numbers, -, and _.</string>
+    <string name="project_select_language">Please select language to use.</string>
 
-    <string name="nothing_yet">아직 %s 없는 것 같아요! %s</string>
+    <string name="project_align_state">Aligned by</string>
+    <string name="plugin_align_state">Aligned by</string>
+    <string name="default_placeholder" translatable="false">DEFAULT</string>
 
-    <string name="align_reversed">내림차순 정렬</string>
-    <string name="align_active_first">활성화 우선</string>
+    <string name="nothing_yet">There are no %s yet! %s</string>
+    <string name="no_message_yet">There are no errors yet.</string>
 
-    <string name="layout_tv_last">마지막</string>
-    <string name="layout_tv_next">다음</string>
-    <string name="layout_tv_replace">교체</string>
-    <string name="layout_tv_replaceAll">모두 교체</string>
-    <string name="text_to_search">검색할 코드를 입력하세요..</string>
-    <string name="replacement">교체</string>
-    <string name="home">홈</string>
-    <string name="end">끝</string>
-    <string name="text_actions">코드 편집</string>
-    <string name="switch_color_scheme">테마 변경</string>
-    <string name="beautify">Beautify(코드 정리)</string>
-    <string name="color_scheme">테마</string>
-    <string name="wordwrap">줄 넘기기</string>
-    <string name="line_number_visibility">줄 번호 표시</string>
-    <string name="compile">컴파일</string>
-    <string name="save">저장</string>
+    <string name="align_reversed">Descending</string>
+    <string name="align_active_first">Active priority sorting</string>
 
-    <string name="step_permission">기본 권한 설정</string>
-    <string name="step_read_notification">알림 읽기 허용</string>
-    <string name="step_install_wearable">위치 정보 정책</string>
-    <string name="step_set_basics">기초 설정</string>
-    <string name="action_previous_step">이전</string>
-    <string name="action_next_step">다음</string>
+    <string name="layout_tv_last">Last</string>
+    <string name="layout_tv_next">Next</string>
+    <string name="layout_tv_replace">Replace</string>
+    <string name="layout_tv_replaceAll">Replace All</string>
+    <string name="text_to_search">Enter code to find…</string>
+    <string name="replacement">Replace</string>
+    <string name="home">Home</string>
+    <string name="end">End</string>
+    <string name="text_actions">Edit code</string>
+    <string name="switch_color_scheme">Change Theme</string>
+    <string name="beautify">Beautify Code</string>
+    <string name="color_scheme">Theme</string>
+    <string name="wordwrap">Wrap Line</string>
+    <string name="line_number_visibility">Show line numbers</string>
+    <string name="compile">Compile</string>
+    <string name="save">Save</string>
+    <string name="debug_room">Debug Room</string>
+
+    <string name="step_permission">Allow default permissions</string>
+    <string name="step_read_notification">Allow notification read</string>
+    <string name="step_install_wearable">Location policy</string>
+    <string name="step_set_basics">Required set-ups</string>
+    <string name="action_previous_step">Prev.</string>
+    <string name="action_next_step">Next</string>
+
+    <string name="log_foreground_started">Successfully started foreground task!</string>
+    <string name="log_project_list_update_failure">Failed to update project list: index not found</string>
 </resources>

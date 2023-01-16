@@ -4,5 +4,7 @@ interface WebviewCallback {
 
     fun onLoadComplete()
 
-    fun onContentChanged(code: String?)
+    fun onContentChanged(sessionId: String?, code: String?)
+
+    fun requestSession(sessionId: String?)
 }

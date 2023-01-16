@@ -31,12 +31,14 @@ import dev.mooner.starlight.plugincore.config.ConfigData
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.event.EventHandler
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.fireEvent
 import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import kotlinx.serialization.decodeFromString
 import java.util.*
+
+private val LOG = LoggerFactory.logger {  }
 
 class NotificationListener: NotificationListenerService() {
 
@@ -84,11 +86,18 @@ class NotificationListener: NotificationListenerService() {
                     val sender = data.sender.name
                     val isGroupChat = data.room.isGroupChat
 
-                    Logger.v("NotificationListenerService", "message\t: $message\nsender\t: $sender\nroom\t: $room\nsession\t: $act")
+                    LOG.verbose {
+                        """
+                            message	: $message
+                            sender	: $sender
+                            room	: $room
+                            session	: $act
+                        """.trimIndent()
+                    }
 
                     Session.projectManager.fireEvent<ProjectOnMessageEvent>(data) { project, e ->
                         e.printStackTrace()
-                        Logger.e("NotificationListener", "Failed to call event on '${project.info.name}': $e")
+                        LOG.error { "Failed to call event on '${project.info.name}': $e" }
                     }
 
                     if (GlobalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
@@ -96,13 +105,13 @@ class NotificationListener: NotificationListenerService() {
 
                         Session.projectManager.fireEvent<LegacyEvent>(room, message, sender, isGroupChat, replier, imageDB) { project, e ->
                             e.printStackTrace()
-                            Logger.e("NotificationListener", "Failed to call event on '${project.info.name}': $e")
+                            LOG.error { "Failed to call event on '${project.info.name}': $e" }
                         }
                     }
                     //stopSelf()
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    Logger.e("NotificationListener", e)
+                    LOG.error(e)
                 }
             }
         }
@@ -113,19 +122,19 @@ class NotificationListener: NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
         super.onNotificationRemoved(sbn, rankingMap, reason)
-        Logger.v("removed, reason= $reason")
+        LOG.verbose { "Notification removed with reason $reason" }
 
         if (sbn.notification.actions == null) return
 
         for (act in sbn.notification.actions) {
             if (act.remoteInputs != null && act.remoteInputs.isNotEmpty() && isGlobalPowerOn) {
-                Logger.v("currentId= $currentChatLogId")
+                LOG.verbose { "currentChatLogId= $currentChatLogId" }
 
                 sbn.toDeletedMessage()?.let { data ->
                     if (reason == REASON_APP_CANCEL && data.chatLogId == currentChatLogId) {
                         Session.projectManager.fireEvent<ProjectOnMessageDeleteEvent>(data) { project, e ->
                             e.printStackTrace()
-                            Logger.e("NotificationListener", "Failed to call event on '${project.info.name}': $e")
+                            LOG.verbose { "Failed to call event on '${project.info.name}': $e" }
                         }
                     }
                 }
@@ -243,7 +252,7 @@ class NotificationListener: NotificationListenerService() {
 
                 getRuleKey(packageName, userId) to mapped
             }
-            Logger.v("notificationRules= $notificationRules")
+            LOG.verbose { "notificationRules= $notificationRules" }
         }
 
         private val chatRooms: MutableMap<String, ChatRoom> = WeakHashMap()

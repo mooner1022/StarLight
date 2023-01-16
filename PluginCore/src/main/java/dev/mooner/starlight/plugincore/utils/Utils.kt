@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Base64
+import dev.mooner.starlight.plugincore.config.LazyMessage
 import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -44,3 +45,10 @@ fun requiredField(fieldName: String, value: Any?) {
 }
 
 fun <A, B> pairOf(first: A, second: B): Pair<A, B> = Pair(first, second)
+
+fun Boolean.runIf(value: Boolean, block: () -> Unit) {
+    if (this == value) block()
+}
+
+inline fun <T> T.require(condition: T.() -> Boolean, lazyMessage: LazyMessage): T =
+    if (this.condition()) this else throw IllegalArgumentException(lazyMessage())

@@ -39,4 +39,6 @@
     <dimen name="widget_medium_height">96dp</dimen>
     <dimen name="widget_large_height">192dp</dimen>
     <dimen name="widget_xlarge_height">384dp</dimen>
+
+    <dimen name="editor_chip_height">32dp</dimen>
 </resources>

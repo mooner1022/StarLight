@@ -92,7 +92,7 @@ class SetPermissionFragment : Fragment() {
                 title = "아래 권한들을 허용해주세요!"
                 textColor = activity.getColor(R.color.main_purple)
                 items {
-                    for (permission in PERMISSIONS) {
+                    for (permission in REQUIRED_PERMISSIONS) {
                         if (permission == MANAGE_EXTERNAL_STORAGE) continue
                         getButtonByPermission(permission)
                     }
@@ -106,7 +106,7 @@ class SetPermissionFragment : Fragment() {
                         title = "권한 허용하기"
                         icon = Icon.CHECK
                         setOnClickListener { _ ->
-                            requestPermissionLauncher.launch(PERMISSIONS)
+                            requestPermissionLauncher.launch(REQUIRED_PERMISSIONS)
                         }
                     }
                 }
@@ -165,7 +165,14 @@ class SetPermissionFragment : Fragment() {
     }
 
     companion object {
-        private val PERMISSIONS = when {
+        val REQUIRED_PERMISSIONS = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+                arrayOf(
+                    INTERNET,
+                    FOREGROUND_SERVICE,
+                    MANAGE_EXTERNAL_STORAGE
+                )
+            }
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
                 arrayOf(
                     INTERNET,

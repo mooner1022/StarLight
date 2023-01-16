@@ -10,6 +10,7 @@ import dev.mooner.starlight.databinding.FragmentSettingsBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.CategoryConfigObject
 import dev.mooner.starlight.plugincore.config.ConfigStructure
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
@@ -17,6 +18,10 @@ import dev.mooner.starlight.ui.settings.dev.startDevModeActivity
 import dev.mooner.starlight.ui.settings.info.AppInfoActivity
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.utils.restartApplication
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class SettingsFragment : Fragment() {
 
@@ -33,9 +38,9 @@ class SettingsFragment : Fragment() {
         configAdapter = ConfigAdapter.Builder(requireActivity()) {
             bind(binding.configRecyclerView)
             structure(::getSettingStruct)
-            savedData(Session.globalConfig.getAllConfigs())
+            savedData(GlobalConfig.getAllConfigs())
             onConfigChanged { parentId, id, _, data ->
-                Session.globalConfig.edit {
+                GlobalConfig.edit {
                     category(parentId).setAny(id, data)
                 }
             }
@@ -59,7 +64,7 @@ class SettingsFragment : Fragment() {
                     toggle {
                         id = "global_power"
                         title = "전역 전원"
-                        description = "모든 봇의 전원을 관리합니다."
+                        description = "모든 봇의 답장/처리 여부를 결정합니다."
                         icon = Icon.POWER
                         iconTintColor = color { "#5584AC" }
                         defaultValue = false
@@ -180,7 +185,7 @@ class SettingsFragment : Fragment() {
                             startActivity(Intent(context, AppInfoActivity::class.java))
                         }
                     }
-                    if (Session.globalConfig.category("dev").getBoolean("dev_mode") == true) {
+                    if (GlobalConfig.category("dev").getBoolean("dev_mode") == true) {
                         button {
                             id = "developer_mode"
                             title = "개발자 모드"

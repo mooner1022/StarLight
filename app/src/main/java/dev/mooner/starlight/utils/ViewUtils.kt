@@ -19,8 +19,10 @@ import coil.imageLoader
 import coil.load
 import coil.request.Disposable
 import coil.request.ImageRequest
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import kotlin.reflect.full.createInstance
+
+private val LOG = LoggerFactory.logger {  }
 
 fun NestedScrollView.bindFadeImage(imageView: ImageView) {
     setOnScrollChangeListener { _, _, scrollY, _, _ ->
@@ -42,7 +44,7 @@ inline fun ImageView.loadWithTint(
     imageLoader: ImageLoader = context.imageLoader,
     builder: ImageRequest.Builder.() -> Unit = {}
 ): Disposable {
-    ImageViewCompat.setImageTintList(this, if (tintColor == null) null else ColorStateList.valueOf(context.getColor(tintColor)))
+    ImageViewCompat.setImageTintList(this, tintColor?.let { color -> ColorStateList.valueOf(context.getColor(color)) })
     return load(drawableResId, imageLoader, builder)
 }
 
@@ -62,7 +64,7 @@ private fun ProgressBar.setProgressGraceful(to: Int) {
 
     val start = progress
     val end = ((to.toFloat() / 100f) * width).toInt()
-    Logger.v("Animating progressbar to= $to, start= $start, end= $end")
+    LOG.verbose { "Animating progressbar to= $to, start= $start, end= $end" }
     val animator = ValueAnimator.ofInt(start, end).apply {
         interpolator = AccelerateDecelerateInterpolator()
         startDelay = 0

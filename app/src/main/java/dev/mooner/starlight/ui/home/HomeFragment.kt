@@ -19,7 +19,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import dev.mooner.starlight.databinding.FragmentHomeBinding
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.config.GlobalConfig
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.ui.widget.config.WidgetConfigActivity
 import dev.mooner.starlight.ui.widget.config.WidgetsAdapter
@@ -31,6 +32,8 @@ import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.serialization.decodeFromString
 
 class HomeFragment : Fragment() {
+
+    private val logger = LoggerFactory.logger {  }
 
     private lateinit var resultLauncher: ActivityResultLauncher<Intent>
     private var _binding: FragmentHomeBinding? = null
@@ -88,7 +91,7 @@ class HomeFragment : Fragment() {
                     data = getWidgets()
                     notifyItemRangeInserted(0, data.size)
                 }
-                Logger.v("List updated")
+                logger.verbose { "Widgets updated" }
             }
         }
         binding.cardViewConfigWidget.setOnClickListener {
@@ -100,14 +103,14 @@ class HomeFragment : Fragment() {
     }
 
     private fun getWidgets(): List<Widget> {
-        val widgetIds: List<String> = Session.json.decodeFromString(Session.globalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
+        val widgetIds: List<String> = Session.json.decodeFromString(GlobalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
         val widgets: MutableList<Widget> = mutableListOf()
         for (id in widgetIds) {
             with(Session.widgetManager.getWidgetById(id)) {
                 if (this != null)
                     widgets += this
                 else
-                    Logger.w(HomeFragment::class.simpleName, "Skipping unknown widget: $id")
+                    logger.warn { "Skipping unknown widget: $id" }
             }
         }
         return widgets

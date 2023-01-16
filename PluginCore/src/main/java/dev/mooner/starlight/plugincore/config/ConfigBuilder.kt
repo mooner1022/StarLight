@@ -57,6 +57,10 @@ class ConfigBuilder {
         objects += category.build()
     }
 
+    fun combine(struct: ConfigStructure) {
+        objects += struct
+    }
+
     fun build(flush: Boolean = true): ConfigStructure {
         val list = objects.toList()
         if (flush) {

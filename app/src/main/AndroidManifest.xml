@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          xmlns:tools="http://schemas.android.com/tools"
-          package="dev.mooner.starlight">
+          xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
@@ -24,15 +23,16 @@
         android:name=".core.GlobalApplication"
         android:allowBackup="true"
         android:extractNativeLibs="false"
-        android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
+        android:requestLegacyExternalStorage="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.StarLight.NoActionBar"
         android:usesCleartextTraffic="true"
-        tools:replace="android:icon">
+        android:fullBackupContent="@xml/backup_descriptor"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".ui.settings.notifications.NotificationRulesActivity"
             android:exported="true"/>

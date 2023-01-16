@@ -1,10 +1,12 @@
 package dev.mooner.starlight.ui.plugins.info
 
 import android.content.Context
+import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.utils.startConfigActivity
+import kotlinx.coroutines.CoroutineScope
 
 fun Context.startPluginInfoActivity(
     plugin: StarlightPlugin
@@ -12,10 +14,11 @@ fun Context.startPluginInfoActivity(
     val info = plugin.info
 
     val items = config {
+        val defaultColor = getColor(R.color.main_bright)
         category {
             id = "general"
             title = "기본"
-            textColor = color { "#706EB9" }
+            textColor = defaultColor
             items {
                 button {
                     id = "name"
@@ -36,7 +39,7 @@ fun Context.startPluginInfoActivity(
         category {
             id = "info"
             title = "등록 정보"
-            textColor = color { "#706EB9" }
+            textColor = defaultColor
             items {
                 button {
                     id = "author"
@@ -64,7 +67,7 @@ fun Context.startPluginInfoActivity(
         category {
             id = "file"
             title = "파일"
-            textColor = color { "#706EB9" }
+            textColor = defaultColor
             items {
                 button {
                     id = "name"
@@ -84,7 +87,7 @@ fun Context.startPluginInfoActivity(
         category {
             id = "library"
             title = "라이브러리"
-            textColor = color { "#706EB9" }
+            textColor = defaultColor
             items {
                 button {
                     id = "pluginCoreVersion"

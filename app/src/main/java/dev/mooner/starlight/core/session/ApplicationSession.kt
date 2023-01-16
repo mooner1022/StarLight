@@ -19,8 +19,11 @@ import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginLoader
 import dev.mooner.starlight.plugincore.Session.pluginManager
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.plugin.EventListener
+import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.NetworkUtil
 import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import dev.mooner.starlight.plugincore.version.Version
@@ -35,10 +38,12 @@ import kotlinx.serialization.encodeToString
 import java.io.File
 import kotlin.system.exitProcess
 
+private val LOG = LoggerFactory.logger {  }
+
 object ApplicationSession {
 
-    private var mKakaoTalkVersion: Version? = null
-    val kakaoTalkVersion: Version? = null
+    var kakaoTalkVersion: Version? = null
+        private set
 
     private var mInitMillis: Long = 0L
     val initMillis get() = mInitMillis
@@ -50,29 +55,32 @@ object ApplicationSession {
     internal fun init(context: Context): Flow<String?> =
         flow {
             if (mIsInitComplete) {
-                Logger.w("ApplicationSession", "Rejecting re-init of ApplicationSession")
+                LOG.warn { "Rejecting re-init of ApplicationSession" }
                 emit(null)
                 return@flow
             }
 
             setExceptionHandler(context)
 
-            val starlightDir = getInternalDirectory()
-            Logger.init(starlightDir)
-
             emit(context.getString(R.string.step_check_kakaotalk_version))
             context.getKakaoTalkVersion()?.let {
                 if (Version.check(it))
-                    mKakaoTalkVersion = Version.fromString(it)
+                    kakaoTalkVersion = Version.fromString(it)
                 else
-                    Logger.e("카카오톡 버전 파싱에 실패했어요. (버전: ${it})")
+                    LOG.error { "카카오톡 버전 파싱에 실패했어요. (버전: ${it})" }
             }
-            Logger.d("카카오톡 버전: $mKakaoTalkVersion")
+            LOG.info { "카카오톡 버전: $kakaoTalkVersion" }
 
             emit(context.getString(R.string.step_plugincore_init))
 
+            val locale = context.getString(R.string.locale_name)
+                .runCatching(Locale::valueOf)
+                .getOrNull() ?: Locale.ENGLISH
+            LOG.debug { "Initializing with locale $locale" }
+
             Session
-                .apply { init(starlightDir) }
+                .apply {
+                    init(locale, getInternalDirectory()) }
                 .let { session ->
                     session.languageManager.apply {
                         //addLanguage("", JSV8())
@@ -80,7 +88,7 @@ object ApplicationSession {
                         //addLanguage(GraalVMLang())
                     }
 
-                    if (!session.globalConfig.category("plugin").getBoolean("safe_mode", false)) {
+                    if (!GlobalConfig.category("plugin").getBoolean("safe_mode", false)) {
                         pluginLoader.loadPlugins()
                             .flowOn(Dispatchers.Default)
                             .onEach { value ->
@@ -137,7 +145,7 @@ object ApplicationSession {
         try {
             Session.shutdown()
         } catch (e: Exception) {
-            Logger.wtf("ApplicationSession", "Failed to gracefully shutdown Session: ${e.localizedMessage}\ncause:\n${e.stackTrace}")
+            LOG.wtf { "Failed to gracefully shutdown Session: ${e.localizedMessage}\ncause:\n${e.stackTrace}" }
         }
     }
 
@@ -149,7 +157,7 @@ object ApplicationSession {
                     try {
                         (plugin as EventListener).onNetworkStateChanged(state)
                     } catch (e: Error) {
-                        Logger.e("Failed to call network event for plugin '${plugin.info.id}': $e")
+                        LOG.error { "Failed to call network event for plugin '${plugin.info.id}': $e" }
                     }
                 }
             }
@@ -176,7 +184,7 @@ object ApplicationSession {
                 message : ${paramThrowable.localizedMessage}
                 cause   : ${paramThrowable.cause}
                 ┉┉┉┉┉┉┉┉┉┉
-                stackTrace:
+                Stack Trace:
                 
             """.trimIndent() + paramThrowable.stackTraceToString() + "\n──────────"
             Logger.wtf("StarLight-core", errMsg)

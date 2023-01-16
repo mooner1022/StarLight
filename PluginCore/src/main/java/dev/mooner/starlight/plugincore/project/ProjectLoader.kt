@@ -8,7 +8,7 @@ package dev.mooner.starlight.plugincore.project
 
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.projectManager
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.internal.Logger
 import kotlinx.serialization.decodeFromString
 import java.io.File
 

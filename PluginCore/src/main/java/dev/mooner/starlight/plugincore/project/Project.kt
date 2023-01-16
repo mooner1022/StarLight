@@ -13,12 +13,15 @@ import dev.mooner.starlight.plugincore.config.MutableConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.language.Language
-import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.logger.ProjectLogger
+import dev.mooner.starlight.plugincore.logger.internal.Logger
 import dev.mooner.starlight.plugincore.pipeline.CompilePipeline
 import dev.mooner.starlight.plugincore.pipeline.PipelineInfo
+import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.hasFile
-import dev.mooner.starlight.plugincore.utils.pairOf
+import dev.mooner.starlight.plugincore.utils.require
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
@@ -164,7 +167,7 @@ class Project (
 
     fun compile(throwException: Boolean = false): Boolean = runBlocking {
         try {
-            compileAsync(true).collect()
+            compileAsync().collect()
             true
         } catch (e: Throwable) {
             if (throwException) throw e
@@ -174,10 +177,8 @@ class Project (
 
     /**
      * Compiles the project with configured values.
-     *
-     * @param throwException if *true*, throws exceptions occurred during compilation.
      */
-    fun compileAsync(throwException: Boolean = false): Flow<Pair<String, Int>> =
+    fun compileAsync(): Flow<Pair<PipelineStage<*, *>, Int>> =
         callbackFlow {
             val pipeline = CompilePipeline(
                 project = this@Project,
@@ -188,18 +189,28 @@ class Project (
                     )
                 )
             ) { stage, perc ->
-                trySend(pairOf(stage.name, perc))
-            }
+                trySend(stage to perc) }
             try {
+                val code = directory.resolve(info.mainScript)
+                    .require(File::isFile) { "Main script ${info.mainScript} is not a file." }
+                    .runCatching(File::readText)
+                    .getOrElse(::error)
+
+                /*
                 val rawCode: String = (directory.listFiles()?.find { it.isFile && it.name == info.mainScript }?: throw IllegalArgumentException(
                     "Cannot find main script ${info.mainScript} for project ${info.name}"
                 )).readText(Charsets.UTF_8)
-                if (langScope != null && lang.requireRelease) {
+                 */
+                if (lang.requireRelease && langScope != null) {
                     lang.release(langScope!!)
                     logger.v(tag, "engine released")
                 }
-                logger.i("Compiling project ${info.name}...")
-                langScope = pipeline.run(rawCode)
+                logger.i(translate {
+                    Locale.ENGLISH { "Compiling project ${info.name}..." }
+                    Locale.KOREAN  { "프로젝트 ${info.name} 컴파일 중..." }
+                })
+                langScope = pipeline.run(code)
+
                 /*
                 langScope = lang.compile(
                     code = rawCode,
@@ -207,12 +218,12 @@ class Project (
                     project = this
                 )
                  */
-                EventHandler.fireEvent(Events.Project.ProjectCompileEvent(project = this@Project))
+                EventHandler.fireEvent(Events.Project.Compile(project = this@Project))
                 //projectManager.onStateChanged(this)
             } catch (e: Exception) {
                 e.printStackTrace()
                 logger.e(tag, e.toString())
-                if (throwException) throw e
+                throw e
             } finally {
                 close()
             }
@@ -236,19 +247,18 @@ class Project (
      * Ignored if application is on background.
      */
     fun requestUpdate() {
-        EventHandler.fireEventWithScope(Events.Project.ProjectInfoUpdateEvent(project = this))
+        EventHandler.fireEventWithScope(Events.Project.InfoUpdate(project = this))
     }
 
     /**
      * Saves contents of [info] to a file.
      */
     fun saveInfo() = runBlocking {
-        withContext(Dispatchers.IO) {
-            flowOf(json.encodeToString(info))
-                .flowOn(Dispatchers.Default)
-                .collect(File(directory.path, INFO_FILE_NAME)::writeText)
-        }
-        EventHandler.fireEventWithScope(Events.Project.ProjectInfoUpdateEvent(project = this@Project))
+        flowOf(json.encodeToString(info))
+            .onEach(File(directory.path, INFO_FILE_NAME)::writeText)
+            .launchIn(CoroutineScope(Dispatchers.IO))
+
+        EventHandler.fireEventWithScope(Events.Project.InfoUpdate(project = this@Project))
     }
 
     /**

@@ -16,10 +16,12 @@ import coil.load
 import coil.size.Scale
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.config.*
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.utils.isDevMode
 import dev.mooner.starlight.utils.startConfigActivity
+
+private val LOG = LoggerFactory.logger {  }
 
 class ParentRecyclerAdapter(
     private val context: Context,
@@ -40,7 +42,7 @@ class ParentRecyclerAdapter(
             ConfigObjectType.CATEGORY_NESTED.viewType -> R.layout.config_category_nested
             ConfigObjectType.CATEGORY.viewType        -> R.layout.config_category
             else -> {
-                Logger.w("Rendering config category with unknown viewType: $viewType, using default layout...")
+                LOG.warn { "Rendering config category with unknown viewType: $viewType, using default layout..." }
                 R.layout.config_category
             }
         }

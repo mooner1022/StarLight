@@ -48,7 +48,7 @@ class ForegroundTask: Service() {
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("StarLight 실행중")
                 .setSubText("당신만을 위한 봇들을 관리중이에요 :)")
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.mipmap.ic_launcher_round)
                 .setContentIntent(pendingIntent)
                 .setShowWhen(false)
                 .build()

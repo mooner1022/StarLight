@@ -13,11 +13,13 @@ import dev.mooner.starlight.plugincore.language.LanguageManager
 import dev.mooner.starlight.plugincore.library.LibraryLoader
 import dev.mooner.starlight.plugincore.library.LibraryManager
 import dev.mooner.starlight.plugincore.library.LibraryManagerApi
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.internal.Logger
 import dev.mooner.starlight.plugincore.plugin.PluginLoader
 import dev.mooner.starlight.plugincore.plugin.PluginManager
 import dev.mooner.starlight.plugincore.project.ProjectLoader
 import dev.mooner.starlight.plugincore.project.ProjectManager
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.TranslationManager
 import dev.mooner.starlight.plugincore.utils.NetworkUtil
 import dev.mooner.starlight.plugincore.widget.WidgetManager
 import kotlinx.serialization.json.Json
@@ -64,7 +66,7 @@ object Session {
     val globalConfig: GlobalConfig = GlobalConfig
 
     val languageManager: LanguageManager = LanguageManager()
-    val pluginLoader: PluginLoader       = PluginLoader()
+    val pluginLoader:  PluginLoader      = PluginLoader()
     val pluginManager: PluginManager     = PluginManager()
     val widgetManager: WidgetManager     = WidgetManager()
     //val eventManager: EventHandler       = EventHandler()
@@ -84,7 +86,7 @@ object Session {
 
     const val isDebugging: Boolean = true
 
-    fun init(baseDir: File) {
+    fun init(locale: Locale, baseDir: File) {
         if (isInitComplete || isDuringInit) {
             Logger.w("Session", "Rejecting re-init of Session")
             return
@@ -96,13 +98,15 @@ object Session {
             throw IllegalAccessException("Illegal access to internal function init() from $preStack")
         }
 
+        TranslationManager.init(locale)
+
         val projectDir = File(baseDir, "projects/")
 
         mProjectManager = ProjectManager(projectDir)
         mProjectLoader = ProjectLoader(projectDir)
         mApiManager = ApiManager()
 
-        if (globalConfig.category("beta_features").getBoolean("load_external_dex_libs", false)) {
+        if (GlobalConfig.category("beta_features").getBoolean("load_external_dex_libs", false)) {
             mLibraryLoader = LibraryLoader()
             mLibraryManager = LibraryManager(libraryLoader!!.loadLibraries(baseDir).toMutableSet())
             apiManager.addApi(LibraryManagerApi())

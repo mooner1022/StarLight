@@ -14,7 +14,7 @@ import dev.mooner.starlight.plugincore.config.ConfigImpl
 import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.language.Language
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.internal.Logger
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.fireEvent
@@ -153,7 +153,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
         Session.apiManager.addApi(api)
 
     protected inline fun <reified T: ProjectEvent> fireProjectEvent(vararg args: Any, noinline onFailure: (project: Project, e: Throwable) -> Unit = { _, _ -> }) =
-        Session.projectManager.fireEvent<T>(args, onFailure = onFailure)
+        Session.projectManager.fireEvent<T>(*args, onFailure = onFailure)
 
     companion object {
         private const val T = "StarlightPlugin"

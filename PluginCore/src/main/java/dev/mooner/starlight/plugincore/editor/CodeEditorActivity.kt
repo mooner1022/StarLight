@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatActivity
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.project.Project
 import java.io.File
 import kotlin.properties.Delegates.notNull
@@ -16,13 +17,17 @@ abstract class CodeEditorActivity: AppCompatActivity() {
     @CallSuper
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val baseDirectoryPath = intent.getStringExtra(KEY_BASE_DIRECTORY) ?: error("Failed to retrieve base directory path")
+        val baseDirectoryPath = intent.getStringExtra(KEY_BASE_DIRECTORY)
+            ?: error("Failed to retrieve base directory path")
         baseDirectory = File(baseDirectoryPath).also {
-            require(it.isValidDirectory()) { "Target file '${baseDirectoryPath}' isn't a valid file" }
+            require(it.isValidDirectory()) {
+                "Target file '${baseDirectoryPath}' isn't a valid file" }
         }
 
-        val projectName = intent.getStringExtra(KEY_PROJECT_NAME) ?: error("Failed to retrieve project name")
-        mProject = Session.projectManager.getProject(projectName) ?: error("Failed to find project with name '$projectName'")
+        val projectName = intent.getStringExtra(KEY_PROJECT_NAME)
+            ?: error("Failed to retrieve project name")
+        mProject = Session.projectManager.getProject(projectName)
+            ?: error("Failed to find project with name '$projectName'")
     }
 
     protected fun getProject(): Project = mProject
@@ -38,6 +43,9 @@ abstract class CodeEditorActivity: AppCompatActivity() {
             return null
         }
     }
+
+    protected fun readCodeOrDefault(fileName: String, language: Language) : String =
+        readCode(fileName) ?: language.defaultCode
 
     protected fun saveCode(fileName: String, code: String): Boolean {
         val targetFile = baseDirectory.resolve(fileName).also {

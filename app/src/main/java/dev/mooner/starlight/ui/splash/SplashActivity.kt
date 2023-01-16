@@ -14,23 +14,21 @@ import coil.load
 import coil.request.repeatCount
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
-import dev.mooner.starlight.core.GlobalApplication.Companion.REQUIRED_PERMISSIONS
 import dev.mooner.starlight.core.session.ApplicationSession
 import dev.mooner.starlight.databinding.ActivitySplashBinding
 import dev.mooner.starlight.event.SessionStageUpdateEvent
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.on
-import dev.mooner.starlight.plugincore.logger.Logger
-import dev.mooner.starlight.plugincore.utils.getInternalDirectory
-import dev.mooner.starlight.ui.crash.FatalErrorActivity
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.ui.splash.quickstart.QuickStartActivity
+import dev.mooner.starlight.ui.splash.quickstart.steps.SetPermissionFragment
 import dev.mooner.starlight.utils.checkPermissions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
-import java.io.File
+
+private val LOG = LoggerFactory.logger {  }
 
 class SplashActivity : AppCompatActivity() {
 
@@ -48,7 +46,7 @@ class SplashActivity : AppCompatActivity() {
             putBoolean("isInitial", false)
         }
 
-        val isPermissionsGrant = checkPermissions(REQUIRED_PERMISSIONS)
+        val isPermissionsGrant = checkPermissions(SetPermissionFragment.REQUIRED_PERMISSIONS)
 
         val imageLoader = ImageLoader.Builder(applicationContext)
             .components {
@@ -63,16 +61,25 @@ class SplashActivity : AppCompatActivity() {
 
         binding.splashAnimImageView.load(R.drawable.splash_anim) { repeatCount(0) }
 
-        //Logger.v("TEST_QUICK_START= $TEST_QUICK_START\nisInitial= $isInitial\nisPermissionsGrant= $isPermissionsGrant")
+        LOG.verbose {
+            """
+                TEST_QUICK_START= $TEST_QUICK_START
+                isInitial= $isInitial
+                isPermissionsGrant= $isPermissionsGrant
+            """.trimIndent()
+        }
+
         if (TEST_QUICK_START || isInitial || !isPermissionsGrant) {
             startActivity(Intent(this, QuickStartActivity::class.java))
         } else {
-            val intent = Intent(this@SplashActivity, MainActivity::class.java)
-            init(intent)
+            init()
         }
     }
 
-    private fun init(intent: Intent) {
+    private fun init() {
+        val intent = Intent(this@SplashActivity, MainActivity::class.java)
+
+        /*
         val startupFile = File(getInternalDirectory(), "STARTUP.info")
         if (startupFile.exists() && startupFile.isFile) {
             val startupData: Map<String, String> = Session.json.decodeFromString(startupFile.readText())
@@ -86,6 +93,7 @@ class SplashActivity : AppCompatActivity() {
                 return
             }
         }
+         */
 
         val initMillis = System.currentTimeMillis()
 
@@ -100,7 +108,7 @@ class SplashActivity : AppCompatActivity() {
             } else {
                 EventHandler.on<SessionStageUpdateEvent>(this) {
                     value?.let {
-                        Logger.i(T, value)
+                        LOG.info { value }
                         runOnUiThread {
                             binding.textViewLoadStatus.text = value
                         }

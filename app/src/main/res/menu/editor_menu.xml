@@ -11,6 +11,11 @@
         android:title="@string/save"
         android:icon="@drawable/ic_round_save_24"
         app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/menu_debug_room"
+        android:title="@string/debug_room"
+        android:icon="@drawable/ic_round_mark_chat_read_24"
+        app:showAsAction="ifRoom"/>
 
     <item android:title="@string/text_actions">
         <menu>

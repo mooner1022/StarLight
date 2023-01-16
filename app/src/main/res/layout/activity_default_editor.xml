@@ -1,64 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/arrow_background_round"
     tools:context=".ui.editor.DefaultEditorActivity">
 
-    <WebView
-        android:id="@+id/editorWebView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar_editor"/>
-
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar_editor"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        android:layout_height="match_parent">
 
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:id="@+id/coordinatorLayout"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/editorWebView">
-
-        <include
-            android:id="@+id/bottomSheet"
-            layout="@layout/sheet_editor"
-        />
-
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
-    <HorizontalScrollView
-        android:id="@+id/scrollViewHotKeys"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:background="@color/background"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" tools:ignore="SpeakableTextPresentCheck">
-
-        <LinearLayout
-            android:id="@+id/layoutHotKeys"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:divider="@drawable/card_plugin_divider"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvOpenFiles"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/editor_chip_height"
             android:orientation="horizontal"
-            android:showDividers="middle"/>
+            android:scrollbars="none"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/toolbar_editor" />
 
-    </HorizontalScrollView>
+        <WebView
+            android:id="@+id/editorWebView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/rvOpenFiles">
+        </WebView>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar_editor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorPrimary"
+            android:minHeight="?attr/actionBarSize"
+            android:theme="?attr/actionBarTheme"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
+            android:id="@+id/coordinatorLayout"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/editorWebView">
+
+            <include
+                android:id="@+id/bottomSheet"
+                layout="@layout/sheet_editor"/>
+
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+        <HorizontalScrollView
+            android:id="@+id/scrollViewHotKeys"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@color/background"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:ignore="SpeakableTextPresentCheck">
+
+            <LinearLayout
+                android:id="@+id/layoutHotKeys"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:divider="@drawable/card_plugin_divider"
+                android:orientation="horizontal"
+                android:showDividers="middle"/>
+
+        </HorizontalScrollView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/drawer_fileTree"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="0dp"
+        android:paddingEnd="20dp"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        android:clickable="true"
+        android:focusable="true"
+        android:name="dev.mooner.starlight.ui.editor.drawer.FileTreeDrawerFragment"
+        tools:layout="@layout/fragment_file_tree_drawer" />
+
+</androidx.drawerlayout.widget.DrawerLayout>

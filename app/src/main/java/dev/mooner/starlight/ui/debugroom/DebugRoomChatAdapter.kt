@@ -7,6 +7,7 @@
 package dev.mooner.starlight.ui.debugroom
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -25,11 +26,13 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 import java.io.File
 
 class DebugRoomChatAdapter(
-    private val debugRoomActivity: DebugRoomActivity,
+    private val parent: Activity,
+    private val dir: File,
     private val chatList: MutableList<DebugRoomMessage>
 ) : RecyclerView.Adapter<DebugRoomChatAdapter.ViewHolder>() {
 
@@ -40,7 +43,7 @@ class DebugRoomChatAdapter(
         const val CHAT_BOT_LONG = 3
     }
 
-    private val context = debugRoomActivity as Context
+    private val context = parent as Context
 
     private val clipboard: ClipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
@@ -79,20 +82,20 @@ class DebugRoomChatAdapter(
         when (messageData.viewType) {
             CHAT_SELF -> {
                 holder.message.text = messageData.message
-                val chatColor = Session.globalConfig.category("d_user").getInt("chat_color")
+                val chatColor = GlobalConfig.category("d_user").getInt("chat_color")
                 holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
             }
             CHAT_SELF_LONG -> {
                 holder.message.text = messageData.message + "..."
                 holder.showAllButton.setOnClickListener {
-                    val fullMessage = debugRoomActivity.dir.resolve("chats").resolve(messageData.fileName!!).readText()
+                    val fullMessage = dir.resolve("chats").resolve(messageData.fileName!!).readText()
                     showFullMessageDialog(fullMessage)
                 }
-                val chatColor = Session.globalConfig.category("d_user").getInt("chat_color")
+                val chatColor = GlobalConfig.category("d_user").getInt("chat_color")
                 holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
             }
             CHAT_BOT, CHAT_BOT_LONG -> {
-                val chatColor = Session.globalConfig.category("d_bot").getInt("chat_color")
+                val chatColor = GlobalConfig.category("d_bot").getInt("chat_color")
 
                 if (isSentAgain) {
                     holder.sender.visibility = View.GONE
@@ -103,7 +106,7 @@ class DebugRoomChatAdapter(
                     holder.sender.text = messageData.sender
 
                     holder.profileImage.apply {
-                        val profileFilePath = Session.globalConfig.category("d_bot").getString("profile_image_path")
+                        val profileFilePath = GlobalConfig.category("d_bot").getString("profile_image_path")
                         if (profileFilePath != null) {
                             runCatching {
                                 load(File(profileFilePath)) {
@@ -112,7 +115,7 @@ class DebugRoomChatAdapter(
                                 colorFilter = null
                             }.onFailure { e ->
                                 Toast.makeText(context, "프로필 사진 '$profileFilePath'를 불러오지 못했어요: $e", Toast.LENGTH_LONG).show()
-                                Session.globalConfig.edit {
+                                GlobalConfig.edit {
                                     category("d_bot").remove("profile_image_path")
                                 }
 
@@ -132,7 +135,7 @@ class DebugRoomChatAdapter(
                 } else {
                     holder.backgroundLayout.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
                     holder.message.text = messageData.message + "..."
-                    val fullMessage = debugRoomActivity.dir.resolve("chats").resolve(messageData.fileName!!).readText()
+                    val fullMessage = dir.resolve("chats").resolve(messageData.fileName!!).readText()
                     holder.showAllButton.setOnClickListener {
                         showFullMessageDialog(fullMessage)
                     }

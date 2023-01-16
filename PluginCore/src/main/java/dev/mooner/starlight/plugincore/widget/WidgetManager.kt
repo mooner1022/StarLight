@@ -1,6 +1,6 @@
 package dev.mooner.starlight.plugincore.widget
 
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.internal.Logger
 
 class WidgetManager {
 

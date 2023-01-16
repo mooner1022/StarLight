@@ -1,5 +1,6 @@
 package dev.mooner.starlight.utils
 
+import android.Manifest
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
 import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
@@ -11,6 +12,7 @@ import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
 import androidx.annotation.ColorRes
 import androidx.core.content.ContextCompat
@@ -41,8 +43,16 @@ fun String.trimLength(max: Int): String {
 
 fun Context.checkPermissions(permissions: Array<String>): Boolean {
     for (permission in permissions) {
-        val perm = ContextCompat.checkSelfPermission(this, permission)
-        if (perm == PackageManager.PERMISSION_DENIED) return false
+        when (permission) {
+            Manifest.permission.MANAGE_EXTERNAL_STORAGE -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager())
+                    return false
+            }
+            else -> {
+                val perm = ContextCompat.checkSelfPermission(this, permission)
+                if (perm == PackageManager.PERMISSION_DENIED) return false
+            }
+        }
     }
     return true
 }
