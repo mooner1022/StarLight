@@ -22,10 +22,10 @@ a variety of script languages and a plugin platform
 
 ### Screenshots (WIP)
 <p align="center">
-    <img src="./images/screenshot_wip_1.jpg" width="24%">
-    <img src="./images/screenshot_wip_2.jpg" width="24%">
-    <img src="./images/screenshot_wip_3.jpg" width="24%">
-    <img src="./images/screenshot_wip_4.jpg" width="24%">
+    <img src="./images/screenshot_wip_1.png" width="24%">
+    <img src="./images/screenshot_wip_2.png" width="24%">
+    <img src="./images/screenshot_wip_3.png" width="24%">
+    <img src="./images/screenshot_wip_4.png" width="24%">
 </p>
 
 # License
