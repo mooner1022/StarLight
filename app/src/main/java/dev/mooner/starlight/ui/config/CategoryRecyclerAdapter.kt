@@ -31,6 +31,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.*
+import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.hasFlag
 import dev.mooner.starlight.ui.config.list.ListRecyclerAdapter
@@ -45,8 +46,8 @@ class CategoryRecyclerAdapter(
     private val onConfigChanged: (id: String, view: View?, data: Any) -> Unit
 ): RecyclerView.Adapter<CategoryRecyclerAdapter.ConfigViewHolder>() {
 
-    var data: List<ConfigObject> = mutableListOf()
-    var saved: MutableMap<String, TypedString> = hashMapOf()
+    var cells: List<ConfigObject> = mutableListOf()
+    var saved: MutableMap<String, PrimitiveTypedString> = hashMapOf()
 
     private val toggleValues: MutableMap<String, Boolean> = hashMapOf()
     private val toggleListeners: MutableMap<String, MutableList<(isEnabled: Boolean) -> Unit>> = hashMapOf()
@@ -307,13 +308,13 @@ class CategoryRecyclerAdapter(
             ConfigObjectType.LIST.viewType -> {
                 val data = viewData as ListConfigObject
 
-                val list: MutableList<Map<String, TypedString>> =
+                val list: MutableList<Map<String, PrimitiveTypedString>> =
                     Session.json.decodeFromString(getDefault() as String)
 
-                val mappedList = list.map { it.mapValues { v -> v.value.cast()!! } }.toMutableList()
+                val mappedList = list.map { it.mapValues { v -> v.value.cast() } }.toMutableList()
                 val recyclerAdapter = let {
                     dumpedObjects += ListRecyclerAdapter(context, data.onDraw, data.onInflate, data.structure, mappedList) { cfgList ->
-                        val encoded = Json.encodeToString(cfgList.map { it.mapValues { v -> TypedString.parse(v.value) } })
+                        val encoded = Json.encodeToString(cfgList.map { it.mapValues { v -> PrimitiveTypedString.from(v.value) } })
                         onConfigChanged(viewData.id, holder.recyclerViewList, encoded)
                     }
                     dumpedObjects.last() as ListRecyclerAdapter
@@ -381,7 +382,7 @@ class CategoryRecyclerAdapter(
                                 if (configData.isNotEmpty()) {
                                     recyclerAdapter.data += configData
                                     recyclerAdapter.notifyItemInserted(recyclerAdapter.data.size)
-                                    val encoded = Json.encodeToString(recyclerAdapter.data.map { it.mapValues { v -> TypedString.parse(v.value) } })
+                                    val encoded = Json.encodeToString(recyclerAdapter.data.map { it.mapValues { v -> PrimitiveTypedString.from(v.value) } })
                                     onConfigChanged(viewData.id, holder.recyclerViewList, encoded)
                                 }
                             }

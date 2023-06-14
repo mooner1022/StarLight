@@ -1,23 +1,23 @@
 /*
- * MutableConfigCategory.kt created by Minki Moon(mooner1022)
+ * MutableConfigCategory.kt created by Minki Moon(mooner1022) on 4/23/23, 8:23 PM
  * Copyright (c) mooner1022. all rights reserved.
  * This code is licensed under the GNU General Public License v3.0.
  */
 
-package dev.mooner.starlight.plugincore.config.category
+package dev.mooner.starlight.plugincore.config.data.category
 
-import dev.mooner.starlight.plugincore.config.TypedString
+import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
 
 class MutableConfigCategory(
-    val data: MutableMap<String, TypedString>
+    val data: MutableMap<String, PrimitiveTypedString>
 ): ConfigCategory {
 
     override operator fun contains(key: String): Boolean = data.containsKey(key)
 
-    private operator fun get(key: String): Any? = data[key]?.cast()
+    private operator fun get(key: String): Any? = data[key]?.tryCast()
 
-    fun setAny(key: String, value: Any) {
-        data[key] = TypedString.parse(value)
+    fun <T: Any> setAny(key: String, value: T) {
+        data[key] = PrimitiveTypedString.from(value)
     }
 
     fun setInt(key: String, value: Int) = setAny(key, value)

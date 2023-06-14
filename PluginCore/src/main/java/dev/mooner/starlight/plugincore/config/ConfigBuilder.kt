@@ -5,8 +5,11 @@ import android.text.InputType
 import android.view.View
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
+import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.requiredField
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -57,8 +60,14 @@ class ConfigBuilder {
         objects += category.build()
     }
 
-    fun combine(struct: ConfigStructure) {
-        objects += struct
+    fun combine(
+        struct: ConfigStructure,
+        filter: ((category: CategoryConfigObject) -> Boolean)? = null
+    ) {
+        objects += if (filter != null)
+            struct.filter(filter)
+        else
+            struct
     }
 
     fun build(flush: Boolean = true): ConfigStructure {
@@ -452,6 +461,12 @@ class ConfigItemBuilder {
         private var onInflateBlock: OnInflateBlock by notNull()
         private var configStructure: List<ConfigObject> by notNull()
 
+        private var default: String = "[]"
+        fun default(vararg entries: Map<String, PrimitiveTypedString>) {
+            val objects = entries.asList()
+            default = Json.encodeToString(objects)
+        }
+
         fun onInflate(block: OnInflateBlock) {
             onInflateBlock = block
         }
@@ -476,7 +491,8 @@ class ConfigItemBuilder {
                 dependency = dependency,
                 onInflate = onInflateBlock,
                 onDraw = onDrawBlock,
-                structure = configStructure
+                structure = configStructure,
+                default = default
             )
     }
 

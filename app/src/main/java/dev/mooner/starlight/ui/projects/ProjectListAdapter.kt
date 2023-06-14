@@ -17,7 +17,7 @@ import dev.mooner.starlight.databinding.CardProjectButtonsBinding
 import dev.mooner.starlight.databinding.CardProjectsBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.config.TypedString
+import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
 import dev.mooner.starlight.plugincore.editor.CodeEditorActivity
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project

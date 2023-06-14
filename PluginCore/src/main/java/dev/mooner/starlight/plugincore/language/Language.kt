@@ -11,9 +11,10 @@ import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.TypedString
-import dev.mooner.starlight.plugincore.config.category.ConfigCategory
-import dev.mooner.starlight.plugincore.config.category.internal.ConfigCategoryImpl
+import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
+import dev.mooner.starlight.plugincore.config.data.category.ConfigCategory
+import dev.mooner.starlight.plugincore.config.data.category.internal.ConfigCategoryImpl
+import dev.mooner.starlight.plugincore.pipeline.Pipeline
 import dev.mooner.starlight.plugincore.pipeline.stage.LanguageStage
 import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
 import dev.mooner.starlight.plugincore.project.Project
@@ -133,7 +134,7 @@ abstract class Language {
     protected fun getLanguageConfig(): ConfigCategory {
         val data = if (configFile == null || !configFile!!.isFile || !configFile!!.exists()) mapOf() else {
             val raw = configFile!!.readText()
-            val typed: Map<String, Map<String, TypedString>> =
+            val typed: Map<String, Map<String, PrimitiveTypedString>> =
                 if (raw.isNotBlank())
                     json.decodeFromString(raw)
                 else

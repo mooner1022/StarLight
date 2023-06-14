@@ -6,7 +6,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import dev.mooner.starlight.event.ApplicationEvent
 import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.TypedString
+import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.ui.config.ConfigActivity
@@ -26,7 +26,7 @@ const val EXTRA_ACTIVITY_ID = "activityId"
 data class DataHolder(
     var isPaused: Boolean = false,
     val struct: ConfigStructure,
-    val saved: Map<String, Map<String, TypedString>>,
+    val saved: Map<String, Map<String, PrimitiveTypedString>>,
     val publisher: MutableSharedFlow<ApplicationEvent.ConfigActivity>,
     val flow: Flow<ApplicationEvent.ConfigActivity>
     //val listener: (parentId: String, id: String, view: View?, data: Any) -> Unit,
@@ -44,7 +44,7 @@ fun Context.startConfigActivity(
     title: String,
     subTitle: String,
     struct: ConfigStructure,
-    saved: Map<String, Map<String, TypedString>> = emptyMap(),
+    saved: Map<String, Map<String, PrimitiveTypedString>> = emptyMap(),
     onConfigChanged: OnConfigChangedListener = { _, _, _, _ -> },
     onDestroy: () -> Unit = {}
 ) {

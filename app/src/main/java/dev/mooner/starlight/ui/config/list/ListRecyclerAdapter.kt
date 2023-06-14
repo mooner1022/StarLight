@@ -17,7 +17,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.config.ConfigObject
 import dev.mooner.starlight.plugincore.config.OnDrawBlock
 import dev.mooner.starlight.plugincore.config.OnInflateBlock
-import dev.mooner.starlight.plugincore.config.TypedString
+import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import java.util.*
 
@@ -46,9 +46,8 @@ class ListRecyclerAdapter(
         holder.container.setOnClickListener {
             MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT))
                 .show {
-                    title(res = R.string.add)
+                    //title(res = R.string.add)
                     cornerRadius(res = R.dimen.card_radius)
-                    maxWidth(res = R.dimen.dialog_width)
                     if (context is LifecycleOwner)
                         lifecycleOwner(context as LifecycleOwner)
                     customView(R.layout.dialog_logs)
@@ -57,18 +56,16 @@ class ListRecyclerAdapter(
 
                     val configAdapter = ConfigAdapter.Builder(view.context) {
                         bind(recycler)
-                        savedData(mapOf("list_structure" to data[position].mapValues { TypedString.parse(it.value) }))
+                        savedData(mapOf("list_structure" to data[position].mapValues { PrimitiveTypedString.from(it.value) }))
                         onConfigChanged { _, id, _, d ->
                             val cpyMap = data[position].toMutableMap()
                             cpyMap[id] = d
                             data[position] = cpyMap
                         }
-                        structure {
-                            dev.mooner.starlight.plugincore.config.config {
-                                category {
-                                    id = "list_structure"
-                                    items = structure
-                                }
+                        buildStruct {
+                            category {
+                                id = "list_structure"
+                                items = structure
                             }
                         }
                     }.build()

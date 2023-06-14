@@ -19,6 +19,8 @@ import dev.mooner.starlight.plugincore.config.ButtonConfigObject
 import dev.mooner.starlight.plugincore.config.ConfigImpl
 import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.config.config
+import dev.mooner.starlight.plugincore.config.data.InMemoryConfig
+import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
 import dev.mooner.starlight.plugincore.plugin.Plugin
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
@@ -37,7 +39,7 @@ class PluginConfigActivity: AppCompatActivity() {
     }
 
     private val changedData: MutableMap<String, MutableMap<String, Any>> = hashMapOf()
-    private lateinit var savedData: MutableMap<String, MutableMap<String, TypedString>>
+    private lateinit var savedData: MutableMap<String, MutableMap<String, PrimitiveTypedString>>
     private var configAdapter: ConfigAdapter? = null
 
     private lateinit var binding: ActivityPluginConfigBinding
@@ -69,9 +71,9 @@ class PluginConfigActivity: AppCompatActivity() {
                     changedData[parentId] = hashMapOf(id to data)
 
                 if (parentId in savedData)
-                    savedData[parentId]!![id] = TypedString.parse(data)
+                    savedData[parentId]!![id] = PrimitiveTypedString.from(data)
                 else
-                    savedData[parentId] = hashMapOf(id to TypedString.parse(data))
+                    savedData[parentId] = hashMapOf(id to PrimitiveTypedString.from(data))
 
                 if (!fabProjectConfig.isShown) {
                     fabProjectConfig.show()
