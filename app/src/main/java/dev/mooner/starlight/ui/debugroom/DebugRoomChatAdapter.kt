@@ -25,9 +25,9 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
-import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
+import dev.mooner.starlight.utils.setCommonAttrs
 import java.io.File
 
 class DebugRoomChatAdapter(
@@ -120,11 +120,11 @@ class DebugRoomChatAdapter(
                                 }
 
                                 load(R.drawable.default_profile)
-                                setColorFilter(chatColor ?: ContextCompat.getColor(context, R.color.main_purple))
+                                setColorFilter(chatColor ?: ContextCompat.getColor(context, R.color.main_bright))
                             }
                         } else {
                             load(R.drawable.default_profile)
-                            setColorFilter(chatColor ?: ContextCompat.getColor(context, R.color.main_purple))
+                            setColorFilter(chatColor ?: ContextCompat.getColor(context, R.color.main_bright))
                         }
                     }
                 }
@@ -146,14 +146,18 @@ class DebugRoomChatAdapter(
         holder.message.setOnLongClickListener {
             val clip = ClipData.newPlainText("디버그룸 채팅", holder.message.text)
             clipboard.setPrimaryClip(clip)
-            Snackbar.make(it, "텍스트를 클립보드에 복사했어요.", Snackbar.LENGTH_SHORT).show()
+
+            Snackbar.make(it, "텍스트를 클립보드에 복사했어요.", Snackbar.LENGTH_SHORT)
+                .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
+                .show()
             true
         }
     }
 
     private fun showFullMessageDialog(fullMessage: String) {
         MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            cornerRadius(25f)
+            setCommonAttrs()
+
             cancelOnTouchOutside(true)
             noAutoDismiss()
             title(text = context.getString(R.string.title_show_all))
