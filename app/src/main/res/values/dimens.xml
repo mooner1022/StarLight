@@ -11,7 +11,7 @@
     <dimen name="card_height">54dp</dimen>
     <dimen name="card_radius">28dp</dimen>
     <dimen name="card_elevation">0dp</dimen>
-    <dimen name="card_margin_horizontal">20dp</dimen>
+    <dimen name="card_margin_horizontal">14dp</dimen>
     <dimen name="card_margin_vertical">20dp</dimen>
 
     <dimen name="title_margin_start">30dp</dimen>
@@ -33,12 +33,18 @@
 
     <dimen name="lang_icon_corner_radius">6dp</dimen>
 
-    <dimen name="widget_card_margin_horizontal">20dp</dimen>
+    <dimen name="widget_card_margin_horizontal">16dp</dimen>
     <dimen name="widget_padding_horizontal">0dp</dimen>
     <dimen name="widget_slim_height">@dimen/card_height</dimen>
     <dimen name="widget_medium_height">96dp</dimen>
     <dimen name="widget_large_height">192dp</dimen>
     <dimen name="widget_xlarge_height">384dp</dimen>
 
+    <dimen name="button_height">52dp</dimen>
+    <dimen name="button_margin_horizontal">@dimen/widget_card_margin_horizontal</dimen>
+    <dimen name="button_corner_radius">18dp</dimen>
+
     <dimen name="editor_chip_height">32dp</dimen>
+
+    <dimen name="md_bottomsheet_horizontal_margin">0dp</dimen>
 </resources>
