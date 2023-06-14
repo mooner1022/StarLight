@@ -289,8 +289,10 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         flow {
             val comparable = compareByDescending<Project> { it.info.isPinned }
                 .thenByDescending { it.isCompiled }
-                .thenByDescending { it.info.name }
-            emit(projects.sortedWith(comparable))
+                .thenComparing(alignState.comparator)
+            emit(projects
+                .sortedWith(comparable)
+                .let { if (isReversed) it.reversed() else it })
         }
 
     private fun reloadList(list: List<Project>) {
@@ -377,16 +379,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             name = "가나다 순",
             reversedName = "가나다 역순",
             icon = R.drawable.ic_round_sort_by_alpha_24,
-            sort = { list, args ->
-                val comparable = with(compareBy<Project> { it.info.isPinned }) {
-                    if (args["activeFirst"] == true) {
-                        thenBy { !it.info.isEnabled }.thenBy { it.info.name }
-                    } else {
-                        compareBy { it.info.name }
-                    }
-                }
-                list.sortedWith(comparable)
-            }
+            comparator = compareBy { it.info.name }
         )
 
         @JvmStatic
@@ -394,16 +387,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             name = "생성일 순",
             reversedName = "생성일 역순",
             icon = R.drawable.ic_baseline_edit_calendar_24,
-            sort = { list, args ->
-                val comparable = with(compareBy<Project> { it.info.isPinned }) {
-                    if (args["activeFirst"] == true) {
-                        thenBy { it.info.isEnabled }.thenBy { it.info.createdMillis }
-                    } else {
-                        compareBy { it.info.createdMillis }
-                    }
-                }
-                list.sortedWith(comparable).asReversed()
-            }
+            comparator = compareByDescending { it.info.createdMillis }
         )
 
         @JvmStatic
@@ -411,16 +395,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             name = "컴파일 순",
             reversedName = "미 컴파일 순",
             icon = R.drawable.ic_round_refresh_24,
-            sort = { list, args ->
-                val comparable = with(compareBy<Project> { it.info.isPinned }) {
-                    if (args["activeFirst"] == true) {
-                        thenBy { it.info.isEnabled }.thenBy { it.isCompiled }
-                    } else {
-                        compareBy { it.isCompiled }
-                    }
-                }
-                list.sortedWith(comparable).asReversed()
-            }
+            comparator = compareByDescending { it.isCompiled }
         )
 
         @JvmStatic

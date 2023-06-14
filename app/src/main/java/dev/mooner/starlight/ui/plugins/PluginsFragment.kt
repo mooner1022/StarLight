@@ -135,10 +135,7 @@ class PluginsFragment : Fragment() {
     }
 
     private fun sortData(): List<StarlightPlugin> {
-        val aligned = alignState.sort(
-            plugins,
-            mapOf()
-        )
+        val aligned = plugins.sortedWith(alignState.comparator)
         return if (isReversed) aligned.asReversed() else aligned
     }
 
@@ -176,9 +173,7 @@ class PluginsFragment : Fragment() {
             name = "가나다 순",
             reversedName = "가나다 역순",
             icon = R.drawable.ic_round_sort_by_alpha_24,
-            sort = { list, _ ->
-                list.sortedBy { it.info.name }
-            }
+            comparator = compareByDescending { it.info.name }
         )
 
         @JvmStatic
@@ -186,9 +181,7 @@ class PluginsFragment : Fragment() {
             name = "파일 크기 순",
             reversedName = "파일 크기 역순",
             icon = R.drawable.ic_round_plugins_24,
-            sort = { list, _ ->
-                list.sortedByDescending { it.fileSize }
-            }
+            comparator = compareByDescending { it.fileSize }
         )
 
         @JvmStatic
