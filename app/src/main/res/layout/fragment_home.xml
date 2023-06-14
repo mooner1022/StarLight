@@ -23,18 +23,18 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toTopOf="@+id/cardViewConfigWidget"/>
     <androidx.cardview.widget.CardView
-            android:layout_width="0dp"
-            android:layout_height="@dimen/card_height"
-            android:id="@+id/cardViewConfigWidget"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:cardCornerRadius="@dimen/card_radius"
-            app:cardElevation="@dimen/card_elevation"
-            app:cardBackgroundColor="@color/main_purple_light">
+        android:id="@+id/cardViewConfigWidget"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:layout_marginHorizontal="@dimen/widget_card_margin_horizontal"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="@dimen/card_elevation"
+        app:cardBackgroundColor="@color/main_dark">
+
         <TextView
                 android:text="위젯 설정"
                 android:layout_width="wrap_content"

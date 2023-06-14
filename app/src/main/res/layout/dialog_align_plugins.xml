@@ -46,7 +46,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="0.15"
-                        android:buttonTint="@color/main_purple"
+                        android:buttonTint="@color/main_bright"
                         tools:ignore="TouchTargetSizeCheck"/>
 
 

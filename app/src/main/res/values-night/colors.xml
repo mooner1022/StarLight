@@ -5,7 +5,7 @@
     <color name="background_main">#000000</color>
     <color name="background">#000000</color>
     <color name="cardview">#171717</color>
-    <color name="bottom_sheet">#74FFFFFF</color>
+    <color name="background_dialog">#1a1a1a</color>
 
     <color name="text">#D5D5D5</color>
 

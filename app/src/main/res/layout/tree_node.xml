@@ -25,7 +25,7 @@
         app:layout_constraintStart_toEndOf="@+id/arrowCollapse"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/ic_round_code_24"
-        app:tint="@color/main_bright" />
+        app:tint="@color/main_bright"/>
 
     <TextView
         android:id="@+id/textViewLabel"

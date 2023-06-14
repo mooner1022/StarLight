@@ -32,7 +32,7 @@
             <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@color/main_purple">
+                    android:background="@color/main_bright">
 
                 <ImageView
                         android:id="@+id/alignStateIcon"
@@ -80,9 +80,9 @@
             android:foregroundGravity="center"
             android:padding="16dp"
             android:src="@drawable/ic_round_add_white_24"
-            app:backgroundTint="@color/main_purple"
+            app:backgroundTint="@color/main_bright"
             app:elevation="0dp"
-            app:rippleColor="@color/main_purple"
+            app:rippleColor="@color/main_bright"
             app:tint="@color/white"
             tools:ignore="SpeakableTextPresentCheck"/>
     </LinearLayout>
@@ -109,8 +109,8 @@
             android:textAlignment="center"
             android:textSize="18sp"
             android:visibility="gone"
-            android:drawableTop="@drawable/ic_box_empty"
-            app:drawableTint="@color/main_bright"/>
+            app:drawableTint="@color/main_bright"
+            app:drawableTopCompat="@drawable/ic_box_empty"/>
 
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewProjectList"
