@@ -18,7 +18,9 @@ data class LogData(
     @SerialName("l")
     val millis: Long = System.currentTimeMillis(),
     @Transient
-    val isLocal: Boolean = false
+    val isLocal: Boolean = false,
+    @Transient
+    val flags: Int = 0,
 ) {
 
     companion object {
@@ -26,6 +28,16 @@ data class LogData(
         private const val MAX_TAG_INDENT    = 20
 
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS"
+
+        const val FLAG_NOTIFY = 1
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other != null && (other is LogData && equals(other))
+    }
+
+    private fun equals(data: LogData): Boolean {
+        return hashCode() == data.hashCode()
     }
 
     fun toString(excludeThread: Boolean = false): String {
@@ -39,5 +51,15 @@ data class LogData(
 
     override fun toString(): String {
         return toString(excludeThread = false)
+    }
+
+    override fun hashCode(): Int {
+        var result = type.hashCode()
+        result = 31 * result + (tag?.hashCode() ?: 0)
+        result = 31 * result + threadName.hashCode()
+        result = 31 * result + message.hashCode()
+        result = 31 * result + millis.hashCode()
+        result = 31 * result + isLocal.hashCode()
+        return result
     }
 }
