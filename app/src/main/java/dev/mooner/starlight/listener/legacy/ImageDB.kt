@@ -14,7 +14,12 @@ data class ImageDB(
         return base64Cache!!
     }
 
-    fun getProfileImage(): String = getProfileBase64()
+    fun getProfileHash(): Int =
+        getProfileBase64().hashCode()
 
-    fun getProfileBitmap(): Bitmap = bitmap
+    fun getProfileImage(): String =
+        getProfileBase64()
+
+    fun getProfileBitmap(): Bitmap =
+        bitmap
 }
