@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ activity_fade_in.xml created by Minki Moon(mooner1022) on 23. 3. 26. 오후 5:36
+  ~ Copyright (c) mooner1022. all rights reserved.
+  ~ This code is licensed under the GNU General Public License v3.0.
+  -->
+
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <translate
+        android:fromYDelta="0"
+        android:toYDelta="20%p"
+        android:duration="300"/>
+    <alpha
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0"
+        android:duration="300"/>
+</set>
