@@ -32,10 +32,10 @@
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvEditorMessage"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:paddingTop="8dp"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
 
             </RelativeLayout>
 
@@ -44,10 +44,10 @@
     </androidx.cardview.widget.CardView>
 
     <LinearLayout
+        android:id="@+id/boxNoErrorYet"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:orientation="vertical">
+        android:layout_gravity="center" android:orientation="vertical">
 
         <ImageView
             android:id="@+id/imageView7"
@@ -64,7 +64,7 @@
             android:text="@string/no_message_yet"
             android:textAlignment="center"
             android:textColor="@color/text"
-            android:textSize="16sp" />
+            android:textSize="16sp"/>
     </LinearLayout>
 
 </FrameLayout>

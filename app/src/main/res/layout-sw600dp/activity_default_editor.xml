@@ -23,113 +23,123 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/toolbar_editor" />
 
-        <WebView
-            android:id="@+id/editorWebView"
+        <FrameLayout
+            android:id="@+id/webviewContainer"
             android:layout_width="0dp"
             android:layout_height="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/rvOpenFiles">
-        </WebView>
+            app:layout_constraintTop_toBottomOf="@+id/rvOpenFiles" />
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar_editor"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorPrimary"
-            android:minHeight="?attr/actionBarSize"
-            android:theme="?attr/actionBarTheme"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+        <!-- Replaced with dynamic allocation
+       <WebView
+           android:id="@+id/editorWebView"
+           android:layout_width="0dp"
+           android:layout_height="0dp"
+           app:layout_constraintBottom_toBottomOf="parent"
+           app:layout_constraintEnd_toEndOf="parent"
+           app:layout_constraintStart_toStartOf="parent"
+           app:layout_constraintTop_toBottomOf="@+id/rvOpenFiles">
+       </WebView>
+       -->
 
-        <androidx.coordinatorlayout.widget.CoordinatorLayout
-            android:id="@+id/coordinatorLayout"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/editorWebView">
+       <androidx.appcompat.widget.Toolbar
+           android:id="@+id/toolbar_editor"
+           android:layout_width="match_parent"
+           android:layout_height="wrap_content"
+           android:background="?attr/colorPrimary"
+           android:minHeight="?attr/actionBarSize"
+           android:theme="?attr/actionBarTheme"
+           app:layout_constraintEnd_toEndOf="parent"
+           app:layout_constraintStart_toStartOf="parent"
+           app:layout_constraintTop_toTopOf="parent"/>
 
-            <include
-                android:id="@+id/bottomSheet"
-                layout="@layout/sheet_editor"/>
+       <androidx.coordinatorlayout.widget.CoordinatorLayout
+           android:id="@+id/coordinatorLayout"
+           android:layout_width="match_parent"
+           android:layout_height="0dp"
+           app:layout_constraintBottom_toBottomOf="parent"
+           app:layout_constraintEnd_toEndOf="parent"
+           app:layout_constraintStart_toStartOf="parent"
+           app:layout_constraintTop_toTopOf="@+id/webviewContainer">
 
-        </androidx.coordinatorlayout.widget.CoordinatorLayout>
+           <include
+               android:id="@+id/bottomSheet"
+               layout="@layout/sheet_editor"/>
 
-        <HorizontalScrollView
-            android:id="@+id/scrollViewHotKeys"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:background="@color/background"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            tools:ignore="SpeakableTextPresentCheck">
+       </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-            <LinearLayout
-                android:id="@+id/layoutHotKeys"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:divider="@drawable/card_plugin_divider"
-                android:orientation="horizontal"
-                android:showDividers="middle"/>
+       <HorizontalScrollView
+           android:id="@+id/scrollViewHotKeys"
+           android:layout_width="match_parent"
+           android:layout_height="40dp"
+           android:background="@color/background"
+           app:layout_constraintBottom_toBottomOf="parent"
+           app:layout_constraintEnd_toEndOf="parent"
+           app:layout_constraintStart_toStartOf="parent"
+           tools:ignore="SpeakableTextPresentCheck">
 
-        </HorizontalScrollView>
+           <LinearLayout
+               android:id="@+id/layoutHotKeys"
+               android:layout_width="wrap_content"
+               android:layout_height="match_parent"
+               android:divider="@drawable/card_plugin_divider"
+               android:orientation="horizontal"
+               android:showDividers="middle"/>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+       </HorizontalScrollView>
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/drawer_fileTree"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingStart="0dp"
-        android:paddingEnd="80dp"
-        android:layout_gravity="start"
-        android:fitsSystemWindows="true"
-        android:clickable="true"
-        android:focusable="true"
-        android:name="dev.mooner.starlight.ui.editor.drawer.FileTreeDrawerFragment"
-        tools:layout="@layout/fragment_file_tree_drawer" />
+   </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/drawer_debugChat"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="end"
-        android:maxWidth="400dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:fitsSystemWindows="true">
+   <androidx.fragment.app.FragmentContainerView
+       android:id="@+id/drawer_fileTree"
+       android:layout_width="match_parent"
+       android:layout_height="match_parent"
+       android:paddingStart="0dp"
+       android:paddingEnd="80dp"
+       android:layout_gravity="start"
+       android:fitsSystemWindows="true"
+       android:clickable="true"
+       android:focusable="true"
+       tools:layout="@layout/fragment_file_tree_drawer" />
 
-        <ImageButton
-            android:id="@+id/buttonCloseDebugChat"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="8dp"
-            android:background="@drawable/arrow_background_round"
-            android:backgroundTint="#1B191B"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_round_keyboard_arrow_right_24"
-            app:tint="#DFC199"/>
+   <androidx.constraintlayout.widget.ConstraintLayout
+       android:id="@+id/drawer_debugChat"
+       android:layout_width="match_parent"
+       android:layout_height="match_parent"
+       android:layout_gravity="end"
+       android:maxWidth="400dp"
+       android:clickable="true"
+       android:focusable="true"
+       android:fitsSystemWindows="true">
 
-        <androidx.fragment.app.FragmentContainerView
-            android:id="@+id/fragment_container_debug_room"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="end"
-            android:fitsSystemWindows="true"
-            android:layout_marginStart="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/buttonCloseDebugChat"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:layout="@layout/fragment_debug_room" />
+       <ImageButton
+           android:id="@+id/buttonCloseDebugChat"
+           android:layout_width="48dp"
+           android:layout_height="48dp"
+           android:layout_marginStart="8dp"
+           android:background="@drawable/arrow_background_round"
+           android:backgroundTint="#1B191B"
+           app:layout_constraintBottom_toBottomOf="parent"
+           app:layout_constraintStart_toStartOf="parent"
+           app:layout_constraintTop_toTopOf="parent"
+           app:srcCompat="@drawable/ic_round_keyboard_arrow_right_24"
+           app:tint="#DFC199"/>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+       <androidx.fragment.app.FragmentContainerView
+           android:id="@+id/fragment_container_debug_room"
+           android:layout_width="0dp"
+           android:layout_height="match_parent"
+           android:layout_gravity="end"
+           android:fitsSystemWindows="true"
+           android:layout_marginStart="8dp"
+           app:layout_constraintBottom_toBottomOf="parent"
+           app:layout_constraintEnd_toEndOf="parent"
+           app:layout_constraintStart_toEndOf="@+id/buttonCloseDebugChat"
+           app:layout_constraintTop_toTopOf="parent"
+           tools:layout="@layout/fragment_debug_room" />
+
+   </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.drawerlayout.widget.DrawerLayout>

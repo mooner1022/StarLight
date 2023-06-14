@@ -23,6 +23,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/toolbar_editor" />
 
+        <FrameLayout
+            android:id="@+id/webviewContainer"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/rvOpenFiles" />
+
+        <!-- Replaced with dynamic allocation
         <WebView
             android:id="@+id/editorWebView"
             android:layout_width="0dp"
@@ -32,6 +42,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/rvOpenFiles">
         </WebView>
+        -->
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar_editor"
@@ -51,7 +62,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/editorWebView">
+            app:layout_constraintTop_toTopOf="@+id/webviewContainer">
 
             <include
                 android:id="@+id/bottomSheet"
@@ -91,7 +102,6 @@
         android:fitsSystemWindows="true"
         android:clickable="true"
         android:focusable="true"
-        android:name="dev.mooner.starlight.ui.editor.drawer.FileTreeDrawerFragment"
         tools:layout="@layout/fragment_file_tree_drawer" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

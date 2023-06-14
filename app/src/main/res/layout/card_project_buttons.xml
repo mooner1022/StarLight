@@ -3,7 +3,6 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/flexLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/transparent"
@@ -11,8 +10,7 @@
     android:visibility="visible"
     app:alignContent="center"
     app:alignItems="center"
-    app:dividerDrawableVertical="@drawable/card_plugin_divider"
-    app:flexDirection="row"
+    app:flexDirection="column"
     app:flexWrap="wrap"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
@@ -20,65 +18,83 @@
     app:layout_constraintTop_toTopOf="parent"
     app:showDividerVertical="middle">
 
-    <ImageButton
-        android:id="@+id/buttonEditCode"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="#00FFFFFF"
-        android:tint="@color/text"
-        app:layout_alignSelf="center"
-        app:srcCompat="@drawable/ic_round_edit_24"
-        tools:ignore="SpeakableTextPresentCheck"/>
+    <com.google.android.flexbox.FlexboxLayout
+        android:id="@+id/flexLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/transparent"
+        android:visibility="visible"
+        app:alignContent="center"
+        app:alignItems="center"
+        app:dividerDrawableVertical="@drawable/card_plugin_divider"
+        app:flexDirection="row"
+        app:flexWrap="wrap"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:showDividerVertical="middle">
 
-    <ImageButton
-        android:id="@+id/buttonRecompile"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="#00FFFFFF"
-        android:tint="@color/text"
-        app:layout_alignSelf="center"
-        app:srcCompat="@drawable/ic_round_refresh_24"
-        tools:ignore="SpeakableTextPresentCheck"/>
+        <ImageButton
+            android:id="@+id/buttonEditCode"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="#00FFFFFF"
+            app:layout_alignSelf="center"
+            app:srcCompat="@drawable/ic_round_edit_24"
+            app:tint="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
 
-    <ImageButton
-        android:id="@+id/buttonDebugRoom"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="#00FFFFFF"
-        android:tint="@color/text"
-        app:layout_alignSelf="center"
-        app:srcCompat="@drawable/ic_round_insert_comment_24"
-        tools:ignore="SpeakableTextPresentCheck"/>
+        <ImageButton
+            android:id="@+id/buttonRecompile"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="#00FFFFFF"
+            app:layout_alignSelf="center"
+            app:srcCompat="@drawable/ic_round_refresh_24"
+            app:tint="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
 
-    <ImageButton
-        android:id="@+id/buttonProjectConfig"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="#00FFFFFF"
-        android:tint="@color/text"
-        app:layout_alignSelf="center"
-        app:srcCompat="@drawable/ic_round_settings_24"
-        tools:ignore="SpeakableTextPresentCheck"/>
+        <ImageButton
+            android:id="@+id/buttonDebugRoom"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="#00FFFFFF"
+            app:layout_alignSelf="center"
+            app:srcCompat="@drawable/ic_round_insert_comment_24"
+            app:tint="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
 
-    <ImageButton
-        android:id="@+id/buttonProjectInfo"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="#00FFFFFF"
-        android:tint="@color/text"
-        app:layout_alignSelf="center"
-        app:srcCompat="@drawable/ic_round_info_24"
-        tools:ignore="SpeakableTextPresentCheck"/>
+        <ImageButton
+            android:id="@+id/buttonProjectConfig"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="#00FFFFFF"
+            app:layout_alignSelf="center"
+            app:srcCompat="@drawable/ic_round_settings_24"
+            app:tint="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
 
-    <ImageButton
-        android:id="@+id/buttonProjectPin"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="#00FFFFFF"
-        android:tint="@color/text"
-        app:layout_alignSelf="center"
-        app:srcCompat="@drawable/ic_round_star_24"
-        tools:ignore="SpeakableTextPresentCheck"/>
+        <ImageButton
+            android:id="@+id/buttonProjectInfo"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="#00FFFFFF"
+            app:layout_alignSelf="center"
+            app:srcCompat="@drawable/ic_round_info_24"
+            app:tint="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+        <ImageButton
+            android:id="@+id/buttonProjectPin"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="#00FFFFFF"
+            app:layout_alignSelf="center"
+            app:srcCompat="@drawable/ic_round_star_24"
+            app:tint="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
+    </com.google.android.flexbox.FlexboxLayout>
 
     <LinearLayout
         android:id="@+id/progressWrapper"
@@ -91,6 +107,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
         <ProgressBar
             android:id="@+id/progressBar"
             style="?android:attr/progressBarStyleHorizontal"
@@ -99,7 +116,8 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="16dp"
-            android:progressDrawable="@drawable/round_progressbar"/>
+            android:progressDrawable="@drawable/round_progressbar" />
+
         <TextView
             android:id="@+id/progressState"
             android:layout_width="match_parent"
@@ -109,6 +127,6 @@
             android:layout_marginEnd="24dp"
             android:fontFamily="@font/nanumsquare_round_extrabold"
             android:text="@string/default_placeholder"
-            android:textAlignment="textEnd"/>
+            android:textAlignment="textEnd" />
     </LinearLayout>
 </com.google.android.flexbox.FlexboxLayout>

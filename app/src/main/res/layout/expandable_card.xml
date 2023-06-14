@@ -1,94 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/card_layout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:paddingTop="@dimen/default_vertical_padding"
-        android:paddingBottom="@dimen/default_vertical_padding" app:cardBackgroundColor="@color/transparent"
-        app:cardElevation="0dp" app:cardMaxElevation="0dp">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_layout"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingTop="@dimen/default_vertical_padding"
+    android:paddingBottom="@dimen/default_vertical_padding" app:cardBackgroundColor="@color/transparent"
+    app:cardElevation="0dp" app:cardMaxElevation="0dp">
 
     <LinearLayout
-            android:id="@+id/card_container"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/default_card_height"
-            android:gravity="center_vertical"
-            android:orientation="vertical">
+        android:id="@+id/card_container"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/default_card_height"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
 
         <RelativeLayout
-                android:id="@+id/card_header"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/default_card_height"
-                android:gravity="center_vertical">
+            android:id="@+id/card_header"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/default_card_height"
+            android:gravity="center_vertical">
 
             <!-- Rivedi effetto ripple -->
 
             <ImageView
-                    android:id="@+id/card_icon"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="15dp"
-                    android:background="#00FFFFFF"
-                    android:visibility="visible"
-                    android:layout_alignParentStart="true"
-                    tools:ignore="ContentDescription"/>
+                android:id="@+id/card_icon"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="15dp"
+                android:background="#00FFFFFF"
+                android:visibility="visible"
+                android:layout_alignParentStart="true"
+                tools:ignore="ContentDescription"/>
 
             <TextView
-                    android:id="@+id/card_title"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_toStartOf="@+id/LL_switch_button"
-                    android:layout_toEndOf="@+id/card_icon"
-                    android:fontFamily="@font/nanumsquare_round_bold"
-                    android:maxLength="39"
-                    android:maxLines="1"
-                    android:singleLine="true"
-                    android:textSize="18sp"
-                    tools:text="PLACEHOLDER"/>
+                android:id="@+id/card_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="8dp"
+                android:layout_toStartOf="@+id/LL_switch_button"
+                android:layout_toEndOf="@+id/card_icon"
+                android:fontFamily="@font/nanumsquare_round_bold"
+                android:maxLength="39"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:textSize="18sp"
+                tools:text="PLACEHOLDER"/>
 
             <LinearLayout
-                    android:id="@+id/LL_switch_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_alignParentEnd="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                android:id="@+id/LL_switch_button"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/card_switch"
-                        android:thumb="@drawable/switch_thumb"
-                        app:track="@drawable/switch_track_selector"
-                        android:theme="@style/overrideExpandableCardViewSwitch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"/>
+                    android:id="@+id/card_switch"
+                    android:thumb="@drawable/switch_thumb"
+                    android:theme="@style/overrideExpandableCardViewSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    app:track="@drawable/switch_track_selector"/>
 
                 <ImageButton
-                        android:id="@+id/card_arrow"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="20dp"
-                        android:background="@drawable/arrow_background_round"
-                        android:src="@drawable/ic_round_keyboard_arrow_down_24"
-                        app:tint="@color/text"
-                        tools:ignore="ContentDescription,TouchTargetSizeCheck"/>
+                    android:id="@+id/card_arrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="20dp"
+                    android:background="@drawable/arrow_background_round"
+                    android:src="@drawable/ic_round_keyboard_arrow_down_24"
+                    app:tint="@color/text"
+                    tools:ignore="ContentDescription,TouchTargetSizeCheck"/>
             </LinearLayout>
 
         </RelativeLayout>
 
         <ViewStub
-                android:id="@+id/card_stub"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:inflatedId="@+id/innerView" android:visibility="visible"
-                android:layout="@layout/card_project_buttons"/>
-
+            android:id="@+id/card_stub"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:inflatedId="@+id/innerView"
+            android:visibility="visible"
+            android:layout="@layout/card_project_buttons"/>
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
