@@ -3,8 +3,14 @@ package dev.mooner.starlight.plugincore.widget
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 
-abstract class Widget {
+abstract class Widget: LifecycleOwner, LifecycleEventObserver {
+
+    private val lifecycleRegistry = LifecycleRegistry(this)
 
     abstract val id: String
 
@@ -32,11 +38,19 @@ abstract class Widget {
 
     override fun hashCode(): Int = this.id.hashCode()
 
+    override fun getLifecycle(): Lifecycle {
+        return lifecycleRegistry
+    }
+
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        lifecycleRegistry.handleLifecycleEvent(event)
+    }
+
     protected fun View.updateHeight() {
-        assert(this@Widget.size == WidgetSize.Wrap) { "Widget size should be WidgetSize.Wrap to use updateHeight()" }
-        assert(Thread.currentThread().name == "main") { "View function should only be accessed from main thread" }
+        require(this@Widget.size == WidgetSize.Wrap) { "Widget size should be WidgetSize.Wrap to use updateHeight()" }
+        require(Thread.currentThread().name == "main") { "View function should only be accessed from main thread" }
         params {
-            width = ViewGroup.LayoutParams.MATCH_PARENT
+            //width = ViewGroup.LayoutParams.MATCH_PARENT
             height = ViewGroup.LayoutParams.WRAP_CONTENT
         }
         requestLayout()

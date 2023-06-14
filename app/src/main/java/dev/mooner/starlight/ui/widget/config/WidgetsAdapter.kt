@@ -6,6 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.widget.Widget
@@ -45,14 +47,26 @@ class WidgetsAdapter (
         viewData.onCreateWidget(holder.view)
     }
 
-    fun onResume() =
-        data.forEach(Widget::onResumeWidget)
+    fun onResume(lifecycleOwner: LifecycleOwner) {
+        for (widget in data) {
+            widget.onStateChanged(lifecycleOwner, Lifecycle.Event.ON_RESUME)
+            widget.onResumeWidget()
+        }
+    }
 
-    fun onPause() =
-        data.forEach(Widget::onPauseWidget)
+    fun onPause(lifecycleOwner: LifecycleOwner) {
+        for (widget in data) {
+            widget.onStateChanged(lifecycleOwner, Lifecycle.Event.ON_PAUSE)
+            widget.onPauseWidget()
+        }
+    }
 
-    fun onDestroy() =
-        data.forEach(Widget::onDestroyWidget)
+    fun onDestroy(lifecycleOwner: LifecycleOwner) {
+        for (widget in data) {
+            widget.onStateChanged(lifecycleOwner, Lifecycle.Event.ON_DESTROY)
+            widget.onDestroyWidget()
+        }
+    }
 
     fun notifyAllItemInserted() {
         notifyItemRangeInserted(0, data.size)
