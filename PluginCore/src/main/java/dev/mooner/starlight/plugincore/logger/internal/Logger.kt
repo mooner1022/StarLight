@@ -7,18 +7,15 @@
 package dev.mooner.starlight.plugincore.logger.internal
 
 import android.util.Log
-import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.config.Flags
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogType
-import dev.mooner.starlight.plugincore.utils.TimeUtils
 import dev.mooner.starlight.plugincore.utils.currentThread
-import dev.mooner.starlight.plugincore.utils.getInternalDirectory
 import kotlinx.coroutines.*
-import java.io.File
 
 /**
  * Internal logger for Project StarLight
@@ -32,8 +29,6 @@ internal object Logger {
         CoroutineScope(Dispatchers.IO.limitedParallelism(1)) + SupervisorJob()
 
     //private lateinit var logFile: File
-
-    private var logLevel: LogType = LogType.INFO
 
     /*
     private var mLogs: MutableList<LogData> = mutableListOf()
@@ -68,14 +63,14 @@ internal object Logger {
     fun v(tag: String?, message: String) =
         log(LogType.VERBOSE, tag, message)
 
-    @Deprecated("Deprecated, use Logger.v(tag: String, message: String).")
+    @Deprecated("Deprecated, use Logger.d(tag: String, message: String).")
     fun d(message: String) =
         d(tag = callSite, message = message)
 
     fun d(tag: String?, message: String) =
         log(LogType.DEBUG, tag, message)
 
-    @Deprecated("Deprecated, use Logger.v(tag: String, message: String).")
+    @Deprecated("Deprecated, use Logger.i(tag: String, message: String).")
     fun i(message: String) =
         i(tag = callSite, message = message)
 
@@ -92,19 +87,25 @@ internal object Logger {
     fun w(tag: String?, message: String) =
         log(LogType.WARN, tag, message)
 
-    @Deprecated("Deprecated, use Logger.v(tag: String, message: String).")
+    @Deprecated("Deprecated, use Logger.e(tag: String, message: String).")
     fun e(message: String) =
         e(tag = callSite, message = message)
 
     fun e(tag: String?, message: String) =
         log(LogType.ERROR, tag, message)
 
-    fun e(tag: String, throwable: Throwable) = e(tag, throwable.message?: "null")
+    fun e(tag: String, throwable: Throwable) =
+        e(tag, """
+            $throwable
+            cause:   ${throwable.cause}
+            message: ${throwable.message}
+        """.trimIndent())
 
-    fun e(throwable: Throwable) = e(throwable.message?: "null")
+    fun e(throwable: Throwable) =
+        e(callSite, throwable)
 
     // What a Terrible Failure!
-    @Deprecated("Deprecated, use Logger.v(tag: String, message: String).")
+    @Deprecated("Deprecated, use Logger.wtf(tag: String, message: String).")
     fun wtf(message: String) =
         wtf(tag = callSite, message = message)
 
@@ -121,14 +122,14 @@ internal object Logger {
         )
         Log.println(data.type.priority, data.tag?: data.type.name, data.message)
 
-        logPublishScope.launch {
-            try {
-                //mLogs += data
-
-                if (data.type != LogType.VERBOSE || showInternalLogs)
+        if (data.type != LogType.VERBOSE || showInternalLogs) {
+            logPublishScope.launch {
+                try {
+                    //mLogs += data
                     EventHandler.fireEventWithScope(Events.Log.Create(data), this)
-            } catch (e: Exception) {
-                e.printStackTrace()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }
