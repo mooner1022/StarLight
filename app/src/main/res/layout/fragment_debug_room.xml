@@ -22,7 +22,7 @@
         android:background="@color/transparent">
 
         <LinearLayout
-            android:id="@+id/topbar"
+            android:id="@+id/top_bar"
             android:layout_width="match_parent"
             android:layout_height="55dp"
             android:orientation="horizontal"
@@ -37,7 +37,8 @@
                 android:layout_marginStart="10dp"
                 android:src="@drawable/ic_round_arrow_left_24"
                 android:layout_gravity="center_vertical"
-                app:tint="@color/text"/>
+                app:tint="@color/text"
+                android:contentDescription="@string/close" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -53,9 +54,9 @@
                     android:layout_marginStart="8dp"
                     android:fontFamily="@font/nanumsquare_round_extrabold"
                     android:gravity="center"
-                    android:text="DEBUG ROOM"
                     android:textSize="18sp"
-                    android:visibility="visible"/>
+                    android:visibility="visible"
+                    tools:text="DEBUG ROOM"/>
 
             </LinearLayout>
 
@@ -67,7 +68,7 @@
             app:layout_constraintBottom_toTopOf="@id/messageInput"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/topbar"
+            app:layout_constraintTop_toBottomOf="@id/top_bar"
             app:cardBackgroundColor="@color/cardview"
             app:cardCornerRadius="20dp"
             app:cardElevation="0dp">
@@ -91,7 +92,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toTopOf="@+id/messageInput"
-            app:layout_constraintTop_toBottomOf="@+id/topbar">
+            app:layout_constraintTop_toBottomOf="@+id/top_bar">
 
             <include
                 android:id="@+id/bottomSheet"
@@ -107,7 +108,7 @@
             android:ems="10"
             android:inputType="textMultiLine"
             android:fontFamily="sans-serif"
-            android:hint="메세지 입력..."
+            android:hint="@string/debugroom_type_here"
             android:paddingStart="15dp"
             android:paddingTop="3dp"
             android:paddingEnd="10dp"
@@ -119,6 +120,7 @@
             android:layout_marginBottom="12dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="8dp"
+            android:importantForAutofill="no"
             app:layout_constraintEnd_toStartOf="@+id/sendButton"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
@@ -131,7 +133,8 @@
             android:layout_marginBottom="12dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:srcCompat="@drawable/ic_send"/>
+            app:srcCompat="@drawable/ic_send"
+            android:contentDescription="@string/send" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
