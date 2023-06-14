@@ -80,9 +80,12 @@ internal object Logger {
         i(tag = callSite, message = message)
 
     fun i(tag: String?, message: String) =
-        log(LogType.INFO, tag, message)
+        i(tag, message, 0)
 
-    @Deprecated("Deprecated, use Logger.v(tag: String, message: String).")
+    fun i(tag: String?, message: String, flags: Flags) =
+        log(LogType.INFO, tag, message, flags)
+
+    @Deprecated("Deprecated, use Logger.w(tag: String, message: String).")
     fun w(message: String) =
         w(tag = callSite, message = message)
 
@@ -109,11 +112,12 @@ internal object Logger {
         log(LogType.CRITICAL, tag, message)
 
 
-    fun log(type: LogType, tag: String?, message: String) {
+    fun log(type: LogType, tag: String?, message: String, flags: Flags = 0) {
         val data = LogData(
             type = type,
             tag = tag,
-            message = message
+            message = message,
+            flags = flags
         )
         Log.println(data.type.priority, data.tag?: data.type.name, data.message)
 

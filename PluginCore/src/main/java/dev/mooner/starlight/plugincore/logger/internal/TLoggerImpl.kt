@@ -6,7 +6,9 @@
 
 package dev.mooner.starlight.plugincore.logger.internal
 
+import dev.mooner.starlight.plugincore.config.Flags
 import dev.mooner.starlight.plugincore.logger.LazyEval
+import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.plugincore.logger.TLogger
 
 class TLoggerImpl(
@@ -22,6 +24,9 @@ class TLoggerImpl(
     override fun info(msg: LazyEval) =
         log(Logger::i, msg)
 
+    override fun info(flags: Flags, msg: LazyEval) =
+        Logger.i(tag, evaluate(msg), flags)
+
     override fun warn(msg: LazyEval) =
         log(Logger::w, msg)
 
@@ -36,9 +41,11 @@ class TLoggerImpl(
         Logger.e(tag, throwable)
     }
 
-
     override fun wtf(msg: LazyEval) =
         log(Logger::wtf, msg)
+
+    override fun log(type: LogType, msg: LazyEval) =
+        Logger.log(type, tag, evaluate(msg))
 
     private fun log(func: (String, String) -> Unit, msg: LazyEval) =
         func(tag, evaluate(msg))

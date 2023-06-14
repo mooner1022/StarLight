@@ -6,6 +6,8 @@
 
 package dev.mooner.starlight.plugincore.logger
 
+import dev.mooner.starlight.plugincore.config.Flags
+
 typealias LazyEval = () -> Any?
 
 interface TLogger {
@@ -16,6 +18,8 @@ interface TLogger {
 
     fun info(msg: LazyEval)
 
+    fun info(flags: Flags, msg: LazyEval)
+
     fun warn(msg: LazyEval)
 
     fun error(msg: LazyEval)
@@ -25,4 +29,6 @@ interface TLogger {
     fun <T> error(throwable: T) where T: Throwable
 
     fun wtf(msg: LazyEval)
+
+    fun log(type: LogType, msg: LazyEval)
 }
