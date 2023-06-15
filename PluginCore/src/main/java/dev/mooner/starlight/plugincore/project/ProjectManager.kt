@@ -43,7 +43,7 @@ class ProjectManager(
     }
 
     fun newProject(info: ProjectInfo, dir: File = projectDir) {
-        Project.create(dir, info).also { project ->
+        ProjectImpl.create(dir, info).also { project ->
             projects[info.name] = project
             EventHandler.fireEventWithScope(Events.Project.Create(project))
         }
