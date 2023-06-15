@@ -8,11 +8,13 @@ package dev.mooner.starlight.plugincore.logger
 
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.logger.internal.Logger
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -21,6 +23,9 @@ class ProjectLogger private constructor(
     private var _logs: MutableList<LogData>,
     private val file: File
 ) {
+    private val logFlushScope: CoroutineScope by lazy {
+        CoroutineScope(Dispatchers.IO)
+    }
 
     val logs: MutableList<LogData>
         get() = this._logs
@@ -78,17 +83,16 @@ class ProjectLogger private constructor(
         if (data.type != LogType.DEBUG) {
             synchronized(_logs) {
                 _logs += data
+                flush()
             }
-            flush()
         }
     }
 
     private fun flush() = runBlocking {
-        withContext(Dispatchers.IO) {
-            flowOf(json.encodeToString(logs))
-                .flowOn(Dispatchers.Default)
-                .collect(file::writeText)
-        }
+        flowOf(json.encodeToString(logs))
+            .onEach(file::writeText)
+            .catch { it.printStackTrace() }
+            .launchIn(logFlushScope)
     }
 
     companion object {
