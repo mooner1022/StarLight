@@ -20,13 +20,14 @@ import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
-import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentPluginsBinding
-import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.Session.pluginManager
+import dev.mooner.starlight.plugincore.config.GlobalConfig
+import dev.mooner.starlight.plugincore.config.GlobalConfig.getDefaultCategory
 import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.utils.align.Align
+import dev.mooner.starlight.utils.setCommonAttrs
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,19 +41,24 @@ class PluginsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var listAdapter: PluginsListAdapter? = null
-    private val plugins: List<StarlightPlugin> by lazy {
-        pluginManager.getPlugins().toList()
-    }
+    private val plugins = pluginManager.plugins
 
     private val aligns = arrayOf(
         ALIGN_GANADA,
         ALIGN_FILE_SIZE,
     )
+
     private var alignState: Align<StarlightPlugin> = getAlignByName(
-        globalConfig.getDefaultCategory().getString(CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name)
+        GlobalConfig
+            .getDefaultCategory()
+            .getString(CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name)
     )?: DEFAULT_ALIGN
+
     private var isReversed: Boolean =
-        globalConfig.getDefaultCategory().getString(CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name).toBoolean()
+        GlobalConfig
+            .getDefaultCategory()
+            .getString(CONFIG_PLUGINS_ALIGN, DEFAULT_ALIGN.name)
+            .toBoolean()
 
     @SuppressLint("CheckResult")
     override fun onCreateView(
@@ -66,13 +72,12 @@ class PluginsFragment : Fragment() {
             with(binding.textViewNoPluginYet) {
                 visibility = View.VISIBLE
 
-                text = if (globalConfig.category("plugin").getBoolean("safe_mode", false)) {
+                text = if (GlobalConfig.category("plugin").getBoolean("safe_mode", false)) {
                     setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_safe_mode, 0, 0)
                     "플러그인 안전 모드가 켜져있어요."
                 } else {
                     setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_box_empty, 0, 0)
-                    getString(R.string.nothing_yet)
-                        .format("플러그인이", "(⊙_⊙;)")
+                    getString(R.string.no_plugins)
                 }
             }
         }
@@ -113,8 +118,7 @@ class PluginsFragment : Fragment() {
     @SuppressLint("CheckResult")
     private fun showAlignDialog() =
         MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            cornerRadius(25f)
-            lifecycleOwner(this@PluginsFragment)
+            setCommonAttrs()
             gridItems(aligns.toGridItems()) { dialog, _, item ->
                 alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
                 isReversed = dialog.findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked
@@ -125,7 +129,8 @@ class PluginsFragment : Fragment() {
             findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked = isReversed
         }
 
-    private fun getAlignByName(name: String): Align<StarlightPlugin>? = aligns.find { it.name == name }
+    private fun getAlignByName(name: String): Align<StarlightPlugin>? =
+        aligns.find { it.name == name }
 
     private fun Array<Align<StarlightPlugin>>.toGridItems(): List<BasicGridItem> = this.map { item ->
         BasicGridItem(
@@ -153,7 +158,7 @@ class PluginsFragment : Fragment() {
         binding.textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
         binding.alignStateIcon.setImageResource(alignState.icon)
         reloadList(sortData())
-        globalConfig.edit {
+        GlobalConfig.edit {
             getDefaultCategory().apply {
                 set(CONFIG_PLUGINS_ALIGN, alignState.name)
                 set(CONFIG_PLUGINS_REVERSED, isReversed.toString())

@@ -30,8 +30,9 @@ class LocationTermsFragment : Fragment() {
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { adapter?.reload() }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentLocationTermsBinding.inflate(inflater, container, false)
         val activity = activity as QuickStartActivity
@@ -75,10 +76,11 @@ class LocationTermsFragment : Fragment() {
         }
 
     private fun requestLocationPermission() {
-        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             arrayOf(ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION, ACCESS_BACKGROUND_LOCATION)
-        else
+        } else {
             arrayOf(ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION)
+        }
         requestPermissionLauncher.launch(permissions)
     }
 }

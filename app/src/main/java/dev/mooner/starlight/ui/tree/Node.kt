@@ -1,6 +1,6 @@
 package dev.mooner.starlight.ui.tree
 
-class Node<T>(val content: T) {
+open class Node<T>(val content: T) {
 
     var parent: Node<T>? = null
 

@@ -23,6 +23,8 @@ import dev.mooner.starlight.databinding.FragmentSetPermissionBinding
 import dev.mooner.starlight.plugincore.config.ConfigItemBuilder
 import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.config
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.TranslationManager
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.splash.quickstart.QuickStartActivity
@@ -81,7 +83,7 @@ class SetPermissionFragment : Fragment() {
                 category {
                     id = "permission_sdk30"
                     title = "SDK 30(안드로이드 11) 이상 저장소 권한"
-                    textColor = activity.getColor(R.color.main_purple)
+                    textColor = activity.getColor(R.color.main_bright)
                     items {
                         getButtonByPermission(MANAGE_EXTERNAL_STORAGE)
                     }
@@ -90,7 +92,7 @@ class SetPermissionFragment : Fragment() {
             category {
                 id = "permissions"
                 title = "아래 권한들을 허용해주세요!"
-                textColor = activity.getColor(R.color.main_purple)
+                textColor = activity.getColor(R.color.main_bright)
                 items {
                     for (permission in REQUIRED_PERMISSIONS) {
                         if (permission == MANAGE_EXTERNAL_STORAGE) continue
@@ -117,6 +119,16 @@ class SetPermissionFragment : Fragment() {
     private fun ConfigItemBuilder.getButtonByPermission(permission: String) {
         val mTitle: String
         val mDesc: String
+
+        when(TranslationManager.getLocale()) {
+            Locale.ENGLISH -> {
+
+            }
+            Locale.KOREAN -> {
+
+            }
+            else -> {}
+        }
         when(permission) {
             INTERNET -> {
                 mTitle = "인터넷"

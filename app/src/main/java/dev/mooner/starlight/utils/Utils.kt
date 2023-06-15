@@ -91,8 +91,15 @@ val isDevMode get() = Session.isInitComplete && GlobalConfig.category("dev").get
 
 const val LAYOUT_DEFAULT = 0
 const val LAYOUT_TABLET  = 1
+const val LAYOUT_SLIM    = 2
 
-val Context.layoutMode get() = resources.getInteger(R.integer.layoutMode)
+val Context.layoutMode
+    get() = resources.getInteger(R.integer.layoutMode).let {
+        if (it == LAYOUT_DEFAULT && getScreenSizeDp(this).first <= 320)
+            LAYOUT_SLIM
+        else
+            it
+    }
 
 fun Context.getColorCompat(@ColorRes res: Int): Int = ContextCompat.getColor(this, res)
 

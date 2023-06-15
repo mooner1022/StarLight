@@ -1,7 +1,6 @@
 package dev.mooner.starlight.plugincore.language
 
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
-import dev.mooner.starlight.plugincore.logger.internal.Logger
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 
@@ -12,7 +11,8 @@ class LanguageManager {
     private val languages: MutableSet<Language> = HashSet()
     private val languageAssetPaths: MutableMap<String, String> = hashMapOf()
 
-    internal fun getAssetPath(id: String): String? = languageAssetPaths[id]
+    internal fun getAssetPath(id: String): String? =
+        languageAssetPaths[id]
 
     fun addLanguage(assetPath: String, lang: Language) {
         if (languages.contains(lang)) {

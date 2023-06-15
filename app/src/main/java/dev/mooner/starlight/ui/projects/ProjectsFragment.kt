@@ -71,8 +71,10 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     private var alignState: Align<Project> = getAlignByName(
         GlobalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name)
     )?: DEFAULT_ALIGN
-    private var isReversed: Boolean = GlobalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_REVERSED).toBoolean()
-    private var isActiveFirst: Boolean = GlobalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_ACTIVE_FIRST).toBoolean()
+    private var isReversed: Boolean =
+        GlobalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_REVERSED).toBoolean()
+    private var isActiveFirst: Boolean =
+        GlobalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_ACTIVE_FIRST).toBoolean()
 
     @SuppressLint("CheckResult")
     override fun onCreateView(
@@ -153,8 +155,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                 visibility = View.VISIBLE
 
                 setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_box_empty, 0, 0)
-                text = getString(R.string.nothing_yet)
-                    .format("프로젝트가", "(⊙_⊙;)")
+                text = getString(R.string.no_projects)
             }
         } else {
             binding.textViewNoProjectYet.visibility = View.GONE
@@ -202,9 +203,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     @SuppressLint("CheckResult")
     private fun showProjectAlignDialog() =
         MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            cornerRadius(res = R.dimen.card_radius)
-            maxWidth(res = R.dimen.dialog_width)
-            lifecycleOwner(this@ProjectsFragment)
+            setCommonAttrs()
             gridItems(aligns.toGridItems()) { dialog, _, item ->
                 alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
                 isReversed = dialog.findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked
@@ -220,10 +219,8 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     @SuppressLint("CheckResult")
     private fun showNewProjectDialog() =
         MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            cornerRadius(res = R.dimen.card_radius)
-            maxWidth(res = R.dimen.dialog_width)
-            customView(R.layout.dialog_new_project)
-            lifecycleOwner(this@ProjectsFragment)
+            setCommonAttrs()
+            customView(R.layout.dialog_new_project, scrollable = false, horizontalPadding = true)
             cancelOnTouchOutside(true)
             noAutoDismiss()
 
@@ -256,7 +253,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                     nameEditText.requestFocus()
                     return@positiveButton
                 }
-                if (!"(^[-_0-9A-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+\$)".toRegex().matches(projectName)) {
+                if (!"(^[-_\\dA-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+\$)".toRegex().matches(projectName)) {
                     nameEditText.error = getString(R.string.project_name_format_error)
                     nameEditText.requestFocus()
                     return@positiveButton
@@ -283,7 +280,8 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             //`}
         }
 
-    private fun getAlignByName(name: String): Align<Project>? = aligns.find { it.name == name }
+    private fun getAlignByName(name: String): Align<Project>? =
+        aligns.find { it.name == name }
 
     private fun sortDataAsync(): Flow<List<Project>> =
         flow {
@@ -310,7 +308,14 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             .flowOn(Dispatchers.Default)
             .onEach { list -> reloadList(list) }
         lifecycleScope.launch {
-            sortFlow.collect()
+            sortDataAsync()
+                .transform { list ->
+                    emit(list.map { ProjectListItem().withProject(it) })
+                }
+                .collect { list ->
+                    LOG.verbose { list.size }
+                    reloadList(list)
+                }
         }
 
         binding.textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name

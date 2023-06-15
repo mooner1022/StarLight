@@ -7,9 +7,11 @@ data class Version(
     val major: Int,
     val minor: Int,
     val patch: Int,
-    val build: Int? = null
+    val build: String? = null
 ) {
     companion object {
+
+        @JvmStatic
         fun fromString(string: String): Version {
             if (string.count{ it == '.' } < 2) throw IllegalArgumentException("Illegal version string")
             try {
@@ -19,13 +21,14 @@ data class Version(
                     major = split[0].toInt(),
                     minor = split[1].toInt(),
                     patch = split[2].toInt(),
-                    build = if (split.size > 3) split[3].toIntOrNull() else null
+                    build = if (split.size > 3) split[3] else null
                 )
             } catch (e: Exception) {
                 throw IllegalArgumentException("Failed to parse version string: $e")
             }
         }
 
+        @JvmStatic
         fun check(string: String): Boolean {
             if (string.count{ it == '.' } < 2) return false
             try {
@@ -42,7 +45,10 @@ data class Version(
     }
 
     override fun toString(): String =
-        (if (build != null) arrayOf(major, minor, patch, build) else arrayOf(major, minor, patch)).joinToString(".")
+        (if (build != null)
+            arrayOf(major, minor, patch, build)
+        else
+            arrayOf(major, minor, patch)).joinToString(".")
 
     override fun equals(other: Any?): Boolean = when(other) {
         null -> false

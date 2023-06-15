@@ -6,12 +6,10 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.cardview.widget.CardView
-import androidx.lifecycle.flowWithLifecycle
 import androidx.recyclerview.widget.RecyclerView
 import coil.transform.RoundedCornersTransformation
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.snackbar.Snackbar
-import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.CardProjectButtonsBinding
 import dev.mooner.starlight.databinding.CardProjectsBinding
@@ -36,7 +34,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.serialization.decodeFromString
 import java.io.File
 import kotlin.properties.Delegates
-import kotlin.system.measureTimeMillis
 
 private val LOG = LoggerFactory.logger {  }
 
@@ -88,7 +85,7 @@ class ProjectListAdapter(
                         //"JS_V8" -> R.drawable.ic_v8
                         else -> project.getLanguage().getIconFileOrNull()
                     }
-                    val tint = if (icon == null) R.color.main_purple else null
+                    val tint = if (icon == null) R.color.main_bright else null
                     it.loadWithTint(
                         data = icon?: R.drawable.ic_round_developer_mode_24,
                         tintColor = tint
@@ -118,7 +115,7 @@ class ProjectListAdapter(
                     }
 
                     val buttonBackgroundColor = context.getColor(R.color.transparent)
-                    val customButtons: List<MutableMap<String, TypedString>> =
+                    val customButtons: List<MutableMap<String, PrimitiveTypedString>> =
                         Session.json.decodeFromString(project.config.category("beta_features").getString("custom_buttons", "[]"))
                     for (button in customButtons) {
                         val buttonId = button["button_id"]!!.castAs<String>()
@@ -199,7 +196,7 @@ class ProjectListAdapter(
                     }
                     context.startActivityWithExtra(
                         DebugRoomActivity::class.java,
-                        mapOf("projectName" to project.info.name)
+                        mapOf(DebugRoomActivity.EXTRA_PROJECT_NAME to project.info.name)
                     )
                 }
                 R.id.buttonProjectConfig ->

@@ -24,13 +24,11 @@ object EventHandler: CoroutineScope {
         eventPublisher.emit(event)
 
     fun fireEventWithScope(event: Event, scope: CoroutineScope = this) =
-        scope.launch {
-            eventPublisher.emit(event)
-        }
+        scope.launch { eventPublisher.emit(event) }
 }
 
 fun eventHandlerScope(): CoroutineScope =
-    CoroutineScope(EventHandler.coroutineContext + SupervisorJob(EventHandler.coroutineContext.job))
+    CoroutineScope(EventHandler.coroutineContext)
 
 inline fun <reified T: Event> EventHandler.on(
     scope: CoroutineScope = this,

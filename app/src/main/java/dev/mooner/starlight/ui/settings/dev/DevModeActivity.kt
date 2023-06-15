@@ -27,7 +27,7 @@ fun Context.startDevModeActivity() {
             category {
                 id = "dev_mode_config"
                 title = "개발자 모드"
-                textColor = color { "#706EB9" }
+                textColor = getColor(R.color.main_bright)
                 items {
                     toggle {
                         id = "show_internal_log"
@@ -73,7 +73,7 @@ fun Context.startDevModeActivity() {
             category {
                 id = "beta_features"
                 title = "실험적 기능"
-                textColor = color { "#706EB9" }
+                textColor = getColor(R.color.main_bright)
                 items {
                     button {
                         id = "caution"
@@ -103,17 +103,19 @@ fun Context.startDevModeActivity() {
             category {
                 id = "debug_info"
                 title = "debug info"
-                textColor = color { "#706EB9" }
+                textColor = getColor(R.color.main_bright)
                 items {
                     fun debugInfo(title: String, value: String) = button {
                         id = title
                         this.title = title
                         description = value
                     }
+                    val (screenWidth, screenHeight) = getScreenSizeDp(this@startDevModeActivity)
                     val layoutModeString = when(layoutMode) {
                         LAYOUT_DEFAULT -> "LAYOUT_DEFAULT"
-                        LAYOUT_TABLET -> "LAYOUT_TABLET"
-                        else -> "UNKNOWN"
+                        LAYOUT_TABLET  -> "LAYOUT_TABLET"
+                        LAYOUT_SLIM    -> "LAYOUT_SLIM"
+                        else           -> "UNKNOWN"
                     }
                     val uiMode = nightModeFlags
                     val uiModeString = when(uiMode) {
@@ -123,13 +125,14 @@ fun Context.startDevModeActivity() {
                         else -> "UNKNOWN"
                     }
                     debugInfo("globalPower", GlobalConfig.category("general").getBoolean("global_power").toString())
+                    debugInfo("screenSizeDp", "$screenWidth x $screenHeight")
                     debugInfo("layoutMode", "$layoutMode ($layoutModeString)")
                     debugInfo("uiMode", "$uiMode ($uiModeString)")
                     debugInfo("widgets", GlobalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
-                    debugInfo("plugins", pluginManager.getPlugins().joinToString { it.info.id })
+                    debugInfo("plugins", pluginManager.plugins.joinToString { it.info.id })
                     //debugInfo("libs", )
                     debugInfo("pluginSafeMode", GlobalConfig.category("plugin").getBoolean("safe_mode").toString())
-                    debugInfo("baseDirectory", getInternalDirectory().path)
+                    debugInfo("baseDirectory", getStarLightDirectory().path)
                     debugInfo("PLUGINCORE_VERSION", dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION.toString())
                 }
             }

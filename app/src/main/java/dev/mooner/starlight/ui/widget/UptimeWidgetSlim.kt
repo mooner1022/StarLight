@@ -5,7 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextSwitcher
 import dev.mooner.starlight.R
-import dev.mooner.starlight.core.session.ApplicationSession
+import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.plugincore.widget.WidgetSize
 import dev.mooner.starlight.utils.formatTime
@@ -33,7 +33,7 @@ class UptimeWidgetSlim: Widget() {
                 }
                 val diffMillis = System.currentTimeMillis() - ApplicationSession.initMillis
                 mainScope.launch {
-                    uptimeText!!.setText(formatTime(diffMillis))
+                    uptimeText?.setText(formatTime(diffMillis))
                 }
             }
         }
@@ -84,6 +84,7 @@ class UptimeWidgetSlim: Widget() {
     }
 
     override fun onCreateThumbnail(view: View) {
-        LayoutInflater.from(view.context).inflate(R.layout.widget_uptime_slim, view as ViewGroup, true)
+        LayoutInflater.from(view.context)
+            .inflate(R.layout.widget_uptime_slim, view as ViewGroup, true)
     }
 }

@@ -6,7 +6,6 @@
 
 package dev.mooner.starlight.plugincore
 
-import android.os.Build
 import dev.mooner.starlight.plugincore.api.ApiManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.language.LanguageManager
@@ -35,30 +34,14 @@ object Session {
     private var mIsInitComplete = false
     val isInitComplete get() = mIsInitComplete
 
-    private val mJson: ThreadLocal<Json> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        ThreadLocal.withInitial {
-            Json {
-                isLenient = true
-                ignoreUnknownKeys = true
-                prettyPrint = true
-            }
-        }
-    } else {
-        object : ThreadLocal<Json>() {
-            override fun initialValue(): Json {
-                return Json {
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                    prettyPrint = true
-                }
-            }
-        }
+    val json: Json = Json {
+        isLenient = true
+        ignoreUnknownKeys = true
+        prettyPrint = true
     }
-    val json: Json
-        get() = mJson.get()!!
 
     @Deprecated(
-        message = "Retained for legacy code compatability, use GlobalConfig",
+        message = "Retained for legacy code compatibility, use GlobalConfig",
         replaceWith = ReplaceWith(
             "GlobalConfig",
             "dev.mooner.starlight.plugincore.config.GlobalConfig")
@@ -131,7 +114,5 @@ object Session {
         pluginLoader.purge()
         pluginManager.purge()
         projectManager.purge()
-
-        mJson.remove()
     }
 }

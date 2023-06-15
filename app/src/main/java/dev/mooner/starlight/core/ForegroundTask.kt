@@ -18,7 +18,6 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
-import dev.mooner.starlight.core.session.ApplicationSession
 
 class ForegroundTask: Service() {
 

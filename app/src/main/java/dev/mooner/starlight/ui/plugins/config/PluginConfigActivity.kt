@@ -117,15 +117,16 @@ class PluginConfigActivity: AppCompatActivity() {
                     type = ButtonConfigObject.Type.FLAT
                     setOnClickListener { view ->
                         MaterialDialog(binding.root.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                            cornerRadius(25f)
+                            setCommonAttrs()
                             title(text = "정말 [${plugin.info.fullName}](을)를 삭제할까요?")
-                            message(text = "주의: 삭제시 되돌릴 수 없습니다.")
+                            message(text = "주의: 모든 설정과 하위 디렉토리가 함께 삭제되며, 되돌릴 수 없습니다.")
                             positiveButton(text = "확인") { dialog ->
                                 pluginManager.removePlugin(plugin.info.id)
                                 Snackbar.make(view, "플러그인을 삭제했습니다.\n앱을 재시작할까요?", Snackbar.LENGTH_LONG)
                                     .setAction("확인") {
                                         restartApplication()
                                     }
+                                    .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
                                     .show()
                                 dialog.dismiss()
                             }

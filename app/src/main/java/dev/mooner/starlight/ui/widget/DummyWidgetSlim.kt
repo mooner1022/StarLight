@@ -10,7 +10,6 @@ import dev.mooner.starlight.plugincore.utils.draw
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.plugincore.widget.WidgetSize
 
-
 class DummyWidgetSlim: Widget() {
 
     override val id: String = "dummy_slim"

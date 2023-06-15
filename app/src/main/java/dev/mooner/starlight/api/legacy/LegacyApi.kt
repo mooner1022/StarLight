@@ -8,6 +8,8 @@ package dev.mooner.starlight.api.legacy
 
 import android.content.Context
 import android.widget.Toast
+import dev.mooner.starlight.R
+import dev.mooner.starlight.api.original.NotificationApi
 import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.listener.NotificationListener
 import dev.mooner.starlight.plugincore.Session.projectManager
@@ -16,7 +18,10 @@ import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.runBlocking
@@ -26,6 +31,20 @@ private val LOG = LoggerFactory.logger {  }
 
 @Suppress("unused")
 class LegacyApi: Api<LegacyApi.Api>() {
+
+    override val name: String = "Api"
+
+    override val objects: List<ApiObject> =
+        getApiObjects<Api>()
+
+    override val instanceClass: Class<Api> =
+        Api::class.java
+
+    override val instanceType: InstanceType =
+        InstanceType.OBJECT
+
+    override fun getInstance(project: Project): Any =
+        Api(project)
 
     class Api(
         private val project: Project
@@ -59,15 +78,19 @@ class LegacyApi: Api<LegacyApi.Api>() {
         }
 
         fun prepare(scriptName: String): Int {
-            val project = projectManager.getProject(scriptName)?: return STATE_PROJECT_NOT_FOUND
-            if (project.isCompiled) return STATE_ALREADY_COMPILED
+            val project = projectManager.getProject(scriptName)
+                ?: return STATE_PROJECT_NOT_FOUND
+            if (project.isCompiled)
+                return STATE_ALREADY_COMPILED
             project.compile(throwException = true)
             return STATE_COMPILE_SUCCESS
         }
 
         fun unload(scriptName: String): Boolean {
-            val project = projectManager.getProject(scriptName)?: return false
-            if (!project.isCompiled) return false
+            val project = projectManager.getProject(scriptName)
+                ?: return false
+            if (!project.isCompiled)
+                return false
             project.destroy(requestUpdate = true)
             return true
         }
@@ -79,31 +102,34 @@ class LegacyApi: Api<LegacyApi.Api>() {
         }
 
         fun off(scriptName: String): Boolean {
-            val project = projectManager.getProject(scriptName)?: return false
+            val project = projectManager.getProject(scriptName)
+                ?: return false
             project.setEnabled(false)
             return true
         }
 
         fun on(): Boolean {
-            for (project in projectManager.getProjects()) {
+            for (project in projectManager.getProjects())
                 project.setEnabled(true)
-            }
             return true
         }
 
         fun on(scriptName: String): Boolean {
-            val project = projectManager.getProject(scriptName)?: return false
+            val project = projectManager.getProject(scriptName)
+                ?: return false
             project.setEnabled(true)
             return true
         }
 
         fun isOn(scriptName: String): Boolean {
-            val project = projectManager.getProject(scriptName)?: return false
+            val project = projectManager.getProject(scriptName)
+                ?: return false
             return project.info.isEnabled
         }
 
         fun isCompiled(scriptName: String): Boolean {
-            val project = projectManager.getProject(scriptName)?: return false
+            val project = projectManager.getProject(scriptName)
+                ?: return false
             return project.isCompiled
         }
 
@@ -116,13 +142,19 @@ class LegacyApi: Api<LegacyApi.Api>() {
             return projectManager.getProjects().map { it.info.name }.toTypedArray()
         }
 
-        fun replyRoom(room: String, message: String): Boolean {
-            return replyRoom(room, message, false)
-        }
 
+        @JvmOverloads
         fun replyRoom(room: String, message: String, hideToast: Boolean = false): Boolean {
             val result = NotificationListener.sendTo(room, message)
-            if (!hideToast && !result) Toast.makeText(GlobalApplication.requireContext(), "메세지가 수신되지 않은 방 '$room' 에 메세지를 보낼 수 없습니다.", Toast.LENGTH_LONG).show()
+            if (!hideToast && !result) {
+                val context = GlobalApplication.requireContext()
+                val content = context
+                    .getString(R.string.api_cannot_send_to_room)
+                    .format(room)
+
+                Toast.makeText(context, content, Toast.LENGTH_LONG).show()
+                LOG.warn { content }
+            }
             return result
         }
 
@@ -143,26 +175,26 @@ class LegacyApi: Api<LegacyApi.Api>() {
         }
 
         fun gc() {
-            LOG.warn { "Java 가상 머신은 자동으로 가비지 컬렉션을 수행합니다.\n뭘 하고 계신건지 정확히 알고 실행해 주세요." }
+            LOG.warn {
+                translate {
+                    Locale.ENGLISH { "Java Virtual Machine automatically makes garbage collection call.\nPlease be sure on what you're doing." }
+                    Locale.KOREAN  { "Java 가상 머신은 자동으로 가비지 컬렉션을 수행합니다.\n뭘 하고 계신건지 정확히 알고 실행해 주세요." }
+                }
+            }
             System.gc()
         }
 
         fun UIThread(func: Callable<Any>, onComplete: (error: Throwable?, result: Any?) -> Unit) {
             runBlocking {
-                val flow = flow<Any> {
-                    try {
-                        emit(func.call())
-                    } catch (e: Throwable) {
-                        emit(e)
+                flow<Any> {
+                    emit(func.call()) }
+                    .flowOn(Dispatchers.Main)
+                    .catch { e ->
+                        onComplete(e, null)
                     }
-                }.flowOn(Dispatchers.Main)
-                flow.collect { result ->
-                    if (result is Throwable) {
-                        onComplete(result, null)
-                    } else {
+                    .collect { result ->
                         onComplete(null, result)
                     }
-                }
             }
         }
 
@@ -171,7 +203,8 @@ class LegacyApi: Api<LegacyApi.Api>() {
         }
 
         fun getActiveThreadsCount(scriptName: String): Int {
-            val project = projectManager.getProject(scriptName)?: return 0
+            val project = projectManager.getProject(scriptName)
+                ?: return 0
             return project.activeJobs()
         }
 
@@ -180,7 +213,8 @@ class LegacyApi: Api<LegacyApi.Api>() {
         }
 
         fun interruptThreads(scriptName: String): Boolean {
-            val project = projectManager.getProject(scriptName)?: return false
+            val project = projectManager.getProject(scriptName)
+                ?: return false
             project.stopAllJobs()
             return true
         }
@@ -190,10 +224,12 @@ class LegacyApi: Api<LegacyApi.Api>() {
         }
 
         fun isTerminated(scriptName: String): Boolean {
-            val project = projectManager.getProject(scriptName)?: return false
+            val project = projectManager.getProject(scriptName)
+                ?: return false
             return project.activeJobs() == 0
         }
 
+        @JvmOverloads
         fun markAsRead(room: String? = null, packageName: String? = null): Boolean {
             return if (room == null)
                 NotificationListener.markAsRead()
@@ -201,14 +237,4 @@ class LegacyApi: Api<LegacyApi.Api>() {
                 NotificationListener.markAsRead(room)
         }
     }
-
-    override val name: String = "Api"
-
-    override val objects: List<ApiObject> = listOf()
-
-    override val instanceClass: Class<Api> = Api::class.java
-
-    override val instanceType: InstanceType = InstanceType.OBJECT
-
-    override fun getInstance(project: Project): Any = Api(project)
 }

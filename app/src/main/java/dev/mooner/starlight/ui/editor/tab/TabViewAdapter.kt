@@ -60,9 +60,8 @@ class TabViewAdapter(
                     holder.fileIcon.loadWithTint(icon, null) {
                         transformations(RoundedCornersTransformation(dp(4).toFloat()))
                     }
-                }?: holder.fileIcon.loadWithTint(
-                R.drawable.ic_round_code_24,
-                R.color.main_bright)
+                }
+                ?: holder.fileIcon.loadWithTint(R.drawable.ic_round_code_24, R.color.main_bright)
 
         holder.fileName.text = session.fileName.let { if (session.isUpdated) "$it *" else it }
         if (position == selectedIndex)
@@ -74,12 +73,21 @@ class TabViewAdapter(
             holder.closeButton.visibility = View.GONE
         else
             holder.closeButton.visibility = View.VISIBLE
+
         holder.closeButton.setOnClickListener {
-            sessions.removeAt(position)
-            notifyItemRemoved(position)
-            if (sessions.size == 1)
+            val actualIndex = sessions.indexOf(session)
+            sessions.removeAt(actualIndex)
+            notifyItemRemoved(actualIndex)
+
+            if (actualIndex != selectedIndex)
+                selectedIndex --
+
+            if (actualIndex != sessions.size)
+                notifyItemRangeChanged(actualIndex, sessions.size)
+            else if (sessions.size == 1)
                 notifyItemChanged(0)
-            onItemEvent?.invoke(EVENT_CLOSED, position, session)
+
+            onItemEvent?.invoke(EVENT_CLOSED, actualIndex, session)
         }
     }
 

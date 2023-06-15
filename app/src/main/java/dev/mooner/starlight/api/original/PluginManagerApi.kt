@@ -26,7 +26,7 @@ class PluginManagerApi: Api<PluginManagerApi.PluginManager>() {
         }
 
         fun getPlugins(): List<StarlightPlugin> {
-            return Session.pluginManager.getPlugins()
+            return Session.pluginManager.plugins.toList()
         }
     }
 

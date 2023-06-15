@@ -102,6 +102,14 @@ class GlobalApplication: Application() {
         CoroutineScope(Dispatchers.Default).launch {
             ApplicationSession.init(applicationContext)
                 .onCompletion {
+                    EventHandler.apply {
+                        on(callback = ::onProjectCreated)
+                        on(callback = ::onProjectInfoUpdated)
+                        on(callback = ::onProjectCompiled)
+                        on<Events.Scheme.SchemeOpenEvent> {
+                            LOG.info { params }
+                        }
+                    }
                     LoggerFactory.logger("System").info {
                         """
                             || Project ✦ StarLight |
@@ -110,14 +118,7 @@ class GlobalApplication: Application() {
                     }
                 }
                 .collect {
-                    EventHandler.apply {
-                        fireEvent(SessionStageUpdateEvent(value = it))
-                        if (it == null) {
-                            on(callback = ::onProjectCreated)
-                            on(callback = ::onProjectInfoUpdated)
-                            on(callback = ::onProjectCompiled)
-                        }
-                    }
+                    EventHandler.fireEvent(ApplicationEvent.Session.StageUpdate(it))
                 }
         }
     }

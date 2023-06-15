@@ -1,5 +1,6 @@
 package dev.mooner.starlight.ui.tree
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -13,7 +14,7 @@ import dev.mooner.starlight.databinding.TreeNodeBinding
 
 abstract class TreeAdapter <T> (
     private val context: Context,
-    val fullNode: List<Node<T>>
+    private var fullNode: List<Node<T>>
 ): RecyclerView.Adapter<TreeAdapter<T>.TreeViewHolder>() {
 
     protected val displayedNodes: MutableList<Node<T>> = arrayListOf()
@@ -106,6 +107,13 @@ abstract class TreeAdapter <T> (
 
     override fun getItemCount(): Int =
         displayedNodes.size
+
+    @SuppressLint("NotifyDataSetChanged")
+    protected fun recreateWith(fullNode: List<Node<T>>) {
+        fullNode.forEach { println("R: " + it.content) }
+        this.fullNode = fullNode
+        replaceAll(fullNode)
+    }
 
     init {
         displayNodes(fullNode)

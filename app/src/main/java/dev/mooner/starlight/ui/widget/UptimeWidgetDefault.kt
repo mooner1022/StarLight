@@ -5,7 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextSwitcher
 import dev.mooner.starlight.R
-import dev.mooner.starlight.core.session.ApplicationSession
+import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.plugincore.widget.WidgetSize
 import dev.mooner.starlight.utils.formatTime
@@ -34,19 +34,21 @@ class UptimeWidgetDefault: Widget() {
                 val diffMillis = System.currentTimeMillis() - ApplicationSession.initMillis
                 val formatStr = formatTime(diffMillis)
                 mainScope.launch {
-                    uptimeText!!.setText(formatStr)
+                    uptimeText?.setText(formatStr)
                 }
             }
         }
 
     override fun onCreateWidget(view: View) {
         if (uptimeTimer != null) return
+
         LayoutInflater.from(view.context).inflate(R.layout.widget_uptime_default, view as ViewGroup, true)
-        with(view) {
-            uptimeText = findViewById(R.id.uptimeText)
-            uptimeText!!.setInAnimation(context, R.anim.text_fade_in)
-            uptimeText!!.setOutAnimation(context, R.anim.text_fade_out)
+
+        uptimeText = view.findViewById<TextSwitcher>(R.id.uptimeText).apply {
+            setInAnimation(context, R.anim.text_fade_in)
+            setOutAnimation(context, R.anim.text_fade_out)
         }
+
         scheduleTimer()
         isCreated = true
     }

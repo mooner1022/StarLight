@@ -27,7 +27,6 @@ data class ChatRoomImpl(
     }
 
     override fun send(message: String): Boolean {
-        println("send")
         return try {
             val sendIntent = Intent()
             val msg = Bundle()

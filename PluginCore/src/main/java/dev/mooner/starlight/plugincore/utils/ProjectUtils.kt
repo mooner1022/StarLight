@@ -12,12 +12,14 @@ import kotlin.reflect.full.createInstance
 
 inline fun <reified T: ProjectEvent> Project.fireEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean {
     logger.v("EventManager", "Calling explicit event ${T::class.simpleName} for project ${this.info.name}")
-    val event = T::class.createInstance().also { event ->
-        for ((index, arg) in event.argTypes.withIndex()) {
-            if (arg != args[index]::class)
-                error("Passed argument types [${args.joinToString { clazz -> clazz::class.simpleName.toString() }}] do not match the required argument types: [${event.argTypes.joinToString { clazz -> clazz.simpleName.toString() }}]")
+    val event = T::class.createInstance()
+    event.argTypes
+        .zip(args)
+        .any { it.first != it.second::class }
+        .runIf(true) {
+            error("Argument type mismatch, registered: [${event.argTypes.joinClassNames()}], provided: [${args.joinClassNames()}]")
         }
-    }
+
     this.callFunction(event.functionName, args, onFailure)
     return true
 }

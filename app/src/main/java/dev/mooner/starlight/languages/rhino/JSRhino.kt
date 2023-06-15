@@ -74,8 +74,10 @@ class JSRhino: Language() {
                 when(methodBlock.instanceType) {
                     InstanceType.CLASS -> {
                         val line = "const ${methodBlock.name} = Packages.${methodBlock.instanceClass.name};\n"
-                        if (importLines == null) importLines = StringBuilder(line)
-                        else importLines.append(line)
+                        if (importLines == null)
+                            importLines = StringBuilder(line)
+                        else
+                            importLines.append(line)
                         //context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
                     }
                     InstanceType.OBJECT -> {
@@ -94,11 +96,9 @@ class JSRhino: Language() {
 
         val langConf = getLanguageConfig()
         if (langConf.getBoolean("load_ext_modules", false)) {
-            LOG.verbose {
-                translate {
-                    Locale.ENGLISH { "[Load external modules] Option enabled" }
-                    Locale.KOREAN  { "[외부 모듈 로드] 설정 활성화됨" }
-                }
+            LOG.verboseTranslated {
+                Locale.ENGLISH { "[Load external modules] Option enabled" }
+                Locale.KOREAN  { "[외부 모듈 로드] 설정 활성화됨" }
             }
             val isSandboxed = langConf.getBoolean("load_ext_module_sandbox", false)
             val require = initRequire(context, scope, isSandboxed)
@@ -113,15 +113,12 @@ class JSRhino: Language() {
     }
 
     override fun release(scope: Any) {
-        super.release(scope)
         try {
             Context.exit()
         } catch (e: IllegalStateException) {
-            LOG.error {
-                translate {
-                    Locale.ENGLISH { "Failed to release engine scope: $e" }
-                    Locale.KOREAN  { "엔진 스코프를 release 하지 못했습니다: $e" }
-                }
+            LOG.verboseTranslated {
+                Locale.ENGLISH { "Failed to release engine scope: $e" }
+                Locale.KOREAN  { "엔진 스코프를 release 하지 못했습니다: $e" }
             }
         }
     }
@@ -137,11 +134,9 @@ class JSRhino: Language() {
             val context = enterContext()
             val function = rhino.get(functionName, scope)
             if (function == Scriptable.NOT_FOUND || function !is Function) {
-                LOG.verbose {
-                    translate {
-                        Locale.ENGLISH { "WARN: Unable to locate function: $functionName" }
-                        Locale.KOREAN  { "경고: 일치하는 함수를 찾을 수 없음: $functionName" }
-                    }
+                LOG.verboseTranslated {
+                    Locale.ENGLISH { "WARN: Unable to locate function: $functionName" }
+                    Locale.KOREAN  { "경고: 일치하는 함수를 찾을 수 없음: $functionName" }
                 }
                 return
             }

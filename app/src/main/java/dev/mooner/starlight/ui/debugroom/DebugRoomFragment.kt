@@ -51,7 +51,6 @@ import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.plugincore.utils.fireEvent
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
-import dev.mooner.starlight.utils.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.utils.dp
 import dev.mooner.starlight.utils.toBitmap
 import kotlinx.coroutines.CoroutineScope
@@ -63,7 +62,7 @@ import kotlinx.serialization.encodeToString
 import java.io.File
 import java.util.*
 
-private val LOG = LoggerFactory.logger {  }
+private val logger = LoggerFactory.logger {  }
 
 private const val RESULT_BOT       = 0x0
 private const val RESULT_USER      = 0x1
@@ -88,14 +87,14 @@ class DebugRoomFragment: Fragment() {
     }
 
     private lateinit var projectName: String
-    private var showLeave    = true
-    private var fixedPadding = false
-    private var roomName    = "undefined"
-    private var sender      = "debug_sender"
-    private var botName     = "BOT"
-    private var sentPackage = PACKAGE_KAKAO_TALK
-    private var isGroupChat = false
-    private var sendOnEnter = false
+    private var showLeave       = true
+    private var fixedPadding    = false
+    private var roomName        = "undefined"
+    private var sender          = "debug_sender"
+    private var botName         = "BOT"
+    private var sentPackage     = PACKAGE_KAKAO_TALK
+    private var isGroupChat     = false
+    private var sendOnEnter     = false
     private var senderChatColor = color { "#F6946E" }
     private var botChatColor    = color { "#706EB9" }
 
@@ -123,9 +122,9 @@ class DebugRoomFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         imageHash    = 0
-        projectName  = arguments?.getString(ARG_PROJECT_NAME) ?: "DEBUG ROOM"
-        showLeave    = arguments?.getBoolean(ARG_SHOW_LEAVE) ?: true
-        fixedPadding = arguments?.getBoolean(ARG_FIXED_PAD) ?: false
+        projectName  = arguments?.getString(ARG_PROJECT_NAME) ?: "ERROR: Project name not defined"
+        showLeave    = arguments?.getBoolean(ARG_SHOW_LEAVE)  ?: true
+        fixedPadding = arguments?.getBoolean(ARG_FIXED_PAD)   ?: false
     }
 
     override fun onCreateView(
@@ -136,16 +135,13 @@ class DebugRoomFragment: Fragment() {
         _binding = FragmentDebugRoomBinding.inflate(inflater, container, false)
 
         val activity = requireActivity()
+        activity.bindLogNotifier()
 
         binding.roomTitle.text = if (roomName == "undefined") projectName else roomName
 
-        Session.projectManager.getProject(projectName).let {
-            if (it == null) {
-                Toast.makeText(activity, "프로젝트 '${projectName}'을 찾을 수 없어요 :(", Toast.LENGTH_LONG).show()
-                //finish()
-                return binding.root
-            }
-            project = it
+        project = Session.projectManager.getProject(projectName) ?: let {
+            Toast.makeText(activity, "프로젝트 '${projectName}'을 찾을 수 없어요 :(", Toast.LENGTH_LONG).show()
+            return binding.root
         }
 
         updateConfig()
@@ -256,6 +252,7 @@ class DebugRoomFragment: Fragment() {
             message = message,
             sender = ChatSender(
                 name = sender,
+                id = null,
                 profileBitmap = selfProfileBitmap
             ),
             room = DebugChatRoom(
@@ -354,14 +351,14 @@ class DebugRoomFragment: Fragment() {
     }
 
     private fun updateConfig() {
-        roomName = GlobalConfig.category("d_room").getString("name", "undefined")
-        sender = GlobalConfig.category("d_user").getString("name", "debug_sender")
-        botName = GlobalConfig.category("d_bot").getString("name", "BOT")
-        sentPackage = GlobalConfig.category("d_room").getString("package", PACKAGE_KAKAO_TALK)
-        isGroupChat = GlobalConfig.category("d_room").getBoolean("is_group_chat", false)
-        sendOnEnter = GlobalConfig.category("d_room").getBoolean("send_with_enter", false)
+        roomName        = GlobalConfig.category("d_room").getString("name", "undefined")
+        sender          = GlobalConfig.category("d_user").getString("name", "debug_sender")
+        botName         = GlobalConfig.category("d_bot") .getString("name", "BOT")
+        sentPackage     = GlobalConfig.category("d_room").getString("package", PACKAGE_KAKAO_TALK)
+        isGroupChat     = GlobalConfig.category("d_room").getBoolean("is_group_chat", false)
+        sendOnEnter     = GlobalConfig.category("d_room").getBoolean("send_with_enter", false)
         senderChatColor = GlobalConfig.category("d_user").getInt("chat_color", senderChatColor)
-        botChatColor = GlobalConfig.category("d_bot").getInt("chat_color", botChatColor)
+        botChatColor    = GlobalConfig.category("d_bot") .getInt("chat_color", botChatColor)
 
         requireActivity().runOnUiThread {
             binding.roomTitle.text = roomName
@@ -606,7 +603,7 @@ class DebugRoomFragment: Fragment() {
                 Toast.makeText(requireActivity(), ImagePicker.getError(data), Toast.LENGTH_SHORT).show()
             }
             else -> {
-                LOG.verbose { "Image select task canceled" }
+                logger.verbose { "Image select task canceled" }
             }
         }
     }

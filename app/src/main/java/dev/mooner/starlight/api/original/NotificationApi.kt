@@ -55,6 +55,8 @@ class NotificationApi: Api<NotificationApi.Notification>() {
 
             val context = GlobalApplication.requireContext()
             val builder = context.buildNotification()
+
+            
             NotificationManagerCompat.from(context).notify(id, builder.build())
         }
 

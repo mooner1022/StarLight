@@ -6,10 +6,12 @@ import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.google.android.material.bottomsheet.BottomSheetBehavior.*
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.maxkeppeler.sheets.core.Sheet
@@ -17,7 +19,6 @@ import com.maxkeppeler.sheets.core.SheetStyle
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.DialogLogsBinding
 import dev.mooner.starlight.logging.LogCollector
-import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
@@ -26,6 +27,8 @@ import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.*
+
+typealias ConfirmCallback = (confirm: Boolean) -> Unit
 
 class CustomSheet: Sheet() {
 
@@ -107,93 +110,47 @@ class CustomSheet: Sheet() {
 }
 
 fun Context.showLogsDialog() {
-    /*
-    val job = Job()
-
-    val mLogs = if (Session.globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false))
-        Logger.logs
-    else
-        Logger.filterNot(LogType.VERBOSE)
-
-    val mAdapter = LogsRecyclerViewAdapter(this).apply {
-        data = mLogs.toMutableList()
-    }
-    val mLayoutManager = LinearLayoutManager(this).apply {
-        reverseLayout = true
-        stackFromEnd = true
-    }
-    return MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-        if (this@showLogsDialog is AppCompatActivity)
-            lifecycleOwner(this@showLogsDialog)
-        cornerRadius(res = R.dimen.card_radius)
-        //maxWidth(res = R.dimen.dialog_width)
-        cancelOnTouchOutside(true)
-        noAutoDismiss()
-        title(text = context.getString(R.string.title_logs))
-        customView(R.layout.dialog_logs)
-        positiveButton(text = context.getString(R.string.close)) {
-            dismiss()
-        }
-
-        val recycler: RecyclerView = findViewById(R.id.rvLog)
-        recycler.apply {
-            itemAnimator = FadeInUpAnimator()
-            layoutManager = mLayoutManager
-            adapter = mAdapter
-        }
-        mAdapter.notifyItemRangeInserted(0, mLogs.size)
-
-        CoroutineScope(Dispatchers.Main + job).launch {
-            EventHandler.on<Events.Log.LogCreateEvent>(this) {
-                if (log.type == LogType.VERBOSE && !Session.globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)) return@on
-                mAdapter.pushLog(log)
-                recycler.post {
-                    recycler.smoothScrollToPosition(mAdapter.data.size - 1)
-                }
-            }
-        }
-        onDismiss {
-            job.cancel()
-        }
-    }
-     */
-
-    /*
-    InfoSheet().show(this) {
-        title("Do you want to install Awake?")
-        peekHeight(dp(400))
-        content("Awake is a beautiful alarm app with morning challenges, advanced alarm management and more.")
-        onNegative("No") {
-            // Handle event
-        }
-        onPositive("Install") {
-            // Handle event
-        }
-    }
-
-    ColorSheet().show(this, width = resources.getDimensionPixelSize(R.dimen.dialog_width)) {
-        //peekHeight(480)
-        peekHeight(dp(400))
-        title("Background color")
-        onPositive { color ->
-            // Use color
-        }
-        displayHandle(true)
-    }
-     */
     CustomSheet().show(this) {
 
+    }
+}
+
+fun showConfirmDialog(context: Context, title: String, message: String, onDismiss: ConfirmCallback? = null) {
+    MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+        setCommonAttrs()
+        cancelOnTouchOutside(false)
+        noAutoDismiss()
+        title(text = title)
+        message(text = message)
+        positiveButton(text = context.getString(R.string.ok)) {
+            onDismiss?.invoke(true)
+            dismiss()
+        }
+        negativeButton(text = context.getString(R.string.cancel)) {
+            onDismiss?.invoke(false)
+            dismiss()
+        }
     }
 }
 
 @SuppressLint("CheckResult")
 fun Context.showErrorLogDialog(title: String, e: Throwable) {
     MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-        cornerRadius(25f)
+        setCommonAttrs()
         cancelOnTouchOutside(false)
         noAutoDismiss()
         title(text = title)
         message(text = e.toString() + "\n" + e.stackTraceToString())
         positiveButton(text = "닫기", click = MaterialDialog::dismiss)
     }
+}
+
+fun MaterialDialog.setCommonAttrs() {
+    cornerRadius(res = R.dimen.card_radius)
+}
+
+context(LifecycleOwner)
+fun MaterialDialog.setCommonAttrs() {
+    cornerRadius(res = R.dimen.card_radius)
+    lifecycleOwner(this@LifecycleOwner)
 }

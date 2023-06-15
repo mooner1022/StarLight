@@ -23,16 +23,18 @@ import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityProjectConfigBinding
 import dev.mooner.starlight.databinding.ConfigButtonFlatBinding
+import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.globalConfig
-import dev.mooner.starlight.plugincore.config.ButtonConfigObject
-import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.config.config
+import dev.mooner.starlight.plugincore.config.*
+import dev.mooner.starlight.plugincore.config.data.*
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.utils.bindFadeImage
+import dev.mooner.starlight.utils.setCommonAttrs
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 
 class ProjectConfigActivity: AppCompatActivity() {
@@ -46,6 +48,8 @@ class ProjectConfigActivity: AppCompatActivity() {
         binding = ActivityProjectConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        bindLogNotifier()
+
         val fabProjectConfig = binding.fabProjectConfig
 
         val projectName = intent.getStringExtra("projectName")!!
@@ -55,19 +59,20 @@ class ProjectConfigActivity: AppCompatActivity() {
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.configRecyclerView)
             onConfigChanged { parentId, id, view, data ->
-                if (parentId in changedData)
-                    changedData[parentId]!![id] = data
-                else
-                    changedData[parentId] = hashMapOf(id to data)
+                changedData
+                    .putIfAbsent(parentId, hashMapOf(id to data))
+                    ?.put(id, data)
 
                 if (!fabProjectConfig.isShown)
                     fabProjectConfig.show()
-                project.getLanguage().onConfigChanged(id, view, data)
+                if (parentId == project.getLanguage().id)
+                    project.getLanguage().onConfigChanged(id, view, data)
             }
             structure {
                 getConfigs(project)
             }
-            savedData(project.config.getData())
+            @Suppress("UNCHECKED_CAST")
+            savedData((project.config.getData() as MutableDataMap).injectEventIds(project.info.allowedEventIds))
             lifecycleOwner(this@ProjectConfigActivity)
         }.build()
 
@@ -80,6 +85,16 @@ class ProjectConfigActivity: AppCompatActivity() {
 
             project.config.edit {
                 for ((catId, data) in changedData) {
+                    if (catId == "events" && "allowed_events" in data) {
+                        project.info.allowedEventIds.clear()
+                        (data["allowed_events"] as String)
+                            .let<_, List<Map<String, PrimitiveTypedString>>>(Session.json::decodeFromString)
+                            .mapNotNull { map -> map["event_id"]?.castAs<String>() }
+                            .forEach(project.info.allowedEventIds::add)
+                        project.saveInfo()
+
+                        data -= "allowed_events"
+                    }
                     category(catId).apply {
                         data.forEach(::setAny)
                     }
@@ -88,7 +103,8 @@ class ProjectConfigActivity: AppCompatActivity() {
 
             val langConfIds = project.getLanguage().configStructure.map { it.id }
             val filtered = changedData.filter { it.key in langConfIds }
-            if (filtered.isNotEmpty()) project.getLanguage().onConfigUpdated(filtered)
+            if (filtered.isNotEmpty())
+                project.getLanguage().onConfigUpdated(filtered)
             Snackbar.make(view, "설정 저장 완료", Snackbar.LENGTH_SHORT).show()
             fabProjectConfig.hide()
         }
@@ -100,6 +116,18 @@ class ProjectConfigActivity: AppCompatActivity() {
         val textViewConfigProjectName: TextView = findViewById(R.id.textViewConfigProjectName)
         textViewConfigProjectName.text = projectName
         fabProjectConfig.hide()
+    }
+
+    private fun MutableDataMap.injectEventIds(ids: Set<String>): MutableDataMap {
+        ids.map { id -> mapOf("event_id" to (id typedAs "String")) }
+            .let(Json::encodeToString)
+            .let { str ->
+                if ("events" in this)
+                    this["events"]!!["allowed_events"] = str typedAs "String"
+                else
+                    this["events"] = mutableMapOf("allowed_events" to (str typedAs "String"))
+            }
+        return this
     }
 
     private fun getConfigs(project: Project): ConfigStructure {
@@ -137,7 +165,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                     list {
                         id = "allowed_events"
                         title = "호출이 허용된 이벤트"
-                        description = "이 프로젝트를 호출할 수 있는 이벤트 ID들이에요"
+                        description = "이 프로젝트를 호출할 수 있는 이벤트 ID 들이에요"
                         icon = Icon.NOTIFICATIONS_ACTIVE
                         iconTintColor = color { "#FF5C58" }
                         structure {
@@ -149,21 +177,25 @@ class ProjectConfigActivity: AppCompatActivity() {
                             }
                         }
                         onInflate { view ->
-                            LayoutInflater.from(view.context).inflate(R.layout.config_button_card, view as FrameLayout, true)
+                            LayoutInflater
+                                .from(view.context)
+                                .inflate(R.layout.config_button_card, view as FrameLayout, true)
                         }
                         onDraw { view, data ->
                             val binding = ConfigButtonFlatBinding.bind(view.findViewById(R.id.layout_configButton))
 
-                            binding.title.text = data["button_id"] as String
+                            binding.title.text = data["event_id"] as String
                             binding.description.visibility = View.GONE
-
-                            val icon = Icon.valueOf(data["button_icon"] as String)
-                            binding.icon.load(icon.drawableRes)
+                            binding.icon.visibility = View.GONE
                         }
                     }
                 }
             }
-            combine(project.getLanguage().configStructure)
+            project.getLanguage().let { language ->
+                combine(language.configStructure) { category ->
+                    category.id == language.id
+                }
+            }
 
             val (changeThreadPoolSize, addCustomButtons) = GlobalConfig.category("beta_features")
                 .run { arrayOf(
@@ -175,7 +207,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                 category {
                     id = "beta_features"
                     title = "실험적 기능"
-                    textColor = color("#706EB9")
+                    textColor = getColor(R.color.main_bright)
                     items {
                         if (changeThreadPoolSize) {
                             seekbar {
@@ -233,6 +265,21 @@ class ProjectConfigActivity: AppCompatActivity() {
                 textColor = color { "#FF865E" }
                 items {
                     button {
+                        id = "reload_info"
+                        title = "프로젝트 정보 다시 로드"
+                        description = "프로젝트 정보를 파일에서 다시 불러옵니다. 이 옵션은 앱의 정상적인 작동을 방해할 수 있어요."
+                        setOnClickListener { view ->
+                            project.loadInfo()
+                            Snackbar.make(
+                                view,
+                                "프로젝트 정보를 다시 불러왔어요.",
+                                Snackbar.LENGTH_SHORT
+                            ).show()
+                        }
+                        icon = Icon.REFRESH
+                        iconTintColor = color { "#FF5C58" }
+                    }
+                    button {
                         id = "interrupt_thread"
                         title = "프로젝트 스레드 강제 종료"
                         description = "${project.activeJobs()}개의 작업이 실행중이에요."
@@ -257,7 +304,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                                 binding.root.context,
                                 BottomSheet(LayoutMode.WRAP_CONTENT)
                             ).show {
-                                cornerRadius(25f)
+                                setCommonAttrs()
                                 cancelOnTouchOutside(true)
                                 noAutoDismiss()
                                 //icon(res = R.drawable.ic_round_delete_forever_24)

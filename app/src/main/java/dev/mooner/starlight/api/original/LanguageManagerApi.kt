@@ -44,5 +44,6 @@ class LanguageManagerApi: Api<LanguageManagerApi.LanguageManager>() {
         }
     )
 
-    override fun getInstance(project: Project): Any = LanguageManager(project)
+    override fun getInstance(project: Project): Any =
+        LanguageManager(project)
 }

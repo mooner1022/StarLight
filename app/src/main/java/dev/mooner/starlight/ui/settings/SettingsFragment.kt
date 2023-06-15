@@ -18,10 +18,6 @@ import dev.mooner.starlight.ui.settings.dev.startDevModeActivity
 import dev.mooner.starlight.ui.settings.info.AppInfoActivity
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.utils.restartApplication
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 class SettingsFragment : Fragment() {
 
@@ -64,7 +60,7 @@ class SettingsFragment : Fragment() {
                     toggle {
                         id = "global_power"
                         title = "전역 전원"
-                        description = "모든 봇의 답장/처리 여부를 결정합니다."
+                        description = "모든 프로젝트의 답장/처리 여부를 결정합니다."
                         icon = Icon.POWER
                         iconTintColor = color { "#5584AC" }
                         defaultValue = false
@@ -168,7 +164,7 @@ class SettingsFragment : Fragment() {
             category {
                 id = "info"
                 title = "정보"
-                textColor = color { "#706EB9" }
+                textColor = requireContext().getColor(R.color.main_bright)
                 items {
                     button {
                         id = "check_update"

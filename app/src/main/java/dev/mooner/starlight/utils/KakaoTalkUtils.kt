@@ -1,6 +1,7 @@
 package dev.mooner.starlight.utils
 
 import android.content.Context
+import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 
 fun Context.isKakaoTalkInstalled(): Boolean =
     isAppInstalled(PACKAGE_KAKAO_TALK)

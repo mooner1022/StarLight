@@ -25,13 +25,13 @@ class ProjectLoader(
         //projectDir.deleteRecursively()
         if (force || projects.isEmpty()) {
             projects.clear()
-            for (folder in dir.listFiles()?.filter { it.isDirectory }?:return emptyList()) {
+            for (folder in dir.listFiles()?.filter { it.isDirectory } ?:return emptyList()) {
                 val info: ProjectInfo
                 try {
-                    info = getProjectConfig(folder)
+                    info = getProjectInfo(folder)
                     val project: Project
                     try {
-                        project = Project(folder, info)
+                        project = ProjectImpl.loadFrom(folder, info)
                         if (info.isEnabled) {
                             try {
                                 project.compile(true)
@@ -57,13 +57,13 @@ class ProjectLoader(
         return projects.values.toList()
     }
 
-    private fun getProjectConfig(dir: File): ProjectInfo {
+    private fun getProjectInfo(dir: File): ProjectInfo {
         val result = dir.listFiles()?.find { it.isFile && it.name == "project.json" }
             ?: throw IllegalStateException("Could not find project.json from ${dir.name}")
         try {
             return json.decodeFromString(result.readText(Charsets.UTF_8))
         } catch (e: Exception) {
-            throw IllegalArgumentException("Could not parse project.json from ${dir.name}")
+            throw IllegalArgumentException("Failed to parse project.json from ${dir.name}")
         }
     }
 

@@ -27,7 +27,7 @@ class FileTreeAdapter(
 
         val icon = when(getLanguageByExtension(file.extension)) {
             DefaultEditorActivity.Language.JAVASCRIPT -> R.drawable.ic_js
-            DefaultEditorActivity.Language.PYTHON -> R.drawable.ic_python
+            DefaultEditorActivity.Language.PYTHON     -> R.drawable.ic_python
             else -> {
                 if (file.isDirectory)
                     R.drawable.ic_round_folder_24

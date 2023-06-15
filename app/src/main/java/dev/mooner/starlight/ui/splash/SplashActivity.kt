@@ -40,6 +40,8 @@ class SplashActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
+        bindLogNotifier()
+
         val pref = getSharedPreferences("general", 0)
         val isInitial = pref.getBoolean("isInitial", true)
         if (isInitial) pref.edit {
@@ -77,8 +79,6 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun init() {
-        val intent = Intent(this@SplashActivity, MainActivity::class.java)
-
         /*
         val startupFile = File(getInternalDirectory(), "STARTUP.info")
         if (startupFile.exists() && startupFile.isFile) {
@@ -103,7 +103,7 @@ class SplashActivity : AppCompatActivity() {
         lifecycleScope.launchWhenCreated {
             if (Session.isInitComplete) {
                 launch(Dispatchers.Default) {
-                    startApplication(initMillis, intent)
+                    startApplication(initMillis)
                 }
             } else {
                 EventHandler.on<SessionStageUpdateEvent>(this) {
@@ -112,13 +112,14 @@ class SplashActivity : AppCompatActivity() {
                         runOnUiThread {
                             binding.textViewLoadStatus.text = value
                         }
-                    } ?: startApplication(initMillis, intent)
+                    } ?: startApplication(initMillis)
                 }
             }
         }
     }
 
-    private suspend fun startApplication(initMillis: Long, intent: Intent) {
+    private suspend fun startApplication(initMillis: Long) {
+        val intent = Intent(this@SplashActivity, MainActivity::class.java)
         val currentMillis = System.currentTimeMillis()
         if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
             val delay = if (!ApplicationSession.isInitComplete)
@@ -140,7 +141,6 @@ class SplashActivity : AppCompatActivity() {
     }
 
     companion object {
-        private val T = SplashActivity::class.simpleName!!
 
         private const val MIN_LOAD_TIME = 1500L
         private const val ANIMATION_DURATION = 5000L

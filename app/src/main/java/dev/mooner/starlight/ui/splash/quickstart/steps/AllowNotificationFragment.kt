@@ -34,8 +34,9 @@ class AllowNotificationFragment : Fragment() {
     private var adapter: ConfigAdapter? = null
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View {
         _binding = FragmentAllowNotificationBinding.inflate(inflater, container, false)
         val activity = (activity as QuickStartActivity)
@@ -53,56 +54,55 @@ class AllowNotificationFragment : Fragment() {
         return binding.root
     }
 
-    private fun getStructure(activity: QuickStartActivity): ConfigStructure {
-        return config {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                category {
-                    id = "allow_battery"
-                    items {
-                        button {
-                            id = "ignore_battery_optimization"
-                            title = "배터리 최적화 무시"
-                            description = "앱이 꺼지거나 절전모드가 되지 않고 계속해서 실행될 수 있어요. (선택)"
-                            icon = Icon.BATTERY_SAVER
-                            iconTintColor = color("#7ACA8A")
-                            setOnClickListener { _ ->
-                                requestIgnoreBatteryOptimization(activity)
-                            }
+    private fun getStructure(activity: QuickStartActivity): ConfigStructure = config {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            category {
+                id = "allow_battery"
+                items {
+                    button {
+                        id = "ignore_battery_optimization"
+                        title = "배터리 최적화 무시"
+                        description = "앱이 꺼지거나 절전모드가 되지 않고 계속해서 실행될 수 있어요."
+                        icon = Icon.BATTERY_SAVER
+                        iconTintColor = color("#7ACA8A")
+                        setOnClickListener { _ ->
+                            requestIgnoreBatteryOptimization(activity)
                         }
                     }
                 }
             }
-            category {
-                id = "permissions"
-                title = "추가 권한"
-                textColor = activity.getColor(R.color.main_purple)
-                items {
-                    button {
-                        id = "allow_notification_read"
-                        title = "알림 읽기 권한 허용"
-                        description = "앱이 메신저의 알림을 읽을 수 있어요. (필수)"
-                        icon = Icon.NOTIFICATIONS_ACTIVE
-                        iconTintColor = color("#ffd866")
-                        setOnClickListener { view ->
-                            if (isNotificationGranted(activity))
-                                Snackbar.make(view, "이미 권한이 승인되었어요!", Snackbar.LENGTH_SHORT).show()
-                            else
-                                requestNotificationPermission(activity)
+        }
+        category {
+            id = "permissions"
+            title = "추가 권한"
+            textColor = activity.getColor(R.color.main_bright)
+            items {
+                button {
+                    id = "allow_notification_read"
+                    title = "알림 읽기 권한 허용"
+                    description = "앱이 메신저의 알림을 읽을 수 있어요. *"
+                    icon = Icon.NOTIFICATIONS_ACTIVE
+                    iconTintColor = color("#ffd866")
+                    setOnClickListener { view ->
+                        if (isNotificationGranted(activity)) {
+                            Snackbar.make(view, "이미 권한이 승인되었어요!", Snackbar.LENGTH_SHORT).show()
+                        } else {
+                            requestNotificationPermission(activity)
                         }
                     }
-                    button {
-                        id = "check_allowed"
-                        title = "권한 허용 확인"
-                        description = "위 권한을 허용하신 후 눌러주세요"
-                        icon = Icon.CHECK
-                        iconTintColor = color("#7ACA8A")
-                        setOnClickListener { view ->
-                            if (isNotificationGranted(activity))
-                                activity.showButton(QuickStartActivity.Buttons.Next)
-                            else {
-                                Snackbar.make(view, "아직 권한이 허용되지 않았어요.", Snackbar.LENGTH_SHORT).show()
-                                activity.hideButton(QuickStartActivity.Buttons.Next)
-                            }
+                }
+                button {
+                    id = "check_allowed"
+                    title = "권한 허용 확인"
+                    description = "위 권한을 허용하신 후 눌러주세요"
+                    icon = Icon.CHECK
+                    iconTintColor = color("#7ACA8A")
+                    setOnClickListener { view ->
+                        if (isNotificationGranted(activity)) {
+                            activity.showButton(QuickStartActivity.Buttons.Next)
+                        } else {
+                            Snackbar.make(view, "아직 권한이 허용되지 않았어요.", Snackbar.LENGTH_SHORT).show()
+                            activity.hideButton(QuickStartActivity.Buttons.Next)
                         }
                     }
                 }
@@ -130,5 +130,6 @@ class AllowNotificationFragment : Fragment() {
     }
 
     private fun requestNotificationPermission(context: Context) =
-        Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).let(context::startActivity)
+        Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+            .let(context::startActivity)
 }
