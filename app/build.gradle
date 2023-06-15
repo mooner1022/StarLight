@@ -6,38 +6,23 @@ plugins {
     id 'com.mikepenz.aboutlibraries.plugin'
 }
 
+def nightly = true
+
 android {
     compileSdkVersion 33
     buildToolsVersion "30.0.3"
 
-    def versionPropsFile = file('version.properties')
+    defaultConfig {
+        applicationId "dev.mooner.starlight"
+        minSdkVersion 24
+        targetSdkVersion 33
+        versionCode 1
+        versionName "0.1.0"
 
-    if (versionPropsFile.canRead()) {
-        Properties versionProps = new Properties()
+        resConfigs "en", "ko"
 
-        versionProps.load(new FileInputStream(versionPropsFile))
-
-        def code = versionProps.containsKey('VERSION_CODE')? versionProps['VERSION_CODE'].toInteger()++ : 1
-
-        versionProps['VERSION_CODE'] = code.toString()
-        versionProps.store(versionPropsFile.newWriter(), null)
-
-        defaultConfig {
-            applicationId "dev.mooner.starlight"
-            minSdkVersion 24
-            targetSdkVersion 33
-            versionCode code
-            versionName "1.0"
-
-            resConfigs "en", "ko"
-
-            testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-            vectorDrawables.useSupportLibrary = true
-        }
-    }
-    else {
-        versionPropsFile.createNewFile()
-        throw new GradleException("Could not read version.properties!")
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
     }
     buildFeatures {
         viewBinding true
@@ -46,6 +31,18 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            def generator = { String alphabet, int n ->
+                new Random().with {
+                    (1..n).collect { alphabet[ nextInt( alphabet.length() ) ] }.join()
+                }
+            }
+
+            def nightlySuffix = ""
+            if (nightly)
+                nightlySuffix = "_nightly"
+            versionNameSuffix "-build_${generator((('A'..'Z') + ('0'..'9')).join(), 6)}${nightlySuffix}"
         }
     }
     compileOptions {
@@ -67,10 +64,6 @@ repositories {
     }
     maven { url "https://jitpack.io" }
     maven { url "https://plugins.gradle.org/m2/" }
-}
-
-aboutLibraries {
-    exclusionPatterns = [~"androidx_.*"]
 }
 
 dependencies {
