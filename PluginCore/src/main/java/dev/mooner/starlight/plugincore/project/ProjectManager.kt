@@ -8,13 +8,13 @@ package dev.mooner.starlight.plugincore.project
 
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
-import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.utils.joinClassNames
 import dev.mooner.starlight.plugincore.utils.runIf
 import java.io.File
 import kotlin.reflect.full.createInstance
-import kotlin.reflect.jvm.jvmName
+
+typealias ProjectFailureCallback = (project: Project, e: Throwable) -> Unit
 
 class ProjectManager(
     private val projectDir: File
@@ -29,8 +29,15 @@ class ProjectManager(
         return projects.values.toList()
     }
 
-    fun getProject(name: String): Project? {
-        return projects[name]
+    @JvmOverloads
+    fun getProject(name: String, ignoreCase: Boolean = false): Project? {
+        return if (ignoreCase) {
+            projects.keys
+                .find { it.lowercase() == name.lowercase() }
+                ?.let(projects::get)
+        } else {
+            projects[name]
+        }
     }
 
     fun updateProjectInfo(name: String, callListener: Boolean = false, block: ProjectInfo.() -> Unit) {
@@ -82,10 +89,11 @@ class ProjectManager(
         EventHandler.fireEventWithScope(Events.Project.Delete(name))
     }
 
-    internal fun purge() = projects.forEach { (_, u) -> u.destroy(requestUpdate = true) }
+    internal fun purge() =
+        projects.forEach { (_, u) -> u.destroy(requestUpdate = true) }
 }
 
-inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, noinline onFailure: (project: Project, e: Throwable) -> Unit = { _, _ -> }) {
+inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, noinline onFailure: ProjectFailureCallback = { _, _ -> }) {
     val event = T::class.createInstance()
     event.argTypes
         .zip(args)
