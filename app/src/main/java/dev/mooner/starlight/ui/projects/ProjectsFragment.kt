@@ -15,6 +15,8 @@ import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.EditText
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -24,17 +26,18 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
-import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.snackbar.Snackbar
+import com.mikepenz.fastadapter.FastAdapter
+import com.mikepenz.fastadapter.adapters.ItemAdapter
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentProjectsBinding
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
+import dev.mooner.starlight.plugincore.config.GlobalConfig.getDefaultCategory
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
@@ -43,6 +46,7 @@ import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
 import dev.mooner.starlight.utils.dpToPx
+import dev.mooner.starlight.utils.setCommonAttrs
 import dev.mooner.starlight.utils.warn
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +66,8 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     private val updatedProjects: MutableSet<Project> = hashSetOf()
 
     private lateinit var projects: List<Project>
-    private var recyclerAdapter: ProjectListAdapter? = null
+    private lateinit var itemAdapter: ItemAdapter<ProjectListItem>
+
     private val aligns = arrayOf(
         ALIGN_GANADA,
         ALIGN_DATE,
@@ -84,8 +89,11 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     ): View {
         _binding = FragmentProjectsBinding.inflate(inflater, container, false)
 
-        val activity = activity as MainActivity
-        recyclerAdapter = ProjectListAdapter(activity)
+        //val activity = activity as MainActivity
+        //recyclerAdapter = ProjectListAdapter(activity)
+        itemAdapter = ItemAdapter()
+        val fastAdapter = FastAdapter.with(itemAdapter)
+
 
         projects = projectManager.getProjects()
 
@@ -98,23 +106,21 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
             alignStateIcon.load(alignState.icon)
 
-            recyclerViewProjectList.setup()
+            recyclerViewProjectList.setup(fastAdapter)
         }
+
+        updateTitle(projects)
 
         lifecycleScope.launchWhenCreated {
             updateEmptyText()
-            val sortFlow = sortDataAsync()
-                .flowOn(Dispatchers.Default)
-                .onEach { list ->
-                    recyclerAdapter!!.apply {
-                        data = list
-                        notifyItemRangeInserted(0, data.size)
-                    }
-                    updateTitle(projects)
-                }
-
             launch {
-                sortFlow.collect()
+                sortDataAsync()
+                    .flowWithLifecycle(lifecycle, Lifecycle.State.CREATED)
+                    .transform { list ->
+                        println(list.joinToString("\n") { it.info.name })
+                        emit(list.map { ProjectListItem().withProject(it) })
+                    }
+                    .collect(itemAdapter::set)
             }
 
             EventHandler.apply {
@@ -135,18 +141,22 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         }
     }
 
-    private suspend fun onProjectUpdated(event: Events.Project.InfoUpdate) = updateProjectView(event.project)
+    private suspend fun onProjectUpdated(event: Events.Project.InfoUpdate) =
+        itemAdapter.updateProjectView(event.project)
 
-    private suspend fun onProjectCompiled(event: Events.Project.Compile) = updateProjectView(event.project)
+    private suspend fun onProjectCompiled(event: Events.Project.Compile) =
+        itemAdapter.updateProjectView(event.project)
 
-    private suspend fun onProjectDeleted(event: Events.Project.Delete) = updateList(null)
+    private suspend fun onProjectDeleted(event: Events.Project.Delete) =
+        updateList(null)
 
-    private suspend fun onProjectCreated(event: Events.Project.Create) = updateList(event.project)
+    private suspend fun onProjectCreated(event: Events.Project.Create) =
+        updateList(event.project)
 
-    private fun RecyclerView.setup() {
+    private fun RecyclerView.setup(adapter: FastAdapter<ProjectListItem>) {
         itemAnimator = FadeInUpAnimator()
         layoutManager = LinearLayoutManager(activity)
-        adapter = recyclerAdapter
+        this.adapter = adapter
     }
 
     private suspend fun updateEmptyText() = withContext(Dispatchers.Main) {
@@ -162,11 +172,11 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         }
     }
 
-    private suspend fun updateProjectView(project: Project) {
+    private suspend fun ItemAdapter<ProjectListItem>.updateProjectView(project: Project) {
         if (isPaused)
             updatedProjects += project
         else {
-            val index = recyclerAdapter!!.data.indexOf(project)
+            val index = getAdapterPosition(project.hashCode().toLong())
             if (index == -1) {
                 with(requireContext()) {
                     LOG.warn(R.string.log_project_list_update_failure)
@@ -174,7 +184,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                 return
             }
             withContext(Dispatchers.Main) {
-                recyclerAdapter!!.notifyItemChanged(index)
+                //this@updateProjectView.getAdapterItem(index)
+                //!!.notifyItemChanged(index)
+                getAdapterItem(index).tryUpdateView()
                 updateTitle(projects)
             }
         }
@@ -189,7 +201,8 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         withContext(Dispatchers.Main) {
             updateEmptyText()
             update()
-            project?.let(::scrollTo)
+
+            project?.let { itemAdapter.scrollTo(it) }
         }
     }
 
@@ -248,7 +261,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
             positiveButton(res = R.string.create) {
                 val projectName = nameEditText.text.toString()
-                if (projectManager.getProject(projectName) != null) {
+                if (projectManager.getProject(projectName, ignoreCase = true) != null) {
                     nameEditText.error = getString(R.string.project_duplicate_name)
                     nameEditText.requestFocus()
                     return@positiveButton
@@ -293,7 +306,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                 .let { if (isReversed) it.reversed() else it })
         }
 
-    private fun reloadList(list: List<Project>) {
+    private fun reloadList(list: List<ProjectListItem>) {
+        itemAdapter.set(list)
+        /*
         recyclerAdapter?.apply {
             val orgDataSize = data.size
             data = listOf()
@@ -301,12 +316,11 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             data = list
             notifyItemRangeInserted(0, list.size)
         }
+         */
     }
 
     private fun update() {
-        val sortFlow = sortDataAsync()
-            .flowOn(Dispatchers.Default)
-            .onEach { list -> reloadList(list) }
+
         lifecycleScope.launch {
             sortDataAsync()
                 .transform { list ->
@@ -329,8 +343,8 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             }
         }
     }
-    private fun scrollTo(project: Project) {
-        val index = recyclerAdapter!!.data.indexOf(project)
+    private fun ItemAdapter<ProjectListItem>.scrollTo(project: Project) {
+        val index = getAdapterPosition(project.hashCode().toLong())
         if (index == -1) {
             with(requireContext()) {
                 LOG.warn(R.string.log_project_list_update_failure)
@@ -359,14 +373,14 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         }
         if (updatedProjects.isNotEmpty()) {
             for (project in updatedProjects) {
-                val index = recyclerAdapter!!.data.indexOf(project)
+                val index = itemAdapter.getAdapterPosition(project.hashCode().toLong())
                 if (index == -1) {
                     with(requireContext()) {
                         LOG.warn(R.string.log_project_list_update_failure)
                     }
                     continue
                 }
-                recyclerAdapter!!.notifyItemChanged(index)
+                //recyclerAdapter!!.notifyItemChanged(index)
             }
             updatedProjects.clear()
         }
@@ -375,7 +389,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        recyclerAdapter = null
+        //recyclerAdapter = null
     }
 
     companion object {
