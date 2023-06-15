@@ -6,12 +6,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import dev.mooner.starlight.databinding.ActivityConfigBinding
 import dev.mooner.starlight.event.ApplicationEvent
+import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.utils.*
-import dev.mooner.starlight.utils.initAdapter
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 private val LOG = LoggerFactory.logger {  }
 
@@ -32,6 +34,8 @@ class ConfigActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        bindLogNotifier()
 
         eventHandleScope.launch {
             EventHandler.on(this, ::onDestroyCall)
@@ -55,7 +59,13 @@ class ConfigActivity : AppCompatActivity() {
 
         binding.leave.setOnClickListener { finish() }
 
-        initAdapter()
+        try {
+            initAdapter()
+        } catch (e: Exception) {
+            LOG.error { "Failed to initialize config activity adapter: $e" }
+            finish()
+        }
+
         recyclerAdapter = ParentRecyclerAdapter(
             context = binding.root.context,
             configStructure = holder.struct,
