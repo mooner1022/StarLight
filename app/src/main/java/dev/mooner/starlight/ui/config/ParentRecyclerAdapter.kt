@@ -16,6 +16,7 @@ import coil.load
 import coil.size.Scale
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.config.*
+import dev.mooner.starlight.plugincore.config.data.DataMap
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.utils.isDevMode
@@ -26,7 +27,7 @@ private val LOG = LoggerFactory.logger {  }
 class ParentRecyclerAdapter(
     private val context: Context,
     var configStructure: ConfigStructure = mutableListOf(),
-    private val savedData: ConfigData = mutableMapOf(),
+    private val savedData: DataMap = mutableMapOf(),
     private val onConfigChanged: OnConfigChangedListener
 ): RecyclerView.Adapter<ParentRecyclerAdapter.ViewHolder>() {
 

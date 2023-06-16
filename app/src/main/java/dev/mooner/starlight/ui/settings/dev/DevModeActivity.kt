@@ -22,7 +22,7 @@ fun Context.startDevModeActivity() {
         uuid = activityId,
         title = "설정",
         subTitle = "개발자 모드",
-        saved = GlobalConfig.getAllConfigs(),
+        saved = GlobalConfig.getDataMap(),
         struct = config {
             category {
                 id = "dev_mode_config"

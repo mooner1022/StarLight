@@ -1,8 +1,8 @@
 package dev.mooner.starlight.plugincore.plugin
 
 import android.view.View
-import dev.mooner.starlight.plugincore.config.Config
 import dev.mooner.starlight.plugincore.config.ConfigStructure
+import dev.mooner.starlight.plugincore.config.data.ConfigData
 import java.io.File
 
 interface Plugin {

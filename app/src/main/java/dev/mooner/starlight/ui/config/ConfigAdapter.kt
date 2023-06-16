@@ -6,8 +6,9 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import dev.mooner.starlight.plugincore.config.ConfigData
+import dev.mooner.starlight.plugincore.config.ConfigBuilder
 import dev.mooner.starlight.plugincore.config.ConfigStructure
+import dev.mooner.starlight.plugincore.config.data.DataMap
 import kotlin.properties.Delegates
 
 typealias OnConfigChangedListener = (parentId: String, id: String, view: View?, data: Any) -> Unit
@@ -68,7 +69,7 @@ class ConfigAdapter private constructor(
         private var lifecycleOwner: LifecycleOwner? = null
 
         private var dataBlock: DataBlock by Delegates.notNull()
-        private var savedData: ConfigData = emptyMap()
+        private var savedData: DataMap = emptyMap()
 
         private var listener: OnConfigChangedListener = { _, _, _, _ -> }
 
@@ -84,7 +85,12 @@ class ConfigAdapter private constructor(
             this.dataBlock = data
         }
 
-        fun savedData(data: ConfigData) {
+        fun buildStruct(block: ConfigBuilder.() -> Unit) {
+            val builder = ConfigBuilder().apply(block)
+            structure { builder.build(flush = true) }
+        }
+
+        fun savedData(data: DataMap) {
             savedData = data
         }
 

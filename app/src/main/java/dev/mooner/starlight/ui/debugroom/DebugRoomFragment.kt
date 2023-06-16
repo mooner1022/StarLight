@@ -30,12 +30,14 @@ import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
+import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentDebugRoomBinding
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.LegacyEvent
 import dev.mooner.starlight.listener.legacy.Replier
+import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
@@ -196,7 +198,7 @@ class DebugRoomFragment: Fragment() {
         configAdapter = ConfigAdapter.Builder(activity) {
             bind(binding.bottomSheet.configRecyclerView)
             structure(::getStructure)
-            savedData(GlobalConfig.getAllConfigs())
+            savedData(GlobalConfig.getDataMap())
             onConfigChanged { parentId, id, _, data ->
                 GlobalConfig.edit {
                     category(parentId).setAny(id, data)

@@ -9,10 +9,10 @@ package dev.mooner.starlight.plugincore.plugin
 import android.view.View
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
-import dev.mooner.starlight.plugincore.config.Config
-import dev.mooner.starlight.plugincore.config.ConfigImpl
-import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.TypedString
+import dev.mooner.starlight.plugincore.config.*
+import dev.mooner.starlight.plugincore.config.data.ConfigData
+import dev.mooner.starlight.plugincore.config.data.DataMap
+import dev.mooner.starlight.plugincore.config.data.InMemoryConfig
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.internal.Logger
 import dev.mooner.starlight.plugincore.project.Project
@@ -69,7 +69,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
     )
     override fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    override fun onConfigUpdated(config: Config, updated: Map<String, Set<String>>) {}
+    override fun onConfigUpdated(config: ConfigData, updated: Map<String, Set<String>>) {}
 
     override fun onConfigChanged(id: String, view: View?, data: Any) {}
 
@@ -86,14 +86,14 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    internal fun setConfigPath(path: File) {
-        configPath = path
-    }
-
-    protected fun getPluginConfig(): Config {
-        return if (configPath == null || !configPath!!.isFile || !configPath!!.exists()) ConfigImpl(emptyMap()) else {
-            val loadedMap: Map<String, Map<String, TypedString>> = Session.json.decodeFromString(configPath!!.readText())
-            ConfigImpl(loadedMap)
+    protected fun getPluginConfig(): ConfigData {
+        val configPath = getExternalDataDirectory().resolve("config-plugin.json")
+        return if (configPath.isValidFile) {
+            configPath.readText()
+                .let<_, DataMap>(Session.json::decodeFromString)
+                .let(::InMemoryConfig)
+        } else {
+            InMemoryConfig(emptyMap())
         }
     }
 

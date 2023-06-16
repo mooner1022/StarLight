@@ -8,8 +8,10 @@ package dev.mooner.starlight.plugincore.config
 
 import android.view.View
 import dev.mooner.starlight.plugincore.Session.json
-import dev.mooner.starlight.plugincore.config.category.ConfigCategory
-import dev.mooner.starlight.plugincore.config.category.MutableConfigCategory
+import dev.mooner.starlight.plugincore.config.data.DataMap
+import dev.mooner.starlight.plugincore.config.data.MutableConfig
+import dev.mooner.starlight.plugincore.config.data.MutableDataMap
+import dev.mooner.starlight.plugincore.config.data.category.MutableConfigCategory
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.utils.getInternalDirectory
@@ -20,32 +22,19 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
-object GlobalConfig: Config {
+object GlobalConfig: MutableConfig {
 
     private const val FILE_NAME = "config-general.json"
     private const val DEFAULT_CATEGORY = "general"
 
-    private val mData: MutableMap<String, MutableMap<String, TypedString>> by lazy {
-        if (!file.exists() || !file.isFile) {
-            file.parentFile?.mkdirs()
-            file.createNewFile()
-            hashMapOf()
-        } else {
-            val raw = file.readText()
-            if (raw.isBlank())
-                hashMapOf()
-            else
-                json.decodeFromString(raw)
-        }
-    }
-
+    private val mData: MutableDataMap by lazy(::loadFromFile)
     private val cachedCategories: MutableMap<String, MutableConfigCategory> = hashMapOf()
     private var file = File(getInternalDirectory(), FILE_NAME)
     private var isSaved: Boolean = false
 
-    override fun getData(): ConfigData = mData
+    override fun getData(): DataMap = mData
 
-    override operator fun get(id: String): ConfigCategory =
+    override operator fun get(id: String): MutableConfigCategory =
         category(id)
 
     override fun contains(id: String): Boolean = categoryOrNull(id) != null
@@ -59,15 +48,15 @@ object GlobalConfig: Config {
     override fun categoryOrNull(id: String): MutableConfigCategory? =
         getCategoryOrNull(id)
 
-    fun getAllConfigs(): Map<String, Map<String, TypedString>> =
+    fun getDataMap(): DataMap =
         mData
 
-    fun edit(block: GlobalConfig.() -> Unit) {
+    override fun edit(block: MutableConfig.() -> Unit) {
         this.apply(block)
         push()
     }
 
-    fun push() {
+    override fun push() {
         isSaved = true
         CoroutineScope(Dispatchers.IO).launch {
             val str = json.encodeToString(mData)
@@ -97,8 +86,13 @@ object GlobalConfig: Config {
         }
     }
 
+    fun invalidateCache() {
+        mData.clear()
+        loadFromFile().forEach(mData::put)
+    }
+
     private fun getCategoryOrNull(id: String): MutableConfigCategory? =
-        cachedCategories[id] ?: mData[id]?.let { MutableConfigCategory(it) }
+        cachedCategories[id] ?: mData[id]?.let(::MutableConfigCategory)
 
     private fun getOrCreateCategory(id: String): MutableConfigCategory {
         return getCategoryOrNull(id) ?: let {
@@ -106,6 +100,20 @@ object GlobalConfig: Config {
             MutableConfigCategory(mData[id]!!).also {
                 cachedCategories[id] = it
             }
+        }
+    }
+
+    private fun loadFromFile(): MutableDataMap {
+        return if (!file.exists() || !file.isFile) {
+            file.parentFile?.mkdirs()
+            file.createNewFile()
+            hashMapOf()
+        } else {
+            val raw = file.readText()
+            if (raw.isBlank())
+                hashMapOf()
+            else
+                json.decodeFromString(raw)
         }
     }
 }

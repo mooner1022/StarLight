@@ -1,13 +1,13 @@
 /*
- * FileConfig.kt created by Minki Moon(mooner1022)
+ * FileConfig.kt created by Minki Moon(mooner1022) on 4/23/23, 11:26 AM
  * Copyright (c) mooner1022. all rights reserved.
  * This code is licensed under the GNU General Public License v3.0.
  */
 
-package dev.mooner.starlight.plugincore.config
+package dev.mooner.starlight.plugincore.config.data
 
 import dev.mooner.starlight.plugincore.Session.json
-import dev.mooner.starlight.plugincore.config.category.MutableConfigCategory
+import dev.mooner.starlight.plugincore.config.data.category.MutableConfigCategory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -23,7 +23,7 @@ class FileConfig(
 
     private val mutex: Mutex by lazy { Mutex(locked = false) }
 
-    private val mData: MutableMap<String, MutableMap<String, TypedString>> by lazy {
+    private val mData: MutableDataMap by lazy {
         if (!file.exists() || !file.isFile) {
             file.parentFile?.mkdirs()
             file.createNewFile()
@@ -37,7 +37,7 @@ class FileConfig(
         }
     }
 
-    override fun getData(): ConfigData = mData
+    override fun getData(): DataMap = mData
 
     override operator fun get(id: String): MutableConfigCategory =
         category(id)
