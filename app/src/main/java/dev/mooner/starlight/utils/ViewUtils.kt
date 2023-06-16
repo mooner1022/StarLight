@@ -4,9 +4,11 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Resources
+import android.util.DisplayMetrics
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import android.widget.ProgressBar
@@ -20,7 +22,7 @@ import coil.load
 import coil.request.Disposable
 import coil.request.ImageRequest
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
-import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.primaryConstructor
 
 private val LOG = LoggerFactory.logger {  }
 
@@ -99,7 +101,14 @@ inline fun View.applyLayoutParams(block: ViewGroup.LayoutParams.() -> Unit) {
 inline fun <reified T : ViewGroup.LayoutParams> View.applyLayoutParams(
     block: T.() -> Unit
 ) {
-    val params = (layoutParams?: T::class.createInstance()) as T
+    val params = (layoutParams ?: T::class.primaryConstructor!!.call(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)) as T
     block(params)
     layoutParams = params
+}
+
+fun getScreenSizeDp(context: Context): Pair<Float, Float> {
+    val displayMetrics: DisplayMetrics = context.resources.displayMetrics
+    val dpHeight: Float = displayMetrics.heightPixels / displayMetrics.density
+    val dpWidth: Float = displayMetrics.widthPixels / displayMetrics.density
+    return dpWidth to dpHeight
 }

@@ -14,7 +14,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.aboutlibraries.LibsBuilder
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityAppInfoBinding
-import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.utils.Icon
@@ -69,7 +69,7 @@ class AppInfoActivity : AppCompatActivity() {
                 button {
                     id = "version"
                     title = "PluginCore 버전"
-                    description = "v${dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION}"
+                    description = "v${Info.PLUGINCORE_VERSION}"
                     icon = Icon.LAYERS
                     iconTintColor = defaultColor
                 }
@@ -125,13 +125,13 @@ class AppInfoActivity : AppCompatActivity() {
                     icon = Icon.DEVELOPER_MODE
                     iconTintColor = defaultColor
                     setOnClickListener { _ ->
-                        LibsBuilder().apply {
-                            withShowLoadingProgress(true)
-                            withAboutIconShown(true)
-                            withAboutVersionShown(true)
-                            withAboutAppName("Project StarLight")
-                            withEdgeToEdge(true)
-                        }.start(this@AppInfoActivity)
+                        LibsBuilder()
+                            .withShowLoadingProgress(true)
+                            .withAboutIconShown(true)
+                            .withAboutVersionShown(true)
+                            .withAboutAppName("Project ✦ StarLight")
+                            .withEdgeToEdge(true)
+                            .start(this@AppInfoActivity)
                     }
                 }
             }

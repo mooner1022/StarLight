@@ -58,15 +58,17 @@ class DefaultEditorActivity : CodeEditorActivity() {
     private lateinit var codeView: WebView
     private lateinit var binding: ActivityDefaultEditorBinding
 
-    private var code: String by notNull()
-    private val isCodeUpdated get() = sessions.any { it.isUpdated }
-    private val sessions: MutableList<EditorSession> = arrayListOf()
-    private var currentSession: EditorSession? = null
+    private var theme          : Theme = Theme.NORD_DARK
 
-    private var theme: Theme = Theme.NORD_DARK
+    private var mainScriptName : String by notNull()
+    private var code           : String by notNull()
+    private val sessions       : MutableList<EditorSession> = arrayListOf()
+    private var currentSession : EditorSession? = null
+    private val isCodeUpdated  : Boolean get() = sessions.any { it.isUpdated }
+    private var isDebugTabOpen : Boolean = false
 
-    private var tabAdapter: TabViewAdapter? = null
-    private var configAdapter: ConfigAdapter? = null
+    private var tabAdapter     : TabViewAdapter? = null
+    private var configAdapter  : ConfigAdapter? = null
 
     private val isHotKeyShown: Boolean get() =
         GlobalConfig
@@ -90,10 +92,11 @@ class DefaultEditorActivity : CodeEditorActivity() {
 
         theme = GlobalConfig
             .category("e_general")
-            .getInt("theme", Theme.NORD_DARK.ordinal)
+            .getInt("theme", Theme.TOMORROW_NIGHT.ordinal)
             .let(Theme.values()::get)
 
         binding.scrollViewHotKeys.isHorizontalScrollBarEnabled = false
+
         // Lock drawer layout open by swipe
         binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.END)
 
@@ -154,7 +157,7 @@ class DefaultEditorActivity : CodeEditorActivity() {
         logger.verbose {
             translate {
                 Locale.ENGLISH { "File extension: $ext, Auto-detected language: $lang" }
-                Locale.KOREAN  { "파일 확장자: $ext, 자동 감지된 언어: $lang" }
+                Locale.KOREAN  { "파일 확장자: $ext, 자동으로 인식한 언어: $lang" }
             }
         }
 
@@ -266,7 +269,6 @@ class DefaultEditorActivity : CodeEditorActivity() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         getProject().config.edit {
             val str = Json.encodeToString(sessions.map { it.fileName })
             category("editor").setString("saved_tabs", str)

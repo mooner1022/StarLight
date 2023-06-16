@@ -26,7 +26,6 @@ import com.afollestad.materialdialogs.color.colorChooser
 import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.input.getInputField
 import com.afollestad.materialdialogs.input.input
-import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.google.android.material.switchmaterial.SwitchMaterial
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
@@ -35,7 +34,8 @@ import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.hasFlag
 import dev.mooner.starlight.ui.config.list.ListRecyclerAdapter
-import dev.mooner.starlight.ui.dialog.DialogUtils
+import dev.mooner.starlight.utils.setCommonAttrs
+import dev.mooner.starlight.utils.showConfirmDialog
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -68,7 +68,7 @@ class CategoryRecyclerAdapter(
             ConfigObjectType.BUTTON_CARD.viewType  -> R.layout.config_button_card
             ConfigObjectType.LIST.viewType         -> R.layout.config_list
             ConfigObjectType.CUSTOM.viewType       -> R.layout.config_custom
-            else -> error("Unhandled viewType: $viewType")
+            else -> error("Unknown viewType: $viewType")
         }
         val view = LayoutInflater.from(context).inflate(layout, parent, false)
         return ConfigViewHolder(view, viewType)
@@ -88,12 +88,16 @@ class CategoryRecyclerAdapter(
         }
         if (viewData !is CustomConfigObject && viewData !is CategoryConfigObject) {
             holder.title.text = viewData.title
-            if (viewData.description != null) {
-                holder.description.visibility = View.VISIBLE
-                holder.description.text = viewData.description
-            } else {
-                holder.description.visibility = View.GONE
+
+            holder.description.apply {
+                if (viewData.description != null) {
+                    visibility = View.VISIBLE
+                    text = viewData.description
+                } else {
+                    visibility = View.GONE
+                }
             }
+
             holder.icon.apply {
                 when {
                     viewData.icon != null -> when(viewData.icon) {
@@ -106,18 +110,17 @@ class CategoryRecyclerAdapter(
                     viewData.iconResId != null -> load(viewData.iconResId!!)
                 }
 
-                imageTintList = if (viewData.iconTintColor != null)
-                    ColorStateList.valueOf(viewData.iconTintColor!!)
-                else
-                    null
+                imageTintList = viewData.iconTintColor?.let(ColorStateList::valueOf)
                 //setColorFilter(viewData.iconTintColor, android.graphics.PorterDuff.Mode.SRC_IN)
             }
         }
+
         when(viewData.viewType) {
             ConfigObjectType.TOGGLE.viewType -> {
                 fun callListeners(isChecked: Boolean) {
                     (viewData as ToggleConfigObject).onValueChangedListener?.invoke(holder.toggle, isChecked)
                     onConfigChanged(viewData.id, holder.toggle, isChecked)
+
                     if (viewData.id in toggleListeners) {
                         for (listener in toggleListeners[viewData.id]!!) {
                             listener(isChecked)
@@ -132,7 +135,7 @@ class CategoryRecyclerAdapter(
                 holder.toggle.setOnCheckedChangeListener { _, isChecked ->
                     if (viewData.enableWarnMsg != null || viewData.disableWarnMag != null) {
                         with(viewData) { if (isChecked) enableWarnMsg else disableWarnMag }?.let { lazyMessage ->
-                            DialogUtils.showConfirmDialog(context, title = "경고", message = lazyMessage()) { isConfirmed ->
+                            showConfirmDialog(context, title = "경고", message = lazyMessage()) { isConfirmed ->
                                 if (isConfirmed) {
                                     callListeners(isChecked)
                                 } else {
@@ -149,6 +152,7 @@ class CategoryRecyclerAdapter(
                 holder.seekBar.progress = getDefault() as Int
                 val offset = (viewData as SeekbarConfigObject).min
 
+                holder.seekBarIndex.text = (holder.seekBar.progress + offset).toString()
                 holder.seekBar.max = viewData.max - offset
                 holder.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                     override fun onProgressChanged(
@@ -165,7 +169,6 @@ class CategoryRecyclerAdapter(
                         onConfigChanged(viewData.id, holder.seekBar, seekBar!!.progress + offset)
                     }
                 })
-                holder.seekBarIndex.text = (holder.seekBar.progress + offset).toString()
             }
             ConfigObjectType.STRING.viewType -> {
                 val data = viewData as StringConfigObject
@@ -205,8 +208,7 @@ class CategoryRecyclerAdapter(
                 holder.layoutButton.setOnClickListener {
                     if (!holder.layoutButton.isEnabled) return@setOnClickListener
                     MaterialDialog(it.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                        cornerRadius(res = R.dimen.card_radius)
-                        maxWidth(res = R.dimen.dialog_width)
+                        setCommonAttrs()
                         title(text = data.title)
                         input(waitForPositiveButton = false) { dialog, text ->
                             val require = data.require(text.toString())
@@ -230,6 +232,7 @@ class CategoryRecyclerAdapter(
                     val items = ArrayAdapter(context, android.R.layout.simple_spinner_item, (viewData as SpinnerConfigObject).items)
                     adapter = items
                     setBackgroundColor(context.getColor(R.color.transparent))
+                    setSelection(getDefault() as Int, true)
                     onItemSelectedListener = object : OnItemSelectedListener {
                         override fun onItemSelected(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                             viewData.onItemSelectedListener?.invoke(this@apply, position)
@@ -238,30 +241,29 @@ class CategoryRecyclerAdapter(
 
                         override fun onNothingSelected(p0: AdapterView<*>?) {}
                     }
-                    setSelection(getDefault() as Int, true)
                 }
             }
             ConfigObjectType.BUTTON_FLAT.viewType -> {
                 val data = viewData as ButtonConfigObject
+                if (data.backgroundColor != null) {
+                    holder.layoutButton.setBackgroundColor(data.backgroundColor!!)
+                }
                 if (data.onClickListener != null) {
                     holder.layoutButton.setOnClickListener {
                         if (holder.layoutButton.isEnabled)
                             data.onClickListener?.invoke(it)
                     }
                 }
-                if (data.backgroundColor != null) {
-                    holder.layoutButton.setBackgroundColor(data.backgroundColor!!)
-                }
             }
             ConfigObjectType.BUTTON_CARD.viewType -> {
                 val data = viewData as ButtonConfigObject
+                if (data.backgroundColor != null) {
+                    holder.cardViewButton.setCardBackgroundColor(data.backgroundColor!!)
+                }
                 if (data.onClickListener != null) {
                     holder.cardViewButton.setOnClickListener {
                         if (holder.cardViewButton.isEnabled) data.onClickListener?.invoke(it)
                     }
-                }
-                if (data.backgroundColor != null) {
-                    holder.cardViewButton.setCardBackgroundColor(data.backgroundColor!!)
                 }
             }
             ConfigObjectType.COLOR_PICKER.viewType -> {
@@ -275,11 +277,12 @@ class CategoryRecyclerAdapter(
 
                 val initialSelection = (getDefault() as Int).let { def -> if (def == 0x0) null else def }
 
+                holder.icon.imageTintList = initialSelection?.let(ColorStateList::valueOf)
                 holder.layoutButton.setOnClickListener { view ->
                     MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
                         var selected: Int? = null
-                        cornerRadius(res = R.dimen.card_radius)
-                        maxWidth(res = R.dimen.dialog_width)
+
+                        setCommonAttrs()
                         title(text = data.title)
                         colorChooser(
                             colors = colors,
@@ -302,8 +305,6 @@ class CategoryRecyclerAdapter(
                         negativeButton(R.string.cancel)
                     }
                 }
-
-                holder.icon.imageTintList = initialSelection?.let(ColorStateList::valueOf)
             }
             ConfigObjectType.LIST.viewType -> {
                 val data = viewData as ListConfigObject
@@ -351,10 +352,10 @@ class CategoryRecyclerAdapter(
                     val configData: MutableMap<String, Any> = mutableMapOf()
                     MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT))
                         .show {
-                            title(res = R.string.add)
-                            cornerRadius(res = R.dimen.card_radius)
-                            maxWidth(res = R.dimen.dialog_width)
-                            lifecycleOwner(view.findViewTreeLifecycleOwner())
+                            view.findViewTreeLifecycleOwner()?.let {
+                                setCommonAttrs()
+                            } ?: setCommonAttrs()
+
                             customView(R.layout.dialog_logs)
 
                             val recycler: RecyclerView = findViewById(R.id.rvLog)
