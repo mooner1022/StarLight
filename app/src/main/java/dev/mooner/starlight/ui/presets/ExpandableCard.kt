@@ -297,6 +297,13 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
         }
     }
 
+    fun getIconVisibility(): Int =
+        binding.cardIcon.visibility
+
+    fun setIconVisibility(visibility: Int) {
+        binding.cardIcon.visibility = visibility
+    }
+
     fun setOnSwitchChangeListener(listener: OnSwitchChangeListener) {
         this.switchListener = listener
     }
@@ -311,11 +318,14 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
 
     fun setOnInnerViewInflateListener(listener: () -> Unit) {
         if (innerView != null) {
-            //listener()
+            listener()
             return
         }
         this.viewInflateListener = listener
     }
+
+    val expanded: Boolean
+        get() = expandState == STATE_EXPANDED || expandState == STATE_EXPANDING
 
     var title: String?
         get() = _title
