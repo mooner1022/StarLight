@@ -49,4 +49,23 @@ sealed class Events {
             val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
     }
+
+    sealed class Scheme {
+
+        data class SchemeOpenEvent(
+            val params: Map<String, String>,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+    }
+
+    sealed class Locale {
+
+        /**
+         * This event should be only fired from main application, or system can break!
+         */
+        class Update(
+            val locale: LocaleEnum,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+    }
 }

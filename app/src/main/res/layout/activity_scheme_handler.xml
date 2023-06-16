@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ activity_scheme_handler.xml created by Minki Moon(mooner1022) on 23. 2. 12. 오전 2:06
+  ~ Copyright (c) mooner1022. all rights reserved.
+  ~ This code is licensed under the GNU General Public License v3.0.
+  -->
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.scheme.SchemeHandlerActivity">
+
+</androidx.constraintlayout.widget.ConstraintLayout>

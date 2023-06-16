@@ -10,29 +10,33 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
-
-    <permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
-
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.VIEW"/>
-        </intent>
-    </queries>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission"/>
 
     <application
         android:name=".core.GlobalApplication"
         android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:extractNativeLibs="false"
+        android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:localeConfig="@xml/locales_config"
         android:requestLegacyExternalStorage="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.StarLight.NoActionBar"
-        android:usesCleartextTraffic="true"
-        android:fullBackupContent="@xml/backup_descriptor"
-        android:dataExtractionRules="@xml/data_extraction_rules">
+        android:usesCleartextTraffic="true">
+        <activity
+            android:name=".ui.scheme.SchemeHandlerActivity"
+            android:exported="true">
+            <intent-filter>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <action android:name="android.intent.action.VIEW"/>
+                <data android:scheme="starlight" android:host="action"/>
+            </intent-filter>
+        </activity>
         <activity
             android:name=".ui.settings.notifications.NotificationRulesActivity"
             android:exported="true"/>
@@ -53,15 +57,10 @@
                 android:resource="@xml/provider_paths"/>
         </provider>
 
-        <activity
-            android:name=".ui.config.ConfigActivity">
-        </activity>
-        <activity
-            android:name=".ui.settings.info.AppInfoActivity"/>
-        <activity
-            android:name=".ui.crash.FatalErrorActivity"/>
-        <activity
-            android:name=".ui.plugins.config.PluginConfigActivity"/>
+        <activity android:name=".ui.config.ConfigActivity"/>
+        <activity android:name=".ui.settings.info.AppInfoActivity"/>
+        <activity android:name=".ui.crash.FatalErrorActivity"/>
+        <activity android:name=".ui.plugins.config.PluginConfigActivity"/>
         <activity
             android:name=".ui.splash.SplashActivity"
             android:exported="true">
@@ -71,12 +70,9 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ui.projects.config.ProjectConfigActivity"/>
-        <activity
-            android:name=".ui.editor.DefaultEditorActivity"/>
-        <activity
-            android:name=".ui.debugroom.DebugRoomActivity"/>
+        <activity android:name=".ui.projects.config.ProjectConfigActivity"/>
+        <activity android:name=".ui.editor.DefaultEditorActivity"/>
+        <activity android:name=".ui.debugroom.DebugRoomActivity"/>
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"/>
@@ -95,6 +91,15 @@
                 <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>
         </service>
+
+        <receiver
+            android:name=".listener.LocaleReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.LOCALE_CHANGED"/>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
