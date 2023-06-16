@@ -6,11 +6,34 @@
 
 package dev.mooner.starlight.plugincore.event
 
+import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
 import dev.mooner.starlight.plugincore.logger.LogData
 import kotlinx.coroutines.CoroutineScope
 import dev.mooner.starlight.plugincore.project.Project as SProject
+import dev.mooner.starlight.plugincore.translation.Locale as LocaleEnum
 
 sealed class Events {
+
+    sealed class Notification {
+
+        class Post(
+            val statusBarNotification: StatusBarNotification,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+
+        class Dismiss(
+            val sbn: StatusBarNotification,
+            val rankingMap: NotificationListenerService.RankingMap,
+            val reason: Int,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+
+        class Click(
+            val notificationId: Int,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+    }
 
     sealed class Project {
 
