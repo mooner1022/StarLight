@@ -130,7 +130,7 @@ class DefaultEditorActivity : CodeEditorActivity() {
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.bottomSheet.configRecyclerView)
             structure(::getStructure)
-            savedData(GlobalConfig.getAllConfigs())
+            savedData(GlobalConfig.getDataMap())
             onConfigChanged { parentId, id, _, data ->
                 GlobalConfig.edit {
                     category(parentId).setAny(id, data)
@@ -179,8 +179,8 @@ class DefaultEditorActivity : CodeEditorActivity() {
 
         tabAdapter = setupTabAdapter()
 
-        codeView = findViewById(R.id.editorWebView)
-        with(codeView) {
+        codeView = WebView(applicationContext)
+        with(codeView!!) {
             settings.apply {
                 builtInZoomControls = false
                 javaScriptEnabled = true
@@ -244,6 +244,7 @@ class DefaultEditorActivity : CodeEditorActivity() {
             }
             loadUrl(ENTRY_POINT)
         }
+        binding.webviewContainer.addView(codeView)
 
         setHotKeyVisibility(isHotKeyShown)
         val dp20 = dp(20)
@@ -273,8 +274,17 @@ class DefaultEditorActivity : CodeEditorActivity() {
             val str = Json.encodeToString(sessions.map { it.fileName })
             category("editor").setString("saved_tabs", str)
         }
+
+        codeView?.destroy()
+        codeView = null
+
         tabAdapter?.destroy()
         tabAdapter = null
+
+        configAdapter?.destroy()
+        configAdapter = null
+
+        super.onDestroy()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -612,7 +622,7 @@ class DefaultEditorActivity : CodeEditorActivity() {
         Base64.encodeToString(Uri.encode(text, "utf-8").toByteArray(), 0)
 
     private fun executeScript(script: String) =
-        codeView.post { codeView.loadUrl("javascript:$script") }
+        codeView?.post { codeView!!.loadUrl("javascript:$script") }
 
     private fun setSession(session: EditorSession) {
         setSession(session.sessionId, session.language, session.code!!)
