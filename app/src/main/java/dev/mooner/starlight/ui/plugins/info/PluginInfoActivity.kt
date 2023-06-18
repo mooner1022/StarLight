@@ -4,9 +4,10 @@ import android.content.Context
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.utils.startConfigActivity
-import kotlinx.coroutines.CoroutineScope
 
 fun Context.startPluginInfoActivity(
     plugin: StarlightPlugin
@@ -17,7 +18,10 @@ fun Context.startPluginInfoActivity(
         val defaultColor = getColor(R.color.main_bright)
         category {
             id = "general"
-            title = "기본"
+            title = translate {
+                Locale.ENGLISH { "General" }
+                Locale.KOREAN  { "기본" }
+            }
             textColor = defaultColor
             items {
                 button {
@@ -29,7 +33,10 @@ fun Context.startPluginInfoActivity(
                 }
                 button {
                     id = "version"
-                    title = "버전"
+                    title = translate {
+                        Locale.ENGLISH { "Version" }
+                        Locale.KOREAN  { "버전" }
+                    }
                     icon = Icon.BRANCH
                     iconTintColor = color { "#C073A0" }
                     description = "v${info.version}"
@@ -38,26 +45,38 @@ fun Context.startPluginInfoActivity(
         }
         category {
             id = "info"
-            title = "등록 정보"
+            title = translate {
+                Locale.ENGLISH { "Information" }
+                Locale.KOREAN  { "등록 정보" }
+            }
             textColor = defaultColor
             items {
                 button {
                     id = "author"
-                    title = "개발자"
+                    title = translate {
+                        Locale.ENGLISH { "Developer(s)" }
+                        Locale.KOREAN  { "개발자(들)" }
+                    }
                     icon = Icon.DEVELOPER_BOARD
                     iconTintColor = color { "#D47E97" }
                     description = info.authors.joinToString()
                 }
                 button {
                     id = "desc"
-                    title = "설명"
+                    title = translate {
+                        Locale.ENGLISH { "Description" }
+                        Locale.KOREAN  { "설명" }
+                    }
                     description = info.description
                     icon = Icon.LIST_BULLETED
                     iconTintColor = color { "#F59193" }
                 }
                 button {
                     id = "mainClass"
-                    title = "메인 클래스"
+                    title = translate {
+                        Locale.ENGLISH { "Main class" }
+                        Locale.KOREAN  { "메인 클래스" }
+                    }
                     icon = Icon.EXIT_TO_APP
                     iconTintColor = color { "#F9AE91" }
                     description = info.mainClass
@@ -66,7 +85,10 @@ fun Context.startPluginInfoActivity(
         }
         category {
             id = "file"
-            title = "파일"
+            title = translate {
+                Locale.ENGLISH { "File" }
+                Locale.KOREAN  { "파일" }
+            }
             textColor = defaultColor
             items {
                 button {
@@ -77,7 +99,10 @@ fun Context.startPluginInfoActivity(
                 }
                 button {
                     id = "size"
-                    title = "크기"
+                    title = translate {
+                        Locale.ENGLISH { "Size" }
+                        Locale.KOREAN  { "크기(용량)" }
+                    }
                     icon = Icon.COMPRESS
                     iconTintColor = color { "#4568DC" }
                     description = "${plugin.fileSize}mb"
@@ -86,26 +111,38 @@ fun Context.startPluginInfoActivity(
         }
         category {
             id = "library"
-            title = "라이브러리"
+            title = translate {
+                Locale.ENGLISH { "Library" }
+                Locale.KOREAN  { "라이브러리" }
+            }
             textColor = defaultColor
             items {
                 button {
                     id = "pluginCoreVersion"
-                    title = "PluginCore 버전"
+                    title = translate {
+                        Locale.ENGLISH { "PluginCore Version" }
+                        Locale.KOREAN  { "PluginCore 버전" }
+                    }
                     description = info.apiVersion.toString()
                     icon = Icon.BRANCH
                     iconTintColor = color { "#3A1C71" }
                 }
                 button {
                     id = "dependency"
-                    title = "의존성(필수)"
+                    title = translate {
+                        Locale.ENGLISH { "Required Dependencies" }
+                        Locale.KOREAN  { "의존성(필수)" }
+                    }
                     icon = Icon.CHECK
                     iconTintColor = color { "#D76D77" }
                     description = if (info.dependency.isEmpty()) "없음" else info.dependency.joinToString("\n")
                 }
                 button {
                     id = "softDependency"
-                    title = "의존성(soft)"
+                    title = translate {
+                        Locale.ENGLISH { "Soft Dependencies" }
+                        Locale.KOREAN  { "의존성(optional)" }
+                    }
                     icon = Icon.CHECK
                     iconTintColor = color { "#FFAF7B" }
                     description = if (info.softDependency.isEmpty()) "없음" else info.softDependency.joinToString("\n")
@@ -125,7 +162,10 @@ fun Context.startPluginInfoActivity(
     }
 
     startConfigActivity(
-        title = "정보",
+        title = translate {
+            Locale.ENGLISH { "Plugin Info" }
+            Locale.KOREAN  { "플러그인 정보" }
+        },
         subTitle = info.name,
         struct = items
     )
