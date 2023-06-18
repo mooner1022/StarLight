@@ -4,7 +4,8 @@ import android.os.Environment
 import java.io.File
 
 @Suppress("DEPRECATION")
-fun getInternalDirectory() = File(Environment.getExternalStorageDirectory(), "StarLight/")
+fun getStarLightDirectory() =
+    File(Environment.getExternalStorageDirectory(), "StarLight/")
 
 fun File.hasFile(fileName: String): Boolean {
     return this.listFiles()?.find { it.name == fileName } != null
@@ -21,3 +22,9 @@ operator fun File.plusAssign(file: File) {
 operator fun File.plusAssign(directory: String) {
     this.resolve(directory)
 }
+
+val File?.isValidFile
+    get() = this != null && this.exists() && this.isFile
+
+val File?.isValidDirectory
+    get() = this != null && this.exists() && this.isDirectory

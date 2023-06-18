@@ -25,7 +25,7 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.plugin.EventListener
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.NetworkUtil
-import dev.mooner.starlight.plugincore.utils.getInternalDirectory
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.ui.widget.DummyWidgetSlim
 import dev.mooner.starlight.ui.widget.LogsWidget
@@ -87,6 +87,10 @@ object ApplicationSession {
                         addLanguage("", JSRhino())
                         //addLanguage(GraalVMLang())
                     }
+                }
+             */
+
+            Session.init(locale, getStarLightDirectory())
 
                     if (!GlobalConfig.category("plugin").getBoolean("safe_mode", false)) {
                         pluginLoader.loadPlugins()
@@ -191,7 +195,7 @@ object ApplicationSession {
 
             val startupData = Session.json.encodeToString(mapOf("last_error" to errMsg))
             try {
-                File(getInternalDirectory(), "STARTUP.info").writeText(startupData)
+                File(getStarLightDirectory(), "STARTUP.info").writeText(startupData)
             } catch (e: Throwable) {
                 e.printStackTrace()
             } finally {

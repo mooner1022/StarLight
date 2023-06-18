@@ -5,7 +5,7 @@ import android.text.method.ScrollingMovementMethod
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ShareCompat
 import dev.mooner.starlight.databinding.ActivityFatalErrorBinding
-import dev.mooner.starlight.plugincore.utils.getInternalDirectory
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.utils.restartApplication
 import java.io.File
 
@@ -38,7 +38,7 @@ class FatalErrorActivity : AppCompatActivity() {
         }
 
         binding.restart.setOnClickListener {
-            File(getInternalDirectory(), "STARTUP.info").also { file ->
+            File(getStarLightDirectory(), "STARTUP.info").also { file ->
                 if (file.exists())
                     file.delete()
             }

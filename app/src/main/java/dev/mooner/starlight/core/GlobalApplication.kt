@@ -32,7 +32,7 @@ import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
-import dev.mooner.starlight.plugincore.utils.getInternalDirectory
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.ui.crash.FatalErrorActivity
 import dev.mooner.starlight.ui.splash.quickstart.steps.SetPermissionFragment
 import dev.mooner.starlight.utils.checkPermissions
@@ -136,7 +136,7 @@ class GlobalApplication: Application() {
     }
 
     private fun checkStartupInfo(): StartupInfo? {
-        val startupFile = File(getInternalDirectory(), "STARTUP.info")
+        val startupFile = File(getStarLightDirectory(), "STARTUP.info")
         var startupData: StartupInfo? = null
         if (startupFile.exists() && startupFile.isFile) {
             try {

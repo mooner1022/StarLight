@@ -33,7 +33,10 @@ import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.fireEvent
-import dev.mooner.starlight.plugincore.utils.getInternalDirectory
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.plugincore.utils.debugTranslated
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import kotlinx.serialization.decodeFromString
 import java.util.*
@@ -235,7 +238,7 @@ class NotificationListener: NotificationListenerService() {
             notificationRules[ruleKey]?.get(rule) ?: default
 
         fun updateRules() {
-            val file = getInternalDirectory().resolve(NotificationRulesActivity.FILE_NAME)
+            val file = getStarLightDirectory().resolve(NotificationRulesActivity.FILE_NAME)
             if (!file.exists() || !file.isFile || !file.canRead()) return
 
             val data: ConfigData = Session.json.decodeFromString(file.readText())

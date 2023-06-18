@@ -12,7 +12,7 @@ import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.plugincore.utils.TimeUtils
-import dev.mooner.starlight.plugincore.utils.getInternalDirectory
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import kotlinx.coroutines.*
 import java.io.File
 
@@ -49,7 +49,7 @@ object LogCollector {
 
     init {
         val dirName = TimeUtils.formatCurrentDate("yyyy-MM-dd")
-        val dir = File(getInternalDirectory(), "logs").resolve(dirName)
+        val dir = File(getStarLightDirectory(), "logs").resolve(dirName)
         if (!dir.exists() || !dir.isDirectory) {
             dir.mkdirs()
         }

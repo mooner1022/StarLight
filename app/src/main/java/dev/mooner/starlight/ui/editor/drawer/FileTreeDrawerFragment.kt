@@ -12,10 +12,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentFileTreeDrawerBinding
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
-import dev.mooner.starlight.plugincore.utils.getInternalDirectory
-import dev.mooner.starlight.ui.editor.DefaultEditorActivity
-import dev.mooner.starlight.utils.toFile
-import java.io.File
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import kotlin.properties.Delegates.notNull
 
 private val LOG = LoggerFactory.logger {  }
@@ -32,8 +29,9 @@ class FileTreeDrawerFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        projectPath = arguments?.getString(ARG_PROJECT_PATH)?.toFile() ?: getInternalDirectory()
-        LOG.verbose { "File tree path: ${projectPath.path}" }
+        projectPath = arguments?.getString(ARG_PROJECT_PATH) ?: getStarLightDirectory().path
+        mainScript  = arguments?.getString(ARG_MAIN_SCRIPT)
+        logger.verbose { "File tree path: $projectPath, mainScript: $mainScript" }
     }
 
     @SuppressLint("NotifyDataSetChanged")

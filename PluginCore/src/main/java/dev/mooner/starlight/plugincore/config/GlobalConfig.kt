@@ -14,7 +14,7 @@ import dev.mooner.starlight.plugincore.config.data.MutableDataMap
 import dev.mooner.starlight.plugincore.config.data.category.MutableConfigCategory
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
-import dev.mooner.starlight.plugincore.utils.getInternalDirectory
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,7 +29,7 @@ object GlobalConfig: MutableConfig {
 
     private val mData: MutableDataMap by lazy(::loadFromFile)
     private val cachedCategories: MutableMap<String, MutableConfigCategory> = hashMapOf()
-    private var file = File(getInternalDirectory(), FILE_NAME)
+    private val file = File(getStarLightDirectory(), FILE_NAME)
     private var isSaved: Boolean = false
 
     override fun getData(): DataMap = mData
@@ -71,13 +71,6 @@ object GlobalConfig: MutableConfig {
             }
         }
         EventHandler.fireEventWithScope(Events.Config.GlobalConfigUpdate())
-        /*
-        scope.launch {
-            val str = Json.encodeToString(configs)
-            println("saved: $str")
-            File(path, FILE_NAME).writeText(str)
-        }
-        */
     }
 
     fun onSaveConfigAdapter(parentId: String, id: String, view: View?, data: Any) {

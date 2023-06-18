@@ -19,6 +19,9 @@ import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.fireEvent
 import dev.mooner.starlight.plugincore.utils.getFileSize
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.utils.infoTranslated
+import dev.mooner.starlight.plugincore.utils.isValidFile
 import dev.mooner.starlight.plugincore.widget.Widget
 import kotlinx.serialization.decodeFromString
 import java.io.File
@@ -97,7 +100,15 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    override fun getDataFolder(): File = dataDir
+    override fun getInternalDataDirectory(): File =
+        internalDir
+            .resolve("plugin_data")
+            .resolve(info.id)
+
+    override fun getExternalDataDirectory(): File =
+        getStarLightDirectory()
+            .resolve("plugins")
+            .resolve("${info.name}(${info.id})")
 
     override fun getAsset(path: String): File = File(dataDir.resolve("assets"), path)
 
