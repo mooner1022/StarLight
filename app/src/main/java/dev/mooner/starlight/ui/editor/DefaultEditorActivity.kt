@@ -13,18 +13,22 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.TextView
 import androidx.core.view.GravityCompat
+import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.drawerlayout.widget.DrawerLayout.DrawerListener
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityDefaultEditorBinding
+import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.editor.CodeEditorActivity
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
@@ -33,30 +37,29 @@ import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.debugroom.DebugRoomActivity
 import dev.mooner.starlight.ui.debugroom.DebugRoomFragment
-import dev.mooner.starlight.ui.dialog.DialogUtils
+import dev.mooner.starlight.ui.editor.drawer.EditorMessageFragment
 import dev.mooner.starlight.ui.editor.drawer.FileTreeDrawerFragment
 import dev.mooner.starlight.ui.editor.tab.EditorSession
 import dev.mooner.starlight.ui.editor.tab.TabItemMoveCallbackListener
 import dev.mooner.starlight.ui.editor.tab.TabViewAdapter
 import dev.mooner.starlight.utils.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.*
 import kotlin.math.max
 import kotlin.properties.Delegates.notNull
 
-class DefaultEditorActivity : CodeEditorActivity() {
+private val logger = LoggerFactory.logger {  }
 
-    private val logger = LoggerFactory.logger {  }
+class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
-    private lateinit var name: String
-    private lateinit var codeView: WebView
-    private lateinit var binding: ActivityDefaultEditorBinding
+    private lateinit var name     : String
+    private lateinit var binding  : ActivityDefaultEditorBinding
+    private          var codeView : WebView? = null
 
     private var theme          : Theme = Theme.NORD_DARK
 
@@ -176,6 +179,7 @@ class DefaultEditorActivity : CodeEditorActivity() {
         }.build()
 
         val fileName = getProject().info.mainScript
+        mainScriptName = fileName
         val ext = File(fileName).extension
         val lang = let {
             for (lang in Language.values()) {
@@ -228,56 +232,7 @@ class DefaultEditorActivity : CodeEditorActivity() {
                 webChromeClient = WebChromeClient()
                 setSupportZoom(false)
                 cacheMode = WebSettings.LOAD_CACHE_ONLY
-                addJavascriptInterface(object : WebviewCallback {
-                    @JavascriptInterface
-                    override fun onLoadComplete() {
-                        //setLanguage(lang)
-                        setTheme(theme)
-                        //val prcCode = encode(code)
-                        //executeScript("""setCode("$prcCode")""")
-                        runOnUiThread {
-                            tabAdapter!!.setSelected(fileName)
-                        }
-                        resetUndoStack()
-                    }
-
-                    @JavascriptInterface
-                    override fun onContentChanged(sessionId: String?, code: String?) {
-                        currentSession?.let {
-                            it.code = code
-                            if (!it.isUpdated) {
-                                it.isUpdated = true
-                                runOnUiThread {
-                                    tabAdapter?.notifyItemChanged(tabAdapter!!.sessions.indexOf(currentSession))
-                                }
-                            }
-                        }
-                    }
-
-                    @JavascriptInterface
-                    override fun requestSession(sessionId: String?) {
-                        if (sessionId == null) return
-                        logger.verbose {
-                            translate {
-                                Locale.ENGLISH { "Editor requested session with id: $sessionId" }
-                                Locale.KOREAN  { "에디터가 세션을 요청함: $sessionId" }
-                            }
-                        }
-                        val requestedSession = sessions.find { it.sessionId == sessionId.toInt() } ?: let {
-                            logger.error {
-                                translate {
-                                    Locale.ENGLISH { "Editor requested session with id: $sessionId, but not found" }
-                                    Locale.KOREAN  { "데이터가 세션을 요청했지만 찾지 못함: $sessionId" }
-                                }
-                            }
-                            return
-                        }
-                        if (requestedSession.code == null) {
-                            requestedSession.code = readCode(requestedSession.fileName) ?: ""
-                        }
-                        setSession(requestedSession)
-                    }
-                }, "WebviewCallback")
+                addJavascriptInterface(this@DefaultEditorActivity, "WebviewCallback")
             }
             loadUrl(ENTRY_POINT)
         }
@@ -351,6 +306,62 @@ class DefaultEditorActivity : CodeEditorActivity() {
         return super.dispatchKeyEvent(event)
     }
 
+    @JavascriptInterface
+    override fun onLoadComplete() {
+        setTheme(theme)
+        runOnUiThread {
+            tabAdapter!!.setSelected(mainScriptName)
+        }
+        resetUndoStack()
+    }
+
+    @JavascriptInterface
+    override fun onContentChanged(sessionId: String?, code: String?) {
+        if (isDebugTabOpen)
+            return
+        currentSession?.let {
+            it.code = code
+            if (!it.isUpdated) {
+                it.isUpdated = true
+                runOnUiThread {
+                    tabAdapter?.notifyItemChanged(tabAdapter!!.sessions.indexOf(currentSession))
+                }
+            }
+        }
+    }
+
+    @JavascriptInterface
+    override fun onAnnotationUpdated(list: String) {
+        logger.info { "list: $list" }
+        lifecycleScope.launch {
+            EventHandler.fireEvent(EditorMessageFragment.EditorAnnotationReturnEvent(list))
+        }
+    }
+
+    @JavascriptInterface
+    override fun requestSession(sessionId: String?) {
+        if (sessionId == null) return
+        logger.verbose {
+            translate {
+                Locale.ENGLISH { "Editor requested session with id: $sessionId" }
+                Locale.KOREAN  { "에디터가 세션을 요청함: $sessionId" }
+            }
+        }
+        val requestedSession = sessions.find { it.sessionId == sessionId.toInt() } ?: let {
+            logger.error {
+                translate {
+                    Locale.ENGLISH { "Editor requested session with id: $sessionId, but not found" }
+                    Locale.KOREAN  { "데이터가 세션을 요청했지만 찾지 못함: $sessionId" }
+                }
+            }
+            return
+        }
+        if (requestedSession.code == null) {
+            requestedSession.code = readCode(requestedSession.fileName) ?: ""
+        }
+        setSession(requestedSession)
+    }
+
     fun openFile(file: File) {
         //val relativePath =
         val parentPath = getProject().directory.path
@@ -393,11 +404,13 @@ class DefaultEditorActivity : CodeEditorActivity() {
         EditorSession(sessionId, fileName, lang, code).also {
             sessions += it
         }
-        println(code)
+
         val idx = sessions.size - 1
         tabAdapter?.notifyItemInserted(idx)
-        if (setAsMain)
+
+        if (setAsMain) {
             tabAdapter?.setSelected(idx)
+        }
     }
 
     private fun compileProject() {
@@ -426,6 +439,7 @@ class DefaultEditorActivity : CodeEditorActivity() {
                 }
                 .collect()
         }
+        requestAnnotations()
     }
 
     private fun setupTabAdapter(): TabViewAdapter {
@@ -444,9 +458,12 @@ class DefaultEditorActivity : CodeEditorActivity() {
                 }
                 TabViewAdapter.EVENT_CLOSED -> {
                     sessions.remove(item)
-                    if (currentSession != item) return@TabViewAdapter
+                    if (currentSession != item)
+                        return@TabViewAdapter
+
+                    logger.verbose { "closed, idx = $index" }
                     val idx = max(index - 1, 0)
-                    val nearest: EditorSession = tabAdapter!!.sessions[idx]
+                    val nearest = tabAdapter!!.sessions[idx]
                     tabAdapter!!.setSelected(idx)
                     closeSession(item.sessionId, nearest.sessionId)
                 }
@@ -465,10 +482,11 @@ class DefaultEditorActivity : CodeEditorActivity() {
     private fun snackbar(text: String, e: Throwable? = null) {
         Snackbar.make(binding.root, text, Snackbar.LENGTH_SHORT).apply {
             if (e != null) {
-                setAction("자세히 보기") {
+                setAction("자세히") {
                     binding.root.context.showErrorLogDialog(getProject().info.name + " 에러 로그", e)
                 }
             }
+            animationMode = Snackbar.ANIMATION_MODE_SLIDE
         }.show()
     }
 
@@ -693,17 +711,25 @@ class DefaultEditorActivity : CodeEditorActivity() {
     private fun redo() =
         executeScript("redo()")
 
+    internal fun requestAnnotations() =
+        executeScript("requestAnnotations()")
+
+    internal fun gotoLine(row: Int, column: Int) =
+        executeScript("_gotoLine($row, $column)")
+
     private fun confirmEditorExit(onExit: () -> Unit) {
         if (isCodeUpdated) {
-            DialogUtils.showConfirmDialog(
+            showConfirmDialog(
                 context = this,
                 title = translate {
                     Locale.ENGLISH { "⚠️ There are changes unsaved" }
-                    Locale.KOREAN  { "⚠️ 저장하지 않은 코드가 있어요" }
+                    Locale.KOREAN  { "⚠️ 저장하지 않은 변경사항이 있어요" }
                 },
                 message = translate {
-                    Locale.ENGLISH { "There are files or changes that are unsaved yet, force close?\n⚠️ All unsaved changes will be discarded." }
-                    Locale.KOREAN  { "아직 저장하지 않은 코드가 있어요. 수정을 종료할까요?\n⚠️ 모든 저장되지 않은 수정 사항은 사라집니다." }
+                    Locale.ENGLISH { "There are files or changes that are unsaved yet, force close?\n" +
+                            "⚠️ All unsaved changes will be discarded." }
+                    Locale.KOREAN  { "아직 저장하지 않은 코드가 있어요. 수정을 종료할까요?\n" +
+                            "⚠️ 모든 저장되지 않은 수정 사항은 사라집니다." }
                 },
                 onDismiss = { confirm ->
                     if (confirm)
