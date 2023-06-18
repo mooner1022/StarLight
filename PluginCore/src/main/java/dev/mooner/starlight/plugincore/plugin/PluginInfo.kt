@@ -25,9 +25,16 @@ data class PluginInfo(
     val dependency: List<PluginDependency> = listOf(),
     @SerialName("soft_dependency")
     val softDependency: List<PluginDependency> = listOf(),
+    @SerialName("uses_native_lib")
+    val usesNativeLibrary: Boolean = false,
     val authors: List<String>,
     val description: String
 ) {
+
+    val fullName = "$name v$version"
+
+    fun encode(): String = json.encodeToString(this)
+
     companion object {
         fun decodeFromString(str: String): PluginInfo {
             if (str.isBlank() || !str.startsWith("{") || !str.endsWith("}")) throw IllegalArgumentException("Illegal plugin info string: $str")
@@ -35,7 +42,4 @@ data class PluginInfo(
         }
     }
 
-    fun encode(): String = json.encodeToString(this)
-
-    val fullName = "$name v$version"
 }

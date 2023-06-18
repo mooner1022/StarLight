@@ -110,6 +110,16 @@ fun Context.startPluginInfoActivity(
                     iconTintColor = color { "#FFAF7B" }
                     description = if (info.softDependency.isEmpty()) "없음" else info.softDependency.joinToString("\n")
                 }
+                button {
+                    id = "usesNativeLibrary"
+                    title = translate {
+                        Locale.ENGLISH { "Uses native libraries" }
+                        Locale.KOREAN  { "Native 라이브러리 사용" }
+                    }
+                    icon = Icon.LINK
+                    iconTintColor = color { "#d98366" }
+                    description = info.usesNativeLibrary.toString()
+                }
             }
         }
     }
