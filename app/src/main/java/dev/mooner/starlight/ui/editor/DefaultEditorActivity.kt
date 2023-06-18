@@ -70,7 +70,10 @@ class DefaultEditorActivity : CodeEditorActivity() {
     private var tabAdapter     : TabViewAdapter? = null
     private var configAdapter  : ConfigAdapter? = null
 
-    private val isHotKeyShown: Boolean get() =
+    private var showFileTree   : Boolean by notNull()
+    private var showDebugChat  : Boolean by notNull()
+
+    private val isHotKeyShown  : Boolean get() =
         GlobalConfig
             .category("e_general")
             .getBoolean("show_hot_keys", true)
@@ -82,11 +85,21 @@ class DefaultEditorActivity : CodeEditorActivity() {
         setContentView(binding.root)
         setSupportActionBar(binding.toolbarEditor)
 
+        bindLogNotifier()
+
+        showFileTree  = intent.getBooleanExtra(EXTRA_SHOW_FILE_TREE, true)
+        showDebugChat = intent.getBooleanExtra(EXTRA_SHOW_DEBUG_CHAT, true)
+
         name = intent.getStringExtra("title")!!
         supportActionBar!!.apply {
-            setDisplayHomeAsUpEnabled(true)
-            setHomeAsUpIndicator(R.drawable.ic_round_menu_24)
-            setDisplayShowHomeEnabled(true)
+            if (showFileTree) {
+                setDisplayHomeAsUpEnabled(true)
+                setHomeAsUpIndicator(R.drawable.ic_round_menu_24)
+            }
+
+            if (showDebugChat)
+                setDisplayShowHomeEnabled(true)
+
             title = name
         }
 
@@ -99,30 +112,54 @@ class DefaultEditorActivity : CodeEditorActivity() {
 
         // Lock drawer layout open by swipe
         binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.END)
+        if (!showFileTree)
+            binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.START)
 
-        if (layoutMode == LAYOUT_TABLET) {
+        binding.root.addDrawerListener(object : DrawerListener {
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
+
+            override fun onDrawerOpened(drawerView: View) {
+                if (drawerView.id == R.id.drawer_debugChat)
+                    isDebugTabOpen = true
+            }
+
+            override fun onDrawerClosed(drawerView: View) {
+                if (drawerView.id == R.id.drawer_debugChat)
+                    isDebugTabOpen = false
+            }
+
+            override fun onDrawerStateChanged(newState: Int) {}
+        })
+
+        if (showDebugChat && layoutMode == LAYOUT_TABLET) {
             // Left drawer (Debug Chat)
             //binding.debugChat!!.leave.visibility = View.INVISIBLE
-            val fragment = DebugRoomFragment.newInstance(
-                projectName = getProject().info.name,
-                showLeave = false,
-                fixedPadding = true
-            )
-            supportFragmentManager.beginTransaction().replace(
-                R.id.fragment_container_debug_room,
-                fragment
-            ).commit()
+            supportFragmentManager.beginTransaction().apply {
+                replace(
+                    R.id.fragment_container_debug_room,
+                    DebugRoomFragment.newInstance(
+                        projectName = getProject().info.name,
+                        showLeave = false,
+                        fixedPadding = true
+                    )
+                )
+            }.commit()
+
             binding.buttonCloseDebugChat!!.setOnClickListener {
                 binding.root.closeDrawer(GravityCompat.END, true)
             }
         }
 
-        //Right drawer (File Tree)
-        supportFragmentManager.beginTransaction().replace(
-            R.id.drawer_fileTree,
-            FileTreeDrawerFragment
-                .newInstance(getProject())
-        ).commit()
+        if (showFileTree) {
+            //Right drawer (File Tree)
+            supportFragmentManager.beginTransaction().apply {
+                replace(
+                    R.id.drawer_fileTree,
+                    FileTreeDrawerFragment
+                        .newInstance(getProject())
+                )
+            }.commit()
+        }
 
         updateColor()
         //setupHotKeys()
@@ -691,7 +728,7 @@ class DefaultEditorActivity : CodeEditorActivity() {
                         LAYOUT_TABLET -> openDebugRoomDrawer()
                         LAYOUT_DEFAULT -> startActivityWithExtra(
                             DebugRoomActivity::class.java,
-                            mapOf("projectName" to getProject().info.name)
+                            mapOf(DebugRoomActivity.EXTRA_PROJECT_NAME to getProject().info.name)
                         )
                     }
                 }
@@ -717,6 +754,9 @@ class DefaultEditorActivity : CodeEditorActivity() {
     }
 
     companion object {
+        const val EXTRA_SHOW_FILE_TREE  = "showFileTree"
+        const val EXTRA_SHOW_DEBUG_CHAT = "showDebugChat"
+
         const val ENTRY_POINT = "file:///android_asset/editor/index.html"
         private const val HOT_KEYS = "↺↻[]{}()<>;=.'\"+-*/\\:&|"
     }
