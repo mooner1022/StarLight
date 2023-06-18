@@ -11,11 +11,16 @@ import java.util.*
 class TranslationBuilder {
 
     private val localeMap: LocaleMap = EnumMap(Locale::class.java)
+    private var formatMap: FormatMap? = null
 
     operator fun Locale.invoke(message: () -> String) {
         localeMap[this] = message()
     }
 
-    fun build(): LocaleMap =
-        localeMap
+    fun format(vararg pairs: Pair<String, String>) {
+        this.formatMap = pairs.toMap()
+    }
+
+    fun build(): Pair<LocaleMap, FormatMap> =
+        localeMap to (formatMap ?: emptyMap())
 }
