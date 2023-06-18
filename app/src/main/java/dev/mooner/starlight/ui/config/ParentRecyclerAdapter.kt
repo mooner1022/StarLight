@@ -136,9 +136,9 @@ class ParentRecyclerAdapter(
             recyclerAdapter = CategoryRecyclerAdapter(context) { id, view, data ->
                 onConfigChanged(viewData.id, id, view, data)
             }.apply {
-                this.data = children
-                saved = savedData[viewData.id]?.toMutableMap()?: mutableMapOf()
-                notifyItemRangeInserted(0, data.size)
+                this.cells = children
+                saved = savedData[viewData.id]?.toMutableMap() ?: mutableMapOf()
+                notifyItemRangeInserted(0, cells.size)
             }
             val mLayoutManager = LinearLayoutManager(context)
             holder.categoryItems.apply {

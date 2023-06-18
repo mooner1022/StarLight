@@ -74,18 +74,18 @@ class CategoryRecyclerAdapter(
         return ConfigViewHolder(view, viewType)
     }
 
-    override fun getItemCount(): Int = data.size
+    override fun getItemCount(): Int =
+        cells.size
 
-    override fun getItemViewType(position: Int): Int {
-        return data[position].viewType
-    }
+    override fun getItemViewType(position: Int): Int =
+        cells[position].viewType
 
-    @SuppressLint("CheckResult")
+    @SuppressLint("CheckResult", "SetTextI18n")
     override fun onBindViewHolder(holder: ConfigViewHolder, position: Int) {
-        val viewData = data[position]
-        fun getDefault(): Any {
-            return if (saved.containsKey(viewData.id)) saved[viewData.id]!!.cast()!! else viewData.default
-        }
+        val viewData = cells[position]
+        fun getDefault(): Any =
+            saved[viewData.id]?.tryCast() ?: viewData.default
+
         if (viewData !is CustomConfigObject && viewData !is CategoryConfigObject) {
             holder.title.text = viewData.title
 
@@ -409,7 +409,7 @@ class CategoryRecyclerAdapter(
                 }
             }
 
-            val parent = data.find { it.id == dependencyId }
+            val parent = cells.find { it.id == dependencyId }
                 ?: throw IllegalArgumentException("Cannot find dependency id '${viewData.dependency}' for object id '${viewData.id}'")
             if (parent.type != ConfigObjectType.TOGGLE) throw IllegalArgumentException("Type of object with id '${parent.id}' does not extend ConfigObjectType.TOGGLE")
 
