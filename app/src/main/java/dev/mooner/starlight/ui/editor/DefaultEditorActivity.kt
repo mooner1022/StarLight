@@ -510,7 +510,10 @@ class DefaultEditorActivity : CodeEditorActivity() {
                 textAlignment = View.TEXT_ALIGNMENT_CENTER
                 setTextColor(textColor)
                 backgroundTintList = backgroundColor
-                applyLayoutParams {
+
+                if (layoutParams == null)
+                    layoutParams = ViewGroup.LayoutParams(widthDP, widthDP)
+                updateLayoutParams {
                     width = widthDP
                     height = widthDP
                     updatePadding(top = textPadding)
