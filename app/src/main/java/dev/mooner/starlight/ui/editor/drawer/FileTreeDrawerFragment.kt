@@ -2,11 +2,10 @@ package dev.mooner.starlight.ui.editor.drawer
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.GravityCompat
+import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentFileTreeDrawerBinding
@@ -15,16 +14,18 @@ import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import kotlin.properties.Delegates.notNull
 
-private val LOG = LoggerFactory.logger {  }
+private val logger = LoggerFactory.logger {  }
 
 private const val ARG_PROJECT_PATH = "projectPath"
+private const val ARG_MAIN_SCRIPT  = "mainScript"
 
 class FileTreeDrawerFragment : Fragment() {
 
     private var _binding: FragmentFileTreeDrawerBinding? = null
     val binding get() = _binding!!
 
-    private var projectPath: File by notNull()
+    private var projectPath: String by notNull()
+    private var mainScript: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,19 +42,11 @@ class FileTreeDrawerFragment : Fragment() {
     ): View {
         _binding = FragmentFileTreeDrawerBinding.inflate(inflater, container, false)
 
-        val activity = requireActivity() as DefaultEditorActivity
-
-        val treeAdapter = FileTreeAdapter(activity, projectPath) { file ->
-            activity.apply {
-                openFile(file)
-                closeDrawer(GravityCompat.START, true)
-            }
-        }
-
         binding.viewPager.apply {
             adapter = FileTreeViewPagerAdapter(
                 fragment = this@FileTreeDrawerFragment,
-                fileTreeAdapter = treeAdapter
+                mainScript = mainScript,
+                rootPath = projectPath
             )
             isUserInputEnabled = false
             registerOnPageChangeCallback(object : OnPageChangeCallback() {
@@ -82,8 +75,6 @@ class FileTreeDrawerFragment : Fragment() {
             binding.viewPager.setCurrentItem(index, true)
         }
 
-        binding.topMenu.showBadge(R.id.nav_warnings, 9)
-
         return binding.root
     }
 
@@ -104,6 +95,7 @@ class FileTreeDrawerFragment : Fragment() {
             FileTreeDrawerFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_PROJECT_PATH, project.directory.path)
+                    putString(ARG_MAIN_SCRIPT, project.info.mainScript)
                 }
             }
     }
