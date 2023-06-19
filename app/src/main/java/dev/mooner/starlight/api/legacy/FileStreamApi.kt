@@ -14,24 +14,27 @@ class FileStreamApi: Api<FileStreamApi.FileStream>() {
         companion object {
 
             @JvmStatic
-            fun read(path: String): String = File(path).readText()
+            fun read(path: String): String? =
+                File(path).let { if (it.exists()) it.readText() else null }
 
             @JvmStatic
-            fun write(path: String, data: String): String {
-                File(path).writeText(data)
-                return data
-            }
+            fun read(path: String, nullIfNotExists: Boolean): String? =
+                if (nullIfNotExists) read(path) else File(path).readText()
 
             @JvmStatic
-            fun append(path: String, data: String): String = with(File(path)) {
-                val org = readText()
-                val appended = org + data
-                writeText(appended)
-                appended
-            }
+            fun write(path: String, data: String): String =
+                data.also(File(path)::writeText)
 
             @JvmStatic
-            fun remove(path: String): Boolean = File(path).delete()
+            fun append(path: String, data: String): String =
+                with(File(path)) {
+                    (readText() + data)
+                        .also(::writeText)
+                }
+
+            @JvmStatic
+            fun remove(path: String): Boolean =
+                File(path).delete()
         }
     }
 
