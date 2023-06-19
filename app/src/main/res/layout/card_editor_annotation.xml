@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ card_editor_annotation.xml created by Minki Moon(mooner1022) on 6/14/23, 5:59 PM
+  ~ Copyright (c) mooner1022. all rights reserved.
+  ~ This code is licensed under the GNU General Public License v3.0.
+  -->
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="36dp"
+    app:layout_minHeight="36dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cvTypeIndicator"
+        android:layout_width="8dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="10dp"
+        app:cardBackgroundColor="@color/monokai_pro_pink"
+        app:cardCornerRadius="4dp"
+        app:cardElevation="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/tvLineNumber"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
+        android:fontFamily="@font/nanumsquare_round_bold"
+        android:textSize="12sp"
+        app:layout_constraintStart_toEndOf="@+id/cvTypeIndicator"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="ERR MSG"/>
+
+    <TextView
+        android:id="@+id/tvAnnotationMessage"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:fontFamily="@font/nanumsquare_round_regular"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/cvTypeIndicator"
+        app:layout_constraintTop_toBottomOf="@+id/tvLineNumber"
+        tools:text="ERR MSG"/>
+</androidx.constraintlayout.widget.ConstraintLayout>
