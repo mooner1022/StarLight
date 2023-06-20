@@ -155,7 +155,16 @@ abstract class Language {
 
     fun getIconFileOrNull(): File? = getAssetOrNull("icon.png")
 
-    fun toPipelineStage(): PipelineStage<Pair<Project, String>, Any> = LanguageStage(
+    open fun toPipeline(): Pipeline<Pair<Project, String>, Any> {
+        return plumber {
+            initial<Pair<Project, String>, Any>(id, name) { (project, code) ->
+                compile(code, Session.apiManager.getApis(), project, project.getClassLoader())
+            }
+        }
+    }
+
+    @Deprecated("Deprecated, use toPipeline().")
+    open fun toPipelineStage(): PipelineStage<Pair<Project, String>, Any> = LanguageStage(
         id = this.id,
         name = this.name,
         run = { project, code ->
