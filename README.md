@@ -17,7 +17,7 @@ a variety of script languages and a plugin platform
 </p>
 
 <p align="center">
-    ✔ Any PRs are welcome, Watch <a href="https://github.com/mooner1022/StarLight/tree/dev">dev</a> branch for recent updates!
+    ✔ Any PRs are welcome, Watch <a href="https://github.com/mooner1022/StarLight/tree/nightly">nightly</a> branch for recent updates!
 </p>
 
 ### Screenshots (WIP)
