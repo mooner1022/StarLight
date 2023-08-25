@@ -7,6 +7,8 @@
 package dev.mooner.starlight.api.legacy
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.original.NotificationApi
@@ -60,22 +62,33 @@ class LegacyApi: Api<LegacyApi.Api>() {
             return GlobalApplication.requireContext()
         }
 
-        fun reload(): Boolean =
-            reload(false)
-
-        fun reload(throwOnError: Boolean = false): Boolean =
-            reload(project.info.name, throwOnError)
-
-        fun reload(scriptName: String, throwOnError: Boolean = false): Boolean =
-            compile(scriptName, throwOnError)
-
-        fun compile(scriptName: String): Boolean =
-            compile(scriptName, false)
-
-        fun compile(scriptName: String, throwOnError: Boolean = false): Boolean {
-            val project = projectManager.getProject(scriptName)?: return false
-            return project.compile(throwException = throwOnError)
+        @JvmOverloads
+        fun reload(throwOnError: Boolean = false): Boolean {
+            var res = false
+            for (project in projectManager.getProjects()) {
+                val cRes = project.compile(throwOnError)
+                if (!res && cRes)
+                    res = true
+            }
+            return res
         }
+
+        @JvmOverloads
+        fun reload(scriptName: String, throwOnError: Boolean = false): Boolean {
+            val mProject = if (scriptName == project.info.name)
+                project
+            else
+                projectManager.getProject(scriptName)?: return false
+            return mProject.compile(throwException = throwOnError)
+        }
+
+        @JvmOverloads
+        fun compile(throwOnError: Boolean = false): Boolean =
+            reload(throwOnError)
+
+        @JvmOverloads
+        fun compile(scriptName: String, throwOnError: Boolean = false): Boolean =
+            reload(scriptName, throwOnError)
 
         fun prepare(scriptName: String): Int {
             val project = projectManager.getProject(scriptName)
@@ -163,15 +176,21 @@ class LegacyApi: Api<LegacyApi.Api>() {
         }
 
         fun showToast(content: String, length: Int) {
-            Toast.makeText(GlobalApplication.requireContext(), content, length).show()
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(GlobalApplication.requireContext(), content, length).show()
+            }
         }
 
         /*
-         * TODO: makeNoti, papagoTranslate
+         * TODO: papagoTranslate?
          */
 
-        fun makeNoti(title: String, content: String, id: Number?) {
-
+        @JvmOverloads
+        fun makeNoti(title: String, content: String, id: Int? = null) {
+            NotificationApi.NotificationBuilder(id ?: 0).apply {
+                setTitle(title)
+                setText(content)
+            }.build()
         }
 
         fun gc() {

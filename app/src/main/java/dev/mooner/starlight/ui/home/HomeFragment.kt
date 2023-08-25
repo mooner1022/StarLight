@@ -17,6 +17,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import dev.mooner.starlight.CA_WIDGETS
+import dev.mooner.starlight.CF_IDS
+import dev.mooner.starlight.WIDGET_DEF_STRING
 import dev.mooner.starlight.databinding.FragmentHomeBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
@@ -26,7 +29,6 @@ import dev.mooner.starlight.ui.widget.config.WidgetConfigActivity
 import dev.mooner.starlight.ui.widget.config.WidgetsAdapter
 import dev.mooner.starlight.utils.LAYOUT_DEFAULT
 import dev.mooner.starlight.utils.LAYOUT_TABLET
-import dev.mooner.starlight.utils.WIDGET_DEF_STRING
 import dev.mooner.starlight.utils.layoutMode
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.serialization.decodeFromString
@@ -91,7 +93,7 @@ class HomeFragment : Fragment() {
                     data = getWidgets()
                     notifyItemRangeInserted(0, data.size)
                 }
-                logger.verbose { "Widgets updated" }
+                logger.verbose { "Widget list updated" }
             }
         }
         binding.cardViewConfigWidget.setOnClickListener {
@@ -103,33 +105,42 @@ class HomeFragment : Fragment() {
     }
 
     private fun getWidgets(): List<Widget> {
-        val widgetIds: List<String> = Session.json.decodeFromString(GlobalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
+        val widgetIds: List<String> = Session.json.decodeFromString(
+            GlobalConfig
+                .category(CA_WIDGETS)
+                .getString(CF_IDS, WIDGET_DEF_STRING)
+        )
         val widgets: MutableList<Widget> = mutableListOf()
+
         for (id in widgetIds) {
-            with(Session.widgetManager.getWidgetById(id)) {
-                if (this != null)
-                    widgets += this
-                else
-                    logger.warn { "Skipping unknown widget: $id" }
+            try {
+                Session.widgetManager
+                    .getWidgetById(id)
+                    ?.newInstance()
+                    ?.also(viewLifecycleOwner.lifecycle::addObserver)
+                    ?.let(widgets::add)
+                    ?: logger.warn { "Skipping unknown widget: $id" }
+            } catch (e: Exception) {
+                logger.error(e) { "Failed to initialize widget '$id': " }
             }
         }
         return widgets
     }
 
     override fun onPause() {
-        super.onPause()
         widgetsAdapter?.onPause()
+        super.onPause()
     }
 
     override fun onResume() {
-        super.onResume()
         widgetsAdapter?.onResume()
+        super.onResume()
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
         widgetsAdapter?.onDestroy()
         widgetsAdapter = null
         _binding = null
+        super.onDestroyView()
     }
 }

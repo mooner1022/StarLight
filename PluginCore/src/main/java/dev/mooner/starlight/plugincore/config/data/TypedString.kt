@@ -24,6 +24,13 @@ sealed interface TypedString <T> {
     fun tryCast(): T?
 }
 
+/*
+@Serializable
+class MapTypedString<T: Any>(
+    override val value: String,
+)
+ */
+
 @Serializable
 class DynamicTypedString<T: Any>(
     override val value: String,

@@ -10,8 +10,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
+import dev.mooner.starlight.plugincore.config.data.TypedString
 
-abstract class ConfigCell<T>(parent: ConfigGroup) {
+abstract class ConfigCell<Builder: ConfigCellBuilder, T> {
+
+    fun requestUpdate() {
+
+    }
+
+    final fun attach() {
+
+    }
 
     protected fun notifyValueUpdated(value: T) {
 
@@ -20,6 +29,18 @@ abstract class ConfigCell<T>(parent: ConfigGroup) {
     abstract fun inflateView(parentView: ViewGroup): View
 
     abstract fun setData(view: View, data: T)
+
+    abstract fun setEnabled(enabled: Boolean)
+
+    abstract fun encodeData(data: T): TypedString<T>
+
+    private fun onEventReceived(event: String) {
+
+    }
+}
+
+interface ConfigCellBuilder {
+
 }
 
 internal fun inflateFromXml(parentView: ViewGroup, @LayoutRes layout: Int): View {

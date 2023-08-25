@@ -8,7 +8,9 @@ package dev.mooner.starlight.plugincore.project
 
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.utils.joinClassNames
 import dev.mooner.starlight.plugincore.utils.runIf
 import java.io.File
@@ -45,7 +47,7 @@ class ProjectManager(
         project.info.block()
         project.saveInfo()
         if (callListener) {
-            EventHandler.fireEventWithScope(Events.Project.InfoUpdate(project))
+            project.requestUpdate()
         }
     }
 
@@ -90,11 +92,17 @@ class ProjectManager(
     }
 
     internal fun purge() =
-        projects.forEach { (_, u) -> u.destroy(requestUpdate = true) }
+        projects.forEach { (_, u) -> u.destroy(requestUpdate = false) }
 }
 
 inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, noinline onFailure: ProjectFailureCallback = { _, _ -> }) {
+    val id = ProjectEventManager.validateAndGetEventID(T::class)
+        ?: error("Unregistered event: ${T::class.qualifiedName}")
+
     val event = T::class.createInstance()
+    if (id.count { it == '.' } == 0)
+        LoggerFactory.logger("ProjectManager").warn { "Illegal ID format on $id: should have at least one separator(.)" }
+
     event.argTypes
         .zip(args)
         .any { it.first != it.second::class }
@@ -102,5 +110,5 @@ inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, 
             error("Argument type mismatch, registered: [${event.argTypes.joinClassNames()}], provided: [${args.joinClassNames()}]")
         }
 
-    this.fireEvent(event.id, event.functionName, args, onFailure)
+    this.fireEvent(id, event.functionName, args, onFailure)
 }

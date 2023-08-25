@@ -26,41 +26,39 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <RelativeLayout
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvFileTree"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvFileTree"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:paddingTop="8dp"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
-
-            </RelativeLayout>
+                android:layout_height="match_parent"
+                android:paddingTop="8dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
 
         </androidx.core.widget.NestedScrollView>
 
-    </androidx.cardview.widget.CardView>
-    <androidx.cardview.widget.CardView
-        android:id="@+id/button_new_file"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:layout_gravity="bottom"
-        android:layout_marginHorizontal="@dimen/widget_card_margin_horizontal"
-        android:layout_marginBottom="16dp"
-        app:cardBackgroundColor="@color/main_dark"
-        app:cardCornerRadius="14dp" app:cardElevation="@dimen/card_elevation">
+        <androidx.cardview.widget.CardView
+            android:id="@+id/button_new_file"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_gravity="bottom"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="@color/main_dark"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="@dimen/card_elevation">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:drawableStart="@drawable/ic_round_add_24"
-            android:drawableTint="#FFFFFF"
-            android:fontFamily="@font/nanumsquare_round_bold"
-            android:gravity="center" android:text="@string/editor_new_file" android:textColor="@color/white"
-            android:textSize="16sp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:fontFamily="@font/nanumsquare_round_bold"
+                android:gravity="center"
+                android:text="@string/editor_new_file"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                app:drawableStartCompat="@drawable/ic_round_add_24"
+                app:drawableTint="#FFFFFF"/>
+
+        </androidx.cardview.widget.CardView>
 
     </androidx.cardview.widget.CardView>
 

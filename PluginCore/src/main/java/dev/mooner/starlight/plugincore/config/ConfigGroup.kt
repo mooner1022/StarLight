@@ -12,7 +12,7 @@ class ConfigGroup(
     val flags: Flags
 ) {
 
-    private val cells: MutableSet<ConfigCell<*>> = hashSetOf()
+    //private val cells: MutableSet<ConfigCell<*>> = hashSetOf()
 
     //fun publishEvent()
 }

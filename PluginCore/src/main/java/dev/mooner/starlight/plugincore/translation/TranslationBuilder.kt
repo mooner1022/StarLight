@@ -14,7 +14,7 @@ class TranslationBuilder {
     private var formatMap: FormatMap? = null
 
     operator fun Locale.invoke(message: () -> String) {
-        localeMap[this] = message()
+        localeMap[this] = message
     }
 
     fun format(vararg pairs: Pair<String, String>) {

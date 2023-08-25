@@ -226,6 +226,7 @@ class PluginLoader {
         loaders[info.name] = loader
         val plugin = loader.plugin
 
+
         loadAssets(file, plugin)
 
         if (plugin !in Session.pluginManager.plugins) {
@@ -235,9 +236,13 @@ class PluginLoader {
     }
 
     private fun loadNativeLibrary(info: PluginInfo, file: File, parentDir: File, force: Boolean = false): File {
-        val libsDir = parentDir.resolve("plugin_data/${info.id}/libs/").also {
-            if (!it.exists())
-                it.mkdirs()
+        val libsDir = if (info.id == "v8") {
+            parentDir.resolve("lib/")
+        } else {
+            parentDir.resolve("plugin_data/${info.id}/libs/").also {
+                if (!it.exists())
+                    it.mkdirs()
+            }
         }
 
         val pathPrefix = when(getArch()) {

@@ -28,6 +28,8 @@ interface TLogger {
 
     fun <T> error(throwable: T) where T: Throwable
 
+    fun <T> error(throwable: T, msg: LazyEval) where T: Throwable
+
     fun wtf(msg: LazyEval)
 
     fun log(type: LogType, msg: LazyEval)

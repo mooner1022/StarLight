@@ -253,5 +253,8 @@ enum class Icon(
     ),
     LOCK(
         drawableRes = R.drawable.ic_round_lock_24
+    ),
+    FILE(
+        drawableRes = R.drawable.ic_round_file_24
     )
 }

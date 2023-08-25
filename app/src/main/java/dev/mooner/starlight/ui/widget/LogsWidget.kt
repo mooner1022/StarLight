@@ -66,10 +66,6 @@ class LogsWidget: Widget(), OnClickListener {
             binding.rvLogs.visibility = View.VISIBLE
         }
 
-        logs.dropBefore(LOGS_MAX_SIZE)
-            .map { v -> v.toLogItem() }
-            .let(itemAdapter!!::set)
-
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 if (itemAdapter == null)
@@ -132,7 +128,8 @@ class LogsWidget: Widget(), OnClickListener {
     }
 
     private fun setLastHash() {
-        lastHash = itemAdapter?.getAdapterItem(0)?.logData?.hashCode()
+        if (itemAdapter != null && itemAdapter!!.adapterItemCount != 0)
+            lastHash = itemAdapter!!.getAdapterItem(0).logData.hashCode()
     }
 
     override fun onCreateThumbnail(view: View) {
@@ -190,7 +187,7 @@ class LogsWidget: Widget(), OnClickListener {
         }
 
     private fun LogData.toLogItem(): LogItem =
-        LogItem().withLogData(this)
+        LogItem().withLogData(this, LogItem.ViewType.NORMAL)
 
     private suspend fun onLogCreated(event: Events.Log.Create) {
         val log = event.log

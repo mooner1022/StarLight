@@ -17,8 +17,6 @@ import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.ui.plugins.config.PluginConfigActivity
 import dev.mooner.starlight.ui.plugins.info.startPluginInfoActivity
 import dev.mooner.starlight.ui.presets.ExpandableCard
-import dev.mooner.starlight.utils.trimLength
-import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.properties.Delegates.notNull
 
@@ -39,12 +37,12 @@ class PluginsListAdapter(
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: PluginListViewHolder, position: Int) {
         val plugin = data[position]
-        val config = plugin.info
+        val info = plugin.info
 
         holder.card.apply {
-            title = config.name.trimLength(17)
+            title = info.name
 
-            val iconFile = File(plugin.getDataFolder().resolve("assets"), "icon.png")
+            val iconFile = File(plugin.getExternalDataDirectory().resolve("assets"), "icon.png")
             if (iconFile.exists() && iconFile.isFile) {
                 setIcon {
                     it.load(iconFile) {
@@ -54,17 +52,19 @@ class PluginsListAdapter(
                 }
             }
 
-            holder.version.text = "v${config.version}"
-
             setOnInnerViewInflateListener {
+
                 with(holder) {
                     inflateInnerView(this@apply)
-                    fileSize.text = "%.2f MB".format(plugin.fileSize)
+
+                    buttonInfo.isEnabled = true
+                    buttonConfig.isEnabled = true
+                    version.text = "v${info.version}"
 
                     buttonConfig.setOnClickListener {
                         val intent = Intent(it.context, PluginConfigActivity::class.java).apply {
-                            putExtra("pluginName", config.name)
-                            putExtra("pluginId", config.id)
+                            putExtra("pluginName", info.name)
+                            putExtra("pluginId", info.id)
                         }
                         it.context.startActivity(intent)
                     }
@@ -79,14 +79,13 @@ class PluginsListAdapter(
 
     inner class PluginListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val card: ExpandableCard = itemView.findViewById(R.id.card_plugin)
-        val version: TextView   = itemView.findViewById(R.id.textViewPluginVersion)
 
-        var fileSize: TextView by notNull()
+        var version: TextView by notNull()
         var buttonConfig: Button by notNull()
         var buttonInfo: Button by notNull()
 
         fun inflateInnerView(innerView: View) {
-            fileSize      = innerView.findViewById(R.id.textViewPluginSize)
+            version      = innerView.findViewById(R.id.textViewPluginVersion)
             buttonConfig = innerView.findViewById(R.id.buttonConfig)
             buttonInfo   = innerView.findViewById(R.id.buttonInfo)
         }

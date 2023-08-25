@@ -8,13 +8,11 @@ package dev.mooner.starlight.plugincore.logger
 
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.logger.internal.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -23,9 +21,6 @@ class ProjectLogger private constructor(
     private var _logs: MutableList<LogData>,
     private val file: File
 ) {
-    private val logFlushScope: CoroutineScope by lazy {
-        CoroutineScope(Dispatchers.IO)
-    }
 
     val logs: MutableList<LogData>
         get() = this._logs
@@ -41,11 +36,23 @@ class ProjectLogger private constructor(
     fun v(tag: String?, message: String) =
         log(LogType.VERBOSE, tag, message)
 
+    fun verbose(message: String) =
+        v(tag = null, message = message)
+
+    fun verbose(tag: String?, message: String) =
+        v(tag = tag, message = message)
+
     fun d(message: String) =
         d(tag = null, message = message)
 
     fun d(tag: String?, message: String) =
         log(LogType.DEBUG, tag, message)
+
+    fun debug(message: String) =
+        d(tag = null, message = message)
+
+    fun debug(tag: String?, message: String) =
+        d(tag = tag, message = message)
 
     fun i(message: String) =
         i(tag = null, message = message)
@@ -53,17 +60,35 @@ class ProjectLogger private constructor(
     fun i(tag: String?, message: String) =
         log(LogType.INFO, tag, message)
 
+    fun info(message: String) =
+        i(tag = null, message = message)
+
+    fun info(tag: String?, message: String) =
+        i(tag = tag, message = message)
+
     fun w(message: String) =
         w(tag = null, message = message)
 
     fun w(tag: String?, message: String) =
         log(LogType.WARN, tag, message)
 
+    fun warn(message: String) =
+        w(tag = null, message = message)
+
+    fun warn(tag: String?, message: String) =
+        w(tag = tag, message = message)
+
     fun e(message: String) =
         e(tag = null, message = message)
 
     fun e(tag: String?, message: String) =
         log(LogType.ERROR, tag, message)
+
+    fun error(message: String) =
+        e(tag = null, message = message)
+
+    fun error(tag: String?, message: String) =
+        e(tag = tag, message = message)
 
     // What a Terrible Failure!
     fun wtf(message: String) =
@@ -88,14 +113,23 @@ class ProjectLogger private constructor(
         }
     }
 
-    private fun flush() = runBlocking {
-        flowOf(json.encodeToString(logs))
-            .onEach(file::writeText)
-            .catch { it.printStackTrace() }
-            .launchIn(logFlushScope)
+    private fun flush() {
+        try {
+            flowOf(json.encodeToString(logs))
+                .onEach(file::writeText)
+                .catch { it.printStackTrace() }
+                .launchIn(logFlushScope)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Logger.v("ProjectLogger", "Failed to flush project log: $e")
+        }
     }
 
     companion object {
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private val logFlushScope: CoroutineScope =
+            CoroutineScope(Dispatchers.IO.limitedParallelism(1)) + SupervisorJob()
 
         fun create(directory: File): ProjectLogger {
             directory.mkdirs()

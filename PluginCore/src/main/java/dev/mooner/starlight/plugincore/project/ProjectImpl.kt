@@ -18,6 +18,7 @@ import dev.mooner.starlight.plugincore.logger.ProjectLogger
 import dev.mooner.starlight.plugincore.logger.internal.Logger
 import dev.mooner.starlight.plugincore.pipeline.SimplePipeline
 import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
+import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycle
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
@@ -47,12 +48,14 @@ class ProjectImpl private constructor(
     override var threadPoolName: String? = null
 
     override val coroutineContext get() = mContext!!
+    private var mContext: CoroutineContext? = null
 
     private val lifecycle = ProjectLifecycle(this)
     override fun getLifecycle(): ProjectLifecycle =
         lifecycle
 
-    private var mContext: CoroutineContext? = null
+    private val _allowedEventIDs: MutableSet<String> = hashSetOf()
+    val allowedEventIDs: Set<String> get() = _allowedEventIDs
 
     override val isCompiled: Boolean
         get() = langScope != null
@@ -74,6 +77,8 @@ class ProjectImpl private constructor(
     init {
         val confFile = File(directory, CONFIG_FILE_NAME)
         lang.setConfigFile(confFile)
+
+        reloadAllowedEventIDs()
     }
 
     /**
@@ -88,13 +93,12 @@ class ProjectImpl private constructor(
         if (langScope == null) {
             if (!isCompiled) return
 
-            val thread = Thread.currentThread()
             logger.w("EventHandler", """
                 Property engine must not be null
                 이 에러는 StarLight 의 버그일 수 있습니다.
                 [버그 제보시 아래 메세지를 첨부해주세요.]
                 ──────────
-                thread    : ${thread.name}
+                thread    : ${currentThread.name}
                 eventName : $name
                 args      : $args
                 ┉┉┉┉┉┉┉┉┉┉
@@ -178,6 +182,8 @@ class ProjectImpl private constructor(
                 )).readText(Charsets.UTF_8)
                  */
                 if (lang.requireRelease && langScope != null) {
+                    if ("starlight.project.compile" in allowedEventIDs)
+                        lang.callFunction(langScope!!, "onStartCompile", emptyArray())
                     lang.release(langScope!!)
                     logger.v(tag, "engine released")
                 }
@@ -202,6 +208,7 @@ class ProjectImpl private constructor(
                 logger.e(tag, e.toString())
                 throw e
             } finally {
+                requestUpdate()
                 close()
             }
             awaitClose()
@@ -241,7 +248,8 @@ class ProjectImpl private constructor(
                 .onEach(File(directory.path, INFO_FILE_NAME)::writeText)
                 .launchIn(CoroutineScope(Dispatchers.IO))
 
-            EventHandler.fireEventWithScope(Events.Project.InfoUpdate(project = this@ProjectImpl))
+            requestUpdate()
+            reloadAllowedEventIDs()
         }
     }
 
@@ -320,7 +328,7 @@ class ProjectImpl private constructor(
     }
 
     override fun isEventCallAllowed(eventId: String): Boolean =
-        info.allowedEventIds.isNotEmpty() && eventId in info.allowedEventIds
+        allowedEventIDs.isNotEmpty() && eventId in allowedEventIDs
 
     @OptIn(DelicateCoroutinesApi::class)
     private fun createContext(): CoroutineContext {
@@ -343,6 +351,14 @@ class ProjectImpl private constructor(
 
     private fun notifyStateUpdated(state: ProjectLifecycle.State) {
         getLifecycle()
+    }
+
+    private fun reloadAllowedEventIDs() {
+        if (allowedEventIDs.isNotEmpty())
+            _allowedEventIDs.clear()
+        ProjectEventManager
+            .filterAllowedEvents(info.allowedEventIds)
+            .forEach(_allowedEventIDs::add)
     }
 
     companion object {

@@ -16,6 +16,8 @@
     <color name="cardview">#FFFFFF</color>
     <color name="background_dialog">#fdfdfd</color>
 
+    <color name="config_list_item_background">#F0F0F0</color>
+
     <color name="text">#4c4c4c</color>
 
     <color name="switch_track">#D1D1D1</color>

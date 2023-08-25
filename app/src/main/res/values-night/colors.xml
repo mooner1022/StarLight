@@ -7,6 +7,8 @@
     <color name="cardview">#171717</color>
     <color name="background_dialog">#1a1a1a</color>
 
+    <color name="config_list_item_background">#202020</color>
+
     <color name="text">#D5D5D5</color>
 
     <color name="switch_track">#636363</color>

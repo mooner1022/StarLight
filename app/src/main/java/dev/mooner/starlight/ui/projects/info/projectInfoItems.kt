@@ -8,6 +8,7 @@ package dev.mooner.starlight.ui.projects.info
 
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.project.ProjectImpl
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.TimeUtils
 
@@ -44,7 +45,7 @@ fun getProjectInfoItems(project: Project) = config {
                 title = "리스너"
                 icon = Icon.ARROW_LEFT
                 iconTintColor = color { "#98DDCA" }
-                description = info.allowedEventIds.joinToString()
+                description = (project as ProjectImpl).allowedEventIDs.joinToString()
             }
             button {
                 id = "packages"

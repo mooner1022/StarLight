@@ -126,7 +126,8 @@ class ProjectListAdapter(
                             }
                             setBackgroundColor(buttonBackgroundColor)
                             //load(button.icon.drawableRes)
-                            val icon = Icon.values()[button["button_icon"]!!.castAs()]
+
+                            val icon = button["button_icon"]?.castAs<Int>()?.let(Icon.values()::get) ?: Icon.NONE
                             loadWithTint(data = icon.drawableRes, tintColor = R.color.text)
                             setOnClickListener {
                                 //Toast.makeText(context, "Button Clicked!", Toast.LENGTH_SHORT).show()

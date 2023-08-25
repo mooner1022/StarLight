@@ -287,7 +287,7 @@ class ConfigItemBuilder {
     inner class SeekbarConfigBuilder: ConfigBuilder() {
         var max: Int by notNull()
         var min: Int = 0
-        var defaultValue: Int = 0
+        var defaultValue: Int? = null
 
         override fun build(): SeekbarConfigObject {
             requiredField("title", title)
@@ -304,7 +304,7 @@ class ConfigItemBuilder {
                 description = description,
                 max = max,
                 min = min,
-                default = defaultValue,
+                default = defaultValue ?: min,
                 icon = icon,
                 iconFile = iconFile,
                 iconResId = iconResId,

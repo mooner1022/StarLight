@@ -1,6 +1,7 @@
 package dev.mooner.starlight.plugincore.language
 
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.plugin.PluginContext
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 
@@ -14,12 +15,12 @@ class LanguageManager {
     internal fun getAssetPath(id: String): String? =
         languageAssetPaths[id]
 
-    fun addLanguage(assetPath: String, lang: Language) {
+    fun addLanguage(context: PluginContext, lang: Language) {
         if (languages.contains(lang)) {
             throw IllegalArgumentException("Duplicated language: ${lang.name}")
         }
         languages += lang
-        languageAssetPaths[lang.id] = assetPath
+        languageAssetPaths[lang.id] = context.getAsset(lang.id).path
         LOG.verbose { 
             translate { 
                 Locale.ENGLISH { "Added language ${lang.name}(${lang.id})" }

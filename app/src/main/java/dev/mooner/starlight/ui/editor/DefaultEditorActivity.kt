@@ -76,6 +76,8 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     private var showFileTree   : Boolean by notNull()
     private var showDebugChat  : Boolean by notNull()
 
+    private var bypassEscape   : Boolean by notNull()
+
     private val isHotKeyShown  : Boolean get() =
         GlobalConfig
             .category("e_general")
@@ -110,6 +112,10 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             .category("e_general")
             .getInt("theme", Theme.TOMORROW_NIGHT.ordinal)
             .let(Theme.values()::get)
+
+        bypassEscape = GlobalConfig
+            .category("e_general")
+            .getBoolean("bypass_escape", true)
 
         binding.scrollViewHotKeys.isHorizontalScrollBarEnabled = false
 
@@ -299,7 +305,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                 return true
             }
             // Bypass Escape
-            else if (event.keyCode == KeyEvent.KEYCODE_ESCAPE) {
+            else if (event.keyCode == KeyEvent.KEYCODE_ESCAPE && bypassEscape) {
                 return true
             }
         }
@@ -582,6 +588,18 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                     defaultValue = true
                     setOnValueChangedListener { _, isEnabled ->
                         setHotKeyVisibility(isEnabled)
+                    }
+                }
+                toggle { 
+                    id = "bypass_escape"
+                    title = translate { 
+                        Locale.ENGLISH { "Bypass Escape" }
+                        Locale.ENGLISH { "ESC 키 입력 무시" }
+                        icon = Icon.EXIT_TO_APP
+                        defaultValue = true
+                        setOnValueChangedListener { _, isEnabled ->
+                            bypassEscape = isEnabled
+                        }
                     }
                 }
                 val themes = Theme.values()

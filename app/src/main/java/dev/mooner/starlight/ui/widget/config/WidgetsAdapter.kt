@@ -6,8 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.core.view.doOnAttach
+import androidx.core.view.doOnDetach
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.widget.Widget
@@ -47,23 +50,26 @@ class WidgetsAdapter (
         viewData.onCreateWidget(holder.view)
     }
 
-    fun onResume(lifecycleOwner: LifecycleOwner) {
+    context(LifecycleOwner)
+    fun onResume() {
         for (widget in data) {
-            widget.onStateChanged(lifecycleOwner, Lifecycle.Event.ON_RESUME)
+            widget.onStateChanged(this@LifecycleOwner, Lifecycle.Event.ON_RESUME)
             widget.onResumeWidget()
         }
     }
 
-    fun onPause(lifecycleOwner: LifecycleOwner) {
+    context(LifecycleOwner)
+    fun onPause() {
         for (widget in data) {
-            widget.onStateChanged(lifecycleOwner, Lifecycle.Event.ON_PAUSE)
+            widget.onStateChanged(this@LifecycleOwner, Lifecycle.Event.ON_PAUSE)
             widget.onPauseWidget()
         }
     }
 
-    fun onDestroy(lifecycleOwner: LifecycleOwner) {
+    context(LifecycleOwner)
+    fun onDestroy() {
         for (widget in data) {
-            widget.onStateChanged(lifecycleOwner, Lifecycle.Event.ON_DESTROY)
+            widget.onStateChanged(this@LifecycleOwner, Lifecycle.Event.ON_DESTROY)
             widget.onDestroyWidget()
         }
     }
@@ -73,7 +79,20 @@ class WidgetsAdapter (
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        var lifecycleOwner: LifecycleOwner? = null
+
         val view: FrameLayout = itemView.findViewById(R.id.view)
         val title: TextView = itemView.findViewById(R.id.title)
+
+        init {
+            with(itemView) {
+                doOnAttach {
+                    lifecycleOwner = findViewTreeLifecycleOwner()
+                }
+                doOnDetach {
+                    lifecycleOwner = null
+                }
+            }
+        }
     }
 }

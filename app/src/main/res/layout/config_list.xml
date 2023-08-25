@@ -6,8 +6,7 @@
     android:id="@+id/layout_configButton"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="84dp"
->
+    android:minHeight="84dp">
 
     <ImageView
         android:id="@+id/icon"
@@ -16,11 +15,11 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:src="@drawable/ic_round_keyboard_arrow_right_24"
-        android:tint="@color/text"
         app:layout_constraintBottom_toBottomOf="@+id/description"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_round_keyboard_arrow_right_24"/>
+        app:srcCompat="@drawable/ic_round_keyboard_arrow_right_24"
+        app:tint="@color/text"/>
 
     <TextView
         android:id="@+id/title"
@@ -63,18 +62,18 @@
         app:icon="@drawable/ic_round_add_white_24"
         app:iconGravity="start"
         app:iconTint="@color/white"
-        app:layout_constraintBottom_toTopOf="@+id/cardView3"
-        app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintBottom_toBottomOf="@+id/description"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/title"/>
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView3"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginHorizontal="16dp"
         android:layout_marginBottom="16dp"
-        app:cardBackgroundColor="@color/background"
+        app:cardBackgroundColor="@color/config_list_item_background"
         app:cardCornerRadius="@dimen/card_radius"
         app:cardElevation="0dp"
         app:cardMaxElevation="0dp"
@@ -87,11 +86,7 @@
             android:id="@+id/recyclerView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:clipToPadding="true"
-            android:paddingStart="8dp"
-            android:paddingTop="16dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="16dp"/>
+            android:clipToPadding="true"/>
 
     </androidx.cardview.widget.CardView>
 

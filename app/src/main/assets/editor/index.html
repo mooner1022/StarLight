@@ -54,10 +54,15 @@
         enableLiveAutocompletion: true,
         showPrintMargin: false,
         scrollPastEnd: 0.2,
+        selectionStyle: "text",
+        useSvgGutterIcons: true,
+        animatedScroll: false,
         fontSize: "16px",
         theme: "ace/theme/nord_dark",
         mode: "ace/mode/javascript"
     });
+
+    editor.renderer.setScrollMargin(0, 0, 0, 20)
 
     const setSession = (sessionId, mode, code) => {
         let nSession;
@@ -68,6 +73,9 @@
             nSession.on("change", () => {
                 onChange(sessionId);
             });
+            //nSession.on("changeAnnotation", () => {
+            //    onAnnotationUpdate(sessionId);
+            //})
             sessions.set(sessionId, nSession);
         }
         editor.setSession(nSession);
@@ -92,6 +100,12 @@
         }
         sessions.delete(sessionId);
         console.log("DELETED");
+    }
+
+    const requestAnnotations = () => {
+        const annotations = editor.getSession().getAnnotations();
+        console.log(JSON.stringify(annotations))
+        WebviewCallback.onAnnotationUpdated(JSON.stringify(annotations));
     }
 
     const onChange = (sessionId) => {
@@ -127,6 +141,10 @@
     const appendText = (text) => {
         let cursorPos = editor.getCursorPosition();
         editor.session.insert(cursorPos, decode(text));
+    }
+
+    const _gotoLine = (row, col) => {
+        editor.gotoLine(row, col, true);
     }
 
     WebviewCallback.onLoadComplete();

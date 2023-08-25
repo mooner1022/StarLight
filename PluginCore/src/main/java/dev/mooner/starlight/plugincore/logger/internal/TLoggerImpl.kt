@@ -38,7 +38,12 @@ class TLoggerImpl(
         log(Logger::e, msg)
 
     override fun <T : Throwable> error(throwable: T) {
-        Logger.e(tag, throwable)
+        error(throwable) { "" }
+    }
+
+    override fun <T : Throwable> error(throwable: T, msg: LazyEval) {
+        val message = msg().toString().let { it + (if (it.isBlank()) "" else "\n") } + throwable.toString()
+        Logger.e(tag, message)
     }
 
     override fun wtf(msg: LazyEval) =

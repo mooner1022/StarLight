@@ -6,5 +6,22 @@
 
 package dev.mooner.starlight.plugincore.template
 
+import dev.mooner.starlight.plugincore.project.Project
+
 class TemplateManager {
+
+    private val templates: MutableSet<Template> = hashSetOf()
+
+    fun addTemplate(template: Template) {
+        templates += template
+    }
+
+    fun formatCode(project: Project, code: String): String {
+        var buffer: String = code
+        for (template in templates) {
+            buffer = buffer.replace("", template.name)
+        }
+        //TODO: Add
+        return ""
+    }
 }

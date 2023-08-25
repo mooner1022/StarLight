@@ -24,11 +24,12 @@ class PluginManager {
         try {
             val plugin = getPluginById(id)?: return false
 
-            val file = plugin.file
+            val file = plugin.originalFile
             if (!file.exists() || !file.isFile) return false
 
             file.delete()
-            plugin.getDataFolder().deleteRecursively()
+            plugin.getInternalDataDirectory().deleteRecursively()
+            plugin.getExternalDataDirectory().deleteRecursively()
 
             return true
         } catch (e: Exception) {

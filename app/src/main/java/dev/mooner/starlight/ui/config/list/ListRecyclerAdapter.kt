@@ -46,6 +46,8 @@ class ListRecyclerAdapter(
         holder.container.setOnClickListener {
             MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT))
                 .show {
+                    title(R.string.edit)
+
                     //title(res = R.string.add)
                     cornerRadius(res = R.dimen.card_radius)
                     if (context is LifecycleOwner)

@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.plugincore.event
 
+import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import dev.mooner.starlight.plugincore.logger.LogData
@@ -19,6 +20,7 @@ sealed class Events {
 
         class Post(
             val statusBarNotification: StatusBarNotification,
+            val context: Context,
             val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
 
@@ -84,7 +86,7 @@ sealed class Events {
     sealed class Locale {
 
         /**
-         * This event should be only fired from main application, or system can break!
+         * @warn This event should be only fired from main application, or system can break!
          */
         class Update(
             val locale: LocaleEnum,

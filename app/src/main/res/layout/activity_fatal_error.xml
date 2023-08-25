@@ -94,10 +94,10 @@
             android:layout_height="wrap_content"
             android:layout_margin="20dp"
             android:fadeScrollbars="true"
-            android:fontFamily="@font/nanumsquare_round_regular"
+            android:fontFamily="@font/jbmono_nl_regular"
             android:scrollbars="horizontal|vertical"
             android:textSize="14sp"
-            tools:text="ERR_CONTENT" />
+            tools:text="ERR_CONTENT"/>
 
     </androidx.cardview.widget.CardView>
 

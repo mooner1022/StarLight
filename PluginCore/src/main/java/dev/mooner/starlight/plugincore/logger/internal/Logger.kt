@@ -116,7 +116,7 @@ internal object Logger {
     fun log(type: LogType, tag: String?, message: String, flags: Flags = 0) {
         val data = LogData(
             type = type,
-            tag = tag,
+            tag = tag ?: type.name,
             message = message,
             flags = flags
         )

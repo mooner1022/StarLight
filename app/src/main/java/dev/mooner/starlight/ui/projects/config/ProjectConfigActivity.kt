@@ -251,7 +251,10 @@ class ProjectConfigActivity: AppCompatActivity() {
                                     binding.title.text = data["button_id"] as String
                                     binding.description.visibility = View.GONE
 
-                                    val icon = Icon.values()[data["button_icon"] as Int]
+                                    val icon = if ("button_icon" in data)
+                                        Icon.values()[data["button_icon"] as Int]
+                                    else
+                                        Icon.NONE
                                     binding.icon.load(icon.drawableRes)
                                 }
                             }
@@ -267,7 +270,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                     button {
                         id = "reload_info"
                         title = "프로젝트 정보 다시 로드"
-                        description = "프로젝트 정보를 파일에서 다시 불러옵니다. 이 옵션은 앱의 정상적인 작동을 방해할 수 있어요."
+                        description = "프로젝트 정보를 파일에서 다시 불러옵니다. 이 옵션은 앱의 정상적인 작동을 방해할 수 있습니다."
                         setOnClickListener { view ->
                             project.loadInfo()
                             Snackbar.make(

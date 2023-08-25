@@ -13,19 +13,19 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.databinding.ActivityPluginConfigBinding
+import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.ButtonConfigObject
-import dev.mooner.starlight.plugincore.config.ConfigImpl
-import dev.mooner.starlight.plugincore.config.TypedString
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.config.data.InMemoryConfig
 import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
-import dev.mooner.starlight.plugincore.plugin.Plugin
+import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.utils.bindFadeImage
 import dev.mooner.starlight.utils.restartApplication
+import dev.mooner.starlight.utils.setCommonAttrs
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
@@ -49,13 +49,15 @@ class PluginConfigActivity: AppCompatActivity() {
         binding = ActivityPluginConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        bindLogNotifier()
+
         val fabProjectConfig = binding.fabPluginConfig
 
         val pluginName = intent.getStringExtra(EXTRA_PLUGIN_NAME)!!
         val pluginId = intent.getStringExtra(EXTRA_PLUGIN_ID)!!
         val plugin = pluginManager.getPluginById(pluginId)?: error("Failed to find plugin with id: $pluginId, name: $pluginName")
 
-        val configFile = File(plugin.getDataFolder(), PLUGIN_CONFIG_FILE_NAME)
+        val configFile = File(plugin.getExternalDataDirectory(), PLUGIN_CONFIG_FILE_NAME)
         savedData = try {
             Session.json.decodeFromString(configFile.readText())
         } catch (e: Exception) {
@@ -92,7 +94,7 @@ class PluginConfigActivity: AppCompatActivity() {
                 return@setOnClickListener
             }
             configFile.writeText(Session.json.encodeToString(savedData))
-            plugin.onConfigUpdated(ConfigImpl(savedData), changedData.mapValues { it.value.keys.toSet() })
+            plugin.onConfigUpdated(InMemoryConfig(savedData), changedData.mapValues { it.value.keys.toSet() })
             plugin.onConfigUpdated(changedData)
             Snackbar.make(view, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
             fabProjectConfig.hide()
@@ -105,7 +107,7 @@ class PluginConfigActivity: AppCompatActivity() {
         binding.pluginName.text = pluginName
     }
 
-    private fun getConfig(plugin: Plugin) = plugin.getConfigStructure() + config {
+    private fun getConfig(plugin: StarlightPlugin) = plugin.getConfigStructure() + config {
         category {
             id = "cautious"
             title = "위험"

@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.starlight.R
@@ -45,6 +46,7 @@ class WidgetsThumbnailAdapter (
             visibility = View.VISIBLE
             text = viewData.name
         }
+        (holder.view as FrameLayout).removeAllViews()
         viewData.onCreateThumbnail(holder.view)
     }
 
@@ -58,10 +60,6 @@ class WidgetsThumbnailAdapter (
         Collections.swap(data, fromPos, toPos)
         notifyItemMoved(fromPos, toPos)
         onEdited(data)
-    }
-
-    fun onDestroy() {
-        data.forEach { it.onDestroyThumbnail() }
     }
 
     fun notifyAllItemInserted() {

@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
@@ -29,10 +30,10 @@ import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.setCommonAttrs
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 
 class PluginsFragment : Fragment() {
@@ -89,16 +90,16 @@ class PluginsFragment : Fragment() {
 
         listAdapter = PluginsListAdapter(requireContext())
 
-        CoroutineScope(Dispatchers.Default).launch {
-            flowOf(sortData()).collect { sorted ->
+        flowOf(sortData())
+            .onEach { sorted ->
                 withContext(Dispatchers.Main) {
-                    listAdapter!!.apply {
-                        listAdapter!!.data = sorted
-                        listAdapter!!.notifyItemRangeInserted(0, plugins.size)
+                    listAdapter?.apply {
+                        data = sorted
+                        notifyItemRangeInserted(0, plugins.size)
                     }
                 }
             }
-        }
+            .launchIn(lifecycleScope)
 
         with(binding.recyclerViewProjectList) {
             adapter = listAdapter

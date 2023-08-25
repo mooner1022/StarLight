@@ -16,7 +16,8 @@ data class ChatRoomImpl(
     override val name: String,
     override val isGroupChat: Boolean,
     override val isDebugRoom: Boolean = false,
-    val session: Notification.Action,
+    val sendSession: Notification.Action,
+    val readSession: Notification.Action,
     private val context: Context
 ): ChatRoom {
 
@@ -30,13 +31,13 @@ data class ChatRoomImpl(
         return try {
             val sendIntent = Intent()
             val msg = Bundle()
-            for (input in session.remoteInputs) msg.putCharSequence(
+            for (input in sendSession.remoteInputs) msg.putCharSequence(
                 input.resultKey,
                 message
             )
-            NotificationListener.notifySent(lastReceivedId)
-            RemoteInput.addResultsToIntent(session.remoteInputs, sendIntent, msg)
-            session.actionIntent.send(context, 0, sendIntent)
+            NotificationListener.notifySent()
+            RemoteInput.addResultsToIntent(sendSession.remoteInputs, sendIntent, msg)
+            sendSession.actionIntent.send(context, 0, sendIntent)
             LOG.verbose { "send() success: $message" }
             true
         } catch (e: PendingIntent.CanceledException) {
@@ -47,7 +48,7 @@ data class ChatRoomImpl(
 
     override fun markAsRead(): Boolean {
         try {
-            session.actionIntent.send(context, 1, Intent())
+            readSession.actionIntent.send(context, 1, null)
         } catch (e: PendingIntent.CanceledException) {
             return false
         }

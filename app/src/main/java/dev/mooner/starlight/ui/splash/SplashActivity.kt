@@ -14,19 +14,17 @@ import coil.load
 import coil.request.repeatCount
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
-import dev.mooner.starlight.core.session.ApplicationSession
+import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.databinding.ActivitySplashBinding
-import dev.mooner.starlight.event.SessionStageUpdateEvent
-import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.event.ApplicationEvent
+import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.ui.splash.quickstart.QuickStartActivity
 import dev.mooner.starlight.ui.splash.quickstart.steps.SetPermissionFragment
 import dev.mooner.starlight.utils.checkPermissions
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 private val LOG = LoggerFactory.logger {  }
 
@@ -79,35 +77,15 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun init() {
-        /*
-        val startupFile = File(getInternalDirectory(), "STARTUP.info")
-        if (startupFile.exists() && startupFile.isFile) {
-            val startupData: Map<String, String> = Session.json.decodeFromString(startupFile.readText())
-            if (startupData.containsKey("last_error")) {
-                val errorIntent = Intent(this, FatalErrorActivity::class.java).apply {
-                    putExtra("errorMessage", startupData["last_error"])
-                }
-                startupFile.delete()
-                startActivity(errorIntent)
-                finish()
-                return
-            }
-        }
-         */
-
         val initMillis = System.currentTimeMillis()
 
-        //val webview = WebView(applicationContext)
-        //webview.loadUrl(EditorActivity.ENTRY_POINT)
-
         lifecycleScope.launchWhenCreated {
-            if (Session.isInitComplete) {
-                launch(Dispatchers.Default) {
-                    startApplication(initMillis)
-                }
+            if (ApplicationSession.isInitComplete) {
+                startApplication(initMillis)
             } else {
-                EventHandler.on<SessionStageUpdateEvent>(this) {
+                EventHandler.on<ApplicationEvent.Session.StageUpdate>(this) {
                     value?.let {
+                        println("------------------------ $value")
                         LOG.info { value }
                         runOnUiThread {
                             binding.textViewLoadStatus.text = value

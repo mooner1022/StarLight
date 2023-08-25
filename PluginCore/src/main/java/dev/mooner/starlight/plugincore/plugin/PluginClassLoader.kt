@@ -1,18 +1,22 @@
 package dev.mooner.starlight.plugincore.plugin
 
+import android.content.Context
 import dalvik.system.PathClassLoader
 import java.io.File
 
 class PluginClassLoader(
+    context: Context,
     private val loader: PluginLoader,
     parent: ClassLoader,
-    private val config: PluginInfo,
-    private val dataDir: File,
+    private val pluginInfo: PluginInfo,
     private val file: File,
-): PathClassLoader(file.path, parent) {
+    nativeLibPath: String?
+): PathClassLoader(file.path, nativeLibPath, parent) {
+
+    private val internalDir: File
 
     private var pluginInit: StarlightPlugin? = null
-    private var pluginState: java.lang.IllegalStateException? = null
+    private var pluginState: IllegalStateException? = null
     private val classes: MutableMap<String, Class<*>> = hashMapOf()
     val plugin: StarlightPlugin
 
@@ -21,7 +25,8 @@ class PluginClassLoader(
     }
 
     fun findClass(name: String, checkGlobal: Boolean): Class<*> {
-        if (name.startsWith("dev.mooner.starlight.plugincore")) throw ClassNotFoundException(name)
+        if (name.startsWith("dev.mooner.starlight.plugincore"))
+            throw ClassNotFoundException(name)
         var result = classes[name]
 
         if (result == null) {
@@ -34,10 +39,10 @@ class PluginClassLoader(
                     loader.setClass(name, result)
                 }
             }
-            classes[name] = result!!
+            result?.also { classes[name] = it }
         }
 
-        return result
+        return result ?: throw ClassNotFoundException(name)
     }
 
     @Synchronized
@@ -51,24 +56,25 @@ class PluginClassLoader(
         }
         pluginState = IllegalStateException("Initial initialization")
         pluginInit = plugin
-        plugin.init(config, dataDir, file, this)
+        plugin.init(pluginInfo, internalDir, file, this)
     }
 
     init {
         try {
-            val jarClass: Class<*>
+            val mainClass: Class<*>
             try {
-                jarClass = Class.forName(config.mainClass, false, this)
+                mainClass = Class.forName(pluginInfo.mainClass, false, this)
             } catch (e: ClassNotFoundException) {
-                throw InvalidPluginException("Cannot find main class: ${config.mainClass}")
+                throw InvalidPluginException("Unable to find main class: ${pluginInfo.mainClass}")
             }
 
             val pluginClass: Class<out StarlightPlugin>
             try {
-                pluginClass = jarClass.asSubclass(StarlightPlugin::class.java)
+                pluginClass = mainClass.asSubclass(StarlightPlugin::class.java)
             } catch (e: ClassCastException) {
-                throw InvalidPluginException("Main class '${config.mainClass}' does not extend StarlightPlugin")
+                throw InvalidPluginException("Main class '${pluginInfo.mainClass}' does not extend StarlightPlugin")
             }
+            internalDir = context.filesDir
 
             plugin = pluginClass.newInstance()
         } catch (e: IllegalAccessException) {

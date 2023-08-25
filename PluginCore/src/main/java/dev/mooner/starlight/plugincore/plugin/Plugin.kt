@@ -5,7 +5,7 @@ import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.data.ConfigData
 import java.io.File
 
-interface Plugin {
+internal sealed interface Plugin {
 
     val info: PluginInfo
 
@@ -17,15 +17,20 @@ interface Plugin {
     )
     fun onConfigUpdated(updated: Map<String, Any>)
 
-    fun onConfigUpdated(config: Config, updated: Map<String, Set<String>>)
+    fun onConfigUpdated(config: ConfigData, updated: Map<String, Set<String>>)
 
     fun onConfigChanged(id: String, view: View?, data: Any)
 
     fun isEnabled(): Boolean
 
+    fun getInternalDataDirectory(): File
+
+    fun getExternalDataDirectory(): File
+
+    @Deprecated("Deprecated, use getExternalDataDirectory().")
     fun getDataFolder(): File
 
     fun getAsset(path: String): File
 
-    fun init(info: PluginInfo, dataDir: File, file: File, classLoader: ClassLoader)
+    fun init(info: PluginInfo, internalDir: File, file: File, classLoader: ClassLoader)
 }

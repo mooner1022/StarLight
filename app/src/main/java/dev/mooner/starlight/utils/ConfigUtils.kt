@@ -1,5 +1,6 @@
 package dev.mooner.starlight.utils
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.Lifecycle
@@ -48,6 +49,12 @@ fun Context.startConfigActivity(
     onConfigChanged: OnConfigChangedListener = { _, _, _, _ -> },
     onDestroy: () -> Unit = {}
 ) {
+    if (this is Activity && this !is ConfigActivity) {
+        holders.keys.forEach(::finishConfigActivity)
+        holders.clear()
+        instanceCount.set(0)
+    }
+
     val activityId = uuid ?: UUID.randomUUID().toString()
 
     val publisher: MutableSharedFlow<ApplicationEvent.ConfigActivity> =
@@ -180,6 +187,7 @@ internal fun onDestroyed() {
     }
     if (instanceCount.get() <= 0) {
         holders.clear()
+        instanceCount.set(0)
         LOG.verbose { "Cleared holder data map" }
 
         if (instanceCount.get() < 0)

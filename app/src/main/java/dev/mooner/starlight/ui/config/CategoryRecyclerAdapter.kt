@@ -26,6 +26,7 @@ import com.afollestad.materialdialogs.color.colorChooser
 import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.input.getInputField
 import com.afollestad.materialdialogs.input.input
+import com.google.android.material.divider.MaterialDividerItemDecoration
 import com.google.android.material.switchmaterial.SwitchMaterial
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
@@ -152,7 +153,7 @@ class CategoryRecyclerAdapter(
                 holder.seekBar.progress = getDefault() as Int
                 val offset = (viewData as SeekbarConfigObject).min
 
-                holder.seekBarIndex.text = (holder.seekBar.progress + offset).toString()
+                holder.seekBarIndex.text = (holder.seekBar.progress).toString()
                 holder.seekBar.max = viewData.max - offset
                 holder.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                     override fun onProgressChanged(
@@ -165,8 +166,8 @@ class CategoryRecyclerAdapter(
 
                     override fun onStartTrackingTouch(seekBar: SeekBar?) {}
 
-                    override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                        onConfigChanged(viewData.id, holder.seekBar, seekBar!!.progress + offset)
+                    override fun onStopTrackingTouch(seekBar: SeekBar) {
+                        onConfigChanged(viewData.id, holder.seekBar, seekBar.progress + offset)
                     }
                 })
             }
@@ -344,6 +345,9 @@ class CategoryRecyclerAdapter(
                     itemAnimator = FadeInUpAnimator()
                     layoutManager = LinearLayoutManager(context)
                     adapter = recyclerAdapter
+                    addItemDecoration(MaterialDividerItemDecoration(context, MaterialDividerItemDecoration.VERTICAL).apply {
+                        isLastItemDecorated = false
+                    })
                 }
 
                 recyclerAdapter.notifyItemRangeInserted(0, list.size)
@@ -352,6 +356,8 @@ class CategoryRecyclerAdapter(
                     val configData: MutableMap<String, Any> = mutableMapOf()
                     MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT))
                         .show {
+                            title(R.string.add)
+
                             view.findViewTreeLifecycleOwner()?.let {
                                 setCommonAttrs()
                             } ?: setCommonAttrs()

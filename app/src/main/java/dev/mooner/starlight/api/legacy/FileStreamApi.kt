@@ -15,7 +15,15 @@ class FileStreamApi: Api<FileStreamApi.FileStream>() {
 
             @JvmStatic
             fun read(path: String): String? =
-                File(path).let { if (it.exists()) it.readText() else null }
+                File(path).let {
+                    try {
+                        if (it.exists())
+                            it.readText()
+                        else null
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
 
             @JvmStatic
             fun read(path: String, nullIfNotExists: Boolean): String? =
@@ -23,7 +31,11 @@ class FileStreamApi: Api<FileStreamApi.FileStream>() {
 
             @JvmStatic
             fun write(path: String, data: String): String =
-                data.also(File(path)::writeText)
+                data.also { _ -> File(path).let { file ->
+                    if (file.parentFile?.exists() != true)
+                        file.parentFile?.mkdirs()
+                    file.writeText(data)
+                } }
 
             @JvmStatic
             fun append(path: String, data: String): String =

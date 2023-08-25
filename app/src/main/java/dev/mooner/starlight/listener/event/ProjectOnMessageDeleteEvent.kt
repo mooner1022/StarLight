@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
 
 class ProjectOnMessageDeleteEvent: ProjectEvent() {
 
-    override val id: String = "on_message_deleted"
+    override val id: String = "delete"
 
     override val name: String = "기본 메세지 삭제 이벤트"
 

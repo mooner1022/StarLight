@@ -13,6 +13,8 @@ import dev.mooner.starlight.plugincore.library.LibraryLoader
 import dev.mooner.starlight.plugincore.library.LibraryManager
 import dev.mooner.starlight.plugincore.library.LibraryManagerApi
 import dev.mooner.starlight.plugincore.logger.internal.Logger
+import dev.mooner.starlight.plugincore.plugin.PluginContext
+import dev.mooner.starlight.plugincore.plugin.PluginContextImpl
 import dev.mooner.starlight.plugincore.plugin.PluginLoader
 import dev.mooner.starlight.plugincore.plugin.PluginManager
 import dev.mooner.starlight.plugincore.project.ProjectLoader
@@ -20,6 +22,7 @@ import dev.mooner.starlight.plugincore.project.ProjectManager
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.TranslationManager
 import dev.mooner.starlight.plugincore.utils.NetworkUtil
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.widget.WidgetManager
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -69,10 +72,10 @@ object Session {
 
     const val isDebugging: Boolean = true
 
-    fun init(locale: Locale, baseDir: File) {
+    fun init(locale: Locale, baseDir: File): PluginContext? {
         if (isInitComplete || isDuringInit) {
             Logger.w("Session", "Rejecting re-init of Session")
-            return
+            return null
         }
         isDuringInit = true
 
@@ -96,6 +99,12 @@ object Session {
         }
         isDuringInit = false
         mIsInitComplete = true
+
+        return PluginContextImpl(
+            "starlight",
+            "StarLight",
+            getStarLightDirectory().path
+        )
     }
 
     fun shutdown() {

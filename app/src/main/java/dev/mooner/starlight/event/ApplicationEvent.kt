@@ -7,6 +7,8 @@
 package dev.mooner.starlight.event
 
 import android.view.View
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import dev.mooner.starlight.plugincore.event.Event
 import dev.mooner.starlight.plugincore.event.eventHandlerScope
 import kotlinx.coroutines.CoroutineScope
@@ -41,5 +43,14 @@ sealed class ApplicationEvent {
                 val data: Any
             )
         }
+    }
+
+    sealed class Lifecycle {
+
+        data class Update(
+            val source: LifecycleOwner,
+            val event: androidx.lifecycle.Lifecycle.Event,
+            val coroutineScope: CoroutineScope = eventHandlerScope(),
+        ): Event, CoroutineScope by coroutineScope, Lifecycle()
     }
 }

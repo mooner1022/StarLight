@@ -45,14 +45,13 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
-import dev.mooner.starlight.utils.dpToPx
 import dev.mooner.starlight.utils.setCommonAttrs
 import dev.mooner.starlight.utils.warn
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.transform
 
 private val LOG = LoggerFactory.logger {  }
 
@@ -61,12 +60,12 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     private var _binding: FragmentProjectsBinding? = null
     private val binding get() = _binding!!
 
-    private var isPaused = false
-    private var requiresUpdate = false
+    private var updateReceiveScope: CoroutineScope? = null
+
     private val updatedProjects: MutableSet<Project> = hashSetOf()
 
     private lateinit var projects: List<Project>
-    private lateinit var itemAdapter: ItemAdapter<ProjectListItem>
+    private var itemAdapter: ItemAdapter<ProjectListItem>? = null
 
     private val aligns = arrayOf(
         ALIGN_GANADA,
@@ -74,12 +73,12 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         ALIGN_COMPILED
     )
     private var alignState: Align<Project> = getAlignByName(
-        GlobalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name)
+        getDefaultCategory().getString(CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name)
     )?: DEFAULT_ALIGN
     private var isReversed: Boolean =
-        GlobalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_REVERSED).toBoolean()
+        getDefaultCategory().getString(CONFIG_PROJECTS_REVERSED).toBoolean()
     private var isActiveFirst: Boolean =
-        GlobalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_ACTIVE_FIRST).toBoolean()
+        getDefaultCategory().getString(CONFIG_PROJECTS_ACTIVE_FIRST).toBoolean()
 
     @SuppressLint("CheckResult")
     override fun onCreateView(
@@ -92,8 +91,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         //val activity = activity as MainActivity
         //recyclerAdapter = ProjectListAdapter(activity)
         itemAdapter = ItemAdapter()
-        val fastAdapter = FastAdapter.with(itemAdapter)
-
+        val fastAdapter = FastAdapter.with(itemAdapter!!)
 
         projects = projectManager.getProjects()
 
@@ -109,7 +107,16 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             recyclerViewProjectList.setup(fastAdapter)
         }
 
-        updateTitle(projects)
+        //updateTitle(projects)
+
+        updateReceiveScope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { scope ->
+            EventHandler.apply {
+                on(scope, callback = ::onProjectUpdated)
+                on(scope, callback = ::onProjectCompiled)
+                on(scope, callback = ::onProjectDeleted)
+                on(scope, callback = ::onProjectCreated)
+            }
+        }
 
         lifecycleScope.launchWhenCreated {
             updateEmptyText()
@@ -117,17 +124,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                 sortDataAsync()
                     .flowWithLifecycle(lifecycle, Lifecycle.State.CREATED)
                     .transform { list ->
-                        println(list.joinToString("\n") { it.info.name })
                         emit(list.map { ProjectListItem().withProject(it) })
                     }
-                    .collect(itemAdapter::set)
-            }
-
-            EventHandler.apply {
-                on(this@launchWhenCreated, callback = ::onProjectUpdated)
-                on(this@launchWhenCreated, callback = ::onProjectCompiled)
-                on(this@launchWhenCreated, callback = ::onProjectDeleted)
-                on(this@launchWhenCreated, callback = ::onProjectCreated)
+                    .collect(itemAdapter!!::set)
             }
         }
 
@@ -142,10 +141,10 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     }
 
     private suspend fun onProjectUpdated(event: Events.Project.InfoUpdate) =
-        itemAdapter.updateProjectView(event.project)
+        itemAdapter?.updateProjectView(event.project)
 
     private suspend fun onProjectCompiled(event: Events.Project.Compile) =
-        itemAdapter.updateProjectView(event.project)
+        itemAdapter?.updateProjectView(event.project)
 
     private suspend fun onProjectDeleted(event: Events.Project.Delete) =
         updateList(null)
@@ -173,36 +172,29 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     }
 
     private suspend fun ItemAdapter<ProjectListItem>.updateProjectView(project: Project) {
-        if (isPaused)
-            updatedProjects += project
-        else {
-            val index = getAdapterPosition(project.hashCode().toLong())
-            if (index == -1) {
-                with(requireContext()) {
-                    LOG.warn(R.string.log_project_list_update_failure)
-                }
-                return
+        LOG.debug { "updateProjectView ${project.info.name}" }
+        val index = getAdapterPosition(project.hashCode().toLong())
+        if (index == -1) {
+            with(requireContext()) {
+                LOG.warn(R.string.log_project_list_update_failure)
             }
-            withContext(Dispatchers.Main) {
-                //this@updateProjectView.getAdapterItem(index)
-                //!!.notifyItemChanged(index)
-                getAdapterItem(index).tryUpdateView()
-                updateTitle(projects)
-            }
+            return
+        }
+        withContext(Dispatchers.Main) {
+            //this@updateProjectView.getAdapterItem(index)
+            //!!.notifyItemChanged(index)
+            getAdapterItem(index).tryUpdateView()
+            updateTitle(projects)
         }
     }
 
     private suspend fun updateList(project: Project?) {
         projects = projectManager.getProjects()
-        if (isPaused) {
-            requiresUpdate = true
-            return
-        }
         withContext(Dispatchers.Main) {
             updateEmptyText()
             update()
 
-            project?.let { itemAdapter.scrollTo(it) }
+            project?.let { itemAdapter?.scrollTo(it) }
         }
     }
 
@@ -247,16 +239,15 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             chipGroup.layoutTransition.enableTransitionType(LayoutTransition.CHANGING)
             val languages = Session.languageManager.getLanguages()
             for ((index, language) in languages.withIndex()) {
-                val chip = Chip(this.windowContext).apply {
+                Chip(this.windowContext).apply {
                     id = index
                     text = language.name
-                    chipMinHeight = dpToPx(context, 30f)
+                    setChipBackgroundColorResource(R.color.chip_selector)
                     isCheckable = true
                     if (index == 0) {
                         isChecked = true
                     }
-                }
-                chipGroup.addView(chip)
+                }.also(chipGroup::addView)
             }
 
             positiveButton(res = R.string.create) {
@@ -307,7 +298,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         }
 
     private fun reloadList(list: List<ProjectListItem>) {
-        itemAdapter.set(list)
+        itemAdapter?.set(list)
         /*
         recyclerAdapter?.apply {
             val orgDataSize = data.size
@@ -356,24 +347,22 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         }, 500)
     }
 
-    override fun onPause() {
-        super.onPause()
-        isPaused = true
+    override fun onDestroyView() {
+        super.onDestroyView()
+        if (updateReceiveScope != null) {
+            updateReceiveScope!!.cancel()
+            updateReceiveScope = null
+        }
+        if (itemAdapter != null)
+            itemAdapter = null
     }
 
     override fun onResume() {
         super.onResume()
-        isPaused = false
-        if (requiresUpdate) {
-            lifecycleScope.launch {
-                updateEmptyText()
-            }
-            update()
-            requiresUpdate = false
-        }
+        //isPaused = false
         if (updatedProjects.isNotEmpty()) {
             for (project in updatedProjects) {
-                val index = itemAdapter.getAdapterPosition(project.hashCode().toLong())
+                val index = itemAdapter?.getAdapterPosition(project.hashCode().toLong())
                 if (index == -1) {
                     with(requireContext()) {
                         LOG.warn(R.string.log_project_list_update_failure)
@@ -385,11 +374,6 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             updatedProjects.clear()
         }
         updateTitle(projects)
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        //recyclerAdapter = null
     }
 
     companion object {

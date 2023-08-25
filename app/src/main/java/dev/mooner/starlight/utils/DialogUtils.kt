@@ -1,21 +1,17 @@
 package dev.mooner.starlight.utils
 
-import android.annotation.SuppressLint
-import android.app.Dialog
 import android.content.Context
-import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
+import androidx.annotation.UiContext
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import com.afollestad.materialdialogs.callbacks.onDismiss
+import com.afollestad.materialdialogs.callbacks.onShow
+import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
-import com.google.android.material.bottomsheet.BottomSheetBehavior.*
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.maxkeppeler.sheets.core.Sheet
-import com.maxkeppeler.sheets.core.SheetStyle
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.DialogLogsBinding
 import dev.mooner.starlight.logging.LogCollector
@@ -26,122 +22,87 @@ import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 
 typealias ConfirmCallback = (confirm: Boolean) -> Unit
 
-class CustomSheet: Sheet() {
+@UiContext
+fun Context.showLogsDialog() {
+    val logUpdateScope = CoroutineScope(Dispatchers.Default)
 
-    private lateinit var binding: DialogLogsBinding
-    private val logUpdateJob = Job()
+    MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+        setCommonAttrs()
+        cancelOnTouchOutside(true)
+        title(res = R.string.title_logs)
 
-    override fun onCreateLayoutView(): View =
-        DialogLogsBinding.inflate(LayoutInflater.from(activity)).also { binding = it }.root
+        val activity = this@showLogsDialog
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        style(SheetStyle.BOTTOM_SHEET)
-        displayHandle(true)
-        displayCloseButton(true)
-        displayPositiveButton(false)
-        width = resources.getDimensionPixelSize(R.dimen.dialog_width)
+        val binding = DialogLogsBinding.inflate(LayoutInflater.from(activity))
+        customView(view = binding.root)
 
-        val activity = requireActivity()
+        onShow { _ ->
+            val showInternalLog = GlobalConfig
+                .category("dev_mode_config")
+                .getBoolean("show_internal_log", false)
+            val logs = LogCollector.logs
+            val mAdapter = LogsRecyclerViewAdapter().withData(logs)
+            val mLayoutManager = LinearLayoutManager(activity).apply {
+                reverseLayout = true
+                stackFromEnd = true
+            }
 
-        val logs = LogCollector.logs
-        val mAdapter = LogsRecyclerViewAdapter(activity).apply {
-            data = logs.toMutableList()
-        }
-        val mLayoutManager = LinearLayoutManager(activity).apply {
-            reverseLayout = true
-            stackFromEnd = true
-        }
+            binding.rvLog.apply {
+                itemAnimator = FadeInUpAnimator()
+                layoutManager = mLayoutManager
+                adapter = mAdapter
+            }
+            mAdapter.notifyItemRangeInserted(0, logs.size)
 
-        binding.rvLog.apply {
-            itemAnimator = FadeInUpAnimator()
-            layoutManager = mLayoutManager
-            adapter = mAdapter
-        }
-        mAdapter.notifyItemRangeInserted(0, logs.size)
-
-        CoroutineScope(Dispatchers.Main + logUpdateJob).launch {
-            EventHandler.on<Events.Log.Create>(this) {
-                if (log.type == LogType.VERBOSE && !GlobalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)) return@on
-                mAdapter.pushLog(log)
-                binding.rvLog.let { recycler ->
-                    recycler.post {
-                        recycler.smoothScrollToPosition(mAdapter.data.size - 1)
-                    }
+            EventHandler.on<Events.Log.Create>(logUpdateScope) {
+                if (log.type == LogType.VERBOSE && !showInternalLog) return@on
+                binding.rvLog.post {
+                    mAdapter.push(log)
+                    binding.rvLog.smoothScrollToPosition(mAdapter.getItems().size - 1)
                 }
             }
         }
-        super.onViewCreated(view, savedInstanceState)
-        (dialog as BottomSheetDialog?)?.behavior?.apply {
-            setPeekHeight(PEEK_HEIGHT_AUTO, true)
-            isFitToContents = false
+
+        onDismiss {
+            logUpdateScope.cancel()
         }
-    }
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        (dialog as BottomSheetDialog?)?.behavior?.apply {
-            state = STATE_HALF_EXPANDED
+        negativeButton(res = R.string.close) {
+            dismiss()
         }
-        return super.onCreateDialog(savedInstanceState)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        logUpdateJob.cancel()
-    }
-
-    fun build(ctx: Context, width: Int? = null, func: CustomSheet.() -> Unit): CustomSheet {
-        this.windowContext = ctx
-        this.width = width
-        this.func()
-        return this
-    }
-
-    fun show(ctx: Context, width: Int? = null, func: CustomSheet.() -> Unit): CustomSheet {
-        this.windowContext = ctx
-        this.width = width
-        this.func()
-        this.show()
-        return this
-    }
-}
-
-fun Context.showLogsDialog() {
-    CustomSheet().show(this) {
-
     }
 }
 
 fun showConfirmDialog(context: Context, title: String, message: String, onDismiss: ConfirmCallback? = null) {
-    MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+    MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
         setCommonAttrs()
         cancelOnTouchOutside(false)
-        noAutoDismiss()
         title(text = title)
         message(text = message)
-        positiveButton(text = context.getString(R.string.ok)) {
+        positiveButton(res = R.string.ok) {
             onDismiss?.invoke(true)
             dismiss()
         }
-        negativeButton(text = context.getString(R.string.cancel)) {
+        negativeButton(res = R.string.cancel) {
             onDismiss?.invoke(false)
             dismiss()
         }
     }
 }
 
-@SuppressLint("CheckResult")
 fun Context.showErrorLogDialog(title: String, e: Throwable) {
-    MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+    MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
         setCommonAttrs()
         cancelOnTouchOutside(false)
-        noAutoDismiss()
         title(text = title)
         message(text = e.toString() + "\n" + e.stackTraceToString())
-        positiveButton(text = "닫기", click = MaterialDialog::dismiss)
+        positiveButton(res = R.string.close, click = MaterialDialog::dismiss)
     }
 }
 

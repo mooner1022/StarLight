@@ -44,7 +44,7 @@ class AppInfoActivity : AppCompatActivity() {
 
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.recyclerView)
-            structure { getConfig(pInfo, versionCode) }
+            structure { getConfig(pInfo.versionName, versionCode) }
             savedData(emptyMap())
             lifecycleOwner(this@AppInfoActivity)
         }.build()
@@ -54,7 +54,7 @@ class AppInfoActivity : AppCompatActivity() {
         binding.scroll.bindFadeImage(binding.imageViewLogo)
     }
 
-    private fun getConfig(pInfo: PackageInfo, versionCode: Number) = config {
+    private fun getConfig(versionName: String, versionCode: Number) = config {
         val defaultColor = getColor(R.color.main_bright)
         category {
             id = "general"
@@ -62,7 +62,7 @@ class AppInfoActivity : AppCompatActivity() {
                 button {
                     id = "name"
                     title = "앱 버전"
-                    description = "v${pInfo.versionName}(build ${versionCode})"
+                    description = "v${versionName}(build ${versionCode})"
                     icon = Icon.STAR
                     iconTintColor = defaultColor
                 }
@@ -90,7 +90,7 @@ class AppInfoActivity : AppCompatActivity() {
                     id = "dev"
                     title = "무너"
                     icon = Icon.DEVELOPER_BOARD
-                    description = "ariel@mooner.dev"
+                    description = "siwol@mooner.dev"
                     iconTintColor = defaultColor
                     setOnClickListener { _ ->
                         if (isDevMode) {

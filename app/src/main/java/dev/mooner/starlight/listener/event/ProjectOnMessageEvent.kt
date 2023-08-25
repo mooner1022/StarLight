@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
 
 class ProjectOnMessageEvent: ProjectEvent() {
 
-    override val id: String = "on_message"
+    override val id: String = "create"
 
     override val name: String = "기본 메세지 수신 이벤트"
 

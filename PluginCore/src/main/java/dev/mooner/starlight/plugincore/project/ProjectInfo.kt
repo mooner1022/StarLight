@@ -14,7 +14,7 @@ data class ProjectInfo (
     var trust: Boolean = true,
     val createdMillis: Long = System.currentTimeMillis(),
     val allowedEventIds: MutableSet<String> =
-        hashSetOf("on_message", "on_message_deleted", "default_legacy"),
+        hashSetOf("starlight.*"),
     val packages: MutableSet<String> =
         hashSetOf("com.kakao.talk")
 )
@@ -24,10 +24,10 @@ class ProjectInfoBuilder {
     var mainScript: String by Delegates.notNull()
     var languageId: String by Delegates.notNull()
     var trust: Boolean = true
-    var allowedEventIds: MutableSet<String> =
-        hashSetOf("on_message", "on_message_deleted", "default_legacy")
-    var packages: MutableSet<String> =
-        hashSetOf("com.kakao.talk")
+    //var allowedEventIds: MutableSet<String> =
+    //    hashSetOf("on_message", "on_message_deleted", "default_legacy")
+    //var packages: MutableSet<String> =
+    //    hashSetOf("com.kakao.talk")
 
     fun build() = ProjectInfo(
         name = name,
@@ -35,7 +35,7 @@ class ProjectInfoBuilder {
         languageId = languageId,
         isEnabled = false,
         trust = trust,
-        allowedEventIds = allowedEventIds,
-        packages = packages
+        //allowedEventIds = allowedEventIds,
+        //packages = packages
     )
 }

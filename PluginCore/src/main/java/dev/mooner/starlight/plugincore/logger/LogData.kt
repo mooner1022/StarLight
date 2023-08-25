@@ -1,6 +1,6 @@
 package dev.mooner.starlight.plugincore.logger
 
-import dev.mooner.starlight.plugincore.utils.TimeUtils.Companion.formatCurrentDate
+import dev.mooner.starlight.plugincore.utils.TimeUtils.Companion.formatMillis
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -40,13 +40,18 @@ data class LogData(
         return hashCode() == data.hashCode()
     }
 
+    fun toSimpleString(): String {
+        return "%s %s - %s:\n%s"
+            .format(type.name.substring(0, 1), formatMillis(millis, "HH:mm:ss.SSS"), tag, message)
+    }
+
     fun toString(excludeThread: Boolean = false): String {
         return if (excludeThread)
             "%s %7.7s - %$MAX_TAG_INDENT.${MAX_TAG_INDENT}s: %s"
-                .format(formatCurrentDate(TIMESTAMP_FORMAT), type.name, tag, message)
+                .format(formatMillis(millis, TIMESTAMP_FORMAT), type.name, tag, message)
         else
             "%s %7.7s [%-$MAX_THREAD_INDENT.${MAX_THREAD_INDENT}s] - %$MAX_TAG_INDENT.${MAX_TAG_INDENT}s: %s"
-                .format(formatCurrentDate(TIMESTAMP_FORMAT), type.name, threadName, tag, message)
+                .format(formatMillis(millis, TIMESTAMP_FORMAT), type.name, threadName, tag, message)
     }
 
     override fun toString(): String {

@@ -19,6 +19,9 @@
     <string name="title_notification_rules">Notification Rules</string>
     <string name="subtitle_notification_rules">There are %d Rules.</string>
 
+    <string name="file">File</string>
+    <string name="directory">Directory</string>
+
     <string name="add">Add</string>
     <string name="open">Open</string>
     <string name="close">Close</string>
@@ -28,6 +31,8 @@
     <string name="finish">Finish</string>
     <string name="create">Create</string>
     <string name="show_more">Show more</string>
+    <string name="send">Send</string>
+    <string name="edit">Edit</string>
 
     <string name="step_default_lib">Loading default libraries…</string>
     <string name="step_check_kakaotalk_version">Checking KakaoTalk version…</string>
@@ -49,18 +54,20 @@
     <string name="menu_warnings">Messages</string>
 
     <string name="project_duplicate_name">Name cannot be duplicated.</string>
-    <string name="project_name_format_error">Name can only contain English, Korean, Numbers, -, and _.</string>
-    <string name="project_select_language">Please select language to use.</string>
+    <string name="project_name_format_error">Name can only contain English, Korean, Number, -, and _.</string>
+    <string name="project_select_language">Please select a language to be used.</string>
 
-    <string name="project_align_state">Aligned by</string>
-    <string name="plugin_align_state">Aligned by</string>
+    <string name="aligned_by">Aligned by</string>
     <string name="default_placeholder" translatable="false">DEFAULT</string>
 
-    <string name="nothing_yet">There are no %s yet! %s</string>
+    <string name="no_projects">There are no projects yet! (⊙_⊙;)</string>
+    <string name="no_plugins">There are no plugins yet! (⊙_⊙;)</string>
     <string name="no_message_yet">There are no errors yet.</string>
 
     <string name="align_reversed">Descending</string>
     <string name="align_active_first">Active priority sorting</string>
+
+    <string name="debugroom_type_here">Type here…</string>
 
     <string name="layout_tv_last">Last</string>
     <string name="layout_tv_next">Next</string>
@@ -87,6 +94,21 @@
     <string name="action_previous_step">Prev.</string>
     <string name="action_next_step">Next</string>
 
+    <string name="editor_new_file">New file/dir</string>
+    <string name="editor_new_file_title">Name of new file/dir</string>
+    <string name="editor_new_file_desc">Please enter the name of file/dir being created.</string>
+
     <string name="log_foreground_started">Successfully started foreground task!</string>
     <string name="log_project_list_update_failure">Failed to update project list: index not found</string>
+    <string name="log_filter_settings">Log filter</string>
+    <string name="log_filter_auto_scroll">Auto scroll</string>
+    <string name="log_filter_types">Types</string>
+    <string name="log_filter_tags">Tags</string>
+    <string name="log_filter_message">Message(Regexp)</string>
+    <string name="log_type_text">Text</string>
+    <string name="log_type_card">Card</string>
+
+    <string name="widget_config_button_text">Widget settings</string>
+
+    <string name="api_cannot_send_to_room">Cannot send message to a room \'%s\' without receiving initial message.</string>
 </resources>

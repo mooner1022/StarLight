@@ -64,18 +64,10 @@ fun formatTime(millis: Long): String {
     val h = TimeUnit.MILLISECONDS.toHours(millis) % 24
     return if (millis >= day) {
         val d = TimeUnit.MILLISECONDS.toDays(millis)
-        String.format("%d일 %d시간 %02d분 %02d초", d, h, m, s)
+        String.format("%d | %02d : %02d : %02d", d, h, m, s)
     } else {
-        String.format("%d시간 %02d분 %02d초", h, m, s)
+        String.format("%02d : %02d : %02d", h, m, s)
     }
-}
-
-fun Context.restartApplication() {
-    val intent = packageManager.getLaunchIntentForPackage(packageName)
-    val componentName = intent!!.component
-    val mainIntent = Intent.makeRestartActivityTask(componentName)
-    startActivity(mainIntent)
-    Runtime.getRuntime().exit(0)
 }
 
 fun Uri.toBitmap(context: Context): Bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

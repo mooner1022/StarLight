@@ -9,13 +9,13 @@ package dev.mooner.starlight
 import android.os.Bundle
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.transition.ChangeBounds
 import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.appbar.AppBarLayout
 import dev.mooner.starlight.databinding.ActivityMainBinding
 import dev.mooner.starlight.logging.bindLogNotifier
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.ui.ViewPagerAdapter
 import dev.mooner.starlight.utils.LAYOUT_TABLET
@@ -54,7 +54,6 @@ class MainActivity : AppCompatActivity() {
 
             appBarLayout.addOnOffsetChangedListener(::handleOffsetUpdate)
         }
-        lifecycleScope
     }
 
     private fun getOnPageChangeCallback() =
@@ -65,7 +64,8 @@ class MainActivity : AppCompatActivity() {
                     0 -> R.id.nav_home
                     1 -> R.id.nav_projects
                     2 -> R.id.nav_plugins
-                    3 -> R.id.nav_settings
+                    3 -> R.id.nav_logs
+                    4 -> R.id.nav_settings
                     else -> R.id.nav_home
                 }
                 binding.bottomMenu.setItemSelected(id, true)
@@ -75,11 +75,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleMenuItemSelection(id: Int) {
         val index = when(id) {
-            R.id.nav_home -> 0
+            R.id.nav_home     -> 0
             R.id.nav_projects -> 1
-            R.id.nav_plugins -> 2
-            R.id.nav_settings -> 3
-            else -> 0
+            R.id.nav_plugins  -> 2
+            R.id.nav_logs     -> 3
+            R.id.nav_settings -> 4
+            else              -> 0
         }
         binding.viewPager.setCurrentItem(index, true)
         onPageChanged(id)
@@ -106,12 +107,15 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_projects ->
                     getText(R.string.title_projects) to
                             getString(R.string.subtitle_projects)
-                                .format(0)
+                                .format(Session.projectManager.getEnabledProjects().size)
 
                 R.id.nav_plugins ->
                     getText(R.string.title_plugins) to
                             getString(R.string.subtitle_plugins)
                                 .format(pluginManager.plugins.size)
+
+                R.id.nav_logs ->
+                    getString(R.string.title_logs) to ""
 
                 R.id.nav_settings ->
                     applicationContext.getText(R.string.title_settings) to ""

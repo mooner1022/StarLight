@@ -61,9 +61,12 @@ class ConfigActivity : AppCompatActivity() {
 
         try {
             initAdapter()
+            if (!this::holder.isInitialized)
+                throw IllegalStateException("Holder not initialized")
         } catch (e: Exception) {
             LOG.error { "Failed to initialize config activity adapter: $e" }
             finish()
+            return
         }
 
         recyclerAdapter = ParentRecyclerAdapter(

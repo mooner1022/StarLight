@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/layout_configButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="64dp">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_configButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="48dp">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView_configButton"
@@ -13,17 +14,20 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:minHeight="50dp"
+        android:minHeight="48dp"
+        app:cardBackgroundColor="@color/transparent"
         app:cardCornerRadius="@dimen/card_radius"
         app:cardElevation="0dp"
         app:cardMaxElevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:minHeight="50dp">
+            android:layout_height="wrap_content"
+            android:minHeight="50dp">
 
             <ImageView
                 android:id="@+id/icon"
@@ -36,6 +40,7 @@
                 app:srcCompat="@drawable/ic_round_keyboard_arrow_right_24"/>
 
             <TextView
+                tools:text="TEXT"
                 android:id="@+id/title"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -44,20 +49,24 @@
                 android:ellipsize="end"
                 android:fontFamily="@font/nanumsquare_round_bold"
                 android:maxLines="1"
-                android:text="TEXT"
                 android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@+id/description"
                 app:layout_constraintEnd_toStartOf="@+id/icon"
-                app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent"/>
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"/>
 
             <TextView
+                tools:text="Description"
                 android:id="@+id/description"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content" android:layout_marginStart="32dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="32dp"
                 android:layout_marginEnd="8dp"
-                android:layout_marginBottom="4dp" android:fontFamily="@font/nanumsquare_round_light"
-                android:text="Description" android:visibility="visible"
-                app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@+id/icon"
+                android:layout_marginBottom="4dp"
+                android:fontFamily="@font/nanumsquare_round_light"
+                android:visibility="visible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/icon"
                 app:layout_constraintStart_toStartOf="parent"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>

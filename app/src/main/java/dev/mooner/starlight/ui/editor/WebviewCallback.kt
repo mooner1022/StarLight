@@ -6,5 +6,7 @@ interface WebviewCallback {
 
     fun onContentChanged(sessionId: String?, code: String?)
 
+    fun onAnnotationUpdated(list: String)
+
     fun requestSession(sessionId: String?)
 }

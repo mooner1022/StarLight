@@ -14,20 +14,24 @@ import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import dev.mooner.starlight.R
+import dev.mooner.starlight.WIDGET_DEF_STRING
 import dev.mooner.starlight.databinding.ActivityWidgetConfigBinding
-import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.widgetManager
 import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.widget.Widget
+import dev.mooner.starlight.plugincore.widget.WidgetInfo
 import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.utils.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*
+
+private val logger = LoggerFactory.logger {  }
 
 class WidgetConfigActivity : AppCompatActivity() {
 
@@ -41,13 +45,13 @@ class WidgetConfigActivity : AppCompatActivity() {
         binding = ActivityWidgetConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val widgetIds: List<String> = json.decodeFromString(GlobalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
-        for (id in widgetIds) {
-            with(widgetManager.getWidgetById(id)) {
-                if (this != null)
-                    widgets += this
-            }
-        }
+        GlobalConfig
+            .category("widgets")
+            .getString("ids", WIDGET_DEF_STRING)
+            .let<_, List<String>>(json::decodeFromString)
+            .mapNotNull(widgetManager::getWidgetById)
+            .map(Class<out Widget>::newInstance)
+            .forEach(widgets::add)
 
         binding.apply {
             subTitle.text = getString(R.string.subtitle_widgets)
@@ -135,9 +139,11 @@ class WidgetConfigActivity : AppCompatActivity() {
         }
     }
 
-    private fun addWidget(widget: Widget) {
+    private fun addWidget(widget: Class<out Widget>) {
+        val instance = widget.newInstance()
+        widgets += instance
+
         recyclerAdapter!!.apply {
-            data += widget
             notifyItemInserted(data.size)
 
             notifyDataEdited(data)
@@ -152,20 +158,25 @@ class WidgetConfigActivity : AppCompatActivity() {
     }
 
     private fun getWidgetConfigStructure(onDismiss: () -> Unit): ConfigStructure = config {
-        val widgets = widgetManager.getWidgets()
+        val allWidgets = widgetManager.getWidgets()
 
-        for ((pluginName, _widgets) in widgets) {
+        for ((category, infos) in widgetManager.getAllWidgetInfo().values.groupBy(WidgetInfo::pluginName)) {
             category {
                 id = UUID.randomUUID().toString()
-                title = pluginName
-                textColor = getColorCompat(R.color.main_purple)
+                title = category
+                textColor = getColorCompat(R.color.main_bright)
                 items {
-                    for (widget in _widgets) {
+                    for (info in infos) {
+                        val clazz = allWidgets[info.id]
+                        if (clazz == null) {
+                            logger.warn { "Ignoring widget ${info.id}: class == null" }
+                            continue
+                        }
                         button {
-                            id = widget.id
-                            title = widget.name
+                            id = info.id
+                            title = info.name
                             setOnClickListener { _ ->
-                                addWidget(widget)
+                                addWidget(clazz)
                                 onDismiss()
                             }
                         }
@@ -178,6 +189,7 @@ class WidgetConfigActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         widgets.forEach(Widget::onDestroyThumbnail)
+        widgets.clear()
         recyclerAdapter = null
     }
 

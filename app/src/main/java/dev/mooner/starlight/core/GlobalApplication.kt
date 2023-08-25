@@ -12,7 +12,6 @@
 
 package dev.mooner.starlight.core
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
@@ -22,9 +21,12 @@ import android.os.Build
 import android.os.Environment
 import android.provider.Settings
 import android.widget.Toast
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import dev.mooner.starlight.R
-import dev.mooner.starlight.core.session.ApplicationSession
-import dev.mooner.starlight.event.SessionStageUpdateEvent
+import dev.mooner.starlight.event.ApplicationEvent
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
@@ -39,8 +41,9 @@ import dev.mooner.starlight.utils.checkPermissions
 import dev.mooner.starlight.utils.info
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.decodeFromString
 import java.io.File
 
@@ -48,11 +51,15 @@ private typealias StartupInfo = Map<String, String>
 
 private val LOG = LoggerFactory.logger {  }
 
-class GlobalApplication: Application() {
+class GlobalApplication: Application(), LifecycleEventObserver {
+
+    private var mState: Int = STATE_UNDEFINED
+    val state get() = mState
 
     override fun onCreate() {
         super.onCreate()
         //Logger.v(T, "Application onCreate() called")
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
 
         mContext = applicationContext
 
@@ -85,6 +92,7 @@ class GlobalApplication: Application() {
             }
         }
 
+        // Init LogCollector
         LogCollector
 
         if (!ForegroundTask.isRunning) {
@@ -99,28 +107,27 @@ class GlobalApplication: Application() {
             //Logger.i(T, "Successfully started foreground task!")
         }
 
-        CoroutineScope(Dispatchers.Default).launch {
-            ApplicationSession.init(applicationContext)
-                .onCompletion {
-                    EventHandler.apply {
-                        on(callback = ::onProjectCreated)
-                        on(callback = ::onProjectInfoUpdated)
-                        on(callback = ::onProjectCompiled)
-                        on<Events.Scheme.SchemeOpenEvent> {
-                            LOG.info { params }
-                        }
+        ApplicationSession.init(applicationContext)
+            .onEach {
+                EventHandler.fireEvent(ApplicationEvent.Session.StageUpdate(it))
+            }
+            .onCompletion {
+                EventHandler.apply {
+                    on(callback = ::onProjectCreated)
+                    on(callback = ::onProjectInfoUpdated)
+                    on(callback = ::onProjectCompiled)
+                    on<Events.Scheme.SchemeOpenEvent> {
+                        LOG.info { params }
                     }
-                    LoggerFactory.logger("System").info {
-                        """
+                }
+                LoggerFactory.logger("System").info {
+                    """
                             || Project ✦ StarLight |
                             |Running PluginCore v${Info.PLUGINCORE_VERSION}
                         """.trimMargin()
-                    }
                 }
-                .collect {
-                    EventHandler.fireEvent(ApplicationEvent.Session.StageUpdate(it))
-                }
-        }
+            }
+            .launchIn(CoroutineScope(Dispatchers.Default))
     }
 
     private fun onProjectCreated(event: Events.Project.Create) {
@@ -149,7 +156,27 @@ class GlobalApplication: Application() {
         return startupData
     }
 
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        when(event) {
+            Lifecycle.Event.ON_START -> {
+                mState = STATE_FOREGROUND
+                LOG.verbose { "Application state changing to STATE_FOREGROUND" }
+            }
+            Lifecycle.Event.ON_STOP  -> {
+                mState = STATE_BACKGROUND
+                LOG.verbose { "Application state changing to STATE_BACKGROUND" }
+            }
+            else -> {}
+        }
+        ApplicationEvent.Lifecycle.Update(source, event)
+            .also(EventHandler::fireEventWithScope)
+    }
+
     companion object {
+
+        const val STATE_UNDEFINED  = -1
+        const val STATE_FOREGROUND = 0
+        const val STATE_BACKGROUND = 1
 
         @SuppressLint("StaticFieldLeak")
         @JvmStatic

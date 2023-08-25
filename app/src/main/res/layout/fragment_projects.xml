@@ -35,38 +35,39 @@
                     android:background="@color/main_bright">
 
                 <ImageView
-                        android:id="@+id/alignStateIcon"
-                        android:layout_width="0dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_round_sort_by_alpha_24"
-                        android:layout_marginStart="20dp"
-                        app:tint="#FFFFFF"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"/>
+                    android:id="@+id/alignStateIcon3"
+                    android:layout_width="0dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="20dp"
+                    android:src="@drawable/ic_round_format_list_bulleted_24"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:tint="#FFFFFF" />
+
+                <ImageView
+                    android:id="@+id/alignStateIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_round_sort_by_alpha_24"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/textViewAlignState"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:tint="#FFFFFF"/>
+
                 <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/nanumsquare_round_extrabold"
-                        android:text="@string/project_align_state"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        app:layout_constraintStart_toEndOf="@+id/alignStateIcon"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"/>
-                <TextView
-                        android:id="@+id/textViewAlignState"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="0.15"
-                        android:fontFamily="@font/nanumsquare_round_extrabold"
-                        android:text="@string/default_placeholder"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        android:layout_marginEnd="20dp"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"/>
+                    android:id="@+id/textViewAlignState"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="14dp"
+                    android:layout_weight="0.15"
+                    android:fontFamily="@font/nanumsquare_round_extrabold"
+                    android:text="@string/default_placeholder"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.cardview.widget.CardView>
 
@@ -105,7 +106,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:fontFamily="@font/nanumsquare_round_bold"
-            android:text="@string/nothing_yet"
+            android:text="@string/no_projects"
             android:textAlignment="center"
             android:textSize="18sp"
             android:visibility="gone"

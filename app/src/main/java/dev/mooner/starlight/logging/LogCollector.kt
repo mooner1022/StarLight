@@ -6,6 +6,9 @@
 
 package dev.mooner.starlight.logging
 
+import dev.mooner.starlight.CA_DEV_MODE
+import dev.mooner.starlight.CF_WRITE_INTERNAL_LOG
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
@@ -25,26 +28,37 @@ object LogCollector {
     private val logWriteScope: CoroutineScope =
         CoroutineScope(Dispatchers.IO.limitedParallelism(1)) + SupervisorJob()
 
+    private var writeInternalLog: Boolean =
+        GlobalConfig
+            .category(CA_DEV_MODE)
+            .getBoolean(CF_WRITE_INTERNAL_LOG, false)
+
     private val logFile: File
 
     private val mLogs: MutableList<LogData> = mutableListOf()
-    val logs: List<out LogData>
+    val logs: List<LogData>
         get() = mLogs
 
-    private suspend fun onLogCreated(event: Events.Log.Create) {
+    private fun onLogCreated(event: Events.Log.Create) {
         logWriteScope.launch {
             val data = event.log
 
-            mLogs += data
+            try {
+                mLogs += data
 
-            if (data.type.priority >= LogType.DEBUG.priority) {
-                try {
+                if (data.type.priority >= LogType.DEBUG.priority || writeInternalLog) {
                     logFile.appendText("$data\n")
-                } catch (e: Exception) {
-                    e.printStackTrace()
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
+    }
+
+    private fun onGlobalConfigUpdate(event: Events.Config.GlobalConfigUpdate) {
+        writeInternalLog = GlobalConfig
+            .category(CA_DEV_MODE)
+            .getBoolean(CF_WRITE_INTERNAL_LOG, false)
     }
 
     init {
@@ -61,8 +75,9 @@ object LogCollector {
         if (!logFile.exists())
             logFile.createNewFile()
 
-        logCollectionScope.launch {
-            EventHandler.on(this, ::onLogCreated)
+        EventHandler.apply {
+            on(logCollectionScope, ::onLogCreated)
+            on(logCollectionScope, ::onGlobalConfigUpdate)
         }
     }
 }

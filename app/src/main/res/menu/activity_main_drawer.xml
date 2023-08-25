@@ -20,6 +20,11 @@
             android:icon="@drawable/ic_round_plugins_24"
             android:title="@string/menu_plugins" />
         <item
+            android:id="@+id/nav_logs"
+            android:enabled="true"
+            android:icon="@drawable/ic_round_article_24"
+            android:title="@string/title_logs"/>
+        <item
             android:id="@+id/nav_settings"
             android:enabled="true"
             android:icon="@drawable/ic_round_settings_24"

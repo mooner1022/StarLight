@@ -1,5 +1,6 @@
 package dev.mooner.starlight.api.original
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -9,15 +10,18 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import dev.mooner.starlight.R
 import dev.mooner.starlight.core.GlobalApplication
-import dev.mooner.starlight.listener.event.NotificationClickEvent
-import dev.mooner.starlight.listener.event.NotificationDismissEvent
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.event.EventHandler
+import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.utils.NotificationEventService
+import dev.mooner.starlight.utils.canPostNotification
 import dev.mooner.starlight.utils.createNotificationChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,9 +29,11 @@ import kotlinx.coroutines.cancel
 import kotlin.properties.Delegates.notNull
 
 private typealias Callback = (id: Int) -> Unit
+private val LOG = LoggerFactory.logger {  }
 
 class NotificationApi: Api<NotificationApi.Notification>() {
 
+    @SuppressLint("MissingPermission")
     @Suppress("unused")
     class Notification(
         private val id: Int,
@@ -73,13 +79,13 @@ class NotificationApi: Api<NotificationApi.Notification>() {
             mState = STATE_DISMISSED
         }
 
-        private fun onDismiss(event: NotificationDismissEvent) {
+        private fun onDismiss(event: Events.Notification.Dismiss) {
             val notificationId = event.sbn.id
             if (notificationId != id) return
             purge()
         }
 
-        private fun onClick(event: NotificationClickEvent) {
+        private fun onClick(event: Events.Notification.Click) {
             if (event.notificationId != id) return
             builder.onClickListener?.invoke(id)
         }
@@ -116,8 +122,17 @@ class NotificationApi: Api<NotificationApi.Notification>() {
                     on(coroutineScope, ::onClick)
             }
 
-            NotificationManagerCompat.from(context).notify(id, builder.build())
-            mState = STATE_CREATED
+            if (!context.canPostNotification()) {
+                LOG.error {
+                    translate {
+                        Locale.ENGLISH { "Unable to post or modify notification: Permission denied" }
+                        Locale.KOREAN { "알림을 표시하거나 수정할 수 없음: 권한 거부" }
+                    }
+                }
+            } else {
+                NotificationManagerCompat.from(context).notify(id, builder.build())
+                mState = STATE_CREATED
+            }
         }
 
         companion object {

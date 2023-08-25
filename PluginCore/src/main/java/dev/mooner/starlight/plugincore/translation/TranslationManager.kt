@@ -14,7 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-internal typealias LocaleMap = MutableMap<Locale, String>
+internal typealias LocaleMap = MutableMap<Locale, () -> String>
 internal typealias FormatMap = Map<String, String>
 typealias TranslationBuilderBlock = TranslationBuilder.() -> Unit
 
@@ -49,7 +49,7 @@ object TranslationManager {
             .apply(block)
             .build()
 
-        var buffer: String = localeMap[locale] ?: localeMap[Locale.ENGLISH] ?: DEFAULT_VALUE
+        var buffer: String = (localeMap[locale] ?: localeMap[Locale.ENGLISH])?.invoke() ?: DEFAULT_VALUE
         for ((tag, value) in formatMap)
             buffer = buffer.replace("{${tag}}", value)
 

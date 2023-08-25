@@ -11,7 +11,10 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission"/>
 
     <application
         android:name=".core.GlobalApplication"
@@ -28,13 +31,20 @@
         android:theme="@style/Theme.StarLight.NoActionBar"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".ui.settings.solver.ProblemSolverActivity"
+            android:exported="false"/>
+        <activity
             android:name=".ui.scheme.SchemeHandlerActivity"
             android:exported="true">
             <intent-filter>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
+
                 <action android:name="android.intent.action.VIEW"/>
-                <data android:scheme="starlight" android:host="action"/>
+
+                <data
+                    android:host="action"
+                    android:scheme="starlight"/>
             </intent-filter>
         </activity>
         <activity

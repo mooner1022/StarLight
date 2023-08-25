@@ -17,6 +17,7 @@ import dev.mooner.starlight.plugincore.config.data.category.internal.ConfigCateg
 import dev.mooner.starlight.plugincore.pipeline.Pipeline
 import dev.mooner.starlight.plugincore.pipeline.stage.LanguageStage
 import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
+import dev.mooner.starlight.plugincore.pipeline.stage.plumber
 import dev.mooner.starlight.plugincore.project.Project
 import kotlinx.serialization.decodeFromString
 import java.io.File
@@ -44,9 +45,15 @@ abstract class Language {
     abstract val requireRelease: Boolean
 
     /**
-     * List of config objects injected in project config.
+     * List of config objects inserted in project config.
+     * Only category which has same ID with language is inserted.
      */
-    open val configStructure: ConfigStructure = listOf()
+    open val configStructure: ConfigStructure = emptyList()
+
+    /**
+     * List of default code config objects inserted in project creation dialog.
+     */
+    open val defaultCodeStructure: ConfigStructure = emptyList()
 
     /**
      * Default code used when a project is created.
@@ -78,7 +85,7 @@ abstract class Language {
      *
      * @return scope of compilation result
      */
-    abstract fun compile(code: String, apis: List<Api<*>>, project: Project?): Any
+    abstract fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any
 
     /**
      * Releases the compiled scope
@@ -144,16 +151,20 @@ abstract class Language {
         return ConfigCategoryImpl(data)
     }
 
-    protected fun getAsset(directory: String): File = File(Session.languageManager.getAssetPath(id), directory)
+    protected fun getAsset(directory: String): File =
+        File(Session.languageManager.getAssetPath(id), directory)
 
-    protected fun getAssetOrNull(directory: String): File? = with(getAsset(directory)) {
-        if (exists() && canRead()) this
-        else null
-    }
+    protected fun getAssetOrNull(directory: String): File? =
+        with(getAsset(directory)) {
+            if (exists() && canRead()) this
+            else null
+        }
 
-    fun getIconFile(): File = getAsset("icon.png")
+    fun getIconFile(): File =
+        getAsset("icon.png")
 
-    fun getIconFileOrNull(): File? = getAssetOrNull("icon.png")
+    fun getIconFileOrNull(): File? =
+        getAssetOrNull("icon.png")
 
     open fun toPipeline(): Pipeline<Pair<Project, String>, Any> {
         return plumber {
@@ -168,7 +179,7 @@ abstract class Language {
         id = this.id,
         name = this.name,
         run = { project, code ->
-            compile(code, Session.apiManager.getApis(), project)
+            compile(code, Session.apiManager.getApis(), project, project.getClassLoader())
         }
     )
 }

@@ -8,6 +8,8 @@ package dev.mooner.starlight.ui.settings.dev
 
 import android.content.Context
 import android.content.res.Configuration
+import dev.mooner.starlight.R
+import dev.mooner.starlight.WIDGET_DEF_STRING
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
@@ -94,6 +96,14 @@ fun Context.startDevModeActivity() {
                         id = "change_thread_pool_size"
                         title = "Thread Pool 크기 변경"
                         description = "프로젝트가 실행되는 Thread pool의 크기를 가변적으로 변경하는 설정을 추가합니다."
+                        icon = Icon.COMPRESS
+                        iconTintColor = color { "#87AAAA" }
+                        defaultValue = false
+                    }
+                    toggle {
+                        id = "use_on_notification_posted"
+                        title = "onNotificationPosted 이벤트 사용"
+                        description = "메신저봇의 onNotificationPosted 이벤트를 사용합니다. 부하가 증가할 수 있습니다."
                         icon = Icon.COMPRESS
                         iconTintColor = color { "#87AAAA" }
                         defaultValue = false

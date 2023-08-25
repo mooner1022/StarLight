@@ -1,10 +1,13 @@
 package dev.mooner.starlight.languages.rhino
 
 import android.net.Uri
+import com.faendir.rhino_android.AndroidContextFactory
 import com.faendir.rhino_android.RhinoAndroidHelper
+import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.config.ConfigStructure
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
@@ -12,16 +15,17 @@ import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.plugincore.utils.getInternalDirectory
+import dev.mooner.starlight.plugincore.utils.currentThread
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.utils.verboseTranslated
 import dev.mooner.starlight.utils.toURI
-import org.mozilla.javascript.Context
+import org.mozilla.javascript.*
 import org.mozilla.javascript.Function
-import org.mozilla.javascript.ImporterTopLevel
-import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.commonjs.module.Require
-import org.mozilla.javascript.commonjs.module.provider.StrongCachingModuleScriptProvider
-import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider
+import org.mozilla.javascript.commonjs.module.RequireBuilder
+import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider
 import java.io.File
+import java.net.URI
 
 private val LOG = LoggerFactory.logger {  }
 
@@ -29,7 +33,10 @@ class JSRhino: Language() {
 
     override val id: String = "JS_RHINO"
 
-    override val name: String = "자바스크립트(라이노)"
+    override val name: String = translate {
+        Locale.ENGLISH { "JavaScript(Rhino)" }
+        Locale.KOREAN  { "자바스크립트(라이노)" }
+    }
 
     override val fileExtension: String = "js"
 
@@ -51,7 +58,8 @@ class JSRhino: Language() {
             config.getInt(CONF_OPTIMIZATION_LEVEL, 0)
         else
             -1
-        val context = RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")).enterContext().apply {
+
+        val context = createAndroidHelper().enterContext().apply {
             optimizationLevel = optLevel
             val langVersionIndex = config.getInt(CONF_LANG_VERSION)
             languageVersion = if (langVersionIndex == null)
@@ -60,10 +68,22 @@ class JSRhino: Language() {
                 indexToVersion(langVersionIndex)
             wrapFactory = PrimitiveWrapFactory()
         }
+        //context.applicationClassLoader =
+        //    RuntimeClassLoader(currentThread.contextClassLoader)
         return context
     }
 
-    override fun compile(code: String, apis: List<Api<*>>, project: Project?): Any {
+    // Overrides the helper to set classloader as RuntimeClassLoader
+    private fun createAndroidHelper(): RhinoAndroidHelper {
+        return object : RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")) {
+            override fun createAndroidContextFactory(cacheDirectory: File?): AndroidContextFactory {
+                val classLoader = RuntimeClassLoader(currentThread.contextClassLoader)
+                return createAndroidContextFactory(cacheDirectory, classLoader)
+            }
+        }
+    }
+
+    override fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any {
         val context = enterContext()
         val scope = context.initStandardObjects(ImporterTopLevel(context))
         //val scope = context.newObject(shared)
@@ -101,7 +121,7 @@ class JSRhino: Language() {
                 Locale.KOREAN  { "[외부 모듈 로드] 설정 활성화됨" }
             }
             val isSandboxed = langConf.getBoolean("load_ext_module_sandbox", false)
-            val require = initRequire(context, scope, isSandboxed)
+            val require = initRequire(context, scope, isSandboxed, project)
             require.install(scope)
         }
 
@@ -140,6 +160,38 @@ class JSRhino: Language() {
                 }
                 return
             }
+            context.errorReporter = object : ErrorReporter {
+                override fun warning(
+                    message: String?,
+                    sourceName: String?,
+                    line: Int,
+                    lineSource: String?,
+                    lineOffset: Int
+                ) {
+                    LOG.warn { "$sourceName#$line: $message" }
+                }
+
+                override fun error(
+                    message: String?,
+                    sourceName: String?,
+                    line: Int,
+                    lineSource: String?,
+                    lineOffset: Int
+                ) {
+                    LOG.error { "$sourceName#$line: $message" }
+                }
+
+                override fun runtimeError(
+                    message: String?,
+                    sourceName: String?,
+                    line: Int,
+                    lineSource: String?,
+                    lineOffset: Int
+                ): EvaluatorException {
+                    LOG.error { "runtime $sourceName#$line: $message" }
+                    return EvaluatorException(message, sourceName, line, lineSource, lineOffset)
+                }
+            }
             function.call(context, scope, scope, args)
         } catch (e: Exception) {
             onError(e)
@@ -176,12 +228,31 @@ class JSRhino: Language() {
         }
     }
 
-    private fun initRequire(context: Context, scope: Scriptable, sandboxed: Boolean): Require {
-        val file = getInternalDirectory().resolve("modules/")
-        val scriptProvider = StrongCachingModuleScriptProvider(
-            UrlModuleSourceProvider(listOf(Uri.parse("file://${file.path}/").toURI()), null)
+    private fun initRequire(context: Context, scope: Scriptable, sandboxed: Boolean, project: Project?): Require {
+        fun parseUri(path: String): URI =
+            Uri.parse("file://${path}/").toURI()
+
+        val requirePath: MutableList<File> = arrayListOf()
+        if (GlobalConfig.category("project").getBoolean("load_global_libraries", false))
+            getStarLightDirectory()
+                .resolve("modules")
+                .let(requirePath::add)
+
+        project?.directory?.let(requirePath::add)
+
+        val scriptProvider = SoftCachingModuleScriptProvider(
+            NestedModuleSourceProvider(
+                requirePath
+                    .map(File::getPath)
+                    .map(::parseUri),
+                null
+            )
         )
-        return Require(context, scope, scriptProvider, null, null, sandboxed)
+
+        return RequireBuilder()
+            .setModuleScriptProvider(scriptProvider)
+            .setSandboxed(sandboxed)
+            .createRequire(context, scope)
     }
 
     companion object {
