@@ -33,7 +33,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
 
             def timeMillis = System.currentTimeMillis()
-            versionNameSuffix "-${new java.text.SimpleDateFormat("yyMMdd").format(timeMillis)}"
+            def versionName = android.defaultConfig.versionName
+            def suffix = "-${new java.text.SimpleDateFormat("yyMMdd").format(timeMillis)}"
+            versionNameSuffix suffix
+            archivesBaseName = "StarLight-$versionName$suffix"
         }
         debug {
             def generator = { String alphabet, int n ->
