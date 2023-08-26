@@ -8,7 +8,6 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.core.view.doOnAttach
 import androidx.core.view.doOnDetach
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.recyclerview.widget.RecyclerView
@@ -47,29 +46,28 @@ class WidgetsAdapter (
         val viewData = data[position]
         holder.title.visibility = View.GONE
         holder.view.removeAllViews()
+        //viewData.onStateChanged(lifecycleOwner, Lifecycle.Event.ON_CREATE)
         viewData.onCreateWidget(holder.view)
+        //viewData.onStateChanged(lifecycleOwner, Lifecycle.Event.ON_START)
     }
 
-    context(LifecycleOwner)
     fun onResume() {
         for (widget in data) {
-            widget.onStateChanged(this@LifecycleOwner, Lifecycle.Event.ON_RESUME)
+            //widget.onStateChanged(lifecycleOwner, Lifecycle.Event.ON_RESUME)
             widget.onResumeWidget()
         }
     }
 
-    context(LifecycleOwner)
     fun onPause() {
         for (widget in data) {
-            widget.onStateChanged(this@LifecycleOwner, Lifecycle.Event.ON_PAUSE)
+            //widget.onStateChanged(lifecycleOwner, Lifecycle.Event.ON_PAUSE)
             widget.onPauseWidget()
         }
     }
 
-    context(LifecycleOwner)
     fun onDestroy() {
         for (widget in data) {
-            widget.onStateChanged(this@LifecycleOwner, Lifecycle.Event.ON_DESTROY)
+            //widget.onStateChanged(lifecycleOwner, Lifecycle.Event.ON_DESTROY)
             widget.onDestroyWidget()
         }
     }

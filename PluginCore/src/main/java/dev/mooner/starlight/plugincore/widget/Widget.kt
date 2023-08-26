@@ -43,7 +43,12 @@ abstract class Widget: LifecycleOwner, LifecycleEventObserver {
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        lifecycleRegistry.handleLifecycleEvent(event)
+        try {
+            lifecycleRegistry.handleLifecycleEvent(event)
+        } catch (e: Exception) {
+            println("Failed to handle lifecycle event: $e")
+            e.printStackTrace()
+        }
     }
 
     protected fun View.updateHeight() {

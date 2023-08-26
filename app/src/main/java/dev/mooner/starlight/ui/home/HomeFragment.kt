@@ -24,6 +24,9 @@ import dev.mooner.starlight.databinding.FragmentHomeBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.plugincore.utils.warnTranslated
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.ui.widget.config.WidgetConfigActivity
 import dev.mooner.starlight.ui.widget.config.WidgetsAdapter
@@ -119,26 +122,46 @@ class HomeFragment : Fragment() {
                     ?.newInstance()
                     ?.also(viewLifecycleOwner.lifecycle::addObserver)
                     ?.let(widgets::add)
-                    ?: logger.warn { "Skipping unknown widget: $id" }
+                    ?: logger.warnTranslated { 
+                        Locale.ENGLISH { "Skipping unknown widget: $id" }
+                        Locale.KOREAN  { "알 수 없는 위젯 $id 의 초기화 건너뜀" }
+                    }
             } catch (e: Exception) {
-                logger.error(e) { "Failed to initialize widget '$id': " }
+                logger.error(e) {
+                    translate {
+                        Locale.ENGLISH { "Failed to initialize widget '$id': " }
+                        Locale.KOREAN  { "위젯 '$id' 초기화 실패: " }
+                    }
+                }
             }
         }
         return widgets
     }
 
     override fun onPause() {
-        widgetsAdapter?.onPause()
+        try {
+            widgetsAdapter?.onPause()
+        } catch (e: Exception) {
+            logger.verbose { "Failed to call onPause() on widget: $e" }
+        }
         super.onPause()
     }
 
     override fun onResume() {
-        widgetsAdapter?.onResume()
+        try {
+            widgetsAdapter?.onResume()
+        } catch (e: Exception) {
+            logger.verbose { "Failed to call onResume() on widget: $e" }
+        }
         super.onResume()
     }
 
     override fun onDestroyView() {
-        widgetsAdapter?.onDestroy()
+        try {
+            widgetsAdapter?.onDestroy()
+        } catch (e: Exception) {
+            logger.verbose { "Failed to destroy widget: $e" }
+        }
         widgetsAdapter = null
         _binding = null
         super.onDestroyView()
