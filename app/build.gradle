@@ -32,7 +32,8 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
 
-            versionNameSuffix "-${new java.text.SimpleDateFormat("yyMMdd").format(new Date())}"
+            def timeMillis = System.currentTimeMillis()
+            versionNameSuffix "-${new java.text.SimpleDateFormat("yyMMdd").format(timeMillis)}"
         }
         debug {
             def generator = { String alphabet, int n ->
