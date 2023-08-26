@@ -271,7 +271,7 @@ class DebugRoomFragment: Fragment() {
 
         project.fireEvent<ProjectOnMessageEvent>(data, ::showErrorSnackbar)
 
-        if (GlobalConfig.category("legacy").getBoolean("use_legacy_event", false)) {
+        if (GlobalConfig.category("notifications").getBoolean("use_legacy_event", false)) {
             val replier = Replier { _, msg, _ ->
                 onSend(msg)
                 true
