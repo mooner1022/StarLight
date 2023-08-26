@@ -128,6 +128,10 @@ class NotificationListener: NotificationListenerService() {
                     (data.room as ChatRoomImpl).setLastReceivedId(data.chatLogId)
                     lastReceivedRoom = data.room
 
+                    if (data.chatLogId == currentChatLogId) {
+                        LOG.verbose { "Detected multiple event listeners" }
+                        return
+                    }
                     currentChatLogId = data.chatLogId
 
                     val room = data.room.name
