@@ -487,7 +487,7 @@ class DebugRoomFragment: Fragment() {
                             color(requireActivity().getColor(R.color.main_bright))
                             color(requireActivity().getColor(R.color.main_dark))
                             color(color { "#789395" })
-                            color(color { "#b4cfb0" })
+                            color(color { "#9CBDA1" })
                         }
                         defaultSelection = color { "#789395" }
                         setOnColorSelectedListener { _, color ->
@@ -544,7 +544,7 @@ class DebugRoomFragment: Fragment() {
                             color(requireActivity().getColor(R.color.main_bright))
                             color(requireActivity().getColor(R.color.main_dark))
                             color(color { "#789395" })
-                            color(color { "#b4cfb0" })
+                            color(color { "#9CBDA1" })
                         }
                         defaultSelection = color { "#b4cfb0" }
                         setOnColorSelectedListener { _, color ->
