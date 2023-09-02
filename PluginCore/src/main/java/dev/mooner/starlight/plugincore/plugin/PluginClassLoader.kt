@@ -6,11 +6,11 @@ import java.io.File
 
 class PluginClassLoader(
     context: Context,
-    private val loader: PluginLoader,
     parent: ClassLoader,
+    nativeLibPath: String?,
+    private val loader: PluginLoader,
     private val pluginInfo: PluginInfo,
     private val file: File,
-    nativeLibPath: String?
 ): PathClassLoader(file.path, nativeLibPath, parent) {
 
     private val internalDir: File
@@ -30,16 +30,14 @@ class PluginClassLoader(
         var result = classes[name]
 
         if (result == null) {
-            if (checkGlobal) {
+            result = runCatching { super.findClass(name) }.getOrNull()
+            if (result == null && checkGlobal) {
                 result = loader.getClass(name)
             }
-            if (result == null) {
-                result = super.findClass(name)
-                if (result != null) {
-                    loader.setClass(name, result)
-                }
+            result?.also {
+                classes[name] = it
+                loader.setClass(name, it)
             }
-            result?.also { classes[name] = it }
         }
 
         return result ?: throw ClassNotFoundException(name)
