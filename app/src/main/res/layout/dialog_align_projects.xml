@@ -1,80 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-                                                   xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
     <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="126dp"
-            android:layout_marginStart="@dimen/card_margin_horizontal"
-            android:layout_marginEnd="@dimen/card_margin_horizontal"
-            android:layout_marginBottom="@dimen/card_margin_horizontal"
-            android:backgroundTint="@color/cardview_gray"
-            app:cardCornerRadius="@dimen/card_radius"
-            app:cardElevation="0dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+        android:layout_width="match_parent"
+        android:layout_height="126dp"
+        android:layout_marginStart="@dimen/card_margin_horizontal"
+        android:layout_marginEnd="@dimen/card_margin_horizontal"
+        android:layout_marginBottom="@dimen/card_margin_horizontal"
+        android:backgroundTint="@color/cardview_gray"
+        app:cardCornerRadius="@dimen/card_radius"
+        app:cardElevation="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
             <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="4dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="20dp"
-                        android:layout_weight="1"
-                        android:fontFamily="@font/nanumsquare_round_extrabold"
-                        android:text="@string/align_reversed"
-                        android:textSize="16sp"/>
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/nanumsquare_round_extrabold"
+                    android:text="@string/align_reversed"
+                    android:textSize="16sp"/>
 
                 <CheckBox
-                        android:id="@+id/checkBoxAlignReversed"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="0.15"
-                        android:buttonTint="@color/main_bright" tools:ignore="TouchTargetSizeCheck"/>//>
-
+                    android:id="@+id/checkBoxAlignReversed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.15"
+                    android:buttonTint="@color/main_bright"
+                    tools:ignore="TouchTargetSizeCheck"/>
 
             </LinearLayout>
 
             <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="20dp"
-                        android:layout_weight="1"
-                        android:fontFamily="@font/nanumsquare_round_extrabold"
-                        android:text="@string/align_active_first"
-                        android:textSize="16sp"/>
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/nanumsquare_round_extrabold"
+                    android:text="@string/align_active_first"
+                    android:textSize="16sp"/>
 
                 <CheckBox
-                        android:id="@+id/checkBoxAlignActiveFirst"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="0.15"
-                        android:checked="true"
-                        android:buttonTint="@color/main_bright" tools:ignore="TouchTargetSizeCheck"/>
+                    android:id="@+id/checkBoxAlignActiveFirst"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.15"
+                    android:checked="true"
+                    android:buttonTint="@color/main_bright"
+                    tools:ignore="TouchTargetSizeCheck"/>
 
 
             </LinearLayout>
