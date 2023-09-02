@@ -17,16 +17,34 @@ import java.io.File
 
 abstract class Project: CoroutineScope, ProjectLifecycleOwner {
 
+    /**
+     * Root directory of project itself.
+     */
     abstract val directory: File
 
+    /**
+     * Information data of this project.
+     */
     abstract val info: ProjectInfo
 
+    /**
+     * Project's dedicated config data, saved in project's local directory.
+     */
     abstract val config: MutableConfig
 
+    /**
+     * Name of thread pool where scripts are being executed at.
+     */
     abstract var threadPoolName: String?
 
+    /**
+     * The state of project compilation, true if scope isn't null.
+     */
     abstract val isCompiled: Boolean
 
+    /**
+     * Logger used for project event logging.
+     */
     abstract val logger: ProjectLogger
 
     /**
@@ -38,6 +56,11 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
      */
     abstract fun callFunction(name: String, args: Array<out Any>, onException: (Throwable) -> Unit = {})
 
+    /**
+     * Execute the compile pipeline of this project. Releases its original scope and context if present.
+     *
+     * @param throwException if true, throws exception on compile failure.
+     */
     abstract fun compile(throwException: Boolean = false): Boolean
 
     /**
@@ -45,6 +68,11 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
      */
     abstract fun compileAsync(): Flow<Pair<PipelineStage<*, *>, Int>>
 
+    /**
+     * Set project's enabled state
+     *
+     * @param enabled the target state of project.
+     */
     abstract fun setEnabled(enabled: Boolean): Boolean
 
     /**
@@ -55,10 +83,13 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
     abstract fun requestUpdate()
 
     /**
-     * Saves contents of [info] to a file.
+     * Save contents of [info] to a file.
      */
     abstract fun saveInfo()
 
+    /**
+     * Invalidate in-memory project info data and reload it from local file.
+     */
     abstract fun loadInfo()
 
     /**
@@ -89,13 +120,27 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
 
     /**
      * Cancels all running jobs and releases [langScope] if the project is compiled.
+     */
+    open fun destroy() =
+        destroy(false)
+
+    /**
+     * Cancels all running jobs and releases [langScope] if the project is compiled.
      *
      * @param requestUpdate if *true*, requests update of UI
      */
     abstract fun destroy(requestUpdate: Boolean = false)
 
+    /**
+     * Get the directory where data of project should be saved in. ex) database files, user data, etc.
+     */
     abstract fun getDataDirectory(): File
 
+    /**
+     * Check whether call of ProjectEvent with id [eventId] is allowed or not.
+     *
+     * @param eventId the event id to check if it's allowed to be called.
+     */
     abstract fun isEventCallAllowed(eventId: String): Boolean
 
     internal abstract fun getClassLoader(): ClassLoader
