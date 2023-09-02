@@ -119,17 +119,33 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
     abstract fun stopAllJobs()
 
     /**
-     * Cancels all running jobs and releases [langScope] if the project is compiled.
+     * Cancels all running jobs and releases `langScope` if the project is compiled.
      */
     open fun destroy() =
         destroy(false)
 
     /**
-     * Cancels all running jobs and releases [langScope] if the project is compiled.
+     * Cancels all running jobs and releases `langScope` if the project is compiled.
      *
      * @param requestUpdate if *true*, requests update of UI
      */
     abstract fun destroy(requestUpdate: Boolean = false)
+
+    /**
+     * Update the name of project
+     *
+     * @param name you know what this is, right?
+     */
+    open fun rename(name: String) =
+        rename(name, false)
+
+    /**
+     * Update the name of project
+     *
+     * @param name you know what this is, right?
+     * @param preserveMainScript if false, the main script for the project will also be renamed.
+     */
+    abstract fun rename(name: String, preserveMainScript: Boolean)
 
     /**
      * Get the directory where data of project should be saved in. ex) database files, user data, etc.

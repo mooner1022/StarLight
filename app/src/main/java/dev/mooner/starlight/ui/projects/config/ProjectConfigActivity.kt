@@ -25,13 +25,15 @@ import dev.mooner.starlight.databinding.ActivityProjectConfigBinding
 import dev.mooner.starlight.databinding.ConfigButtonFlatBinding
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.config.*
 import dev.mooner.starlight.plugincore.config.data.*
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.ui.config.ConfigAdapter
-import dev.mooner.starlight.utils.bindFadeImage
-import dev.mooner.starlight.utils.setCommonAttrs
+import dev.mooner.starlight.utils.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -53,7 +55,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         val fabProjectConfig = binding.fabProjectConfig
 
         val projectName = intent.getStringExtra("projectName")!!
-        project = Session.projectManager.getProject(projectName)
+        project = projectManager.getProject(projectName)
             ?: throw IllegalStateException("Unable to find project $projectName")
 
         configAdapter = ConfigAdapter.Builder(this) {
@@ -137,6 +139,18 @@ class ProjectConfigActivity: AppCompatActivity() {
                 title = "일반"
                 textColor = getColor(R.color.main_bright)
                 items {
+                    button {
+                        id = "rename_project"
+                        title = translate {
+                            Locale.ENGLISH { "Rename Project" }
+                            Locale.KOREAN  { "프로젝트 이름 변경" }
+                        }
+                        icon = Icon.EDIT
+                        //iconTintColor = color { "#94A684" }
+                        setOnClickListener { _ ->
+                            showProjectRenameDialog()
+                        }
+                    }
                     button {
                         id = "open_folder"
                         title = "폴더 열기"
@@ -306,15 +320,14 @@ class ProjectConfigActivity: AppCompatActivity() {
                             MaterialDialog(
                                 binding.root.context,
                                 BottomSheet(LayoutMode.WRAP_CONTENT)
-                            ).show {
+                            ).noAutoDismiss().show {
                                 setCommonAttrs()
                                 cancelOnTouchOutside(true)
-                                noAutoDismiss()
                                 //icon(res = R.drawable.ic_round_delete_forever_24)
                                 title(text = "프로젝트를 정말로 제거할까요?")
                                 message(text = "주의: 프로젝트 제거시 복구가 불가합니다.")
                                 positiveButton(text = context.getString(R.string.delete)) {
-                                    Session.projectManager.removeProject(
+                                    projectManager.removeProject(
                                         project,
                                         removeFiles = true
                                     )
@@ -339,6 +352,99 @@ class ProjectConfigActivity: AppCompatActivity() {
             }
         }
         return configs
+    }
+
+    private fun showProjectRenameDialog() {
+        MaterialDialog(
+            this,
+            BottomSheet(LayoutMode.WRAP_CONTENT)
+        ).noAutoDismiss().show {
+            var name: String? = null
+            var updateMainScript = true
+
+            setCommonAttrs()
+            cancelOnTouchOutside(true)
+            //icon(res = R.drawable.ic_round_delete_forever_24)
+            title(text = translate { 
+                Locale.ENGLISH { "Rename project" }
+                Locale.KOREAN  { "프로젝트 이름 변경" }
+            })
+            message(text = translate {
+                Locale.ENGLISH { "What name should it be changed to?" }
+                Locale.KOREAN  { "어떤 이름으로 변경할까요?" }
+            })
+            configStruct(this@ProjectConfigActivity) {
+                struct {
+                    category {
+                        id = "def"
+                        items {
+                            string {
+                                id = "name"
+                                title = "이름"
+                                icon = Icon.EDIT
+                                hint = translate {
+                                    Locale.ENGLISH { "Enter name..." }
+                                    Locale.KOREAN  { "변경될 이름 입력..." }
+                                }
+                                require = lambda@{ v ->
+                                    if (v.isBlank()) {
+                                        name = null
+                                        return@lambda translate {
+                                            Locale.ENGLISH { "Illegal name format" }
+                                            Locale.KOREAN  { "올바르지 않은 이름 형식이에요" }
+                                        }
+                                    }
+                                    if (projectManager.getProject(v, ignoreCase = true) != null) {
+                                        name = null
+                                        return@lambda translate {
+                                            Locale.ENGLISH { "Name shadowed" }
+                                            Locale.KOREAN  { "이미 존재하는 이름이에요." }
+                                        }
+                                    }
+                                    name = v
+                                    return@lambda null
+                                }
+                            }
+                            toggle {
+                                id = "preserve_main_script"
+                                title = "메인 스크립트 이름 변경"
+                                description = "메인 스크립트의 이름을 같이 변경합니다."
+                                defaultValue = true
+                                icon = Icon.FILE
+                                setOnValueChangedListener { _, toggle ->
+                                    updateMainScript = toggle
+                                }
+                            }
+                        }
+                    }
+                }
+                data {
+                    mapOf(
+                        "def" to mapOf(
+                            "name" to (project.info.name typedAs "String")
+                        )
+                    )
+                }
+            }
+            positiveButton(text = context.getString(R.string.ok)) {
+                if (name == null)
+                    return@positiveButton
+                project.rename(name!!, !updateMainScript)
+                Snackbar.make(
+                    binding.root,
+                    translate {
+                        Locale.ENGLISH { "Successfully renamed project." }
+                        Locale.KOREAN  { "프로젝트의 이름을 성공적으로 변경했어요." }
+                    },
+                    Snackbar.LENGTH_SHORT
+                ).show()
+                dismiss()
+                finish()
+            }
+            negativeButton(text = context.getString(R.string.cancel)) {
+                dismiss()
+            }
+        }
     }
 
     private fun openFolderInExplorer(context: Context, file: File) {

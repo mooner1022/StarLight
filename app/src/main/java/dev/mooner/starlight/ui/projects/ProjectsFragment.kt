@@ -146,7 +146,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     private suspend fun onProjectCompiled(event: Events.Project.Compile) =
         itemAdapter?.updateProjectView(event.project)
 
-    private suspend fun onProjectDeleted(event: Events.Project.Delete) =
+    private suspend fun onProjectDeleted(unused: Events.Project.Delete) =
         updateList(null)
 
     private suspend fun onProjectCreated(event: Events.Project.Create) =
@@ -172,8 +172,8 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     }
 
     private suspend fun ItemAdapter<ProjectListItem>.updateProjectView(project: Project) {
-        LOG.debug { "updateProjectView ${project.info.name}" }
         val index = getAdapterPosition(project.info.id.hashCode().toLong())
+        LOG.debug { "updateProjectView ${project.info.name}, index $index" }
         if (index == -1) {
             with(requireContext()) {
                 LOG.warn(R.string.log_project_list_update_failure)

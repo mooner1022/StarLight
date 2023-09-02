@@ -9,6 +9,7 @@ package dev.mooner.starlight.plugincore.project
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
+import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.config.data.FileConfig
 import dev.mooner.starlight.plugincore.config.data.MutableConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
@@ -81,13 +82,6 @@ class ProjectImpl private constructor(
         reloadAllowedEventIDs()
     }
 
-    /**
-     * Calls an event with [name] and passes [args] as parameter.
-     *
-     * @param name the name of function or event being called.
-     * @param args parameter values being passed to function.
-     * @param onException called when exception is occurred while calling.
-     */
     override fun callFunction(name: String, args: Array<out Any>, onException: (Throwable) -> Unit) {
         //logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
         if (langScope == null) {
@@ -156,9 +150,6 @@ class ProjectImpl private constructor(
         }
     }
 
-    /**
-     * Compiles the project with configured values.
-     */
     override fun compileAsync(): Flow<Pair<PipelineStage<*, *>, Int>> =
         callbackFlow {
             val size: Int
@@ -225,18 +216,10 @@ class ProjectImpl private constructor(
         return false
     }
 
-    /**
-     * Requests the application to update UI of the project.
-     *
-     * Ignored if application is on background.
-     */
     override fun requestUpdate() {
         EventHandler.fireEventWithScope(Events.Project.InfoUpdate(project = this))
     }
 
-    /**
-     * Saves contents of [info] to a file.
-     */
     override fun saveInfo() {
         runBlocking {
             val json = Json {
@@ -259,38 +242,19 @@ class ProjectImpl private constructor(
             .let(json::decodeFromString)
     }
 
-    /**
-     * Returns the language used in the project.
-     *
-     * @return language used in the project.
-     */
     override fun getLanguage(): Language {
         return lang
     }
 
-    /**
-     * Returns the scope instance if project is compiled, else null.
-     *
-     * @return scope returned on compile
-     */
     override fun getScope(): Any? {
         return langScope
     }
 
-    /**
-     * Count of jobs currently running in thread pool of this project.
-     *
-     * @return the size of running jobs.
-     */
     override fun activeJobs(): Int {
         return if (mContext == null || threadPoolName == null) 0
         else JobLocker.withParent(threadPoolName!!).activeJobs()
     }
 
-
-    /**
-     * Cancels all running jobs.
-     */
     override fun stopAllJobs() {
         if (mContext != null) {
             if (threadPoolName != null) {
@@ -301,11 +265,6 @@ class ProjectImpl private constructor(
         }
     }
 
-    /**
-     * Cancels all running jobs and releases [langScope] if the project is compiled.
-     *
-     * @param requestUpdate if *true*, requests update of UI
-     */
     override fun destroy(requestUpdate: Boolean) {
         logger.v("Destroying project [${info.name}]...")
         stopAllJobs()
@@ -315,6 +274,31 @@ class ProjectImpl private constructor(
             langScope = null
         }
         if (requestUpdate) requestUpdate()
+    }
+
+    override fun rename(name: String, preserveMainScript: Boolean) {
+        val mainScript = if (preserveMainScript)
+            info.mainScript
+        else {
+            val nName = name + "." + lang.fileExtension
+            File(directory, info.mainScript)
+                .renameTo(File(directory, nName))
+            nName
+        }
+        val orgName = info.name
+        val nInfo = info.copy(
+            name       = name,
+            mainScript = mainScript
+        )
+        mInfo = nInfo
+
+        projectManager.projects.let {
+            it -= orgName
+            it[info.name] = this
+        }
+
+        saveInfo()
+        requestUpdate()
     }
 
     override fun getDataDirectory(): File = with(directory.resolve("data")) {
@@ -349,9 +333,11 @@ class ProjectImpl private constructor(
         config.category("beta_features")
             .getInt("thread_pool_size", DEF_THREAD_POOL_SIZE)
 
+    /*
     private fun notifyStateUpdated(state: ProjectLifecycle.State) {
         getLifecycle()
     }
+     */
 
     private fun reloadAllowedEventIDs() {
         if (allowedEventIDs.isNotEmpty())

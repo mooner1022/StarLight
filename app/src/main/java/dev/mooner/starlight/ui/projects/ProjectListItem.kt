@@ -349,7 +349,8 @@ class ProjectListItem: AbstractBindingItem<CardProjectsBinding>() {
         cardViewIsEnabled.setCardBackgroundColor(
             root.context.getCardColor(project))
         with(cardProject) {
-            switchValue = project.info.isEnabled
+            title           = project.info.name
+            switchValue     = project.info.isEnabled
             isSwitchEnabled = project.isCompiled
         }
     }
