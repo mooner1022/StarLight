@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.plugincore.project
 
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
@@ -68,6 +69,8 @@ class ProjectManager(
         //    Logger.e(ProjectManager::class.simpleName, "Rejecting event call from '$eventId' which is not registered on EventManager")
         //    return
         //}
+        if (!Session.isInitComplete)
+            return
         projects.values
             .filter { it.isCompiled && it.info.isEnabled && it.isEventCallAllowed(eventId) }
             .let { availableProjects ->

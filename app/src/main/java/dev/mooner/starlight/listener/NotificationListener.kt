@@ -14,6 +14,7 @@ import android.service.notification.StatusBarNotification
 import android.widget.Toast
 import androidx.core.app.NotificationCompat.*
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
+import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.listener.chat.ChatRoomImpl
 import dev.mooner.starlight.listener.event.LegacyEvent
 import dev.mooner.starlight.listener.event.OnNotificationPostedEvent
@@ -88,7 +89,7 @@ class NotificationListener: NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if (!isGlobalPowerOn || sbn.notification.actions == null) return
+        if (!isGlobalPowerOn || sbn.notification.actions == null || !ApplicationSession.isInitComplete) return
 
         val ts = System.currentTimeMillis()
         val pkgName = sbn.packageName
