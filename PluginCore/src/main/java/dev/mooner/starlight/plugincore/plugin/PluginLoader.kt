@@ -102,7 +102,7 @@ class PluginLoader {
                 emit(emptySet<StarlightPlugin>())
             }
 
-            val pluginFiles: MutableMap<String, Pair<File, PluginInfo>> = hashMapOf()
+            val pluginFiles : MutableMap<String, Pair<File, PluginInfo>> = hashMapOf()
             val loadPriority: MutableMap<String, Int> = hashMapOf()
 
             for ((index, file) in (dir.listFiles { it -> it.extension in SUPPORTED_EXT } ?: arrayOf()).withIndex()) {
@@ -111,7 +111,7 @@ class PluginLoader {
                     info = loadInfoFile(file)
                     if (info.id.trim().lowercase() in PRESERVED_IDS)
                         throw IllegalArgumentException("Preserved or unusable plugin id: ${info.id}")
-                    pluginFiles[info.id] = Pair(file, info)
+                    pluginFiles [info.id] = file to info
                     loadPriority[info.id] = index
                 } catch (e: FileNotFoundException) {
                     logger.error(e)
@@ -217,7 +217,6 @@ class PluginLoader {
         loaders[info.name] = loader
         val plugin = loader.plugin
 
-
         loadAssets(file, plugin)
 
         if (plugin !in Session.pluginManager.plugins) {
@@ -237,9 +236,9 @@ class PluginLoader {
         }
 
         val pathPrefix = when(getArch()) {
-            Arch.X86_32 -> "x86"
-            Arch.X86_64 -> "x86_64"
-            Arch.ARM_32 -> "armeabi"
+            Arch.X86_32   -> "x86"
+            Arch.X86_64   -> "x86_64"
+            Arch.ARM_32   -> "armeabi"
             Arch.AARCH_64 -> "arm64"
             else -> null
         }
@@ -341,9 +340,7 @@ class PluginLoader {
             for ((_, loader) in loaders) {
                 try {
                     return loader.findClass(name, false)
-                } catch (_: ClassNotFoundException) {
-
-                }
+                } catch (_: ClassNotFoundException) { }
             }
         }
         return null
