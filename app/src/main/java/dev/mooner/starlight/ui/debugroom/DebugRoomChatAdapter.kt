@@ -161,7 +161,14 @@ class DebugRoomChatAdapter(
             cancelOnTouchOutside(true)
             noAutoDismiss()
             title(text = context.getString(R.string.title_show_all))
-            message(text = fullMessage)
+            message(text = fullMessage) {
+                messageTextView.apply {
+                    isEnabled       = true
+                    isFocusable     = true
+                    isLongClickable = true
+                    setTextIsSelectable(true)
+                }
+            }
             positiveButton(text = context.getString(R.string.close)) {
                 dismiss()
             }
