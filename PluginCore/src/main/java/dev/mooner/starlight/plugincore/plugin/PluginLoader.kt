@@ -7,6 +7,7 @@
 package dev.mooner.starlight.plugincore.plugin
 
 import android.content.Context
+import dalvik.system.PathClassLoader
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
@@ -203,7 +204,11 @@ class PluginLoader {
                 loadNativeLibrary(info, file, context.filesDir)
             else
                 null
-            loader = PluginClassLoader(context, this, javaClass.classLoader!!, info, file, nativeLibDir?.path)
+            val parentLoader: ClassLoader = info.customClassLoader
+                ?.let { retrieveCustomClassLoader(it, file.path) }
+                ?: javaClass.classLoader!!
+
+            loader = PluginClassLoader(context, parentLoader, nativeLibDir?.path, this, info, file)
             logger.verbose {
                 translate {
                     Locale.ENGLISH { "Loaded plugin ${info.fullName} (${file.name})" }
@@ -223,6 +228,19 @@ class PluginLoader {
             Session.pluginManager.addPlugin(plugin)
         }
         return plugin
+    }
+
+    private fun retrieveCustomClassLoader(name: String, dexPath: String): ClassLoader {
+        val tempClassLoader = PathClassLoader(dexPath, javaClass.classLoader!!)
+        val clazz = Class.forName(name, false, tempClassLoader)
+        val primaryConstructor = clazz.constructors.find { cn ->
+            cn.parameterTypes.size == 1 && ClassLoader::class.java.isAssignableFrom(cn.parameterTypes[0])
+        } ?: clazz.getConstructor()
+
+        return if (primaryConstructor.parameterTypes.isNotEmpty())
+            primaryConstructor.newInstance(javaClass.classLoader!!) as ClassLoader
+        else
+            primaryConstructor.newInstance() as ClassLoader
     }
 
     private fun loadNativeLibrary(info: PluginInfo, file: File, parentDir: File, force: Boolean = false): File {
