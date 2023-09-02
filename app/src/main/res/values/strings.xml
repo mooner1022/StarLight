@@ -65,7 +65,7 @@
     <string name="no_message_yet">There are no errors yet.</string>
 
     <string name="align_reversed">Descending</string>
-    <string name="align_active_first">Active priority sorting</string>
+    <string name="align_active_first">Align active first</string>
 
     <string name="debugroom_type_here">Type here…</string>
 
