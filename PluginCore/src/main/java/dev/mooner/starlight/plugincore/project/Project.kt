@@ -144,4 +144,8 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
     abstract fun isEventCallAllowed(eventId: String): Boolean
 
     internal abstract fun getClassLoader(): ClassLoader
+
+    override fun equals(other: Any?): Boolean {
+        return other is Project && other.info.id == this.info.id
+    }
 }
