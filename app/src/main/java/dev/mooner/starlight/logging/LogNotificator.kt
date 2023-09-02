@@ -8,12 +8,9 @@ package dev.mooner.starlight.logging
 
 import android.app.Activity
 import android.content.Context
-import android.graphics.Typeface
 import android.os.Build
 import android.view.ViewGroup.LayoutParams
-import androidx.annotation.FontRes
 import androidx.core.app.NotificationCompat
-import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -30,17 +27,11 @@ import dev.mooner.starlight.plugincore.logger.LogData.Companion.FLAG_NOTIFY
 import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.plugincore.utils.hasFlag
 import dev.mooner.starlight.utils.dp
+import dev.mooner.starlight.utils.getTypeface
 import dev.mooner.starlight.utils.isForeground
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-private var typefaceCache: MutableMap<Int, Typeface> = hashMapOf()
-private fun getTypeface(context: Context, @FontRes res: Int): Typeface? =
-    typefaceCache[res]
-        ?: context
-            .let { ResourcesCompat.getFont(it, res) }
-            ?.also { typefaceCache[res] = it }
 
 context(LifecycleOwner)
 fun Activity.bindLogNotifier() =
