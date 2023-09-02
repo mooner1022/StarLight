@@ -1,6 +1,6 @@
 package dev.mooner.starlight.plugincore.plugin
 
-import dev.mooner.starlight.plugincore.logger.internal.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.version.Version
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -9,6 +9,8 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+
+private val logger = LoggerFactory.logger {  }
 
 @Serializable(with = PluginDependencySerializer::class)
 class PluginDependency {
@@ -45,7 +47,7 @@ class PluginDependency {
                     if (Version.check(version))
                         version
                     else {
-                        Logger.w("Failed to parse supportedVersion from plugin: $pluginId")
+                        logger.warn { "Failed to parse supportedVersion from plugin: $pluginId" }
                         VERSION_ANY
                     }
                 }
