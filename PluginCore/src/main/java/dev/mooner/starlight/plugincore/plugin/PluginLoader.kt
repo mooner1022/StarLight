@@ -39,8 +39,6 @@ class PluginLoader {
     private val defDirectory = File(getStarLightDirectory(), "plugins/")
     //private val dexDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/.dex/")
 
-    private var systemPluginClass: Class<StarlightPlugin>? = null
-
     /*
     fun loadPlugins(dir: File = defDirectory, onPluginLoad: ((name: String) -> Unit)? = null): Set<Plugin> {
         if (!dir.exists() || !dir.isDirectory) {
@@ -96,13 +94,6 @@ class PluginLoader {
         return plugins
     }
      */
-
-    fun registerSystemPlugin(clazz: Class<StarlightPlugin>) {
-        if (systemPluginClass != null)
-            throw IllegalAccessException("Illegal access")
-
-        systemPluginClass = clazz
-    }
 
     fun loadPlugins(context: Context, dir: File = defDirectory): Flow<Any> =
         flow {
