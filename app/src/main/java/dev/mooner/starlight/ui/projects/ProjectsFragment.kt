@@ -173,7 +173,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
     private suspend fun ItemAdapter<ProjectListItem>.updateProjectView(project: Project) {
         LOG.debug { "updateProjectView ${project.info.name}" }
-        val index = getAdapterPosition(project.hashCode().toLong())
+        val index = getAdapterPosition(project.info.id.hashCode().toLong())
         if (index == -1) {
             with(requireContext()) {
                 LOG.warn(R.string.log_project_list_update_failure)

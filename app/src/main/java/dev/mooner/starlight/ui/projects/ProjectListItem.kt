@@ -50,7 +50,7 @@ private val LOG = LoggerFactory.logger {  }
 class ProjectListItem: AbstractBindingItem<CardProjectsBinding>() {
 
     override var identifier: Long
-        get() = project?.hashCode()?.toLong() ?: -1L
+        get() = project?.info?.id?.hashCode()?.toLong() ?: -1L
         set(_) {}
     var project: Project? = null
 
