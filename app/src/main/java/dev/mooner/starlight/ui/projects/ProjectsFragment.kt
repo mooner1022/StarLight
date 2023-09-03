@@ -52,6 +52,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transform
+import kotlin.math.min
 
 private val LOG = LoggerFactory.logger {  }
 
@@ -335,7 +336,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         }
     }
     private fun ItemAdapter<ProjectListItem>.scrollTo(project: Project) {
-        val index = getAdapterPosition(project.hashCode().toLong())
+        val index = getAdapterPosition(project.info.id.hashCode().toLong())
         if (index == -1) {
             with(requireContext()) {
                 LOG.warn(R.string.log_project_list_update_failure)
@@ -343,7 +344,8 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             return
         }
         binding.recyclerViewProjectList.postDelayed({
-            binding.recyclerViewProjectList.smoothScrollToPosition(index)
+            val scrollIdx = min(index + 2, adapterItemCount - 1)
+            binding.recyclerViewProjectList.smoothScrollToPosition(scrollIdx)
         }, 500)
     }
 
