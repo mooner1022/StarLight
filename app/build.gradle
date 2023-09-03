@@ -7,6 +7,7 @@ plugins {
 }
 
 def nightly = true
+def timeMillis = System.currentTimeMillis() + 1
 
 android {
     compileSdkVersion 33
@@ -32,7 +33,6 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
 
-            def timeMillis = System.currentTimeMillis()
             def versionName = android.defaultConfig.versionName
             def suffix = "-${new java.text.SimpleDateFormat("yyMMdd").format(timeMillis)}"
             versionNameSuffix suffix

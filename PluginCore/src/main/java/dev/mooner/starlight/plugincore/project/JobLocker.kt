@@ -128,6 +128,12 @@ object JobLocker {
             return key
         }
 
+        fun tryRelease(key: String = defaultKey) {
+            if (key !in runningJobs)
+                return
+            requestRelease(key)
+        }
+
         fun requestRelease(key: String = defaultKey) {
             if (key in runningJobs) {
                 //var isReleased = false
@@ -201,3 +207,6 @@ object JobLocker {
          */
     }
 }
+
+fun JobLocker.withProject(project: Project): JobLocker.Parent =
+    withParent(project.threadPoolName!!)

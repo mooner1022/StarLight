@@ -52,7 +52,7 @@ class JSRhino: Language() {
 
     override fun onConfigUpdated(updated: Map<String, Any>) {}
 
-    private fun enterContext(): Context {
+    internal fun enterContext(): Context {
         val config = getLanguageConfig()
         val optLevel = if (config.getBoolean(CONF_OPTIMIZE_CODE, false))
             config.getInt(CONF_OPTIMIZATION_LEVEL, 0)
@@ -85,7 +85,11 @@ class JSRhino: Language() {
 
     override fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any {
         val context = enterContext()
-        val scope = context.initStandardObjects(ImporterTopLevel(context))
+        val scope = if (project != null)
+            context.initStandardObjects(RhinoGlobalObject(context, project))
+        else
+            context.initStandardObjects(ImporterTopLevel(context))
+
         //val scope = context.newObject(shared)
         //val engine = ScriptEngineManager().getEngineByName("rhino")!!
         if (project != null) {
