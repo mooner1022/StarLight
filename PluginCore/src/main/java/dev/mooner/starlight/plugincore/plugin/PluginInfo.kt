@@ -22,6 +22,7 @@ data class PluginInfo(
     @SerialName("custom_classloader")
     val customClassLoader   : String? = null,
     val version             : Version,
+    val assetRevision       : Int = 0,
     @SerialName("api_version")
     val apiVersion          : Version,
     val dependency          : List<PluginDependency> = listOf(),

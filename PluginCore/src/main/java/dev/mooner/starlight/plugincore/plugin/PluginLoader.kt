@@ -306,14 +306,35 @@ class PluginLoader {
     private fun loadAssets(file: File, plugin: StarlightPlugin, force: Boolean = false) {
         var jar: JarFile? = null
         try {
+            val parent = plugin.getInternalDataDirectory()
+                .resolve("assets")
+                .also { it.mkdirs() }
+            val assetVersion = runCatching { parent.resolve(".VERSION").readText().toInt() }
+                .getOrDefault(-1)
+            if (plugin.info.assetRevision == assetVersion)
+                return
+            logger.debug { "Found new version of asset($assetVersion -> ${plugin.info.assetRevision}), loading assets..." }
+            parent.apply {
+                deleteRecursively()
+                mkdirs()
+                resolve(".VERSION")
+                    .writeText(plugin.info.assetRevision.toString())
+            }
+
             jar = JarFile(file)
             val entries = jar.entries()
-            val parent = plugin.getInternalDataDirectory().resolve("assets")
             while (entries.hasMoreElements()) {
                 val entry = entries.nextElement() ?: break
                 if (!entry.name.startsWith("assets/")) continue
 
-                val fileName = entry.name.split("assets/").last()
+                val fileName = entry.name.split("assets/")
+                    .drop(1)
+                    .let {
+                        if (it.size == 1)
+                            it[0]
+                        else
+                            it.joinToString("assets/")
+                    }
                 File(parent, fileName).apply {
                     if (force || !exists()) {
                         val entStream = jar.getInputStream(entry)
