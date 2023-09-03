@@ -42,7 +42,7 @@ class PluginsListAdapter(
         holder.card.apply {
             title = info.name
 
-            val iconFile = File(plugin.getExternalDataDirectory().resolve("assets"), "icon.png")
+            val iconFile = File(plugin.getInternalDataDirectory().resolve("assets"), "icon.png")
             if (iconFile.exists() && iconFile.isFile) {
                 setIcon {
                     it.load(iconFile) {
