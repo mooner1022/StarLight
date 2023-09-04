@@ -165,7 +165,7 @@ class LegacyApi: Api<LegacyApi.Api>() {
                     .getString(R.string.api_cannot_send_to_room)
                     .format(room)
 
-                Toast.makeText(context, content, Toast.LENGTH_LONG).show()
+                showToast(content, Toast.LENGTH_LONG)
                 LOG.warn { content }
             }
             return result
