@@ -25,22 +25,16 @@ class ProjectLoader(
         //projectDir.deleteRecursively()
         if (force || projects.isEmpty()) {
             projects.clear()
-            for (folder in dir.listFiles()?.filter { it.isDirectory } ?:return emptyList()) {
+            val precompiledNames: MutableSet<String> = hashSetOf()
+            for (folder in dir.listFiles()?.filter { it.isDirectory } ?: return emptyList()) {
                 val info: ProjectInfo
                 try {
                     info = getProjectInfo(folder)
                     val project: Project
                     try {
                         project = ProjectImpl.loadFrom(folder, info)
-                        if (info.isEnabled) {
-                            try {
-                                project.compile(true)
-                            } catch (e: Exception) {
-                                Logger.w(T, "Failed to pre-compile project ${info.name}: $e")
-                                info.isEnabled = false
-                                project.saveInfo()
-                            }
-                        }
+                        if (info.isEnabled)
+                            precompiledNames += info.name
                     } catch (e: IllegalArgumentException) {
                         e.printStackTrace()
                         Logger.e(T, e)
@@ -51,6 +45,19 @@ class ProjectLoader(
                     Logger.e(T, "Failed to load project '${folder.name}': $e")
                 } catch (e: IllegalArgumentException) {
                     Logger.e(T, "Failed to load project '${folder.name}': $e")
+                }
+            }
+            for (name in precompiledNames) {
+                val project = projects[name] ?: continue
+                val info    = project.info
+                if (info.isEnabled) {
+                    try {
+                        project.compile(true)
+                    } catch (e: Exception) {
+                        Logger.w(T, "Failed to pre-compile project ${info.name}: $e")
+                        info.isEnabled = false
+                        project.saveInfo()
+                    }
                 }
             }
         }
