@@ -139,7 +139,7 @@ abstract class Language {
      * @return the deserialized object of config values, wrapped with [ConfigCategory]
      */
     protected fun getLanguageConfig(): ConfigCategory {
-        val data = if (configFile == null || !configFile!!.isFile || !configFile!!.exists()) mapOf() else {
+        val data = if (configFile == null || !configFile!!.isFile || !configFile!!.exists()) emptyMap() else {
             val raw = configFile!!.readText()
             val typed: Map<String, Map<String, PrimitiveTypedString>> =
                 if (raw.isNotBlank())
