@@ -29,7 +29,14 @@ fun isNightMode(context: Context): Boolean {
     }
 }
 
-inline fun color(color: () -> String): Int = Color.parseColor(color())
+private val colorCache: MutableMap<Int, Int> = hashMapOf()
+fun color(color: () -> String): Int {
+    val nColor = color()
+    val nHash = nColor.hashCode()
+    return colorCache[nHash]
+        ?: Color.parseColor(nColor)
+            .also { colorCache[nHash] = it }
+}
 
 fun Bitmap.toBase64(): String {
     val stream = ByteArrayOutputStream()

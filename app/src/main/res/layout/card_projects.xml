@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginTop="8dp"
@@ -17,15 +18,17 @@
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"
         android:background="@color/cardview"
+        android:paddingStart="16dp"
         app:animationDuration="200"
         app:expandOnClick="true"
         app:innerView="@layout/card_project_buttons"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/cardViewIsEnabled"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:startExpanded="false"
-        app:title="PROJECT_NAME" />
+        app:title="PROJECT_NAME"
+        tools:ignore="RtlSymmetry"/>
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardViewIsEnabled"
@@ -38,5 +41,6 @@
         app:cardElevation="0dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

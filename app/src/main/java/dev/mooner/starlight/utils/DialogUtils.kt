@@ -1,8 +1,11 @@
 package dev.mooner.starlight.utils
 
+import android.app.Activity
 import android.content.Context
 import android.view.LayoutInflater
+import android.view.ViewGroup
 import androidx.annotation.UiContext
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.afollestad.materialdialogs.LayoutMode
@@ -12,6 +15,9 @@ import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.callbacks.onShow
 import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
+import dev.mooner.peekalert.PeekAlert
+import dev.mooner.peekalert.PeekAlertBuilder
+import dev.mooner.peekalert.createPeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.DialogConfigLayoutBinding
 import dev.mooner.starlight.databinding.DialogLogsBinding
@@ -86,6 +92,19 @@ fun Context.showLogsDialog() {
     }
 }
 
+fun showAlertDialog(context: Context, title: String, message: String, onDismiss: ConfirmCallback? = null): MaterialDialog {
+    return MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
+        setCommonAttrs()
+        cancelOnTouchOutside(true)
+        title(text = title)
+        message(text = message)
+        positiveButton(res = R.string.ok) {
+            onDismiss?.invoke(true)
+            dismiss()
+        }
+    }
+}
+
 fun showConfirmDialog(context: Context, title: String, message: String, onDismiss: ConfirmCallback? = null) {
     MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
         setCommonAttrs()
@@ -126,12 +145,17 @@ fun MaterialDialog.setCommonAttrs() {
 context(LifecycleOwner)
 fun MaterialDialog.configStruct(context: Context, block: DialogConfigStructBuilder.() -> Unit) {
     val binding = DialogConfigLayoutBinding.inflate(layoutInflater, null, false)
-    ConfigAdapter.Builder(context) {
+    var adapter: ConfigAdapter? = ConfigAdapter.Builder(context) {
         bind(binding.configRecyclerView)
         lifecycleOwner(this@LifecycleOwner)
 
         DialogConfigStructBuilder().apply(block).build(this)
     }.build()
+
+    onDismiss {
+        adapter?.destroy()
+        adapter = null
+    }
 
     customView(view = binding.root)
 }
@@ -141,6 +165,10 @@ class DialogConfigStructBuilder {
     private var structure: ConfigStructure by notNull()
     private var dataMap  : DataMap = emptyMap()
     private var listener : OnConfigChangedListener = { _, _, _, _ -> }
+
+    fun struct(structure: ConfigStructure) {
+        this.structure = structure
+    }
 
     fun struct(block: ConfigBuilder.() -> Unit) {
         structure = ConfigBuilder()
@@ -161,6 +189,49 @@ class DialogConfigStructBuilder {
             structure { structure }
             savedData(dataMap)
             onConfigChanged(listener)
+        }
+    }
+}
+
+fun Fragment.createSimplePeek(title: String? = null, text: String, builder: PeekAlertBuilder.() -> Unit): PeekAlert {
+    return createPeekAlert(this) {
+        setup(requireContext(), title, text)
+        this.apply(builder)
+    }
+}
+
+fun Activity.createSimplePeek(title: String? = null, text: String, builder: PeekAlertBuilder.() -> Unit): PeekAlert {
+    return createPeekAlert(this) {
+        setup(this@createSimplePeek, title, text)
+        this.apply(builder)
+    }
+}
+
+private fun PeekAlertBuilder.setup(context: Context, title: String?, text: String) {
+    position = PeekAlert.Position.Top
+    width = ViewGroup.LayoutParams.WRAP_CONTENT
+    cornerRadius = dp(14).toFloat()
+    autoHideMillis = 3000L
+    draggable = true
+    iconTint(res = R.color.white)
+
+    if (title == null) {
+        text(text) {
+            textColor(R.color.text)
+            textSize = 14f
+            typeface = getTypeface(context, R.font.nanumsquare_round_bold)
+        }
+    } else {
+        paddingDp = 17
+        text(text) {
+            textColor(R.color.text)
+            textSize = 14f
+            typeface = getTypeface(context, R.font.wantedsans_medium)
+        }
+        text(text) {
+            textColor(R.color.text)
+            textSize = 12f
+            typeface = getTypeface(context, R.font.wantedsans_regular)
         }
     }
 }

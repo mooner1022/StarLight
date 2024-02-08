@@ -147,9 +147,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                         }
                         icon = Icon.EDIT
                         //iconTintColor = color { "#94A684" }
-                        setOnClickListener { _ ->
-                            showProjectRenameDialog()
-                        }
+                        setOnClickListener(::showProjectRenameDialog)
                     }
                     button {
                         id = "open_folder"
@@ -310,6 +308,18 @@ class ProjectConfigActivity: AppCompatActivity() {
                             ).show()
                         }
                         icon = Icon.LAYERS_CLEAR
+                        //backgroundColor = Color.parseColor("#B8DFD8")
+                        iconTintColor = color { "#FF5C58" }
+                    }
+                    button {
+                        id = "destroy_scope"
+                        title = "프로젝트 스코프 폐기"
+                        description = "프로젝트의 컴파일된 스코프를 폐기합니다. 이후 프로젝트를 사용하기 위해선 다시 컴파일 해야 합니다."
+                        setOnClickListener { _ ->
+                            project.destroy(requestUpdate = isForeground())
+                            finish()
+                        }
+                        icon = Icon.DEVELOPER_BOARD_OFF
                         //backgroundColor = Color.parseColor("#B8DFD8")
                         iconTintColor = color { "#FF5C58" }
                     }

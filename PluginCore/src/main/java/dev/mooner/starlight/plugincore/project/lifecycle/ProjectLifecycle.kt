@@ -7,87 +7,21 @@
 package dev.mooner.starlight.plugincore.project.lifecycle
 
 import dev.mooner.starlight.plugincore.project.Project
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.*
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
+import kotlinx.coroutines.CoroutineScope
 
-private typealias LifecycleCallback = suspend (project: Project) -> Unit
+typealias LifecycleCallback = suspend (project: Project) -> Unit
 
-class ProjectLifecycle(
-    private val project: Project
-) {
+interface ProjectLifecycle {
 
-    var lifecycleScope: ProjectLifecycleScope? = null
-        private set
+    val lifecycleScope: ProjectLifecycleScope
 
-    private val flow: StateFlow<State> =
-        MutableStateFlow(State.DESTROYED)
+    val state: State
 
-    private val observers: ConcurrentMap<ProjectLifecycleObserver, Job> = ConcurrentHashMap()
+    fun registerObserver(observer: ProjectLifecycleObserver, scope: CoroutineScope = lifecycleScope)
 
-    val state get() = flow.value
+    fun unregisterObserver(observer: ProjectLifecycleObserver)
 
-    fun registerObserver(observer: ProjectLifecycleObserver) {
-        var prevState: State? = null
-        flow
-            .buffer(Channel.UNLIMITED)
-            .onEach { state ->
-                if (observer is ProjectLifecycleObserver.StateObserver)
-                    observer.onUpdate(project, state)
-                else {
-                    observer as ProjectLifecycleObserver.ExplicitObserver
-                    if (prevState == State.COMPILING)
-                        observer.onCompileEnd(project)
-                    getExplicitCallbackByState(observer, state)
-                        .invoke(project)
-                    prevState = state
-                }
-            }
-            .launchIn(checkOrCreateScope())
-            .also { observers[observer] = it }
-    }
-
-    fun unregisterObserver(observer: ProjectLifecycleObserver) {
-        observers[observer]?.let { job ->
-            job.cancel()
-            observers -= observer
-        }
-    }
-
-    fun whileInState(state: State, block: LifecycleCallback) {
-        checkOrCreateScope().launch {
-            if (flow.value == state)
-                block(project)
-            flow.collect { nState ->
-                if (nState != state)
-                    cancel()
-            }
-        }
-    }
-
-    private fun getExplicitCallbackByState(observer: ProjectLifecycleObserver.ExplicitObserver, state: State): LifecycleCallback {
-        return when(state) {
-            State.COMPILING ->
-                observer::onCompileStart
-            State.ENABLED ->
-                observer::onEnable
-            State.DISABLED ->
-                observer::onDisable
-            State.DESTROYED ->
-                observer::onDestroy
-        }
-    }
-
-    private fun checkOrCreateScope(): ProjectLifecycleScope {
-        if (lifecycleScope == null)
-            lifecycleScope = ProjectLifecycleScopeImpl(
-                lifecycle = this,
-                coroutineContext = Dispatchers.Default + SupervisorJob()
-            )
-        return lifecycleScope!!
-    }
+    suspend fun whileInState(state: State, block: LifecycleCallback)
 
     enum class State {
         COMPILING,

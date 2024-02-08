@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
-    android:maxWidth="344dp"
+    android:maxWidth="@dimen/editor_drawer_max_width"
     tools:context=".ui.editor.drawer.FileTreeDrawerFragment">
 
     <androidx.cardview.widget.CardView

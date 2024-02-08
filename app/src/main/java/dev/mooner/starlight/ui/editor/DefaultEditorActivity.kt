@@ -2,9 +2,12 @@ package dev.mooner.starlight.ui.editor
 
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.text.InputType
 import android.util.Base64
 import android.view.*
 import android.webkit.JavascriptInterface
@@ -12,7 +15,9 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.view.GravityCompat
+import androidx.core.view.get
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.drawerlayout.widget.DrawerLayout
@@ -20,7 +25,9 @@ import androidx.drawerlayout.widget.DrawerLayout.DrawerListener
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.snackbar.Snackbar
+import dev.mooner.peekalert.PeekAlert
+import dev.mooner.peekalert.PeekAlertBuilder
+import dev.mooner.peekalert.createPeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityDefaultEditorBinding
 import dev.mooner.starlight.logging.bindLogNotifier
@@ -43,6 +50,7 @@ import dev.mooner.starlight.ui.editor.tab.EditorSession
 import dev.mooner.starlight.ui.editor.tab.TabItemMoveCallbackListener
 import dev.mooner.starlight.ui.editor.tab.TabViewAdapter
 import dev.mooner.starlight.utils.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
@@ -61,7 +69,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     private lateinit var binding  : ActivityDefaultEditorBinding
     private          var codeView : WebView? = null
 
-    private var theme          : Theme = Theme.NORD_DARK
+    private var theme          : Theme = DEFAULT_THEME
 
     private var mainScriptName : String by notNull()
     private var code           : String by notNull()
@@ -72,6 +80,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
     private var tabAdapter     : TabViewAdapter? = null
     private var configAdapter  : ConfigAdapter? = null
+    private var fileTreeDrawer : FileTreeDrawerFragment? = null
 
     private var showFileTree   : Boolean by notNull()
     private var showDebugChat  : Boolean by notNull()
@@ -90,7 +99,9 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         setContentView(binding.root)
         setSupportActionBar(binding.toolbarEditor)
 
-        bindLogNotifier()
+        bindLogNotifier { log ->
+            !log.message.startsWith("ECOMF: ")
+        }
 
         showFileTree  = intent.getBooleanExtra(EXTRA_SHOW_FILE_TREE, true)
         showDebugChat = intent.getBooleanExtra(EXTRA_SHOW_DEBUG_CHAT, true)
@@ -108,16 +119,21 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             title = name
         }
 
-        theme = GlobalConfig
-            .category("e_general")
-            .getInt("theme", Theme.TOMORROW_NIGHT.ordinal)
-            .let(Theme.values()::get)
+        theme = try {
+            GlobalConfig
+                .category("e_general")
+                .getInt("theme", DEFAULT_THEME.ordinal)
+                .let(Theme.entries.toTypedArray()::get)
+        } catch (e: Exception) {
+            DEFAULT_THEME
+        }
 
         bypassEscape = GlobalConfig
             .category("e_general")
             .getBoolean("bypass_escape", true)
 
         binding.scrollViewHotKeys.isHorizontalScrollBarEnabled = false
+        binding.toolbarEditor.setTitleTextAppearance(this, R.style.EditorTitleTextAppearance)
 
         // Lock drawer layout open by swipe
         binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.END)
@@ -161,16 +177,15 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
         if (showFileTree) {
             //Right drawer (File Tree)
+            fileTreeDrawer = FileTreeDrawerFragment
+                .newInstance(getProject())
             supportFragmentManager.beginTransaction().apply {
                 replace(
                     R.id.drawer_fileTree,
-                    FileTreeDrawerFragment
-                        .newInstance(getProject())
+                    fileTreeDrawer!!
                 )
             }.commit()
         }
-
-        updateColor()
         //setupHotKeys()
 
         configAdapter = ConfigAdapter.Builder(this) {
@@ -181,6 +196,11 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                 GlobalConfig.edit {
                     category(parentId).setAny(id, data)
                 }
+                if (parentId == "e_code" && id == "font_size") {
+                    val fontSize = (data as String).toIntOrNull()
+                        ?: return@onConfigChanged
+                    setFontSize(fontSize)
+                }
             }
         }.build()
 
@@ -188,7 +208,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         mainScriptName = fileName
         val ext = File(fileName).extension
         val lang = let {
-            for (lang in Language.values()) {
+            for (lang in Language.entries) {
                 if (ext in lang.fileExt) return@let lang
             }
             return@let null
@@ -208,8 +228,12 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             }
         }
 
-        code = readCodeOrDefault(fileName, getProject().getLanguage())
+        code = readCode(fileName) ?: return let {
+            Toast.makeText(this, "Unable to locate main script file '${fileName}'", Toast.LENGTH_LONG).show()
+            finish()
+        }
 
+        readCodeOrDefault(fileName, getProject().getLanguage())
         val savedTabs: Collection<String> =
             getProject().config.category("editor")
                 .getString("saved_tabs", "[]")
@@ -245,6 +269,8 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         binding.webviewContainer.addView(codeView)
 
         setHotKeyVisibility(isHotKeyShown)
+        updateColor()
+
         val dp20 = dp(20)
         BottomSheetBehavior.from(binding.bottomSheet.root)
             .addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
@@ -285,6 +311,15 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         super.onDestroy()
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        val superRes = super.onPrepareOptionsMenu(menu)
+        val iconColor = ColorStateList.valueOf(getTextColor(theme.isTextDark))
+        for (idx in 0 until menu.size()) {
+            menu[idx].iconTintList = iconColor
+        }
+        return superRes
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.editor_menu, menu)
         return super.onCreateOptionsMenu(menu)
@@ -295,17 +330,28 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         if (event.action == KeyEvent.ACTION_DOWN) {
             if (event.isCtrlPressed) {
                 when(event.keyCode) {
-                    KeyEvent.KEYCODE_S -> {
+                    KeyEvent.KEYCODE_S ->
                         saveCode()
+                    KeyEvent.KEYCODE_E ->
+                        compileProject()
+                    KeyEvent.KEYCODE_L -> {
+                        if (binding.root.isDrawerOpen(GravityCompat.START))
+                            binding.root.closeDrawer(GravityCompat.START, true)
+                        else {
+                            binding.root.openDrawer(GravityCompat.START, true)
+                            fileTreeDrawer?.openTabAt(1)
+                        }
                     }
-                    else -> {
+                    else ->
                         return super.dispatchKeyEvent(event)
-                    }
                 }
                 return true
             }
             // Bypass Escape
             else if (event.keyCode == KeyEvent.KEYCODE_ESCAPE && bypassEscape) {
+                return true
+            } else if (event.keyCode == KeyEvent.KEYCODE_TAB) {
+                appendText("    ")
                 return true
             }
         }
@@ -319,6 +365,15 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             tabAdapter!!.setSelected(mainScriptName)
         }
         resetUndoStack()
+
+        with(GlobalConfig.category("e_code")) {
+            val fontSize = getString("font_size")?.toInt()
+            if (fontSize != null)
+                setFontSize(fontSize)
+            val wrapText = getBoolean("wrap_text")
+            if (wrapText == true)
+                setWordWrap(wrapText)
+        }
     }
 
     @JavascriptInterface
@@ -338,7 +393,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
     @JavascriptInterface
     override fun onAnnotationUpdated(list: String) {
-        logger.info { "list: $list" }
+        logger.verbose { "list: $list" }
         lifecycleScope.launch {
             EventHandler.fireEvent(EditorMessageFragment.EditorAnnotationReturnEvent(list))
         }
@@ -357,7 +412,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             logger.error {
                 translate {
                     Locale.ENGLISH { "Editor requested session with id: $sessionId, but not found" }
-                    Locale.KOREAN  { "데이터가 세션을 요청했지만 찾지 못함: $sessionId" }
+                    Locale.KOREAN  { "에디터가 세션을 요청했지만 찾지 못함: $sessionId" }
                 }
             }
             return
@@ -423,25 +478,61 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         saveCode()
         val project = getProject()
 
-        snackbar(translate {
-            Locale.ENGLISH { "Compiling project [${project.info.name}]..." }
-            Locale.KOREAN  { "프로젝트 [${project.info.name}] 컴파일 중..." }
-        })
+        val peek = createSimplePeek(
+            text = translate {
+                Locale.ENGLISH { "Compiling project [${project.info.name}]..." }
+                Locale.KOREAN  { "프로젝트 [${project.info.name}] 컴파일 중..." }
+            }
+        ) {
+            //backgroundColor(value = color { "#424242" })
+            autoHideMillis = null
+            iconRes = R.drawable.ic_round_developer_mode_24
+            iconTint(R.color.text_clear)
+        }.apply {
+            setTextColor(R.color.text_clear)
+        }
+        peek.peek()
 
         lifecycleScope.launch {
             getProject()
                 .compileAsync()
-                .onCompletion {
-                    snackbar(translate {
-                        Locale.ENGLISH { "Finished compile of [${project.info.name}!]" }
-                        Locale.KOREAN  { "프로젝트 [${project.info.name}] 컴파일 완료!" }
-                    })
+                .onCompletion { e ->
+                    if (e != null)
+                        return@onCompletion
+                    peek.hide()
+                    delay(300L)
+                    peek.apply {
+                        setAutoHide(3000L)
+                        setIcon(R.drawable.ic_round_check_24)
+                        setText(translate {
+                            Locale.ENGLISH { "Successfully compiled [${project.info.name}]!" }
+                            Locale.KOREAN  { "프로젝트 [${project.info.name}] 컴파일 완료!" }
+                        })
+                        setBackgroundColor(res = R.color.noctis_green)
+                    }.peek()
                 }
                 .catch { e ->
-                    snackbar(translate {
-                        Locale.ENGLISH { "Failed to compile [${project.info.name}]" }
-                        Locale.KOREAN  { "프로젝트 [${project.info.name}] 컴파일 실패:\n$e" }
-                    }, e)
+                    peek.hide()
+                    delay(300L)
+                    peek.apply {
+                        setPaddingDp(16)
+                        setAutoHide(4000L)
+                        setIcon(R.drawable.ic_round_error_outline_24)
+                        setTitleColor(R.color.white)
+                        setTitle(translate {
+                            Locale.ENGLISH { "Failed to compile [${project.info.name}]" }
+                            Locale.ENGLISH { "[${project.info.name}] 컴파일 실패" }
+                        })
+                        setTitleTypeface(getTypeface(this@DefaultEditorActivity, R.font.wantedsans_medium)!!)
+                        setTextColor(R.color.white)
+                        setText(e.toString())
+                        setTextTypeface(getTypeface(this@DefaultEditorActivity, R.font.wantedsans_regular)!!)
+                        setTextSize(12f)
+                        setAction("자세히", textColorRes = R.color.black) {
+                            binding.root.context.showErrorLogDialog(getProject().info.name + " 에러 로그", e)
+                        }
+                        setBackgroundColor(res = R.color.code_error)
+                    }.peek()
                 }
                 .collect()
         }
@@ -449,7 +540,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     }
 
     private fun setupTabAdapter(): TabViewAdapter {
-        val adapter = TabViewAdapter(this, sessions) { type, index, item ->
+        val adapter = TabViewAdapter(this, sessions, theme.isTextDark) { type, index, item ->
             when(type) {
                 TabViewAdapter.EVENT_SELECTED -> {
                     logger.verbose {
@@ -485,28 +576,39 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         //binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.END)
     }
 
-    private fun snackbar(text: String, e: Throwable? = null) {
-        Snackbar.make(binding.root, text, Snackbar.LENGTH_SHORT).apply {
-            if (e != null) {
-                setAction("자세히") {
-                    binding.root.context.showErrorLogDialog(getProject().info.name + " 에러 로그", e)
-                }
+    private fun createPeek(text: String, builder: PeekAlertBuilder.() -> Unit): PeekAlert {
+        return createPeekAlert(this) {
+            //paddingDp = 16
+            position = PeekAlert.Position.Top
+            width = ViewGroup.LayoutParams.WRAP_CONTENT
+            cornerRadius = dp(14).toFloat()
+            autoHideMillis = 3000L
+            draggable = true
+            iconTint(res = R.color.white)
+            text(text) {
+                textSize = 14f
+                typeface = getTypeface(this@DefaultEditorActivity, R.font.nanumsquare_round_bold)
             }
-            animationMode = Snackbar.ANIMATION_MODE_SLIDE
-        }.show()
+            this.apply(builder)
+        }
     }
 
     private fun updateColor() {
         setupHotKeys(clear = true)
 
         val color = theme.toolbarColor ?: getColor(R.color.background)
-        val textColor =
-            if (theme.toolbarColor != null)
-                color { "#FFFFFF" }
-            else
-                getColor(R.color.text)
+        val textColor = getTextColor(theme.isTextDark)
+        val textColorStateList = ColorStateList.valueOf(textColor)
 
         supportActionBar!!.setBackgroundDrawable(ColorDrawable(color))
+        binding.toolbarEditor.apply {
+            setTitleTextColor(textColor)
+            navigationIcon!!.colorFilter = PorterDuffColorFilter(textColor, PorterDuff.Mode.MULTIPLY)
+            for (idx in 0 until menu.size()) {
+                menu[idx].iconTintList = textColorStateList
+            }
+        }
+        //binding.toolbarEditor.foregroundTintList = ColorStateList.valueOf(textColor)
         binding.rvOpenFiles.setBackgroundColor(color)
         val stateList = ColorStateList.valueOf(color)
         binding.bottomSheet.apply {
@@ -514,7 +616,15 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             cardViewTopRadius.setCardBackgroundColor(stateList)
             cardView2.setCardBackgroundColor(textColor)
         }
+        tabAdapter?.updateTextColor(theme.isTextDark)
         binding.scrollViewHotKeys.backgroundTintList = stateList
+    }
+
+    private fun getTextColor(isDark: Boolean): Int {
+        return if (isDark)
+            getColor(R.color.editor_text_dark)
+        else
+            getColor(R.color.editor_text)
     }
 
     @Suppress("SameParameterValue")
@@ -525,7 +635,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         val widthDP = dp(36)
         val textPadding = dp(8)
         val backgroundColor = ColorStateList.valueOf(theme.toolbarColor ?: getColor(R.color.transparent))
-        val textColor = ColorStateList.valueOf(if (theme.toolbarColor != null) color { "#FFFFFF" } else getColor(R.color.text))
+        val textColor = ColorStateList.valueOf(getTextColor(theme.isTextDark))
 
         for (key in HOT_KEYS) {
             val textView = TextView(binding.root.context).apply {
@@ -548,6 +658,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                     when(key) {
                         '↺' -> undo()
                         '↻' -> redo()
+                        '⇒' -> appendText("    ")
                         else -> appendText(key.toString())
                     }
                 }
@@ -557,26 +668,29 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     }
 
     private fun setHotKeyVisibility(visible: Boolean) {
-        binding.bottomSheet.cardViewTopRadius.radius = 0f
+        val behavior = BottomSheetBehavior
+            .from(binding.bottomSheet.rootBottomSheet)
+
+        binding.bottomSheet.cardViewTopRadius.radius =
+            if (visible && behavior.state != BottomSheetBehavior.STATE_EXPANDED) dp(20).toFloat() else 0f
         val (peekHeight, visibility) = when(visible) {
             true -> dp(64) to View.VISIBLE
             false -> dp(24) to View.GONE
         }
-        BottomSheetBehavior
-            .from(binding.bottomSheet.rootBottomSheet)
-            .setPeekHeight(peekHeight, true)
+        behavior.setPeekHeight(peekHeight, true)
         binding.scrollViewHotKeys.visibility = visibility
         binding.layoutHotKeys.visibility = visibility
     }
 
     private fun getStructure() = config {
+        val titleTextColor = getTextColor(theme.isTextDark)
         category {
             id = "e_general"
             title = translate {
                 Locale.ENGLISH { "General" }
                 Locale.KOREAN  { "일반" }
             }
-            textColor = getColor(R.color.text)
+            textColor = titleTextColor
             items {
                 toggle {
                     id = "show_hot_keys"
@@ -602,7 +716,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                         }
                     }
                 }
-                val themes = Theme.values()
+                val themes = Theme.entries.toTypedArray()
                 spinner {
                     id = "theme"
                     title = translate {
@@ -627,12 +741,45 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             }
         }
         category {
+            id = "e_code"
+            title = translate {
+                Locale.ENGLISH { "Code" }
+                Locale.KOREAN  { "코드" }
+            }
+            textColor = titleTextColor
+            items {
+                string {
+                    id = "font_size"
+                    title = translate {
+                        Locale.ENGLISH { "Font size(px)" }
+                        Locale.KOREAN  { "폰트 크기(px)" }
+                    }
+                    icon = Icon.TEXT_FIELDS
+                    hint = "15"
+                    defaultValue = "15"
+                    inputType = InputType.TYPE_CLASS_NUMBER
+                }
+                toggle {
+                    id = "wrap_text"
+                    title = translate {
+                        Locale.ENGLISH { "Wrap text" }
+                        Locale.KOREAN  { "자동 줄바꿈(워드 랩)" }
+                    }
+                    icon = Icon.WRAP_TEXT
+                    defaultValue = false
+                    setOnValueChangedListener { _, toggle ->
+                        setWordWrap(toggle)
+                    }
+                }
+            }
+        }
+        category {
             id = "e_files"
             title = translate {
                 Locale.ENGLISH { "Tabs" }
                 Locale.KOREAN  { "탭" }
             }
-            textColor = getColor(R.color.text)
+            textColor = titleTextColor
             items {
                 toggle {
                     id = "always_show_close_button"
@@ -685,7 +832,15 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             isCodeChanged = false
         }
          */
-        Snackbar.make(window.decorView.findViewById(android.R.id.content), "${savedCount}개 파일 저장 완료", Snackbar.LENGTH_LONG).show()
+        createPeek(translate {
+            Locale.ENGLISH { "Saved $savedCount files" }
+            Locale.KOREAN  { "${savedCount}개 파일 저장 완료" }
+        }) {
+            iconRes = R.drawable.ic_round_check_24
+            iconTint(R.color.noctis_green)
+        }.apply {
+            setTextColor(R.color.text_clear)
+        }.peek()
     }
 
     private fun beautifyCode() =
@@ -698,7 +853,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         Base64.encodeToString(Uri.encode(text, "utf-8").toByteArray(), 0)
 
     private fun executeScript(script: String) =
-        codeView?.post { codeView!!.loadUrl("javascript:$script") }
+        codeView?.post { codeView?.loadUrl("javascript:$script") }
 
     private fun setSession(session: EditorSession) {
         setSession(session.sessionId, session.language, session.code!!)
@@ -728,6 +883,12 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
     private fun redo() =
         executeScript("redo()")
+
+    private fun setFontSize(size: Int) =
+        executeScript("setFontSize(${size})")
+
+    private fun setWordWrap(wrap: Boolean) =
+        executeScript("setWordWrap(${wrap})")
 
     internal fun requestAnnotations() =
         executeScript("requestAnnotations()")
@@ -765,11 +926,15 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             R.id.code_beautify -> beautifyCode()
             R.id.menu_debug_room -> {
                 if (!getProject().isCompiled) {
-                    Snackbar.make(binding.root,
-                        translate {
-                            Locale.ENGLISH { "Project isn't compiled yet." }
-                            Locale.KOREAN  { "아직 프로젝트가 컴파일되지 않았어요." }
-                        }, Snackbar.LENGTH_SHORT).show()
+                    createPeek(translate {
+                        Locale.ENGLISH { "Project isn't compiled yet." }
+                        Locale.KOREAN  { "아직 프로젝트가 컴파일 되지 않았어요." }
+                    }) {
+                        iconRes = R.drawable.ic_round_close_24
+                        backgroundColor(R.color.orange)
+                    }.apply {
+                        setTextColor(R.color.white)
+                    }.peek()
                 } else {
                     when(layoutMode) {
                         LAYOUT_TABLET -> openDebugRoomDrawer()
@@ -805,7 +970,8 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         const val EXTRA_SHOW_DEBUG_CHAT = "showDebugChat"
 
         const val ENTRY_POINT = "file:///android_asset/editor/index.html"
-        private const val HOT_KEYS = "↺↻[]{}()<>;=.'\"+-*/\\:&|"
+        private const val HOT_KEYS = "↺↻⇒[]{}()<>;=.'\"+-*/\\:&|"
+        private val DEFAULT_THEME = Theme.TOMORROW_NIGHT_EIGHTIES
     }
 
     @Suppress("unused")
@@ -849,39 +1015,43 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     }
 
     sealed class ThemeStyle {
-        object Light: ThemeStyle()
-        object Dark: ThemeStyle()
+        data object Light: ThemeStyle()
+        data object Dark: ThemeStyle()
     }
 
     @Suppress("unused")
     enum class Theme(
-        val shownName: String,
-        val editorName: String,
-        val themeStyle: ThemeStyle,
-        val toolbarColor: Int? = null,
+        val shownName       : String,
+        val editorName      : String,
+        val themeStyle      : ThemeStyle,
+        val toolbarColor    : Int? = if (themeStyle == ThemeStyle.Light) color { "#b7b7b7" } else color { "#202020" },
+        val isTextDark      : Boolean = false,
     ) {
         // Light themes
-        GITHUB("Github", "github", ThemeStyle.Light, color { "#e2f1fe" }),
-        ECLIPSE("Eclipse", "eclipse", ThemeStyle.Light),
-        CLOUDS("Clouds", "clouds", ThemeStyle.Light),
-        XCODE("XCode", "xcode", ThemeStyle.Light),
-        CHROME("Chrome", "chrome", ThemeStyle.Light),
-        DREAMWEAVER("Dreamweaver","dreamweaver", ThemeStyle.Light),
-        IPLASTIC("IPlastic", "iplastic", ThemeStyle.Light),
-        KATZEN_MILCH("Katzenmilch", "katzenmilch", ThemeStyle.Light, color { "#e2f1fe" }),
-        SOLARIZED_LIGHT("Solarized-Light", "solarized_light", ThemeStyle.Light),
-        TOMORROW("Tomorrow", "tomorrow", ThemeStyle.Light),
+        GITHUB("Github", "github", ThemeStyle.Light, color { "#e2f1fe" }, true),
+        ECLIPSE("Eclipse", "eclipse", ThemeStyle.Light, color { "#b7b7b7" }, true),
+        CLOUDS("Clouds", "clouds", ThemeStyle.Light, color { "#b7b7b7" }, true),
+        XCODE("XCode", "xcode", ThemeStyle.Light, color { "#b7b7b7" }, true),
+        CHROME("Chrome", "chrome", ThemeStyle.Light, color { "#b7b7b7" }, true),
+        DREAMWEAVER("Dreamweaver","dreamweaver", ThemeStyle.Light, color { "#b7b7b7" }, true),
+        IPLASTIC("IPlastic", "iplastic", ThemeStyle.Light, color { "#909090" }),
+        KATZEN_MILCH("Katzenmilch", "katzenmilch", ThemeStyle.Light, color { "#a2a9b1" }),
+        SOLARIZED_LIGHT("Solarized-Light", "solarized_light", ThemeStyle.Light, color { "#bbb6a7" }, true),
+        TOMORROW("Tomorrow", "tomorrow", ThemeStyle.Light, color { "#b7b7b7" }, true),
 
         // Dark themes
-        AMBIANCE("Ambiance", "ambiance", ThemeStyle.Dark),
+        //AMBIANCE("Ambiance", "ambiance", ThemeStyle.Dark),
+        GITHUB_DARK("Github-Dark", "github_dark", ThemeStyle.Dark),
+        DRACULA("Dracula", "dracula", ThemeStyle.Dark),
+        GRUVBOX("Gruvbox", "gruvbox", ThemeStyle.Dark, color { "#1d2021" }),
         CLOUDS_MIDNIGHT("Clouds-Midnight", "clouds_midnight", ThemeStyle.Dark),
-        PASTEL_ON_DARK("Pastel On Dark", "pastel_on_dark", ThemeStyle.Dark),
-        SOLARIZED_DARK("Solarized-Dark", "solarized_dark", ThemeStyle.Dark),
-        TERMINAL("Terminal", "terminal", ThemeStyle.Dark),
+        PASTEL_ON_DARK("Pastel On Dark", "pastel_on_dark", ThemeStyle.Dark, color { "#332f2f" }),
+        SOLARIZED_DARK("Solarized-Dark", "solarized_dark", ThemeStyle.Dark, color { "#1a414a" }),
+        TERMINAL("Terminal", "terminal", ThemeStyle.Dark, color { "#1a0005" }),
         TOMORROW_NIGHT("Tomorrow Night", "tomorrow_night", ThemeStyle.Dark, color { "#3e4047" }),
         TOMORROW_NIGHT_EIGHTIES("Tomorrow Night-Eighties", "tomorrow_night_eighties", ThemeStyle.Dark, color { "#535153" }),
-        MONOKAI("Monokai", "monokai", ThemeStyle.Dark),
-        GREEN_ON_BLACK("Green on black", "green_on_black", ThemeStyle.Dark),
+        MONOKAI("Monokai", "monokai", ThemeStyle.Dark, color { "#202020" }),
+        //GREEN_ON_BLACK("Green on black", "green_on_black", ThemeStyle.Dark),
         KR_THEME("KR Theme", "kr_theme", ThemeStyle.Dark, color { "#322129" }),
         NORD_DARK("Nord Dark", "nord_dark", ThemeStyle.Dark, color { "#92A9BD" }),
         ONE_DARK("One Dark", "one_dark", ThemeStyle.Dark, color { "#656980" }),

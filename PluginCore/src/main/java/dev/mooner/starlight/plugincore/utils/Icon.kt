@@ -256,5 +256,11 @@ enum class Icon(
     ),
     FILE(
         drawableRes = R.drawable.ic_round_file_24
-    )
+    ),
+    TEXT_FIELDS(
+        drawableRes = R.drawable.ic_round_text_fields_24
+    ),
+    WRAP_TEXT(
+        drawableRes = R.drawable.ic_round_wrap_text_24
+    ),
 }

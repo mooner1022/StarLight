@@ -26,7 +26,7 @@ import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
-import dev.mooner.starlight.plugincore.utils.warnTranslated
+import dev.mooner.starlight.plugincore.utils.infoTranslated
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.ui.widget.config.WidgetConfigActivity
 import dev.mooner.starlight.ui.widget.config.WidgetsAdapter
@@ -122,7 +122,7 @@ class HomeFragment : Fragment() {
                     ?.newInstance()
                     ?.also(viewLifecycleOwner.lifecycle::addObserver)
                     ?.let(widgets::add)
-                    ?: logger.warnTranslated { 
+                    ?: logger.infoTranslated {
                         Locale.ENGLISH { "Skipping unknown widget: $id" }
                         Locale.KOREAN  { "알 수 없는 위젯 $id 의 초기화 건너뜀" }
                     }

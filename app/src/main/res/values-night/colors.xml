@@ -6,10 +6,15 @@
     <color name="background">#000000</color>
     <color name="cardview">#171717</color>
     <color name="background_dialog">#1a1a1a</color>
+    <color name="background_card">#171717</color>
+    <color name="background_chip">#202020</color>
+    <color name="background_popup">#2B2B2B</color>
 
     <color name="config_list_item_background">#202020</color>
 
     <color name="text">#D5D5D5</color>
+    <color name="text_clear">#FFFFFF</color>
+    <color name="text_sub">#757575</color>
 
     <color name="switch_track">#636363</color>
 

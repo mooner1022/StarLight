@@ -28,6 +28,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/jbmono_nl_regular"
             android:paddingHorizontal="4dp"
+            android:bufferType="spannable"
             tools:text="This is a dummy log content"/>
     </LinearLayout>
 

@@ -19,8 +19,10 @@ import dev.mooner.starlight.plugincore.logger.ProjectLogger
 import dev.mooner.starlight.plugincore.logger.internal.Logger
 import dev.mooner.starlight.plugincore.pipeline.SimplePipeline
 import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
+import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycle
+import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycleRegistry
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.currentThread
@@ -49,18 +51,24 @@ class ProjectImpl private constructor(
     override var threadPoolName: String? = null
 
     override val coroutineContext get() = mContext!!
+
     private var mContext: CoroutineContext? = null
 
-    private val lifecycle = ProjectLifecycle(this)
+    private val lifecycle = ProjectLifecycleRegistry(this)
     override fun getLifecycle(): ProjectLifecycle =
         lifecycle
+
+    private val lifecycleRegistry: ProjectLifecycleRegistry
+        get() = lifecycle
 
     private val _allowedEventIDs: MutableSet<String> = hashSetOf()
     val allowedEventIDs: Set<String> get() = _allowedEventIDs
 
     override val isCompiled: Boolean
         get() = langScope != null
+
     private var langScope: Any? = null
+
     private val lang: Language =
         Session.languageManager
             .getLanguage(info.languageId, newInstance = true)
@@ -83,10 +91,11 @@ class ProjectImpl private constructor(
     }
 
     override fun callFunction(name: String, args: Array<out Any>, onException: (Throwable) -> Unit) {
-        //logger.d(tag, "calling $name with args [${args.joinToString(", ")}]")
         if (langScope == null) {
+            onException(IllegalStateException("Project should be in compiled state before calling function."))
+            return
+            /*
             if (!isCompiled) return
-
             logger.w("EventHandler", """
                 Property engine must not be null
                 이 에러는 StarLight 의 버그일 수 있습니다.
@@ -101,7 +110,7 @@ class ProjectImpl private constructor(
                 packages  : ${info.packages}
                 ──────────
             """.trimIndent())
-            return
+             */
         }
 
         //setClassLoader()
@@ -110,20 +119,18 @@ class ProjectImpl private constructor(
 
         fun onError(e: Throwable) {
             logger.e(tag, "Error while running: $e")
-            val key = "shutdown_on_error"
-            val shutdownOnError: Boolean = config["general"].getBoolean(key, true)
+            val shutdownOnError = config
+                .category("general")
+                .getBoolean("shutdown_on_error", true)
 
             if (shutdownOnError) {
-                logger.e(info.name, "Shutting down project '${info.name}'...")
-                info.isEnabled = false
-                saveInfo()
-                if (langScope != null && lang.requireRelease) {
-                    lang.release(langScope!!)
-                    langScope = null
-                }
+                logger.e(info.name, translate {
+                    Locale.ENGLISH { "Destroying project '${info.name}'..." }
+                    Locale.KOREAN  { "프로젝트 '${info.name}' 종료중..." }
+                })
+                destroy(requestUpdate = true)
             }
             e.printStackTrace()
-            //projectManager.onStateChanged(this)
             onException(e)
         }
 
@@ -132,7 +139,7 @@ class ProjectImpl private constructor(
                 JobLocker.withLock(threadPoolName!!) {
                     lang.callFunction(langScope!!, name, args, ::onError)
                 }
-                if (langScope != null && lang.requireRelease)
+                if (isCompiled && lang.requireRelease)
                     lang.release(langScope!!)
             } catch (e: Error) {
                 onError(e)
@@ -160,8 +167,9 @@ class ProjectImpl private constructor(
                     trySend(stage to percentage)
                 }
             }
-
+            val orgLifecycleState = lifecycle.state
             try {
+                lifecycleRegistry.setCurrentState(ProjectLifecycle.State.COMPILING)
                 val code = directory.resolve(info.mainScript)
                     .require(File::isFile) { "Main script ${info.mainScript} is not a file." }
                     .runCatching(File::readText)
@@ -172,11 +180,13 @@ class ProjectImpl private constructor(
                     "Cannot find main script ${info.mainScript} for project ${info.name}"
                 )).readText(Charsets.UTF_8)
                  */
-                if (lang.requireRelease && langScope != null) {
+                if (isCompiled) {
                     if ("starlight.project.compile" in allowedEventIDs)
                         lang.callFunction(langScope!!, "onStartCompile", emptyArray())
-                    lang.release(langScope!!)
-                    logger.v(tag, "engine released")
+                    if (lang.requireRelease) {
+                        lang.release(langScope!!)
+                        logger.v(tag, "engine released")
+                    }
                 }
                 logger.i(translate {
                     Locale.ENGLISH { "Compiling project ${info.name}..." }
@@ -184,19 +194,13 @@ class ProjectImpl private constructor(
                 })
                 //setClassLoader()
                 langScope = pipeline.run(this@ProjectImpl to code)
-
-                /*
-                langScope = lang.compile(
-                    code = rawCode,
-                    apis = apiManager.getApis(),
-                    project = this
-                )
-                 */
                 EventHandler.fireEvent(Events.Project.Compile(project = this@ProjectImpl))
+                lifecycleRegistry.setCurrentState(ProjectLifecycle.State.DISABLED)
                 //projectManager.onStateChanged(this)
             } catch (e: Exception) {
                 e.printStackTrace()
-                logger.e(tag, e.toString())
+                logger.e(tag, "ECOMF: $e")
+                lifecycleRegistry.setCurrentState(orgLifecycleState)
                 throw e
             } finally {
                 requestUpdate()
@@ -206,34 +210,36 @@ class ProjectImpl private constructor(
         }.flowOn(createContext())
 
     override fun setEnabled(enabled: Boolean): Boolean {
-        if (isCompiled) {
-            if (info.isEnabled == enabled) return true
+        if (!isCompiled)
+            return false
+        if (info.isEnabled != enabled) {
             info.isEnabled = enabled
             saveInfo()
+            val state = if (enabled)
+                ProjectLifecycle.State.ENABLED
+            else
+                ProjectLifecycle.State.DISABLED
+            lifecycleRegistry.setCurrentState(state)
             requestUpdate()
-            return true
         }
-        return false
+        return true
     }
 
     override fun requestUpdate() {
         EventHandler.fireEventWithScope(Events.Project.InfoUpdate(project = this))
     }
 
-    override fun saveInfo() {
-        runBlocking {
-            val json = Json {
-                encodeDefaults = true
-                prettyPrint = true
-            }
-
-            flowOf(json.encodeToString(info))
-                .onEach(File(directory.path, INFO_FILE_NAME)::writeText)
-                .launchIn(CoroutineScope(Dispatchers.IO))
-
-            requestUpdate()
-            reloadAllowedEventIDs()
+    override fun saveInfo() = runBlocking {
+        val json = Json {
+            encodeDefaults = true
+            prettyPrint = true
         }
+
+        flowOf(json.encodeToString(info))
+            .onEach(File(directory.path, INFO_FILE_NAME)::writeText)
+            .launchIn(CoroutineScope(Dispatchers.IO))
+
+        reloadAllowedEventIDs()
     }
 
     override fun loadInfo() {
@@ -268,12 +274,20 @@ class ProjectImpl private constructor(
     override fun destroy(requestUpdate: Boolean) {
         logger.v("Destroying project [${info.name}]...")
         stopAllJobs()
-        if (langScope != null) {
+        langScope?.let { scope ->
             if (lang.requireRelease)
-                lang.release(langScope!!)
+                lang.release(scope)
+            lang.destroy(scope)
             langScope = null
         }
-        if (requestUpdate) requestUpdate()
+        if (info.isEnabled) {
+            info.isEnabled = false
+            saveInfo()
+        }
+        lifecycleRegistry.setCurrentState(ProjectLifecycle.State.DESTROYED)
+
+        if (requestUpdate)
+            requestUpdate()
     }
 
     override fun rename(name: String, preserveMainScript: Boolean) {
@@ -340,7 +354,7 @@ class ProjectImpl private constructor(
      */
 
     private fun reloadAllowedEventIDs() {
-        if (allowedEventIDs.isNotEmpty())
+        if (_allowedEventIDs.isNotEmpty())
             _allowedEventIDs.clear()
         ProjectEventManager
             .filterAllowedEvents(info.allowedEventIds)
@@ -354,7 +368,7 @@ class ProjectImpl private constructor(
 
         private const val DEF_THREAD_POOL_SIZE = 3
 
-        fun create(dir: File, info: ProjectInfo): Project {
+        fun create(dir: File, info: ProjectInfo, events: Map<String, ProjectEvent>): Project {
             val folder = File(dir.path, info.name)
                 .also(File::mkdirs)
 
@@ -362,7 +376,11 @@ class ProjectImpl private constructor(
                 .writeText(json.encodeToString(info), Charsets.UTF_8)
 
             File(folder.path, info.mainScript)
-                .writeText(getLanguage(info).defaultCode, Charsets.UTF_8)
+                .writeText(getLanguage(info).formatDefaultCode(info.mainScript, events.values.toList()), Charsets.UTF_8)
+
+            for ((eventId, _) in events)
+                info.allowedEventIds += eventId
+
             return loadFrom(folder, info)
         }
 

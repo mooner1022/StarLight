@@ -8,6 +8,7 @@ package dev.mooner.starlight.listener.specs
 
 import android.app.Notification
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
@@ -49,17 +50,27 @@ class DefaultParserSpec: MessageParserSpec {
         } else {
             null
         }
+        val roomId = sbn.tag
         val room = extras.getString(NotificationCompat.EXTRA_SUMMARY_TEXT, sender)
 
         val profileBitmap = (notification.getLargeIcon().loadDrawable(context) as BitmapDrawable).bitmap
         val isGroupChat = extras.containsKey(NotificationCompat.EXTRA_SUMMARY_TEXT)
-        val hasMention = extras[NotificationCompat.EXTRA_TEXT] is SpannableString
+        val hasMention = extras.getCharSequence(NotificationCompat.EXTRA_MESSAGES) is SpannableString
         val chatLogId = extras.getLong("chatLogId")
+
+        val background: Bitmap? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            extras.getBundle("android.wearable.EXTENSIONS")
+                ?.getParcelable("background", Bitmap::class.java)
+        } else {
+            extras.getBundle("android.wearable.EXTENSIONS")
+                ?.getParcelable("background") as Bitmap?
+        }
 
         val readAction = actions[0]
         val sendAction = actions[1]
         val chatRoom: ChatRoom = chatRoomCache[userId]?.get(room) ?: let {
             ChatRoomImpl(
+                id = roomId,
                 name = room,
                 isGroupChat = isGroupChat,
                 sendSession = sendAction,
@@ -74,6 +85,7 @@ class DefaultParserSpec: MessageParserSpec {
 
         return Message(
             message = message,
+            image = background,
             sender = ChatSender(
                 name = sender,
                 id = senderId,

@@ -12,6 +12,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 class FileTreeViewPagerAdapter(
     fragment: FileTreeDrawerFragment,
     private val mainScript: String?,
+    private val projectId: String,
     private val rootPath: String
 ): FragmentStateAdapter(fragment) {
 
@@ -21,11 +22,12 @@ class FileTreeViewPagerAdapter(
     override fun createFragment(position: Int): Fragment =
         when(position) {
             0 -> FileTreeFragment.newInstance(rootPath, mainScript)
-            1 -> EditorMessageFragment()
+            1 -> EditorLogsFragment.newInstance(projectId)
+            2 -> EditorMessageFragment()
             else -> createFragment(0)
         }
 
     companion object {
-        private const val PAGE_COUNT = 2
+        private const val PAGE_COUNT = 3
     }
 }

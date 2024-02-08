@@ -7,8 +7,8 @@
 package dev.mooner.starlight.listener.event
 
 import android.service.notification.StatusBarNotification
+import dev.mooner.starlight.plugincore.language.CodeGenerator
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
-import kotlin.reflect.KClass
 
 class OnNotificationPostedEvent: ProjectEvent() {
 
@@ -18,6 +18,6 @@ class OnNotificationPostedEvent: ProjectEvent() {
 
     override val functionName: String = "onNotificationPosted"
 
-    override val argTypes: Array<KClass<*>> =
-        arrayOf(StatusBarNotification::class)
+    override val argTypes: Array<CodeGenerator.Argument<*>> =
+        arrayOf("sbn" typedAs StatusBarNotification::class)
 }

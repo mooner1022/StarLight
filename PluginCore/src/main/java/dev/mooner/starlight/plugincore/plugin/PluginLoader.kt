@@ -126,14 +126,18 @@ class PluginLoader {
             }
 
             for ((_, info) in pluginFiles.values) {
+                if (info.apiVersion incompatibleWith Info.PLUGINCORE_VERSION) {
+                    logger.warnTranslated {
+                        Locale.ENGLISH { "Incompatible PluginCore version(${info.apiVersion}) found on plugin: ${info.fullName}" }
+                        Locale.KOREAN  { "현재 버전 (${Info.PLUGINCORE_VERSION})과 호환되지 않는 PluginCore 의존성(${info.apiVersion}) 발견: 플러그인 ${info.fullName}" }
+                    }
+                    loadPriority -= info.id
+                    continue
+                }
+
                 if (info.dependency.isEmpty())
                     continue
-
                 for (dependency in info.dependency) {
-                    if (info.apiVersion incompatibleWith Info.PLUGINCORE_VERSION) {
-                        logger.warn { "Incompatible PluginCore version(${info.apiVersion}) found on plugin: ${info.fullName}" }
-                        continue
-                    }
                     if (dependency.pluginId !in pluginFiles) {
                         logger.errorTranslated {
                             Locale.ENGLISH { "Required dependency $dependency for plugin ${info.fullName} wasn't found." }
@@ -361,7 +365,13 @@ class PluginLoader {
 
         try {
             jar = JarFile(file)
-            val ent: JarEntry = jar.getJarEntry("res/raw/starlight.json")
+            val ent: JarEntry = jar.getJarEntry("assets/starlight.json")
+                ?: let {
+                    val legacyPath = jar.getJarEntry("res/raw/starlight.json") // Should be removed after
+                    if (legacyPath != null)
+                        logger.warn { "res/raw 경로는 더 이상 사용되지 않습니다. assets 경로를 사용하세요." }
+                    legacyPath
+                }
                 ?: throw FileNotFoundException("Cannot find starlight.json")
 
             stream = jar.getInputStream(ent)
@@ -437,7 +447,7 @@ class PluginLoader {
 
     companion object {
         val SUPPORTED_EXT =
-            arrayOf("apk", "jar", "aar", "slp")
+            arrayOf(/*"apk", "jar", "aar", */"slp")
 
         val PRESERVED_IDS =
             arrayOf("global", "starlight", "system")

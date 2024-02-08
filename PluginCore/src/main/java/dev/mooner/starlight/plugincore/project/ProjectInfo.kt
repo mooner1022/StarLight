@@ -3,7 +3,7 @@ package dev.mooner.starlight.plugincore.project
 import dev.mooner.starlight.plugincore.serializers.UUIDSerializer
 import kotlinx.serialization.Serializable
 import java.util.*
-import kotlin.properties.Delegates
+import kotlin.properties.Delegates.notNull
 
 @Serializable
 data class ProjectInfo (
@@ -15,7 +15,6 @@ data class ProjectInfo (
     val languageId: String,
     var isEnabled: Boolean,
     var isPinned: Boolean = false,
-    var trust: Boolean = true,
     val createdMillis: Long = System.currentTimeMillis(),
     val allowedEventIds: MutableSet<String> =
         hashSetOf("starlight.*"),
@@ -24,21 +23,15 @@ data class ProjectInfo (
 )
 
 class ProjectInfoBuilder {
-    var name: String by Delegates.notNull()
-    var mainScript: String by Delegates.notNull()
-    var languageId: String by Delegates.notNull()
-    var trust: Boolean = true
-    //var allowedEventIds: MutableSet<String> =
-    //    hashSetOf("on_message", "on_message_deleted", "default_legacy")
-    //var packages: MutableSet<String> =
-    //    hashSetOf("com.kakao.talk")
+    var name       : String by notNull()
+    var mainScript : String by notNull()
+    var languageId : String by notNull()
 
     fun build() = ProjectInfo(
         name = name,
         mainScript = mainScript,
         languageId = languageId,
         isEnabled = false,
-        trust = trust,
         //allowedEventIds = allowedEventIds,
         //packages = packages
     )

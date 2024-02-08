@@ -20,7 +20,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/nanumsquare_round_extrabold"
+            android:fontFamily="@font/wantedsans_medium"
             android:text="12 : 10 : 28"
             android:textAlignment="center"
             android:textColor="@color/white"
@@ -29,7 +29,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/nanumsquare_round_extrabold"
+            android:fontFamily="@font/wantedsans_medium"
             android:textAlignment="center"
             android:textColor="@color/white"
             android:textSize="20sp"/>
@@ -39,7 +39,7 @@
         android:id="@+id/textView3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="@font/nanumsquare_round_bold"
+        android:fontFamily="@font/wantedsans_regular"
         android:text="업타임"
         android:textColor="@android:color/white"
         android:textSize="16sp"

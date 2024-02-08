@@ -24,6 +24,8 @@ interface TLogger {
 
     fun error(msg: LazyEval)
 
+    fun error(flags: Flags, msg: LazyEval)
+
     fun <T> warn(throwable: T) where T: Throwable
 
     fun <T> error(throwable: T) where T: Throwable

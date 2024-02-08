@@ -16,21 +16,20 @@ import kotlin.properties.Delegates.notNull
 
 private val logger = LoggerFactory.logger {  }
 
-private const val ARG_PROJECT_PATH = "projectPath"
-private const val ARG_MAIN_SCRIPT  = "mainScript"
-
 class FileTreeDrawerFragment : Fragment() {
 
     private var _binding: FragmentFileTreeDrawerBinding? = null
     val binding get() = _binding!!
 
     private var projectPath: String by notNull()
+    private var projectId: String by notNull()
     private var mainScript: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         projectPath = arguments?.getString(ARG_PROJECT_PATH) ?: getStarLightDirectory().path
+        projectId   = arguments?.getString(ARG_PROJECT_ID) ?: error("Failed to retrieve project id")
         mainScript  = arguments?.getString(ARG_MAIN_SCRIPT)
         logger.verbose { "File tree path: $projectPath, mainScript: $mainScript" }
     }
@@ -44,9 +43,10 @@ class FileTreeDrawerFragment : Fragment() {
 
         binding.viewPager.apply {
             adapter = FileTreeViewPagerAdapter(
-                fragment = this@FileTreeDrawerFragment,
+                fragment   = this@FileTreeDrawerFragment,
                 mainScript = mainScript,
-                rootPath = projectPath
+                rootPath   = projectPath,
+                projectId  = projectId,
             )
             isUserInputEnabled = false
             registerOnPageChangeCallback(object : OnPageChangeCallback() {
@@ -54,7 +54,8 @@ class FileTreeDrawerFragment : Fragment() {
                     super.onPageSelected(position)
                     val id = when(position) {
                         0 -> R.id.nav_file_tree
-                        1 -> R.id.nav_warnings
+                        1 -> R.id.nav_logs
+                        2 -> R.id.nav_warnings
                         else -> R.id.nav_file_tree
                     }
                     binding.topMenu.setItemSelected(
@@ -69,13 +70,18 @@ class FileTreeDrawerFragment : Fragment() {
         setOnTabSelectedListener { id ->
             val index = when(id) {
                 R.id.nav_file_tree -> 0
-                R.id.nav_warnings -> 1
+                R.id.nav_logs -> 1
+                R.id.nav_warnings -> 2
                 else -> 0
             }
             binding.viewPager.setCurrentItem(index, true)
         }
 
         return binding.root
+    }
+
+    fun openTabAt(index: Int) {
+        binding.viewPager.setCurrentItem(index, false)
     }
 
     fun updateMessageCount(count: Int) {
@@ -85,16 +91,20 @@ class FileTreeDrawerFragment : Fragment() {
             binding.topMenu.showBadge(R.id.nav_warnings, count)
     }
 
-    fun setOnTabSelectedListener(block: (id: Int) -> Unit) =
+    private fun setOnTabSelectedListener(block: (id: Int) -> Unit) =
         binding.topMenu.setOnItemSelectedListener(block)
 
     companion object {
+        private const val ARG_PROJECT_PATH = "projectPath"
+        private const val ARG_PROJECT_ID   = "projectId"
+        private const val ARG_MAIN_SCRIPT  = "mainScript"
 
         @JvmStatic
         fun newInstance(project: Project) =
             FileTreeDrawerFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_PROJECT_PATH, project.directory.path)
+                    putString(ARG_PROJECT_ID, project.info.id.toString())
                     putString(ARG_MAIN_SCRIPT, project.info.mainScript)
                 }
             }

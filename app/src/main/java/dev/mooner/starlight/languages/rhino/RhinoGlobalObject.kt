@@ -17,6 +17,8 @@ import org.mozilla.javascript.Function
 import org.mozilla.javascript.ImporterTopLevel
 import org.mozilla.javascript.Undefined
 import org.mozilla.javascript.annotations.JSFunction
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 
 private typealias TimeoutID = Int
 
@@ -25,7 +27,7 @@ class RhinoGlobalObject(
     private val project: Project
 ): ImporterTopLevel(context) {
 
-    private val timeouts: MutableMap<TimeoutID, Job> = hashMapOf()
+    private val timeouts: ConcurrentMap<TimeoutID, Job> = ConcurrentHashMap()
     private val timeoutScope: CoroutineScope by lazy {
         CoroutineScope(Dispatchers.Default + SupervisorJob())
     }
@@ -45,7 +47,7 @@ class RhinoGlobalObject(
 
     @JSFunction
     fun setInterval(callback: Function, delay: Any?): TimeoutID {
-        val key = JobLocker.withProject(project).requestLock()
+        //val key = JobLocker.withProject(project).requestLock()
         val mDelay = delay.getOrThrow<Long>()
 
         val id = generateID()
@@ -61,7 +63,7 @@ class RhinoGlobalObject(
             invokeOnCompletion {
                 if (id in timeouts)
                     timeouts -= id
-                JobLocker.withProject(project).tryRelease(key)
+                //JobLocker.withProject(project).tryRelease(key)
             }
         }
         timeouts[id] = job

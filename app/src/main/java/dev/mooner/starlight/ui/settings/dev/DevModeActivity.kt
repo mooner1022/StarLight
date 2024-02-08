@@ -7,9 +7,13 @@
 package dev.mooner.starlight.ui.settings.dev
 
 import android.content.Context
+import android.content.pm.PackageInfo
 import android.content.res.Configuration
+import android.os.Build
+import androidx.core.content.edit
 import dev.mooner.starlight.R
 import dev.mooner.starlight.WIDGET_DEF_STRING
+import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.config
@@ -41,9 +45,9 @@ fun Context.startDevModeActivity() {
                     }
                     toggle {
                         dependency = "show_internal_log"
-                        id = "write_internal_log"
+                        id = "append_internal_log"
                         title = "내부 로그 기록"
-                        description = "앱 내부의 디버깅용 로그를 로그 파일에 기록합니다."
+                        description = "앱 내부의 디버깅용 로그를 로그 배열에 기록합니다. 부하가 증가합니다."
                         icon = Icon.EDIT
                         iconTintColor = color { "#87AAAA" }
                         defaultValue = false
@@ -56,6 +60,18 @@ fun Context.startDevModeActivity() {
                         iconTintColor = color { "#FF5C58" }
                         setOnClickListener { _ ->
                             throw Exception("Expected error created from dev mode")
+                        }
+                    }
+                    button {
+                        id = "reset_first_open"
+                        title = "초기 설정 초기화"
+                        description = "무루무루?"
+                        icon = Icon.REFRESH
+                        iconTintColor = color { "#FF5C58" }
+                        setOnClickListener { _ ->
+                            getSharedPreferences("general", 0).edit {
+                                putBoolean("isFirstOpen", true)
+                            }
                         }
                     }
                     button {
@@ -100,13 +116,10 @@ fun Context.startDevModeActivity() {
                         iconTintColor = color { "#87AAAA" }
                         defaultValue = false
                     }
-                    toggle {
+                    button {
                         id = "use_on_notification_posted"
                         title = "onNotificationPosted 이벤트 사용"
-                        description = "메신저봇의 onNotificationPosted 이벤트를 사용합니다. 부하가 증가할 수 있습니다."
-                        icon = Icon.COMPRESS
-                        iconTintColor = color { "#87AAAA" }
-                        defaultValue = false
+                        description = "이 설정은 '알림, 이벤트' 항목으로 이동되었어요 :3"
                     }
                 }
             }
@@ -134,7 +147,15 @@ fun Context.startDevModeActivity() {
                         Configuration.UI_MODE_NIGHT_UNDEFINED -> "UI_MODE_NIGHT_UNDEFINED"
                         else -> "UNKNOWN"
                     }
+                    val pInfo: PackageInfo = applicationContext.packageManager.getPackageInfo(applicationContext.packageName, 0)
+                    val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+                        pInfo.longVersionCode
+                    else
+                        pInfo.versionCode
                     debugInfo("globalPower", GlobalConfig.category("general").getBoolean("global_power").toString())
+                    debugInfo("kakaoTalkVersion", ApplicationSession.kakaoTalkVersion.toString())
+                    debugInfo("appVersion", "${pInfo.versionName}(build ${versionCode})")
+                    debugInfo("PLUGINCORE_VERSION", dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION.toString())
                     debugInfo("screenSizeDp", "$screenWidth x $screenHeight")
                     debugInfo("layoutMode", "$layoutMode ($layoutModeString)")
                     debugInfo("uiMode", "$uiMode ($uiModeString)")
@@ -143,7 +164,6 @@ fun Context.startDevModeActivity() {
                     //debugInfo("libs", )
                     debugInfo("pluginSafeMode", GlobalConfig.category("plugin").getBoolean("safe_mode").toString())
                     debugInfo("baseDirectory", getStarLightDirectory().path)
-                    debugInfo("PLUGINCORE_VERSION", dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION.toString())
                 }
             }
         },

@@ -7,12 +7,14 @@
 package dev.mooner.starlight.listener
 
 import android.content.Intent
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.widget.Toast
-import androidx.core.app.NotificationCompat.*
+import androidx.core.app.NotificationCompat.EXTRA_TEXT
+import androidx.core.app.NotificationCompat.EXTRA_TITLE
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.listener.chat.ChatRoomImpl
@@ -36,31 +38,36 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.debugTranslated
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.ui.settings.notifications.RuleData
 import dev.mooner.starlight.utils.decodeIfNotBlank
+import dev.mooner.starlight.utils.isNoobMode
 import kotlinx.coroutines.*
 import java.util.*
 
 private val LOG = LoggerFactory.logger {  }
 
+private typealias RoomID   = String
+private typealias RoomName = String
+
 @Suppress("DEPRECATION")
 class NotificationListener: NotificationListenerService() {
 
     private var isGlobalPowerOn : Boolean = true
+    private var isNewbieMode    : Boolean = false
     private var legacyEvent     : Boolean = false
     private var useNPostedEvent : Boolean = false
+    private var logRecMessage   : Boolean = false
 
     private val eventReceiverScope: CoroutineScope =
         CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val replier = Replier { roomName, msg, hideToast ->
-        val chatRoom = if (roomName == null) lastReceivedRoom else chatRooms[roomName]
+        val chatRoom = roomName?.let(::getRoomByName) ?: lastReceivedRoom
         if (chatRoom == null) {
             if (!hideToast) {
-                MainScope().launch {
-                    Handler(Looper.getMainLooper()).post {
-                        Toast.makeText(applicationContext, "메세지가 수신되지 않은 방 '$roomName' 에 메세지를 보낼 수 없습니다.", Toast.LENGTH_LONG).show()
-                    }
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(applicationContext, "메세지가 수신되지 않은 방 '$roomName' 에 메세지를 보낼 수 없습니다.", Toast.LENGTH_LONG).show()
                 }
             }
             false
@@ -135,27 +142,31 @@ class NotificationListener: NotificationListenerService() {
                     }
                     currentChatLogId = data.chatLogId
 
-                    val room = data.room.name
-                    val message = data.message
-                    val sender = data.sender.name
-                    val senderId = data.sender.id
+                    val roomName    = data.room.name
+                    val roomID      = data.room.id
+                    val message     = data.message
+                    val sender      = data.sender.name
+                    val senderId    = data.sender.id
                     val isGroupChat = data.room.isGroupChat
 
-                    if (isDefaultRule && room !in chatRooms)
-                        chatRooms[room] = data.room
+                    if (isDefaultRule && roomID !in chatRooms) {
+                        roomIdMap[roomName] = roomID
+                        chatRooms[roomID] = data.room
+                    }
 
-                    LOG.verbose {
-                        """
+                    if (logRecMessage) {
+                        LOG.verbose {
+                            """
                             pkgName(userID) : $pkgName($userId)
                             userHash: ${data.sender.profileHash}
                             senderId: $senderId
                             message	: $message
                             sender	: $sender
-                            room	: $room
-                        """.trimIndent()
+                            room	: $roomName
+                            """.trimIndent()
+                        }
                     }
 
-                    LOG.verbose { "fs = ${System.currentTimeMillis() - ts}" }
                     Session.projectManager.fireEvent<ProjectOnMessageEvent>(data) { project, e ->
                         e.printStackTrace()
                         LOG.error {
@@ -169,7 +180,7 @@ class NotificationListener: NotificationListenerService() {
                     if (legacyEvent) {
                         val imageDB = ImageDB(data.sender.profileBitmap)
 
-                        Session.projectManager.fireEvent<LegacyEvent>(room, message, sender, isGroupChat, replier, imageDB) { project, e ->
+                        Session.projectManager.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB) { project, e ->
                             e.printStackTrace()
                             LOG.error {
                                 translate {
@@ -185,7 +196,12 @@ class NotificationListener: NotificationListenerService() {
                     e.printStackTrace()
                     LOG.error {
                         translate {
-                            Locale.ENGLISH { "Failed to parse message content:" }
+                            Locale.ENGLISH { """
+                                |Failed to parse message content:
+                                |message : ${e.localizedMessage}
+                                |cause   : ${e.cause}
+                                |${e.stackTraceToString()}
+                            """.trimMargin() }
                             Locale.KOREAN  { """
                                 |메세지 해석에 실패했습니다:
                                 |message : ${e.localizedMessage}
@@ -238,11 +254,11 @@ class NotificationListener: NotificationListenerService() {
 
         val message = extras.getString(EXTRA_TEXT).toString()
         val sender = extras.getString(EXTRA_TITLE).toString()
-        val room = extras.getString(EXTRA_SUMMARY_TEXT, sender)
+        val roomId = this.tag
 
         val chatLogId = extras.getLong("chatLogId")
 
-        val chatRoom: ChatRoom? = chatRooms[room]
+        val chatRoom: ChatRoom? = chatRooms[roomId]
 
         return DeletedMessage(
             message = message,
@@ -260,7 +276,8 @@ class NotificationListener: NotificationListenerService() {
     companion object {
 
         private var currentChatLogId: Long = -1
-        private val chatRooms: MutableMap<String, ChatRoom> = WeakHashMap()
+        private val roomIdMap: MutableMap<RoomName, RoomID> = hashMapOf()
+        private val chatRooms: MutableMap<RoomID, ChatRoom> = WeakHashMap()
         private var lastReceivedRoom: ChatRoom? = null
         private var rules: List<RuleData> = arrayListOf()
 
@@ -269,6 +286,11 @@ class NotificationListener: NotificationListenerService() {
         }
 
         fun updateRules() {
+            if (isNoobMode) {
+                val rule = detectRule()
+                rules = listOf(rule)
+                return
+            }
             val file = getStarLightDirectory().resolve(NotificationRulesActivity.FILE_NAME)
             if (!file.exists() || !file.isFile || !file.canRead()) return
 
@@ -284,21 +306,43 @@ class NotificationListener: NotificationListenerService() {
             LOG.verbose { "notificationRules= $rules" }
         }
 
+        private fun detectRule(): RuleData {
+            var specId = "default"
+
+            val kakaoTalkVersion = ApplicationSession.kakaoTalkVersion
+            val androidVersion = Build.VERSION.SDK_INT
+
+            if (kakaoTalkVersion != null &&
+                kakaoTalkVersion.newerThan(Version.fromString("9.7.0")) &&
+                androidVersion >= Build.VERSION_CODES.R) {
+                specId = "android_r"
+            }
+
+            return RuleData(
+                packageName = PACKAGE_KAKAO_TALK,
+                userId = 0,
+                parserSpecId = specId
+            )
+        }
+
+        private fun getRoomByName(roomName: RoomName): ChatRoom? =
+            roomIdMap[roomName]?.let(chatRooms::get)
+
         fun getRoomNames(): Set<String> =
-            chatRooms.keys
+            roomIdMap.keys
 
         fun hasRoom(roomName: String): Boolean =
-            roomName in chatRooms
+            roomName in roomIdMap
 
         fun send(message: String): Boolean =
             lastReceivedRoom?.send(message) ?: false
         fun sendTo(roomName: String, message: String): Boolean =
-            chatRooms[roomName]?.send(message) ?: false
+            getRoomByName(roomName)?.send(message) ?: false
 
         fun markAsRead(): Boolean =
             lastReceivedRoom?.markAsRead() ?: false
         fun markAsRead(roomName: String): Boolean =
-            chatRooms[roomName]?.markAsRead() ?: false
+            getRoomByName(roomName)?.markAsRead() ?: false
     }
 
     private fun onGlobalConfigUpdated(event: Events.Config.GlobalConfigUpdate) =
@@ -324,5 +368,8 @@ class NotificationListener: NotificationListenerService() {
         useNPostedEvent = GlobalConfig
             .category("beta_features")
             .getBoolean("use_on_notification_posted", useNPostedEvent)
+        logRecMessage = GlobalConfig
+            .category("notifications")
+            .getBoolean("log_received_message", logRecMessage)
     }
 }

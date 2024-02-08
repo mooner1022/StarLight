@@ -8,8 +8,8 @@ package dev.mooner.starlight.listener.event
 
 import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.Replier
+import dev.mooner.starlight.plugincore.language.CodeGenerator
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
-import kotlin.reflect.KClass
 
 class LegacyEvent: ProjectEvent() {
 
@@ -19,6 +19,14 @@ class LegacyEvent: ProjectEvent() {
 
     override val functionName: String = "response"
 
-    override val argTypes: Array<KClass<*>> =
-        arrayOf(String::class, String::class, String::class, Boolean::class, Replier::class, ImageDB::class)
+    override val argTypes: Array<CodeGenerator.Argument<*>> =
+        arrayOf(
+            "room"        typedAs String::class,
+            "msg"         typedAs String::class,
+            "sender"      typedAs String::class,
+            "isGroupChat" typedAs Boolean::class,
+            "replier"     typedAs Replier::class,
+            "imageDB"     typedAs ImageDB::class,
+            "packageName" typedAs String::class,
+        )
 }

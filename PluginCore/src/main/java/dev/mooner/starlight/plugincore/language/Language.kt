@@ -7,6 +7,7 @@
 package dev.mooner.starlight.plugincore.language
 
 import android.view.View
+import androidx.annotation.CallSuper
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.api.Api
@@ -19,6 +20,8 @@ import dev.mooner.starlight.plugincore.pipeline.stage.LanguageStage
 import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
 import dev.mooner.starlight.plugincore.pipeline.stage.plumber
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import dev.mooner.starlight.plugincore.utils.TimeUtils
 import kotlinx.serialization.decodeFromString
 import java.io.File
 
@@ -57,15 +60,81 @@ abstract class Language {
 
     /**
      * Default code used when a project is created.
+     *
+     * %HEADER% - Position for header content
+     * %BODY% - Position for main code
      */
-    abstract val defaultCode: String
+    open val defaultCode: String = """
+            %HEADER%
+            %BODY%
+        """.trimIndent()
+
+    open val codeGenerator: CodeGenerator = DefaultJSCodeGenerator()
+
+    open fun formatDefaultCode(fileName: String, events: List<ProjectEvent>): String {
+        // TODO: Change with user-updatable comment
+        val defaultComment = codeGenerator.generateComment(
+            isMultiLine = true,
+            isDocument = false,
+            content = "$fileName created with Project StarLight ✦\nCreated on ${TimeUtils.formatCurrentDate("dd/MM/yy hh:mm a")}"
+        )
+
+        val imports: MutableSet<String> = hashSetOf()
+
+        val duplicated: MutableMap<String, Boolean> = hashMapOf()
+        for (event in events) {
+            if (event.functionName in duplicated)
+                continue
+            if (events.count { it.functionName == event.functionName } > 1)
+                duplicated[event.functionName] = false
+        }
+
+        val body = buildString {
+            for (event in events) {
+                if (duplicated[event.functionName] == true)
+                    continue
+
+                val generated = codeGenerator.generateFunction(event.functionName, event.argTypes, null)
+                imports += generated.imports
+                append("\n")
+                if (event.functionComment != null)
+                    append(codeGenerator.generateComment(
+                        isMultiLine = true,
+                        isDocument = true,
+                        content = event.functionComment!!
+                    )).append("\n")
+                if (event.functionName in duplicated) {
+                    append(codeGenerator
+                        .generateComment(
+                            isMultiLine = false,
+                            isDocument = false,
+                            content = "같은 함수명을 가진 이벤트가 발견되어 하나만 추가되었습니다."
+                        )
+                    ).append("\n")
+                    duplicated[event.functionName] = true
+                }
+                append(generated.function).append("\n")
+            }
+        }
+
+        val header = defaultComment + imports.joinToString("\n")
+            .let { if (it.isNotBlank()) "\n${it}" else it }
+
+        return defaultCode
+            .replace(PLACEHOLDER_HEADER, header)
+            .replace(PLACEHOLDER_BODY, body)
+    }
 
     /**
      * Called when the value of config object defined above is saved to a local file.
      *
      * @param updated [Map] that contains id as key and updated value as value
      */
-    open fun onConfigUpdated(updated: Map<String, Any>) {}
+    @CallSuper
+    open fun onConfigUpdated(updated: Map<String, Any>) {
+        // Invalidate cache for lazy loading
+        configCache = null
+    }
 
     /**
      * Called when the value of config object defined above is updated.
@@ -88,11 +157,20 @@ abstract class Language {
     abstract fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any
 
     /**
-     * Releases the compiled scope
+     * Releases the compiled scope.
+     * Should be called after scope evaluation, only if language requires release.
      *
      * @param scope scope which is compiled and used
      */
     open fun release(scope: Any) {}
+
+    /**
+     * Destroys and releases the scope, and all resources it was holding.
+     * Should be called on the last stage of scope lifecycle.
+     *
+     * @param scope scope which is compiled and used
+     */
+    open fun destroy(scope: Any) {}
 
     /**
      * Calls a function defined in the scope with arguments provided
@@ -113,6 +191,7 @@ abstract class Language {
     abstract fun eval(code: String): Any
 
     private var configFile: File? = null
+    private var configCache: ConfigCategory? = null
 
     internal fun setConfigFile(path: File) {
         configFile = path
@@ -139,6 +218,10 @@ abstract class Language {
      * @return the deserialized object of config values, wrapped with [ConfigCategory]
      */
     protected fun getLanguageConfig(): ConfigCategory {
+        return configCache ?: loadLanguageConfig().also { configCache = it }
+    }
+
+    private fun loadLanguageConfig(): ConfigCategory {
         val data = if (configFile == null || !configFile!!.isFile || !configFile!!.exists()) emptyMap() else {
             val raw = configFile!!.readText()
             val typed: Map<String, Map<String, PrimitiveTypedString>> =
@@ -182,4 +265,10 @@ abstract class Language {
             compile(code, Session.apiManager.getApis(), project, project.getClassLoader())
         }
     )
+
+    companion object {
+
+        const val PLACEHOLDER_HEADER = "%HEADER%"
+        const val PLACEHOLDER_BODY   = "%BODY%"
+    }
 }

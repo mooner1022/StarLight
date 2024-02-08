@@ -4,15 +4,21 @@ import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.text.toSpannable
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.CardLogBinding
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogType
+import dev.mooner.starlight.plugincore.utils.TimeUtils
+import dev.mooner.starlight.plugincore.utils.color
+import dev.mooner.starlight.plugincore.utils.isNightMode
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Pattern
@@ -52,13 +58,18 @@ class LogsRecyclerViewAdapter
         holder.bind(viewData)
     }
 
-    fun set(list: List<LogData>) {
+    fun set(list: List<LogData>, notify: Boolean = false) {
         if (data.isNotEmpty()) {
+            val size = visibleData.size
             data.clear()
             visibleData.clear()
+            if (notify)
+                notifyItemRangeRemoved(0, size)
         }
         data.addAll(list)
         visibleData.addAll(list)
+        if (notify)
+            notifyItemRangeInserted(0, list.size)
     }
 
     fun getItems(): List<LogData> =
@@ -135,37 +146,43 @@ class LogsRecyclerViewAdapter
     inner class LogsViewHolder(
         private val binding: CardLogBinding
     ) : RecyclerView.ViewHolder(binding.root) {
+        @SuppressLint("SetTextI18n")
         fun bind(data: LogData) {
             val context = binding.root.context
 
             binding.setViewByType(viewType)
+            val color = when(data.type) {
+                LogType.INFO -> R.color.code_string
+                LogType.DEBUG -> R.color.code_purple
+                LogType.WARN -> R.color.code_yellow
+                LogType.ERROR -> R.color.code_orange
+                LogType.CRITICAL -> R.color.code_error
+                LogType.VERBOSE -> R.color.monokai_pro_sky
+            }.let(context::getColor)
             when(viewType) {
-                LogItem.ViewType.NORMAL -> {
-                    val color = when(data.type) {
-                        LogType.INFO -> R.color.code_string
-                        LogType.DEBUG -> R.color.code_purple
-                        LogType.WARN -> R.color.code_yellow
-                        LogType.ERROR -> R.color.code_orange
-                        LogType.CRITICAL -> R.color.code_error
-                        LogType.VERBOSE -> R.color.monokai_pro_sky
+                LogItem.ViewType.NORMAL ->
+                    with(binding) {
+                        logInfoColor.setCardBackgroundColor(color)
+                        logTitleText.text = data.tag ?: data.type.name
+                        logContentText.text = data.message
+                        logTimeStampText.text = formatDate(data.millis)
                     }
-                    binding.logInfoColor.setCardBackgroundColor(context.getColor(color))
-                    binding.logTitleText.text = data.tag ?: data.type.name
-                    binding.logContentText.text = data.message
-                    binding.logTimeStampText.text = formatDate(data.millis)
-                }
-                LogItem.ViewType.TEXT -> {
-                    val color = when(data.type) {
-                        LogType.INFO -> R.color.code_string
-                        LogType.DEBUG -> R.color.code_purple
-                        LogType.WARN -> R.color.code_yellow
-                        LogType.ERROR -> R.color.code_orange
-                        LogType.CRITICAL -> R.color.code_error
-                        LogType.VERBOSE -> R.color.monokai_pro_sky
+                LogItem.ViewType.TEXT ->
+                    with(binding) {
+                        val tagColor = if (isNightMode(context))
+                            color { "#757575" }
+                        else
+                            color { "#A3A3A3" }
+                        textModeStateIndicator.setBackgroundColor(color)
+                        val tag = "%s %s - %s:"
+                            .format(data.type.name.substring(0, 1),
+                                TimeUtils.formatMillis(data.millis, "HH:mm:ss.SSS"), data.tag)
+                        textModeMessage.text = "$tag\n${data.message}"
+                        textModeMessage.text.toSpannable().let { span ->
+                            span.setSpan(ForegroundColorSpan(color), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                            span.setSpan(ForegroundColorSpan(tagColor), 2, tag.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        }
                     }
-                    binding.textModeStateIndicator.setBackgroundColor(context.getColor(color))
-                    binding.textModeMessage.text = data.toSimpleString()
-                }
             }
 
             if (copyOnLongClick) {

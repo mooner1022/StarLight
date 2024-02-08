@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" translatable="false">StarLight</string>
-    <string name="app_version" translatable="false">v0.0.1 Alpha</string>
+    <string name="app_version" translatable="false">v0.2.0 Alpha ✦</string>
     <string name="nav_header_title" translatable="false">Project StarLight 🌟</string>
     <string name="nav_header_subtitle" translatable="false">@string/app_version</string>
     <string name="nav_header_desc">Project StarLight Logo</string>
@@ -56,6 +56,12 @@
     <string name="project_duplicate_name">Name cannot be duplicated.</string>
     <string name="project_name_format_error">Name can only contain English, Korean, Number, -, and _.</string>
     <string name="project_select_language">Please select a language to be used.</string>
+    <string name="project_edit">Edit</string>
+    <string name="project_compile">Compile</string>
+    <string name="project_debugroom">Debug</string>
+    <string name="project_settings">Config</string>
+    <string name="project_info">Info</string>
+    <string name="project_favorite">Like</string>
 
     <string name="aligned_by">Aligned by</string>
     <string name="default_placeholder" translatable="false">DEFAULT</string>
@@ -111,4 +117,7 @@
     <string name="widget_config_button_text">Widget settings</string>
 
     <string name="api_cannot_send_to_room">Cannot send message to a room \'%s\' without receiving initial message.</string>
+
+    <string name="splash_welcome">Welcome</string>
+    <string name="splash_welcome_desc">Let\'s start with the initial settings!</string>
 </resources>

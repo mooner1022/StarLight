@@ -52,6 +52,12 @@
     <string name="project_duplicate_name">이미 존재하는 이름이에요.</string>
     <string name="project_name_format_error">이름은 숫자와 -, _, 영문자, 한글만 가능해요.</string>
     <string name="project_select_language">사용할 언어를 선택해주세요.</string>
+    <string name="project_edit">수정</string>
+    <string name="project_compile">컴파일</string>
+    <string name="project_debugroom">디버그</string>
+    <string name="project_settings">설정</string>
+    <string name="project_info">정보</string>
+    <string name="project_favorite">즐겨찾기</string>
 
     <string name="aligned_by">정렬</string>
     <string name="default_placeholder">DEFAULT</string>
@@ -107,4 +113,7 @@
     <string name="widget_config_button_text">위젯 설정</string>
 
     <string name="api_cannot_send_to_room">메세지가 수신되지 않은 방 \'%s\' 에 메세지를 보낼 수 없습니다.</string>
+
+    <string name="splash_welcome">환영합니다</string>
+    <string name="splash_welcome_desc">초기 설정부터 시작해보죠!</string>
 </resources>

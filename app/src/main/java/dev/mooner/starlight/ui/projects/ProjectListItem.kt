@@ -13,10 +13,13 @@ import android.view.View.OnClickListener
 import android.view.ViewGroup
 import android.widget.ImageButton
 import androidx.core.view.updateLayoutParams
+import androidx.fragment.app.Fragment
+import coil.load
 import coil.transform.RoundedCornersTransformation
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.fastadapter.binding.AbstractBindingItem
+import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.ID_VIEW_ITEM_PROJECT
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.CardProjectButtonsBinding
@@ -25,11 +28,13 @@ import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
 import dev.mooner.starlight.plugincore.editor.CodeEditorActivity
+import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.Icon
+import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.ui.debugroom.DebugRoomActivity
 import dev.mooner.starlight.ui.editor.DefaultEditorActivity
 import dev.mooner.starlight.ui.presets.ExpandableCard
@@ -42,12 +47,14 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import java.io.File
+import java.lang.ref.WeakReference
 import dev.mooner.starlight.ui.projects.info.startProjectInfoActivity as mStartProjectInfoActivity
-import dev.mooner.starlight.utils.layoutMode as utils_layoutMode
 
 private val LOG = LoggerFactory.logger {  }
 
-class ProjectListItem: AbstractBindingItem<CardProjectsBinding>() {
+class ProjectListItem(
+    private val parent: WeakReference<Fragment>
+): AbstractBindingItem<CardProjectsBinding>() {
 
     override var identifier: Long
         get() = project?.info?.id?.hashCode()?.toLong() ?: -1L
@@ -79,10 +86,12 @@ class ProjectListItem: AbstractBindingItem<CardProjectsBinding>() {
                     collapse()
 
                 title = project.info.name
-                if (context.utils_layoutMode == LAYOUT_SLIM)
+
+                if (context.layoutMode == LAYOUT_SLIM)
                     setIconVisibility(View.GONE)
                 else
                     setIcon(project)
+
                 setOnSwitchChangeListener { _, isChecked ->
                     if (project.info.isEnabled != isChecked) {
                         project.info.isEnabled = isChecked
@@ -198,13 +207,17 @@ class ProjectListItem: AbstractBindingItem<CardProjectsBinding>() {
                 val compileTime = System.currentTimeMillis() - startMillis
                 if (e == null) {
                     withContext(Dispatchers.Main) {
-                        Snackbar.make(view,
-                            translate {
+                        (parent.get() ?: return@withContext).createSimplePeek(
+                            text = translate {
                                 Locale.ENGLISH { "Successfully compiled ${project.info.name} (${compileTime}ms)" }
                                 Locale.KOREAN  { "${project.info.name} 컴파일 완료! (${compileTime}ms)" }
-                            }, Snackbar.LENGTH_SHORT)
-                            .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
-                            .show()
+                            }
+                        ) {
+                            position = PeekAlert.Position.Bottom
+                            iconRes = R.drawable.ic_round_check_24
+                            iconTint(res = R.color.noctis_green)
+                            backgroundColor(res = R.color.background_popup)
+                        }.peek()
                         binding?.updateState(project)
                     }
                 }
@@ -222,22 +235,28 @@ class ProjectListItem: AbstractBindingItem<CardProjectsBinding>() {
                     Locale.ENGLISH { "Failed to compile ${project.info.name}\n$e" }
                     Locale.KOREAN  { "${project.info.name} 컴파일 실패\n$e" }
                 }
-                LOG.error { title }
+                LOG.error(LogData.FLAG_COMPILE_RESULT) { title }
                 withContext(Dispatchers.Main) {
-                    Snackbar.make(view, title, Snackbar.LENGTH_LONG)
-                        .apply {
-                            setAction(translate {
-                                Locale.ENGLISH { "Show all" }
-                                Locale.KOREAN  { "자세히 보기" }
-                            }) {
+                    (parent.get() ?: return@withContext).createSimplePeek(
+                        text = title
+                    ) {
+                        paddingDp = 16;
+                        position = PeekAlert.Position.Bottom
+                        iconRes = R.drawable.ic_round_error_outline_24
+                        iconTint(res = R.color.code_error)
+                        backgroundColor(res = R.color.background_popup)
+                        action("자세히") {
+                            textColor(value = color { "#4c4c4c" })
+                            setOnActionListener {
                                 view.context.showErrorLogDialog(
                                     translate {
                                         Locale.ENGLISH { "Error log of ${project.info.name}\n$e" }
                                         Locale.KOREAN  { "${project.info.name} 에러 로그\n$e" }
-                                    }, e)
+                                    }, e
+                                )
                             }
-                            animationMode = Snackbar.ANIMATION_MODE_SLIDE
-                        }.show()
+                        }
+                    }.peek()
                     binding?.updateState(project)
                 }
             }
@@ -315,7 +334,7 @@ class ProjectListItem: AbstractBindingItem<CardProjectsBinding>() {
                 .category("beta_features")
                 .getString("custom_buttons")
                 ?.let<_, List<Map<String, PrimitiveTypedString>>>(Session.json::decodeFromString)
-                ?.map { it["button_id"]!!.castAs<String>() to Icon.values()[it["button_icon"]!!.castAs()] }
+                ?.map { it["button_id"]!!.castAs<String>() to Icon.entries.toTypedArray()[it["button_icon"]!!.castAs()] }
                 ?: listOf()
         } catch (e: Exception) {
             LOG.warn {
@@ -329,20 +348,25 @@ class ProjectListItem: AbstractBindingItem<CardProjectsBinding>() {
     }
 
     private fun ExpandableCard.setIcon(project: Project) {
+        val icon: Any? = when(project.getLanguage().id) {
+            "JS_RHINO" -> R.drawable.ic_js
+            //"JS_V8" -> R.drawable.ic_v8
+            else -> project.getLanguage().getIconFileOrNull()
+        }
+        //val tint = if (icon == null) R.color.main_bright else null
         setIcon {
-            val icon: Any? = when(project.getLanguage().id) {
-                "JS_RHINO" -> R.drawable.ic_js
-                //"JS_V8" -> R.drawable.ic_v8
-                else -> project.getLanguage().getIconFileOrNull()
-            }
-            val tint = if (icon == null) R.color.main_bright else null
-            it.loadWithTint(
-                data = icon ?: R.drawable.ic_round_developer_mode_24,
-                tintColor = tint
-            ) {
+            it.load(icon ?: R.drawable.ic_round_developer_mode_24) {
                 transformations(RoundedCornersTransformation(context.resources.getDimension(R.dimen.lang_icon_corner_radius)))
             }
         }
+        /*
+        loadWithTint(
+            data = icon ?: R.drawable.ic_round_developer_mode_24,
+            tintColor = tint
+        ) {
+            transformations(RoundedCornersTransformation(context.resources.getDimension(R.dimen.lang_icon_corner_radius)))
+        }
+         */
     }
 
     private fun CardProjectsBinding.updateState(project: Project) {

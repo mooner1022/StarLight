@@ -119,8 +119,8 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
             if (!_title.isNullOrEmpty())
                 cardTitle.text = _title
 
+            cardHeader.visibility = View.VISIBLE
             iconDrawable?.let { drawable ->
-                cardHeader.visibility = View.VISIBLE
                 cardIcon.visibility   = View.VISIBLE
                 cardIcon.load(drawable)
             }
@@ -136,11 +136,9 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
             cardArrow.setOnClickListener(onClickListener)
 
             cardSwitch.apply {
+                visibility = View.GONE
                 if (showSwitch) {
-                    visibility = View.VISIBLE
                     setOnCheckedChangeListener(switchCheckChangedListener)
-                } else {
-                    visibility = View.GONE
                 }
             }
         }
@@ -230,12 +228,10 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
 
         if (showSwitch) {
             val switchAnim = when(animType) {
-                AnimationType.Expand -> {
-                    AlphaAnimation(1f, 0f)
-                }
-                AnimationType.Collapse -> {
+                AnimationType.Expand ->
                     AlphaAnimation(0f, 1f)
-                }
+                AnimationType.Collapse ->
+                    AlphaAnimation(1f, 0f)
             }.apply {
                 interpolator = cubicBezierInterpolator
                 duration = ANIM_DURATION
@@ -248,15 +244,15 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
                 override fun onAnimationRepeat(p0: Animation?) {}
                 override fun onAnimationStart(p0: Animation?) {
                     binding.cardSwitch.visibility = when(animType) {
-                        AnimationType.Expand -> View.VISIBLE
-                        AnimationType.Collapse -> View.INVISIBLE
+                        AnimationType.Expand -> View.INVISIBLE
+                        AnimationType.Collapse -> View.VISIBLE
                     }
                 }
 
                 override fun onAnimationEnd(p0: Animation?) {
                     binding.cardSwitch.visibility = when(animType) {
-                        AnimationType.Expand -> View.GONE
-                        AnimationType.Collapse -> View.VISIBLE
+                        AnimationType.Expand -> View.VISIBLE
+                        AnimationType.Collapse -> View.GONE
                     }
                 }
             })

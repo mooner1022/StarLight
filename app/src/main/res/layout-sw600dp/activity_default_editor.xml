@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/arrow_background_round"
+    android:theme="@style/Theme.StarLight.Editor"
     tools:context=".ui.editor.DefaultEditorActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -109,7 +109,7 @@
        android:layout_width="match_parent"
        android:layout_height="match_parent"
        android:layout_gravity="end"
-       android:maxWidth="400dp"
+       android:maxWidth="@dimen/editor_drawer_max_width"
        android:clickable="true"
        android:focusable="true"
        android:fitsSystemWindows="true">

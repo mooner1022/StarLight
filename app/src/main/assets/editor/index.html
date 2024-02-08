@@ -3,6 +3,16 @@
 <head>
     <title>StarLight Embedded Editor</title>
     <link rel="stylesheet" type="text/css" href="./index.css">
+    <style>
+        @font-face {
+            font-family: "JetBrains Mono";
+            src: url("./JetBrainsMono-Regular.ttf");
+        }
+
+        #editor {
+            font-family: "JetBrains Mono", monospace;
+        }
+    </style>
     <script src="./ace.min.js"></script>
     <script src="keybindings/keybinding-vscode.js"></script>
     <script src="extensions/ext-error_marker.js"></script>
@@ -57,8 +67,8 @@
         selectionStyle: "text",
         useSvgGutterIcons: true,
         animatedScroll: false,
-        fontSize: "16px",
-        theme: "ace/theme/nord_dark",
+        fontFamily: "JetBrains Mono",
+        fontSize: "15px",
         mode: "ace/mode/javascript"
     });
 
@@ -132,6 +142,12 @@
     const redo = () =>
         editor.session.getUndoManager().redo();
 
+    const setFontSize = (size) =>
+        editor.setFontSize(size);
+
+    const setWordWrap = (wrap) =>
+        editor.setUseWrapMode(wrap);
+
     const setTheme = (name) =>
         editor.setTheme(`ace/theme/${name}`);
 
@@ -146,6 +162,32 @@
     const _gotoLine = (row, col) => {
         editor.gotoLine(row, col, true);
     }
+
+    const snippetManager = ace.require("ace/snippets").snippetManager;
+    const snippets = [
+        {
+            name: "response",
+            content: "function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {\n    // Edit here...\n}"
+        },
+        {
+            name: "onMessage",
+            content: "function onMessage(event) {\n    // Edit here...\n}"
+        },
+    ];
+    snippetManager.register(snippets, "javascript");
+
+    const autoCompletes = ["FileStream", "ProjectManager", "LanguageManager", "PluginManager", "Api", "Device", "App", "Bridge", "Utils"];
+    editor.completers.push({
+        getCompletions: function(editor, session, pos, prefix, callback) {
+            callback(null, autoCompletes.map((word) => {
+                return {
+                    caption: word,
+                    value: word,
+                    meta: "static",
+                };
+            }));
+        }
+    });
 
     WebviewCallback.onLoadComplete();
     const placeHolder = document.getElementById("placeholder");

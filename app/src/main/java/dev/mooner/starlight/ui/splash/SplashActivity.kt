@@ -1,10 +1,12 @@
 package dev.mooner.starlight.ui.splash
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import coil.Coil
 import coil.ImageLoader
@@ -15,6 +17,7 @@ import coil.request.repeatCount
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
 import dev.mooner.starlight.core.ApplicationSession
+import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.databinding.ActivitySplashBinding
 import dev.mooner.starlight.event.ApplicationEvent
 import dev.mooner.starlight.logging.bindLogNotifier
@@ -24,12 +27,18 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.ui.splash.quickstart.QuickStartActivity
 import dev.mooner.starlight.ui.splash.quickstart.steps.SetPermissionFragment
 import dev.mooner.starlight.utils.checkPermissions
+import dev.mooner.starlight.utils.restartApplication
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private val LOG = LoggerFactory.logger {  }
 
+@SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
 
+    private var startupJob: Job? = null
     private lateinit var binding: ActivitySplashBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,9 +50,9 @@ class SplashActivity : AppCompatActivity() {
         bindLogNotifier()
 
         val pref = getSharedPreferences("general", 0)
-        val isInitial = pref.getBoolean("isInitial", true)
+        val isInitial = pref.getBoolean("isFirstOpen", true)
         if (isInitial) pref.edit {
-            putBoolean("isInitial", false)
+            putBoolean("isFirstOpen", false)
         }
 
         val isPermissionsGrant = checkPermissions(SetPermissionFragment.REQUIRED_PERMISSIONS)
@@ -76,19 +85,38 @@ class SplashActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun init() {
         val initMillis = System.currentTimeMillis()
 
-        lifecycleScope.launchWhenCreated {
+        val restartJob = lifecycleScope.launch(start = CoroutineStart.LAZY) {
+            delay(7000L)
+            when(ApplicationSession.initState) {
+                ApplicationSession.InitState.None ->
+                    restartApplication()
+                ApplicationSession.InitState.Done -> {
+                    if (lifecycle.currentState == Lifecycle.State.STARTED)
+                        startApplication(initMillis)
+                }
+                else -> {}
+            }
+        }
+
+        startupJob = lifecycleScope.launchWhenCreated {
+            if (GlobalApplication.isStartupAborted)
+                return@launchWhenCreated
             if (ApplicationSession.isInitComplete) {
                 startApplication(initMillis)
             } else {
-                EventHandler.on<ApplicationEvent.Session.StageUpdate>(this) {
+                restartJob.start()
+                EventHandler.on<ApplicationEvent.Session.StageUpdate>(this, replay = 3) {
+                    if (restartJob.isActive)
+                        restartJob.cancel()
                     value?.let {
                         println("------------------------ $value")
                         LOG.info { value }
                         runOnUiThread {
-                            binding.textViewLoadStatus.text = value
+                            binding.textViewLoadStatus.text = "✦ $value"
                         }
                     } ?: startApplication(initMillis)
                 }

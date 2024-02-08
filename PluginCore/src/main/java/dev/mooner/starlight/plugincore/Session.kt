@@ -51,10 +51,10 @@ object Session {
     )
     val globalConfig: GlobalConfig = GlobalConfig
 
-    val languageManager: LanguageManager = LanguageManager()
-    val pluginLoader:  PluginLoader      = PluginLoader()
-    val pluginManager: PluginManager     = PluginManager()
-    val widgetManager: WidgetManager     = WidgetManager()
+    val languageManager : LanguageManager = LanguageManager()
+    val pluginLoader    : PluginLoader    = PluginLoader()
+    val pluginManager   : PluginManager   = PluginManager()
+    val widgetManager   : WidgetManager   = WidgetManager()
     //val eventManager: EventHandler       = EventHandler()
 
     private var mProjectLoader: ProjectLoader by Delegates.notNull()

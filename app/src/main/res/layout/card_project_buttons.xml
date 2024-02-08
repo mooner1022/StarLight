@@ -35,6 +35,81 @@
         app:layout_constraintTop_toTopOf="parent"
         app:showDividerVertical="middle">
 
+        <!--
+
+        <Button
+            android:id="@+id/buttonEditCode2"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="130dp"
+            android:background="#00FFFFFF"
+            android:drawableLeft="@drawable/ic_round_edit_24"
+            android:drawableTint="@color/text"
+            android:text="@string/project_edit"
+            android:textColor="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+        <Button
+            android:id="@+id/buttonRecompile2"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="130dp"
+            android:background="#00FFFFFF"
+            android:drawableLeft="@drawable/ic_round_refresh_24"
+            android:drawableTint="@color/text"
+            android:text="@string/project_compile"
+            android:textColor="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+        <Button
+            android:id="@+id/buttonDebugRoom2"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="130dp"
+            android:background="#00FFFFFF"
+            android:drawableLeft="@drawable/ic_round_insert_comment_24"
+            android:drawableTint="@color/text"
+            android:text="@string/project_debugroom"
+            android:textColor="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+        <Button
+            android:id="@+id/buttonProjectConfig2"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="130dp"
+            android:background="#00FFFFFF"
+            android:drawableLeft="@drawable/ic_round_settings_24"
+            android:drawableTint="@color/text"
+            android:text="@string/project_settings"
+            android:textColor="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+        <Button
+            android:id="@+id/buttonProjectInfo2"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="130dp"
+            android:background="#00FFFFFF"
+            android:drawableLeft="@drawable/ic_round_info_24"
+            android:drawableTint="@color/text"
+            android:text="@string/project_info"
+            android:textColor="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
+
+        <Button
+            android:id="@+id/buttonProjectPin2"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="130dp"
+            android:background="#00FFFFFF"
+            android:drawableLeft="@drawable/ic_round_star_24"
+            android:drawableTint="@color/text"
+            android:text="@string/project_favorite"
+            android:textColor="@color/text"
+            tools:ignore="SpeakableTextPresentCheck" />
+            -->
+
         <ImageButton
             android:id="@+id/buttonEditCode"
             android:layout_width="48dp"

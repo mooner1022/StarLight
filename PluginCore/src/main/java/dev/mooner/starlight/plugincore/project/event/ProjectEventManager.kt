@@ -8,8 +8,8 @@ package dev.mooner.starlight.plugincore.project.event
 
 object ProjectEventManager {
 
-    private const val WILDCARD_ALL   = "*"
-    private const val PATH_DELIMITER = '.'
+            const val PATH_DELIMITER  = '.'
+    private const val WILDCARD_ALL    = "*"
     private val       ID_SANITY_REGEX = "(^[-_\\dA-Za-z]+\$)".toRegex()
 
     private val classCache: MutableMap<ProjectEventClass, String> = hashMapOf()

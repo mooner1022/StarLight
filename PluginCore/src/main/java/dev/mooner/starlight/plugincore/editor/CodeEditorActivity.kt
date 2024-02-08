@@ -45,7 +45,7 @@ abstract class CodeEditorActivity: AppCompatActivity() {
     }
 
     protected fun readCodeOrDefault(fileName: String, language: Language) : String =
-        readCode(fileName) ?: language.defaultCode
+        readCode(fileName) ?: language.formatDefaultCode(fileName, emptyList())
 
     protected fun saveCode(fileName: String, code: String): Boolean {
         val targetFile = baseDirectory.resolve(fileName).also {

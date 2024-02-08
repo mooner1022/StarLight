@@ -22,14 +22,18 @@ class BridgeApi: Api<BridgeApi.Bridge>() {
 
             @JvmStatic
             fun getScopeOf(scriptName: String): ScriptableObject {
-                val project = Session.projectManager.getProject(scriptName)
-                    ?: error("Unable to find project: $scriptName")
+                val projectName = if (scriptName.endsWith(".js")) scriptName.dropLast(3) else scriptName
+                val project = Session.projectManager.getProject(projectName)
+                    ?: error("Unable to find project: $projectName")
                 require(project.getLanguage().id == "JS_RHINO") { "Method 'Bridge.getScopeOf()' only supports project with language 'JS_RHINO'" }
                 return project.getScope() as ScriptableObject
             }
 
             @JvmStatic
-            fun isAllowed(scriptName: String): Boolean = true
+            fun isAllowed(scriptName: String): Boolean =
+                Session.projectManager.getProject(scriptName)?.let { proj ->
+                    proj.isCompiled && proj.getLanguage().id == "JS_RHINO"
+                } == true
         }
     }
 

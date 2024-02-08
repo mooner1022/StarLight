@@ -4,6 +4,7 @@ import dev.mooner.starlight.plugincore.version.Version
 
 class Info {
     companion object {
-        val PLUGINCORE_VERSION: Version = Version.fromString("0.1.0")
+        val PLUGINCORE_VERSION: Version =
+            Version.fromString("0.2.0")
     }
 }

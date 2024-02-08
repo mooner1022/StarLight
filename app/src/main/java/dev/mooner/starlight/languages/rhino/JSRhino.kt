@@ -18,6 +18,7 @@ import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
+import dev.mooner.starlight.utils.isNoobMode
 import dev.mooner.starlight.utils.toURI
 import org.mozilla.javascript.*
 import org.mozilla.javascript.Function
@@ -45,12 +46,11 @@ class JSRhino: Language() {
     override val configStructure: ConfigStructure = configs
 
     override val defaultCode: String = """
-            function onMessage(event) {
-                
-            }
+            %HEADER%
+            %BODY%
         """.trimIndent()
 
-    override fun onConfigUpdated(updated: Map<String, Any>) {}
+    //override fun onConfigUpdated(updated: Map<String, Any>) {}
 
     internal fun enterContext(): Context {
         val config = getLanguageConfig()
@@ -94,10 +94,10 @@ class JSRhino: Language() {
         //val engine = ScriptEngineManager().getEngineByName("rhino")!!
         if (project != null) {
             var importLines: StringBuilder? = null
-            for(methodBlock in apis) {
-                when(methodBlock.instanceType) {
+            for(api in apis) {
+                when(api.instanceType) {
                     InstanceType.CLASS -> {
-                        val line = "const ${methodBlock.name} = Packages.${methodBlock.instanceClass.name};\n"
+                        val line = "const ${api.name} = Packages.${api.instanceClass.name};\n"
                         if (importLines == null)
                             importLines = StringBuilder(line)
                         else
@@ -105,8 +105,8 @@ class JSRhino: Language() {
                         //context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
                     }
                     InstanceType.OBJECT -> {
-                        val instance = methodBlock.getInstance(project)
-                        scope.put(methodBlock.name, scope, instance)
+                        val instance = api.getInstance(project)
+                        scope.put(api.name, scope, instance)
                         //ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(instance, scope))
                     }
                 }
@@ -119,7 +119,7 @@ class JSRhino: Language() {
         }
 
         val langConf = getLanguageConfig()
-        if (langConf.getBoolean("load_ext_modules", false)) {
+        if (langConf.getBoolean("load_ext_modules", false) || isNoobMode) {
             LOG.verboseTranslated {
                 Locale.ENGLISH { "[Load external modules] Option enabled" }
                 Locale.KOREAN  { "[외부 모듈 로드] 설정 활성화됨" }
@@ -164,38 +164,7 @@ class JSRhino: Language() {
                 }
                 return
             }
-            context.errorReporter = object : ErrorReporter {
-                override fun warning(
-                    message: String?,
-                    sourceName: String?,
-                    line: Int,
-                    lineSource: String?,
-                    lineOffset: Int
-                ) {
-                    LOG.warn { "$sourceName#$line: $message" }
-                }
-
-                override fun error(
-                    message: String?,
-                    sourceName: String?,
-                    line: Int,
-                    lineSource: String?,
-                    lineOffset: Int
-                ) {
-                    LOG.error { "$sourceName#$line: $message" }
-                }
-
-                override fun runtimeError(
-                    message: String?,
-                    sourceName: String?,
-                    line: Int,
-                    lineSource: String?,
-                    lineOffset: Int
-                ): EvaluatorException {
-                    LOG.error { "runtime $sourceName#$line: $message" }
-                    return EvaluatorException(message, sourceName, line, lineSource, lineOffset)
-                }
-            }
+            context.errorReporter = defaultErrorReporter
             function.call(context, scope, scope, args)
         } catch (e: Exception) {
             onError(e)
@@ -237,7 +206,7 @@ class JSRhino: Language() {
             Uri.parse("file://${path}/").toURI()
 
         val requirePath: MutableList<File> = arrayListOf()
-        if (GlobalConfig.category("project").getBoolean("load_global_libraries", false))
+        if (GlobalConfig.category("project").getBoolean("load_global_libraries", false) || isNoobMode)
             getStarLightDirectory()
                 .resolve("modules")
                 .let(requirePath::add)
@@ -268,6 +237,39 @@ class JSRhino: Language() {
         private const val CONF_LANG_VERSION = "js_version"
         private const val LANG_DEF_VERSION = Context.VERSION_ES6
 
+        private val defaultErrorReporter = object : ErrorReporter {
+            override fun warning(
+                message: String?,
+                sourceName: String?,
+                line: Int,
+                lineSource: String?,
+                lineOffset: Int
+            ) {
+                LOG.warn { "$sourceName#$line: $message" }
+            }
+
+            override fun error(
+                message: String?,
+                sourceName: String?,
+                line: Int,
+                lineSource: String?,
+                lineOffset: Int
+            ) {
+                LOG.error { "$sourceName#$line: $message" }
+            }
+
+            override fun runtimeError(
+                message: String?,
+                sourceName: String?,
+                line: Int,
+                lineSource: String?,
+                lineOffset: Int
+            ): EvaluatorException {
+                LOG.error { "runtime $sourceName#$line: $message" }
+                return EvaluatorException(message, sourceName, line, lineSource, lineOffset)
+            }
+        }
+
         private val configs = config {
             category {
                 id = "JS_RHINO"
@@ -294,8 +296,8 @@ class JSRhino: Language() {
                     toggle {
                         id = "load_ext_modules"
                         title = "외부 모듈 로드"
-                        description = "컴파일 시 /modules 폴더 내의 모듈을 로드합니다."
-                        defaultValue = false
+                        description = "컴파일 시 프로젝트 폴더 내의 모듈을 로드합니다."
+                        defaultValue = true
                         icon = Icon.FOLDER
                         iconTintColor = color { "#C7B198" }
                     }

@@ -1,12 +1,12 @@
 package dev.mooner.starlight.ui.editor.tab
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import coil.transform.RoundedCornersTransformation
 import dev.mooner.starlight.R
@@ -27,9 +27,11 @@ private val LOG = LoggerFactory.logger {  }
 class TabViewAdapter(
     private val context: Context,
     val sessions: MutableList<EditorSession>,
+    isDark: Boolean,
     private val onItemEvent: OnItemEvent? = null
 ): RecyclerView.Adapter<TabViewAdapter.TabViewHolder>() {
 
+    private var textColor: Int = getTextColor(isDark)
     private var showFileIcon: Boolean = false
 
     private val eventJob: Job = Job()
@@ -64,6 +66,7 @@ class TabViewAdapter(
                 ?: holder.fileIcon.loadWithTint(R.drawable.ic_round_code_24, R.color.main_bright)
 
         holder.fileName.text = session.fileName.let { if (session.isUpdated) "$it *" else it }
+        holder.fileName.setTextColor(textColor)
         if (position == selectedIndex)
             holder.indicator.visibility = View.VISIBLE
         else
@@ -73,6 +76,7 @@ class TabViewAdapter(
             holder.closeButton.visibility = View.GONE
         else
             holder.closeButton.visibility = View.VISIBLE
+        holder.closeButton.imageTintList = ColorStateList.valueOf(textColor)
 
         holder.closeButton.setOnClickListener {
             val actualIndex = sessions.indexOf(session)
@@ -145,6 +149,19 @@ class TabViewAdapter(
         onItemEvent?.invoke(EVENT_SELECTED, index, sessions[index])
     }
 
+    fun updateTextColor(isDark: Boolean) {
+        textColor = getTextColor(isDark)
+
+        notifyItemRangeChanged(0, itemCount)
+    }
+
+    private fun getTextColor(isDark: Boolean): Int {
+        return if (isDark)
+            context.getColor(R.color.editor_text_dark)
+        else
+            context.getColor(R.color.editor_text)
+    }
+
     private suspend fun onGlobalConfigUpdated(event: Events.Config.GlobalConfigUpdate) =
         with(event) {
             LOG.verbose { "Config updated" }
@@ -184,7 +201,7 @@ class TabViewAdapter(
         val fileName: TextView  = itemView.findViewById(R.id.textViewFileName)
         val fileIcon: ImageView = itemView.findViewById(R.id.imageViewIcon)
         val indicator: View     = itemView.findViewById(R.id.isCurrentMain)
-        val closeButton: ConstraintLayout = itemView.findViewById(R.id.buttonClose)
+        val closeButton: ImageView = itemView.findViewById(R.id.buttonClose)
 
         init {
             itemView.setOnClickListener {

@@ -9,5 +9,11 @@ package dev.mooner.starlight.plugincore.utils
 inline fun <reified T> Array<out T>.joinClassNames(): String =
     this.joinToString { cl ->
         cl?.let { it::class.simpleName.toString() }
-            ?: "null"
+            ?: "unknown"
+    }
+
+inline fun <reified T> Collection<T>.joinClassNames(): String =
+    this.joinToString { cl ->
+        cl?.let { it::class.simpleName.toString() }
+            ?: "unknown"
     }

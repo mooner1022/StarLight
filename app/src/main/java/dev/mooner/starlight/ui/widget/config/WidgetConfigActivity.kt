@@ -10,9 +10,6 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.callbacks.onDismiss
-import com.afollestad.materialdialogs.customview.customView
-import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import dev.mooner.starlight.R
 import dev.mooner.starlight.WIDGET_DEF_STRING
 import dev.mooner.starlight.databinding.ActivityWidgetConfigBinding
@@ -24,7 +21,6 @@ import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.plugincore.widget.WidgetInfo
-import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.utils.*
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -119,20 +115,11 @@ class WidgetConfigActivity : AppCompatActivity() {
         when(view) {
             binding.fabAddWidget -> MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT))
                 .show {
-                    cornerRadius(res = R.dimen.card_radius)
+                    setCommonAttrs()
                     maxWidth(res = R.dimen.dialog_width)
-                    lifecycleOwner(this@WidgetConfigActivity)
-                    customView(R.layout.dialog_logs)
 
-                    val recycler: RecyclerView = findViewById(R.id.rvLog)
-
-                    val configAdapter = ConfigAdapter.Builder(this@WidgetConfigActivity) {
-                        bind(recycler)
-                        structure { getWidgetConfigStructure(::dismiss) }
-                    }.build()
-
-                    onDismiss {
-                        configAdapter.destroy()
+                    configStruct(this@WidgetConfigActivity) {
+                        struct(getWidgetConfigStructure(::dismiss))
                     }
                 }
             binding.leave -> finish()
@@ -145,7 +132,6 @@ class WidgetConfigActivity : AppCompatActivity() {
 
         recyclerAdapter!!.apply {
             notifyItemInserted(data.size)
-
             notifyDataEdited(data)
         }
     }

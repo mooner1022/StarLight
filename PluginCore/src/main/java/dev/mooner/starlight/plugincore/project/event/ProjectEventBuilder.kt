@@ -42,7 +42,7 @@ class ProjectEventBuilder(
         }
 
         operator fun plus(event: ProjectEventClass) {
-            val instance = event.createInstance()
+            val instance = event.getInstance()
             events[instance.id] = event
         }
 
@@ -53,4 +53,9 @@ class ProjectEventBuilder(
             return events
         }
     }
+}
+
+private val instances: MutableMap<ProjectEventClass, ProjectEvent> = hashMapOf()
+fun ProjectEventClass.getInstance(): ProjectEvent {
+    return instances[this] ?: this.createInstance().also { instances[this] = it }
 }

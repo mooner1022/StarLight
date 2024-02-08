@@ -15,8 +15,6 @@ const val WIDGET_DEF_STRING = """
 const val ID_VIEW_ITEM_PROJECT = 0
 const val ID_VIEW_ITEM_LOG     = 1
 
-const val CORE_PLUGIN_ID = "system"
-
 // Config
 const val CA_WIDGETS   = "widgets"
 const val CA_PLUGIN    = "plugin"
@@ -29,22 +27,3 @@ const val CF_IDS                = "ids"
 const val CF_SAFE_MODE          = "safe_mode"
 const val CF_WRITE_INTERNAL_LOG = "write_internal_log"
 const val CF_LOAD_EXT_DEX_LIB   = "load_external_dex_libs"
-
-sealed class Conf(
-    val name: String
-) {
-
-    sealed class Widgets(
-        val key: String
-    ): Conf("widgets") companion object {
-
-        const val IDS = "ids"
-    }
-
-    sealed class Plugin(
-        val key: String
-    ): Conf("plugin") {
-
-        object SafeMode: Plugin("safe_mode")
-    }
-}

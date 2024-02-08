@@ -17,12 +17,14 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import dev.mooner.peekalert.PeekAlert
+import dev.mooner.peekalert.PeekAlertBuilder
 import dev.mooner.peekalert.createPeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.original.NotificationApi
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
+import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogData.Companion.FLAG_NOTIFY
 import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.plugincore.utils.hasFlag
@@ -33,13 +35,18 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+typealias LogFilter = (log: LogData) -> Boolean
+
 context(LifecycleOwner)
-fun Activity.bindLogNotifier() =
+fun Activity.bindLogNotifier(filter: LogFilter? = null) =
     lifecycleScope.launch {
         suspend fun onLogCreated(event: Events.Log.Create) {
             val log = event.log
             if (log.type.priority >= LogType.INFO.priority) {
                 if (log.type == LogType.INFO && !log.flags.hasFlag(FLAG_NOTIFY))
+                    return
+
+                if (filter != null && !filter(log))
                     return
 
                 val peekAlert = createPeek(log.tag ?: "null", log.message)
@@ -54,7 +61,7 @@ fun Activity.bindLogNotifier() =
                                 peekAlert.setBackgroundColor(res = R.color.main_dark)
                             else {
                                 buildNotification(10) {
-                                    title = log.tag
+                                    setTitle(log.tag)
                                     setText(log.message)
                                 }.build()
                                 return@withContext
@@ -71,11 +78,17 @@ fun Activity.bindLogNotifier() =
     }
 
 context(LifecycleOwner)
-fun Fragment.bindLogNotifier() =
+fun Fragment.bindLogNotifier(filter: LogFilter? = null) =
     lifecycleScope.launch {
         suspend fun onLogCreated(event: Events.Log.Create) {
             val log = event.log
-            if (log.type.priority >= LogType.WARN.priority) {
+            if (log.type.priority >= LogType.INFO.priority) {
+                if (log.type == LogType.INFO && !log.flags.hasFlag(FLAG_NOTIFY))
+                    return
+
+                if (filter != null && !filter(log))
+                    return
+
                 val peekAlert = createPeek(log.tag ?: "null", log.message)
                 withContext(Dispatchers.Main) {
                     when(log.type) {
@@ -83,8 +96,17 @@ fun Fragment.bindLogNotifier() =
                             peekAlert.setBackgroundColor(res = R.color.noctis_orange)
                         LogType.ERROR, LogType.CRITICAL ->
                             peekAlert.setBackgroundColor(res = R.color.code_error)
-                        else ->
-                            peekAlert
+                        else -> {
+                            if (isForeground())
+                                peekAlert.setBackgroundColor(res = R.color.main_dark)
+                            else {
+                                requireContext().buildNotification(10) {
+                                    setTitle(log.tag ?: log.type.toString())
+                                    setText(log.message)
+                                }.build()
+                                return@withContext
+                            }
+                        }
                     }.peek()
                 }
             }
@@ -97,48 +119,45 @@ fun Fragment.bindLogNotifier() =
 
 private fun Fragment.createPeek(title: String, text: String): PeekAlert {
     return createPeekAlert(this) {
-        autoHideMillis = 5000L
-        paddingDp = 16
-        position = PeekAlert.Position.Top
-        width = LayoutParams.WRAP_CONTENT
-        cornerRadius = dp(14).toFloat()
-        iconRes = R.drawable.ic_round_info_24
-        iconTint(res = R.color.white)
-        draggable = true
+        setCommonAttrs()
         title(title) {
             textColor(R.color.white)
             textSize = 14f
-            typeface = getTypeface(this@createPeek.requireContext(), R.font.nanumsquare_round_extrabold)
+            typeface = getTypeface(this@createPeek.requireContext(), R.font.wantedsans_medium)
         }
         text(text) {
             textColor(R.color.white)
             textSize = 12f
-            typeface = getTypeface(this@createPeek.requireContext(), R.font.nanumsquare_round_regular)
+            typeface = getTypeface(this@createPeek.requireContext(), R.font.wantedsans_regular)
         }
     }
 }
 
 private fun Activity.createPeek(title: String, text: String): PeekAlert {
     return createPeekAlert(this) {
-        autoHideMillis = 5000L
-        paddingDp = 16
-        position = PeekAlert.Position.Top
-        width = LayoutParams.WRAP_CONTENT
-        cornerRadius = dp(14).toFloat()
-        iconRes = R.drawable.ic_round_info_24
-        iconTint(res = R.color.white)
-        draggable = true
+        setCommonAttrs()
         title(title) {
             textColor(R.color.white)
             textSize = 14f
-            typeface = getTypeface(this@createPeek, R.font.nanumsquare_round_extrabold)
+            typeface = getTypeface(this@createPeek, R.font.wantedsans_medium)
         }
         text(text) {
             textColor(R.color.white)
             textSize = 12f
-            typeface = getTypeface(this@createPeek, R.font.nanumsquare_round_regular)
+            typeface = getTypeface(this@createPeek, R.font.wantedsans_regular)
         }
     }
+}
+
+private fun PeekAlertBuilder.setCommonAttrs() {
+    autoHideMillis = 5000L
+    paddingDp = 17
+    position = PeekAlert.Position.Top
+    width = LayoutParams.WRAP_CONTENT
+    cornerRadius = dp(14).toFloat()
+    iconRes = R.drawable.ic_round_projects_24
+    iconTint(res = R.color.white)
+    draggable = true
 }
 
 private fun Context.buildNotification(id: Int, block: NotificationApi.NotificationBuilder.() -> Unit): NotificationCompat.Builder {

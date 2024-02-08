@@ -29,7 +29,8 @@ data class LogData(
 
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS"
 
-        const val FLAG_NOTIFY = 1
+        const val FLAG_NOTIFY         = 1 shl 0
+        const val FLAG_COMPILE_RESULT = 1 shl 1
     }
 
     override fun equals(other: Any?): Boolean {

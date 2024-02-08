@@ -13,6 +13,7 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 private val LOG = LoggerFactory.logger {  }
 
 data class ChatRoomImpl(
+    override val id: String,
     override val name: String,
     override val isGroupChat: Boolean,
     override val isDebugRoom: Boolean = false,

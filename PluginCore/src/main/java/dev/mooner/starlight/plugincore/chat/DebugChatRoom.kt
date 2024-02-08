@@ -1,6 +1,7 @@
 package dev.mooner.starlight.plugincore.chat
 
 data class DebugChatRoom(
+    override val id: String,
     override val name: String,
     override val isGroupChat: Boolean,
     override val isDebugRoom: Boolean = true,

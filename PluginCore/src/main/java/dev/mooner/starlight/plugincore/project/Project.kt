@@ -164,4 +164,8 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
     override fun equals(other: Any?): Boolean {
         return other is Project && other.info.id == this.info.id
     }
+
+    override fun hashCode(): Int {
+        return info.id.hashCode()
+    }
 }

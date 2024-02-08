@@ -23,6 +23,14 @@
             @anim/activity_fade_in</item>
     </style>
 
+    <style name="Theme.StarLight.Editor" parent="Theme.StarLight">
+        <item name="android:textColor">@color/editor_text</item>
+        <item name="android:textColorPrimary">@color/editor_text</item>
+
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
     <style name="Theme.StarLight.NoActionBar" parent="Theme.StarLight">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
@@ -31,6 +39,10 @@
     <style name="Theme.StarLight.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="Theme.StarLight.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="EditorTitleTextAppearance">
+        <item name="android:fontFamily">@font/wantedsans_regular</item>
+    </style>
 
     <style name="overrideExpandableCardViewSwitch" parent="Widget.MaterialComponents.CompoundButton.Switch">
         <item name="android:background">@null</item>

@@ -7,7 +7,7 @@ data class Version(
     val major: Int,
     val minor: Int,
     val patch: Int,
-    val build: String? = null
+    val build: String? = null,
 ) {
     companion object {
 
@@ -58,7 +58,7 @@ data class Version(
     }
 
     fun isCompatibleWith(version: Version): Boolean =
-        version.major == this.major
+        version.major == this.major && version.minor == this.minor
 
     infix fun compatibleWith(version: Version): Boolean =
         isCompatibleWith(version)

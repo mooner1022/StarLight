@@ -41,7 +41,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_marginStart="16dp"
+                android:layout_marginStart="8dp"
                 android:layout_marginEnd="8dp"
                 android:layout_toStartOf="@+id/LL_switch_button"
                 android:layout_toEndOf="@+id/card_icon"
@@ -67,6 +67,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
+                    android:visibility="gone"
                     app:track="@drawable/switch_track_selector"/>
 
                 <ImageButton
@@ -76,7 +77,7 @@
                     android:layout_marginEnd="20dp"
                     android:background="@drawable/arrow_background_round"
                     android:src="@drawable/ic_round_keyboard_arrow_down_24"
-                    app:tint="@color/text"
+                    app:tint="@color/white"
                     tools:ignore="ContentDescription,TouchTargetSizeCheck"/>
             </LinearLayout>
 

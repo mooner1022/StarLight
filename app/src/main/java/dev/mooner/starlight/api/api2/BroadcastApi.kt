@@ -13,6 +13,7 @@ import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.project.Project
+import java.util.*
 
 private typealias BroadcastCallback = (value: Any) -> Unit
 private typealias ProjectCallbacks = MutableMap<String, MutableSet<BroadcastCallback>>
@@ -54,7 +55,7 @@ class BroadcastApi: Api<BroadcastApi.Broadcast>() {
     object BroadcastManager {
 
         private val callbacks: MutableMap<String, ProjectCallbacks> =
-            hashMapOf()
+            WeakHashMap()
 
         fun send(name: String, value: Any) {
             for ((_, projCallback) in callbacks) {

@@ -44,3 +44,20 @@ inline fun <reified T: Event> EventHandler.on(
         }
     }
     .launchIn(scope)
+
+inline fun <reified T: Event> EventHandler.on(
+    scope: CoroutineScope = this,
+    replay: Int,
+    noinline callback: suspend T.() -> Unit
+): Job = eventFlow
+    .shareIn(scope, SharingStarted.Eagerly, replay)
+    .buffer(Channel.UNLIMITED)
+    .filterIsInstance<T>()
+    .onEach { event ->
+        scope.launch(event.coroutineContext) {
+            runCatching {
+                callback(event)
+            }.onFailure { LOG.error(it) }
+        }
+    }
+    .launchIn(scope)

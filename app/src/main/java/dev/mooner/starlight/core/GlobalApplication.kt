@@ -69,7 +69,8 @@ class GlobalApplication: Application(), LifecycleEventObserver {
 
         val isPermissionsGrant = checkPermissions(SetPermissionFragment.REQUIRED_PERMISSIONS)
 
-        if (isInitial || !isPermissionsGrant) return
+        if (isInitial || !isPermissionsGrant)
+            return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
             Toast.makeText(this, "Android 12 이상 버전에서는 모든 파일 액세스 권한이 필요합니다.", Toast.LENGTH_LONG).show()
@@ -87,6 +88,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
                     putExtra("errorMessage", info["last_error"])
                 }
                 //startupFile.delete()
+                isStartupAborted = true
                 startActivity(errorIntent)
                 return
             }
@@ -182,5 +184,8 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         @JvmStatic
         private var mContext: Context? = null
         fun requireContext(): Context = mContext!!
+
+        var isStartupAborted: Boolean = false
+            private set
     }
 }

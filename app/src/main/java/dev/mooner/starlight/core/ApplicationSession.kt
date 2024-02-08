@@ -52,13 +52,17 @@ object ApplicationSession {
     val initMillis get() = mInitMillis
 
     @JvmStatic
-    private var mIsInitComplete: Boolean = false
-    val isInitComplete get() = mIsInitComplete
+    var initState: InitState = InitState.None
+        private set
+
+    val isInitComplete get() = initState == InitState.Done
 
     internal fun init(context: Context): Flow<String?> =
         flow {
-            if (mIsInitComplete) {
+            initState = InitState.Running
+            if (isInitComplete) {
                 logger.warn { "Rejecting re-init of ApplicationSession" }
+                initState = InitState.Done
                 emit(null)
                 return@flow
             }
@@ -118,6 +122,7 @@ object ApplicationSession {
                 //addApi(TimerApi())
                 addApi(NotificationApi())
                 addApi(EnvironmentApi())
+                addApi(JavaClassApi())
 
                 //Experimental Node.js Api implementation
                 addApi(EventEmitterApi())
@@ -163,7 +168,7 @@ object ApplicationSession {
 
             setNetworkHandler(context)
 
-            mIsInitComplete = true
+            initState = InitState.Done
             emit(null)
             mInitMillis = System.currentTimeMillis()
         }
@@ -233,4 +238,11 @@ object ApplicationSession {
                 exitProcess(2)
             }
         }
+
+    sealed class InitState {
+
+        data object None: InitState()
+        data object Running: InitState()
+        data object Done: InitState()
+    }
 }

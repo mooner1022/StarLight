@@ -7,8 +7,8 @@
 package dev.mooner.starlight.listener.event
 
 import dev.mooner.starlight.plugincore.chat.DeletedMessage
+import dev.mooner.starlight.plugincore.language.CodeGenerator
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
-import kotlin.reflect.KClass
 
 class ProjectOnMessageDeleteEvent: ProjectEvent() {
 
@@ -18,6 +18,6 @@ class ProjectOnMessageDeleteEvent: ProjectEvent() {
 
     override val functionName: String = "onMessageDeleted"
 
-    override val argTypes: Array<KClass<*>> =
-        arrayOf(DeletedMessage::class)
+    override val argTypes: Array<CodeGenerator.Argument<*>> =
+        arrayOf("event" typedAs DeletedMessage::class)
 }

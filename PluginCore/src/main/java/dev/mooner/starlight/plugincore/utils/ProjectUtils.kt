@@ -8,17 +8,31 @@ package dev.mooner.starlight.plugincore.utils
 
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
-import kotlin.reflect.full.createInstance
+import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
+import dev.mooner.starlight.plugincore.project.event.getInstance
+import kotlin.reflect.full.isSubclassOf
 
 inline fun <reified T: ProjectEvent> Project.fireEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean {
     logger.v("EventManager", "Calling explicit event ${T::class.simpleName} for project ${this.info.name}")
-    val event = T::class.createInstance()
-    event.argTypes
-        .zip(args)
-        .any { it.first != it.second::class }
-        .runIf(true) {
-            error("Argument type mismatch, registered: [${event.argTypes.joinClassNames()}], provided: [${args.joinClassNames()}]")
-        }
+
+    val eventId = ProjectEventManager.validateAndGetEventID(T::class)
+        ?: error("Unregistered event: ${T::class.qualifiedName}")
+
+    if (!this.isEventCallAllowed(eventId))
+        return false;
+
+    val event = T::class.getInstance()
+    val actualTypes = event.argTypes
+        .map { it.type }
+    if (actualTypes.size < args.size)
+        error("Argument length mismatch, required: ${actualTypes.size}, provided: ${args.size}")
+
+    for (i in args.indices) {
+        val eArg = actualTypes[i]
+        val pArg = args[i]::class
+        if (!pArg.isSubclassOf(eArg))
+            error("Argument type mismatch on position ${i}, required: ${eArg}, provided: $pArg")
+    }
 
     this.callFunction(event.functionName, args, onFailure)
     return true

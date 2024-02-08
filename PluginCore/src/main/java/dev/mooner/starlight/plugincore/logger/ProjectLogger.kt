@@ -16,17 +16,26 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
+import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
+
+private typealias ListenerCallback = (log: LogData) -> Unit
 
 class ProjectLogger private constructor(
-    private var _logs: MutableList<LogData>,
+    private var _logs: MutableList<LogData>, // LinkedList
     private val file: File
 ) {
+
+    private val listenerId: AtomicInteger = AtomicInteger(0)
+    private val listeners: WeakHashMap<Int, ListenerCallback> = WeakHashMap(2)
 
     val logs: MutableList<LogData>
         get() = this._logs
 
     fun clear() {
-        _logs.clear()
+        synchronized(_logs) {
+            _logs.clear()
+        }
         flush()
     }
 
@@ -97,6 +106,16 @@ class ProjectLogger private constructor(
     fun wtf(tag: String?, message: String) =
         log(LogType.CRITICAL, tag, message)
 
+    fun addOnLogCreateListener(listener: ListenerCallback): Int {
+        val id = listenerId.getAndIncrement()
+        listeners[id] = listener
+        return id
+    }
+
+    fun removeOnLogCreateListener(id: Int) {
+        listeners -= id
+    }
+
     private fun log(type: LogType, tag: String?, message: String) {
         Logger.log(type, tag, message)
 
@@ -105,8 +124,12 @@ class ProjectLogger private constructor(
             tag = tag,
             message = message
         )
+        for ((_, listener) in listeners)
+            listener(data)
         if (data.type != LogType.DEBUG) {
             synchronized(_logs) {
+                if (_logs.size > LOGS_MAX_SIZE)
+                    _logs.removeFirst()
                 _logs += data
                 flush()
             }
@@ -126,6 +149,7 @@ class ProjectLogger private constructor(
     }
 
     companion object {
+        private const val LOGS_MAX_SIZE = 50
 
         @OptIn(ExperimentalCoroutinesApi::class)
         private val logFlushScope: CoroutineScope =
@@ -135,7 +159,7 @@ class ProjectLogger private constructor(
             directory.mkdirs()
             val file = File(directory, "logs.json")
             file.createNewFile()
-            return ProjectLogger(arrayListOf(), file)
+            return ProjectLogger(LinkedList(), file)
         }
 
         fun fromFile(file: File): ProjectLogger {
@@ -144,15 +168,17 @@ class ProjectLogger private constructor(
             }
             val raw = file.readText()
             if (raw.isBlank()) return create(file.parentFile!!)
-            val logs: MutableList<LogData> = try {
-                json.decodeFromString(raw)
+            var logs: MutableList<LogData> = try {
+                json.decodeFromString(raw) // No serializer for linked list
             } catch (e: Exception) {
                 e.printStackTrace()
                 file.delete()
                 Logger.e(ProjectLogger::class.simpleName!!, "Failed to parse log file ${file.name}, removing file")
                 mutableListOf()
             }
-            return ProjectLogger(logs, file)
+            if (logs.size > LOGS_MAX_SIZE)
+                logs = logs.drop(logs.size - LOGS_MAX_SIZE).toMutableList()
+            return ProjectLogger(LinkedList(logs), file)
         }
     }
 }

@@ -64,6 +64,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 import java.util.*
+import kotlin.properties.Delegates.notNull
 
 private val logger = LoggerFactory.logger {  }
 
@@ -109,6 +110,7 @@ class DebugRoomFragment: Fragment() {
     private lateinit var project: Project
     private var configAdapter: ConfigAdapter? = null
     private var imageHash: Int = 0
+    private var roomId: String by notNull()
 
     private val onSend: (msg: String) -> Unit = { msg ->
         val viewType = if (msg.length >= 500)
@@ -125,6 +127,11 @@ class DebugRoomFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         imageHash    = 0
+        roomId       = GlobalConfig.category("d_room").let { category ->
+            if (!category.contains("id"))
+                category["id"] = UUID.randomUUID().toString()
+            category.getString("id")!!
+        }
         projectName  = arguments?.getString(ARG_PROJECT_NAME) ?: "ERROR: Project name not defined"
         showLeave    = arguments?.getBoolean(ARG_SHOW_LEAVE)  ?: true
         fixedPadding = arguments?.getBoolean(ARG_FIXED_PAD)   ?: false
@@ -233,9 +240,11 @@ class DebugRoomFragment: Fragment() {
     }
 
 
-    private fun loadBitmapFromResource(@DrawableRes res: Int): Bitmap = BitmapFactory.decodeResource(resources, res)
+    private fun loadBitmapFromResource(@DrawableRes res: Int): Bitmap =
+        BitmapFactory.decodeResource(resources, res)
 
-    private fun loadBitmapFromFile(file: File): Bitmap = Uri.fromFile(file).toBitmap(requireContext())
+    private fun loadBitmapFromFile(file: File): Bitmap =
+        Uri.fromFile(file).toBitmap(requireContext())
 
     @SuppressLint("CheckResult")
     private fun send(_message: String) {
@@ -252,6 +261,7 @@ class DebugRoomFragment: Fragment() {
         val viewType = if (message.length >= 500) DebugRoomChatAdapter.CHAT_SELF_LONG else DebugRoomChatAdapter.CHAT_SELF
         addMessage(sender, message, viewType, true)
         val data = Message(
+            image = null,
             message = message,
             sender = ChatSender(
                 name = sender,
@@ -259,6 +269,7 @@ class DebugRoomFragment: Fragment() {
                 profileBitmap = selfProfileBitmap
             ),
             room = DebugChatRoom(
+                id = roomId,
                 name = roomName,
                 isGroupChat = isGroupChat,
                 onSend = onSend,
@@ -269,7 +280,7 @@ class DebugRoomFragment: Fragment() {
             chatLogId = -1L
         )
 
-        project.fireEvent<ProjectOnMessageEvent>(data, ::showErrorSnackbar)
+        project.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::showErrorSnackbar)
 
         if (GlobalConfig.category("notifications").getBoolean("use_legacy_event", false)) {
             val replier = Replier { _, msg, _ ->
@@ -279,12 +290,12 @@ class DebugRoomFragment: Fragment() {
 
             val imageDB = ImageDB(selfProfileBitmap)
 
-            project.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB, ::showErrorSnackbar)
+            project.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB, onFailure = ::showErrorSnackbar)
         }
     }
 
     @SuppressLint("CheckResult")
-    private fun showErrorSnackbar(e: Exception) {
+    private fun showErrorSnackbar(e: Throwable) {
         Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
             setAction("자세히 보기") {
                 MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {

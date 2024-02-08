@@ -9,6 +9,7 @@ package dev.mooner.starlight.plugincore.pipeline
 import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
 import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStageImpl
 
+private typealias AnyStage = PipelineStage<*, *>
 private typealias StageCallback = (stage: AnyStage, index: Int) -> Unit
 
 class SimplePipeline<S, E>(

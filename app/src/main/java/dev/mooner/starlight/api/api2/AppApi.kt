@@ -6,10 +6,9 @@ import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.project.Project
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import java.util.concurrent.Callable
 
 @Suppress("unused")
@@ -24,22 +23,16 @@ class AppApi: Api<AppApi.App>() {
 
             /* Incomplete implementation */
             @JvmStatic
-            fun runOnUiThread(task: Callable<Any>, onComplete: (error: Throwable?, result: Any?) -> Unit) = runBlocking {
-                flow<Any> {
-                    try {
-                        emit(task.call())
-                    } catch (e: Throwable) {
-                        emit(e)
+            fun runOnUiThread(task: Callable<Any>, onComplete: (error: Throwable?, result: Any?) -> Unit) =
+                CoroutineScope(Dispatchers.Main).launch {
+                    runCatching {
+                        task.call()
+                    }.onFailure {
+                        onComplete(it, null)
+                    }.onSuccess {
+                        onComplete(null, it)
                     }
-                }.flowOn(Dispatchers.Main)
-                    .collect { result ->
-                        if (result is Throwable) {
-                            onComplete(result, null)
-                        } else {
-                            onComplete(null, result)
-                        }
-                    }
-            }
+                }
         }
     }
 

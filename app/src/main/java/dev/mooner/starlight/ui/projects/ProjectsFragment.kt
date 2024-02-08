@@ -33,6 +33,7 @@ import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
+import dev.mooner.starlight.databinding.DialogNewProjectBinding
 import dev.mooner.starlight.databinding.FragmentProjectsBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.projectManager
@@ -43,6 +44,8 @@ import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
+import dev.mooner.starlight.plugincore.project.event.getInstance
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
 import dev.mooner.starlight.utils.setCommonAttrs
@@ -52,6 +55,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transform
+import java.lang.ref.WeakReference
 import kotlin.math.min
 
 private val LOG = LoggerFactory.logger {  }
@@ -122,10 +126,11 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         lifecycleScope.launchWhenCreated {
             updateEmptyText()
             launch {
+                val weakThis = WeakReference<Fragment>(this@ProjectsFragment)
                 sortDataAsync()
                     .flowWithLifecycle(lifecycle, Lifecycle.State.CREATED)
                     .transform { list ->
-                        emit(list.map { ProjectListItem().withProject(it) })
+                        emit(list.map { ProjectListItem(weakThis).withProject(it) })
                     }
                     .collect(itemAdapter!!::set)
             }
@@ -174,7 +179,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
     private suspend fun ItemAdapter<ProjectListItem>.updateProjectView(project: Project) {
         val index = getAdapterPosition(project.info.id.hashCode().toLong())
-        LOG.debug { "updateProjectView ${project.info.name}, index $index" }
+        LOG.verbose { "updateProjectView ${project.info.name}, index $index" }
         if (index == -1) {
             with(requireContext()) {
                 LOG.warn(R.string.log_project_list_update_failure)
@@ -195,7 +200,11 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             updateEmptyText()
             update()
 
-            project?.let { itemAdapter?.scrollTo(it) }
+            project?.let {
+                binding.recyclerViewProjectList.post {
+                    itemAdapter?.scrollTo(it)
+                }
+            }
         }
     }
 
@@ -225,18 +234,16 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     @SuppressLint("CheckResult")
     private fun showNewProjectDialog() =
         MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            val binding = DialogNewProjectBinding.inflate(layoutInflater, view, false)
             setCommonAttrs()
-            customView(R.layout.dialog_new_project, scrollable = false, horizontalPadding = true)
+            customView(view = binding.root, scrollable = false, horizontalPadding = false)
             cancelOnTouchOutside(true)
             noAutoDismiss()
 
-            val nameEditText: EditText = findViewById(R.id.editTextNewProjectName)
-
-            //val languageSpinner: NiceSpinner
-            // = findViewById(R.id.spinnerLanguage)
+            val nameEditText: EditText = binding.editTextNewProjectName
             nameEditText.text.clear()
 
-            val chipGroup: ChipGroup = this.findViewById(R.id.langSelectionGroup)
+            val chipGroup: ChipGroup = binding.langSelectionGroup
             chipGroup.layoutTransition.enableTransitionType(LayoutTransition.CHANGING)
             val languages = Session.languageManager.getLanguages()
             for ((index, language) in languages.withIndex()) {
@@ -250,6 +257,22 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                     }
                 }.also(chipGroup::addView)
             }
+
+            val recyclerView = binding.rvEventIdSelection
+            val mAdapter = ProjectEventSelectionAdapter(
+                ProjectEventManager.filterAllowedEvents(setOf("*")).map { eventId ->
+                    val instance = ProjectEventManager.findFirst(eventId)!!.getInstance()
+
+                    if (eventId == "starlight.message.create")
+                        ProjectEventSelectionAdapter.EventData.fromEvent(eventId, instance)
+                            .also { it.isSelected = true }
+                    else
+                        ProjectEventSelectionAdapter.EventData.fromEvent(eventId, instance)
+                }.sortedBy(ProjectEventSelectionAdapter.EventData::pluginId)
+            )
+            recyclerView.adapter = mAdapter
+            recyclerView.layoutManager = LinearLayoutManager(context)
+            mAdapter.notifyItemRangeInserted(0, mAdapter.itemCount)
 
             positiveButton(res = R.string.create) {
                 val projectName = nameEditText.text.toString()
@@ -270,7 +293,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
                     return@positiveButton
                 }
                 val selectedLang = Session.languageManager.getLanguages()[id]
-                projectManager.newProject {
+                projectManager.newProject(events = mAdapter.getSelectedEventIds()) {
                     name = projectName
                     mainScript = "$projectName.${selectedLang.fileExtension}"
                     languageId = selectedLang.id
@@ -291,7 +314,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     private fun sortDataAsync(): Flow<List<Project>> =
         flow {
             val comparable = compareByDescending<Project> { it.info.isPinned }
-                .thenByDescending { it.isCompiled }
+                .thenByDescending(Project::isCompiled)
                 .thenComparing(alignState.comparator)
             emit(projects
                 .sortedWith(comparable)
@@ -299,7 +322,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         }
 
     private fun reloadList(list: List<ProjectListItem>) {
-        itemAdapter?.set(list)
+        binding.recyclerViewProjectList.post {
+            itemAdapter?.set(list)
+        }
         /*
         recyclerAdapter?.apply {
             val orgDataSize = data.size
@@ -314,14 +339,12 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     private fun update() {
 
         lifecycleScope.launch {
+            val weakThis = WeakReference<Fragment>(this@ProjectsFragment)
             sortDataAsync()
                 .transform { list ->
-                    emit(list.map { ProjectListItem().withProject(it) })
+                    emit(list.map { ProjectListItem(weakThis).withProject(it) })
                 }
-                .collect { list ->
-                    LOG.verbose { list.size }
-                    reloadList(list)
-                }
+                .collect(::reloadList)
         }
 
         binding.textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
@@ -335,6 +358,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             }
         }
     }
+
     private fun ItemAdapter<ProjectListItem>.scrollTo(project: Project) {
         val index = getAdapterPosition(project.info.id.hashCode().toLong())
         if (index == -1) {

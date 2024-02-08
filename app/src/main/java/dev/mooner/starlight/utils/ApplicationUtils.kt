@@ -53,3 +53,12 @@ fun Context.getPackageInfo(packageName: String): PackageInfo {
         packageManager.getPackageInfo(packageName, 0)
     }
 }
+
+fun Context.getAppVersionCode(): Long {
+    val pInfo: PackageInfo = getPackageInfo()
+    val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+        pInfo.longVersionCode
+    else
+        pInfo.versionCode.toLong()
+    return versionCode
+}

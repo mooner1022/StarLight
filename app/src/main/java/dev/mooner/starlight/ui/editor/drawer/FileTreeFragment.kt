@@ -20,10 +20,14 @@ import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
+import dev.mooner.peekalert.PeekAlert
+import dev.mooner.peekalert.createPeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentFileTreeBinding
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.ui.editor.DefaultEditorActivity
+import dev.mooner.starlight.utils.dp
+import dev.mooner.starlight.utils.getTypeface
 import dev.mooner.starlight.utils.setCommonAttrs
 import dev.mooner.starlight.utils.toFile
 import java.io.File
@@ -85,7 +89,7 @@ class FileTreeFragment : Fragment() {
 
     @SuppressLint("CheckResult")
     private fun showNewFileDialog(onCreate: () -> Unit) {
-        var type = TYPE_FILE
+        var type: Int = -1
 
         MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
             val titleDir = context.getString(R.string.directory)
@@ -102,7 +106,7 @@ class FileTreeFragment : Fragment() {
                     title = titleFile
                 )
             )
-            gridItems(items) { _, _, item ->
+            gridItems(items, waitForPositiveButton = true) { _, _, item ->
                 type = when(item.title) {
                     titleFile   -> TYPE_FILE
                     titleDir    -> TYPE_DIR
@@ -110,6 +114,7 @@ class FileTreeFragment : Fragment() {
                 }
             }
             customView(R.layout.dialog_new_file)
+            noAutoDismiss()
 
             positiveButton(res = R.string.ok) {
                 val nameInput = findViewById<EditText>(R.id.edit_file_name)!!
@@ -141,6 +146,23 @@ class FileTreeFragment : Fragment() {
                     }
                     TYPE_DIR ->
                         file.mkdirs()
+                    -1 -> {
+                        createPeekAlert(this@FileTreeFragment) {
+                            iconTint(R.color.white)
+                            iconRes = R.drawable.ic_round_error_outline_24
+                            position = PeekAlert.Position.Top
+                            width = ViewGroup.LayoutParams.WRAP_CONTENT
+                            cornerRadius = dp(14).toFloat()
+                            autoHideMillis = 2000L
+                            text("생성할 종류를 선택해 주세요. (폴더/파일)") {
+                                textColor(R.color.white)
+                                textSize = 14f
+                                typeface = getTypeface(requireContext(), R.font.nanumsquare_round_bold)
+                            }
+                            backgroundColor(R.color.orange)
+                        }.peek()
+                        return@positiveButton
+                    }
                 }
                 onCreate()
                 it.dismiss()

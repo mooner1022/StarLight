@@ -17,6 +17,7 @@ import android.service.notification.StatusBarNotification
 import android.text.SpannableString
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.core.text.getSpans
 import dev.mooner.starlight.listener.chat.ChatRoomImpl
 import dev.mooner.starlight.plugincore.chat.ChatRoom
 import dev.mooner.starlight.plugincore.chat.ChatSender
@@ -29,6 +30,7 @@ class AndroidRParserSpec: MessageParserSpec {
 
     private val kakaoTalkLimitVersion = Version.fromString("9.7.0")
     private val chatRoomCache: MutableMap<Int, MutableMap<String, ChatRoom>> = hashMapOf()
+    private val createBitmap = Icon::class.declaredFunctions.find { it.name == "getBitmap" }!!
 
     override val id: String = "android_r"
 
@@ -36,9 +38,9 @@ class AndroidRParserSpec: MessageParserSpec {
 
     @RequiresApi(Build.VERSION_CODES.P)
     override fun parse(
-        userId: Int,
+        userId : Int,
         context: Context,
-        sbn: StatusBarNotification,
+        sbn    : StatusBarNotification,
         actions: Array<Notification.Action>
     ): Message? {
         val notification = sbn.notification
@@ -68,20 +70,34 @@ class AndroidRParserSpec: MessageParserSpec {
         }!!
         val senderId = sender.key
 
+        val roomId = sbn.tag
         val room = extras.getString(NotificationCompat.EXTRA_SUB_TEXT)
             ?: extras.getString(NotificationCompat.EXTRA_SUMMARY_TEXT)
             ?: senderName
 
         //val image = extras.getBundle("android.wearable.EXTENSIONS")?.getParcelable("background")
-        val profileBitmap = Icon::class.declaredFunctions.find { it.name == "getBitmap" }!!.call(sender.icon!!) as Bitmap
+        val profileBitmap = createBitmap.call(sender.icon!!) as Bitmap
         val isGroupChat = room != senderName
         val hasMention = extras.getCharSequence(NotificationCompat.EXTRA_TEXT) is SpannableString
+
+        if (hasMention)
+            println((extras.getCharSequence(NotificationCompat.EXTRA_TEXT) as SpannableString).getSpans<Any>().joinToString { it.toString() })
+
         val chatLogId = extras.getLong("chatLogId")
+
+        val background: Bitmap? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            extras.getBundle("android.wearable.EXTENSIONS")
+                ?.getParcelable("background", Bitmap::class.java)
+        } else {
+            extras.getBundle("android.wearable.EXTENSIONS")
+                ?.getParcelable("background") as Bitmap?
+        }
 
         val readAction = sbn.notification.actions[0]
         val sendAction = sbn.notification.actions[1]
         val chatRoom: ChatRoom = chatRoomCache[userId]?.get(room) ?: let {
             ChatRoomImpl(
+                id = roomId,
                 name = room,
                 isGroupChat = isGroupChat,
                 sendSession = sendAction,
@@ -96,6 +112,7 @@ class AndroidRParserSpec: MessageParserSpec {
 
         return Message(
             message = message,
+            image = background,
             sender = ChatSender(
                 name = senderName,
                 id = senderId,

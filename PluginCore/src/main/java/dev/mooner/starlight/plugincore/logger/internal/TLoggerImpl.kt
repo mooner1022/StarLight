@@ -37,6 +37,9 @@ class TLoggerImpl(
     override fun error(msg: LazyEval) =
         log(Logger::e, msg)
 
+    override fun error(flags: Flags, msg: LazyEval) =
+        Logger.i(tag, evaluate(msg), flags)
+
     override fun <T : Throwable> error(throwable: T) {
         error(throwable) { "" }
     }

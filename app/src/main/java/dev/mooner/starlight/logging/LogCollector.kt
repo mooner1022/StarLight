@@ -7,7 +7,6 @@
 package dev.mooner.starlight.logging
 
 import dev.mooner.starlight.CA_DEV_MODE
-import dev.mooner.starlight.CF_WRITE_INTERNAL_LOG
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
@@ -28,25 +27,38 @@ object LogCollector {
     private val logWriteScope: CoroutineScope =
         CoroutineScope(Dispatchers.IO.limitedParallelism(1)) + SupervisorJob()
 
-    private var writeInternalLog: Boolean =
+    private var appendInternalLog: Boolean =
         GlobalConfig
             .category(CA_DEV_MODE)
-            .getBoolean(CF_WRITE_INTERNAL_LOG, false)
+            .getBoolean("append_internal_log", false)
+
+    private var logBufferMaxSize: Int =
+        GlobalConfig
+            .category("general")
+            .getString("log_buffer_max_size", "100")
+            .toInt()
 
     private val logFile: File
 
-    private val mLogs: MutableList<LogData> = mutableListOf()
+    private val mLogs: MutableList<LogData> = createDeque()
     val logs: List<LogData>
         get() = mLogs
+
+    private fun createDeque(): ArrayDeque<LogData> {
+        return logBufferMaxSize.let(::ArrayDeque)
+    }
 
     private fun onLogCreated(event: Events.Log.Create) {
         logWriteScope.launch {
             val data = event.log
 
             try {
-                mLogs += data
+                if (mLogs.size >= logBufferMaxSize)
+                    (mLogs as ArrayDeque).removeFirst()
+                if (appendInternalLog || data.type.priority >= LogType.VERBOSE.priority)
+                    mLogs += data
 
-                if (data.type.priority >= LogType.DEBUG.priority || writeInternalLog) {
+                if (data.type.priority >= LogType.DEBUG.priority) {
                     logFile.appendText("$data\n")
                 }
             } catch (e: Exception) {
@@ -56,9 +68,21 @@ object LogCollector {
     }
 
     private fun onGlobalConfigUpdate(event: Events.Config.GlobalConfigUpdate) {
-        writeInternalLog = GlobalConfig
+        appendInternalLog = GlobalConfig
             .category(CA_DEV_MODE)
-            .getBoolean(CF_WRITE_INTERNAL_LOG, false)
+            .getBoolean("append_internal_log", false)
+
+        val nSize = GlobalConfig
+            .category("general")
+            .getString("log_buffer_max_size", "100")
+            .toIntOrNull()
+            ?: return
+        if (mLogs.size > nSize) {
+            while (mLogs.size > nSize) {
+                (mLogs as ArrayDeque).removeFirst()
+            }
+        }
+        logBufferMaxSize = nSize
     }
 
     init {

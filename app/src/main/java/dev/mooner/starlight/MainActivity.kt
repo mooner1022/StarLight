@@ -17,6 +17,8 @@ import dev.mooner.starlight.databinding.ActivityMainBinding
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginManager
+import dev.mooner.starlight.plugincore.logger.LogData
+import dev.mooner.starlight.plugincore.utils.hasFlag
 import dev.mooner.starlight.ui.ViewPagerAdapter
 import dev.mooner.starlight.utils.LAYOUT_TABLET
 import dev.mooner.starlight.utils.layoutMode
@@ -25,6 +27,7 @@ import kotlin.math.abs
 class MainActivity : AppCompatActivity() {
 
     lateinit var binding: ActivityMainBinding
+    private var currentTabId: Int = R.id.nav_home
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,7 +35,9 @@ class MainActivity : AppCompatActivity() {
         val view = binding.root
         setContentView(view)
 
-        bindLogNotifier()
+        bindLogNotifier { log ->
+            !log.message.startsWith("ECOMF: ") && !(log.flags hasFlag LogData.FLAG_COMPILE_RESULT)
+        }
 
         binding.apply {
             viewPager.adapter = ViewPagerAdapter(this@MainActivity)
@@ -54,6 +59,29 @@ class MainActivity : AppCompatActivity() {
 
             appBarLayout.addOnOffsetChangedListener(::handleOffsetUpdate)
         }
+    }
+
+    override fun onBackPressed() {
+        if (currentTabId == R.id.nav_home)
+            super.onBackPressed()
+        else
+            setCurrentTab(R.id.nav_home)
+    }
+
+    private fun setCurrentTab(id: Int) {
+        val index = when(id) {
+            R.id.nav_home     -> 0
+            R.id.nav_projects -> 1
+            R.id.nav_plugins  -> 2
+            R.id.nav_logs     -> 3
+            R.id.nav_settings -> 4
+            else              -> 0
+        }
+        binding.apply {
+            viewPager.setCurrentItem(index, true)
+            bottomMenu.setItemSelected(id, true)
+        }
+        onPageChanged(id)
     }
 
     private fun getOnPageChangeCallback() =
@@ -127,5 +155,6 @@ class MainActivity : AppCompatActivity() {
 
         binding.titleText.text  = title
         binding.statusText.text = status
+        currentTabId = id
     }
 }

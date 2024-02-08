@@ -32,6 +32,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.*
 import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.hasFlag
 import dev.mooner.starlight.ui.config.list.ListRecyclerAdapter
@@ -41,6 +42,9 @@ import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.math.min
+
+private val logger = LoggerFactory.logger {  }
 
 class CategoryRecyclerAdapter(
     private val context: Context,
@@ -231,9 +235,12 @@ class CategoryRecyclerAdapter(
             ConfigObjectType.SPINNER.viewType -> {
                 holder.spinner.apply {
                     val items = ArrayAdapter(context, android.R.layout.simple_spinner_item, (viewData as SpinnerConfigObject).items)
+                    val selectionIdx = min(getDefault() as Int, items.count - 1)
+                    if (selectionIdx != getDefault())
+                        logger.debug { "Spinner idx out of bound, fixed to item size..." }
                     adapter = items
                     setBackgroundColor(context.getColor(R.color.transparent))
-                    setSelection(getDefault() as Int, true)
+                    setSelection(selectionIdx, true)
                     onItemSelectedListener = object : OnItemSelectedListener {
                         override fun onItemSelected(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
                             viewData.onItemSelectedListener?.invoke(this@apply, position)

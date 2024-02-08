@@ -117,7 +117,6 @@ class LogsFragment : Fragment(), OnClickListener {
         setLastHash()
 
         //binding.root.layoutTransition = LayoutTransition()
-
         return binding.root
     }
 
@@ -328,7 +327,7 @@ class LogsFragment : Fragment(), OnClickListener {
             return
 
         binding.recyclerViewLogs.post {
-            itemAdapter?.push(log)
+            itemAdapter?.push(log, limit = 100)
             if (autoScroll && itemAdapter != null)
                 binding.recyclerViewLogs.scrollToPosition(itemAdapter!!.itemCount - 1)
         }

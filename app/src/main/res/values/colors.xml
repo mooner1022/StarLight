@@ -15,12 +15,20 @@
     <color name="background">#F0F0F0</color>
     <color name="cardview">#FFFFFF</color>
     <color name="background_dialog">#fdfdfd</color>
+    <color name="background_card">#FFFFFF</color>
+    <color name="background_chip">#F6F6F6</color>
+    <color name="background_popup">#E9E9E9</color>
 
     <color name="config_list_item_background">#F0F0F0</color>
 
     <color name="text">#4c4c4c</color>
+    <color name="text_clear">#4c4c4c</color>
+    <color name="text_sub">#A3A3A3</color>
 
     <color name="switch_track">#D1D1D1</color>
+
+    <color name="editor_text">#EBEBEB</color>
+    <color name="editor_text_dark">#2D2D2D</color>
 
     <color name="black">#FF000000</color>
     <color name="toolbar">#A6B1E1</color>

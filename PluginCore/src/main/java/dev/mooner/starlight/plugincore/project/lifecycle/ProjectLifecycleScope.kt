@@ -26,13 +26,10 @@ internal class ProjectLifecycleScopeImpl(
 ): ProjectLifecycleScope(), ProjectLifecycleObserver.StateObserver {
 
     override fun onUpdate(project: Project, state: ProjectLifecycle.State) {
+        println("Project LifeCycle state update: $state")
         if (state == ProjectLifecycle.State.DESTROYED) {
             lifecycle.unregisterObserver(this)
             coroutineContext.cancel()
         }
-    }
-
-    init {
-        lifecycle.registerObserver(this)
     }
 }

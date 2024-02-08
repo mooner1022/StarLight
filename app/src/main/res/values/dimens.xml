@@ -8,6 +8,8 @@
     <dimen name="icon_margin">15dp</dimen>
     <dimen name="icon_width">24dp</dimen>
 
+    <dimen name="editor_drawer_max_width">344dp</dimen>
+
     <dimen name="card_height">54dp</dimen>
     <dimen name="card_radius">20dp</dimen>
     <dimen name="card_elevation">0dp</dimen>

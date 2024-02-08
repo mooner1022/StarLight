@@ -16,6 +16,11 @@
             android:icon="@drawable/ic_round_format_list_bulleted_24"
             android:title="@string/menu_file_tree" />
         <item
+            android:id="@+id/nav_logs"
+            android:enabled="true"
+            android:icon="@drawable/ic_round_layers_24"
+            android:title="@string/title_logs"/>
+        <item
             android:id="@+id/nav_warnings"
             android:enabled="true"
             android:icon="@drawable/ic_round_error_outline_24"
