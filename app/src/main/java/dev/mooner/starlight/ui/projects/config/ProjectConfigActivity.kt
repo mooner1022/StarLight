@@ -132,6 +132,24 @@ class ProjectConfigActivity: AppCompatActivity() {
         return this
     }
 
+    private fun Project.getCustomButtonIDs(): Set<String> {
+        return try {
+            config
+                .category("beta_features")
+                .getString("custom_buttons")
+                ?.let<_, List<Map<String, PrimitiveTypedString>>>(Session.json::decodeFromString)
+                ?.map { it["button_id"]!!.castAs<String>() }
+                ?.toSet()
+                ?: emptySet()
+        } catch (e: Exception) {
+            logger.warn(translate {
+                Locale.ENGLISH { "Failed to parse custom buttons: $e" }
+                Locale.KOREAN  { "커스텀 버튼 목록을 불러오지 못함: $e" }
+            })
+            emptySet()
+        }
+    }
+
     private fun getConfigs(project: Project): ConfigStructure {
         val configs = config {
             category {
@@ -244,14 +262,20 @@ class ProjectConfigActivity: AppCompatActivity() {
                                         title = "id"
                                         description = "버튼 이벤트 호출 시 사용될 ID"
                                         icon = null
-                                        require = { string -> if (string.isBlank()) "버튼 id를 입력하세요" else null }
+                                        require = { string ->
+                                            if (string.isBlank())
+                                                "버튼 id를 입력하세요"
+                                            else if (string in project.getCustomButtonIDs())
+                                                "이미 존재하는 버튼 id"
+                                            else null
+                                        }
                                     }
                                     spinner {
                                         id = "button_icon"
                                         title = "아이콘"
                                         icon = null
                                         defaultIndex = 0
-                                        items = Icon.values().map(Icon::name)
+                                        items = Icon.entries.map(Icon::name)
                                     }
                                 }
                                 onInflate { view ->
@@ -264,7 +288,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                                     binding.description.visibility = View.GONE
 
                                     val icon = if ("button_icon" in data)
-                                        Icon.values()[data["button_icon"] as Int]
+                                        Icon.entries[data["button_icon"] as Int]
                                     else
                                         Icon.NONE
                                     binding.icon.load(icon.drawableRes)

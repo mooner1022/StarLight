@@ -61,7 +61,7 @@ class ProjectListItem(
         set(_) {}
     var project: Project? = null
 
-    private val buttonIds: MutableSet<String> = hashSetOf()
+    private val buttonIds: MutableSet<Int> = hashSetOf()
     private var binding: CardProjectsBinding? = null
     private var innerBinding: CardProjectButtonsBinding? = null
     private var isExpanded: Boolean = false
@@ -101,14 +101,26 @@ class ProjectListItem(
                 }
             }
             binding.updateState(project)
-
+            /**
+             * Two different ViewHolders have the same stable ID. Stable IDs in your adapter MUST BE unique and SHOULD NOT change.
+             * ViewHolder 1:BindingViewHolder{58cf25c position=4 id=1087354647, oldPos=-1, pLpos:-1}
+             * View Holder 2:BindingViewHolder{d03acd0 position=3 id=1087354647, oldPos=-1, pLpos:-1}
+             * androidx.recyclerview.widget.RecyclerView{45b401e VFED..... ......ID 0,0-1006,1793 #7f0a0252 app:id/recyclerViewProjectList},
+             * adapter:com.mikepenz.fastadapter.FastAdapter@2dac75d, layout:androidx.recyclerview.widget.LinearLayoutManager@e5548ac,
+             * context:dev.mooner.starlight.MainActivity@6f1d031
+             */
             binding.cardProject.setOnInnerViewInflateListener {
                 val innerView = binding.root.findViewById<FlexboxLayout>(R.id.innerView)
                 innerBinding = getInnerViewBinding(innerView)
 
                 for ((id, icon) in project.getCustomButtons()) {
-                    val button = project.createCustomButton(context, id, icon)
-                    buttonIds += id
+                    var buttonId = id.hashCode()
+                    do {
+                        buttonId++
+                    } while (innerBinding?.flexLayout?.findViewById<View>(buttonId) != null)
+
+                    val button = project.createCustomButton(context, id, buttonId, icon)
+                    buttonIds += buttonId
 
                     innerBinding!!.flexLayout.addView(button)
                 }
@@ -133,7 +145,7 @@ class ProjectListItem(
         if (buttonIds.isNotEmpty()) {
             innerBinding?.flexLayout?.apply {
                 for (id in buttonIds)
-                    removeView(findViewById(id.hashCode()))
+                    removeView(findViewById(id))
             }
             buttonIds.clear()
         }
@@ -303,9 +315,9 @@ class ProjectListItem(
         mStartProjectInfoActivity(project)
     }
 
-    private fun Project.createCustomButton(context: Context, id: String, icon: Icon): ImageButton {
+    private fun Project.createCustomButton(context: Context, id: String, viewId: Int, icon: Icon): ImageButton {
         return ImageButton(context).apply {
-            setId(id.hashCode())
+            setId(viewId)
             if (layoutParams == null)
                 layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             updateLayoutParams {
