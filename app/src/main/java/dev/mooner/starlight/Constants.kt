@@ -15,6 +15,8 @@ const val WIDGET_DEF_STRING = """
 const val ID_VIEW_ITEM_PROJECT = 0
 const val ID_VIEW_ITEM_LOG     = 1
 
+const val PREF_IS_INITIAL = "isFirstOpen"
+
 // Config
 const val CA_WIDGETS   = "widgets"
 const val CA_PLUGIN    = "plugin"

@@ -15,6 +15,7 @@ import coil.decode.ImageDecoderDecoder
 import coil.load
 import coil.request.repeatCount
 import dev.mooner.starlight.MainActivity
+import dev.mooner.starlight.PREF_IS_INITIAL
 import dev.mooner.starlight.R
 import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.core.GlobalApplication
@@ -50,10 +51,11 @@ class SplashActivity : AppCompatActivity() {
         bindLogNotifier()
 
         val pref = getSharedPreferences("general", 0)
-        val isInitial = pref.getBoolean("isFirstOpen", true)
-        if (isInitial) pref.edit {
-            putBoolean("isFirstOpen", false)
-        }
+        val isInitial = pref.getBoolean(PREF_IS_INITIAL, true)
+        if (isInitial)
+            pref.edit {
+                putBoolean(PREF_IS_INITIAL, false)
+            }
 
         val isPermissionsGrant = checkPermissions(SetPermissionFragment.REQUIRED_PERMISSIONS)
 

@@ -25,6 +25,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import dev.mooner.starlight.PREF_IS_INITIAL
 import dev.mooner.starlight.R
 import dev.mooner.starlight.event.ApplicationEvent
 import dev.mooner.starlight.logging.LogCollector
@@ -65,7 +66,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
 
         val pref = getSharedPreferences("general", 0)
         //pref.edit().clear().commit()
-        val isInitial = pref.getBoolean("isInitial", true)
+        val isInitial = pref.getBoolean(PREF_IS_INITIAL, true)
 
         val isPermissionsGrant = checkPermissions(SetPermissionFragment.REQUIRED_PERMISSIONS)
 
