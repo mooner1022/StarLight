@@ -48,7 +48,7 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
     abstract val logger: ProjectLogger
 
     /**
-     * Calls an event with [name] and passes [args] as parameter.
+     * Calls a function with [name] and passes [args] as parameter.
      *
      * @param name the name of function or event being called.
      * @param args parameter values being passed to function.

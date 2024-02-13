@@ -94,31 +94,16 @@ class ProjectImpl private constructor(
         if (langScope == null) {
             onException(IllegalStateException("Project should be in compiled state before calling function."))
             return
-            /*
-            if (!isCompiled) return
-            logger.w("EventHandler", """
-                Property engine must not be null
-                이 에러는 StarLight 의 버그일 수 있습니다.
-                [버그 제보시 아래 메세지를 첨부해주세요.]
-                ──────────
-                thread    : ${currentThread.name}
-                eventName : $name
-                args      : $args
-                ┉┉┉┉┉┉┉┉┉┉
-                language  : ${info.languageId}
-                listeners : ${info.allowedEventIds}
-                packages  : ${info.packages}
-                ──────────
-            """.trimIndent())
-             */
         }
 
-        //setClassLoader()
         if (threadPoolName == null || mContext == null)
             mContext = createContext()
 
         fun onError(e: Throwable) {
-            logger.e(tag, "Error while running: $e")
+            logger.e(tag, translate {
+                Locale.ENGLISH { "Error while running: $e" }
+                Locale.KOREAN  { "실행 중 에러 발생: $e" }
+            })
             val shutdownOnError = config
                 .category("general")
                 .getBoolean("shutdown_on_error", true)
@@ -137,7 +122,11 @@ class ProjectImpl private constructor(
         CoroutineScope(mContext!!).launch {
             try {
                 JobLocker.withLock(threadPoolName!!) {
-                    lang.callFunction(langScope!!, name, args, ::onError)
+                    try {
+                        lang.callFunction(langScope!!, name, args)
+                    } catch (e: Error) {
+                        onError(e)
+                    }
                 }
                 if (isCompiled && lang.requireRelease)
                     lang.release(langScope!!)
@@ -182,7 +171,9 @@ class ProjectImpl private constructor(
                  */
                 if (isCompiled) {
                     if ("starlight.project.compile" in allowedEventIDs)
-                        lang.callFunction(langScope!!, "onStartCompile", emptyArray())
+                        runCatching {
+                            lang.callFunction(langScope!!, "onStartCompile", emptyArray())
+                        }
                     if (lang.requireRelease) {
                         lang.release(langScope!!)
                         logger.v(tag, "engine released")
