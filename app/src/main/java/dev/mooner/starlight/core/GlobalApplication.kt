@@ -101,11 +101,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         if (!ForegroundTask.isRunning) {
             LOG.verbose { "Starting foreground task..." }
             val intent = Intent(this, ForegroundTask::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
+            startForegroundService(intent)
             LOG.info(R.string.log_foreground_started)
             //Logger.i(T, "Successfully started foreground task!")
         }
