@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.plugincore.config.data
 
+import dev.mooner.configdsl.DataMap
 import dev.mooner.starlight.plugincore.config.data.category.ConfigCategory
 import dev.mooner.starlight.plugincore.config.data.category.internal.ConfigCategoryImpl
 

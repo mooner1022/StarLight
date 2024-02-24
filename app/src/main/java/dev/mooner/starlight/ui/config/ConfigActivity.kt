@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import dev.mooner.configdsl.adapters.ParentConfigAdapter
 import dev.mooner.starlight.databinding.ActivityConfigBinding
 import dev.mooner.starlight.event.ApplicationEvent
 import dev.mooner.starlight.logging.bindLogNotifier
@@ -13,6 +14,8 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.utils.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 private val LOG = LoggerFactory.logger {  }
@@ -24,7 +27,7 @@ class ConfigActivity : AppCompatActivity() {
 
     lateinit var binding: ActivityConfigBinding
 
-    private var recyclerAdapter: ParentRecyclerAdapter? = null
+    private var recyclerAdapter: ParentConfigAdapter<*>? = null
     //private var bypassDestroy: Boolean = false
     lateinit var activityId: String
 
@@ -69,21 +72,23 @@ class ConfigActivity : AppCompatActivity() {
             return
         }
 
-        recyclerAdapter = ParentRecyclerAdapter(
-            context = binding.root.context,
-            configStructure = holder.struct,
-            savedData = holder.saved
-        ) { parentId, id, view, data ->
-            eventHandleScope.launch {
-                EventHandler.fireEvent(
-                    ApplicationEvent.ConfigActivity.Update(
-                        uuid = activityId,
-                        data = ApplicationEvent.ConfigActivity.Update.UpdatedData(
-                            parentId, id, view, data)
+        recyclerAdapter = ParentConfigAdapterImpl(
+            configStructure  = holder.struct,
+            configData       = holder.saved,
+            coroutineContext = lifecycleScope.coroutineContext
+        ).also(ParentConfigAdapterImpl::notifyAllItemInserted).apply {
+            eventFlow
+                .onEach { data ->
+                    val (parentId, id) = data.provider.split(":")
+                    EventHandler.fireEvent(
+                        ApplicationEvent.ConfigActivity.Update(
+                            uuid = activityId,
+                            data = ApplicationEvent.ConfigActivity.Update.UpdatedData(parentId, id, data.data, data.jsonData)
+                        )
                     )
-                )
-            }
-        }.also(ParentRecyclerAdapter::notifyAllItemInserted)
+                }
+                .launchIn(eventHandleScope)
+        }
 
         val mLayoutManager = LinearLayoutManager(applicationContext)
         binding.recyclerView.apply {

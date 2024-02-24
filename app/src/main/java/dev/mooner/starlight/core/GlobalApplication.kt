@@ -45,7 +45,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.serialization.decodeFromString
 import java.io.File
 
 private typealias StartupInfo = Map<String, String>
@@ -148,7 +147,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
             try {
                 startupData = Session.json.decodeFromString(startupFile.readText())
             } catch (e: Exception) {
-                println("Failed to open startup info: $e")
+                LOG.error { "Failed to open startup info: $e" }
                 startupFile.delete()
             }
         }

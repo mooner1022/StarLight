@@ -9,6 +9,7 @@ package dev.mooner.starlight.core
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Build
+import dev.mooner.configdsl.ConfigDSL
 import dev.mooner.starlight.CA_PLUGIN
 import dev.mooner.starlight.CF_SAFE_MODE
 import dev.mooner.starlight.R
@@ -33,6 +34,7 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.NetworkUtil
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.version.Version
+import dev.mooner.starlight.ui.config.ParentConfigAdapterImpl
 import dev.mooner.starlight.ui.widget.*
 import dev.mooner.starlight.utils.getKakaoTalkVersion
 import kotlinx.coroutines.Dispatchers
@@ -107,6 +109,8 @@ object ApplicationSession {
 
             emit(context.getString(R.string.step_default_lib))
             //CorePlugin()
+
+            ConfigDSL.registerAdapterImpl(::ParentConfigAdapterImpl)
 
             ParserSpecManager.apply {
                 registerSpec(DefaultParserSpec())

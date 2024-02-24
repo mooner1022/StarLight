@@ -6,19 +6,18 @@
 
 package dev.mooner.starlight.plugincore.config
 
-import android.view.View
+import dev.mooner.configdsl.DataMap
+import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.starlight.plugincore.Session.json
-import dev.mooner.starlight.plugincore.config.data.DataMap
 import dev.mooner.starlight.plugincore.config.data.MutableConfig
-import dev.mooner.starlight.plugincore.config.data.MutableDataMap
 import dev.mooner.starlight.plugincore.config.data.category.MutableConfigCategory
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
+import dev.mooner.starlight.plugincore.utils.decodeLegacyData
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
@@ -32,7 +31,11 @@ object GlobalConfig: MutableConfig {
     private val file = File(getStarLightDirectory(), FILE_NAME)
     private var isSaved: Boolean = false
 
-    override fun getData(): DataMap = mData
+    override fun getData(): DataMap =
+        mData
+
+    override fun getMutableData(): MutableDataMap =
+        mData
 
     override operator fun get(id: String): MutableConfigCategory =
         category(id)
@@ -47,9 +50,6 @@ object GlobalConfig: MutableConfig {
 
     override fun categoryOrNull(id: String): MutableConfigCategory? =
         getCategoryOrNull(id)
-
-    fun getDataMap(): DataMap =
-        mData
 
     override fun edit(block: MutableConfig.() -> Unit) {
         this.apply(block)
@@ -71,12 +71,6 @@ object GlobalConfig: MutableConfig {
             }
         }
         EventHandler.fireEventWithScope(Events.Config.GlobalConfigUpdate())
-    }
-
-    fun onSaveConfigAdapter(parentId: String, id: String, view: View?, data: Any) {
-        edit {
-            category(parentId).setAny(id, data)
-        }
     }
 
     fun invalidateCache() {
@@ -105,8 +99,13 @@ object GlobalConfig: MutableConfig {
             val raw = file.readText()
             if (raw.isBlank())
                 hashMapOf()
-            else
-                json.decodeFromString(raw)
+            else {
+                try {
+                    json.decodeLegacyData(raw)
+                } catch (e: Exception) {
+                    json.decodeFromString(raw)
+                }
+            }
         }
     }
 }

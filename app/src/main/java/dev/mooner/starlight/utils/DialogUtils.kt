@@ -15,6 +15,11 @@ import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.callbacks.onShow
 import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
+import dev.mooner.configdsl.ConfigBuilder
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.MutableDataMap
+import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.adapters.OnValueUpdatedListener
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.peekalert.PeekAlertBuilder
 import dev.mooner.peekalert.createPeekAlert
@@ -22,16 +27,11 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.DialogConfigLayoutBinding
 import dev.mooner.starlight.databinding.DialogLogsBinding
 import dev.mooner.starlight.logging.LogCollector
-import dev.mooner.starlight.plugincore.config.ConfigBuilder
-import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.config.data.DataMap
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogType
-import dev.mooner.starlight.ui.config.ConfigAdapter
-import dev.mooner.starlight.ui.config.OnConfigChangedListener
 import dev.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.CoroutineScope
@@ -163,8 +163,8 @@ fun MaterialDialog.configStruct(context: Context, block: DialogConfigStructBuild
 class DialogConfigStructBuilder {
 
     private var structure: ConfigStructure by notNull()
-    private var dataMap  : DataMap = emptyMap()
-    private var listener : OnConfigChangedListener = { _, _, _, _ -> }
+    private var dataMap  : MutableDataMap = hashMapOf()
+    private var listener : OnValueUpdatedListener = { _, _, _, _ -> }
 
     fun struct(structure: ConfigStructure) {
         this.structure = structure
@@ -176,19 +176,19 @@ class DialogConfigStructBuilder {
             .build(flush = true)
     }
 
-    fun data(block: () -> DataMap) {
+    fun data(block: () -> MutableDataMap) {
         dataMap = block()
     }
 
-    fun onUpdate(listener: OnConfigChangedListener) {
+    fun onUpdate(listener: OnValueUpdatedListener) {
         this.listener = listener
     }
 
     internal fun build(builder: ConfigAdapter.Builder) {
         builder.apply {
             structure { structure }
-            savedData(dataMap)
-            onConfigChanged(listener)
+            configData(dataMap)
+            onValueUpdated(listener)
         }
     }
 }

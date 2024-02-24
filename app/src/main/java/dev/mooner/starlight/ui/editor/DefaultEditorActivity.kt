@@ -6,6 +6,7 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.util.Base64
@@ -25,6 +26,12 @@ import androidx.drawerlayout.widget.DrawerLayout.DrawerListener
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.spinner
+import dev.mooner.configdsl.options.string
+import dev.mooner.configdsl.options.toggle
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.peekalert.PeekAlertBuilder
 import dev.mooner.peekalert.createPeekAlert
@@ -33,15 +40,12 @@ import dev.mooner.starlight.databinding.ActivityDefaultEditorBinding
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.editor.CodeEditorActivity
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
-import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.color
-import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.debugroom.DebugRoomActivity
 import dev.mooner.starlight.ui.debugroom.DebugRoomFragment
 import dev.mooner.starlight.ui.editor.drawer.EditorMessageFragment
@@ -53,7 +57,6 @@ import dev.mooner.starlight.utils.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -191,14 +194,14 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.bottomSheet.configRecyclerView)
             structure(::getStructure)
-            savedData(GlobalConfig.getDataMap())
-            onConfigChanged { parentId, id, _, data ->
+            configData(GlobalConfig.getMutableData())
+            onValueUpdated { parentId, id, data, jsonData ->
                 GlobalConfig.edit {
-                    category(parentId).setAny(id, data)
+                    category(parentId).setRaw(id, jsonData)
                 }
                 if (parentId == "e_code" && id == "font_size") {
                     val fontSize = (data as String).toIntOrNull()
-                        ?: return@onConfigChanged
+                        ?: return@onValueUpdated
                     setFontSize(fontSize)
                 }
             }
@@ -315,7 +318,10 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         val superRes = super.onPrepareOptionsMenu(menu)
         val iconColor = ColorStateList.valueOf(getTextColor(theme.isTextDark))
         for (idx in 0 until menu.size()) {
-            menu[idx].iconTintList = iconColor
+            if (Build.VERSION.SDK_INT < 26)
+                menu[idx].icon?.setTintList(iconColor)
+            else
+                menu[idx].iconTintList = iconColor
         }
         return superRes
     }
@@ -605,7 +611,10 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             setTitleTextColor(textColor)
             navigationIcon!!.colorFilter = PorterDuffColorFilter(textColor, PorterDuff.Mode.MULTIPLY)
             for (idx in 0 until menu.size()) {
-                menu[idx].iconTintList = textColorStateList
+                if (Build.VERSION.SDK_INT < 26)
+                    menu[idx].icon?.setTintList(textColorStateList)
+                else
+                    menu[idx].iconTintList = textColorStateList
             }
         }
         //binding.toolbarEditor.foregroundTintList = ColorStateList.valueOf(textColor)
@@ -953,6 +962,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         return super.onOptionsItemSelected(item)
     }
 
+    @Deprecated("")
     override fun onBackPressed() {
         if (binding.root.isDrawerOpen(GravityCompat.END))
             binding.fragmentContainerDebugRoom!!

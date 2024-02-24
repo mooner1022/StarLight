@@ -6,7 +6,7 @@
 
 package dev.mooner.starlight.plugincore.project
 
-import dev.mooner.starlight.plugincore.utils.Icon
+import dev.mooner.configdsl.Icon
 import kotlinx.serialization.Serializable
 
 @Serializable

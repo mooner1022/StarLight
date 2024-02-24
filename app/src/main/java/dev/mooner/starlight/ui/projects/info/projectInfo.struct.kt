@@ -7,11 +7,12 @@
 package dev.mooner.starlight.ui.projects.info
 
 import android.content.Context
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.button
 import dev.mooner.starlight.R
-import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.ProjectImpl
-import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.TimeUtils
 
 context(Context)

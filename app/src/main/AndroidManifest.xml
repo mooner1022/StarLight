@@ -90,6 +90,7 @@
 
         <service
             android:name=".core.ForegroundTask"
+            android:exported="false"
             android:stopWithTask="false"/>
         <service
             android:name=".utils.NotificationEventService"

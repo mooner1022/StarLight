@@ -20,30 +20,42 @@ import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.MutableDataMap
+import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.*
+import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityProjectConfigBinding
 import dev.mooner.starlight.databinding.ConfigButtonFlatBinding
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.config.*
 import dev.mooner.starlight.plugincore.config.data.*
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
-import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.utils.*
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.*
 import java.io.File
+import kotlin.properties.Delegates.notNull
 
 class ProjectConfigActivity: AppCompatActivity() {
-    private val changedData: MutableMap<String, MutableMap<String, Any>> = hashMapOf()
+
+    private val changedData: MutableDataMap = hashMapOf()
     private lateinit var binding: ActivityProjectConfigBinding
     private lateinit var project: Project
     private var configAdapter: ConfigAdapter? = null
+
+    private var projectButtonIDs: Set<String> by notNull()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,23 +70,30 @@ class ProjectConfigActivity: AppCompatActivity() {
         project = projectManager.getProject(projectName)
             ?: throw IllegalStateException("Unable to find project $projectName")
 
+        projectButtonIDs = project
+            .getCustomButtons()
+            .map { it.first }
+            .toSet()
+
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.configRecyclerView)
-            onConfigChanged { parentId, id, view, data ->
+            onValueUpdated { parentId, id, data, jsonData ->
                 changedData
-                    .putIfAbsent(parentId, hashMapOf(id to data))
-                    ?.put(id, data)
+                    .putIfAbsent(parentId, hashMapOf(id to jsonData))
+                    ?.put(id, jsonData)
 
-                if (!fabProjectConfig.isShown)
-                    fabProjectConfig.show()
+                withContext(Dispatchers.Main) {
+                    if (!fabProjectConfig.isShown)
+                        fabProjectConfig.show()
+                }
                 if (parentId == project.getLanguage().id)
-                    project.getLanguage().onConfigChanged(id, view, data)
+                    project.getLanguage().onConfigChanged(id, data)
             }
             structure {
                 getConfigs(project)
             }
             @Suppress("UNCHECKED_CAST")
-            savedData((project.config.getData() as MutableDataMap).injectEventIds(project.info.allowedEventIds))
+            configData((project.config.getData() as MutableDataMap).injectEventIds(project.info.allowedEventIds))
             lifecycleOwner(this@ProjectConfigActivity)
         }.build()
 
@@ -89,16 +108,16 @@ class ProjectConfigActivity: AppCompatActivity() {
                 for ((catId, data) in changedData) {
                     if (catId == "events" && "allowed_events" in data) {
                         project.info.allowedEventIds.clear()
-                        (data["allowed_events"] as String)
-                            .let<_, List<Map<String, PrimitiveTypedString>>>(Session.json::decodeFromString)
-                            .mapNotNull { map -> map["event_id"]?.castAs<String>() }
+                        data["allowed_events"]!!
+                            .let<_, List<ProjectEventIdData>>(json::decodeFromJsonElement)
+                            .mapNotNull(ProjectEventIdData::id)
                             .forEach(project.info.allowedEventIds::add)
                         project.saveInfo()
 
                         data -= "allowed_events"
                     }
                     category(catId).apply {
-                        data.forEach(::setAny)
+                        data.forEach(::setRaw)
                     }
                 }
             }
@@ -107,7 +126,14 @@ class ProjectConfigActivity: AppCompatActivity() {
             val filtered = changedData.filter { it.key in langConfIds }
             if (filtered.isNotEmpty())
                 project.getLanguage().onConfigUpdated(filtered)
-            Snackbar.make(view, "설정 저장 완료", Snackbar.LENGTH_SHORT).show()
+            createSimplePeek(
+                text = "설정 저장 완료!"
+            ) {
+                position = PeekAlert.Position.Bottom
+                iconRes = R.drawable.ic_round_check_24
+                iconTint(res = R.color.noctis_green)
+                backgroundColor(res = R.color.background_popup)
+            }.peek()
             fabProjectConfig.hide()
         }
 
@@ -121,32 +147,37 @@ class ProjectConfigActivity: AppCompatActivity() {
     }
 
     private fun MutableDataMap.injectEventIds(ids: Set<String>): MutableDataMap {
-        ids.map { id -> mapOf("event_id" to (id typedAs "String")) }
-            .let(Json::encodeToString)
-            .let { str ->
-                if ("events" in this)
-                    this["events"]!!["allowed_events"] = str typedAs "String"
-                else
-                    this["events"] = mutableMapOf("allowed_events" to (str typedAs "String"))
-            }
+        val data = JsonArray(ids.map { JsonObject(mapOf("event_id" to JsonPrimitive(it))) })
+        if ("events" in this)
+            this["events"]!!["allowed_events"] = data
+        else
+            this["events"] = mutableMapOf("allowed_events" to data)
         return this
     }
 
-    private fun Project.getCustomButtonIDs(): Set<String> {
+    private fun Project.getCustomButtons(): List<Pair<String, Icon>> {
         return try {
-            config
-                .category("beta_features")
-                .getString("custom_buttons")
-                ?.let<_, List<Map<String, PrimitiveTypedString>>>(Session.json::decodeFromString)
-                ?.map { it["button_id"]!!.castAs<String>() }
-                ?.toSet()
-                ?: emptySet()
+            runCatching {
+                config
+                    .category("beta_features")
+                    .getString("custom_buttons")
+                    ?.let<_, List<Map<String, PrimitiveTypedString>>>(Session.json::decodeFromString)
+                    ?.map { it["button_id"]!!.castAs<String>() to Icon.entries.toTypedArray()[it["button_icon"]!!.castAs()] }
+                    ?: listOf()
+            }.getOrElse {
+                config
+                    .category("beta_features")
+                    .getList("custom_buttons")
+                    ?.map<_, ProjectButtonData>(Session.json::decodeFromJsonElement)
+                    ?.map { it.id to (it.icon?.let(Icon.entries::get) ?: Icon.LAYERS) }
+                    ?: listOf()
+            }
         } catch (e: Exception) {
             logger.warn(translate {
                 Locale.ENGLISH { "Failed to parse custom buttons: $e" }
                 Locale.KOREAN  { "커스텀 버튼 목록을 불러오지 못함: $e" }
             })
-            emptySet()
+            listOf()
         }
     }
 
@@ -170,7 +201,6 @@ class ProjectConfigActivity: AppCompatActivity() {
                     button {
                         id = "open_folder"
                         title = "폴더 열기"
-                        type = ButtonConfigObject.Type.FLAT
                         setOnClickListener { _ ->
                             openFolderInExplorer(this@ProjectConfigActivity, project.directory)
                         }
@@ -211,10 +241,10 @@ class ProjectConfigActivity: AppCompatActivity() {
                                 .from(view.context)
                                 .inflate(R.layout.config_button_card, view as FrameLayout, true)
                         }
-                        onDraw { view, data ->
+                        onDraw<ProjectEventIdData> { view, data ->
                             val binding = ConfigButtonFlatBinding.bind(view.findViewById(R.id.layout_configButton))
 
-                            binding.title.text = data["event_id"] as String
+                            binding.title.text = data.id
                             binding.description.visibility = View.GONE
                             binding.icon.visibility = View.GONE
                         }
@@ -265,7 +295,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                                         require = { string ->
                                             if (string.isBlank())
                                                 "버튼 id를 입력하세요"
-                                            else if (string in project.getCustomButtonIDs())
+                                            else if (string in projectButtonIDs)
                                                 "이미 존재하는 버튼 id"
                                             else null
                                         }
@@ -281,16 +311,16 @@ class ProjectConfigActivity: AppCompatActivity() {
                                 onInflate { view ->
                                     LayoutInflater.from(view.context).inflate(R.layout.config_button_card, view as FrameLayout, true)
                                 }
-                                onDraw { view, data ->
+                                onDraw<ProjectButtonData> { view, data ->
                                     val binding = ConfigButtonFlatBinding.bind(view.findViewById(R.id.layout_configButton))
 
-                                    binding.title.text = data["button_id"] as String
+                                    binding.title.text = data.id
                                     binding.description.visibility = View.GONE
 
-                                    val icon = if ("button_icon" in data)
-                                        Icon.entries[data["button_icon"] as Int]
+                                    val icon = if (data.icon != null)
+                                        Icon.entries[data.icon]
                                     else
-                                        Icon.NONE
+                                        Icon.LAYERS
                                     binding.icon.load(icon.drawableRes)
                                 }
                             }
@@ -453,9 +483,9 @@ class ProjectConfigActivity: AppCompatActivity() {
                     }
                 }
                 data {
-                    mapOf(
-                        "def" to mapOf(
-                            "name" to (project.info.name typedAs "String")
+                    mutableMapOf(
+                        "def" to mutableMapOf(
+                            "name" to JsonPrimitive(project.info.name)
                         )
                     )
                 }
@@ -488,3 +518,17 @@ class ProjectConfigActivity: AppCompatActivity() {
         startActivity(Intent.createChooser(intent, "폴더 열기"))
     }
 }
+
+@Serializable
+private data class ProjectEventIdData(
+    @SerialName("event_id")
+    val id: String
+)
+
+@Serializable
+internal data class ProjectButtonData(
+    @SerialName("button_id")
+    val id: String,
+    @SerialName("button_icon")
+    val icon: Int? = null,
+)

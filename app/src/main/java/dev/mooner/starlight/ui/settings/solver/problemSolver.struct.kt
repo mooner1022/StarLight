@@ -8,17 +8,17 @@ package dev.mooner.starlight.ui.settings.solver
 
 import android.os.Build
 import androidx.fragment.app.Fragment
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.button
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.ui.settings.notifications.RuleData
 import dev.mooner.starlight.ui.settings.notifications.Rules
-import kotlinx.serialization.decodeFromString
 
 context(Fragment)
 internal fun getProblemSolverStruct() = config {

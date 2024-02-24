@@ -14,11 +14,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.button
 import dev.mooner.starlight.databinding.FragmentLocationTermsBinding
-import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.splash.quickstart.QuickStartActivity
 
 class LocationTermsFragment : Fragment() {
@@ -27,7 +28,10 @@ class LocationTermsFragment : Fragment() {
     private val binding get() = _binding!!
     private var adapter: ConfigAdapter? = null
 
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { adapter?.reload() }
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            adapter?.redraw()
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,

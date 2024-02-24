@@ -1,0 +1,11 @@
+<resources>
+    <string name="add">Add</string>
+    <string name="open">Open</string>
+    <string name="close">Close</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="finish">Finish</string>
+    <string name="create">Create</string>
+    <string name="edit">Edit</string>
+</resources>

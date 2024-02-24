@@ -102,8 +102,8 @@ class QuickStartActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     sealed class Buttons {
-        object Previous: Buttons()
-        object Next: Buttons()
-        object Finish: Buttons()
+        data object Previous: Buttons()
+        data object Next: Buttons()
+        data object Finish: Buttons()
     }
 }

@@ -143,7 +143,7 @@ abstract class Language {
      * @param view view which the config object is being drawn
      * @param data updated value
      */
-    open fun onConfigChanged(id: String, view: View?, data: Any) {}
+    open fun onConfigChanged(id: String, data: Any) {}
 
     /**
      * Compiles code with given code and apis
@@ -224,12 +224,16 @@ abstract class Language {
     private fun loadLanguageConfig(): ConfigCategory {
         val data = if (configFile == null || !configFile!!.isFile || !configFile!!.exists()) emptyMap() else {
             val raw = configFile!!.readText()
-            val typed: Map<String, Map<String, PrimitiveTypedString>> =
+            val data =
                 if (raw.isNotBlank())
-                    json.decodeFromString(raw)
+                    runCatching {
+                        json.decodeLegacyData(raw)
+                    }.getOrElse {
+                        json.decodeFromString<MutableDataMap>(raw)
+                    }
                 else
                     emptyMap()
-            typed[id]?: emptyMap()
+            data[id] ?: emptyMap()
         }
         return ConfigCategoryImpl(data)
     }

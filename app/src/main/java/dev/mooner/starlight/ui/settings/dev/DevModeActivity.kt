@@ -11,14 +11,17 @@ import android.content.pm.PackageInfo
 import android.content.res.Configuration
 import android.os.Build
 import androidx.core.content.edit
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.button
+import dev.mooner.configdsl.options.toggle
 import dev.mooner.starlight.R
 import dev.mooner.starlight.WIDGET_DEF_STRING
 import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.utils.onSaveConfigAdapter
 import dev.mooner.starlight.utils.*
 import java.util.*
 
@@ -28,7 +31,7 @@ fun Context.startDevModeActivity() {
         uuid = activityId,
         title = "설정",
         subTitle = "개발자 모드",
-        saved = GlobalConfig.getDataMap(),
+        saved = GlobalConfig.getMutableData(),
         struct = config {
             category {
                 id = "dev_mode_config"
@@ -167,6 +170,6 @@ fun Context.startDevModeActivity() {
                 }
             }
         },
-        onConfigChanged = GlobalConfig::onSaveConfigAdapter
+        onValueUpdated = GlobalConfig::onSaveConfigAdapter
     )
 }

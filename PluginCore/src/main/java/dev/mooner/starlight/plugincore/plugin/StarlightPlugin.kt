@@ -6,13 +6,13 @@
 
 package dev.mooner.starlight.plugincore.plugin
 
-import android.view.View
+import androidx.annotation.CallSuper
+import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
-import dev.mooner.starlight.plugincore.config.*
 import dev.mooner.starlight.plugincore.config.data.ConfigData
-import dev.mooner.starlight.plugincore.config.data.DataMap
-import dev.mooner.starlight.plugincore.config.data.InMemoryConfig
+import dev.mooner.starlight.plugincore.config.data.FileConfig
+import dev.mooner.starlight.plugincore.config.data.MutableConfig
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
@@ -24,9 +24,7 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.getFileSize
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.infoTranslated
-import dev.mooner.starlight.plugincore.utils.isValidFile
 import dev.mooner.starlight.plugincore.widget.Widget
-import kotlinx.serialization.decodeFromString
 import java.io.File
 
 private val logger = LoggerFactory.logger {  }
@@ -44,6 +42,8 @@ abstract class StarlightPlugin: Plugin, EventListener {
     private lateinit var mInfo: PluginInfo
     override val info: PluginInfo
         get() = mInfo
+
+    private var configCache: MutableConfig? = null
 
     val context: PluginContext by lazy {
         PluginContextImpl(info.id, info.name, getInternalDataDirectory().path)
@@ -76,15 +76,11 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     override fun getConfigStructure(): ConfigStructure { return emptyList() }
 
-    @Deprecated(
-        message = "Retained for legacy compatability, don't use it.",
-        replaceWith = ReplaceWith("onConfigUpdated(config: Config)", "dev.mooner.starlight.plugincore.plugin.onConfigUpdated")
-    )
-    override fun onConfigUpdated(updated: Map<String, Any>) {}
+    @CallSuper
+    override fun onConfigUpdated(config: ConfigData, updated: Map<String, Set<String>>) =
+        invalidateConfigCache()
 
-    override fun onConfigUpdated(config: ConfigData, updated: Map<String, Set<String>>) {}
-
-    override fun onConfigChanged(id: String, view: View?, data: Any) {}
+    override fun onConfigValueUpdated(id: String, data: Any) {}
 
     override fun isEnabled(): Boolean = isEnabled
 
@@ -102,6 +98,13 @@ abstract class StarlightPlugin: Plugin, EventListener {
     fun getListeners(): Set<EventListener> =
         listeners + this
 
+    /**
+     * Invalidate cached config data inside plugin instance
+     */
+    fun invalidateConfigCache() {
+        configCache = null
+    }
+
     protected fun setEnabled(enabled: Boolean) {
         if (isEnabled != enabled) {
             isEnabled = enabled
@@ -114,13 +117,11 @@ abstract class StarlightPlugin: Plugin, EventListener {
     }
 
     protected fun getPluginConfig(): ConfigData {
-        val configPath = getExternalDataDirectory().resolve("config-plugin.json")
-        return if (configPath.isValidFile) {
-            configPath.readText()
-                .let<_, DataMap>(Session.json::decodeFromString)
-                .let(::InMemoryConfig)
-        } else {
-            InMemoryConfig(emptyMap())
+        return configCache ?: let {
+            val configPath = getExternalDataDirectory().resolve("config-plugin.json")
+            FileConfig(configPath).also {
+                configCache = it
+            }
         }
     }
 

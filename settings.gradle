@@ -1,3 +1,5 @@
 include ':app'
 include ':PluginCore'
+include ':ConfigDSL'
+
 rootProject.name = "StarLight"

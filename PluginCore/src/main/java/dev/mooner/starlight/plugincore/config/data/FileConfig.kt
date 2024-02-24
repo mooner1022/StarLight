@@ -6,14 +6,16 @@
 
 package dev.mooner.starlight.plugincore.config.data
 
+import dev.mooner.configdsl.DataMap
+import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.config.data.category.MutableConfigCategory
+import dev.mooner.starlight.plugincore.utils.decodeLegacyData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 
@@ -32,12 +34,21 @@ class FileConfig(
             val raw = file.readText()
             if (raw.isBlank())
                 mutableMapOf()
-            else
-                json.decodeFromString(raw)
+            else {
+                try {
+                    json.decodeLegacyData(raw)
+                } catch (e: Exception) {
+                    json.decodeFromString<MutableDataMap>(raw)
+                }
+            }
         }
     }
 
-    override fun getData(): DataMap = mData
+    override fun getData(): DataMap =
+        mData
+
+    override fun getMutableData(): MutableDataMap =
+        mData
 
     override operator fun get(id: String): MutableConfigCategory =
         category(id)

@@ -43,25 +43,15 @@ class ForegroundTask: Service() {
             Intent(this, MainActivity::class.java).let { notificationIntent ->
                 PendingIntent.getActivity(this, 0, notificationIntent, 0 or PendingIntent.FLAG_IMMUTABLE)
             }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("StarLight 실행중")
-                .setSubText("당신만을 위한 봇들을 관리중이에요 :)")
-                .setSmallIcon(R.mipmap.ic_launcher_round)
-                .setContentIntent(pendingIntent)
-                .setShowWhen(false)
-                .build()
-            startForeground(NOTIFICATION_ID, notification)
-        } else {
-            val notification = NotificationCompat.Builder(this)
-                .setContentTitle("StarLight 실행중")
-                .setSubText("당신만을 위한 봇들을 관리중이에요 :)")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentIntent(pendingIntent)
-                .setShowWhen(false)
-                .build()
-            startForeground(NOTIFICATION_ID, notification)
-        }
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("StarLight 실행중")
+            .setSubText("당신만을 위한 봇들을 관리중이에요 :)")
+            .setSmallIcon(R.mipmap.ic_launcher_round)
+            .setContentIntent(pendingIntent)
+            .setShowWhen(false)
+            .build()
+        startForeground(NOTIFICATION_ID, notification)
+
         isRunning = true
     }
 

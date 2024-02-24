@@ -19,12 +19,13 @@ import android.view.ViewGroup
 import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.button
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentAllowNotificationBinding
-import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.splash.quickstart.QuickStartActivity
 
 class AllowNotificationFragment : Fragment() {

@@ -5,7 +5,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Base64
-import dev.mooner.starlight.plugincore.config.LazyMessage
+import dev.mooner.configdsl.LazyMessage
 import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
 import java.io.InputStream

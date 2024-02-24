@@ -69,6 +69,9 @@ data class Version(
     infix fun newerThan(target: Version): Boolean =
         this.major > target.major && this.minor > target.minor && this.patch > target.patch
 
+    infix fun newerThan(target: String): Boolean =
+        newerThan(fromString(target))
+
     override fun hashCode(): Int {
         var result = major.hashCode()
         result = 31 * result + minor.hashCode()

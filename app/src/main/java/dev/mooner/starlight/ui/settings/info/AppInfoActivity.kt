@@ -12,13 +12,14 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.aboutlibraries.LibsBuilder
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.button
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityAppInfoBinding
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.utils.bindFadeImage
 import dev.mooner.starlight.utils.openWebUrl
 
@@ -45,7 +46,7 @@ class AppInfoActivity : AppCompatActivity() {
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.recyclerView)
             structure { getConfig(pInfo.versionName, versionCode) }
-            savedData(emptyMap())
+            configData(hashMapOf())
             lifecycleOwner(this@AppInfoActivity)
         }.build()
 

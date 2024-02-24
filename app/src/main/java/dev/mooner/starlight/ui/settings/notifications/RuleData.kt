@@ -17,9 +17,9 @@ data class RuleData(
     @SerialName("package_name")
     val packageName: String,
     @SerialName("user_id")
-    val userId: Int,
+    val userId: Int = 0,
     @SerialName("parser_spec_id")
-    val parserSpecId: String
+    val parserSpecId: String = "default"
 ) {
 
     fun convert(specs: Array<MessageParserSpec>): Map<String, PrimitiveTypedString>? {

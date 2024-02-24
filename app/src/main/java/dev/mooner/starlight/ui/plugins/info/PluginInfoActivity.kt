@@ -1,12 +1,13 @@
 package dev.mooner.starlight.ui.plugins.info
 
 import android.content.Context
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.button
 import dev.mooner.starlight.R
-import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
-import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.utils.startConfigActivity
 
 fun Context.startPluginInfoActivity(

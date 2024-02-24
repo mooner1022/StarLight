@@ -6,9 +6,12 @@
 
 package dev.mooner.starlight.plugincore.config.data
 
+import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.starlight.plugincore.config.data.category.MutableConfigCategory
 
 interface MutableConfig: ConfigData {
+
+    fun getMutableData(): MutableDataMap
 
     override operator fun get(id: String): MutableConfigCategory
 

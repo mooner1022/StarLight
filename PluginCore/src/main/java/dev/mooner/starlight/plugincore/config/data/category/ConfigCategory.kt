@@ -1,5 +1,8 @@
 package dev.mooner.starlight.plugincore.config.data.category
 
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+
 interface ConfigCategory {
     operator fun contains(key: String): Boolean
 
@@ -26,4 +29,8 @@ interface ConfigCategory {
     fun getDouble(key: String): Double?
 
     fun getDouble(key: String, default: Double): Double = getDouble(key)?: default
+
+    fun getList(key: String): List<JsonElement>?
+
+    fun getObject(key: String): JsonObject?
 }

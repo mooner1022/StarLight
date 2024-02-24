@@ -38,7 +38,6 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.debugTranslated
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
-import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.ui.settings.notifications.RuleData
 import dev.mooner.starlight.utils.decodeIfNotBlank
@@ -55,7 +54,6 @@ private typealias RoomName = String
 class NotificationListener: NotificationListenerService() {
 
     private var isGlobalPowerOn : Boolean = true
-    private var isNewbieMode    : Boolean = false
     private var legacyEvent     : Boolean = false
     private var useNPostedEvent : Boolean = false
     private var logRecMessage   : Boolean = false
@@ -286,9 +284,10 @@ class NotificationListener: NotificationListenerService() {
         }
 
         fun updateRules() {
-            if (isNoobMode) {
+            if (isNoobMode || GlobalConfig.category("noti_rules").getBoolean("auto_rule", true)) {
                 val rule = detectRule()
                 rules = listOf(rule)
+                LOG.verbose { "notificationRules(auto)= $rules" }
                 return
             }
             val file = getStarLightDirectory().resolve(NotificationRulesActivity.FILE_NAME)
@@ -313,7 +312,7 @@ class NotificationListener: NotificationListenerService() {
             val androidVersion = Build.VERSION.SDK_INT
 
             if (kakaoTalkVersion != null &&
-                kakaoTalkVersion.newerThan(Version.fromString("9.7.0")) &&
+                kakaoTalkVersion newerThan "9.7.0" &&
                 androidVersion >= Build.VERSION_CODES.R) {
                 specId = "android_r"
             }

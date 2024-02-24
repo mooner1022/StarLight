@@ -31,6 +31,11 @@ import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.*
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentDebugRoomBinding
@@ -43,16 +48,11 @@ import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
 import dev.mooner.starlight.plugincore.chat.Message
-import dev.mooner.starlight.plugincore.config.ColorPickerConfigObject
-import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
-import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.plugincore.utils.fireEvent
-import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 import dev.mooner.starlight.utils.dp
 import dev.mooner.starlight.utils.toBitmap
@@ -60,7 +60,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import java.io.File
 import java.util.*
@@ -206,10 +205,10 @@ class DebugRoomFragment: Fragment() {
         configAdapter = ConfigAdapter.Builder(activity) {
             bind(binding.bottomSheet.configRecyclerView)
             structure(::getStructure)
-            savedData(GlobalConfig.getDataMap())
-            onConfigChanged { parentId, id, _, data ->
+            configData(GlobalConfig.getMutableData())
+            onValueUpdated { parentId, id, _, jsonData ->
                 GlobalConfig.edit {
-                    category(parentId).setAny(id, data)
+                    category(parentId).setRaw(id, jsonData)
                 }
                 updateConfig()
             }
@@ -406,7 +405,7 @@ class DebugRoomFragment: Fragment() {
         }.start(resultCode)
     }
 
-    private fun reloadConfig() = configAdapter?.reload()
+    private fun reloadConfig() = configAdapter?.redraw()
 
     private fun getStructure(): ConfigStructure {
         val defaultColor = requireActivity().getColor(R.color.main_bright)
@@ -493,7 +492,7 @@ class DebugRoomFragment: Fragment() {
                         id = "chat_color"
                         title = "채팅 말풍선 색 설정"
                         icon = Icon.MARK_CHAT_READ
-                        flags = ColorPickerConfigObject.FLAG_CUSTOM_ARGB or ColorPickerConfigObject.FLAG_ALPHA_SELECTOR
+                        flags = ColorPickerConfigOption.FLAG_CUSTOM_ARGB or ColorPickerConfigOption.FLAG_ALPHA_SELECTOR
                         colors {
                             color(requireActivity().getColor(R.color.main_bright))
                             color(requireActivity().getColor(R.color.main_dark))
@@ -550,7 +549,7 @@ class DebugRoomFragment: Fragment() {
                         title = "채팅 말풍선 색 설정"
                         icon = Icon.MARK_CHAT_READ
                         iconTintColor = defaultColor
-                        flags = ColorPickerConfigObject.FLAG_CUSTOM_ARGB or ColorPickerConfigObject.FLAG_ALPHA_SELECTOR
+                        flags = ColorPickerConfigOption.FLAG_CUSTOM_ARGB or ColorPickerConfigOption.FLAG_ALPHA_SELECTOR
                         colors {
                             color(requireActivity().getColor(R.color.main_bright))
                             color(requireActivity().getColor(R.color.main_dark))

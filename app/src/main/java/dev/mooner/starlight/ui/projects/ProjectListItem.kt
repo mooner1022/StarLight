@@ -19,6 +19,7 @@ import coil.transform.RoundedCornersTransformation
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.fastadapter.binding.AbstractBindingItem
+import dev.mooner.configdsl.Icon
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.ID_VIEW_ITEM_PROJECT
 import dev.mooner.starlight.R
@@ -33,11 +34,11 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
-import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.ui.debugroom.DebugRoomActivity
 import dev.mooner.starlight.ui.editor.DefaultEditorActivity
 import dev.mooner.starlight.ui.presets.ExpandableCard
+import dev.mooner.starlight.ui.projects.config.ProjectButtonData
 import dev.mooner.starlight.ui.projects.config.ProjectConfigActivity
 import dev.mooner.starlight.utils.*
 import kotlinx.coroutines.CoroutineScope
@@ -45,7 +46,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.decodeFromJsonElement
 import java.io.File
 import java.lang.ref.WeakReference
 import dev.mooner.starlight.ui.projects.info.startProjectInfoActivity as mStartProjectInfoActivity
@@ -342,12 +343,21 @@ class ProjectListItem(
 
     private fun Project.getCustomButtons(): List<Pair<String, Icon>> {
         return try {
-            config
-                .category("beta_features")
-                .getString("custom_buttons")
-                ?.let<_, List<Map<String, PrimitiveTypedString>>>(Session.json::decodeFromString)
-                ?.map { it["button_id"]!!.castAs<String>() to Icon.entries.toTypedArray()[it["button_icon"]!!.castAs()] }
-                ?: listOf()
+            runCatching {
+                config
+                    .category("beta_features")
+                    .getString("custom_buttons")
+                    ?.let<_, List<Map<String, PrimitiveTypedString>>>(Session.json::decodeFromString)
+                    ?.map { it["button_id"]!!.castAs<String>() to Icon.entries.toTypedArray()[it["button_icon"]!!.castAs()] }
+                    ?: listOf()
+            }.getOrElse {
+                config
+                    .category("beta_features")
+                    .getList("custom_buttons")
+                    ?.map<_, ProjectButtonData>(Session.json::decodeFromJsonElement)
+                    ?.map { it.id to (it.icon?.let(Icon.entries::get) ?: Icon.LAYERS) }
+                    ?: listOf()
+            }
         } catch (e: Exception) {
             LOG.warn {
                 translate {

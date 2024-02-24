@@ -18,15 +18,14 @@ import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
+import dev.mooner.configdsl.ConfigItemBuilder
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.button
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentSetPermissionBinding
-import dev.mooner.starlight.plugincore.config.ConfigItemBuilder
-import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.translation.Locale
-import dev.mooner.starlight.plugincore.translation.TranslationManager
-import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.ui.config.ConfigAdapter
 import dev.mooner.starlight.ui.splash.quickstart.QuickStartActivity
 import dev.mooner.starlight.utils.requestManageStoragePermission
 import java.util.*
@@ -47,14 +46,14 @@ class SetPermissionFragment : Fragment() {
                         continue
                 } else {
                     Snackbar.make(binding.root, "모든 권한이 승인되지 않았어요.. (´•ω•̥`)و\n$permission", Snackbar.LENGTH_LONG).show()
-                    adapter?.reload()
+                    adapter?.redraw()
                     return@registerForActivityResult
                 }
             }
         }
         Snackbar.make(binding.root, "앱을 사용할 준비가 되었어요! ٩(*•̀ᴗ•́*)و", Snackbar.LENGTH_LONG).show()
         (activity as QuickStartActivity).showButton(QuickStartActivity.Buttons.Next)
-        adapter?.reload()
+        adapter?.redraw()
     }
 
     override fun onCreateView(
@@ -120,15 +119,6 @@ class SetPermissionFragment : Fragment() {
         val mTitle: String
         val mDesc: String
 
-        when(TranslationManager.getLocale()) {
-            Locale.ENGLISH -> {
-
-            }
-            Locale.KOREAN -> {
-
-            }
-            else -> {}
-        }
         when(permission) {
             INTERNET -> {
                 mTitle = "인터넷"

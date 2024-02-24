@@ -38,6 +38,8 @@ abstract class Widget: LifecycleOwner, LifecycleEventObserver {
 
     override fun hashCode(): Int = this.id.hashCode()
 
+    //override val lifecycle get() = lifecycleRegistry
+
     override fun getLifecycle(): Lifecycle {
         return lifecycleRegistry
     }

@@ -11,20 +11,24 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.provider.Settings
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.database.getLongOrNull
 import androidx.lifecycle.lifecycleScope
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.button
+import dev.mooner.configdsl.options.toggle
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
-import dev.mooner.starlight.plugincore.config.CategoryConfigObject
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
-import dev.mooner.starlight.plugincore.utils.Icon
+import dev.mooner.starlight.ui.config.options.page
+import dev.mooner.starlight.ui.config.options.singleCategoryPage
 import dev.mooner.starlight.ui.settings.dev.startDevModeActivity
 import dev.mooner.starlight.ui.settings.info.AppInfoActivity
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
@@ -39,13 +43,11 @@ import java.io.File
 
 context(SettingsFragment)
 internal fun getSettingsStruct() = config {
-    category {
+    singleCategoryPage {
         id = "general"
         title = "일반"
         icon = Icon.SETTINGS
         iconTintColor = color { "#5584AC" }
-        //textColor = color { "#706EB9" }
-        flags = CategoryConfigObject.FLAG_NESTED
         items {
             toggle {
                 id = "global_power"
@@ -72,16 +74,6 @@ internal fun getSettingsStruct() = config {
                     }
                 }
             }
-            /*
-            string {
-                id = "log_buffer_max_size"
-                title = "로그 최대 저장 크기"
-                description = "로그 기록 배열의 최대 크기를 설정합니다. 이 값이 클수록 메모리 사용량이 증가합니다.\n(0 = 비활성화)"
-                icon = Icon.LIST_BULLETED
-                inputType = InputType.TYPE_CLASS_NUMBER
-                defaultValue = "100"
-            }
-             */
             button {
                 id = "restart_application"
                 title = "앱 재시작"
@@ -92,13 +84,11 @@ internal fun getSettingsStruct() = config {
             }
         }
     }
-    category {
+    singleCategoryPage {
         id = "project"
         title = "프로젝트"
         icon = Icon.PROJECTS
         iconTintColor = color { "#B4CFB0" }
-        //textColor = color { "#706EB9" }
-        flags = CategoryConfigObject.FLAG_NESTED
         items {
             toggle {
                 id = "compile_animation"
@@ -124,13 +114,11 @@ internal fun getSettingsStruct() = config {
             }
         }
     }
-    category {
+    singleCategoryPage {
         id = "plugin"
         title = "플러그인"
         icon = Icon.ARCHIVE
         iconTintColor = color { "#95D1CC" }
-        //textColor = color { "#706EB9" }
-        flags = CategoryConfigObject.FLAG_NESTED
         items {
             toggle {
                 id = "safe_mode"
@@ -151,69 +139,81 @@ internal fun getSettingsStruct() = config {
             }
         }
     }
-    category {
+    page {
         id = "notifications"
         title = "알림, 이벤트"
         icon = Icon.NOTIFICATIONS
         iconTintColor = color { "#98BAE7" }
-        //textColor = color { "#706EB9" }
-        flags = CategoryConfigObject.FLAG_NESTED
-        items {
-            button {
-                id = "read_noti_perm"
-                title = "알림 읽기 권한 설정"
-                icon = Icon.NOTIFICATIONS_ACTIVE
-                iconTintColor = color { "#C8E4B2" }
-                setOnClickListener { _ ->
-                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        structure {
+            category {
+                id = "event"
+                title = "이벤트"
+                textColor = requireContext().getColor(R.color.main_bright)
+                items {
+                    button {
+                        id = "read_noti_perm"
+                        title = "알림 읽기 권한 설정"
+                        icon = Icon.NOTIFICATIONS_ACTIVE
+                        iconTintColor = color { "#C8E4B2" }
+                        setOnClickListener { _ ->
+                            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        }
+                    }
+                    toggle {
+                        id = "use_legacy_event"
+                        title = "레거시 이벤트 사용"
+                        description = "메신저봇이나 채자봇과 호환되는 이벤트를 사용합니다. (response)"
+                        icon = Icon.BOOKMARK
+                        iconTintColor = color { "#9ED2BE" }
+                        defaultValue = false
+                    }
+                    toggle {
+                        id = "log_received_message"
+                        title = "수신 메세지 로그 표시"
+                        description = "수신된 메세지를 로그에 표시합니다. ('내부 로그 표시' 활성화 필요)"
+                        icon = Icon.MARK_CHAT_READ
+                        iconTintColor = color { "#7EAA92" }
+                        defaultValue = false
+                    }
                 }
             }
-            toggle {
-                id = "use_legacy_event"
-                title = "레거시 이벤트 사용"
-                description = "메신저봇이나 채자봇과 호환되는 이벤트를 사용합니다. (response)"
-                icon = Icon.BOOKMARK
-                iconTintColor = color { "#9ED2BE" }
-                defaultValue = false
-            }
-            toggle {
-                id = "log_received_message"
-                title = "수신 메세지 로그 표시"
-                description = "수신된 메세지를 로그에 표시합니다. ('내부 로그 표시' 활성화 필요)"
-                icon = Icon.MARK_CHAT_READ
-                iconTintColor = color { "#7EAA92" }
-                defaultValue = false
-            }
-            button {
-                id = "set_package_rules"
-                title = "패키지 규칙 설정"
-                description = "패키지 별 알림을 수신할 규칙을 설정합니다."
-                icon = Icon.DEVELOPER_BOARD
-                iconTintColor = color { "#7EAA92" }
-                setOnClickListener { _ ->
-                    requireActivity().startActivity<NotificationRulesActivity>()
-                }
-            }
-            toggle {
-                id = "use_on_notification_posted"
-                title = "onNotificationPosted 이벤트 사용"
-                description = "메신저봇의 onNotificationPosted 이벤트를 사용합니다. 부하가 증가할 수 있습니다."
-                icon = Icon.COMPRESS
-                iconTintColor = color { "#87AAAA" }
-                defaultValue = false
-            }
-            button {
-                id = "magic"
-                title = "문제 해결 도우미"
-                description = "알림 수신 관련 문제를 해결할 수 있도록 돕습니다."
-                icon = Icon.ECO
-                iconTintColor = color { "#FFD9B7" }
-                setOnClickListener { _ ->
-                    requireActivity().startConfigActivity(
-                        title = "문제 해결 도우미",
-                        subTitle = "알림 수신 관련 문제 해결을 돕습니다.",
-                        struct = getProblemSolverStruct(),
-                    )
+            category { 
+                id = "noti"
+                title = "알림, 패키지"
+                textColor = requireContext().getColor(R.color.main_bright)
+                items {
+                    button {
+                        id = "set_package_rules"
+                        title = "패키지 규칙 설정"
+                        description = "패키지 별 알림을 수신할 규칙을 설정합니다."
+                        icon = Icon.DEVELOPER_BOARD
+                        iconTintColor = color { "#7EAA92" }
+                        setOnClickListener { _ ->
+                            requireActivity().startActivity<NotificationRulesActivity>()
+                        }
+                    }
+                    toggle {
+                        id = "use_on_notification_posted"
+                        title = "onNotificationPosted 이벤트 사용"
+                        description = "메신저봇의 onNotificationPosted 이벤트를 사용합니다. 부하가 증가할 수 있습니다."
+                        icon = Icon.COMPRESS
+                        iconTintColor = color { "#87AAAA" }
+                        defaultValue = false
+                    }
+                    button {
+                        id = "magic"
+                        title = "문제 해결 도우미"
+                        description = "알림 수신 관련 문제를 해결할 수 있도록 돕습니다."
+                        icon = Icon.ECO
+                        iconTintColor = color { "#FFD9B7" }
+                        setOnClickListener { _ ->
+                            requireActivity().startConfigActivity(
+                                title = "문제 해결 도우미",
+                                subTitle = "알림 수신 관련 문제 해결을 돕습니다.",
+                                struct = getProblemSolverStruct(),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -500,9 +500,11 @@ private fun checkUpdate() {
                         }.peek()
                         val destUri = FileProvider.getUriForFile(requireContext(), "dev.mooner.starlight.provider", dest)
 
-                        if (!requireContext().packageManager.canRequestPackageInstalls()) {
-                            Toast.makeText(requireContext(), "먼저 앱 설치 권한을 허용해 주세요.", Toast.LENGTH_LONG).show()
-                            requestAppInstallPermission()
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            if (!requireContext().packageManager.canRequestPackageInstalls()) {
+                                Toast.makeText(requireContext(), "먼저 앱 설치 권한을 허용해 주세요.", Toast.LENGTH_LONG).show()
+                                requestAppInstallPermission()
+                            }
                         }
                         requestInstall(requireContext(), destUri)
                     }

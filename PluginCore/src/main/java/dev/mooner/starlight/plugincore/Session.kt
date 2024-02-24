@@ -43,14 +43,6 @@ object Session {
         prettyPrint = true
     }
 
-    @Deprecated(
-        message = "Retained for legacy code compatibility, use GlobalConfig",
-        replaceWith = ReplaceWith(
-            "GlobalConfig",
-            "dev.mooner.starlight.plugincore.config.GlobalConfig")
-    )
-    val globalConfig: GlobalConfig = GlobalConfig
-
     val languageManager : LanguageManager = LanguageManager()
     val pluginLoader    : PluginLoader    = PluginLoader()
     val pluginManager   : PluginManager   = PluginManager()

@@ -6,12 +6,11 @@
 
 package dev.mooner.starlight.event
 
-import android.view.View
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import dev.mooner.starlight.plugincore.event.Event
 import dev.mooner.starlight.plugincore.event.eventHandlerScope
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.serialization.json.JsonElement
 
 sealed class ApplicationEvent {
 
@@ -39,8 +38,8 @@ sealed class ApplicationEvent {
             data class UpdatedData(
                 val parentId: String,
                 val id: String,
-                val view: View?,
-                val data: Any
+                val data: Any,
+                val jsonData: JsonElement
             )
         }
     }
