@@ -3,18 +3,21 @@ package dev.mooner.starlight.languages.rhino
 import android.net.Uri
 import com.faendir.rhino_android.AndroidContextFactory
 import com.faendir.rhino_android.RhinoAndroidHelper
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.seekbar
+import dev.mooner.configdsl.options.spinner
+import dev.mooner.configdsl.options.toggle
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.InstanceType
-import dev.mooner.starlight.plugincore.config.ConfigStructure
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.config.config
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
-import dev.mooner.starlight.plugincore.utils.Icon
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
@@ -150,28 +153,20 @@ class JSRhino: Language() {
     override fun callFunction(
         scope: Any,
         functionName: String,
-        args: Array<out Any>,
-        onError: (e: Exception) -> Unit
-    ) {
-        try {
-            val rhino = scope as Scriptable
-            val context = enterContext()
-            val function = rhino.get(functionName, scope)
-            if (function == Scriptable.NOT_FOUND || function !is Function) {
-                LOG.verboseTranslated {
-                    Locale.ENGLISH { "WARN: Unable to locate function: $functionName" }
-                    Locale.KOREAN  { "경고: 일치하는 함수를 찾을 수 없음: $functionName" }
-                }
-                return
+        args: Array<out Any>
+    ): Any? {
+        val rhino = scope as Scriptable
+        val context = enterContext()
+        val function = rhino.get(functionName, scope)
+        if (function == Scriptable.NOT_FOUND || function !is Function) {
+            LOG.verboseTranslated {
+                Locale.ENGLISH { "WARN: Unable to locate function: $functionName" }
+                Locale.KOREAN  { "경고: 일치하는 함수를 찾을 수 없음: $functionName" }
             }
-            context.errorReporter = defaultErrorReporter
-            function.call(context, scope, scope, args)
-        } catch (e: Exception) {
-            onError(e)
+            return null
         }
-        //ScriptableObject.callMethod(engine as Scriptable, methodName, args)
-        //val invocable = engine as Invocable
-        //invocable.invokeFunction(methodName, args)
+        context.errorReporter = defaultErrorReporter
+        return function.call(context, scope, scope, args)
     }
 
     override fun eval(code: String): Any {

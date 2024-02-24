@@ -6,13 +6,12 @@
 
 package dev.mooner.starlight.plugincore.language
 
-import android.view.View
 import androidx.annotation.CallSuper
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.api.Api
-import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.data.PrimitiveTypedString
 import dev.mooner.starlight.plugincore.config.data.category.ConfigCategory
 import dev.mooner.starlight.plugincore.config.data.category.internal.ConfigCategoryImpl
 import dev.mooner.starlight.plugincore.pipeline.Pipeline
@@ -22,7 +21,7 @@ import dev.mooner.starlight.plugincore.pipeline.stage.plumber
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.utils.TimeUtils
-import kotlinx.serialization.decodeFromString
+import dev.mooner.starlight.plugincore.utils.decodeLegacyData
 import java.io.File
 
 abstract class Language {
@@ -178,9 +177,9 @@ abstract class Language {
      * @param scope scope which is compiled and used
      * @param functionName name of the function being called
      * @param args arguments passed to the function being called
-     * @param onError callback called when an error occurs while running.
+     * @return return value of the called function
      */
-    abstract fun callFunction(scope: Any, functionName: String, args: Array<out Any>, onError: (e: Exception) -> Unit = {})
+    abstract fun callFunction(scope: Any, functionName: String, args: Array<out Any>): Any?
 
     /**
      * Compiles and runs a code instantly
