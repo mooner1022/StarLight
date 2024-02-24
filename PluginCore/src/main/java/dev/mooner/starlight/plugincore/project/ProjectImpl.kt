@@ -31,7 +31,6 @@ import dev.mooner.starlight.plugincore.utils.require
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -177,6 +176,9 @@ class ProjectImpl private constructor(
                     if (lang.requireRelease) {
                         lang.release(langScope!!)
                         logger.v(tag, "engine released")
+                    }
+                    withTimeoutOrNull(200L) {
+                        stopAllJobs()
                     }
                 }
                 logger.i(translate {

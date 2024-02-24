@@ -217,8 +217,8 @@ class ProjectListItem(
                 withContext(Dispatchers.Main) {
                     innerBinding.progressBar.graceProgress = 100
                 }
-                val compileTime = System.currentTimeMillis() - startMillis
                 if (e == null) {
+                    val compileTime = System.currentTimeMillis() - startMillis
                     withContext(Dispatchers.Main) {
                         (parent.get() ?: return@withContext).createSimplePeek(
                             text = translate {
