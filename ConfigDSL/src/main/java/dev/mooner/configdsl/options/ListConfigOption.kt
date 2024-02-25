@@ -291,7 +291,7 @@ class ListConfigBuilder: ConfigBuilderBase<ListConfigOption.ListViewHolder, List
         )
 }
 
-@ConfigBuilderDsl
+@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.list(block: ListConfigBuilder.() -> Unit) {
     add(ListConfigBuilder().apply(block))
 }

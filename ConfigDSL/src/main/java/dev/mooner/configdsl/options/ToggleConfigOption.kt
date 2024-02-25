@@ -118,7 +118,7 @@ class ToggleConfigBuilder: ConfigBuilderBase<ToggleConfigOption.ToggleViewHolder
     }
 }
 
-@ConfigBuilderDsl
+@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.toggle(block: ToggleConfigBuilder.() -> Unit) {
     add(ToggleConfigBuilder().apply(block))
 }

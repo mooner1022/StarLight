@@ -161,7 +161,9 @@ class PageConfigBuilder(
     }
 }
 
-class SingleCategoryPageBuilder: ConfigBuilderBase<PageConfigOption.PageViewHolder, MutableDataMapEntry>() {
+class SingleCategoryPageBuilder(
+    private val isRootOption: Boolean
+): ConfigBuilderBase<PageConfigOption.PageViewHolder, MutableDataMapEntry>() {
 
     private var structure: List<ConfigOption<*, *>> by notNull()
 
@@ -195,7 +197,7 @@ class SingleCategoryPageBuilder: ConfigBuilderBase<PageConfigOption.PageViewHold
             icon         = IconInfo.auto(icon, iconFile, iconResId, iconTintColor),
             default      = default,
             content      = actualStructure,
-            isRootOption = true,
+            isRootOption = isRootOption,
         )
     }
 }
@@ -208,11 +210,16 @@ fun ConfigBuilder.page(block: PageConfigBuilder.() -> Unit) {
 
 @ConfigBuilderDsl
 fun ConfigBuilder.singleCategoryPage(block: SingleCategoryPageBuilder.() -> Unit) {
-    val category = SingleCategoryPageBuilder().apply(block)
+    val category = SingleCategoryPageBuilder(isRootOption = true).apply(block)
     add(category.build())
 }
 
-@ConfigBuilderDsl
+@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.page(block: PageConfigBuilder.() -> Unit) {
     add(PageConfigBuilder(isRootOption = false).apply(block))
+}
+
+@ConfigOptionBuilderDsl
+fun ConfigItemBuilder.singleCategoryPage(block: SingleCategoryPageBuilder.() -> Unit) {
+    add(SingleCategoryPageBuilder(isRootOption = false).apply(block))
 }

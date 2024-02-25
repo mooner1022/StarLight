@@ -18,6 +18,9 @@ typealias ColorSelectedListener       = (view: View, color: Int) -> Unit
 @DslMarker
 annotation class ConfigBuilderDsl
 
+@DslMarker
+annotation class ConfigOptionBuilderDsl
+
 @ConfigBuilderDsl
 fun config(block: ConfigBuilder.() -> Unit): ConfigStructure {
     val builder = ConfigBuilder().apply(block)

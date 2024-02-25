@@ -101,7 +101,7 @@ class SeekbarConfigBuilder: ConfigBuilderBase<SeekbarConfigOption.SeekbarViewHol
     }
 }
 
-@ConfigBuilderDsl
+@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.seekbar(block: SeekbarConfigBuilder.() -> Unit) {
     add(SeekbarConfigBuilder().apply(block))
 }

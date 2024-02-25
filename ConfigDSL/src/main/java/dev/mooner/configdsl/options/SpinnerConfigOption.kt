@@ -107,7 +107,7 @@ class SpinnerConfigBuilder: ConfigBuilderBase<SpinnerConfigOption.SpinnerViewHol
     }
 }
 
-@ConfigBuilderDsl
+@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.spinner(block: SpinnerConfigBuilder.() -> Unit) {
     add(SpinnerConfigBuilder().apply(block))
 }
