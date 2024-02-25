@@ -28,30 +28,11 @@ internal object Logger {
     private val logPublishScope: CoroutineScope =
         CoroutineScope(Dispatchers.IO.limitedParallelism(1)) + SupervisorJob()
 
-    //private lateinit var logFile: File
-
-    /*
-    private var mLogs: MutableList<LogData> = mutableListOf()
-    val logs: List<LogData> get() =
-        if (showInternalLogs) mLogs else mLogs.filterNot { it.type == LogType.VERBOSE }
-     */
-
     private val showInternalLogs get() =
         Session.isInitComplete &&
                 GlobalConfig
                     .category("dev_mode_config")
                     .getBoolean("show_internal_log", false)
-
-    /*
-    private val writeInternalLogs get() =
-        Session.isInitComplete &&
-                GlobalConfig
-                    .category("dev_mode_config")
-                    .getBoolean("write_internal_log", false)
-     */
-
-    //val isInitialized: Boolean get() =
-    //    this::logFile.isInitialized
 
     private val callSite get() =
         currentThread.stackTrace[4].className.split(".").last()
@@ -125,7 +106,6 @@ internal object Logger {
         if (data.type != LogType.VERBOSE || showInternalLogs) {
             logPublishScope.launch {
                 try {
-                    //mLogs += data
                     EventHandler.fireEventWithScope(Events.Log.Create(data), this)
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -133,26 +113,4 @@ internal object Logger {
             }
         }
     }
-
-
-    /*
-    fun filter(type: LogType): List<LogData> = logs.filter { it.type == type }
-
-    fun filterNot(type: LogType): List<LogData> = logs.filterNot { it.type == type }
-
-    init {
-        val dirName = TimeUtils.formatCurrentDate("yyyy-MM-dd")
-        val dir = File(getInternalDirectory(), "logs").resolve(dirName)
-        if (!dir.exists() || !dir.isDirectory) {
-            dir.mkdirs()
-        }
-
-        val time = TimeUtils.formatCurrentDate("HH_mm_ss_SSS")
-        val fileName = "$time.log"
-        logFile = File(dir, fileName)
-
-        if (!logFile.exists())
-            logFile.createNewFile()
-    }
-     */
 }
