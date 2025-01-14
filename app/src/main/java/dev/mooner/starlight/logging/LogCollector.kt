@@ -54,7 +54,7 @@ object LogCollector {
 
             try {
                 if (mLogs.size >= logBufferMaxSize)
-                    (mLogs as ArrayDeque).removeFirst()
+                    (mLogs as ArrayDeque).removeAt(0)
                 if (appendInternalLog || data.type.priority >= LogType.VERBOSE.priority)
                     mLogs += data
 
@@ -79,7 +79,7 @@ object LogCollector {
             ?: return
         if (mLogs.size > nSize) {
             while (mLogs.size > nSize) {
-                (mLogs as ArrayDeque).removeFirst()
+                (mLogs as ArrayDeque).removeAt(0)
             }
         }
         logBufferMaxSize = nSize
