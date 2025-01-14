@@ -251,22 +251,22 @@ class DebugRoomFragment: Fragment() {
         Uri.fromFile(file).toBitmap(requireContext())
 
     @SuppressLint("CheckResult")
-    private fun send(_message: String) {
-        val hasMention = mentionRegex.containsMatchIn(_message)
-        val message: String = if (hasMention) {
-            val mentionedNames = mentionRegex.findAll(_message).map { it.value.drop(2).dropLast(1) }
-            var mMsg: String = _message
+    private fun send(message: String) {
+        val hasMention = mentionRegex.containsMatchIn(message)
+        val actualMessage: String = if (hasMention) {
+            val mentionedNames = mentionRegex.findAll(message).map { it.value.drop(2).dropLast(1) }
+            var mMsg: String = message
             for (name in mentionedNames)
                 mMsg = mMsg.replace("<@$name>", "@$name")
             mMsg
         } else
-            _message
+            message
 
-        val viewType = if (message.length >= 500) DebugRoomChatAdapter.CHAT_SELF_LONG else DebugRoomChatAdapter.CHAT_SELF
-        addMessage(sender, message, viewType, true)
+        val viewType = if (actualMessage.length >= 500) DebugRoomChatAdapter.CHAT_SELF_LONG else DebugRoomChatAdapter.CHAT_SELF
+        addMessage(sender, actualMessage, viewType, true)
         val data = Message(
             image = null,
-            message = message,
+            message = actualMessage,
             sender = ChatSender(
                 name = sender,
                 id = null,
@@ -294,7 +294,7 @@ class DebugRoomFragment: Fragment() {
         if (useLegacyEvent) {
             val imageDB = ImageDB(selfProfileBitmap)
 
-            project.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB, onFailure = ::showErrorSnackbar)
+            project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, replier, imageDB, onFailure = ::showErrorSnackbar)
         }
     }
 
