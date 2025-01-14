@@ -164,7 +164,7 @@ abstract class Language {
     open fun release(scope: Any) {}
 
     /**
-     * Destroys and releases the scope, and all resources it was holding.
+     * Destroys and releases the scope, with all resources it was holding.
      * Should be called on the last stage of scope lifecycle.
      *
      * @param scope scope which is compiled and used
