@@ -76,7 +76,7 @@ class FileTreeAdapter(
             },
             message = translate {
                 Locale.ENGLISH { "After deletion, it cannot be reversed.\nAre you sure you want to delete this file?" }
-                Locale.KOREAN  { "삭제 후에는 되돌릴 수 없어용.\n정말 이 파일을 삭제할까요?" }
+                Locale.KOREAN  { "삭제 후에는 되돌릴 수 없어요.\n정말 이 파일을 삭제할까요?" }
             },
             onDismiss = { confirm ->
                 if (confirm)
