@@ -161,7 +161,11 @@ class PluginLoader {
             Session.pluginManager.purge()
 
             val sortedIds = loadPriority.toList().sortedBy { it.second }
-            logger.verbose { sortedIds.withIndex().joinToString("\n") { "#${it.index} - ${it.value.first}" } }
+            logger.verbose {
+                "Plugin load priority\n" + sortedIds
+                    .withIndex()
+                    .joinToString("\n") { "#${it.index} - ${it.value.first}" }
+            }
 
             for ((id, _) in sortedIds) {
                 val (file, info) = pluginFiles[id]!!
@@ -196,7 +200,7 @@ class PluginLoader {
             dataDir.mkdirs()
         }
 
-        logger.verbose {
+        logger.info {
             translate { 
                 Locale.ENGLISH { "Loading plugin ${info.fullName}" }
                 Locale.KOREAN  { "${info.fullName} 플러그인 로드중" }
@@ -213,7 +217,7 @@ class PluginLoader {
                 ?: javaClass.classLoader!!
 
             loader = PluginClassLoader(context, parentLoader, nativeLibDir?.path, this, info, file)
-            logger.verbose {
+            logger.info {
                 translate {
                     Locale.ENGLISH { "Loaded plugin ${info.fullName} (${file.name})" }
                     Locale.KOREAN  { "${info.fullName} 플러그인 로드 성공" }

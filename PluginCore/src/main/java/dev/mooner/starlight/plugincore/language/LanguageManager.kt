@@ -21,7 +21,7 @@ class LanguageManager {
         }
         languages += lang
         languageAssetPaths[lang.id] = context.getAsset(lang.id).path
-        LOG.verbose { 
+        LOG.debug {
             translate { 
                 Locale.ENGLISH { "Added language ${lang.name}(${lang.id})" }
                 Locale.KOREAN  { "${lang.name}(${lang.id}) 언어 추가 성공" }
