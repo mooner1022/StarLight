@@ -233,6 +233,13 @@ fun Fragment.createSimplePeek(title: String? = null, text: String, builder: Peek
     }
 }
 
+fun ViewGroup.createSimplePeek(title: String? = null, text: String, builder: PeekAlertBuilder.() -> Unit): PeekAlert {
+    return createPeekAlert(this) {
+        setup(context, title, text)
+        this.apply(builder)
+    }
+}
+
 fun Activity.createSimplePeek(title: String? = null, text: String, builder: PeekAlertBuilder.() -> Unit): PeekAlert {
     return createPeekAlert(this) {
         setup(this@createSimplePeek, title, text)
@@ -241,6 +248,15 @@ fun Activity.createSimplePeek(title: String? = null, text: String, builder: Peek
 }
 
 fun Fragment.createSuccessPeek(title: String, position: PeekAlert.Position): PeekAlert {
+    return createSimplePeek(text = title) {
+        this.position = position
+        iconRes = dev.mooner.configdsl.R.drawable.ic_round_check_24
+        iconTint(res = R.color.noctis_green)
+        backgroundColor(res = R.color.background_popup)
+    }
+}
+
+fun ViewGroup.createSuccessPeek(title: String, position: PeekAlert.Position): PeekAlert {
     return createSimplePeek(text = title) {
         this.position = position
         iconRes = dev.mooner.configdsl.R.drawable.ic_round_check_24
@@ -259,6 +275,15 @@ fun Activity.createSuccessPeek(title: String, position: PeekAlert.Position): Pee
 }
 
 fun Fragment.createFailurePeek(title: String, position: PeekAlert.Position): PeekAlert {
+    return createSimplePeek(text = title) {
+        this.position = position
+        iconRes = dev.mooner.configdsl.R.drawable.ic_round_close_24
+        iconTint(res = R.color.code_error)
+        backgroundColor(res = R.color.background_popup)
+    }
+}
+
+fun ViewGroup.createFailurePeek(title: String, position: PeekAlert.Position): PeekAlert {
     return createSimplePeek(text = title) {
         this.position = position
         iconRes = dev.mooner.configdsl.R.drawable.ic_round_close_24

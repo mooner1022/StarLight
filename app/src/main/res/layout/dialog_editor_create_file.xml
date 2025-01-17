@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ dialog_editor_create_file.xml created by Minki Moon(mooner1022) on 25. 1. 18. 오전 12:03
+  ~ Copyright (c) mooner1022. all rights reserved.
+  ~ This code is licensed under the GNU General Public License v3.0.
+  -->
+
+<androidx.appcompat.widget.LinearLayoutCompat
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chip_group_file_type"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginHorizontal="16dp"
+        app:selectionRequired="true"
+        app:singleLine="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_directory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxHeight="48dp"
+            android:minWidth="92dp"
+            android:text="@string/directory"
+            android:checkable="true"
+            tools:text="폴더"
+            app:chipStartPadding="11dp"
+            app:chipEndPadding="8dp"
+            app:chipIconTint="#7AB2D3"
+            app:chipIcon="@drawable/ic_round_folder_24"
+            app:chipMinHeight="48dp"
+            app:chipCornerRadius="18dp"
+            app:chipBackgroundColor="@color/background_log_card"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_file"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxHeight="48dp"
+            android:minWidth="92dp"
+            android:text="@string/file"
+            android:checkable="true"
+            android:checked="true"
+            tools:text="파일"
+            app:chipStartPadding="11dp"
+            app:chipEndPadding="8dp"
+            app:chipIconTint="#4A628A"
+            app:chipIcon="@drawable/ic_round_file_24"
+            app:chipMinHeight="48dp"
+            app:chipCornerRadius="18dp"
+            app:chipBackgroundColor="@color/background_log_card"/>
+
+    </com.google.android.material.chip.ChipGroup>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="24dp"
+        android:maxWidth="360dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/editor_new_file_title"
+            android:textSize="12sp"
+            android:fontFamily="@font/nanumsquare_neo_bold"/>
+
+        <EditText
+            android:id="@+id/edit_text_filename"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:fontFamily="@font/jbmono_nl_regular"
+            android:importantForAutofill="no"
+            android:inputType="textPersonName"
+            android:hint="foobar.txt"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/title_message"
+            tools:ignore="HardcodedText"/>
+
+    </LinearLayout>
+
+</androidx.appcompat.widget.LinearLayoutCompat>

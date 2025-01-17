@@ -33,9 +33,11 @@ chip-navigation-bar = "1.4.0"
 process-phoenix = "2.2.0"
 markwon = "4.6.2"
 dalvik-dx = "11.0.0_r3"
+cascade = "2.3.0"
 
 [libraries]
 android-gradle-plugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
+cascade = { module = "me.saket.cascade:cascade", version.ref = "cascade" }
 kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidx-appcompat" }

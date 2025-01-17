@@ -100,9 +100,11 @@
     <string name="action_previous_step">Prev.</string>
     <string name="action_next_step">Next</string>
 
-    <string name="editor_new_file">New file/dir</string>
+    <string name="editor_new_file">New file/directory</string>
     <string name="editor_new_file_title">Name of new file/dir</string>
     <string name="editor_new_file_desc">Please enter the name of file/dir being created.</string>
+
+    <string name="editor_edit_file_name">Name to be changed</string>
 
     <string name="log_foreground_started">Successfully started foreground task!</string>
     <string name="log_project_list_update_failure">Failed to update project list: index not found</string>

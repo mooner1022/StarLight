@@ -94,6 +94,8 @@ dependencies {
     implementation(libs.markwon.core)
     implementation(libs.dalvik.dx)
 
+    implementation(libs.cascade)
+
     implementation(files("libs/bottomsheets-release.aar"))
     implementation(files("libs/files-release.aar"))
 
