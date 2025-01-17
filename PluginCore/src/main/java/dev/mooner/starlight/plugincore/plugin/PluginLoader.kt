@@ -38,63 +38,6 @@ class PluginLoader {
     private val loaders: MutableMap<String, PluginClassLoader> = LinkedHashMap()
 
     private val defDirectory = File(getStarLightDirectory(), "plugins/")
-    //private val dexDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/.dex/")
-
-    /*
-    fun loadPlugins(dir: File = defDirectory, onPluginLoad: ((name: String) -> Unit)? = null): Set<Plugin> {
-        if (!dir.exists() || !dir.isDirectory) {
-            dir.mkdirs()
-        }
-
-        val pluginInfos: MutableMap<String, Pair<File, PluginInfo>> = hashMapOf()
-        for (file in dir.listFiles { it -> it.extension in listOf("apk", "jar") }?: arrayOf()) {
-            val info: PluginInfo
-            try {
-                info = loadInfoFile(file)
-                pluginInfos[info.id] = Pair(file, info)
-            } catch (e: FileNotFoundException) {
-                Logger.e(T, e.toString())
-                //throw InvalidPluginException(e.toString())
-            } catch (e: IllegalStateException) {
-                Logger.e(T, e.toString())
-                //throw InvalidPluginException(e.toString())
-            } catch (e: Exception) {
-                Logger.e(T, "Unexpected error while loading plugin info: $e")
-            }
-        }
-
-        val plugins: MutableSet<StarlightPlugin> = hashSetOf()
-        for ((file: File, info: PluginInfo) in pluginInfos.values) {
-            try {
-                for (dependency in info.dependency) {
-                    if (dependency.pluginId !in pluginInfos) {
-                        throw DependencyNotFoundException("Unable to find dependency '$dependency' for plugin [${info.name}]")
-                        //Logger.e(T, "Unable to find plugin [$dependency] for plugin ${config.fullName}")
-                    }
-                    val pluginInfo = pluginInfos[dependency.pluginId]!!.second
-                    if (dependency.supportedVersion != VERSION_ANY && Version.fromString(dependency.supportedVersion) incompatibleWith pluginInfo.version) {
-                        Logger.w(javaClass.simpleName,"Incompatible dependency version(required: ${dependency.supportedVersion}, found: ${pluginInfo.version}) found on plugin: ${info.name}")
-                    }
-                }
-
-                if (onPluginLoad != null) onPluginLoad(info.name)
-                val plugin = loadPlugin(info, file)
-                if (info.apiVersion incompatibleWith Info.PLUGINCORE_VERSION) {
-                    Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin: ${info.fullName}")
-                    continue
-                }
-                plugins += plugin
-                plugin.onEnable()
-            } catch (e: Error) {
-                Logger.e(T, e.toString())
-                if (Session.isDebugging) e.printStackTrace()
-            }
-        }
-
-        Session.pluginManager.plugins = plugins
-        return plugins
-    }
-     */
 
     fun loadPlugins(context: Context, dir: File = defDirectory): Flow<Any> =
         flow {
@@ -157,7 +100,6 @@ class PluginLoader {
                 }
             }
 
-            //val plugins: MutableSet<StarlightPlugin> = hashSetOf()
             Session.pluginManager.purge()
 
             val sortedIds = loadPriority.toList().sortedBy { it.second }
@@ -174,7 +116,6 @@ class PluginLoader {
                 try {
                     val plugin = loadPlugin(context, file, info)
 
-                    //plugins += plugin
                     Session.pluginManager.addPlugin(plugin)
                     plugin.getListeners().forEach(EventListener::onEnable)
                 } catch (e: Throwable) {
@@ -184,7 +125,6 @@ class PluginLoader {
                 }
             }
 
-            //plugins.forEach(Session.pluginManager::addPlugin)
             emit(Session.pluginManager.plugins)
         }
 
