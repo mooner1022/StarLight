@@ -31,7 +31,7 @@ import dev.mooner.starlight.utils.setCommonAttrs
 import java.io.File
 
 class DebugRoomChatAdapter(
-    private val parent: Activity,
+    parent: Activity,
     private val dir: File,
     private val chatList: MutableList<DebugRoomMessage>
 ) : RecyclerView.Adapter<DebugRoomChatAdapter.ViewHolder>() {
@@ -155,11 +155,10 @@ class DebugRoomChatAdapter(
     }
 
     private fun showFullMessageDialog(fullMessage: String) {
-        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
             setCommonAttrs()
 
             cancelOnTouchOutside(true)
-            noAutoDismiss()
             title(text = context.getString(R.string.title_show_all))
             message(text = fullMessage) {
                 messageTextView.apply {
