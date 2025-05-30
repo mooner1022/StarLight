@@ -183,7 +183,7 @@ class ProjectListItem(
     private fun getInnerViewBinding(innerView: View): CardProjectButtonsBinding =
         CardProjectButtonsBinding.bind(innerView)
 
-    private fun CardProjectButtonsBinding.showProgress(show: Boolean) {
+    private fun CardProjectButtonsBinding.setProgressVisibility(show: Boolean) {
         flexLayout.visibility = if (show) View.GONE else View.VISIBLE
         progressWrapper.visibility = if (!show) View.GONE else View.VISIBLE
     }
@@ -195,7 +195,7 @@ class ProjectListItem(
         }
         val innerBinding = innerBinding!!
 
-        innerBinding.showProgress(true)
+        innerBinding.setProgressVisibility(true)
         innerBinding.progressBar.progress = 0
 
         val startMillis = System.currentTimeMillis()
@@ -228,7 +228,7 @@ class ProjectListItem(
                     delay(PROGRESS_WAIT_TIME)
 
                 withContext(Dispatchers.Main) {
-                    innerBinding.showProgress(false)
+                    innerBinding.setProgressVisibility(false)
                 }
             }
             .catch { e ->
@@ -335,7 +335,7 @@ class ProjectListItem(
     private fun Project.getCustomButtons(): List<Pair<String, Icon>> {
         return try {
             runCatching {
-                config
+                config // Support legacy config format
                     .category("beta_features")
                     .getString("custom_buttons")
                     ?.let<_, List<Map<String, PrimitiveTypedString>>>(Session.json::decodeFromString)
