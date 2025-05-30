@@ -43,7 +43,7 @@ class FileTreeFragment : Fragment() {
             ?: LOCKED_FILE_NAMES
         treeAdapter = if (isEditor)
             FileTreeAdapter(activity, parent, lockedFiles) { file ->
-                (activity as DefaultEditorActivity).apply {
+                activity.apply {
                     openFile(file)
                     closeDrawer(GravityCompat.START, true)
                 }

@@ -4,12 +4,12 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
+import androidx.core.net.toUri
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
@@ -23,7 +23,7 @@ import java.io.File
 
 fun Context.requestManageStoragePermission() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
-    val uri = Uri.parse("package:${BuildConfig.APPLICATION_ID}")
+    val uri = "package:${BuildConfig.APPLICATION_ID}".toUri()
 
     startActivity(
         Intent(
@@ -54,7 +54,7 @@ fun Context.showNewFileDialog(root: File, onFileCreated: (file: File) -> Unit) {
                 nameInput.requestFocus()
                 return@positiveButton
             }
-            if (!"(^[-_.A-Za-z0-9/]+\$)".toRegex().matches(nameInput.text.toString())) {
+            if (!"(^[-_.A-Za-z0-9/]+$)".toRegex().matches(nameInput.text.toString())) {
                 nameInput.error = "허용되지 않는 문자가 포함되어 있어요."
                 nameInput.requestFocus()
                 return@positiveButton
