@@ -1,6 +1,6 @@
 package dev.mooner.starlight.languages.rhino
 
-import android.net.Uri
+import androidx.core.net.toUri
 import com.faendir.rhino_android.AndroidContextFactory
 import com.faendir.rhino_android.RhinoAndroidHelper
 import dev.mooner.configdsl.ConfigStructure
@@ -10,6 +10,7 @@ import dev.mooner.configdsl.options.seekbar
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.config.GlobalConfig
@@ -168,12 +169,39 @@ class JSRhino: Language() {
         return function.call(context, scope, scope, args)
     }
 
-    override fun eval(code: String): Any {
-        val context = enterContext()
-        val scope = context.initStandardObjects(ImporterTopLevel(context))
-        val result = context.evaluateString(scope, code, "eval", 0, null)
-        Context.exit()
-        return result
+    override fun eval(code: String, options: Map<String, String>): Any {
+        val allowJavaAccess   = options["allowJavaAccess"]?.toBoolean() ?: false
+        val allowApiAccess    = options["allowApiAccess"]?.toBoolean() ?: false
+        val optimizationLevel = options["optimizationLevel"]?.toIntOrNull() ?: 0
+        val langVersionIndex  = options["langVersion"]?.toIntOrNull() ?: 9
+
+        return createAndroidHelper().enterContext().apply {
+            this.optimizationLevel = optimizationLevel
+            languageVersion = indexToVersion(langVersionIndex)
+            wrapFactory = PrimitiveWrapFactory()
+        }.use { context ->
+            val scope = if (!allowJavaAccess) {
+                context.setClassShutter { false }
+                context.initSafeStandardObjects()
+            } else
+                context.initStandardObjects(ImporterTopLevel(context))
+
+            if (allowJavaAccess && allowApiAccess) {
+                val apis = Session.apiManager.getApis()
+                for (api in apis) {
+                    if (api.instanceType == InstanceType.OBJECT)
+                        continue
+                    context.evaluateString(
+                        scope,
+                        "const ${api.name} = Packages.${api.instanceClass.name};",
+                        "import",
+                        1,
+                        null
+                    )
+                }
+            }
+            context.evaluateString(scope, code, "eval", 0, null)
+        }
     }
 
     private fun indexToVersion(index: Int): Int {
@@ -195,7 +223,7 @@ class JSRhino: Language() {
 
     private fun initRequire(context: Context, scope: Scriptable, sandboxed: Boolean, project: Project?): Require {
         fun parseUri(path: String): URI =
-            Uri.parse("file://${path}/").toURI()
+            "file://${path}/".toUri().toURI()
 
         val requirePath: MutableList<File> = arrayListOf()
         if (GlobalConfig.category("project").getBoolean("load_global_libraries", false) || isNoobMode)

@@ -184,10 +184,11 @@ abstract class Language {
     /**
      * Compiles and runs a code instantly
      *
-     * @param code code to execute
+     * @param code [String] code to execute
+     * @param options [Map] that contains options as key and value
      * @return [Any] value returned by the executed code
      */
-    abstract fun eval(code: String): Any
+    abstract fun eval(code: String, options: Map<String, String> = emptyMap()): Any
 
     private var configFile: File? = null
     private var configCache: ConfigCategory? = null
