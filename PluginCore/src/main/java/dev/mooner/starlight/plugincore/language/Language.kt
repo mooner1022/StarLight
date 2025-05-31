@@ -80,17 +80,17 @@ abstract class Language {
 
         val imports: MutableSet<String> = hashSetOf()
 
-        val duplicated: MutableMap<String, Boolean> = hashMapOf()
+        val duplicated: MutableSet<String> = hashSetOf()
         for (event in events) {
             if (event.functionName in duplicated)
                 continue
             if (events.count { it.functionName == event.functionName } > 1)
-                duplicated[event.functionName] = false
+                duplicated += event.functionName
         }
 
         val body = buildString {
             for (event in events) {
-                if (duplicated[event.functionName] == true)
+                if (event.functionName in duplicated)
                     continue
 
                 val generated = codeGenerator.generateFunction(event.functionName, event.argTypes, null)
@@ -107,10 +107,17 @@ abstract class Language {
                         .generateComment(
                             isMultiLine = false,
                             isDocument = false,
-                            content = "같은 함수명을 가진 이벤트가 발견되어 하나만 추가되었습니다."
+                            content = "동일한 함수명의 이벤트가 두 개 이상 발견되어 주석 처리 되었습니다."
+                        )
+                    ).append("\n").append(
+                        codeGenerator.generateComment(
+                            isMultiLine = true,
+                            isDocument = false,
+                            content = generated.function
                         )
                     ).append("\n")
-                    duplicated[event.functionName] = true
+                    duplicated += event.functionName
+                    continue
                 }
                 append(generated.function).append("\n")
             }
