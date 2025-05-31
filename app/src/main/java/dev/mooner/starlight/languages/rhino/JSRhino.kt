@@ -102,26 +102,26 @@ class JSRhino: Language() {
         else
             context.initStandardObjects(ImporterTopLevel(context))
 
-        if (project != null) {
-            var importLines: StringBuilder? = null
-            for(api in apis) {
-                when(api.instanceType) {
-                    InstanceType.CLASS -> {
-                        val line = "const ${api.name} = Packages.${api.instanceClass.name};\n"
-                        if (importLines == null)
-                            importLines = StringBuilder(line)
-                        else
-                            importLines.append(line)
-                    }
-                    InstanceType.OBJECT -> {
-                        val instance = api.getInstance(project)
-                        scope.put(api.name, scope, instance)
-                    }
+        var importLines: StringBuilder? = null
+        for(api in apis) {
+            when(api.instanceType) {
+                InstanceType.CLASS -> {
+                    val line = "const ${api.name} = Packages.${api.instanceClass.name};\n"
+                    if (importLines == null)
+                        importLines = StringBuilder(line)
+                    else
+                        importLines.append(line)
+                }
+                InstanceType.OBJECT -> {
+                    if (project == null)
+                        continue
+                    val instance = api.getInstance(project)
+                    scope.put(api.name, scope, instance)
                 }
             }
-            if (importLines != null)
-                context.evaluateString(scope, importLines.toString(), "import", 1, null)
         }
+        if (importLines != null)
+            context.evaluateString(scope, importLines.toString(), "import", 1, null)
 
         val langConf = getLanguageConfig()
         if (langConf.getBoolean("load_ext_modules", true) || isNoobMode) {
