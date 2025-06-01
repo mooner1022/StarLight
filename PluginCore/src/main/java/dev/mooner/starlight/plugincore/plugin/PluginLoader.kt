@@ -148,10 +148,11 @@ class PluginLoader {
         }
         val loader: PluginClassLoader
         try {
-            val nativeLibDir = if (info.usesNativeLibrary)
-                loadNativeLibrary(info, file, context.filesDir)
-            else
-                null
+            val nativeLibDir =
+                if (info.usesNativeLibrary)
+                    loadNativeLibrary(info, file, context.filesDir)
+                else null
+
             val parentLoader: ClassLoader = info.customClassLoader
                 ?.let { retrieveCustomClassLoader(it, file.path) }
                 ?: javaClass.classLoader!!
@@ -329,14 +330,15 @@ class PluginLoader {
     }
 
     fun getClass(name: String): Class<*>? {
-        classes[name] ?.let { return it } ?: synchronized(loaders) {
-            for ((_, loader) in loaders) {
-                try {
-                    return loader.findClass(name, false)
-                } catch (_: ClassNotFoundException) { }
+        return classes[name]
+            ?: synchronized(loaders) {
+                for ((_, loader) in loaders) {
+                    try {
+                        return@synchronized loader.findClass(name, false)
+                    } catch (_: ClassNotFoundException) { }
+                }
+                null
             }
-        }
-        return null
     }
 
     fun registerListener(plugin: StarlightPlugin, listener: EventListener) {
