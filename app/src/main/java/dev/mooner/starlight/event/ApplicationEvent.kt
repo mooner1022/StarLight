@@ -7,6 +7,7 @@
 package dev.mooner.starlight.event
 
 import androidx.lifecycle.LifecycleOwner
+import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.event.Event
 import dev.mooner.starlight.plugincore.event.eventHandlerScope
 import kotlinx.coroutines.CoroutineScope
@@ -42,6 +43,14 @@ sealed class ApplicationEvent {
                 val jsonData: JsonElement
             )
         }
+    }
+
+    sealed class DebugRoom {
+
+        data class MessageCreate(
+            val message: Message,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope, DebugRoom()
     }
 
     sealed class Lifecycle {

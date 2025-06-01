@@ -39,6 +39,7 @@ import dev.mooner.configdsl.options.*
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentDebugRoomBinding
+import dev.mooner.starlight.event.ApplicationEvent
 import dev.mooner.starlight.listener.event.LegacyEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
@@ -49,6 +50,7 @@ import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
 import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.config.GlobalConfig
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.color
@@ -60,7 +62,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.serialization.encodeToString
 import java.io.File
 import java.util.*
 import kotlin.properties.Delegates.notNull
@@ -296,6 +297,7 @@ class DebugRoomFragment: Fragment() {
 
             project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, replier, imageDB, onFailure = ::showErrorSnackbar)
         }
+        EventHandler.fireEventWithScope(ApplicationEvent.DebugRoom.MessageCreate(data), scope = project)
     }
 
     @SuppressLint("CheckResult")

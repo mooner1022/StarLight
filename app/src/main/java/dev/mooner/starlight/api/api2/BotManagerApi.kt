@@ -8,6 +8,7 @@ package dev.mooner.starlight.api.api2
 
 import android.graphics.Bitmap
 import dev.mooner.starlight.api.api2.BotManagerApi.Bot.MessageData.Author
+import dev.mooner.starlight.event.ApplicationEvent
 import dev.mooner.starlight.listener.NotificationListener
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
@@ -53,6 +54,11 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
 
         init {
             project.getLifecycle().registerObserver(this)
+        }
+
+        override fun onCompileStart(project: Project) {
+            botInstances -= project.info.name
+            project.getLifecycle().unregisterObserver(this)
         }
 
         override fun onDestroy(project: Project) {
@@ -219,8 +225,7 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
         fun listeners(eventName: String): List<ListenerCallback> =
             listeners[eventName]?.map { it.first } ?: emptyList()
 
-        private suspend fun onMessageCreate(event: Events.Message.Create) {
-            val message = event.message
+        private suspend fun handleMessageCreate(message: Message) {
             (eventFlow as MutableSharedFlow).emit(
                 EventData(
                     name = "message",
@@ -242,6 +247,12 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
             }
         }
 
+        private suspend fun onMessageCreate(event: Events.Message.Create) =
+            handleMessageCreate(event.message)
+
+        private suspend fun onDebugRoomMessageCreate(event: ApplicationEvent.DebugRoom.MessageCreate) =
+            handleMessageCreate(event.message)
+
         private suspend fun onNotificationPosted(event: Events.Notification.Post) {
             if ("notificationPosted" !in listeners)
                 return
@@ -255,6 +266,12 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
 
         init {
             project.getLifecycle().registerObserver(object : ProjectLifecycleObserver.ExplicitObserver {
+                override fun onCompileStart(project: Project) {
+                    eventScope.coroutineContext.cancelChildren()
+                    eventScope.cancel()
+                    listeners.clear()
+                }
+
                 override fun onDestroy(project: Project) {
                     eventScope.coroutineContext.cancelChildren()
                     eventScope.cancel()
@@ -262,6 +279,7 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
                 }
             })
             EventHandler.on(eventScope, ::onMessageCreate)
+            EventHandler.on(eventScope, ::onDebugRoomMessageCreate)
             EventHandler.on(eventScope, ::onNotificationPosted)
         }
 
