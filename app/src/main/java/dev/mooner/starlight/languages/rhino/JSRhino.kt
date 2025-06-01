@@ -170,7 +170,7 @@ class JSRhino: Language() {
     }
 
     override fun eval(code: String, options: Map<String, String>): Any {
-        val allowJavaAccess   = options["allowJavaAccess"]?.toBoolean() ?: false
+        val allowJavaAccess   = options["allowJavaAccess"]?.toBoolean() ?: true
         val allowApiAccess    = options["allowApiAccess"]?.toBoolean() ?: false
         val optimizationLevel = options["optimizationLevel"]?.toIntOrNull() ?: 0
         val langVersionIndex  = options["langVersion"]?.toIntOrNull() ?: 9
