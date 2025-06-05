@@ -7,10 +7,12 @@
 package dev.mooner.starlight.ui.projects
 
 import android.content.Context
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.ViewGroup
+import android.view.WindowInsets
 import android.widget.ImageButton
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
@@ -218,7 +220,10 @@ class ProjectListItem(
                         (parent.get() ?: return@withContext).createSuccessPeek(translate {
                             Locale.ENGLISH { "Successfully compiled ${project.info.name} (${compileTime}ms)" }
                             Locale.KOREAN  { "${project.info.name} 컴파일 완료! (${compileTime}ms)" }
-                        }, PeekAlert.Position.Bottom).peek()
+                        }, PeekAlert.Position.Bottom).also {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                                it.setMargin(vertical = innerBinding.root.rootWindowInsets.getInsets(WindowInsets.Type.systemBars()).bottom)
+                        }.peek()
                         binding?.updateState(project)
                     }
                 }
