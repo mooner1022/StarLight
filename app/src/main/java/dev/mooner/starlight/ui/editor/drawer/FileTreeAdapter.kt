@@ -178,6 +178,7 @@ class FileTreeAdapter(
                     node.addChild(*walkAndMap(it).toTypedArray())
                 result += node
             }
+            result.sortWith(compareBy<FileNode> { it.isLeaf }.thenBy { it.content.name })
             return result
         }
     }
