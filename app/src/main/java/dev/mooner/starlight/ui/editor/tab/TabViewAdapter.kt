@@ -65,7 +65,8 @@ class TabViewAdapter(
                 }
                 ?: holder.fileIcon.loadWithTint(R.drawable.ic_round_code_24, R.color.main_bright)
 
-        holder.fileName.text = session.fileName.let { if (session.isUpdated) "$it *" else it }
+        holder.fileName.text = getUniqueFileName(session.fileName)
+            .let { if (session.isUpdated) "$it *" else it }
         holder.fileName.setTextColor(textColor)
         if (position == selectedIndex)
             holder.indicator.visibility = View.VISIBLE
@@ -153,6 +154,16 @@ class TabViewAdapter(
         textColor = getTextColor(isDark)
 
         notifyItemRangeChanged(0, itemCount)
+    }
+
+    private fun getUniqueFileName(path: String): String {
+        val parts = path.split("/")
+        val fileName = parts.last()
+        if (parts.size == 1)
+            return fileName
+        if (sessions.find { it.fileName != path && it.fileName.endsWith(fileName) } != null)
+            return parts.takeLast(2).joinToString("/")
+        return fileName
     }
 
     private fun getTextColor(isDark: Boolean): Int {
