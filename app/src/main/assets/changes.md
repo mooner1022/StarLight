@@ -1,3 +1,32 @@
+## 0.3.4b - 2025-06-05
+### 새로운 기능
++ 알파 -> 베타 전환
++ Kotlin 2.1.21로 업데이트
++ `Language.eval` API에 options 파라미터 추가
++ RhinoJS의 eval 파라미터에 `allowJavaAccess`, `allowApiAccess`, `optimizationLevel`, `languageVersion` 파라미터 추가
++ `Language.compile`에 project가 제공되지 않아도 일부 API를 주입하도록 개선
++ API2의 Bot API가 디버그룸에서 동작하도록 개선
+
+### 버그 수정 / 개선 사항
++ 코드 최적화 개선
++ 코드 에디터의 파일 트리가 폴더를 우선 정렬하도록 수정
++ 코드 에디터의 세션 탭이 올바르게 동작하도록 수정
++ 코드 에디터의 세션 탭에 전체 파일 경로가 아닌 파일명만 표시되도록 수정
++ 하단 알림이 일부 기기에서 제스쳐 바에 가려지는 현상 수정
++ 코드 생성기 최적화 개선
+
+## 0.3.3a - 2025-01-19
+### 새로운 기능
++ `Api.markAsReadOnID`, `Api.sendToID` 구현 추가 `(도리도리ㅎ)`
++ 에디터 파일 트리에 하위 파일 생성 / 파일 이름 변경 기능 추가
+
+### 버그 수정 / 개선 사항
++ timeout 관련 API 사용시 Thread Starvation이 생기던 문제 수정 `(Yellu)`
++ 업데이트 다운로드 실패 시 유저에게 표시되도록 개선
++ 로그가 일정 개수 이상 쌓일 시 앱이 종료되던 문제 수정 `(shaper, bgyooPtr, hahamini)`
++ 에디터 파일 트리 팝업 사용성 개선
++ 일부 로그의 로그 레벨 변경
+
 ## 0.3.2a - 2024-12-06
 ### 버그 수정 / 개선 사항
 + 후원 링크 변경 (토스아이디 -> Buy me a coffee)
@@ -9,11 +38,6 @@
 + 초기 설정에서 권한이 제대로 요청되지 않는 문제 수정 `(Ample, 미노)`
 + 초기 설정이 반복되어 표시되는 문제 수정 `(Ample, 미노)`
 + 레거시 `response` 이벤트의 `replier`가 올바르게 동작하도록 구현 수정 `(thfzm)`
-
-### 알려진 문제
-초기 설정 관련 문제의 중요도가 높아 아래 문제들은 추후 수정될 예정입니다. 
-+ `setTimeout`, `setInterval` 구현 관련하여 스레드 풀 starvation이 일어나는 문제
-+ 프로젝트 삭제 시 간헐적으로 앱이 종료되는 문제
 
 ## 0.3.1a - 2024-08-15
 ### 버그 수정 / 개선 사항
@@ -58,10 +82,14 @@
 + 프로젝트 ID 해시 충돌 문제 수정 `(Yellu)`
 
 ### 도움 주신 분들
+#### Contributors
++ [Ample(naijun0403)](https://github.com/naijun0403)
++ [shaper(shaper1234w)](https://github.com/shaper12340w)
+
 `Yellu` - 버그 제보  
 `AlphaDo` - 버그 제보  
-`Ample` - PR 제공, 버그 제보, 버그 수정 도움  
-`NoMic` - 버그 제보, 후원  
+`Ample` - PR 제공  
+`NoMik` - 버그 제보, 후원  
 `완두콩완두` - 개선 사항 제공, 후원  
 `도리도리ㅎ` - 개선 사항 제공, 후원  
 `개밟자` - 후원  
@@ -69,5 +97,8 @@
 `삼플` - 버그 제보  
 `미노` - 버그 제보  
 `thfzm` - 버그 제보  
+`shaper` - PR 제공, 후원  
+`bgyooPtr` - 버그 제보  
+`hahamini` - 버그 제보
 
 도움 주신 모든 분들 감사합니다.
