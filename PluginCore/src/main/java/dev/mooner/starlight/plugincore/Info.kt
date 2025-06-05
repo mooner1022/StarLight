@@ -8,6 +8,6 @@ class Info {
 
         @JvmStatic
         val PLUGINCORE_VERSION: Version =
-            Version.fromString("0.3.0")
+            Version.fromString("0.3.2")
     }
 }
