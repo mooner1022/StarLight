@@ -580,6 +580,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                 }
             }
         }.also(binding.rvOpenFiles::setAdapter)
+        binding.rvOpenFiles.itemAnimator = FadeInAnimator()
         ItemTouchHelper(TabItemMoveCallbackListener(adapter))
             .attachToRecyclerView(binding.rvOpenFiles)
         return adapter
@@ -982,7 +983,12 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                         binding.root.closeDrawer(GravityCompat.END)
                 }
         else
-            confirmEditorExit { super.onBackPressed() }
+            confirmEditorExit {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                    super.onBackPressedDispatcher.onBackPressed()
+                else
+                    super.onBackPressed()
+            }
     }
 
     companion object {
