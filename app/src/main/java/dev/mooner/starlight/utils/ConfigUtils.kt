@@ -143,8 +143,7 @@ internal fun ConfigActivity.onPaused() {
     LOG.verbose { "Paused, instanceCount= ${instanceCount.get()}" }
 }
 
-context(ConfigActivity)
-internal fun onDestroyed() {
+internal fun ConfigActivity.onDestroyed() {
     instanceCount.getAndDecrement()
     LOG.verbose { "Destroyed, instanceCount= ${instanceCount.get()}" }
     if (holders[activityId]?.isPaused == true) {

@@ -29,6 +29,7 @@ import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.callbacks.onDismiss
 import com.afollestad.materialdialogs.customview.customView
+import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.google.android.material.chip.Chip
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.DialogLogFilterBinding
@@ -44,7 +45,6 @@ import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.utils.dp
 import dev.mooner.starlight.utils.setCommonAttrs
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 
@@ -190,11 +190,12 @@ class LogsFragment : Fragment(), OnClickListener {
         }
     }
 
-    context(LifecycleOwner)
+    context(lifecycle: LifecycleOwner)
     @SuppressLint("CheckResult")
     private fun showLogFilterConfigDialog(context: Context) {
         MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
             setCommonAttrs()
+            lifecycleOwner(lifecycle)
             title(res = R.string.log_filter_settings)
 
             val inflater = LayoutInflater.from(context as Activity)
@@ -280,12 +281,14 @@ class LogsFragment : Fragment(), OnClickListener {
         }
     }
 
-    context(LifecycleOwner)
+    context(lifecycle: LifecycleOwner)
     @SuppressLint("CheckResult")
     private fun showModeSelectDialog(context: Context) {
         MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
             var type: LogItem.ViewType = itemAdapter?.viewType ?: LogItem.ViewType.NORMAL
-            setCommonAttrs()
+            with(lifecycle) {
+                setCommonAttrs()
+            }
 
             title(text = "로그 표시 모드")
             

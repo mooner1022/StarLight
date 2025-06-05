@@ -40,9 +40,9 @@ import kotlinx.coroutines.withContext
 
 typealias LogFilter = (log: LogData) -> Boolean
 
-context(LifecycleOwner)
+context(lifecycle: LifecycleOwner)
 fun Activity.bindLogNotifier(filter: LogFilter? = null) =
-    lifecycleScope.launch {
+    lifecycle.lifecycleScope.launch {
         suspend fun onLogCreated(event: Events.Log.Create) {
             val log = event.log
             if (log.type.priority >= LogType.INFO.priority) {
@@ -80,9 +80,9 @@ fun Activity.bindLogNotifier(filter: LogFilter? = null) =
         }
     }
 
-context(LifecycleOwner)
+context(lifecycle: LifecycleOwner)
 fun Fragment.bindLogNotifier(filter: LogFilter? = null) =
-    lifecycleScope.launch {
+    lifecycle.lifecycleScope.launch {
         suspend fun onLogCreated(event: Events.Log.Create) {
             val log = event.log
             if (log.type.priority >= LogType.INFO.priority) {

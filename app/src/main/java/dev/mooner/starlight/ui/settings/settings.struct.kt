@@ -27,8 +27,7 @@ import dev.mooner.starlight.utils.showConfirmDialog
 import dev.mooner.starlight.utils.startActivity
 import dev.mooner.starlight.utils.startConfigActivity
 
-context(SettingsFragment)
-internal fun getSettingsStruct() = config {
+internal fun SettingsFragment.getSettingsStruct() = config {
     singleCategoryPage {
         id = "general"
         title = "일반"
@@ -252,8 +251,7 @@ internal fun getSettingsStruct() = config {
     }
 }
 
-context(SettingsFragment)
-internal fun getNoobSettingStruct() = config {
+internal fun SettingsFragment.getNoobSettingStruct() = config {
     val mainColor = requireContext().getColor(R.color.main_bright)
     category {
         id = "general"

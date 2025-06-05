@@ -15,12 +15,13 @@ import android.os.Build
 import android.os.Environment
 import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.core.database.getLongOrNull
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
@@ -39,7 +40,6 @@ import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.TimeUtils
 import dev.mooner.starlight.plugincore.utils.onSaveConfigAdapter
 import dev.mooner.starlight.ui.config.ConfigActivity
-import dev.mooner.starlight.ui.settings.SettingsFragment
 import dev.mooner.starlight.utils.*
 import io.noties.markwon.AbstractMarkwonPlugin
 import io.noties.markwon.Markwon
@@ -54,8 +54,6 @@ import java.io.File
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-
-context(SettingsFragment)
 fun Context.startCheckUpdateActivity() {
     startConfigActivity(
         title = "설정",
@@ -129,8 +127,7 @@ fun Context.startCheckUpdateActivity() {
     )
 }
 
-context(ConfigActivity)
-private fun checkUpdate() {
+private fun ConfigActivity.checkUpdate() {
     createSimplePeek(
         text = translate {
             Locale.ENGLISH { "Plz wait for a sec..." }
@@ -192,7 +189,7 @@ private fun checkUpdate() {
         val pInfo = getPackageInfo()
         val changeLog = checker.fetchChangeLog(version)
 
-        MaterialDialog(this@ConfigActivity, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
+        MaterialDialog(this@checkUpdate, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
             setCommonAttrs()
             cancelOnTouchOutside(false)
             title(text = "새로운 버전 확인 (*˙˘˙*)!")
@@ -237,7 +234,7 @@ private fun checkUpdate() {
                     autoHideMillis = null
                 }.also(PeekAlert::peek)
 
-                downloadFileFromURL(this@ConfigActivity, version.downloadUrl, dest)
+                downloadFileFromURL(this@checkUpdate, version.downloadUrl, dest)
                     .onEach { (status, progress) ->
                         println("$status : ${progress}%")
                         when (status) {
@@ -248,15 +245,15 @@ private fun checkUpdate() {
                                     setText("파일을 성공적으로 다운로드 했어요! (뿌듯)")
                                     setAutoHide(3000L)
                                 }.peek()
-                                val destUri = FileProvider.getUriForFile(this@ConfigActivity, "dev.mooner.starlight.provider", dest)
+                                val destUri = FileProvider.getUriForFile(this@checkUpdate, "dev.mooner.starlight.provider", dest)
 
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                     if (!packageManager.canRequestPackageInstalls()) {
-                                        Toast.makeText(this@ConfigActivity, "먼저 앱 설치 권한을 허용해 주세요.", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(this@checkUpdate, "먼저 앱 설치 권한을 허용해 주세요.", Toast.LENGTH_LONG).show()
                                         requestAppInstallPermission()
                                     }
                                 }
-                                requestInstall(this@ConfigActivity, destUri)
+                                requestInstall(this@checkUpdate, destUri)
                             }
                             DownloadManager.STATUS_FAILED -> {
                                 alert.apply {
@@ -278,22 +275,15 @@ private fun checkUpdate() {
     }
 }
 
-context(ConfigActivity)
+context(activity: AppCompatActivity)
 @RequiresApi(Build.VERSION_CODES.O)
 internal suspend fun requestAppInstallPermission() {
-    var permCallback: ((result: ActivityResult) -> Unit)? = null
-    val permListener = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        permCallback?.invoke(result)
-    }
-
     suspendCoroutine { cont ->
-        permCallback = { result ->
-            cont.resume(result.resultCode == Activity.RESULT_OK)
-            permCallback = null
-        }
         val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
-            .setData(Uri.parse("package:${packageName}"))
-        permListener.launch(intent)
+            .setData("package:${activity.packageName}".toUri())
+        activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            cont.resume(result.resultCode == Activity.RESULT_OK)
+        }.launch(intent)
     }
 }
 

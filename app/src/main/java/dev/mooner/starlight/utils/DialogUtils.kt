@@ -169,18 +169,18 @@ fun MaterialDialog.setCommonAttrs() {
     cornerRadius(res = R.dimen.card_radius)
 }
 
-context(LifecycleOwner)
+context(lifecycleOwner: LifecycleOwner)
 fun MaterialDialog.setCommonAttrs() {
     cornerRadius(res = R.dimen.card_radius)
-    lifecycleOwner(this@LifecycleOwner)
+    lifecycleOwner(lifecycleOwner)
 }
 
-context(LifecycleOwner)
+context(lifecycleOwner: LifecycleOwner)
 fun MaterialDialog.configStruct(context: Context, block: DialogConfigStructBuilder.() -> Unit) {
     val binding = DialogConfigLayoutBinding.inflate(layoutInflater, null, false)
     var adapter: ConfigAdapter? = ConfigAdapter.Builder(context) {
         bind(binding.configRecyclerView)
-        lifecycleOwner(this@LifecycleOwner)
+        lifecycleOwner(lifecycleOwner)
 
         DialogConfigStructBuilder().apply(block).build(this)
     }.build()

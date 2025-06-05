@@ -15,8 +15,7 @@ import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.ProjectImpl
 import dev.mooner.starlight.plugincore.utils.TimeUtils
 
-context(Context)
-fun getProjectInfoItems(project: Project) = config {
+fun Context.getProjectInfoItems(project: Project) = config {
     val defaultColor = getColor(R.color.main_bright)
     val info = project.info
     val lang = project.getLanguage()

@@ -10,42 +10,42 @@ import android.content.Context
 import androidx.annotation.StringRes
 import dev.mooner.starlight.plugincore.logger.TLogger
 
-context(Context)
+context(context: Context)
 fun TLogger.verbose(@StringRes res: Int) =
-    verbose { getString(res) }
+    verbose { context.getString(res) }
 
-context(Context)
+context(context: Context)
 fun TLogger.verbose(@StringRes res: Int, vararg formatArgs: Any) =
-    verbose { getString(res, formatArgs) }
+    verbose { context.getString(res, formatArgs) }
 
-context(Context)
+context(context: Context)
 fun TLogger.debug(@StringRes res: Int) =
-    debug { getString(res) }
+    debug { context.getString(res) }
 
-context(Context)
+context(context: Context)
 fun TLogger.debug(@StringRes res: Int, vararg formatArgs: Any) =
-    debug { getString(res, formatArgs) }
+    debug { context.getString(res, formatArgs) }
 
-context(Context)
+context(context: Context)
 fun TLogger.info(@StringRes res: Int) =
-    info { getString(res) }
+    info { context.getString(res) }
 
-context(Context)
+context(context: Context)
 fun TLogger.info(@StringRes res: Int, vararg formatArgs: Any) =
-    info { getString(res, formatArgs) }
+    info { context.getString(res, formatArgs) }
 
-context(Context)
+context(context: Context)
 fun TLogger.warn(@StringRes res: Int) =
-    warn { getString(res) }
+    warn { context.getString(res) }
 
-context(Context)
+context(context: Context)
 fun TLogger.warn(@StringRes res: Int, vararg formatArgs: Any) =
-    warn { getString(res, formatArgs) }
+    warn { context.getString(res, formatArgs) }
 
-context(Context)
+context(context: Context)
 fun TLogger.error(@StringRes res: Int) =
-    warn { getString(res) }
+    warn { context.getString(res) }
 
-context(Context)
+context(context: Context)
 fun TLogger.error(@StringRes res: Int, vararg formatArgs: Any) =
-    warn { getString(res, formatArgs) }
+    warn { context.getString(res, formatArgs) }

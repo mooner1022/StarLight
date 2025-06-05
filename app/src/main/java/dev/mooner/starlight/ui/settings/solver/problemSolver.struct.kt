@@ -7,7 +7,6 @@
 package dev.mooner.starlight.ui.settings.solver
 
 import android.os.Build
-import androidx.fragment.app.Fragment
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.button
@@ -20,7 +19,6 @@ import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.ui.settings.notifications.RuleData
 import dev.mooner.starlight.ui.settings.notifications.Rules
 
-context(Fragment)
 internal fun getProblemSolverStruct() = config {
     val colorPrimary = color { "#7ACA8A" }
     val colorError   = color { "#FF6188" }
