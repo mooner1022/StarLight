@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -17,10 +16,8 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.view.GravityCompat
-import androidx.core.view.get
-import androidx.core.view.updateLayoutParams
-import androidx.core.view.updatePadding
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.*
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.drawerlayout.widget.DrawerLayout.DrawerListener
 import androidx.lifecycle.lifecycleScope
@@ -54,10 +51,10 @@ import dev.mooner.starlight.ui.editor.tab.EditorSession
 import dev.mooner.starlight.ui.editor.tab.TabItemMoveCallbackListener
 import dev.mooner.starlight.ui.editor.tab.TabViewAdapter
 import dev.mooner.starlight.utils.*
+import jp.wasabeef.recyclerview.animators.FadeInAnimator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.*
@@ -128,7 +125,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                 .category("e_general")
                 .getInt("theme", DEFAULT_THEME.ordinal)
                 .let(Theme.entries.toTypedArray()::get)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             DEFAULT_THEME
         }
 
@@ -291,7 +288,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                     alpha = offsetFlip
                     if (offsetFlip == 0f)
                         visibility = View.GONE
-                    else if (visibility == View.GONE)
+                    else if (isGone)
                         visibility = View.VISIBLE
                 }
             }
@@ -321,7 +318,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         val superRes = super.onPrepareOptionsMenu(menu)
         val iconColor = ColorStateList.valueOf(getTextColor(theme.isTextDark))
-        for (idx in 0 until menu.size()) {
+        for (idx in 0 until menu.size) {
             val item = menu[idx]
             if (Build.VERSION.SDK_INT < 26)
                 item.icon?.setTintList(iconColor)
@@ -617,11 +614,11 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         val textColor = getTextColor(theme.isTextDark)
         val textColorStateList = ColorStateList.valueOf(textColor)
 
-        supportActionBar!!.setBackgroundDrawable(ColorDrawable(color))
+        supportActionBar!!.setBackgroundDrawable(color.toDrawable())
         binding.toolbarEditor.apply {
             setTitleTextColor(textColor)
             navigationIcon!!.colorFilter = PorterDuffColorFilter(textColor, PorterDuff.Mode.MULTIPLY)
-            for (idx in 0 until menu.size()) {
+            for (idx in 0 until menu.size) {
                 if (Build.VERSION.SDK_INT < 26)
                     menu[idx].icon?.setTintList(textColorStateList)
                 else
@@ -895,6 +892,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     private fun appendText(text: String) =
         executeScript("""appendText("${encode(text)}")""")
 
+    @Suppress("unused")
     private fun setChanged(changed: Boolean) =
         executeScript("""setChanged("$changed")""")
 

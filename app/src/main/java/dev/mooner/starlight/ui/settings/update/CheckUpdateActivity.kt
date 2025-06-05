@@ -292,7 +292,7 @@ private fun downloadFileFromURL(context: Activity, url: String, dest: File): Sta
     val flow = MutableStateFlow(0 to -1)
 
     val downloadManager = context.getSystemService(Activity.DOWNLOAD_SERVICE) as DownloadManager
-    val request = DownloadManager.Request(Uri.parse(url))
+    val request = DownloadManager.Request(url.toUri())
         .setDestinationUri(Uri.fromFile(dest))
         .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
         .setTitle("새 버전 다운로드")
