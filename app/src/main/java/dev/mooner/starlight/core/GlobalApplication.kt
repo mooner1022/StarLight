@@ -76,6 +76,13 @@ class GlobalApplication: Application(), LifecycleEventObserver {
                 data = Uri.fromParts("package", packageName, null)
             }.also(::startActivity)
         }
+        if (!Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "다른 앱 위에 그리기 권한이 필요합니다.", Toast.LENGTH_LONG).show()
+            Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                data = Uri.fromParts("package", packageName, null)
+            }.also(::startActivity)
+        }
 
         checkStartupInfo()?.let { info ->
             println("Found fatal error on last run, aborting launch..")
