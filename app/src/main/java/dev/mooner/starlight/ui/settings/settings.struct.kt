@@ -21,7 +21,7 @@ import dev.mooner.starlight.ui.settings.dev.startDevModeActivity
 import dev.mooner.starlight.ui.settings.info.AppInfoActivity
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.ui.settings.solver.getProblemSolverStruct
-import dev.mooner.starlight.ui.settings.update.startCheckUpdateActivity
+import dev.mooner.starlight.ui.settings.update.CheckUpdateConfigActivity
 import dev.mooner.starlight.utils.restartApplication
 import dev.mooner.starlight.utils.showConfirmDialog
 import dev.mooner.starlight.utils.startActivity
@@ -215,7 +215,8 @@ internal fun SettingsFragment.getSettingsStruct() = config {
                 iconTintColor = color { "#A7D0CD" }
                 setOnClickListener { _ ->
                     //checkUpdate()
-                    requireActivity().startCheckUpdateActivity()
+
+                    requireActivity().startConfigActivity(CheckUpdateConfigActivity())
                 }
             }
             button {
@@ -352,7 +353,7 @@ internal fun SettingsFragment.getNoobSettingStruct() = config {
                 iconTintColor = color { "#A7D0CD" }
                 setOnClickListener { _ ->
                     //checkUpdate()
-                    requireContext().startCheckUpdateActivity()
+                    requireContext().startConfigActivity(CheckUpdateConfigActivity())
                 }
             }
             button {
