@@ -19,12 +19,13 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 private val LOG = LoggerFactory.logger {  }
 
 class ConfigActivity : AppCompatActivity() {
 
-    val eventHandleScope: CoroutineScope =
+    val eventHandlerScope: CoroutineScope =
         lifecycleScope
 
     lateinit var binding: ActivityConfigBinding
@@ -42,7 +43,7 @@ class ConfigActivity : AppCompatActivity() {
 
         bindLogNotifier()
 
-        eventHandleScope.launch {
+        eventHandlerScope.launch {
             EventHandler.on(this, ::onDestroyCall)
         }
 
@@ -73,6 +74,13 @@ class ConfigActivity : AppCompatActivity() {
             finish()
             return
         }
+        runBlocking(lifecycleScope.coroutineContext) {
+            EventHandler.fireEvent(ApplicationEvent.ConfigActivity.Create(
+                uuid           = activityId,
+                activity       = this@ConfigActivity,
+                coroutineScope = this,
+            ))
+        }
 
         val struct = holder.structBlock.invoke(this)
         recyclerAdapter = ParentConfigAdapter(
@@ -95,7 +103,7 @@ class ConfigActivity : AppCompatActivity() {
                         )
                     )
                 }
-                .launchIn(eventHandleScope)
+                .launchIn(eventHandlerScope)
         }
 
         val mLayoutManager = LinearLayoutManager(applicationContext)
@@ -125,7 +133,7 @@ class ConfigActivity : AppCompatActivity() {
                 uuid = activityId
             )
         )
-        eventHandleScope.cancel()
+        eventHandlerScope.cancel()
         recyclerAdapter?.destroy()
         recyclerAdapter = null
         onDestroyed()

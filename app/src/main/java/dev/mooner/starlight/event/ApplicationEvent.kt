@@ -12,6 +12,7 @@ import dev.mooner.starlight.plugincore.event.Event
 import dev.mooner.starlight.plugincore.event.eventHandlerScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.JsonElement
+import dev.mooner.starlight.ui.config.ConfigActivity as ActualConfigActivity
 
 sealed class ApplicationEvent {
 
@@ -25,13 +26,21 @@ sealed class ApplicationEvent {
 
     sealed class ConfigActivity {
 
+        abstract val uuid: String
+
+        data class Create(
+            override val uuid: String,
+            val activity: ActualConfigActivity,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope, ConfigActivity()
+
         data class Destroy(
-            val uuid: String,
+            override val uuid: String,
             val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope, ConfigActivity()
 
         data class Update(
-            val uuid: String,
+            override val uuid: String,
             val data: UpdatedData?,
             val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope, ConfigActivity() {

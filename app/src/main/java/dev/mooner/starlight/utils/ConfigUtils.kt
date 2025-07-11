@@ -13,6 +13,7 @@ import dev.mooner.starlight.ui.config.ConfigActivity
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonElement
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -23,11 +24,12 @@ const val EXTRA_SUBTITLE = "subTitle"
 const val EXTRA_ACTIVITY_ID = "activityId"
 
 data class DataHolder(
-    var isPaused    : Boolean = false,
-    val structBlock : ConfigActivity.() -> ConfigStructure,
-    val saved       : MutableDataMap,
-    val publisher   : MutableSharedFlow<ApplicationEvent.ConfigActivity>,
-    val flow        : Flow<ApplicationEvent.ConfigActivity>
+    var isPaused          : Boolean = false,
+    val onCreatedListener : ConfigActivity.() -> Unit = {},
+    val structBlock       : ConfigActivity.() -> ConfigStructure,
+    val saved             : MutableDataMap,
+    val publisher         : MutableSharedFlow<ApplicationEvent.ConfigActivity>,
+    val flow              : Flow<ApplicationEvent.ConfigActivity>
 )
 
 //private var instanceCount: Int = 0
@@ -37,15 +39,29 @@ private val holders: MutableMap<String, DataHolder> = hashMapOf()
 
 private var rootActivityId: String? = null
 
+fun Context.startConfigActivity(configActivity: dev.mooner.starlight.utils.ConfigActivity) {
+    startConfigActivity(
+        uuid = configActivity.uuid,
+        title = configActivity.title,
+        subTitle = configActivity.subTitle,
+        structBlock = configActivity::getStructBlock,
+        saved = configActivity.getSavedData(),
+        onCreated = configActivity::onCreated,
+        onValueUpdated = configActivity::onValueUpdated,
+        onDestroyed = configActivity::onDestroyed,
+    )
+}
+
 fun Context.startConfigActivity(
     uuid           : String? = null,
     title          : String,
     subTitle       : String,
     struct         : ConfigStructure,
     saved          : MutableDataMap = hashMapOf(),
+    onCreated      : ConfigActivity.() -> Unit = {},
     onValueUpdated : OnValueUpdatedListener = { _, _, _, _ -> },
-    onDestroy      : () -> Unit = {}
-) = startConfigActivity(uuid, title, subTitle, { struct }, saved, onValueUpdated, onDestroy)
+    onDestroyed    : () -> Unit = {}
+) = startConfigActivity(uuid, title, subTitle, { struct }, saved, onCreated, onValueUpdated, onDestroyed)
 
 fun Context.startConfigActivity(
     uuid           : String? = null,
@@ -53,8 +69,9 @@ fun Context.startConfigActivity(
     subTitle       : String,
     structBlock    : ConfigActivity.() -> ConfigStructure,
     saved          : MutableDataMap = hashMapOf(),
+    onCreated      : ConfigActivity.() -> Unit = {},
     onValueUpdated : OnValueUpdatedListener = { _, _, _, _ -> },
-    onDestroy      : () -> Unit = {}
+    onDestroyed    : () -> Unit = {}
 ) {
     if (this is Activity && this !is ConfigActivity) {
         holders.keys.forEach(::finishConfigActivity)
@@ -71,15 +88,17 @@ fun Context.startConfigActivity(
         .onEach { event ->
             LOG.verbose { event }
             when(event) {
+                is ApplicationEvent.ConfigActivity.Create -> {}
+                    //onCreated(event.activity)
                 is ApplicationEvent.ConfigActivity.Update ->
                     with(event.data!!) {
                         onValueUpdated(parentId, id, data, jsonData) }
                 is ApplicationEvent.ConfigActivity.Destroy ->
-                    onDestroy()
+                    onDestroyed()
             }
         }
 
-    holders[activityId] = DataHolder(false, structBlock, saved, publisher, flow)
+    holders[activityId] = DataHolder(false, onCreated, structBlock, saved, publisher, flow)
     val intent = Intent(this, ConfigActivity::class.java).apply {
         putExtra(EXTRA_TITLE, title)
         putExtra(EXTRA_SUBTITLE, subTitle)
@@ -91,17 +110,14 @@ fun Context.startConfigActivity(
 }
 
 fun finishConfigActivity(id: String): Boolean {
-    if (id in holders) {
-        runBlocking {
-            EventHandler.fireEvent(
-                ApplicationEvent.ConfigActivity.Destroy(
-                    uuid = id
-                )
-            )
-        }
-        return true
+    if (id !in holders)
+        return false
+    runBlocking {
+        EventHandler.fireEvent(
+            ApplicationEvent.ConfigActivity.Destroy(id)
+        )
     }
-    return false
+    return true
 }
 
 internal fun ConfigActivity.initAdapter() {
@@ -115,7 +131,7 @@ internal fun ConfigActivity.initAdapter() {
         holder.flow
             .onCompletion { LOG.verbose { "HandlerFlow completed" } }
             //.flowWithLifecycle(lifecycle, Lifecycle.State.CREATED)
-            .launchIn(eventHandleScope)
+            .launchIn(eventHandlerScope)
 
         EventHandler.eventFlow
             //.flowWithLifecycle(lifecycle, Lifecycle.State.CREATED)
@@ -124,7 +140,7 @@ internal fun ConfigActivity.initAdapter() {
             .filter { it.uuid == activityId }
             .onEach(holder.publisher::emit)
             .onCompletion { LOG.verbose { "EventFlow completed" } }
-            .launchIn(eventHandleScope)
+            .launchIn(eventHandlerScope)
 
         instanceCount.getAndIncrement()
     }
@@ -135,6 +151,8 @@ internal fun ConfigActivity.initAdapter() {
         rootActivityId = activityId
         LOG.verbose { "Setting new root activity as $rootActivityId" }
     }
+
+    holder.onCreatedListener.invoke(this)
 }
 
 internal fun ConfigActivity.onPaused() {
@@ -159,4 +177,35 @@ internal fun ConfigActivity.onDestroyed() {
         if (instanceCount.get() < 0)
             instanceCount.set(0)
     }
+}
+
+abstract class ConfigActivity(val uuid: String? = null) {
+    /*
+    fun show(context: Context) {
+        context.startConfigActivity(
+            uuid = uuid,
+            title = title,
+            subTitle = subTitle,
+            structBlock = ::getStructBlock,
+            saved = getSavedData(),
+            onCreated = ::onCreated,
+            onValueUpdated = ::onValueUpdated,
+            onDestroyed = ::onDestroyed,
+        )
+    }
+     */
+
+    abstract val title: String
+
+    abstract val subTitle: String
+
+    abstract fun getStructBlock(activity: ConfigActivity): ConfigStructure
+
+    abstract fun getSavedData(): MutableDataMap
+
+    abstract fun onCreated(activity: ConfigActivity)
+
+    abstract suspend fun onValueUpdated(parentId: String, id: String, value: Any, jsonValue: JsonElement)
+
+    abstract fun onDestroyed()
 }
