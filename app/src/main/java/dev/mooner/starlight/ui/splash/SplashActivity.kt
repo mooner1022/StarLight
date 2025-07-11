@@ -2,14 +2,15 @@ package dev.mooner.starlight.ui.splash
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import coil.Coil
 import coil.ImageLoader
 import dev.mooner.starlight.MainActivity
@@ -25,6 +26,7 @@ import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.ui.splash.quickstart.WelcomeActivity
 import dev.mooner.starlight.ui.splash.quickstart.steps.SetPermissionFragment
+import dev.mooner.starlight.utils.applyEdgeToEdge
 import dev.mooner.starlight.utils.checkPermissions
 import dev.mooner.starlight.utils.restartApplication
 import kotlinx.coroutines.*
@@ -40,11 +42,9 @@ class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        enableEdgeToEdge()
-
         binding = ActivitySplashBinding.inflate(layoutInflater)
-        val view = binding.root
-        setContentView(view)
+        setContentView(binding.root)
+        applyEdgeToEdge(binding.root)
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemGestures())
@@ -113,24 +113,26 @@ class SplashActivity : AppCompatActivity() {
             }
         }
 
-        lifecycleScope.launchWhenCreated {
-            if (GlobalApplication.isStartupAborted)
-                return@launchWhenCreated
-            if (ApplicationSession.isInitComplete) {
-                startApplication(initMillis)
-            } else {
-                restartJob.start()
-                EventHandler.on<ApplicationEvent.Session.StageUpdate>(this) {
-                    if (value == null) {
-                        startApplication(initMillis)
-                        return@on
-                    }
-                    if (restartJob.isActive)
-                        restartJob.cancel()
-                    println("------------------------ $value")
-                    LOG.info { value }
-                    withContext(Dispatchers.Main) {
-                        binding.textViewLoadStatus.text = "✦ $value"
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.CREATED) {
+                if (GlobalApplication.isStartupAborted)
+                    return@repeatOnLifecycle
+                if (ApplicationSession.isInitComplete) {
+                    startApplication(initMillis)
+                } else {
+                    restartJob.start()
+                    EventHandler.on<ApplicationEvent.Session.StageUpdate>(this) {
+                        if (value == null) {
+                            startApplication(initMillis)
+                            return@on
+                        }
+                        if (restartJob.isActive)
+                            restartJob.cancel()
+                        println("------------------------ $value")
+                        LOG.info { value }
+                        withContext(Dispatchers.Main) {
+                            binding.textViewLoadStatus.text = "✦ $value"
+                        }
                     }
                 }
             }
@@ -155,7 +157,10 @@ class SplashActivity : AppCompatActivity() {
 
     private fun startMainActivity(intent: Intent) = runOnUiThread {
         startActivity(intent)
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, android.R.anim.fade_in, android.R.anim.fade_out)
+        else
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()
     }
 
