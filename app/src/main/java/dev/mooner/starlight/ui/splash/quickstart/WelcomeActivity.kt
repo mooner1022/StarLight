@@ -7,42 +7,32 @@
 package dev.mooner.starlight.ui.splash.quickstart
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import dev.mooner.starlight.databinding.ActivityWelcomeBinding
+import dev.mooner.starlight.utils.applyEdgeToEdge
 
-class WelcomeActivity : AppCompatActivity() {
+class WelcomeActivity: AppCompatActivity() {
 
     private lateinit var binding: ActivityWelcomeBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        enableEdgeToEdge()
-
         binding = ActivityWelcomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeToEdge(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
-            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemGestures())
-            // Apply the insets as padding to the view. Here, set all the dimensions
-            // as appropriate to your layout. You can also update the view's margin if
-            // more appropriate.
-            view.updatePadding(insets.left, insets.top, insets.right, insets.bottom)
-
-            // Return CONSUMED if you don't want the window insets to keep passing down
-            // to descendant views.
-            WindowInsetsCompat.CONSUMED
-        }
-
-        binding.buttonNext.setOnClickListener {
-            startActivity(Intent(this, QuickStartActivity::class.java))
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-            finish()
+        arrayOf(binding.buttonNext, binding.labelNext).forEach {
+            it.setOnClickListener {
+                startActivity(Intent(this, QuickStartActivity::class.java))
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+                    overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, android.R.anim.fade_in, android.R.anim.fade_out)
+                else
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+                finish()
+            }
         }
     }
 }

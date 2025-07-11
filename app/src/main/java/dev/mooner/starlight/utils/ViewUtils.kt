@@ -12,8 +12,14 @@ import android.view.ViewGroup.LayoutParams
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import android.widget.ProgressBar
+import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.core.widget.ImageViewCompat
 import androidx.core.widget.NestedScrollView
 import coil.ImageLoader
@@ -108,6 +114,18 @@ inline fun <reified T : ViewGroup.LayoutParams> View.applyLayoutParams(
     val params = (layoutParams ?: T::class.primaryConstructor!!.call(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)) as T
     block(params)
     layoutParams = params
+}
+
+fun ComponentActivity.applyEdgeToEdge(rootView: View? = null, onApplyWindowInsets: ((view: View, insets: Insets) -> Unit)? = null) {
+    enableEdgeToEdge()
+
+    val rootView: View = rootView ?: window.decorView.findViewById(android.R.id.content)
+    ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
+        val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemGestures())
+        view.updatePadding(insets.left, insets.top, insets.right, insets.bottom)
+        onApplyWindowInsets?.invoke(view, insets)
+        WindowInsetsCompat.CONSUMED
+    }
 }
 
 fun getScreenSizeDp(context: Context): Pair<Float, Float> {

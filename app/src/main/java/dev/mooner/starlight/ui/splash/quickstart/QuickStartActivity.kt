@@ -10,13 +10,9 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.annotation.IdRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.AnimBuilder
 import androidx.navigation.NavController
@@ -26,6 +22,7 @@ import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.PREF_IS_INITIAL
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityQuickStartBinding
+import dev.mooner.starlight.utils.applyEdgeToEdge
 import dev.mooner.starlight.utils.restartApplication
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -39,22 +36,9 @@ class QuickStartActivity : AppCompatActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        enableEdgeToEdge()
-
         binding = ActivityQuickStartBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
-            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemGestures())
-            // Apply the insets as padding to the view. Here, set all the dimensions
-            // as appropriate to your layout. You can also update the view's margin if
-            // more appropriate.
-            view.updatePadding(insets.left, insets.top, insets.right, insets.bottom)
-
-            // Return CONSUMED if you don't want the window insets to keep passing down
-            // to descendant views.
-            WindowInsetsCompat.CONSUMED
-        }
+        applyEdgeToEdge(binding.root)
 
         val navHostFrag: NavHostFragment = supportFragmentManager.findFragmentById(R.id.frame_stepper) as NavHostFragment
         val controller = navHostFrag.navController
