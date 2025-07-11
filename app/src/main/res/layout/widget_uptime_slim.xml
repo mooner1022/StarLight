@@ -4,13 +4,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:background="@color/main_dark"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content"
+    android:padding="@dimen/card_radius">
 
     <TextSwitcher
         android:id="@+id/uptimeText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="12dp"
         android:layout_weight="5"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -51,7 +51,6 @@
         android:id="@+id/imageView4"
         android:layout_width="0dp"
         android:layout_height="20dp"
-        android:layout_marginStart="12dp"
         android:src="@drawable/ic_round_access_time_24"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

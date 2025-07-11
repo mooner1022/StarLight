@@ -11,7 +11,7 @@
     <dimen name="editor_drawer_max_width">400dp</dimen>
 
     <dimen name="card_height">54dp</dimen>
-    <dimen name="card_radius">20dp</dimen>
+    <dimen name="card_radius">16dp</dimen>
     <dimen name="card_elevation">0dp</dimen>
     <dimen name="card_margin_horizontal">64dp</dimen>
     <dimen name="card_margin_vertical">20dp</dimen>
@@ -26,7 +26,7 @@
     <dimen name="dialog_width">480dp</dimen>
 
     <dimen name="widget_card_margin_horizontal">32dp</dimen>
-    <dimen name="widget_padding_horizontal">8dp</dimen>
+    <dimen name="widget_padding_horizontal">0dp</dimen>
 
     <dimen name="editor_chip_height">40dp</dimen>
 

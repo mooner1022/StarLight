@@ -34,7 +34,6 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
             android:fontFamily="@font/nanumsquare_neo_regular"
             android:text="Project ✦"
             android:textColor="@color/white"
@@ -53,7 +52,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:layout_marginStart="5dp"
             android:fontFamily="@font/nanumsquare_neo_regular"
             android:text="@string/app_version"
             android:textColor="#C1C1C1"
@@ -66,6 +64,7 @@
             android:orientation="horizontal">
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/label_next"
                 android:layout_width="match_parent"
                 android:layout_height="46dp"
                 app:cardBackgroundColor="#373337"
