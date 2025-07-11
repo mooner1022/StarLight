@@ -120,7 +120,7 @@ internal fun ConfigActivity.initAdapter() {
         EventHandler.eventFlow
             //.flowWithLifecycle(lifecycle, Lifecycle.State.CREATED)
             .buffer(Channel.UNLIMITED)
-            .filterIsInstance<ApplicationEvent.ConfigActivity.Update>()
+            .filterIsInstance<ApplicationEvent.ConfigActivity>()
             .filter { it.uuid == activityId }
             .onEach(holder.publisher::emit)
             .onCompletion { LOG.verbose { "EventFlow completed" } }
