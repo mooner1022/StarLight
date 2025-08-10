@@ -94,6 +94,7 @@ dependencies {
     implementation(libs.fast.adapter.extensions.binding)
     implementation(libs.markwon.core)
     implementation(libs.dalvik.dx)
+    implementation(libs.sqlite)
 
     implementation(libs.cascade)
 
