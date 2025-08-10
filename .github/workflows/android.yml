@@ -2,7 +2,7 @@ name: Android CI
 
 on:
   push:
-    branches: [ "nightly" ]
+    branches: [ "nightly", "nightly-external-sqlite" ]
     paths-ignore:
       - "**.md"
   pull_request:
