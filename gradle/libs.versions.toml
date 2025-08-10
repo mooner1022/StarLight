@@ -35,6 +35,7 @@ markwon = "4.6.2"
 dalvik-dx = "11.0.0_r3"
 ketch = "2.0.5"
 cascade = "2.3.0"
+sqlite = "3.49.0"
 
 [libraries]
 android-gradle-plugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
@@ -78,6 +79,7 @@ fast-adapter-extensions-binding = { group = "com.mikepenz", name = "fastadapter-
 markwon-core = { group = "io.noties.markwon", name = "core", version.ref = "markwon" }
 dalvik-dx = { group = "com.jakewharton.android.repackaged", name = "dalvik-dx", version.ref = "dalvik-dx" }
 ketch = { group = "com.github.khushpanchal", name = "Ketch", version.ref = "ketch" }
+sqlite = { group = "com.github.requery", name = "sqlite-android", version.ref = "sqlite" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
