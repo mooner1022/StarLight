@@ -35,7 +35,7 @@ markwon = "4.6.2"
 dalvik-dx = "11.0.0_r3"
 ketch = "2.0.5"
 cascade = "2.3.0"
-sqlite = "3.49.0"
+sqlite = "3.41.2"
 
 [libraries]
 android-gradle-plugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
