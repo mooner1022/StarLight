@@ -38,4 +38,6 @@ dependencies {
     api(libs.bundles.androidx)
     api(libs.bundles.kotlin)
     api(projects.configDSL)
+
+    testImplementation(libs.junit)
 }
