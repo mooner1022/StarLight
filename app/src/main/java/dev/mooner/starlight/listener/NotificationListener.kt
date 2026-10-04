@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.listener
 
+import android.app.Notification
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -76,11 +77,7 @@ class NotificationListener: NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if (!isGlobalPowerOn || sbn.notification.actions == null || !ApplicationSession.isInitComplete) return
-
-        val ts = System.currentTimeMillis()
-        val pkgName = sbn.packageName
-        val userId = sbn.userId
+        if (!isGlobalPowerOn || !ApplicationSession.isInitComplete || sbn.packageName == packageName) return
 
         if (useNPostedEvent) {
             Session.projectManager.fireEvent<OnNotificationPostedEvent>(sbn) { project, e ->
@@ -93,20 +90,30 @@ class NotificationListener: NotificationListenerService() {
             }
         }
 
+        sbn.notification.actions?.let { actions ->
+            handleMessage(sbn, actions)
+        }
+
+        Events.Notification.Post(sbn, applicationContext)
+            .also(EventHandler::fireEventWithScope)
+    }
+
+    private fun handleMessage(sbn: StatusBarNotification, actions: Array<Notification.Action>) {
+        val ts = System.currentTimeMillis()
+        val pkgName = sbn.packageName
+        val userId = sbn.userId
+
         if (rules.isEmpty()) return
         var idx = 0
         val appliedRule = rules.find { ++idx; it.packageName == pkgName && it.userId == userId }
             ?: return
         val isDefaultRule = idx == 1
 
-        if (sbn.notification.actions == null)
-            return
-
-        for (act in sbn.notification.actions) {
+        for (act in actions) {
             if (act.remoteInputs != null && act.remoteInputs.isNotEmpty()) {
                 try {
                     val data = ParserSpecManager.getSpecById(appliedRule.parserSpecId)
-                        ?.parse(userId, applicationContext, sbn, sbn.notification.actions)
+                        ?.parse(userId, applicationContext, sbn, actions)
                         ?: return
                     //val data = sbn.toMessage(this, ruleKey, act) ?: return
                     (data.room as ChatRoomImpl).setLastReceivedId(data.chatLogId)
@@ -193,9 +200,6 @@ class NotificationListener: NotificationListenerService() {
             }
         }
         LOG.verbose { "es = ${System.currentTimeMillis() - ts}" }
-
-        Events.Notification.Post(sbn, applicationContext)
-            .also(EventHandler::fireEventWithScope)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {

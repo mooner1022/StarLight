@@ -334,7 +334,7 @@ internal fun SettingsFragment.getNoobSettingStruct() = config {
             toggle {
                 id = "use_on_notification_posted"
                 title = "onNotificationPosted 이벤트 사용"
-                description = "메신저봇의 onNotificationPosted 이벤트를 사용합니다. 부하가 증가할 수 있습니다."
+                description = "모든 앱의 알림을 메신저봇의 onNotificationPosted 이벤트로 전달합니다. 부하가 증가할 수 있습니다."
                 icon = Icon.COMPRESS
                 iconTintColor = color { "#87AAAA" }
                 defaultValue = false
