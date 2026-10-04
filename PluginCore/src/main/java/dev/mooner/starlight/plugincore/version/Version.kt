@@ -8,7 +8,7 @@ data class Version(
     val minor: Int,
     val patch: Int,
     val build: String? = null,
-) {
+): Comparable<Version> {
     companion object {
 
         @JvmStatic
@@ -66,8 +66,11 @@ data class Version(
     infix fun incompatibleWith(version: Version): Boolean =
         !isCompatibleWith(version)
 
+    override fun compareTo(other: Version): Int =
+        compareValuesBy(this, other, Version::major, Version::minor, Version::patch)
+
     infix fun newerThan(target: Version): Boolean =
-        this.major > target.major && this.minor > target.minor && this.patch > target.patch
+        this > target
 
     infix fun newerThan(target: String): Boolean =
         newerThan(fromString(target))
