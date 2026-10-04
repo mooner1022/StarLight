@@ -60,7 +60,7 @@ object Session {
     var apiManager: ApiManager by notNull()
         private set
 
-    fun init(locale: Locale, baseDir: File): PluginContext? {
+    fun init(locale: Locale, baseDir: File, codeCacheDir: File): PluginContext? {
         if (state != InitState.None) {
             Logger.w("Session", "Rejecting re-init of Session")
             return null
@@ -81,7 +81,7 @@ object Session {
 
         if (GlobalConfig.category("beta_features").getBoolean("load_external_dex_libs", false)) {
             libraryLoader  = LibraryLoader()
-            libraryManager = LibraryManager(libraryLoader!!.loadLibraries(baseDir).toMutableSet())
+            libraryManager = LibraryManager(libraryLoader!!.loadLibraries(baseDir, codeCacheDir).toMutableSet())
             apiManager.addApi(LibraryManagerApi())
         }
         state = InitState.Done

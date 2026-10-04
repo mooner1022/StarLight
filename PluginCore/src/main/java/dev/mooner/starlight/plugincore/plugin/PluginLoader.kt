@@ -16,6 +16,7 @@ import dev.mooner.starlight.plugincore.plugin.arch.Arch
 import dev.mooner.starlight.plugincore.plugin.arch.getArch
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.plugincore.utils.copyAsReadOnly
 import dev.mooner.starlight.plugincore.utils.errorTranslated
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.readString
@@ -154,11 +155,13 @@ class PluginLoader {
                     loadNativeLibrary(info, file, context.filesDir)
                 else null
 
+            val dexFile = file.copyAsReadOnly(context.codeCacheDir.resolve("plugins/${info.id}"))
+
             val parentLoader: ClassLoader = info.customClassLoader
-                ?.let { retrieveCustomClassLoader(it, file.path) }
+                ?.let { retrieveCustomClassLoader(it, dexFile.path) }
                 ?: javaClass.classLoader!!
 
-            loader = PluginClassLoader(context, parentLoader, nativeLibDir?.path, this, info, file)
+            loader = PluginClassLoader(context, parentLoader, dexFile, nativeLibDir?.path, this, info, file)
             logger.info {
                 translate {
                     Locale.ENGLISH { "Loaded plugin ${info.fullName} (${file.name})" }

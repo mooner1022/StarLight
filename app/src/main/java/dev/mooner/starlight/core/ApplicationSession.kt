@@ -84,7 +84,7 @@ object ApplicationSession {
             .getOrNull() ?: Locale.ENGLISH
         logger.debug { "Initializing with locale $locale" }
 
-        val pContext = Session.init(locale, getStarLightDirectory())
+        val pContext = Session.init(locale, getStarLightDirectory(), context.codeCacheDir)
             ?: error("PluginCore session is already initialized")
 
         Session.languageManager.apply {

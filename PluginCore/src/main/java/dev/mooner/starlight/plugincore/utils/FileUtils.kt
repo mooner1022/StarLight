@@ -7,6 +7,17 @@ import java.io.File
 fun getStarLightDirectory() =
     File(Environment.getExternalStorageDirectory(), "StarLight/")
 
+fun File.copyAsReadOnly(directory: File): File {
+    val target = directory.resolve("${length()}-${lastModified()}.$extension")
+    if (!target.exists()) {
+        directory.deleteRecursively()
+        directory.mkdirs()
+        copyTo(target)
+    }
+    target.setReadOnly()
+    return target
+}
+
 fun File.hasFile(fileName: String): Boolean {
     return this.listFiles()?.find { it.name == fileName } != null
 }
