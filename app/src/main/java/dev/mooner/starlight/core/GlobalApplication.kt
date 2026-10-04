@@ -101,12 +101,16 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         if (!ForegroundTask.isRunning) {
             LOG.verbose { "Starting foreground task..." }
             val intent = Intent(this, ForegroundTask::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(intent)
+                } else {
+                    startService(intent)
+                }
+                LOG.info(R.string.log_foreground_started)
+            } catch (e: IllegalStateException) {
+                LOG.error { "Failed to start foreground task: $e" }
             }
-            LOG.info(R.string.log_foreground_started)
         }
 
         ApplicationSession.init(applicationContext)
