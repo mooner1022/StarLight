@@ -95,49 +95,48 @@ class JSRhino: Language() {
         }
     }
 
-    override fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any {
-        val context = enterContext()
-        val scope = if (project != null)
-            context.initStandardObjects(RhinoGlobalObject(context, project))
-        else
-            context.initStandardObjects(ImporterTopLevel(context))
+    override fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any =
+        enterContext().use { context ->
+            val scope = if (project != null)
+                context.initStandardObjects(RhinoGlobalObject(context, project))
+            else
+                context.initStandardObjects(ImporterTopLevel(context))
 
-        var importLines: StringBuilder? = null
-        for(api in apis) {
-            when(api.instanceType) {
-                InstanceType.CLASS -> {
-                    val line = "const ${api.name} = Packages.${api.instanceClass.name};\n"
-                    if (importLines == null)
-                        importLines = StringBuilder(line)
-                    else
-                        importLines.append(line)
-                }
-                InstanceType.OBJECT -> {
-                    if (project == null)
-                        continue
-                    val instance = api.getInstance(project)
-                    scope.put(api.name, scope, instance)
+            var importLines: StringBuilder? = null
+            for(api in apis) {
+                when(api.instanceType) {
+                    InstanceType.CLASS -> {
+                        val line = "const ${api.name} = Packages.${api.instanceClass.name};\n"
+                        if (importLines == null)
+                            importLines = StringBuilder(line)
+                        else
+                            importLines.append(line)
+                    }
+                    InstanceType.OBJECT -> {
+                        if (project == null)
+                            continue
+                        val instance = api.getInstance(project)
+                        scope.put(api.name, scope, instance)
+                    }
                 }
             }
-        }
-        if (importLines != null)
-            context.evaluateString(scope, importLines.toString(), "import", 1, null)
+            if (importLines != null)
+                context.evaluateString(scope, importLines.toString(), "import", 1, null)
 
-        val langConf = getLanguageConfig()
-        if (langConf.getBoolean("load_ext_modules", true) || isNoobMode) {
-            LOG.verboseTranslated {
-                Locale.ENGLISH { "[Load external modules] Option enabled" }
-                Locale.KOREAN  { "[외부 모듈 로드] 설정 활성화됨" }
+            val langConf = getLanguageConfig()
+            if (langConf.getBoolean("load_ext_modules", true) || isNoobMode) {
+                LOG.verboseTranslated {
+                    Locale.ENGLISH { "[Load external modules] Option enabled" }
+                    Locale.KOREAN  { "[외부 모듈 로드] 설정 활성화됨" }
+                }
+                val isSandboxed = langConf.getBoolean("load_ext_module_sandbox", false)
+                val require = initRequire(context, scope, isSandboxed, project)
+                require.install(scope)
             }
-            val isSandboxed = langConf.getBoolean("load_ext_module_sandbox", false)
-            val require = initRequire(context, scope, isSandboxed, project)
-            require.install(scope)
-        }
 
-        context.evaluateString(scope, code, project?.info?.name ?: name, 1, null)
-        Context.exit()
-        return scope
-    }
+            context.evaluateString(scope, code, project?.info?.name ?: name, 1, null)
+            scope
+        }
 
     override fun release(scope: Any) {
         try {
