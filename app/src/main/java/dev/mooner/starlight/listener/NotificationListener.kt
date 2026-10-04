@@ -43,7 +43,7 @@ import dev.mooner.starlight.ui.settings.notifications.RuleData
 import dev.mooner.starlight.utils.decodeIfNotBlank
 import dev.mooner.starlight.utils.isNoobMode
 import kotlinx.coroutines.*
-import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 private val LOG = LoggerFactory.logger {  }
 
@@ -132,7 +132,7 @@ class NotificationListener: NotificationListenerService() {
                     val senderId    = data.sender.id
                     val isGroupChat = data.room.isGroupChat
 
-                    if (isDefaultRule && roomID !in chatRooms) {
+                    if (isDefaultRule) {
                         roomIdMap[roomName] = roomID
                         chatRooms[roomID] = data.room
                     }
@@ -277,9 +277,9 @@ class NotificationListener: NotificationListenerService() {
     companion object {
 
         private var currentChatLogId: Long = -1
-        private val roomIdMap: MutableMap<RoomName, RoomID> = hashMapOf()
-        private val chatRooms: MutableMap<RoomID, ChatRoom> = WeakHashMap()
-        private val replierCache: MutableMap<RoomID, Replier> = WeakHashMap()
+        private val roomIdMap: MutableMap<RoomName, RoomID> = ConcurrentHashMap()
+        private val chatRooms: MutableMap<RoomID, ChatRoom> = ConcurrentHashMap()
+        private val replierCache: MutableMap<RoomID, Replier> = ConcurrentHashMap()
         private var lastReceivedRoom: ChatRoom? = null
         private var rules: List<RuleData> = arrayListOf()
 
