@@ -27,15 +27,8 @@ object JobLocker {
         parent.awaitRelease()
     }
 
-    fun withParent(name: String): Parent {
-        return if (parents.containsKey(name)) {
-            parents[name]!!
-        } else {
-            val parent = Parent(name)
-            parents[name] = parent
-            parent
-        }
-    }
+    fun withParent(name: String): Parent =
+        parents.computeIfAbsent(name) { Parent(it) }
 
     class Parent(
         val name: String
