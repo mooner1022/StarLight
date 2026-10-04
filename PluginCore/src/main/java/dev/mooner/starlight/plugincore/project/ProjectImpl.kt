@@ -6,6 +6,9 @@
 
 package dev.mooner.starlight.plugincore.project
 
+import android.util.AtomicFile
+import androidx.core.util.readText
+import androidx.core.util.writeText
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
@@ -54,6 +57,8 @@ class ProjectImpl private constructor(
 
     @Volatile
     private var executor: ProjectExecutor? = null
+
+    private val infoWriteScope = CoroutineScope(Dispatchers.IO.limitedParallelism(1))
 
     private val lifecycle = ProjectLifecycleRegistry(this)
     override fun getLifecycle(): ProjectLifecycle =
@@ -213,21 +218,17 @@ class ProjectImpl private constructor(
         EventHandler.fireEventWithScope(Events.Project.InfoUpdate(project = this))
     }
 
-    override fun saveInfo() = runBlocking {
-        val json = Json {
-            encodeDefaults = true
-            prettyPrint = true
+    override fun saveInfo() {
+        val encoded = infoJson.encodeToString(info)
+        infoWriteScope.launch {
+            AtomicFile(File(directory.path, INFO_FILE_NAME)).writeText(encoded)
         }
-
-        flowOf(json.encodeToString(info))
-            .onEach(File(directory.path, INFO_FILE_NAME)::writeText)
-            .launchIn(CoroutineScope(Dispatchers.IO))
 
         reloadAllowedEventIDs()
     }
 
     override fun loadInfo() {
-        this.mInfo = File(directory.path, INFO_FILE_NAME)
+        this.mInfo = AtomicFile(File(directory.path, INFO_FILE_NAME))
             .readText()
             .let(json::decodeFromString)
     }
@@ -343,6 +344,11 @@ class ProjectImpl private constructor(
         private const val LOGS_FILE_NAME    = "logs-local.json"
 
         private const val DEF_THREAD_POOL_SIZE = 3
+
+        private val infoJson = Json {
+            encodeDefaults = true
+            prettyPrint = true
+        }
 
         fun create(dir: File, info: ProjectInfo, events: Map<String, ProjectEvent>): Project {
             val folder = File(dir.path, info.name)
