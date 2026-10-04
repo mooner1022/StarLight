@@ -11,7 +11,7 @@ import dalvik.system.PathClassLoader
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
-import dev.mooner.starlight.plugincore.plugin.PluginDependency.Companion.VERSION_ANY
+import dev.mooner.starlight.plugincore.plugin.PluginResolver.Exclusion
 import dev.mooner.starlight.plugincore.plugin.arch.Arch
 import dev.mooner.starlight.plugincore.plugin.arch.getArch
 import dev.mooner.starlight.plugincore.translation.Locale
@@ -20,7 +20,6 @@ import dev.mooner.starlight.plugincore.utils.errorTranslated
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.readString
 import dev.mooner.starlight.plugincore.utils.warnTranslated
-import dev.mooner.starlight.plugincore.version.Version
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.File
@@ -46,17 +45,15 @@ class PluginLoader {
                 emit(emptySet<StarlightPlugin>())
             }
 
-            val pluginFiles : MutableMap<String, Pair<File, PluginInfo>> = hashMapOf()
-            val loadPriority: MutableMap<String, Int> = hashMapOf()
+            val pluginFiles: MutableMap<String, Pair<File, PluginInfo>> = hashMapOf()
 
-            for ((index, file) in (dir.listFiles { it -> it.extension in SUPPORTED_EXT } ?: arrayOf()).withIndex()) {
+            for (file in dir.listFiles { it -> it.extension in SUPPORTED_EXT } ?: arrayOf()) {
                 val info: PluginInfo
                 try {
                     info = loadInfoFile(file)
                     if (info.id.trim().lowercase() in PRESERVED_IDS)
                         throw IllegalArgumentException("Preserved or unusable plugin id: ${info.id}")
-                    pluginFiles [info.id] = file to info
-                    loadPriority[info.id] = index
+                    pluginFiles[info.id] = file to info
                 } catch (e: FileNotFoundException) {
                     logger.error(e)
                     //throw InvalidPluginException(e.toString())
@@ -68,48 +65,22 @@ class PluginLoader {
                 }
             }
 
-            for ((_, info) in pluginFiles.values) {
-                if (info.apiVersion incompatibleWith Info.PLUGINCORE_VERSION) {
-                    logger.warnTranslated {
-                        Locale.ENGLISH { "Incompatible PluginCore version(${info.apiVersion}) found on plugin: ${info.fullName}" }
-                        Locale.KOREAN  { "현재 버전 (${Info.PLUGINCORE_VERSION})과 호환되지 않는 PluginCore 의존성(${info.apiVersion}) 발견: 플러그인 ${info.fullName}" }
-                    }
-                    loadPriority -= info.id
-                    continue
-                }
-
-                if (info.dependency.isEmpty())
-                    continue
-                for (dependency in info.dependency) {
-                    if (dependency.pluginId !in pluginFiles) {
-                        logger.errorTranslated {
-                            Locale.ENGLISH { "Required dependency $dependency for plugin ${info.fullName} wasn't found." }
-                            Locale.KOREAN  { "플러그인 ${info.fullName}에 필요한 종속성 $dependency 을(를) 찾을 수 없습니다." }
-                        }
-                        continue
-                    }
-                    if (dependency.supportedVersion != VERSION_ANY &&
-                        Version.fromString(dependency.supportedVersion) incompatibleWith info.version) {
-                        logger.warnTranslated {
-                            Locale.ENGLISH { "Incompatible dependency version(required: ${dependency.supportedVersion}, found: ${info.version}) found on plugin: ${info.name}" }
-                            Locale.KOREAN  { "요구된 버전과 다른 종속성 버전(required: ${dependency.supportedVersion}, found: ${info.version})이 발견되었습니다. 플러그인: ${info.name}" }
-                        }
-                    }
-                    logger.verbose { "${info.id} <= $dependency" }
-                    loadPriority[info.id] = loadPriority[info.id]!! + loadPriority[dependency.pluginId]!!
-                }
-            }
+            val resolution = PluginResolver.resolve(
+                pluginFiles.mapValues { (_, value) -> value.second },
+                Info.PLUGINCORE_VERSION
+            )
+            for ((id, exclusion) in resolution.excluded)
+                logExclusion(pluginFiles[id]!!.second, exclusion)
 
             Session.pluginManager.purge()
 
-            val sortedIds = loadPriority.toList().sortedBy { it.second }
             logger.verbose {
-                "Plugin load priority\n" + sortedIds
+                "Plugin load priority\n" + resolution.order
                     .withIndex()
-                    .joinToString("\n") { "#${it.index} - ${it.value.first}" }
+                    .joinToString("\n") { "#${it.index} - ${it.value}" }
             }
 
-            for ((id, _) in sortedIds) {
+            for (id in resolution.order) {
                 val (file, info) = pluginFiles[id]!!
                 emit(info.name)
 
@@ -127,6 +98,36 @@ class PluginLoader {
 
             emit(Session.pluginManager.plugins)
         }
+
+    private fun logExclusion(info: PluginInfo, exclusion: Exclusion) {
+        when (exclusion) {
+            is Exclusion.IncompatibleApi ->
+                logger.warnTranslated {
+                    Locale.ENGLISH { "Incompatible PluginCore version(${exclusion.apiVersion}) found on plugin: ${info.fullName}" }
+                    Locale.KOREAN  { "현재 버전 (${Info.PLUGINCORE_VERSION})과 호환되지 않는 PluginCore 의존성(${exclusion.apiVersion}) 발견: 플러그인 ${info.fullName}" }
+                }
+            is Exclusion.MissingDependency ->
+                logger.errorTranslated {
+                    Locale.ENGLISH { "Required dependency ${exclusion.dependency} for plugin ${info.fullName} wasn't found." }
+                    Locale.KOREAN  { "플러그인 ${info.fullName}에 필요한 종속성 ${exclusion.dependency} 을(를) 찾을 수 없습니다." }
+                }
+            is Exclusion.ExcludedDependency ->
+                logger.errorTranslated {
+                    Locale.ENGLISH { "Required dependency ${exclusion.dependency} for plugin ${info.fullName} couldn't be loaded." }
+                    Locale.KOREAN  { "플러그인 ${info.fullName}에 필요한 종속성 ${exclusion.dependency} 을(를) 로드할 수 없습니다." }
+                }
+            is Exclusion.IncompatibleDependency ->
+                logger.errorTranslated {
+                    Locale.ENGLISH { "Incompatible dependency version(required: ${exclusion.dependency.supportedVersion}, found: ${exclusion.found}) found on plugin: ${info.name}" }
+                    Locale.KOREAN  { "요구된 버전과 다른 종속성 버전(required: ${exclusion.dependency.supportedVersion}, found: ${exclusion.found})이 발견되었습니다. 플러그인: ${info.name}" }
+                }
+            Exclusion.CircularDependency ->
+                logger.errorTranslated {
+                    Locale.ENGLISH { "Circular dependency found on plugin: ${info.fullName}" }
+                    Locale.KOREAN  { "순환 종속성이 발견되었습니다. 플러그인: ${info.fullName}" }
+                }
+        }
+    }
 
     private fun loadPlugin(context: Context, file: File, info: PluginInfo): StarlightPlugin {
         val parent = file.parentFile
@@ -168,7 +169,7 @@ class PluginLoader {
             logger.error { "Failed to load plugin ${info.fullName} (${file.name}): $e" }
             throw e
         }
-        loaders[info.name] = loader
+        loaders[info.id] = loader
         val plugin = loader.plugin
 
         loadAssets(file, plugin)
