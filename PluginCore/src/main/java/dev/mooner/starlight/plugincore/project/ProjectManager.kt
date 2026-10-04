@@ -15,7 +15,6 @@ import dev.mooner.starlight.plugincore.project.event.getInstance
 import java.io.File
 import java.util.*
 import kotlin.reflect.KClass
-import kotlin.reflect.full.isSubclassOf
 
 typealias ProjectFailureCallback = (project: Project, e: Throwable) -> Unit
 
@@ -75,6 +74,12 @@ class ProjectManager(
         val eventId = ProjectEventManager.validateAndGetEventID(eventClass)
             ?: error("Non-registered event: ${eventClass.qualifiedName}")
 
+        val targets = projects.values.filter { project ->
+            project.isCompiled && project.info.isEnabled && project.isEventCallAllowed(eventId)
+        }
+        if (targets.isEmpty())
+            return
+
         val event = eventClass.getInstance()
         val actualTypes = event.argTypes
             .map { it.type }
@@ -83,20 +88,12 @@ class ProjectManager(
 
         for (i in args.indices) {
             val eArg = actualTypes[i]
-            val pArg = args[i]::class
-            if (!pArg.isSubclassOf(eArg))
-                error("Argument type mismatch on position ${i}, required: ${eArg}, provided: $pArg")
+            if (!eArg.javaObjectType.isInstance(args[i]))
+                error("Argument type mismatch on position ${i}, required: ${eArg}, provided: ${args[i]::class}")
         }
 
-        fireEvent(eventId, event.functionName, args, onFailure)
-    }
-
-    private fun fireEvent(eventId: String, functionName: String, args: Array<out Any>, onFailure: ProjectFailureCallback) {
-        for ((_, project) in projects) {
-            if (!project.isCompiled || !project.info.isEnabled || !project.isEventCallAllowed(eventId))
-                continue
-            project.callFunction(functionName, args) { e -> onFailure(project, e) }
-        }
+        for (project in targets)
+            project.callFunction(event.functionName, args) { e -> onFailure(project, e) }
     }
 
     fun removeProject(project: Project, removeFiles: Boolean = true) =
