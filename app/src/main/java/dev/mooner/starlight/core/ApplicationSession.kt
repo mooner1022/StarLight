@@ -96,6 +96,7 @@ object ApplicationSession {
         if (!GlobalConfig.category(CA_PLUGIN).getBoolean(CF_SAFE_MODE, false)) {
             Session.pluginLoader.loadPlugins(context)
                 .flowOn(Dispatchers.Default)
+                .catch { logger.error(it) }
                 .onEach { value ->
                     if (value is String)
                         emit(context.getString(R.string.step_plugins).format(value))
