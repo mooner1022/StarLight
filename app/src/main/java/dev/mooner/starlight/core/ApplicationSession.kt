@@ -59,12 +59,11 @@ object ApplicationSession {
         get() = initState == Session.InitState.Done
 
     internal fun init(context: Context): Flow<String> = flow {
-        initState = Session.InitState.Processing
-        if (isInitComplete) {
+        if (initState != Session.InitState.None) {
             logger.warn { "Rejecting re-init of ApplicationSession" }
-            initState = Session.InitState.Done
             return@flow
         }
+        initState = Session.InitState.Processing
 
         setExceptionHandler(context)
         //ConfigDSL.registerAdapterImpl(::ParentConfigAdapterImpl)
@@ -85,7 +84,8 @@ object ApplicationSession {
             .getOrNull() ?: Locale.ENGLISH
         logger.debug { "Initializing with locale $locale" }
 
-        val pContext = Session.init(locale, getStarLightDirectory()) ?: return@flow
+        val pContext = Session.init(locale, getStarLightDirectory())
+            ?: error("PluginCore session is already initialized")
 
         Session.languageManager.apply {
             //addLanguage("", JSV8())

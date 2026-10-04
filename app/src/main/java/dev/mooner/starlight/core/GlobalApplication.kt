@@ -114,7 +114,9 @@ class GlobalApplication: Application(), LifecycleEventObserver {
                 lastStageValue = it
                 EventHandler.fireEvent(ApplicationEvent.Session.StageUpdate(it))
             }
-            .onCompletion {
+            .onCompletion { cause ->
+                if (cause != null)
+                    return@onCompletion
                 lastStageValue = null
                 EventHandler.fireEvent(ApplicationEvent.Session.StageUpdate(null))
 
