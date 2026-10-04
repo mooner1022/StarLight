@@ -57,7 +57,7 @@ class JSRhino: Language() {
     internal fun enterContext(): Context {
         val config = getLanguageConfig()
         val optLevel = if (config.getBoolean(CONF_OPTIMIZE_CODE, false))
-            config.getInt(CONF_OPTIMIZATION_LEVEL, 0)
+            config.getInt(CONF_OPTIMIZATION_LEVEL, DEF_OPTIMIZATION_LEVEL)
         else
             -1
 
@@ -129,7 +129,7 @@ class JSRhino: Language() {
                     Locale.ENGLISH { "[Load external modules] Option enabled" }
                     Locale.KOREAN  { "[외부 모듈 로드] 설정 활성화됨" }
                 }
-                val isSandboxed = langConf.getBoolean("load_ext_module_sandbox", false)
+                val isSandboxed = langConf.getBoolean(CONF_EXT_MODULE_SANDBOX, DEF_EXT_MODULE_SANDBOX)
                 val require = initRequire(context, scope, isSandboxed, project)
                 require.install(scope)
             }
@@ -254,7 +254,10 @@ class JSRhino: Language() {
         private const val CONF_OPTIMIZE_CODE = "optimize_code"
         private const val CONF_OPTIMIZATION_LEVEL = "optimization_level"
         private const val CONF_LANG_VERSION = "js_version"
+        private const val CONF_EXT_MODULE_SANDBOX = "load_ext_module_sandbox"
         private const val LANG_DEF_VERSION = Context.VERSION_ES6
+        private const val DEF_OPTIMIZATION_LEVEL = 1
+        private const val DEF_EXT_MODULE_SANDBOX = true
 
         private val defaultErrorReporter = object : ErrorReporter {
             override fun warning(
@@ -310,7 +313,7 @@ class JSRhino: Language() {
                         max = 9
                         icon = Icon.COMPRESS
                         iconTintColor = color { "#57837B" }
-                        defaultValue = 1
+                        defaultValue = DEF_OPTIMIZATION_LEVEL
                     }
                     toggle {
                         id = "load_ext_modules"
@@ -321,11 +324,11 @@ class JSRhino: Language() {
                         iconTintColor = color { "#C7B198" }
                     }
                     toggle {
-                        id = "load_ext_module_sandbox"
+                        id = CONF_EXT_MODULE_SANDBOX
                         dependency = "load_ext_modules"
                         title = "샌드박스 환경에서 로드"
                         description = "/modules 폴더 내의 모듈을 샌드박스 환경에서 실행합니다."
-                        defaultValue = true
+                        defaultValue = DEF_EXT_MODULE_SANDBOX
                         icon = Icon.LOCK
                         iconTintColor = color { "#F8B400" }
                     }
