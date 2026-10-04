@@ -19,6 +19,7 @@ class FileUtilsTest {
 
         assertEquals("dex", target.readText())
         assertFalse(target.canWrite())
+        assertEquals(listOf(target), target.parentFile!!.listFiles()!!.toList())
         assertEquals(target, source.copyAsReadOnly(folder.root.resolve("cache/plugin")))
     }
 

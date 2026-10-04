@@ -2,6 +2,7 @@ package dev.mooner.starlight.plugincore.utils
 
 import android.os.Environment
 import java.io.File
+import java.io.IOException
 
 @Suppress("DEPRECATION")
 fun getStarLightDirectory() =
@@ -12,7 +13,10 @@ fun File.copyAsReadOnly(directory: File): File {
     if (!target.exists()) {
         directory.deleteRecursively()
         directory.mkdirs()
-        copyTo(target)
+        val temp = directory.resolve("${target.name}.tmp")
+        copyTo(temp)
+        if (!temp.renameTo(target))
+            throw IOException("Failed to move $temp to $target")
     }
     target.setReadOnly()
     return target
