@@ -6,11 +6,10 @@
 
 package dev.mooner.starlight.plugincore.language
 
+import android.util.AtomicFile
 import androidx.annotation.CallSuper
 import dev.mooner.configdsl.ConfigStructure
-import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.config.data.category.ConfigCategory
 import dev.mooner.starlight.plugincore.config.data.category.internal.ConfigCategoryImpl
@@ -21,7 +20,7 @@ import dev.mooner.starlight.plugincore.pipeline.stage.plumber
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.utils.TimeUtils
-import dev.mooner.starlight.plugincore.utils.decodeLegacyData
+import dev.mooner.starlight.plugincore.utils.readConfigData
 import java.io.File
 
 abstract class Language {
@@ -229,19 +228,9 @@ abstract class Language {
     }
 
     private fun loadLanguageConfig(): ConfigCategory {
-        val data = if (configFile == null || !configFile!!.isFile || !configFile!!.exists()) emptyMap() else {
-            val raw = configFile!!.readText()
-            val data =
-                if (raw.isNotBlank())
-                    runCatching {
-                        json.decodeLegacyData(raw)
-                    }.getOrElse {
-                        json.decodeFromString<MutableDataMap>(raw)
-                    }
-                else
-                    emptyMap()
-            data[id] ?: emptyMap()
-        }
+        val data = configFile
+            ?.let { AtomicFile(it).readConfigData()[id] }
+            ?: emptyMap()
         return ConfigCategoryImpl(data)
     }
 
