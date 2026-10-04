@@ -55,13 +55,13 @@
         </activity>
         <activity
             android:name=".ui.settings.notifications.NotificationRulesActivity"
-            android:exported="true"/>
+            android:exported="false"/>
         <activity
             android:name=".ui.splash.quickstart.QuickStartActivity"
-            android:exported="true"/>
+            android:exported="false"/>
         <activity
             android:name=".ui.widget.config.WidgetConfigActivity"
-            android:exported="true"/>
+            android:exported="false"/>
 
         <activity android:name=".ui.config.ConfigActivity"/>
         <activity android:name=".ui.settings.info.AppInfoActivity"/>
