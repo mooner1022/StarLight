@@ -37,6 +37,7 @@
 
     <dimen name="widget_card_margin_horizontal">16dp</dimen>
     <dimen name="widget_padding_horizontal">0dp</dimen>
+    <dimen name="widget_spacing">10dp</dimen>
     <dimen name="widget_slim_height">@dimen/card_height</dimen>
     <dimen name="widget_medium_height">96dp</dimen>
     <dimen name="widget_large_height">192dp</dimen>

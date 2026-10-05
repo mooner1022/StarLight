@@ -8,6 +8,7 @@
 package dev.mooner.starlight.ui.home
 
 import android.content.Intent
+import android.graphics.Rect
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,8 +17,10 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import dev.mooner.starlight.CA_WIDGETS
+import dev.mooner.starlight.R
 import dev.mooner.starlight.CF_IDS
 import dev.mooner.starlight.WIDGET_DEF_STRING
 import dev.mooner.starlight.databinding.FragmentHomeBinding
@@ -85,6 +88,8 @@ class HomeFragment : Fragment() {
             itemAnimator = FadeInUpAnimator()
             layoutManager = mLayoutManager
             adapter = widgetsAdapter
+            if (mLayoutManager is StaggeredGridLayoutManager)
+                addItemDecoration(ColumnSpacingDecoration(resources.getDimensionPixelSize(R.dimen.widget_spacing)))
         }
 
         resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -164,5 +169,23 @@ class HomeFragment : Fragment() {
         widgetsAdapter = null
         _binding = null
         super.onDestroyView()
+    }
+
+    private class ColumnSpacingDecoration(
+        private val spacing: Int
+    ): RecyclerView.ItemDecoration() {
+
+        override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+            val params = view.layoutParams as? StaggeredGridLayoutManager.LayoutParams
+                ?: return
+            if (params.isFullSpan)
+                return
+            val spanCount = (parent.layoutManager as StaggeredGridLayoutManager).spanCount
+            val spanIndex = params.spanIndex
+            if (spanIndex < 0)
+                return
+            outRect.left = spacing * spanIndex / spanCount
+            outRect.right = spacing - spacing * (spanIndex + 1) / spanCount
+        }
     }
 }
