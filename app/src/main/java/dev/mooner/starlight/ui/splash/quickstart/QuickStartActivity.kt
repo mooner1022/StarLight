@@ -22,6 +22,7 @@ import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.PREF_IS_INITIAL
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityQuickStartBinding
+import androidx.core.view.WindowInsetsCompat
 import dev.mooner.starlight.utils.applyEdgeToEdge
 import dev.mooner.starlight.utils.restartApplication
 import kotlinx.coroutines.delay
@@ -38,7 +39,7 @@ class QuickStartActivity : AppCompatActivity(), View.OnClickListener {
 
         binding = ActivityQuickStartBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        applyEdgeToEdge(binding.root)
+        applyEdgeToEdge(binding.root, WindowInsetsCompat.Type.systemGestures())
 
         val navHostFrag: NavHostFragment = supportFragmentManager.findFragmentById(R.id.frame_stepper) as NavHostFragment
         val controller = navHostFrag.navController
