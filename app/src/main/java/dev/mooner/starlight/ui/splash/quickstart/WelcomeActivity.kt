@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import dev.mooner.starlight.databinding.ActivityWelcomeBinding
+import androidx.core.view.WindowInsetsCompat
 import dev.mooner.starlight.utils.applyEdgeToEdge
 
 class WelcomeActivity: AppCompatActivity() {
@@ -22,7 +23,7 @@ class WelcomeActivity: AppCompatActivity() {
 
         binding = ActivityWelcomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        applyEdgeToEdge(binding.root)
+        applyEdgeToEdge(binding.root, WindowInsetsCompat.Type.systemGestures())
 
         arrayOf(binding.buttonNext, binding.labelNext).forEach {
             it.setOnClickListener {

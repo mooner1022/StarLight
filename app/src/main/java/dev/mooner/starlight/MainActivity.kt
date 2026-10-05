@@ -9,6 +9,7 @@ package dev.mooner.starlight
 import android.os.Bundle
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.WindowCompat
 import androidx.transition.ChangeBounds
@@ -38,7 +39,9 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        applyEdgeToEdge(binding.root)
+        applyEdgeToEdge(binding.root) { _, _ ->
+            window.navigationBarColor = ContextCompat.getColor(this, R.color.cardview)
+        }
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 

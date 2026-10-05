@@ -116,12 +116,16 @@ inline fun <reified T : ViewGroup.LayoutParams> View.applyLayoutParams(
     layoutParams = params
 }
 
-fun ComponentActivity.applyEdgeToEdge(rootView: View? = null, onApplyWindowInsets: ((view: View, insets: Insets) -> Unit)? = null) {
+fun ComponentActivity.applyEdgeToEdge(
+    rootView: View? = null,
+    typeMask: Int = WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
+    onApplyWindowInsets: ((view: View, insets: Insets) -> Unit)? = null
+) {
     enableEdgeToEdge()
 
     val rootView: View = rootView ?: window.decorView.findViewById(android.R.id.content)
     ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
-        val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemGestures())
+        val insets = windowInsets.getInsets(typeMask)
         view.updatePadding(insets.left, insets.top, insets.right, insets.bottom)
         onApplyWindowInsets?.invoke(view, insets)
         WindowInsetsCompat.CONSUMED
