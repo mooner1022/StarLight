@@ -6,6 +6,9 @@
 
 package dev.mooner.starlight.plugincore.project
 
+import android.util.AtomicFile
+import androidx.core.util.readText
+import androidx.core.util.writeText
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
@@ -49,9 +52,13 @@ class ProjectImpl private constructor(
 
     override var threadPoolName: String? = null
 
-    override val coroutineContext get() = mContext!!
+    override val coroutineContext: CoroutineContext
+        get() = obtainExecutor().scope.coroutineContext
 
-    private var mContext: CoroutineContext? = null
+    @Volatile
+    private var executor: ProjectExecutor? = null
+
+    private val infoWriteScope = CoroutineScope(Dispatchers.IO.limitedParallelism(1))
 
     private val lifecycle = ProjectLifecycleRegistry(this)
     override fun getLifecycle(): ProjectLifecycle =
@@ -95,9 +102,6 @@ class ProjectImpl private constructor(
             return
         }
 
-        if (threadPoolName == null || mContext == null)
-            mContext = createContext()
-
         fun onError(e: Throwable) {
             logger.e(tag, translate {
                 Locale.ENGLISH { "Error while running: $e" }
@@ -118,7 +122,7 @@ class ProjectImpl private constructor(
             onException(e)
         }
 
-        CoroutineScope(mContext!!).launch {
+        obtainExecutor().scope.launch {
             JobLocker.withLock(threadPoolName!!) {
                 runCatching { lang.callFunction(langScope!!, name, args) }
                     .onFailure(::onError)
@@ -171,9 +175,7 @@ class ProjectImpl private constructor(
                         lang.release(langScope!!)
                         logger.v(tag, "engine released")
                     }
-                    withTimeoutOrNull(200L) {
-                        stopAllJobs()
-                    }
+                    stopAllJobs()
                 }
                 logger.i(translate {
                     Locale.ENGLISH { "Compiling project ${info.name}..." }
@@ -194,7 +196,7 @@ class ProjectImpl private constructor(
                 close()
             }
             awaitClose()
-        }.flowOn(createContext())
+        }.flowOn(Dispatchers.IO)
 
     override fun setEnabled(enabled: Boolean): Boolean {
         if (!isCompiled)
@@ -216,21 +218,17 @@ class ProjectImpl private constructor(
         EventHandler.fireEventWithScope(Events.Project.InfoUpdate(project = this))
     }
 
-    override fun saveInfo() = runBlocking {
-        val json = Json {
-            encodeDefaults = true
-            prettyPrint = true
+    override fun saveInfo() {
+        val encoded = infoJson.encodeToString(info)
+        infoWriteScope.launch {
+            AtomicFile(File(directory.path, INFO_FILE_NAME)).writeText(encoded)
         }
-
-        flowOf(json.encodeToString(info))
-            .onEach(File(directory.path, INFO_FILE_NAME)::writeText)
-            .launchIn(CoroutineScope(Dispatchers.IO))
 
         reloadAllowedEventIDs()
     }
 
     override fun loadInfo() {
-        this.mInfo = File(directory.path, INFO_FILE_NAME)
+        this.mInfo = AtomicFile(File(directory.path, INFO_FILE_NAME))
             .readText()
             .let(json::decodeFromString)
     }
@@ -244,18 +242,16 @@ class ProjectImpl private constructor(
     }
 
     override fun activeJobs(): Int {
-        return if (mContext == null || threadPoolName == null) 0
-        else JobLocker.withParent(threadPoolName!!).activeJobs()
+        val current = executor ?: return 0
+        return JobLocker.withParent(current.name).activeJobs()
     }
 
     override fun stopAllJobs() {
-        if (mContext != null) {
-            if (threadPoolName != null) {
-                JobLocker.withParent(threadPoolName!!).purge()
-            }
-            (mContext as CoroutineDispatcher?)?.cancelChildren() // Could be null
-            mContext = null
-        }
+        val current = synchronized(this) {
+            executor.also { executor = null }
+        } ?: return
+        JobLocker.withParent(current.name).purge()
+        current.shutdown()
     }
 
     override fun destroy(requestUpdate: Boolean) {
@@ -315,20 +311,14 @@ class ProjectImpl private constructor(
     override fun isEventCallAllowed(eventId: String): Boolean =
         allowedEventIDs.isNotEmpty() && eventId in allowedEventIDs
 
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun createContext(): CoroutineContext {
-        if (threadPoolName == null || mContext == null) {
-            if (mContext != null) {
-                mContext?.cancel()
-                mContext = null
+    private fun obtainExecutor(): ProjectExecutor =
+        executor ?: synchronized(this) {
+            executor ?: ProjectExecutor("$tag-worker", getThreadPoolSize()).also {
+                threadPoolName = it.name
+                executor = it
+                Logger.v(tag, "Allocated thread pool ${it.name} with ${it.size} threads to project ${info.name}")
             }
-            threadPoolName = "$tag-worker"
-            val poolSize = getThreadPoolSize()
-            mContext = newFixedThreadPoolContext(poolSize, threadPoolName!!)
-            Logger.v(tag, "Allocated thread pool $threadPoolName with $poolSize threads to project ${info.name}")
         }
-        return mContext!!
-    }
 
     private fun getThreadPoolSize(): Int =
         config.category("beta_features")
@@ -355,6 +345,11 @@ class ProjectImpl private constructor(
 
         private const val DEF_THREAD_POOL_SIZE = 3
 
+        private val infoJson = Json {
+            encodeDefaults = true
+            prettyPrint = true
+        }
+
         fun create(dir: File, info: ProjectInfo, events: Map<String, ProjectEvent>): Project {
             val folder = File(dir.path, info.name)
                 .also(File::mkdirs)
@@ -378,5 +373,19 @@ class ProjectImpl private constructor(
         private fun getLanguage(info: ProjectInfo): Language =
             Session.languageManager.getLanguage(info.languageId)
                 ?: throw IllegalArgumentException("Cannot find language ${info.languageId} for project '${info.name}'")
+    }
+}
+
+@OptIn(DelicateCoroutinesApi::class)
+private class ProjectExecutor(
+    val name: String,
+    val size: Int
+) {
+    val dispatcher = newFixedThreadPoolContext(size, name)
+    val scope = CoroutineScope(SupervisorJob() + dispatcher)
+
+    fun shutdown() {
+        scope.cancel()
+        dispatcher.close()
     }
 }

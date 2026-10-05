@@ -7,11 +7,12 @@ import java.io.File
 class PluginClassLoader(
     context: Context,
     parent: ClassLoader,
+    dexFile: File,
     nativeLibPath: String?,
     private val loader: PluginLoader,
     private val pluginInfo: PluginInfo,
     private val file: File,
-): PathClassLoader(file.path, nativeLibPath, parent) {
+): PathClassLoader(dexFile.path, nativeLibPath, parent) {
 
     private val internalDir: File
 

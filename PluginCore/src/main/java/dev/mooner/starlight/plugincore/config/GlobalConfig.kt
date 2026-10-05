@@ -6,6 +6,8 @@
 
 package dev.mooner.starlight.plugincore.config
 
+import android.util.AtomicFile
+import androidx.core.util.writeText
 import dev.mooner.configdsl.DataMap
 import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.starlight.plugincore.Session.json
@@ -13,24 +15,25 @@ import dev.mooner.starlight.plugincore.config.data.MutableConfig
 import dev.mooner.starlight.plugincore.config.data.category.MutableConfigCategory
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
-import dev.mooner.starlight.plugincore.utils.decodeLegacyData
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.utils.readConfigData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.encodeToString
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 object GlobalConfig: MutableConfig {
 
     private const val FILE_NAME = "config-general.json"
     private const val DEFAULT_CATEGORY = "general"
 
-    private val cachedCategories: MutableMap<String, MutableConfigCategory> = hashMapOf()
-    private val mData           : MutableDataMap by lazy(::loadFromFile)
+    private val cachedCategories: MutableMap<String, MutableConfigCategory> = ConcurrentHashMap()
+    private val mData           : MutableDataMap by lazy { file.readConfigData() }
     private val flushScope      = CoroutineScope(Dispatchers.IO)
-    private val file            = File(getStarLightDirectory(), FILE_NAME)
+    private val file            = AtomicFile(File(getStarLightDirectory(), FILE_NAME))
     private val fileAccessMutex = Mutex()
 
     override fun getData(): DataMap =
@@ -62,14 +65,7 @@ object GlobalConfig: MutableConfig {
         flushScope.launch {
             fileAccessMutex.lock()
             try {
-                val str = json.encodeToString(mData)
-                with(file) {
-                    if (!exists())
-                        mkdirs()
-                    if (!isFile)
-                        deleteRecursively()
-                    writeText(str)
-                }
+                file.writeText(json.encodeToString(mData))
             } finally {
                 fileAccessMutex.unlock()
             }
@@ -79,7 +75,8 @@ object GlobalConfig: MutableConfig {
 
     fun invalidateCache() {
         mData.clear()
-        loadFromFile().forEach(mData::put)
+        cachedCategories.clear()
+        file.readConfigData().forEach(mData::put)
     }
 
     private fun getCategoryOrNull(id: String): MutableConfigCategory? =
@@ -87,28 +84,9 @@ object GlobalConfig: MutableConfig {
 
     private fun getOrCreateCategory(id: String): MutableConfigCategory {
         return getCategoryOrNull(id) ?: let {
-            mData[id] = mutableMapOf()
+            mData[id] = ConcurrentHashMap()
             MutableConfigCategory(mData[id]!!).also {
                 cachedCategories[id] = it
-            }
-        }
-    }
-
-    private fun loadFromFile(): MutableDataMap {
-        return if (!file.exists() || !file.isFile) {
-            file.parentFile?.mkdirs()
-            file.createNewFile()
-            hashMapOf()
-        } else {
-            val raw = file.readText()
-            if (raw.isBlank())
-                hashMapOf()
-            else {
-                try {
-                    json.decodeLegacyData(raw)
-                } catch (e: Exception) {
-                    json.decodeFromString(raw)
-                }
             }
         }
     }

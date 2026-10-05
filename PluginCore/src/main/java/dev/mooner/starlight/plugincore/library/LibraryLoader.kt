@@ -3,13 +3,14 @@ package dev.mooner.starlight.plugincore.library
 import dalvik.system.PathClassLoader
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.logger.internal.Logger
+import dev.mooner.starlight.plugincore.utils.copyAsReadOnly
 import java.io.File
 
 class LibraryLoader {
 
     private val logger = LoggerFactory.logger {  }
 
-    fun loadLibraries(baseDirectory: File): Set<Library> {
+    fun loadLibraries(baseDirectory: File, codeCacheDirectory: File): Set<Library> {
         val folder = baseDirectory.resolve(LIBS_DIR)
         if (!folder.exists() || !folder.isDirectory) {
             folder.mkdirs()
@@ -29,7 +30,7 @@ class LibraryLoader {
         val libs: MutableSet<Library> = hashSetOf()
         for (dexFile in files) {
             try {
-                libs += loadLibrary(dexFile)
+                libs += loadLibrary(dexFile, codeCacheDirectory)
             } catch (e: Exception) {
                 logger.error(e)
             }
@@ -37,8 +38,9 @@ class LibraryLoader {
         return libs
     }
 
-    private fun loadLibrary(file: File): Library {
-        val classLoader = PathClassLoader(file.path, javaClass.classLoader!!)
+    private fun loadLibrary(file: File, codeCacheDirectory: File): Library {
+        val copied = file.copyAsReadOnly(codeCacheDirectory.resolve("$LIBS_DIR/${file.name}"))
+        val classLoader = PathClassLoader(copied.path, javaClass.classLoader!!)
         return Library(classLoader, file)
     }
 

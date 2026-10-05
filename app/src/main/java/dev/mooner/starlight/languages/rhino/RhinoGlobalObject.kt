@@ -26,9 +26,6 @@ class RhinoGlobalObject(
 ): ImporterTopLevel(context) {
 
     private val timeouts: ConcurrentMap<TimeoutID, Job> = ConcurrentHashMap()
-    private val timeoutScope: CoroutineScope by lazy {
-        CoroutineScope(project.coroutineContext + SupervisorJob())
-    }
 
     override fun getClassName(): String {
         return "global"
@@ -49,7 +46,7 @@ class RhinoGlobalObject(
         val mDelay = delay.getOrThrow<Long>()
 
         val id = generateID()
-        val job = timeoutScope.launch(start = CoroutineStart.LAZY) {
+        val job = project.launch(start = CoroutineStart.LAZY) {
             while (true) {
                 delay(mDelay)
                 withContext { context ->
@@ -77,7 +74,7 @@ class RhinoGlobalObject(
         val mDelay = delay.getOrThrow<Long>()
 
         val id = generateID()
-        val job = timeoutScope.launch(start = CoroutineStart.LAZY) {
+        val job = project.launch(start = CoroutineStart.LAZY) {
             delay(mDelay)
             withContext { context ->
                 val scope = this@RhinoGlobalObject

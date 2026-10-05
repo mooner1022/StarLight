@@ -29,7 +29,6 @@ import kotlin.reflect.full.declaredFunctions
 class AndroidRParserSpec: MessageParserSpec {
 
     private val kakaoTalkLimitVersion = Version.fromString("9.7.0")
-    private val chatRoomCache: MutableMap<Int, MutableMap<String, ChatRoom>> = hashMapOf()
     private val createBitmap = Icon::class.declaredFunctions.find { it.name == "getBitmap" }!!
 
     override val id: String = "android_r"
@@ -95,20 +94,14 @@ class AndroidRParserSpec: MessageParserSpec {
 
         val readAction = sbn.notification.actions[0]
         val sendAction = sbn.notification.actions[1]
-        val chatRoom: ChatRoom = chatRoomCache[userId]?.get(room) ?: let {
-            ChatRoomImpl(
-                id = roomId,
-                name = room,
-                isGroupChat = isGroupChat,
-                sendSession = sendAction,
-                readSession = readAction,
-                context = context
-            ).also { nRoom ->
-                if (userId !in chatRoomCache)
-                    chatRoomCache[userId] = hashMapOf()
-                chatRoomCache[userId]!![room] = nRoom
-            }
-        }
+        val chatRoom: ChatRoom = ChatRoomImpl(
+            id = roomId,
+            name = room,
+            isGroupChat = isGroupChat,
+            sendSession = sendAction,
+            readSession = readAction,
+            context = context
+        )
 
         return Message(
             message = message,

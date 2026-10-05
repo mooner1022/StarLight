@@ -23,8 +23,6 @@ import dev.mooner.starlight.plugincore.chat.MessageParserSpec
 
 class DefaultParserSpec: MessageParserSpec {
 
-    private val chatRoomCache: MutableMap<Int, MutableMap<String, ChatRoom>> = hashMapOf()
-
     override val id: String = "default"
 
     override val name: String = "기본 메세지 분석 스펙"
@@ -70,19 +68,14 @@ class DefaultParserSpec: MessageParserSpec {
 
         val readAction = actions[0]
         val sendAction = actions[1]
-        val chatRoom: ChatRoom = chatRoomCache[userId]?.get(room)
-            ?: ChatRoomImpl(
-                id = roomId,
-                name = room,
-                isGroupChat = isGroupChat,
-                sendSession = sendAction,
-                readSession = readAction,
-                context = context
-            ).also { nRoom ->
-                if (userId !in chatRoomCache)
-                    chatRoomCache[userId] = hashMapOf()
-                chatRoomCache[userId]!![room] = nRoom
-            }
+        val chatRoom: ChatRoom = ChatRoomImpl(
+            id = roomId,
+            name = room,
+            isGroupChat = isGroupChat,
+            sendSession = sendAction,
+            readSession = readAction,
+            context = context
+        )
         return Message(
             message = message,
             image = background,

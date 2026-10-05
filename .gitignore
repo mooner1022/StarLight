@@ -15,3 +15,5 @@
 .cxx
 local.properties
 /app/release
+/enckey
+.kotlin

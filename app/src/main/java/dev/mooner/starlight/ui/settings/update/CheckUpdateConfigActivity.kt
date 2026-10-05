@@ -280,7 +280,11 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
                                                 installPermCallback = { result ->
                                                     cont.resume(result.resultCode == Activity.RESULT_OK)
                                                 }
-                                                installResultLauncher!!.launch(intent) // Should be non-null if SCK_INT >= 26
+                                                installResultLauncher!!.launch(installPermissionIntent!!) // Should be non-null if SCK_INT >= 26
+                                            }
+                                            if (!packageManager.canRequestPackageInstalls()) {
+                                                Toast.makeText(this@checkUpdate, "앱 설치 권한이 없어 업데이트를 설치할 수 없어요.", Toast.LENGTH_LONG).show()
+                                                return@onEach
                                             }
                                         }
                                     }
@@ -357,8 +361,8 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
     private fun requestInstall(context: Context, uri: Uri) {
         val intent = Intent(Intent.ACTION_VIEW)
         intent.setDataAndType(uri, "application/vnd.android.package-archive")
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         context.startActivity(intent)
     }
 }

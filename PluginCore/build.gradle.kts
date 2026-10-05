@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.kotlin.kapt)
 }
 
 android {
@@ -39,4 +38,6 @@ dependencies {
     api(libs.bundles.androidx)
     api(libs.bundles.kotlin)
     api(projects.configDSL)
+
+    testImplementation(libs.junit)
 }

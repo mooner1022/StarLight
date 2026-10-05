@@ -6,11 +6,13 @@
 
 package dev.mooner.starlight.plugincore.config.data
 
+import android.util.AtomicFile
+import androidx.core.util.writeText
 import dev.mooner.configdsl.DataMap
 import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.config.data.category.MutableConfigCategory
-import dev.mooner.starlight.plugincore.utils.decodeLegacyData
+import dev.mooner.starlight.plugincore.utils.readConfigData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,31 +20,17 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 class FileConfig(
-    private val file: File
+    file: File
 ): MutableConfig {
+
+    private val file = AtomicFile(file)
 
     private val mutex: Mutex by lazy { Mutex(locked = false) }
 
-    private val mData: MutableDataMap by lazy {
-        if (!file.exists() || !file.isFile) {
-            file.parentFile?.mkdirs()
-            file.createNewFile()
-            mutableMapOf()
-        } else {
-            val raw = file.readText()
-            if (raw.isBlank())
-                mutableMapOf()
-            else {
-                try {
-                    json.decodeLegacyData(raw)
-                } catch (e: Exception) {
-                    json.decodeFromString<MutableDataMap>(raw)
-                }
-            }
-        }
-    }
+    private val mData: MutableDataMap by lazy { this.file.readConfigData() }
 
     override fun getData(): DataMap =
         mData
@@ -58,7 +46,7 @@ class FileConfig(
 
     override fun category(id: String): MutableConfigCategory {
         if (id !in mData)
-            mData[id] = mutableMapOf()
+            mData[id] = ConcurrentHashMap()
         return categoryOrNull(id)!!
     }
 
@@ -72,10 +60,9 @@ class FileConfig(
 
     override fun push() {
         CoroutineScope(Dispatchers.IO).launch {
-            val encoded = mutex.withLock {
-                json.encodeToString(mData)
+            mutex.withLock {
+                file.writeText(json.encodeToString(mData))
             }
-            file.writeText(encoded)
         }
     }
 

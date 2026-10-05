@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.about.libs.plugin)
 }
 
@@ -35,9 +34,22 @@ android {
         buildConfig = true
     }
 
+    signingConfigs {
+        val keystore = System.getenv("KEYSTORE_FILE")?.let(::file)
+        if (keystore != null && keystore.isFile) {
+            create("release") {
+                storeFile = keystore
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
 
             val suffix = "-${SimpleDateFormat("yyMMdd").format(timeMillis)}"

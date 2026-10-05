@@ -6,11 +6,14 @@
 
 package dev.mooner.starlight.plugincore.project
 
+import android.util.AtomicFile
+import androidx.core.util.readText
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.logger.internal.Logger
 import kotlinx.serialization.decodeFromString
 import java.io.File
+import java.io.FileNotFoundException
 
 class ProjectLoader(
     private val projectDir: File
@@ -65,10 +68,13 @@ class ProjectLoader(
     }
 
     private fun getProjectInfo(dir: File): ProjectInfo {
-        val result = dir.listFiles()?.find { it.isFile && it.name == "project.json" }
-            ?: throw IllegalStateException("Could not find project.json from ${dir.name}")
+        val raw = try {
+            AtomicFile(File(dir, "project.json")).readText()
+        } catch (e: FileNotFoundException) {
+            throw IllegalStateException("Could not find project.json from ${dir.name}")
+        }
         try {
-            return json.decodeFromString(result.readText(Charsets.UTF_8))
+            return json.decodeFromString(raw)
         } catch (e: Exception) {
             throw IllegalArgumentException("Failed to parse project.json from ${dir.name}")
         }

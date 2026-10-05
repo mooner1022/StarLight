@@ -2,10 +2,25 @@ package dev.mooner.starlight.plugincore.utils
 
 import android.os.Environment
 import java.io.File
+import java.io.IOException
 
 @Suppress("DEPRECATION")
 fun getStarLightDirectory() =
     File(Environment.getExternalStorageDirectory(), "StarLight/")
+
+fun File.copyAsReadOnly(directory: File): File {
+    val target = directory.resolve("${length()}-${lastModified()}.$extension")
+    if (!target.exists()) {
+        directory.deleteRecursively()
+        directory.mkdirs()
+        val temp = directory.resolve("${target.name}.tmp")
+        copyTo(temp)
+        if (!temp.renameTo(target))
+            throw IOException("Failed to move $temp to $target")
+    }
+    target.setReadOnly()
+    return target
+}
 
 fun File.hasFile(fileName: String): Boolean {
     return this.listFiles()?.find { it.name == fileName } != null
