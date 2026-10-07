@@ -170,7 +170,7 @@ fun MaterialDialog.setCommonAttrs() {
 }
 
 context(lifecycleOwner: LifecycleOwner)
-fun MaterialDialog.setCommonAttrs() {
+fun MaterialDialog.setCommonAttrsWithLifecycle() {
     cornerRadius(res = R.dimen.card_radius)
     lifecycleOwner(lifecycleOwner)
 }

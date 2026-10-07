@@ -43,7 +43,7 @@ import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.utils.dp
-import dev.mooner.starlight.utils.setCommonAttrs
+import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
 import kotlinx.coroutines.launch
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
@@ -194,7 +194,7 @@ class LogsFragment : Fragment(), OnClickListener {
     @SuppressLint("CheckResult")
     private fun showLogFilterConfigDialog(context: Context) {
         MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
-            setCommonAttrs()
+            setCommonAttrsWithLifecycle()
             lifecycleOwner(lifecycle)
             title(res = R.string.log_filter_settings)
 
@@ -287,7 +287,7 @@ class LogsFragment : Fragment(), OnClickListener {
         MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
             var type: LogItem.ViewType = itemAdapter?.viewType ?: LogItem.ViewType.NORMAL
             with(lifecycle) {
-                setCommonAttrs()
+                setCommonAttrsWithLifecycle()
             }
 
             title(text = "로그 표시 모드")

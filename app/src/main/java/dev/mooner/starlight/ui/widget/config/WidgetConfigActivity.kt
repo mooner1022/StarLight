@@ -115,7 +115,7 @@ class WidgetConfigActivity : AppCompatActivity() {
         when(view) {
             binding.fabAddWidget -> MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT))
                 .show {
-                    setCommonAttrs()
+                    setCommonAttrsWithLifecycle()
                     maxWidth(res = R.dimen.dialog_width)
 
                     configStruct(this@WidgetConfigActivity) {
