@@ -85,7 +85,6 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_1_8
-        freeCompilerArgs.add("-Xcontext-parameters")
     }
 }
 
