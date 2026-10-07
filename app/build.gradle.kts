@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -78,13 +79,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
-        //freeCompilerArgs = listOf("-Xcontext-receivers")
-        freeCompilerArgs = listOf("-Xcontext-parameters")
-    }
-
     namespace = "dev.mooner.starlight"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_1_8
+        freeCompilerArgs.add("-Xcontext-parameters")
+    }
 }
 
 dependencies {
