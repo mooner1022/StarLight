@@ -219,7 +219,7 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
             val changeLog = checker.fetchChangeLog(version)
 
             MaterialDialog(this@checkUpdate, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
-                setCommonAttrs()
+                setCommonAttrsWithLifecycle()
                 cancelOnTouchOutside(false)
                 title(text = "새로운 버전 확인 (*˙˘˙*)!")
                 val markdown = Markwon

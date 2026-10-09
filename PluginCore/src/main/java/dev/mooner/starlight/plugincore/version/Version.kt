@@ -45,10 +45,7 @@ data class Version(
     }
 
     override fun toString(): String =
-        (if (build != null)
-            arrayOf(major, minor, patch, build)
-        else
-            arrayOf(major, minor, patch)).joinToString(".")
+        listOfNotNull(major, minor, patch, build).joinToString(".")
 
     override fun equals(other: Any?): Boolean = when(other) {
         null -> false

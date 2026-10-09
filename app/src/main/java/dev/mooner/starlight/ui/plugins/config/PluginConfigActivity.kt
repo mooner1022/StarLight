@@ -23,7 +23,7 @@ import dev.mooner.starlight.plugincore.config.data.FileConfig
 import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.utils.bindFadeImage
 import dev.mooner.starlight.utils.restartApplication
-import dev.mooner.starlight.utils.setCommonAttrs
+import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -97,7 +97,7 @@ class PluginConfigActivity: AppCompatActivity() {
                     title = "플러그인 제거"
                     setOnClickListener { view ->
                         MaterialDialog(binding.root.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                            setCommonAttrs()
+                            setCommonAttrsWithLifecycle()
                             title(text = "정말 [${plugin.info.fullName}](을)를 삭제할까요?")
                             message(text = "주의: 모든 설정과 하위 디렉토리가 함께 삭제되며, 되돌릴 수 없습니다.")
                             positiveButton(text = "확인") { dialog ->

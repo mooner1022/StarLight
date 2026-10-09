@@ -384,7 +384,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                                 binding.root.context,
                                 BottomSheet(LayoutMode.WRAP_CONTENT)
                             ).noAutoDismiss().show {
-                                setCommonAttrs()
+                                setCommonAttrsWithLifecycle()
                                 cancelOnTouchOutside(true)
                                 //icon(res = R.drawable.ic_round_delete_forever_24)
                                 title(text = "프로젝트를 정말로 제거할까요?")
@@ -424,7 +424,7 @@ class ProjectConfigActivity: AppCompatActivity() {
             var name: String? = null
             var updateMainScript = true
 
-            setCommonAttrs()
+            setCommonAttrsWithLifecycle()
             cancelOnTouchOutside(true)
             //icon(res = R.drawable.ic_round_delete_forever_24)
             title(text = translate { 

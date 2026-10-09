@@ -218,7 +218,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     @SuppressLint("CheckResult")
     private fun showProjectAlignDialog() =
         MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            setCommonAttrs()
+            setCommonAttrsWithLifecycle()
             gridItems(aligns.toGridItems()) { dialog, _, item ->
                 alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
                 isReversed = dialog.findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked
@@ -235,7 +235,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     private fun showNewProjectDialog() =
         MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
             val binding = DialogNewProjectBinding.inflate(layoutInflater, view, false)
-            setCommonAttrs()
+            setCommonAttrsWithLifecycle()
             customView(view = binding.root, scrollable = false, horizontalPadding = false)
             cancelOnTouchOutside(true)
             noAutoDismiss()

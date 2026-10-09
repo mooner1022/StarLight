@@ -35,7 +35,7 @@ import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.createFailurePeek
 import dev.mooner.starlight.utils.createSimplePeek
-import dev.mooner.starlight.utils.setCommonAttrs
+import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
@@ -139,7 +139,7 @@ class PluginsFragment : Fragment(), OnClickListener {
                 update()
             }
             .show {
-                setCommonAttrs()
+                setCommonAttrsWithLifecycle()
                 customView(R.layout.dialog_align_plugins)
                 findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked = isReversed
             }
@@ -171,7 +171,7 @@ class PluginsFragment : Fragment(), OnClickListener {
                 }.peek()
             }
             .show {
-                setCommonAttrs()
+                setCommonAttrsWithLifecycle()
             }
 
     private fun getAlignByName(name: String): Align<StarlightPlugin>? =
