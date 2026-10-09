@@ -18,6 +18,7 @@ import dev.mooner.starlight.api.api2.BroadcastApi
 import dev.mooner.starlight.api.legacy.*
 import dev.mooner.starlight.api.node.EventEmitterApi
 import dev.mooner.starlight.api.original.*
+import dev.mooner.starlight.languages.neonjs.JSNeon
 import dev.mooner.starlight.languages.rhino.JSRhino
 import dev.mooner.starlight.listener.event.*
 import dev.mooner.starlight.listener.specs.AndroidRParserSpec
@@ -90,6 +91,7 @@ object ApplicationSession {
         Session.languageManager.apply {
             //addLanguage("", JSV8())
             addLanguage(pContext, JSRhino())
+            addLanguage(pContext, JSNeon())
             //addLanguage(GraalVMLang())
         }
 
