@@ -35,7 +35,7 @@ markwon = "4.6.2"
 dalvik-dx = "16.0.1"
 ketch = "2.0.5"
 cascade = "2.3.0"
-neonjs = "0.1.4-SNAPSHOT"
+neonjs = "0.1.3"
 junit = "4.13.2"
 
 [libraries]
