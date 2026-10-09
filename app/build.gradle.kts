@@ -108,6 +108,9 @@ dependencies {
     implementation(libs.markwon.core)
     implementation(libs.dalvik.dx)
 
+    implementation(libs.neonjs.core)
+    implementation(libs.neonjs.android)
+
     implementation(libs.cascade)
 
     implementation(files("libs/bottomsheets-release.aar"))
