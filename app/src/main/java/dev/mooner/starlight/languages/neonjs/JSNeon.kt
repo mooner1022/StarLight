@@ -17,6 +17,7 @@ import dev.mooner.neonjs.HostAccess
 import dev.mooner.neonjs.NeonConsole
 import dev.mooner.neonjs.NeonContext
 import dev.mooner.neonjs.NeonEngine
+import dev.mooner.neonjs.NeonInterruptedException
 import dev.mooner.neonjs.NeonModuleLoader
 import dev.mooner.neonjs.NeonValue
 import dev.mooner.neonjs.SandboxPolicy
@@ -41,9 +42,11 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.milliseconds
@@ -63,6 +66,8 @@ class JSNeon: Language() {
     override val configStructure: ConfigStructure = configs
 
     override val codeGenerator: CodeGenerator = ModuleCodeGenerator(DefaultJSCodeGenerator())
+
+    private val eventLoops: MutableMap<NeonContext, EventLoop> = ConcurrentHashMap()
 
     override fun compile(
         code: String,
@@ -119,9 +124,18 @@ class JSNeon: Language() {
                 val moduleName = project
                     ?.run { directory.resolve(info.mainScript).canonicalPath }
                     ?: name
-                context.evalModule(code, moduleName)
+                val module = context.evalModule(code, moduleName)
+                if (project != null) {
+                    context.setUncaughtErrorHandler { error, rejection ->
+                        val type = if (rejection) "Unhandled promise rejection" else "Uncaught exception"
+                        project.logger.error("$type: ${error.message}${error.jsStack?.let { "\n$it" }.orEmpty()}")
+                    }
+                    eventLoops[context] = EventLoop(context, project).apply { drain() }
+                }
+                module
             }
         } catch (e: Throwable) {
+            eventLoops -= context
             context.close()
             throw e
         }
@@ -129,6 +143,7 @@ class JSNeon: Language() {
 
     override fun destroy(scope: Any) {
         val context = (scope as NeonValue).context
+        eventLoops -= context
         context.interrupt()
         context.close()
         context.engine.close()
@@ -149,7 +164,7 @@ class JSNeon: Language() {
             return null
         }
         return withClassLoader(null) {
-            function.call(*args)
+            function.call(*args).also { eventLoops[module.context]?.drain() }
         }.`as`(Any::class.java)
     }
 
@@ -221,7 +236,10 @@ class JSNeon: Language() {
                 do {
                     delay(mDelay.milliseconds)
                     runCatching {
-                        withClassLoader(null) { callback.call(*params) }
+                        withClassLoader(null) {
+                            callback.call(*params)
+                            eventLoops[this@defineGlobals]?.drain()
+                        }
                     }.onFailure { e ->
                         project.logger.error("Exception on timer $id: $e")
                     }
@@ -303,6 +321,41 @@ class JSNeon: Language() {
 
         companion object {
             private const val ENTRY_FILE = "index.js"
+        }
+    }
+
+    private class EventLoop(
+        private val context: NeonContext,
+        private val project: Project
+    ) {
+
+        private val isPumping = AtomicBoolean()
+
+        fun drain() {
+            if (context.runEventLoop(0) || !isPumping.compareAndSet(false, true))
+                return
+            project.launch(Dispatchers.IO) {
+                try {
+                    withClassLoader(null) {
+                        do {
+                            while (isActive && !context.runEventLoop(PUMP_TIMEOUT_MILLIS))
+                                continue
+                            isPumping.set(false)
+                        } while (isActive && !context.runEventLoop(0) && isPumping.compareAndSet(false, true))
+                    }
+                } catch (e: Exception) {
+                    isPumping.set(false)
+                    if (e !is NeonInterruptedException && e !is IllegalStateException)
+                        project.logger.error("Exception on event loop: $e")
+                }
+            }.invokeOnCompletion { e ->
+                if (e != null)
+                    isPumping.set(false)
+            }
+        }
+
+        companion object {
+            private const val PUMP_TIMEOUT_MILLIS = 1000L
         }
     }
 
