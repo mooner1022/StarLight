@@ -56,6 +56,12 @@
     <string name="project_settings">설정</string>
     <string name="project_info">정보</string>
     <string name="project_favorite">즐겨찾기</string>
+    <string name="new_project">새 프로젝트</string>
+    <string name="project_search_hint">프로젝트 검색</string>
+    <string name="project_search_empty">일치하는 프로젝트가 없어요.</string>
+    <string name="project_status_running">실행 중</string>
+    <string name="project_status_off">꺼짐</string>
+    <string name="project_status_not_compiled">컴파일 필요</string>
 
     <string name="aligned_by">정렬: %s</string>
     <string name="default_placeholder">DEFAULT</string>
@@ -101,7 +107,6 @@
     <string name="editor_edit_file_name">변경된 이름</string>
 
     <string name="log_foreground_started">포그라운드 서비스 등록 성공!</string>
-    <string name="log_project_list_update_failure">프로젝트 정보 업데이트 실패: 인덱스를 찾지 못함</string>
     <string name="log_filter_settings">로그 필터</string>
     <string name="log_filter_auto_scroll">자동 스크롤</string>
     <string name="log_filter_types">타입</string>
