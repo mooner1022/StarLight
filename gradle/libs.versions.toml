@@ -35,7 +35,7 @@ markwon = "4.6.2"
 dalvik-dx = "16.0.1"
 ketch = "2.0.5"
 cascade = "2.3.0"
-neonjs = "0.1.4"
+neonjs = "0.1.5"
 junit = "4.13.2"
 
 [libraries]
@@ -82,6 +82,7 @@ dalvik-dx = { group = "com.jakewharton.android.repackaged", name = "dalvik-dx", 
 ketch = { group = "com.github.khushpanchal", name = "Ketch", version.ref = "ketch" }
 neonjs-core = { group = "dev.mooner.neonjs", name = "neonjs-core", version.ref = "neonjs" }
 neonjs-android = { group = "dev.mooner.neonjs", name = "neonjs-android", version.ref = "neonjs" }
+neonjs-net = { group = "dev.mooner.neonjs", name = "neonjs-net", version.ref = "neonjs" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]
