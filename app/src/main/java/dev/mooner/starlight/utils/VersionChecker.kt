@@ -45,15 +45,14 @@ class VersionChecker {
 
     private fun fetchVersion(): Result<VersionMap> {
         return runBlocking(Dispatchers.IO) {
-            Jsoup.connect(VERSION_REMOTE_URL)
-                .get()
-                .text()
-                .runCatching<String, VersionMap> {
-                    let(Session.json::decodeFromString)
-                }
-                .onFailure {
-                    it.printStackTrace()
-                }
+            runCatching<VersionMap> {
+                Jsoup.connect(VERSION_REMOTE_URL)
+                    .get()
+                    .text()
+                    .let(Session.json::decodeFromString)
+            }.onFailure {
+                it.printStackTrace()
+            }
         }
     }
 
