@@ -1,12 +1,12 @@
 [versions]
 # app info
-compileSdk = "35"
+compileSdk = "37"
 minSdk = "26"
 targetSdk = "33"
 versionCode = "8"
 versionName = "0.3.4b"
 buildTools = "35.0.0"
-androidGradlePlugin = "8.9.3"
+androidGradlePlugin = "8.13.2"
 kotlin = "2.4.20"
 coil = "2.7.0"
 about-libs = "11.2.2"
