@@ -7,17 +7,22 @@
 package dev.mooner.starlight.ui.projects
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.os.Build
+import android.transition.AutoTransition
+import android.transition.TransitionManager
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.widget.ImageButton
-import androidx.core.view.updateLayoutParams
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import coil.load
-import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.fastadapter.binding.AbstractBindingItem
 import dev.mooner.configdsl.Icon
@@ -25,8 +30,8 @@ import dev.mooner.configdsl.utils.PrimitiveTypedString
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.ID_VIEW_ITEM_PROJECT
 import dev.mooner.starlight.R
-import dev.mooner.starlight.databinding.CardProjectButtonsBinding
-import dev.mooner.starlight.databinding.CardProjectsBinding
+import dev.mooner.starlight.databinding.ItemProjectActionsBinding
+import dev.mooner.starlight.databinding.ItemProjectBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.editor.CodeEditorActivity
@@ -37,7 +42,6 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.ui.debugroom.DebugRoomActivity
 import dev.mooner.starlight.ui.editor.DefaultEditorActivity
-import dev.mooner.starlight.ui.presets.ExpandableCard
 import dev.mooner.starlight.ui.projects.config.ProjectButtonData
 import dev.mooner.starlight.ui.projects.config.ProjectConfigActivity
 import dev.mooner.starlight.utils.*
@@ -54,17 +58,19 @@ private val LOG = LoggerFactory.logger {  }
 
 class ProjectListItem(
     private val parent: WeakReference<Fragment>
-): AbstractBindingItem<CardProjectsBinding>() {
+): AbstractBindingItem<ItemProjectBinding>() {
 
     override var identifier: Long
         get() = project!!.info.id.getLongHash()
         set(_) {}
     var project: Project? = null
 
-    private val buttonIds: MutableSet<Int> = hashSetOf()
-    private var binding: CardProjectsBinding? = null
-    private var innerBinding: CardProjectButtonsBinding? = null
+    private var binding: ItemProjectBinding? = null
     private var isExpanded: Boolean = false
+
+    private var isCompiling: Boolean = false
+    private var compileStage: String? = null
+    private var compileProgress: Int = 0
 
     override val type: Int
         get() = ID_VIEW_ITEM_PROJECT
@@ -74,91 +80,93 @@ class ProjectListItem(
         return this
     }
 
-    override fun bindView(binding: CardProjectsBinding, payloads: List<Any>) {
+    override fun bindView(binding: ItemProjectBinding, payloads: List<Any>) {
         this.binding = binding
-        project?.let { project ->
-            val context = binding.root.context
+        binding.root.tag = this
+        val project = project ?: return
 
-            binding.cardProject.apply {
-                if (isExpanded && !expanded)
-                    expand()
-                else if (!isExpanded && expanded)
-                    collapse()
-
-                title = project.info.name
-                subTitle = project.getLanguage().name
-
-                setIcon(project)
-
-                setOnSwitchChangeListener { _, isChecked ->
-                    if (project.info.isEnabled != isChecked) {
-                        project.info.isEnabled = isChecked
-                        project.saveInfo()
-                    }
-                    binding.updateState(project)
-                }
-            }
-            binding.updateState(project)
-            /**
-             * Two different ViewHolders have the same stable ID. Stable IDs in your adapter MUST BE unique and SHOULD NOT change.
-             * ViewHolder 1:BindingViewHolder{58cf25c position=4 id=1087354647, oldPos=-1, pLpos:-1}
-             * View Holder 2:BindingViewHolder{d03acd0 position=3 id=1087354647, oldPos=-1, pLpos:-1}
-             * androidx.recyclerview.widget.RecyclerView{45b401e VFED..... ......ID 0,0-1006,1793 #7f0a0252 app:id/recyclerViewProjectList},
-             * adapter:com.mikepenz.fastadapter.FastAdapter@2dac75d, layout:androidx.recyclerview.widget.LinearLayoutManager@e5548ac,
-             * context:dev.mooner.starlight.MainActivity@6f1d031
-             */
-            binding.cardProject.setOnInnerViewInflateListener {
-                val innerView = binding.root.findViewById<FlexboxLayout>(R.id.innerView)
-                innerBinding = getInnerViewBinding(innerView)
-
-                for ((id, icon) in project.getCustomButtons()) {
-                    var buttonId = View.generateViewId()
-                    do {
-                        buttonId++
-                    } while (innerBinding?.flexLayout?.findViewById<View>(buttonId) != null)
-
-                    val button = project.createCustomButton(context, id, buttonId, icon)
-                    buttonIds += buttonId
-
-                    innerBinding!!.flexLayout.addView(button)
-                }
-
-                innerBinding!!.apply {
-                    buttonEditCode.setOnClickListener(onClickListener)
-                    buttonRecompile.setOnClickListener(onClickListener)
-                    buttonDebugRoom.setOnClickListener(onClickListener)
-                    buttonProjectConfig.setOnClickListener(onClickListener)
-                    buttonProjectInfo.setOnClickListener(onClickListener)
-                    buttonProjectPin.setOnClickListener(onClickListener)
-
-                    val tintColor = if (project.info.isPinned) R.color.code_yellow else R.color.text
-                    buttonProjectPin
-                        .loadWithTint(dev.mooner.configdsl.R.drawable.ic_round_star_24, tintColor)
-                }
-            }
+        binding.icon.loadLanguageIcon(project)
+        binding.header.setOnClickListener {
+            isExpanded = !isExpanded
+            binding.setExpanded(project, isExpanded, animate = true)
         }
+        binding.updateState(project)
+        binding.setExpanded(project, isExpanded, animate = false)
     }
 
-    override fun unbindView(binding: CardProjectsBinding) {
-        if (buttonIds.isNotEmpty()) {
-            innerBinding?.flexLayout?.apply {
-                for (id in buttonIds)
-                    removeView(findViewById(id))
-            }
-            buttonIds.clear()
-        }
-        isExpanded = binding.cardProject.expanded
+    override fun unbindView(binding: ItemProjectBinding) {
+        if (binding.root.tag === this)
+            binding.root.tag = null
+        if (this.binding === binding)
+            this.binding = null
     }
 
     fun tryUpdateView() {
-        project?.let { project -> binding?.updateState(project) }
+        val project = project ?: return
+        boundBinding()?.updateState(project)
+    }
+
+    private fun boundBinding(): ItemProjectBinding? =
+        binding?.takeIf { it.root.tag === this }
+
+    private fun ItemProjectBinding.findActions(inflate: Boolean): ItemProjectActionsBinding? {
+        root.findViewById<View>(R.id.actions)?.let { return ItemProjectActionsBinding.bind(it) }
+        if (!inflate)
+            return null
+        return ItemProjectActionsBinding.bind(actionsStub.inflate())
+    }
+
+    private fun ItemProjectBinding.setExpanded(project: Project, expanded: Boolean, animate: Boolean) {
+        if (animate)
+            (root.parent?.parent as? ViewGroup)?.let {
+                TransitionManager.beginDelayedTransition(it, AutoTransition().apply { duration = ANIM_DURATION })
+            }
+        val actions = findActions(inflate = expanded)
+        if (actions != null) {
+            actions.root.visibility = if (expanded) View.VISIBLE else View.GONE
+            if (expanded)
+                actions.bind(project)
+        }
+        val rotation = if (expanded) 180f else 0f
+        if (animate)
+            arrow.animate().rotation(rotation).setDuration(ANIM_DURATION).start()
+        else {
+            arrow.animate().cancel()
+            arrow.rotation = rotation
+        }
+    }
+
+    private fun ItemProjectActionsBinding.bind(project: Project) {
+        for (button in arrayOf(buttonEditCode, buttonRecompile, buttonDebugRoom, buttonProjectConfig, buttonProjectInfo, buttonProjectPin))
+            button.setOnClickListener(onClickListener)
+        updatePinButton(project)
+
+        customButtons.removeAllViews()
+        val buttons = project.getCustomButtons()
+        for ((id, icon) in buttons)
+            customButtons.addView(project.createCustomButton(root.context, id, icon))
+        customButtons.visibility = if (buttons.isEmpty()) View.GONE else View.VISIBLE
+
+        updateProgress()
+    }
+
+    private fun ItemProjectActionsBinding.updatePinButton(project: Project) {
+        val tintColor = if (project.info.isPinned) R.color.code_yellow else R.color.text
+        buttonProjectPin.setDrawableTint(tintColor)
+    }
+
+    private fun ItemProjectActionsBinding.updateProgress() {
+        actionRow.visibility = if (isCompiling) View.INVISIBLE else View.VISIBLE
+        progressWrapper.visibility = if (isCompiling) View.VISIBLE else View.GONE
+        if (isCompiling) {
+            progressState.text = compileStage
+            progressBar.graceProgress = compileProgress
+        }
     }
 
     private val onClickListener = OnClickListener { view ->
         val context = view.context
-        if (project == null)
-            return@OnClickListener
-        val project = project!!
+        val project = project ?: return@OnClickListener
 
         when(view.id) {
             R.id.buttonEditCode ->
@@ -173,46 +181,37 @@ class ProjectListItem(
                 context.startProjectInfoActivity(project)
             R.id.buttonProjectPin -> {
                 project.info.isPinned = !project.info.isPinned
-                val tintColor = if (project.info.isPinned) R.color.code_yellow else R.color.text
-
-                innerBinding?.buttonProjectPin
-                    ?.loadWithTint(dev.mooner.configdsl.R.drawable.ic_round_star_24, tintColor)
                 project.saveInfo()
+                boundBinding()?.let { binding ->
+                    binding.updateState(project)
+                    binding.findActions(inflate = false)?.updatePinButton(project)
+                }
             }
         }
     }
 
-    private fun getInnerViewBinding(innerView: View): CardProjectButtonsBinding =
-        CardProjectButtonsBinding.bind(innerView)
-
-    private fun CardProjectButtonsBinding.setProgressVisibility(show: Boolean) {
-        flexLayout.visibility = if (show) View.GONE else View.VISIBLE
-        progressWrapper.visibility = if (!show) View.GONE else View.VISIBLE
-    }
-
     private fun compileProject(view: View, project: Project) {
-        if (innerBinding == null) {
-            LOG.error { "innerBinding == null" }
+        if (isCompiling)
             return
-        }
-        val innerBinding = innerBinding!!
-
-        innerBinding.setProgressVisibility(true)
-        innerBinding.progressBar.progress = 0
+        isCompiling = true
+        compileStage = null
+        compileProgress = 0
+        boundBinding()?.findActions(inflate = false)?.updateProgress()
 
         val startMillis = System.currentTimeMillis()
         project.compileAsync()
-            //.flowWithLifecycle((this@ProjectListAdapter.context as MainActivity).lifecycle)
             .buffer(3)
             .onEach { (stage, percent) ->
                 withContext(Dispatchers.Main) {
-                    innerBinding.progressState.text = stage.name
-                    innerBinding.progressBar.graceProgress = percent
+                    compileStage = stage.name
+                    compileProgress = percent
+                    boundBinding()?.findActions(inflate = false)?.updateProgress()
                 }
             }
             .onCompletion { e ->
                 withContext(Dispatchers.Main) {
-                    innerBinding.progressBar.graceProgress = 100
+                    compileProgress = 100
+                    boundBinding()?.findActions(inflate = false)?.updateProgress()
                 }
                 if (e == null) {
                     val compileTime = System.currentTimeMillis() - startMillis
@@ -222,9 +221,11 @@ class ProjectListItem(
                             Locale.KOREAN  { "${project.info.name} 컴파일 완료! (${compileTime}ms)" }
                         }, PeekAlert.Position.Bottom).also {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-                                it.setMargin(vertical = innerBinding.root.rootWindowInsets.getInsets(WindowInsets.Type.systemBars()).bottom)
+                                view.rootWindowInsets?.let { insets ->
+                                    it.setMargin(vertical = insets.getInsets(WindowInsets.Type.systemBars()).bottom)
+                                }
                         }.peek()
-                        binding?.updateState(project)
+                        tryUpdateView()
                     }
                 }
 
@@ -233,7 +234,8 @@ class ProjectListItem(
                     delay(PROGRESS_WAIT_TIME)
 
                 withContext(Dispatchers.Main) {
-                    innerBinding.setProgressVisibility(false)
+                    isCompiling = false
+                    boundBinding()?.findActions(inflate = false)?.updateProgress()
                 }
             }
             .catch { e ->
@@ -266,7 +268,7 @@ class ProjectListItem(
                         setTitleColor(res = R.color.white)
                         setTextColor(res = R.color.white)
                     }.peek()
-                    binding?.updateState(project)
+                    tryUpdateView()
                 }
             }
             .launchIn(CoroutineScope(Dispatchers.Default))
@@ -312,16 +314,12 @@ class ProjectListItem(
         mStartProjectInfoActivity(project)
     }
 
-    private fun Project.createCustomButton(context: Context, id: String, viewId: Int, icon: Icon): ImageButton {
+    private fun Project.createCustomButton(context: Context, id: String, icon: Icon): ImageButton {
         return ImageButton(context).apply {
-            setId(viewId)
-            if (layoutParams == null)
-                layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-            updateLayoutParams {
-                width = dp(48)
-                height = dp(48)
-            }
-            setBackgroundColor(context.getColor(R.color.transparent))
+            layoutParams = ViewGroup.LayoutParams(dp(48), dp(48))
+            TypedValue()
+                .also { context.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, it, true) }
+                .let { setBackgroundResource(it.resourceId) }
             loadWithTint(data = icon.drawableRes, tintColor = R.color.text)
             setOnClickListener {
                 callFunction("onProjectButtonClicked", arrayOf(id)) { e ->
@@ -365,43 +363,46 @@ class ProjectListItem(
         }
     }
 
-    private fun ExpandableCard.setIcon(project: Project) {
+    private fun ImageView.loadLanguageIcon(project: Project) {
         val icon: Any? = when(project.getLanguage().id) {
             "JS_RHINO" -> R.drawable.ic_js
             else -> project.getLanguage().getIconFileOrNull()
         }
-        setIcon {
-            it.load(icon ?: R.drawable.ic_round_developer_mode_24)
+        load(icon ?: R.drawable.ic_round_developer_mode_24)
+    }
+
+    private fun ItemProjectBinding.updateState(project: Project) {
+        val context = root.context
+        title.text = project.info.name
+        pin.visibility = if (project.info.isPinned) View.VISIBLE else View.GONE
+
+        val (statusRes, colorRes) = when {
+            !project.isCompiled    -> R.string.project_status_not_compiled to R.color.orange
+            project.info.isEnabled -> R.string.project_status_running to R.color.card_enabled
+            else                   -> R.string.project_status_off to R.color.text_sub
+        }
+        subtitle.text = "${project.getLanguage().name} · ${context.getString(statusRes)}"
+        status.backgroundTintList = ColorStateList.valueOf(context.getColor(colorRes))
+
+        toggle.setOnCheckedChangeListener(null)
+        toggle.isChecked = project.info.isEnabled
+        toggle.isEnabled = project.isCompiled
+        toggle.setOnCheckedChangeListener { _, isChecked ->
+            if (project.info.isEnabled != isChecked)
+                project.setEnabled(isChecked)
+            updateState(project)
         }
     }
 
-    private fun CardProjectsBinding.updateState(project: Project) {
-        cardViewIsEnabled.setCardBackgroundColor(
-            root.context.getCardColor(project))
-        with(cardProject) {
-            title           = project.info.name
-            switchValue     = project.info.isEnabled
-            isSwitchEnabled = project.isCompiled
-        }
+    private fun TextView.setDrawableTint(colorRes: Int) {
+        TextViewCompat.setCompoundDrawableTintList(this, ColorStateList.valueOf(context.getColor(colorRes)))
     }
 
-    private fun Context.getCardColor(project: Project): Int {
-        val colorRes = if (project.isCompiled) {
-            if (project.info.isEnabled) {
-                R.color.card_enabled
-            } else {
-                R.color.card_disabled
-            }
-        } else {
-            R.color.orange
-        }
-        return getColor(colorRes)
-    }
-
-    override fun createBinding(inflater: LayoutInflater, parent: ViewGroup?): CardProjectsBinding =
-        CardProjectsBinding.inflate(inflater, parent, false)
+    override fun createBinding(inflater: LayoutInflater, parent: ViewGroup?): ItemProjectBinding =
+        ItemProjectBinding.inflate(inflater, parent, false)
 
     companion object {
         private const val PROGRESS_WAIT_TIME = 400L
+        private const val ANIM_DURATION = 200L
     }
 }
