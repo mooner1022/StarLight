@@ -9,7 +9,7 @@ package dev.mooner.starlight
 const val PACKAGE_KAKAO_TALK = "com.kakao.talk"
 
 const val WIDGET_DEF_STRING = """
-    ["widget_uptime_slim","widget_logs"]
+    ["widget_status","widget_logs"]
 """
 
 const val ID_VIEW_ITEM_PROJECT = 0

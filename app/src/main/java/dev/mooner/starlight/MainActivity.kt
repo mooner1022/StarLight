@@ -17,6 +17,7 @@ import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.appbar.AppBarLayout
 import dev.mooner.starlight.databinding.ActivityMainBinding
+import dev.mooner.starlight.diagnostics.Diagnostics
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginManager
@@ -78,6 +79,12 @@ class MainActivity : AppCompatActivity() {
                 putInt("lastVersionCode", BuildConfig.VERSION_CODE)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (currentTabId == R.id.nav_home)
+            onPageChanged(currentTabId)
     }
 
     @Deprecated("Deprecated in Java")
@@ -150,7 +157,7 @@ class MainActivity : AppCompatActivity() {
             when(id) {
                 R.id.nav_home ->
                     getText(R.string.app_name) to
-                            getText(R.string.app_version)
+                            Diagnostics.summarize(this)
 
                 R.id.nav_projects ->
                     getText(R.string.title_projects) to

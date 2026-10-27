@@ -146,6 +146,7 @@ object ApplicationSession {
 
         Session.widgetManager.apply {
             //val name = "기본 위젯"
+            addWidget(pContext, StatusWidget)
             addWidget(pContext, UptimeWidget)
             addWidget(pContext, LogsWidget)
             if (GlobalConfig.category("dev").getBoolean("dev_mode", false)) {
