@@ -129,6 +129,7 @@
     <string name="widget_logs_more">More</string>
     <string name="widget_logs_empty">No logs yet!</string>
     <string name="widget_status">Bot status</string>
+    <string name="widget_messages">Messages</string>
     <string name="widget_errors">Errors</string>
     <string name="widget_jobs">Running jobs</string>
 

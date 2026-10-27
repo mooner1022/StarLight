@@ -125,6 +125,7 @@
     <string name="widget_logs_more">더보기</string>
     <string name="widget_logs_empty">아직 로그가 없어요!</string>
     <string name="widget_status">봇 상태</string>
+    <string name="widget_messages">메시지</string>
     <string name="widget_errors">오류</string>
     <string name="widget_jobs">실행 중 작업</string>
 
