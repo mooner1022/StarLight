@@ -79,7 +79,7 @@ data class ColorPickerConfigOption(
 
                     positiveButton(R.string.ok) {
                         if (selected == null) {
-                            Toast.makeText(context, "선택된 값이 없어 저장되지 않았어요.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, R.string.configdsl_color_not_selected, Toast.LENGTH_SHORT).show()
                         } else {
                             holder.icon.imageTintList = selected?.let(ColorStateList::valueOf)
                             onColorSelectedListener?.invoke(holder.layout, selected!!)

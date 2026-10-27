@@ -47,9 +47,11 @@ data class SeekbarConfigOption(
 
     override fun onDraw(holder: SeekbarViewHolder, data: Int) {
         val offset = min
-        holder.seekBar.progress  = data
-        holder.seekBarIndex.text = (holder.seekBar.progress).toString()
+        val value = data.coerceIn(min, max)
+        holder.seekBar.setOnSeekBarChangeListener(null)
         holder.seekBar.max       = max - offset
+        holder.seekBar.progress  = value - offset
+        holder.seekBarIndex.text = value.toString()
 
         holder.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             @SuppressLint("SetTextI18n")

@@ -6,13 +6,12 @@
 
 package dev.mooner.configdsl.options
 
-import android.text.Editable
 import android.text.InputType
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import androidx.core.widget.doAfterTextChanged
 import dev.mooner.configdsl.*
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
@@ -43,25 +42,18 @@ data class StringConfigOption(
     override fun dataToJson(value: String): JsonElement =
         JsonPrimitive(value)
 
-    override fun dataFromJson(jsonElement: JsonElement): String {
-        println("StringConfigOption dataFromJson $jsonElement")
-        return jsonElement.jsonPrimitive.content
-    }
+    override fun dataFromJson(jsonElement: JsonElement): String =
+        jsonElement.jsonPrimitive.content
 
     override fun onDraw(holder: StringViewHolder, data: String) {
-        holder.editTextString.hint      = hint
-        holder.editTextString.inputType = inputType
-        holder.editTextString.setText(data)
-
-        holder.editTextString.addTextChangedListener(object: TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
-            override fun afterTextChanged(s: Editable) {
-                onTextUpdate(holder.editTextString, s.toString())
-            }
-        })
+        val editText = holder.editTextString
+        holder.onTextChanged = null
+        editText.hint = hint
+        if (editText.inputType != inputType)
+            editText.inputType = inputType
+        if (editText.text.toString() != data)
+            editText.setText(data)
+        holder.onTextChanged = { text -> onTextUpdate(editText, text) }
     }
 
     private fun onTextUpdate(editText: EditText, value: String) {
@@ -80,6 +72,12 @@ data class StringConfigOption(
     class StringViewHolder(itemView: View): DefaultViewHolder(itemView) {
 
         val editTextString: EditText = itemView.findViewById(R.id.editText)
+
+        internal var onTextChanged: ((String) -> Unit)? = null
+
+        init {
+            editTextString.doAfterTextChanged { text -> onTextChanged?.invoke(text.toString()) }
+        }
 
         override fun setEnabled(enabled: Boolean) {
             super.setEnabled(enabled)

@@ -6,7 +6,6 @@
 
 package dev.mooner.configdsl.options
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,7 +17,6 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
-import kotlin.math.min
 import kotlin.properties.Delegates
 
 data class SpinnerConfigOption(
@@ -51,23 +49,28 @@ data class SpinnerConfigOption(
         jsonElement.jsonPrimitive.int
 
     override fun onDraw(holder: SpinnerViewHolder, data: Int) {
-        holder.spinner.apply {
-            val items = ArrayAdapter(context, android.R.layout.simple_spinner_item, items)
-            val selectionIdx = min(data, items.count - 1)
-            if (selectionIdx != data)
-                Log.d("SpinnerConfigOption", "Spinner idx out of bound, fixed to item size...")
-
-            adapter = items
-            setBackgroundColor(context.getColor(R.color.transparent))
-            setSelection(selectionIdx, true)
-            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
-                    this@SpinnerConfigOption.onItemSelectedListener?.invoke(this@apply, position)
-                    notifyUpdated(position)
-                }
-
-                override fun onNothingSelected(p0: AdapterView<*>?) {}
+        val spinner = holder.spinner
+        val selection = data.coerceIn(0, (items.size - 1).coerceAtLeast(0))
+        spinner.onItemSelectedListener = null
+        spinner.adapter = ArrayAdapter(spinner.context, R.layout.configdsl_spinner_item, items).apply {
+            setDropDownViewResource(R.layout.configdsl_spinner_dropdown_item)
+        }
+        spinner.setSelection(selection, false)
+        holder.selection = selection
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (position == holder.selection)
+                    return
+                holder.selection = position
+                onItemSelectedListener?.invoke(spinner, position)
+                notifyUpdated(position)
             }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        holder.itemView.setOnClickListener {
+            if (spinner.isEnabled)
+                spinner.performClick()
         }
     }
 
@@ -75,9 +78,11 @@ data class SpinnerConfigOption(
 
         val spinner: Spinner = itemView.findViewById(R.id.spinner)
 
+        internal var selection: Int = -1
+
         override fun setEnabled(enabled: Boolean) {
             super.setEnabled(enabled)
-            spinner.isEnabled = false
+            spinner.isEnabled = enabled
         }
     }
 }

@@ -45,21 +45,28 @@ data class ToggleConfigOption(
         jsonElement.jsonPrimitive.boolean
 
     override fun onDraw(holder: ToggleViewHolder, data: Boolean) {
-        holder.toggle.isChecked = data
-        holder.toggle.setOnCheckedChangeListener { _, isChecked ->
-            if (enableWarnMsg != null || disableWarnMag != null) {
-                (if (isChecked) enableWarnMsg else disableWarnMag)?.let { lazyMessage ->
-                    showConfirmDialog(holder.toggle.context, title = "경고", message = lazyMessage()) { isConfirmed ->
-                        if (isConfirmed) {
-                            onChecked(holder.toggle, isChecked)
-                        } else {
-                            holder.toggle.isChecked = !holder.toggle.isChecked
-                        }
-                    }
-                } ?: onChecked(holder.toggle, isChecked)
-            } else {
-                onChecked(holder.toggle, isChecked)
-            }
+        setChecked(holder.toggle, data)
+        holder.itemView.setOnClickListener {
+            if (holder.toggle.isEnabled)
+                holder.toggle.toggle()
+        }
+    }
+
+    private fun setChecked(toggle: SwitchMaterial, isChecked: Boolean) {
+        toggle.setOnCheckedChangeListener(null)
+        toggle.isChecked = isChecked
+        toggle.setOnCheckedChangeListener { _, checked -> onToggled(toggle, checked) }
+    }
+
+    private fun onToggled(toggle: SwitchMaterial, isChecked: Boolean) {
+        val warning = (if (isChecked) enableWarnMsg else disableWarnMag)
+            ?: return onChecked(toggle, isChecked)
+        val context = toggle.context
+        showConfirmDialog(context, title = context.getString(R.string.configdsl_warning), message = warning()) { isConfirmed ->
+            if (isConfirmed)
+                onChecked(toggle, isChecked)
+            else
+                setChecked(toggle, !isChecked)
         }
     }
 

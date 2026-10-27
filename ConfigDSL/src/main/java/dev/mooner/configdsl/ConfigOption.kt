@@ -33,9 +33,15 @@ abstract class DefaultViewHolder(itemView: View): BaseViewHolder(itemView) {
 
     @CallSuper
     override fun setEnabled(enabled: Boolean) {
+        itemView.isEnabled    = enabled
+        itemView.alpha        = if (enabled) 1f else DISABLED_ALPHA
         icon.isEnabled        = enabled
         title.isEnabled       = enabled
         description.isEnabled = enabled
+    }
+
+    private companion object {
+        const val DISABLED_ALPHA = 0.38f
     }
 }
 

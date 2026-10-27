@@ -8,4 +8,6 @@
     <string name="finish">끝내기</string>
     <string name="create">생성</string>
     <string name="edit">수정</string>
+    <string name="configdsl_warning">경고</string>
+    <string name="configdsl_color_not_selected">선택된 값이 없어 저장되지 않았어요.</string>
 </resources>
