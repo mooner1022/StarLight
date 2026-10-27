@@ -21,6 +21,8 @@ import dev.mooner.neonjs.NeonInterruptedException
 import dev.mooner.neonjs.NeonModuleLoader
 import dev.mooner.neonjs.NeonValue
 import dev.mooner.neonjs.SandboxPolicy
+import dev.mooner.neonjs.net.NetExtension
+import dev.mooner.neonjs.net.NetOptions
 import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
@@ -92,6 +94,13 @@ class JSNeon: Language() {
             )
             .hostAccess(hostAccess)
             .webGlobals(true)
+            .extension(
+                NetExtension(
+                    NetOptions.builder()
+                        .allowAllHosts()
+                        .build()
+                )
+            )
             .console(project?.let(::createConsole) ?: NeonConsole.STDIO)
             .build()
 
