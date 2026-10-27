@@ -35,6 +35,7 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.NetworkUtil
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.version.Version
+import dev.mooner.starlight.stats.LogStats
 import dev.mooner.starlight.ui.widget.*
 import dev.mooner.starlight.utils.getKakaoTalkVersion
 import kotlinx.coroutines.Dispatchers
@@ -144,11 +145,15 @@ object ApplicationSession {
             addApi(BotManagerApi())
         }
 
+        LogStats.start()
+
         Session.widgetManager.apply {
             //val name = "기본 위젯"
             addWidget(pContext, StatusWidget)
             addWidget(pContext, UptimeWidget)
             addWidget(pContext, LogsWidget)
+            addWidget(pContext, ErrorMonitorWidget)
+            addWidget(pContext, JobsWidget)
             if (GlobalConfig.category("dev").getBoolean("dev_mode", false)) {
                 addWidget(pContext, DummyWidgetSlim::class.java)
                 addWidget(pContext, LogGenWidget::class.java)

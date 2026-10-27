@@ -129,6 +129,8 @@
     <string name="widget_logs_more">More</string>
     <string name="widget_logs_empty">No logs yet!</string>
     <string name="widget_status">Bot status</string>
+    <string name="widget_errors">Errors</string>
+    <string name="widget_jobs">Running jobs</string>
 
     <string name="api_cannot_send_to_room">Cannot send message to a room \'%s\' without receiving initial message.</string>
 </resources>
