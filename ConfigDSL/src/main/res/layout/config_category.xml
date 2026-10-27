@@ -26,6 +26,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
+        app:layout_goneMarginTop="12dp"
         app:cardBackgroundColor="@color/cardview"
         app:cardElevation="0dp"
         app:cardMaxElevation="0dp"

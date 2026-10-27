@@ -87,7 +87,7 @@ class CategoryConfigOption(
                 setTextColor(textColor ?: context.getColor(R.color.text))
             }
         } ?: let {
-            holder.title.visibility = View.INVISIBLE
+            holder.title.visibility = View.GONE
         }
 
         if (holder.boundOption !== this) {
