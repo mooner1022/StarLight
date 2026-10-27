@@ -62,7 +62,7 @@ data class PasswordConfigOption(
                         hasError = false
                 }.show {
                     setCommonAttrs()
-                    title(text = title)
+                    title(text = displayTitle)
 
                     positiveButton(R.string.ok) { dialog ->
                         val password = dialog.getInputField().text.toString()

@@ -18,6 +18,9 @@ import java.io.File
 
 typealias ConfigStructure = List<RootConfigOption<*, *>>
 
+fun ConfigStructure.findOption(rootId: String, id: String): ConfigOption<*, *>? =
+    find { it.id == rootId }?.childOptions?.find { it.id == id }
+
 abstract class BaseViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
 
     abstract fun setEnabled(enabled: Boolean)
@@ -140,6 +143,26 @@ abstract class ConfigOption<VH: BaseViewHolder, T: Any> {
 
     abstract fun dataFromJson(jsonElement: JsonElement): T
 
+    @Volatile
+    private var textOverride: OptionText? = null
+
+    val displayTitle: String
+        get() = textOverride?.title ?: title
+
+    val displayDescription: String?
+        get() = textOverride.let { if (it == null) description else it.description }
+
+    fun updateTitle(title: String): Boolean =
+        updateText(title, displayDescription)
+
+    fun updateDescription(description: String?): Boolean =
+        updateText(displayTitle, description)
+
+    fun updateText(title: String, description: String?): Boolean {
+        textOverride = OptionText(title, description)
+        return requestViewUpdate()
+    }
+
     private var _eventFlow: MutableSharedFlow<EventData>? = null
 
     fun init(eventFlow: MutableSharedFlow<EventData>) {
@@ -166,6 +189,8 @@ abstract class ConfigOption<VH: BaseViewHolder, T: Any> {
         tryEmitData(RedrawRequestData(
             provider = id
         ))
+
+    private data class OptionText(val title: String, val description: String?)
 
     interface EventData {
         val provider: String

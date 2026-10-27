@@ -75,7 +75,7 @@ data class ColorPickerConfigOption(
                     selected = color
                 }.show {
                     setCommonAttrs()
-                    title(text = title)
+                    title(text = displayTitle)
 
                     positiveButton(R.string.ok) {
                         if (selected == null) {

@@ -143,9 +143,9 @@ class CategoryConfigOption(
         option as ConfigOption<BaseViewHolder, Any>
 
         if (holder is DefaultViewHolder) {
-            holder.title.text = option.title
-            holder.description.text = option.description
-            holder.description.visibility = if (option.description.isNullOrEmpty()) View.GONE else View.VISIBLE
+            holder.title.text = option.displayTitle
+            holder.description.text = option.displayDescription
+            holder.description.visibility = if (option.displayDescription.isNullOrEmpty()) View.GONE else View.VISIBLE
             option.icon.loadTo(holder.icon)
         }
 
