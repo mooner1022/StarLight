@@ -114,6 +114,7 @@
     <string name="home_edit_hint">끌어서 이동 · 테두리를 당겨 크기 조절</string>
     <string name="home_edit_add">위젯 추가</string>
     <string name="home_edit_remove">위젯 제거</string>
+    <string name="home_edit_settings">위젯 설정</string>
     <string name="home_edit_done">완료</string>
     <string name="home_edit_entry">위젯을 길게 눌러 편집</string>
     <string name="home_empty_title">아직 위젯이 없어요</string>
@@ -125,6 +126,10 @@
     <string name="widget_logs_more">더보기</string>
     <string name="widget_logs_empty">아직 로그가 없어요!</string>
     <string name="widget_status">봇 상태</string>
+    <string name="widget_messages">메시지</string>
+    <string name="widget_errors">오류</string>
+    <string name="widget_jobs">실행 중 작업</string>
+    <string name="widget_script">스크립트</string>
 
     <string name="api_cannot_send_to_room">메세지가 수신되지 않은 방 \'%s\' 에 메세지를 보낼 수 없습니다.</string>
 </resources>

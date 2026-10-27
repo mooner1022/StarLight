@@ -1,12 +1,12 @@
 package dev.mooner.starlight.ui.widget
 
+import android.text.TextUtils
+import android.view.LayoutInflater
 import android.view.View
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.mikepenz.fastadapter.FastAdapter
-import com.mikepenz.fastadapter.adapters.ItemAdapter
 import dev.mooner.starlight.CA_DEV_MODE
+import dev.mooner.starlight.databinding.CardLogBinding
 import dev.mooner.starlight.databinding.WidgetLogsBinding
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.config.GlobalConfig
@@ -19,9 +19,16 @@ import dev.mooner.starlight.plugincore.widget.widget
 import dev.mooner.starlight.plugincore.widget.x
 import dev.mooner.starlight.ui.logs.LogItem
 import dev.mooner.starlight.utils.showLogsDialog
-import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 const val WIDGET_LOGS = "widget_logs"
+
+private const val SETTING_MIN_LEVEL = "min_level"
+private const val MAX_CANDIDATES = 10
+private const val MAX_MESSAGE_LINES = 3
+private val RENDER_DELAY = 200.milliseconds
 
 val LogsWidget = widget(WIDGET_LOGS) {
     name {
@@ -30,27 +37,66 @@ val LogsWidget = widget(WIDGET_LOGS) {
     }
     span(default = 4 x 4, min = 2 x 2, max = 8 x 8)
 
+    settings {
+        choice(
+            id = SETTING_MIN_LEVEL,
+            title = translate {
+                Locale.ENGLISH { "Minimum level" }
+                Locale.KOREAN  { "최소 로그 수준" }
+            },
+            options = listOf(
+                LogType.VERBOSE.name to translate {
+                    Locale.ENGLISH { "All" }
+                    Locale.KOREAN  { "전체" }
+                },
+                LogType.INFO.name  to "INFO",
+                LogType.WARN.name  to "WARN",
+                LogType.ERROR.name to "ERROR",
+            ),
+        )
+    }
+
     content {
         val binding = inflate(WidgetLogsBinding::inflate)
-        val maxLogs = (span.y - 1).coerceAtLeast(1)
-        val itemAdapter = ItemAdapter<LogItem>()
-        binding.rvLogs.apply {
-            itemAnimator = FadeInUpAnimator()
-            layoutManager = LinearLayoutManager(context).apply {
-                reverseLayout = true
-                stackFromEnd = true
+        val minPriority = settings.string(SETTING_MIN_LEVEL)
+            ?.let { runCatching { LogType.valueOf(it) }.getOrNull() }
+            ?.priority
+            ?: LogType.VERBOSE.priority
+        val inflater = LayoutInflater.from(context)
+        val shown: ArrayDeque<LogData> = ArrayDeque()
+
+        fun isVisibleLog(log: LogData): Boolean =
+            log.type.priority >= minPriority &&
+                    (log.type != LogType.VERBOSE || GlobalConfig.category(CA_DEV_MODE).getBoolean("show_internal_log", false))
+
+        fun render() {
+            val hasLogs = shown.isNotEmpty()
+            binding.textViewNoLogsYet.isVisible = !hasLogs
+            binding.logList.isVisible = hasLogs
+            binding.logList.removeAllViews()
+            for (log in shown) {
+                val item = CardLogBinding.inflate(inflater, binding.logList, false)
+                LogItem().withLogData(log, LogItem.ViewType.NORMAL, copyOnLongClick = false).bindView(item, emptyList())
+                item.logContentText.maxLines = MAX_MESSAGE_LINES
+                item.logContentText.ellipsize = TextUtils.TruncateAt.END
+                binding.logList.addView(item.root)
             }
-            adapter = FastAdapter.with(itemAdapter)
         }
 
-        fun setLogsVisible(visible: Boolean) {
-            binding.textViewNoLogsYet.isVisible = !visible
-            binding.rvLogs.isVisible = visible
+        var pendingRender: Job? = null
+        fun scheduleRender() {
+            if (pendingRender?.isActive == true)
+                return
+            pendingRender = launch {
+                delay(RENDER_DELAY)
+                render()
+            }
         }
 
-        fun showLogs(logs: List<LogData>) {
-            itemAdapter.set(logs.takeLast(maxLogs).map(LogData::toLogItem))
-            setLogsVisible(logs.isNotEmpty())
+        fun push(log: LogData) {
+            shown.addFirst(log)
+            while (shown.size > MAX_CANDIDATES)
+                shown.removeLast()
         }
 
         val openLogs = View.OnClickListener { it.context.showLogsDialog() }
@@ -58,27 +104,27 @@ val LogsWidget = widget(WIDGET_LOGS) {
         binding.buttonMoreLogs.setOnClickListener(openLogs)
 
         if (isPreview) {
-            showLogs(List(maxLogs) { previewLog() })
+            repeat(MAX_CANDIDATES) { push(previewLog()) }
+            render()
             return@content
         }
 
         repeatWhile(Lifecycle.State.STARTED) {
-            showLogs(LogCollector.logs.filter(::isVisibleLog))
+            shown.clear()
+            LogCollector.logs
+                .filter(::isVisibleLog)
+                .takeLast(MAX_CANDIDATES)
+                .forEach(::push)
+            render()
         }
         on<Events.Log.Create> {
             if (!isVisibleLog(log))
                 return@on
-            if (itemAdapter.adapterItemCount >= maxLogs)
-                itemAdapter.remove(0)
-            itemAdapter.add(log.toLogItem())
-            setLogsVisible(true)
+            push(log)
+            scheduleRender()
         }
     }
 }
-
-private fun isVisibleLog(log: LogData): Boolean =
-    log.type != LogType.VERBOSE ||
-            GlobalConfig.category(CA_DEV_MODE).getBoolean("show_internal_log", false)
 
 private fun previewLog(): LogData =
     LogData(
@@ -88,6 +134,3 @@ private fun previewLog(): LogData =
             Locale.KOREAN  { "이건 미리보기용 더미 로그에요.\n로그 메세지는 여기에 보여져요." }
         }
     )
-
-private fun LogData.toLogItem(): LogItem =
-    LogItem().withLogData(this, LogItem.ViewType.NORMAL)

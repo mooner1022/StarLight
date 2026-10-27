@@ -9,7 +9,7 @@
     android:paddingVertical="12dp">
 
     <LinearLayout
-        android:id="@+id/statusHeader"
+        android:id="@+id/panelHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
@@ -17,14 +17,14 @@
         android:orientation="horizontal">
 
         <ImageView
+            android:id="@+id/panelIcon"
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:importantForAccessibility="no"
-            android:src="@drawable/ic_round_power_settings_new_24"
             app:tint="@color/main_dark"/>
 
         <TextView
-            android:id="@+id/textStatusTitle"
+            android:id="@+id/panelTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
@@ -32,12 +32,11 @@
             android:ellipsize="end"
             android:fontFamily="@font/nanumsquare_round_bold"
             android:maxLines="1"
-            android:text="@string/widget_status"
             android:textColor="@color/main_dark"
             android:textSize="16sp"/>
 
         <TextView
-            android:id="@+id/textStatusSummary"
+            android:id="@+id/panelSummary"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -47,12 +46,12 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/statusItems"
+        android:id="@+id/panelContent"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="6dp"
         android:layout_weight="1"
         android:gravity="center_vertical"
-        android:orientation="horizontal"/>
+        android:orientation="vertical"/>
 
 </LinearLayout>

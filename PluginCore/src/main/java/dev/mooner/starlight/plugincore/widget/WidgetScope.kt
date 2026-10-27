@@ -34,6 +34,7 @@ class WidgetScope internal constructor(
     val container: FrameLayout,
     span: WidgetSpan,
     val isPreview: Boolean,
+    val settings: WidgetSettings,
     owner: LifecycleOwner,
     onError: (Throwable) -> Unit,
 ) : LifecycleOwner by owner {

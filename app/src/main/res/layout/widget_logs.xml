@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/cardview">
 
@@ -71,15 +71,14 @@
         android:textSize="16sp"
         android:visibility="visible"/>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvLogs"
+    <dev.mooner.starlight.ui.widget.FadingColumnLayout
+        android:id="@+id/logList"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginStart="@dimen/card_radius"
         android:layout_marginEnd="@dimen/card_radius"
         android:layout_marginBottom="@dimen/card_radius"
-        android:visibility="gone"
-        android:touchscreenBlocksFocus="true"
-        android:nestedScrollingEnabled="false"/>
+        android:visibility="gone"/>
 
 </LinearLayout>

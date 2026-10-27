@@ -118,6 +118,7 @@
     <string name="home_edit_hint">Drag to move · Pull edges to resize</string>
     <string name="home_edit_add">Add widget</string>
     <string name="home_edit_remove">Remove widget</string>
+    <string name="home_edit_settings">Widget settings</string>
     <string name="home_edit_done">Done</string>
     <string name="home_edit_entry">Long-press a widget to edit</string>
     <string name="home_empty_title">No widgets yet</string>
@@ -129,6 +130,10 @@
     <string name="widget_logs_more">More</string>
     <string name="widget_logs_empty">No logs yet!</string>
     <string name="widget_status">Bot status</string>
+    <string name="widget_messages">Messages</string>
+    <string name="widget_errors">Errors</string>
+    <string name="widget_jobs">Running jobs</string>
+    <string name="widget_script">Script</string>
 
     <string name="api_cannot_send_to_room">Cannot send message to a room \'%s\' without receiving initial message.</string>
 </resources>
