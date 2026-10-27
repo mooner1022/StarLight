@@ -30,6 +30,8 @@ import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.configdsl.config
+import dev.mooner.configdsl.findOption
+import dev.mooner.configdsl.options.ButtonConfigOption
 import dev.mooner.configdsl.options.button
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
@@ -62,6 +64,7 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
     private var installPermissionIntent: Intent? = null
     private var installResultLauncher: ActivityResultLauncher<Intent>? = null
     private var installPermCallback: ((ActivityResult) -> Unit)? = null // Fuck!
+    private var checkUpdateButton: ButtonConfigOption? = null
 
     override val title: String = "설정"
 
@@ -93,18 +96,10 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
             category {
                 id = "updates"
                 items {
-                    val lastUpdateDate = activity.getSharedPreferences("general", 0)
-                        .getLong("lastUpdateCheck", 0)
-                        .let {
-                            if (it == 0L)
-                                "없음"
-                            else
-                                TimeUtils.formatMillis(it, "yyyy년 MM월 dd일 HH:mm")
-                        }
                     button {
                         id = "check_update"
                         title = "업데이트 확인"
-                        description = "마지막 확인: $lastUpdateDate"
+                        description = activity.lastUpdateCheckDescription()
                         icon = Icon.CLOUD_DOWNLOAD
                         iconTintColor = color("#748DA6")
                         setOnClickListener { _ ->
@@ -150,11 +145,22 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
                     }
                 }
             }
+        }.also { struct ->
+            checkUpdateButton = struct.findOption("updates", "check_update") as? ButtonConfigOption
         }
     }
 
     override fun getSavedData(): MutableDataMap =
         GlobalConfig.getMutableData()
+
+    private fun Context.lastUpdateCheckDescription(): String {
+        val lastCheck = getSharedPreferences("general", 0).getLong("lastUpdateCheck", 0)
+        val formatted = if (lastCheck == 0L)
+            "없음"
+        else
+            TimeUtils.formatMillis(lastCheck, "yyyy년 MM월 dd일 HH:mm")
+        return "마지막 확인: $formatted"
+    }
 
     private fun ConfigActivity.checkUpdate() {
         createSimplePeek(
@@ -198,6 +204,7 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
             getSharedPreferences("general", 0).edit {
                 putLong("lastUpdateCheck", System.currentTimeMillis())
             }
+            checkUpdateButton?.updateDescription(lastUpdateCheckDescription())
 
             val versionCode = getAppVersionCode()
             if (version.versionCode <= versionCode) {
