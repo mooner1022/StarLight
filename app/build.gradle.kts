@@ -110,6 +110,7 @@ dependencies {
 
     implementation(libs.neonjs.core)
     implementation(libs.neonjs.android)
+    implementation(libs.neonjs.net)
 
     implementation(libs.cascade)
 

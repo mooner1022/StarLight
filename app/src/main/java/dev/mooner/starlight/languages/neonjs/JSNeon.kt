@@ -21,6 +21,8 @@ import dev.mooner.neonjs.NeonInterruptedException
 import dev.mooner.neonjs.NeonModuleLoader
 import dev.mooner.neonjs.NeonValue
 import dev.mooner.neonjs.SandboxPolicy
+import dev.mooner.neonjs.net.NetExtension
+import dev.mooner.neonjs.net.NetOptions
 import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
@@ -77,7 +79,8 @@ class JSNeon: Language() {
     ): Any {
         val langConf = getLanguageConfig()
 
-        val execMode = if (langConf.getBoolean(CONF_OPTIMIZE_CODE, false))
+        val isOptimized = langConf.getBoolean(CONF_OPTIMIZE_CODE, false)
+        val execMode = if (isOptimized)
             langConf.getInt(CONF_OPTIMIZATION_LEVEL, DEF_OPTIMIZATION_LEVEL)
                 .let(ExecutionMode.entries::get)
         else
@@ -85,6 +88,7 @@ class JSNeon: Language() {
 
         val engine = NeonEngine.builder()
             .executionMode(execMode)
+            .optimizingTier(isOptimized && langConf.getBoolean(CONF_ADVANCED_OPTIMIZATION, false))
             .sandbox(
                 SandboxPolicy.builder()
                     .exposeJavaGlobal(true)
@@ -92,6 +96,13 @@ class JSNeon: Language() {
             )
             .hostAccess(hostAccess)
             .webGlobals(true)
+            .extension(
+                NetExtension(
+                    NetOptions.builder()
+                        .allowAllHosts()
+                        .build()
+                )
+            )
             .console(project?.let(::createConsole) ?: NeonConsole.STDIO)
             .build()
 
@@ -375,6 +386,7 @@ class JSNeon: Language() {
     companion object {
         private const val CONF_OPTIMIZE_CODE = "optimize_code"
         private const val CONF_OPTIMIZATION_LEVEL = "optimization_level"
+        private const val CONF_ADVANCED_OPTIMIZATION = "advanced_optimization"
         private const val CONF_LOAD_EXT_MODULES = "load_ext_modules"
         private const val CONF_EXT_MODULE_SANDBOX = "load_ext_module_sandbox"
         private const val DEF_OPTIMIZATION_LEVEL = 2 // Adaptive
@@ -411,6 +423,15 @@ class JSNeon: Language() {
                         iconTintColor = color { "#57837B" }
                         items = listOf("Interpreter", "Compiled", "Adaptive")
                         defaultIndex = DEF_OPTIMIZATION_LEVEL
+                    }
+                    toggle {
+                        id = CONF_ADVANCED_OPTIMIZATION
+                        dependency = CONF_OPTIMIZE_CODE
+                        title = "고급 최적화"
+                        description = "(실험적) 컴파일된 코드를 실행 중 수집한 타입 정보를 바탕으로 한 번 더 최적화합니다. 실행 속도가 빨라지지만 불안정할 수 있습니다."
+                        defaultValue = false
+                        icon = Icon.DEVELOPER_BOARD
+                        iconTintColor = color { "#E5707E" }
                     }
                     toggle {
                         id = CONF_LOAD_EXT_MODULES
