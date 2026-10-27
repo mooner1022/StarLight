@@ -25,6 +25,7 @@ import dev.mooner.starlight.plugincore.utils.getFileSize
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.infoTranslated
 import dev.mooner.starlight.plugincore.widget.Widget
+import dev.mooner.starlight.plugincore.widget.WidgetDefinition
 import java.io.File
 
 private val logger = LoggerFactory.logger {  }
@@ -197,8 +198,11 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    protected fun addWidget(widget: Class<Widget>) =
+    protected fun addWidget(widget: Class<out Widget>) =
         Session.widgetManager.addWidget(context, widget)
+
+    protected fun addWidget(definition: WidgetDefinition) =
+        Session.widgetManager.addWidget(context, definition)
 
     protected inline fun <reified T> addWidget() where T : Widget =
         Session.widgetManager.addWidget(context, T::class.java)
