@@ -47,24 +47,18 @@ class LogsWidget: Widget(), OnClickListener {
     override val size: WidgetSize = WidgetSize.Wrap
 
     private var mView: View? = null
+    private var mBinding: WidgetLogsBinding? = null
 
     override fun onCreateWidget(view: View) {
         val context = view.context
         val binding = WidgetLogsBinding.inflate(LayoutInflater.from(context), view as ViewGroup, true)
 
         mView = view
+        mBinding = binding
         //LayoutInflater.from(context).inflate(R.layout.widget_logs, view as ViewGroup, true)
 
         createAdapter(binding.rvLogs)
-
-        val logs = LogCollector.logs
-        if (logs.isEmpty()) {
-            binding.textViewNoLogsYet.visibility = View.VISIBLE
-            binding.rvLogs.visibility = View.GONE
-        } else {
-            binding.textViewNoLogsYet.visibility = View.GONE
-            binding.rvLogs.visibility = View.VISIBLE
-        }
+        binding.setLogsVisible(LogCollector.logs.isNotEmpty())
 
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -79,10 +73,14 @@ class LogsWidget: Widget(), OnClickListener {
                 if (itemAdapter == null)
                     createAdapter(binding.rvLogs)
 
-                logs.dropBefore(LOGS_MAX_SIZE)
-                    .takeIf { logs -> logs[0].hashCode() != lastHash }
+                LogCollector.logs
+                    .dropBefore(LOGS_MAX_SIZE)
+                    .takeIf { logs -> logs.isNotEmpty() && logs[0].hashCode() != lastHash }
                     ?.map { v -> v.toLogItem() }
-                    ?.let(itemAdapter!!::set)
+                    ?.let { items ->
+                        itemAdapter!!.set(items)
+                        binding.setLogsVisible(true)
+                    }
             }
         }
 
@@ -124,6 +122,7 @@ class LogsWidget: Widget(), OnClickListener {
         super.onDestroyWidget()
         setLastHash()
         mView = null
+        mBinding = null
         itemAdapter = null
     }
 
@@ -186,6 +185,11 @@ class LogsWidget: Widget(), OnClickListener {
             stackFromEnd = true
         }
 
+    private fun WidgetLogsBinding.setLogsVisible(visible: Boolean) {
+        textViewNoLogsYet.visibility = if (visible) View.GONE else View.VISIBLE
+        rvLogs.visibility = if (visible) View.VISIBLE else View.GONE
+    }
+
     private fun LogData.toLogItem(): LogItem =
         LogItem().withLogData(this, LogItem.ViewType.NORMAL)
 
@@ -207,6 +211,7 @@ class LogsWidget: Widget(), OnClickListener {
             if (itemAdapter!!.adapterItemCount >= LOGS_MAX_SIZE)
                 itemAdapter!!.remove(0)
             itemAdapter!!.add(log.toLogItem())
+            mBinding?.setLogsVisible(true)
 
             mView?.updateHeight()
         }
