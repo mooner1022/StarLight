@@ -118,6 +118,7 @@
     <string name="home_edit_hint">Drag to move · Pull edges to resize</string>
     <string name="home_edit_add">Add widget</string>
     <string name="home_edit_remove">Remove widget</string>
+    <string name="home_edit_settings">Widget settings</string>
     <string name="home_edit_done">Done</string>
     <string name="home_edit_entry">Long-press a widget to edit</string>
     <string name="home_empty_title">No widgets yet</string>

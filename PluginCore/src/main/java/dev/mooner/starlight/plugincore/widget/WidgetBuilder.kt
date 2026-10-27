@@ -15,6 +15,7 @@ class WidgetBuilder internal constructor(
     private var spanSpec: WidgetSpanSpec = WidgetSpanSpec(DEFAULT_SPAN)
     private var content: WidgetContent? = null
     private var preview: WidgetContent? = null
+    private var settings: WidgetSettingsBlock? = null
 
     var autoHeight: Boolean = false
 
@@ -40,6 +41,10 @@ class WidgetBuilder internal constructor(
         preview = block
     }
 
+    fun settings(block: WidgetSettingsBlock) {
+        settings = block
+    }
+
     internal fun build(): WidgetDefinition =
         DslWidgetDefinition(
             id = id,
@@ -49,6 +54,7 @@ class WidgetBuilder internal constructor(
             isDevOnly = devOnly,
             content = requireNotNull(content) { "Widget '$id' must have content" },
             preview = preview,
+            settingsBlock = settings,
         )
 
     private companion object {

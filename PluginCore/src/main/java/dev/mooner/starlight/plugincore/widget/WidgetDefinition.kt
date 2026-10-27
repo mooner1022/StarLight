@@ -1,5 +1,7 @@
 package dev.mooner.starlight.plugincore.widget
 
+import kotlinx.serialization.json.JsonElement
+
 abstract class WidgetDefinition internal constructor() {
 
     abstract val id: String
@@ -12,7 +14,12 @@ abstract class WidgetDefinition internal constructor() {
 
     abstract val isDevOnly: Boolean
 
+    abstract val hasSettings: Boolean
+
     abstract fun newController(): WidgetController
+
+    open fun createSettingsForm(values: Map<String, JsonElement>): WidgetSettingsForm? =
+        null
 
     override fun equals(other: Any?): Boolean =
         other is WidgetDefinition && other.id == id
@@ -29,10 +36,20 @@ internal class DslWidgetDefinition(
     override val isDevOnly: Boolean,
     val content: WidgetContent,
     val preview: WidgetContent?,
+    private val settingsBlock: WidgetSettingsBlock?,
 ) : WidgetDefinition() {
 
     override val name: String
         get() = nameProvider()
+
+    override val hasSettings: Boolean
+        get() = settingsBlock != null
+
+    override fun createSettingsForm(values: Map<String, JsonElement>): WidgetSettingsForm? =
+        settingsBlock?.let { WidgetSettingsForm(it.evaluate(), values) }
+
+    fun settingsOf(values: Map<String, JsonElement>): WidgetSettings =
+        settingsBlock?.evaluate()?.toSettings(values) ?: WidgetSettings(values, emptyMap())
 
     override fun newController(): WidgetController =
         DslWidgetController(this)
@@ -60,6 +77,8 @@ internal class LegacyWidgetDefinition(
     override val isAutoHeight: Boolean = sample.size == WidgetSize.Wrap
 
     override val isDevOnly: Boolean = false
+
+    override val hasSettings: Boolean = false
 
     override fun newController(): WidgetController =
         LegacyWidgetController(widgetClass.getDeclaredConstructor().newInstance())

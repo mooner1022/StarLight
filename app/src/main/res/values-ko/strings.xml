@@ -114,6 +114,7 @@
     <string name="home_edit_hint">끌어서 이동 · 테두리를 당겨 크기 조절</string>
     <string name="home_edit_add">위젯 추가</string>
     <string name="home_edit_remove">위젯 제거</string>
+    <string name="home_edit_settings">위젯 설정</string>
     <string name="home_edit_done">완료</string>
     <string name="home_edit_entry">위젯을 길게 눌러 편집</string>
     <string name="home_empty_title">아직 위젯이 없어요</string>

@@ -42,6 +42,9 @@ import dev.mooner.starlight.utils.getColorCompat
 import dev.mooner.starlight.utils.isDevMode
 import dev.mooner.starlight.utils.layoutMode
 import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonElement
 import java.util.UUID
 
 class HomeFragment : Fragment(), WidgetGridLayout.Listener {
@@ -66,6 +69,7 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
         val card: View,
         val container: FrameLayout,
         var controller: WidgetController?,
+        var settings: Map<String, JsonElement>,
     )
 
     override fun onCreateView(
@@ -84,6 +88,7 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
         binding.apply {
             buttonEditAdd.setOnClickListener { showAddWidgetSheet() }
             buttonEditRemove.setOnClickListener { widgetGrid.selected?.let(::removeWidget) }
+            buttonEditSettings.setOnClickListener { widgetGrid.selected?.let(::showWidgetSettings) }
             buttonEditDone.setOnClickListener { exitEditMode() }
             buttonEmptyAdd.setOnClickListener {
                 enterEditMode()
@@ -114,22 +119,27 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
                 hiddenPlacements += placement
                 continue
             }
-            addWidget(placement.instanceId, definition, placement.span)
+            addWidget(placement.instanceId, definition, placement.span, placement.settings)
         }
         updateEmptyState()
     }
 
-    private fun addWidget(instanceId: String, definition: WidgetDefinition, span: WidgetSpan?): View {
+    private fun addWidget(
+        instanceId: String,
+        definition: WidgetDefinition,
+        span: WidgetSpan?,
+        settings: Map<String, JsonElement> = emptyMap(),
+    ): View {
         val grid = binding.widgetGrid
         val card = layoutInflater.inflate(R.layout.card_widget_grid, grid, false)
         val container = card.findViewById<FrameLayout>(R.id.view)
-        val widget = HomeWidget(instanceId, definition, card, container, definition.newController())
+        val widget = HomeWidget(instanceId, definition, card, container, definition.newController(), settings)
         widgets[card] = widget
         grid.addWidget(card, definition.spanSpec, span, definition.isAutoHeight)
 
         widget.controller!!.apply {
             onError = { e -> card.post { onWidgetError(widget, e) } }
-            create(container, definition.spanSpec.resolve(span, grid.columns), isPreview = false)
+            create(container, definition.spanSpec.resolve(span, grid.columns), isPreview = false, settings = settings)
             attach(viewLifecycleOwner.lifecycle)
         }
         return card
@@ -163,7 +173,7 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
         val grid = binding.widgetGrid
         val items = grid.widgets.mapNotNull { card ->
             widgets[card]?.let { widget ->
-                WidgetPlacement(widget.instanceId, widget.definition.id, grid.spanOf(card))
+                WidgetPlacement(widget.instanceId, widget.definition.id, grid.spanOf(card), widget.settings)
             }
         }
         HomeLayoutStore.save(WidgetLayout(items = items + hiddenPlacements))
@@ -205,6 +215,32 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
                 struct(getAddWidgetStructure(::dismiss))
             }
         }
+    }
+
+    private fun showWidgetSettings(card: View) {
+        val widget = widgets[card] ?: return
+        val form = widget.definition.createSettingsForm(widget.settings) ?: return
+        MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            setCommonAttrsWithLifecycle()
+            maxWidth(res = R.dimen.dialog_width)
+            title(text = widget.definition.name)
+            configStruct(requireContext()) {
+                struct(form.structure)
+                data { form.data }
+                onUpdate { _, id, _, jsonValue ->
+                    val value = form.toValue(id, jsonValue) ?: return@onUpdate
+                    withContext(Dispatchers.Main) { applySetting(widget, id, value) }
+                }
+            }
+        }
+    }
+
+    private fun applySetting(widget: HomeWidget, id: String, value: JsonElement) {
+        if (_binding == null || widgets[widget.card] !== widget)
+            return
+        widget.settings = widget.settings + (id to value)
+        widget.controller?.updateSettings(widget.settings)
+        saveLayout()
     }
 
     private fun getAddWidgetStructure(onDismiss: () -> Unit): ConfigStructure = config {
@@ -251,6 +287,7 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
 
     override fun onSelectionChanged(view: View?) {
         binding.buttonEditRemove.isVisible = view != null
+        binding.buttonEditSettings.isVisible = view?.let(widgets::get)?.definition?.hasSettings == true
     }
 
     override fun onSpanChanged(view: View, span: WidgetSpan) {

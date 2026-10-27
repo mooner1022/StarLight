@@ -6,6 +6,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import kotlinx.serialization.json.JsonElement
 
 private val logger = LoggerFactory.logger { }
 
@@ -13,9 +14,16 @@ abstract class WidgetController internal constructor() {
 
     var onError: ((Throwable) -> Unit)? = null
 
-    abstract fun create(container: FrameLayout, span: WidgetSpan, isPreview: Boolean)
+    abstract fun create(
+        container: FrameLayout,
+        span: WidgetSpan,
+        isPreview: Boolean,
+        settings: Map<String, JsonElement> = emptyMap(),
+    )
 
     abstract fun resize(span: WidgetSpan)
+
+    open fun updateSettings(settings: Map<String, JsonElement>) {}
 
     abstract fun attach(lifecycle: Lifecycle)
 
@@ -52,12 +60,14 @@ internal class DslWidgetController(
     private var container: FrameLayout? = null
     private var content: WidgetContent? = null
     private var scope: WidgetScope? = null
+    private var settings: Map<String, JsonElement> = emptyMap()
     private var isPreview = false
     private var isDestroyed = false
 
-    override fun create(container: FrameLayout, span: WidgetSpan, isPreview: Boolean) {
+    override fun create(container: FrameLayout, span: WidgetSpan, isPreview: Boolean, settings: Map<String, JsonElement>) {
         this.container = container
         this.isPreview = isPreview
+        this.settings = settings
         content = if (isPreview)
             definition.preview ?: definition.content
         else
@@ -70,7 +80,8 @@ internal class DslWidgetController(
         val content = content ?: return
         scope?.dispose()
         container.removeAllViews()
-        scope = WidgetScope(container, span, isPreview, this, ::reportError).also { scope ->
+        val widgetSettings = definition.settingsOf(settings)
+        scope = WidgetScope(container, span, isPreview, widgetSettings, this, ::reportError).also { scope ->
             guard { content(scope) }
         }
     }
@@ -83,6 +94,11 @@ internal class DslWidgetController(
             guard { scope.dispatchResize(span) }
         else
             render(span)
+    }
+
+    override fun updateSettings(settings: Map<String, JsonElement>) {
+        this.settings = settings
+        scope?.let { render(it.span) }
     }
 
     override fun attach(lifecycle: Lifecycle) {
@@ -123,7 +139,7 @@ internal class LegacyWidgetController(
     private var isCreated = false
     private var isDestroyed = false
 
-    override fun create(container: FrameLayout, span: WidgetSpan, isPreview: Boolean) {
+    override fun create(container: FrameLayout, span: WidgetSpan, isPreview: Boolean, settings: Map<String, JsonElement>) {
         this.isPreview = isPreview
         guard {
             if (isPreview)

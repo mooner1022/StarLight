@@ -3,6 +3,7 @@ package dev.mooner.starlight.plugincore.widget
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import java.util.UUID
 
 @Serializable
@@ -10,6 +11,7 @@ data class WidgetPlacement(
     val instanceId: String,
     val widgetId: String,
     val span: WidgetSpan? = null,
+    val settings: Map<String, JsonElement> = emptyMap(),
 )
 
 @Serializable
