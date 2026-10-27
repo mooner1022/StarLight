@@ -194,12 +194,14 @@ class CategoryConfigOption(
             container.removeAllViews()
             rows.clear()
             val dividerInset = container.resources.getDimensionPixelSize(R.dimen.configdsl_divider_inset)
+            val dividerEndInset = container.resources.getDimensionPixelSize(R.dimen.card_radius)
             options.forEachIndexed { index, option ->
                 if (index > 0)
                     container.addView(View(container.context).apply {
                         setBackgroundResource(R.color.configdsl_divider)
                         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1).apply {
                             marginStart = dividerInset
+                            marginEnd = dividerEndInset
                         }
                     })
                 val row = option.onCreateViewHolder(container)
