@@ -71,6 +71,9 @@ object ApplicationSession {
         initState = Session.InitState.Processing
 
         setExceptionHandler(context)
+        LogStats.start()
+        MessageStats.start()
+        ScriptWidgetEntries.start()
         //ConfigDSL.registerAdapterImpl(::ParentConfigAdapterImpl)
 
         emit(context.getString(R.string.step_check_kakaotalk_version))
@@ -148,10 +151,6 @@ object ApplicationSession {
             addApi(BotManagerApi())
             addApi(HomeWidgetApi())
         }
-
-        LogStats.start()
-        MessageStats.start()
-        ScriptWidgetEntries.start()
 
         Session.widgetManager.apply {
             //val name = "기본 위젯"

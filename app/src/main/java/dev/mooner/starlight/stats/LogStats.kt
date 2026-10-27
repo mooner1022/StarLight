@@ -25,6 +25,9 @@ object LogStats {
     val updates: SharedFlow<Unit>
         get() = _updates
 
+    var startedMillis: Long = 0L
+        private set
+
     val errorCount: Int
         get() = errors.get()
 
@@ -32,8 +35,10 @@ object LogStats {
         get() = warnings.get()
 
     fun start() {
-        if (isStarted.compareAndSet(false, true))
-            EventHandler.on(scope, ::onLog)
+        if (!isStarted.compareAndSet(false, true))
+            return
+        startedMillis = System.currentTimeMillis()
+        EventHandler.on(scope, ::onLog)
     }
 
     private fun onLog(event: Events.Log.Create) {

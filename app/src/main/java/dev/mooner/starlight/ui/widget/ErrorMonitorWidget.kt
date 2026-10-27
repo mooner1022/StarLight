@@ -2,7 +2,6 @@ package dev.mooner.starlight.ui.widget
 
 import androidx.lifecycle.Lifecycle
 import dev.mooner.starlight.R
-import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogType
@@ -82,7 +81,7 @@ private fun latestProjectErrors(): List<Pair<Project, LogData>> {
     return Session.projectManager.getProjects()
         .mapNotNull { project ->
             val logs = project.logger.logs
-            synchronized(logs) { logs.lastOrNull { it.isError && it.millis >= ApplicationSession.initMillis } }
+            synchronized(logs) { logs.lastOrNull { it.isError && it.millis >= LogStats.startedMillis } }
                 ?.let { project to it }
         }
         .sortedByDescending { (_, log) -> log.millis }
