@@ -4,13 +4,11 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
-import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.CA_GENERAL
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.translation.Locale
-import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.ui.settings.solver.readNotificationRuleFile
 import dev.mooner.starlight.ui.settings.solver.unwrapData
@@ -130,18 +128,8 @@ object Diagnostics {
     fun checkAll(context: Context): List<Pair<Diagnostic, DiagnosticResult>> =
         all.map { it to it.check(context) }
 
-    fun summarize(context: Context): String {
-        val problems = checkAll(context).filter { (_, result) -> result.level.isProblem }
-        return when (problems.size) {
-            0 -> translate {
-                Locale.ENGLISH { "All systems normal · v${BuildConfig.VERSION_NAME}" }
-                Locale.KOREAN  { "모두 정상 · v${BuildConfig.VERSION_NAME}" }
-            }
-            1 -> problems.first().let { (diagnostic, result) -> "⚠ ${diagnostic.title}: ${result.summary}" }
-            else -> translate {
-                Locale.ENGLISH { "⚠ ${problems.size} items need attention" }
-                Locale.KOREAN  { "⚠ ${problems.size}개 항목을 확인해 주세요" }
-            }
-        }
-    }
+    fun powerWarning(context: Context): String? =
+        globalPower.check(context)
+            .takeIf { it.level.isProblem }
+            ?.let { result -> "⚠ ${globalPower.title}: ${result.summary}" }
 }

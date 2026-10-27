@@ -12,6 +12,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.transition.ChangeBounds
 import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
@@ -21,6 +24,9 @@ import dev.mooner.starlight.diagnostics.Diagnostics
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.pluginManager
+import dev.mooner.starlight.plugincore.event.EventHandler
+import dev.mooner.starlight.plugincore.event.Events
+import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.utils.hasFlag
 import dev.mooner.starlight.ui.ViewPagerAdapter
@@ -28,6 +34,9 @@ import dev.mooner.starlight.utils.LAYOUT_TABLET
 import dev.mooner.starlight.utils.applyEdgeToEdge
 import dev.mooner.starlight.utils.layoutMode
 import dev.mooner.starlight.utils.showChangelogDialog
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
@@ -69,6 +78,17 @@ class MainActivity : AppCompatActivity() {
             }
 
             appBarLayout.addOnOffsetChangedListener(::handleOffsetUpdate)
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                EventHandler.on<Events.Config.GlobalConfigUpdate>(this) {
+                    withContext(Dispatchers.Main) {
+                        if (currentTabId == R.id.nav_home)
+                            onPageChanged(currentTabId)
+                    }
+                }
+            }
         }
 
         val prefs = getSharedPreferences("general", 0)
@@ -157,7 +177,7 @@ class MainActivity : AppCompatActivity() {
             when(id) {
                 R.id.nav_home ->
                     getText(R.string.app_name) to
-                            Diagnostics.summarize(this)
+                            (Diagnostics.powerWarning(this) ?: getText(R.string.app_version))
 
                 R.id.nav_projects ->
                     getText(R.string.title_projects) to
