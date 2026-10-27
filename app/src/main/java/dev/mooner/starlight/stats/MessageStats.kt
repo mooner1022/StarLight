@@ -24,7 +24,7 @@ object MessageStats {
     private val isStarted = AtomicBoolean(false)
 
     private val minuteCounts: ConcurrentHashMap<Long, AtomicInteger> = ConcurrentHashMap()
-    private val roomCounts: ConcurrentHashMap<String, AtomicInteger> = ConcurrentHashMap()
+    private val roomCounts: ConcurrentHashMap<Long, ConcurrentHashMap<String, AtomicInteger>> = ConcurrentHashMap()
     private val total = AtomicLong()
 
     private val _updates = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
@@ -46,17 +46,29 @@ object MessageStats {
         }
     }
 
-    fun topRooms(limit: Int): List<Pair<String, Int>> =
-        roomCounts.entries
-            .map { (room, count) -> room to count.get() }
+    fun topRooms(limit: Int, now: Long = System.currentTimeMillis()): List<Pair<String, Int>> {
+        val oldestMinute = now / MINUTE_MILLIS - (WINDOW_MINUTES - 1)
+        val totals: MutableMap<String, Int> = hashMapOf()
+        for ((minute, rooms) in roomCounts) {
+            if (minute < oldestMinute)
+                continue
+            for ((room, count) in rooms)
+                totals.merge(room, count.get(), Int::plus)
+        }
+        return totals.entries
+            .map { (room, count) -> room to count }
             .sortedByDescending { (_, count) -> count }
             .take(limit)
+    }
 
     internal fun record(roomName: String, now: Long = System.currentTimeMillis()) {
         val minute = now / MINUTE_MILLIS
         minuteCounts.computeIfAbsent(minute) { AtomicInteger() }.incrementAndGet()
+        roomCounts.computeIfAbsent(minute) { ConcurrentHashMap() }
+            .computeIfAbsent(roomName) { AtomicInteger() }
+            .incrementAndGet()
         minuteCounts.keys.removeAll { it <= minute - WINDOW_MINUTES }
-        roomCounts.computeIfAbsent(roomName) { AtomicInteger() }.incrementAndGet()
+        roomCounts.keys.removeAll { it <= minute - WINDOW_MINUTES }
         total.incrementAndGet()
         _updates.tryEmit(Unit)
     }
