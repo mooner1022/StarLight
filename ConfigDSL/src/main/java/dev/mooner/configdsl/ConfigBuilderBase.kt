@@ -9,11 +9,15 @@ package dev.mooner.configdsl
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import java.io.File
-import kotlin.properties.Delegates
 
 abstract class ConfigBuilderBase<T: BaseViewHolder, V: Any> {
 
-    var id: String by Delegates.notNull()
+    private var _id: String? = null
+    var id: String
+        get() = _id ?: error("Config option '${title ?: "(untitled)"}' is missing an id")
+        set(value) {
+            _id = value
+        }
     var title: String? = null
     var description: String? = null
 
@@ -39,7 +43,7 @@ abstract class ConfigBuilderBase<T: BaseViewHolder, V: Any> {
 
     protected fun requiredField(fieldName: String, value: Any?) {
         if (value == null) {
-            throw IllegalArgumentException("Required field '$fieldName' is null")
+            throw IllegalArgumentException("Required field '$fieldName' of config option '${_id ?: "(no id)"}' is null")
         }
     }
 }
