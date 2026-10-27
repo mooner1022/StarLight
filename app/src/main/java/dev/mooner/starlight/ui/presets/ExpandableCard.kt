@@ -347,7 +347,7 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
         get() = _switchEnabled
         set(value) {
             binding.cardSwitch.isEnabled = value
-            _switchValue = value
+            _switchEnabled = value
         }
 
     sealed class AnimationType {
