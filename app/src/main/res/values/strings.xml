@@ -124,6 +124,11 @@
     <string name="home_empty_description">Add widgets to check your bot at a glance.</string>
     <string name="home_add_widget">Add widget</string>
     <string name="widget_load_failed">Couldn\'t load this widget</string>
+    <string name="widget_uptime">Uptime</string>
+    <string name="widget_logs">Logs</string>
+    <string name="widget_logs_more">More</string>
+    <string name="widget_logs_empty">No logs yet!</string>
+    <string name="widget_status">Bot status</string>
 
     <string name="api_cannot_send_to_room">Cannot send message to a room \'%s\' without receiving initial message.</string>
 </resources>

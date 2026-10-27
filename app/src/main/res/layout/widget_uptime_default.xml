@@ -4,14 +4,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@color/main_dark"
     android:layout_width="match_parent"
-    android:layout_height="@dimen/widget_medium_height"
+    android:layout_height="match_parent"
     android:padding="@dimen/card_radius">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/wantedsans_regular"
-        android:text="업타임"
+        android:text="@string/widget_uptime"
         android:textColor="@android:color/white"
         android:textSize="16sp"
         app:layout_constraintTop_toTopOf="parent"

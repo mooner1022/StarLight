@@ -1,223 +1,93 @@
 package dev.mooner.starlight.ui.widget
 
-import android.animation.LayoutTransition
-import android.content.Context
-import android.view.LayoutInflater
 import android.view.View
-import android.view.View.OnClickListener
-import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.LayoutManager
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
-import dev.mooner.starlight.R
+import dev.mooner.starlight.CA_DEV_MODE
 import dev.mooner.starlight.databinding.WidgetLogsBinding
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
-import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
-import dev.mooner.starlight.plugincore.widget.Widget
-import dev.mooner.starlight.plugincore.widget.WidgetSize
+import dev.mooner.starlight.plugincore.widget.widget
+import dev.mooner.starlight.plugincore.widget.x
 import dev.mooner.starlight.ui.logs.LogItem
-import dev.mooner.starlight.utils.dropBefore
 import dev.mooner.starlight.utils.showLogsDialog
 import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-class LogsWidget: Widget(), OnClickListener {
+const val WIDGET_LOGS = "widget_logs"
 
-    //private var _binding: WidgetLogsBinding? = null
-    //private val binding get() = _binding!!
-    private var itemAdapter: ItemAdapter<LogItem>? = null
-    private var lastHash: Int? = null
+val LogsWidget = widget(WIDGET_LOGS) {
+    name {
+        Locale.ENGLISH { "Logs" }
+        Locale.KOREAN  { "로그" }
+    }
+    span(default = 4 x 4, min = 2 x 2, max = 8 x 8)
 
-    override val id: String = "widget_logs"
-    override val name: String = "로그"
-    override val size: WidgetSize = WidgetSize.Wrap
-
-    private var mView: View? = null
-    private var mBinding: WidgetLogsBinding? = null
-
-    override fun onCreateWidget(view: View) {
-        val context = view.context
-        val binding = WidgetLogsBinding.inflate(LayoutInflater.from(context), view as ViewGroup, true)
-
-        mView = view
-        mBinding = binding
-        //LayoutInflater.from(context).inflate(R.layout.widget_logs, view as ViewGroup, true)
-
-        createAdapter(binding.rvLogs)
-        binding.setLogsVisible(LogCollector.logs.isNotEmpty())
-
-        lifecycleScope.launch {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                if (itemAdapter == null)
-                    createAdapter(binding.rvLogs)
-
-                EventHandler.on(this, ::onLogCreated)
+    content {
+        val binding = inflate(WidgetLogsBinding::inflate)
+        val maxLogs = (span.y - 1).coerceAtLeast(1)
+        val itemAdapter = ItemAdapter<LogItem>()
+        binding.rvLogs.apply {
+            itemAnimator = FadeInUpAnimator()
+            layoutManager = LinearLayoutManager(context).apply {
+                reverseLayout = true
+                stackFromEnd = true
             }
-        }
-        lifecycleScope.launch {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                if (itemAdapter == null)
-                    createAdapter(binding.rvLogs)
-
-                LogCollector.logs
-                    .dropBefore(LOGS_MAX_SIZE)
-                    .takeIf { logs -> logs.isNotEmpty() && logs[0].hashCode() != lastHash }
-                    ?.map { v -> v.toLogItem() }
-                    ?.let { items ->
-                        itemAdapter!!.set(items)
-                        binding.setLogsVisible(true)
-                    }
-            }
+            adapter = FastAdapter.with(itemAdapter)
         }
 
-        binding.root.layoutTransition = LayoutTransition()
-
-        // Set click listeners
-        binding.tvMoreLogs.setOnClickListener(this)
-        binding.buttonMoreLogs.setOnClickListener(this)
-    }
-
-    /*
-    override fun onPauseWidget() {
-        super.onPauseWidget()
-        unbindLogger()
-    }
-
-    override fun onResumeWidget() {
-        super.onResumeWidget()
-        if (this::mAdapter.isInitialized) {
-            val logs = Logger.logs
-            Logger.e("onResumeWidget")
-            if (mAdapter.data.size != logs.size) {
-                val missedLogs = logs.drop(mAdapter.data.size)
-                for (data in missedLogs) {
-                    mAdapter.pushLog(data, LOGS_MAX_SIZE)
-                }
-            }
-            bindLogger()
-        }
-    }
-     */
-
-    override fun onPauseWidget() {
-        super.onPauseWidget()
-        setLastHash()
-    }
-
-    override fun onDestroyWidget() {
-        super.onDestroyWidget()
-        setLastHash()
-        mView = null
-        mBinding = null
-        itemAdapter = null
-    }
-
-    private fun setLastHash() {
-        if (itemAdapter != null && itemAdapter!!.adapterItemCount != 0)
-            lastHash = itemAdapter!!.getAdapterItem(0).logData.hashCode()
-    }
-
-    override fun onCreateThumbnail(view: View) {
-        val context = view.context
-        val binding = WidgetLogsBinding.inflate(LayoutInflater.from(context), view as ViewGroup, true)
-
-        binding.textViewNoLogsYet.visibility = View.GONE
-
-        val dummyLog = LogData(
-            type = LogType.INFO,
-            message = translate {
-                Locale.ENGLISH { "This is a dummy log for thumbnail.\nMessage is shown here." }
-                Locale.KOREAN  { "이건 썸네일용 더미 로그에요.\n로그 메세지는 여기에 보여져요." }
-            }
-        ).toLogItem()
-
-        itemAdapter = ItemAdapter()
-        val fastAdapter = FastAdapter.with(itemAdapter!!)
-        binding.rvLogs.init(fastAdapter)
-
-        itemAdapter!!.add(dummyLog, dummyLog, dummyLog)
-    }
-
-    override fun onDestroyThumbnail() {
-        super.onDestroyThumbnail()
-
-        itemAdapter = null
-    }
-
-    override fun onClick(view: View) {
-        val context = view.context
-        when(view.id) {
-            R.id.tvMoreLogs, R.id.buttonMoreLogs ->
-                context.showLogsDialog()
-        }
-    }
-
-    private fun createAdapter(recyclerView: RecyclerView) {
-        itemAdapter = ItemAdapter()
-        val fastAdapter = FastAdapter.with(itemAdapter!!)
-        recyclerView.init(fastAdapter)
-    }
-
-    private fun RecyclerView.init(adapter: FastAdapter<LogItem>) {
-        itemAnimator = FadeInUpAnimator()
-        layoutManager = initLayoutManager(context)
-        this.adapter = adapter
-        visibility = View.VISIBLE
-    }
-
-    private fun initLayoutManager(context: Context): LayoutManager =
-        LinearLayoutManager(context).apply {
-            reverseLayout = true
-            stackFromEnd = true
+        fun setLogsVisible(visible: Boolean) {
+            binding.textViewNoLogsYet.isVisible = !visible
+            binding.rvLogs.isVisible = visible
         }
 
-    private fun WidgetLogsBinding.setLogsVisible(visible: Boolean) {
-        textViewNoLogsYet.visibility = if (visible) View.GONE else View.VISIBLE
-        rvLogs.visibility = if (visible) View.VISIBLE else View.GONE
-    }
-
-    private fun LogData.toLogItem(): LogItem =
-        LogItem().withLogData(this, LogItem.ViewType.NORMAL)
-
-    private suspend fun onLogCreated(event: Events.Log.Create) {
-        val log = event.log
-        val showInternalLog = GlobalConfig
-            .category("dev_mode_config")
-            .getBoolean("show_internal_log", false)
-
-        if (log.type == LogType.VERBOSE && !showInternalLog) return
-
-        //mAdapter?.pushLog(log, LOGS_MAX_SIZE)
-        // Avoid infinite-loop
-        //println(itemAdapter)
-        if (itemAdapter == null)
-            return
-
-        withContext(Dispatchers.Main) {
-            if (itemAdapter!!.adapterItemCount >= LOGS_MAX_SIZE)
-                itemAdapter!!.remove(0)
-            itemAdapter!!.add(log.toLogItem())
-            mBinding?.setLogsVisible(true)
-
-            mView?.updateHeight()
+        fun showLogs(logs: List<LogData>) {
+            itemAdapter.set(logs.takeLast(maxLogs).map(LogData::toLogItem))
+            setLogsVisible(logs.isNotEmpty())
         }
-    }
 
-    companion object {
-        private const val LOGS_MAX_SIZE = 3
+        val openLogs = View.OnClickListener { it.context.showLogsDialog() }
+        binding.tvMoreLogs.setOnClickListener(openLogs)
+        binding.buttonMoreLogs.setOnClickListener(openLogs)
+
+        if (isPreview) {
+            showLogs(List(maxLogs) { previewLog() })
+            return@content
+        }
+
+        repeatWhile(Lifecycle.State.STARTED) {
+            showLogs(LogCollector.logs.filter(::isVisibleLog))
+        }
+        on<Events.Log.Create> {
+            if (!isVisibleLog(log))
+                return@on
+            if (itemAdapter.adapterItemCount >= maxLogs)
+                itemAdapter.remove(0)
+            itemAdapter.add(log.toLogItem())
+            setLogsVisible(true)
+        }
     }
 }
+
+private fun isVisibleLog(log: LogData): Boolean =
+    log.type != LogType.VERBOSE ||
+            GlobalConfig.category(CA_DEV_MODE).getBoolean("show_internal_log", false)
+
+private fun previewLog(): LogData =
+    LogData(
+        type = LogType.INFO,
+        message = translate {
+            Locale.ENGLISH { "This is a dummy log for preview.\nMessage is shown here." }
+            Locale.KOREAN  { "이건 미리보기용 더미 로그에요.\n로그 메세지는 여기에 보여져요." }
+        }
+    )
+
+private fun LogData.toLogItem(): LogItem =
+    LogItem().withLogData(this, LogItem.ViewType.NORMAL)
