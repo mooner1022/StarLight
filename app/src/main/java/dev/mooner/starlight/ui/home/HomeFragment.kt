@@ -7,62 +7,66 @@
 
 package dev.mooner.starlight.ui.home
 
-import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.FrameLayout
+import androidx.activity.OnBackPressedCallback
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import dev.mooner.starlight.CA_WIDGETS
+import androidx.transition.TransitionManager
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.button
 import dev.mooner.starlight.R
-import dev.mooner.starlight.CF_IDS
-import dev.mooner.starlight.WIDGET_DEF_STRING
 import dev.mooner.starlight.databinding.FragmentHomeBinding
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.infoTranslated
-import dev.mooner.starlight.plugincore.widget.Widget
-import dev.mooner.starlight.ui.widget.config.WidgetConfigActivity
-import dev.mooner.starlight.ui.widget.config.WidgetsAdapter
-import dev.mooner.starlight.utils.LAYOUT_DEFAULT
+import dev.mooner.starlight.plugincore.widget.WidgetController
+import dev.mooner.starlight.plugincore.widget.WidgetDefinition
+import dev.mooner.starlight.plugincore.widget.WidgetInfo
+import dev.mooner.starlight.plugincore.widget.WidgetLayout
+import dev.mooner.starlight.plugincore.widget.WidgetPlacement
+import dev.mooner.starlight.plugincore.widget.WidgetSpan
 import dev.mooner.starlight.utils.LAYOUT_TABLET
+import dev.mooner.starlight.utils.configStruct
+import dev.mooner.starlight.utils.getColorCompat
+import dev.mooner.starlight.utils.isDevMode
 import dev.mooner.starlight.utils.layoutMode
-import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
+import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
+import java.util.UUID
 
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(), WidgetGridLayout.Listener {
 
     private val logger = LoggerFactory.logger {  }
 
-    private lateinit var resultLauncher: ActivityResultLauncher<Intent>
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
-    private var widgetsAdapter: WidgetsAdapter? = null
+    private val widgets: MutableMap<View, HomeWidget> = hashMapOf()
+    private val hiddenPlacements: MutableList<WidgetPlacement> = arrayListOf()
+    private var isLayoutDirty = false
 
-    /*
-    private var uptimeTimer: Timer? = null
-    private val mainScope = CoroutineScope(Dispatchers.Main)
-    private val updateUpTimeTask: TimerTask
-        get() = object: TimerTask() {
-            override fun run() {
-                val diffMillis = System.currentTimeMillis() - ApplicationSession.initMillis
-                val formatStr = Utils.formatTime(diffMillis)
-                mainScope.launch {
-                    binding.uptimeText.setText(formatStr)
-                }
-            }
-        }
-    private lateinit var mAdapter: LogsRecyclerViewAdapter
-     */
+    private val exitEditCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() =
+            exitEditMode()
+    }
+
+    private class HomeWidget(
+        val instanceId: String,
+        val definition: WidgetDefinition,
+        val card: View,
+        val container: FrameLayout,
+        var controller: WidgetController?,
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -71,121 +75,215 @@ class HomeFragment : Fragment() {
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
-        val context = requireContext()
-
-        widgetsAdapter = WidgetsAdapter(context).apply {
-            data = getWidgets()
-            notifyAllItemInserted()
+        binding.widgetGrid.apply {
+            columns = if (requireContext().layoutMode == LAYOUT_TABLET) TABLET_COLUMNS else DEFAULT_COLUMNS
+            cellHeight = resources.getDimensionPixelSize(R.dimen.widget_cell_height)
+            gap = resources.getDimensionPixelSize(R.dimen.widget_spacing)
+            listener = this@HomeFragment
         }
-
-        val mLayoutManager = when(context.layoutMode) {
-            LAYOUT_DEFAULT -> LinearLayoutManager(context)
-            LAYOUT_TABLET -> StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-            else -> LinearLayoutManager(context)
-        }
-
-        with(binding.widgets) {
-            itemAnimator = FadeInUpAnimator()
-            layoutManager = mLayoutManager
-            adapter = widgetsAdapter
-            if (mLayoutManager is StaggeredGridLayoutManager)
-                addItemDecoration(ColumnSpacingDecoration(resources.getDimensionPixelSize(R.dimen.widget_spacing)))
-        }
-
-        resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == WidgetConfigActivity.RESULT_EDITED) {
-                widgetsAdapter!!.apply {
-                    onDestroy()
-                    notifyItemRangeRemoved(0, data.size)
-                    data = getWidgets()
-                    notifyItemRangeInserted(0, data.size)
-                }
-                logger.verbose { "Widget list updated" }
+        binding.apply {
+            buttonEditAdd.setOnClickListener { showAddWidgetSheet() }
+            buttonEditRemove.setOnClickListener { widgetGrid.selected?.let(::removeWidget) }
+            buttonEditDone.setOnClickListener { exitEditMode() }
+            buttonEmptyAdd.setOnClickListener {
+                enterEditMode()
+                showAddWidgetSheet()
+            }
+            textEditHint.setOnClickListener { enterEditMode() }
+            widgetContent.setOnClickListener {
+                if (widgetGrid.isEditing)
+                    exitEditMode()
             }
         }
-        binding.cardViewConfigWidget.setOnClickListener {
-            val intent = Intent(requireActivity(), WidgetConfigActivity::class.java)
-            resultLauncher.launch(intent)
-        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, exitEditCallback)
+
+        loadWidgets()
 
         return binding.root
     }
 
-    private fun getWidgets(): List<Widget> {
-        val widgetIds: List<String> =
-            GlobalConfig
-                .category(CA_WIDGETS)
-                .getString(CF_IDS, WIDGET_DEF_STRING)
-                .let(Session.json::decodeFromString)
-        val widgets: MutableList<Widget> = mutableListOf()
-
-        for (id in widgetIds) {
-            try {
-                Session.widgetManager
-                    .getWidgetById(id)
-                    ?.newInstance()
-                    ?.also(viewLifecycleOwner.lifecycle::addObserver)
-                    ?.let(widgets::add)
-                    ?: logger.infoTranslated {
-                        Locale.ENGLISH { "Skipping unknown widget: $id" }
-                        Locale.KOREAN  { "알 수 없는 위젯 $id 의 초기화 건너뜀" }
+    private fun loadWidgets() {
+        for (placement in HomeLayoutStore.load().items) {
+            val definition = Session.widgetManager.getDefinition(placement.widgetId)
+            if (definition == null || (definition.isDevOnly && !isDevMode)) {
+                if (definition == null)
+                    logger.infoTranslated {
+                        Locale.ENGLISH { "Skipping unknown widget: ${placement.widgetId}" }
+                        Locale.KOREAN  { "알 수 없는 위젯 ${placement.widgetId} 의 초기화 건너뜀" }
                     }
-            } catch (e: Exception) {
-                logger.error(e) {
-                    translate {
-                        Locale.ENGLISH { "Failed to initialize widget '$id': " }
-                        Locale.KOREAN  { "위젯 '$id' 초기화 실패: " }
+                hiddenPlacements += placement
+                continue
+            }
+            addWidget(placement.instanceId, definition, placement.span)
+        }
+        updateEmptyState()
+    }
+
+    private fun addWidget(instanceId: String, definition: WidgetDefinition, span: WidgetSpan?): View {
+        val grid = binding.widgetGrid
+        val card = layoutInflater.inflate(R.layout.card_widget_grid, grid, false)
+        val container = card.findViewById<FrameLayout>(R.id.view)
+        val widget = HomeWidget(instanceId, definition, card, container, definition.newController())
+        widgets[card] = widget
+        grid.addWidget(card, definition.spanSpec, span, definition.isAutoHeight)
+
+        widget.controller!!.apply {
+            onError = { e -> card.post { onWidgetError(widget, e) } }
+            create(container, definition.spanSpec.resolve(span, grid.columns), isPreview = false)
+            attach(viewLifecycleOwner.lifecycle)
+        }
+        return card
+    }
+
+    private fun removeWidget(card: View) {
+        val widget = widgets.remove(card) ?: return
+        widget.controller?.destroy()
+        binding.widgetGrid.removeWidget(card)
+        updateEmptyState()
+        saveLayout()
+    }
+
+    private fun onWidgetError(widget: HomeWidget, throwable: Throwable) {
+        if (_binding == null || widgets[widget.card] !== widget)
+            return
+        val controller = widget.controller ?: return
+        logger.error(throwable) {
+            translate {
+                Locale.ENGLISH { "Widget '${widget.definition.id}' failed: " }
+                Locale.KOREAN  { "위젯 '${widget.definition.id}' 실행 중 오류 발생: " }
+            }
+        }
+        widget.controller = null
+        controller.destroy()
+        widget.container.removeAllViews()
+        layoutInflater.inflate(R.layout.widget_error, widget.container, true)
+    }
+
+    private fun saveLayout() {
+        val grid = binding.widgetGrid
+        val items = grid.widgets.mapNotNull { card ->
+            widgets[card]?.let { widget ->
+                WidgetPlacement(widget.instanceId, widget.definition.id, grid.spanOf(card))
+            }
+        }
+        HomeLayoutStore.save(WidgetLayout(items = items + hiddenPlacements))
+        isLayoutDirty = false
+    }
+
+    private fun updateEmptyState() {
+        val isEmpty = widgets.isEmpty()
+        binding.emptyState.isVisible = isEmpty
+        binding.textEditHint.isVisible = !isEmpty && !binding.widgetGrid.isEditing
+    }
+
+    private fun enterEditMode() {
+        binding.widgetGrid.setEditing(true)
+        onEditModeChanged()
+    }
+
+    private fun exitEditMode() {
+        binding.widgetGrid.setEditing(false)
+        onEditModeChanged()
+        if (isLayoutDirty)
+            saveLayout()
+    }
+
+    private fun onEditModeChanged() {
+        val isEditing = binding.widgetGrid.isEditing
+        exitEditCallback.isEnabled = isEditing
+        TransitionManager.beginDelayedTransition(binding.root as ViewGroup)
+        binding.editBar.isVisible = isEditing
+        updateEmptyState()
+    }
+
+    private fun showAddWidgetSheet() {
+        MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            setCommonAttrsWithLifecycle()
+            maxWidth(res = R.dimen.dialog_width)
+            title(res = R.string.home_add_widget)
+            configStruct(requireContext()) {
+                struct(getAddWidgetStructure(::dismiss))
+            }
+        }
+    }
+
+    private fun getAddWidgetStructure(onDismiss: () -> Unit): ConfigStructure = config {
+        val manager = Session.widgetManager
+        val available = manager.getAllWidgetInfo().values.filter { info ->
+            manager.getDefinition(info.id)?.let { !it.isDevOnly || isDevMode } == true
+        }
+        for ((category, infos) in available.groupBy(WidgetInfo::pluginName)) {
+            category {
+                id = UUID.randomUUID().toString()
+                title = category
+                textColor = requireContext().getColorCompat(R.color.main_bright)
+                items {
+                    for (info in infos) {
+                        val definition = manager.getDefinition(info.id) ?: continue
+                        button {
+                            id = info.id
+                            title = definition.name
+                            setOnClickListener { _ ->
+                                onWidgetPicked(definition)
+                                onDismiss()
+                            }
+                        }
                     }
                 }
             }
         }
-        return widgets
     }
 
-    override fun onPause() {
-        try {
-            widgetsAdapter?.onPause()
-        } catch (e: Exception) {
-            logger.verbose { "Failed to call onPause() on widget: $e" }
+    private fun onWidgetPicked(definition: WidgetDefinition) {
+        if (_binding == null)
+            return
+        val card = addWidget(WidgetLayout.newInstanceId(), definition, span = null)
+        binding.widgetGrid.select(card)
+        updateEmptyState()
+        saveLayout()
+        card.post {
+            card.requestRectangleOnScreen(Rect(0, 0, card.width, card.height), false)
         }
+    }
+
+    override fun onEditModeRequested(view: View) =
+        onEditModeChanged()
+
+    override fun onSelectionChanged(view: View?) {
+        binding.buttonEditRemove.isVisible = view != null
+    }
+
+    override fun onSpanChanged(view: View, span: WidgetSpan) {
+        val widget = widgets[view] ?: return
+        widget.controller?.resize(widget.definition.spanSpec.resolve(span, binding.widgetGrid.columns))
+        isLayoutDirty = true
+    }
+
+    override fun onOrderChanged() {
+        isLayoutDirty = true
+    }
+
+    override fun onEmptyAreaTapped() =
+        exitEditMode()
+
+    override fun onPause() {
+        if (binding.widgetGrid.isEditing)
+            exitEditMode()
         super.onPause()
     }
 
-    override fun onResume() {
-        try {
-            widgetsAdapter?.onResume()
-        } catch (e: Exception) {
-            logger.verbose { "Failed to call onResume() on widget: $e" }
-        }
-        super.onResume()
-    }
-
     override fun onDestroyView() {
-        try {
-            widgetsAdapter?.onDestroy()
-        } catch (e: Exception) {
-            logger.verbose { "Failed to destroy widget: $e" }
-        }
-        widgetsAdapter = null
+        if (isLayoutDirty)
+            saveLayout()
+        widgets.values.forEach { it.controller?.destroy() }
+        widgets.clear()
+        hiddenPlacements.clear()
         _binding = null
         super.onDestroyView()
     }
 
-    private class ColumnSpacingDecoration(
-        private val spacing: Int
-    ): RecyclerView.ItemDecoration() {
-
-        override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
-            val params = view.layoutParams as? StaggeredGridLayoutManager.LayoutParams
-                ?: return
-            if (params.isFullSpan)
-                return
-            val spanCount = (parent.layoutManager as StaggeredGridLayoutManager).spanCount
-            val spanIndex = params.spanIndex
-            if (spanIndex < 0)
-                return
-            outRect.left = spacing * spanIndex / spanCount
-            outRect.right = spacing - spacing * (spanIndex + 1) / spanCount
-        }
+    private companion object {
+        const val DEFAULT_COLUMNS = 4
+        const val TABLET_COLUMNS = 8
     }
 }

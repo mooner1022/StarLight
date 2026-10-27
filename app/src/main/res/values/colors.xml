@@ -28,6 +28,10 @@
     <color name="text_clear">#4c4c4c</color>
     <color name="text_sub">#A3A3A3</color>
 
+    <color name="status_ok">#7ACA8A</color>
+    <color name="status_warning">#F2B05E</color>
+    <color name="status_error">#FF6188</color>
+
     <color name="switch_track">#D1D1D1</color>
     <color name="switch_track_disabled">#A5A5A5</color>
 

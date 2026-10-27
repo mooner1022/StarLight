@@ -60,10 +60,6 @@
         <activity
             android:name=".ui.splash.quickstart.QuickStartActivity"
             android:exported="false"/>
-        <activity
-            android:name=".ui.widget.config.WidgetConfigActivity"
-            android:exported="false"/>
-
         <activity android:name=".ui.config.ConfigActivity"/>
         <activity android:name=".ui.settings.info.AppInfoActivity"/>
         <activity android:name=".ui.crash.FatalErrorActivity"/>

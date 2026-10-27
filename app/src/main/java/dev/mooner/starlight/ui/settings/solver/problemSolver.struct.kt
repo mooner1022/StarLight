@@ -108,7 +108,7 @@ internal fun getProblemSolverStruct() = config {
     }
 }
 
-private fun readNotificationRuleFile(): String? {
+internal fun readNotificationRuleFile(): String? {
     val file = getStarLightDirectory().resolve(NotificationRulesActivity.FILE_NAME)
 
     if (!file.exists() || !file.isFile || !file.canRead())
@@ -116,7 +116,7 @@ private fun readNotificationRuleFile(): String? {
     return file.readText()
 }
 
-private fun unwrapData(data: String): Rules {
+internal fun unwrapData(data: String): Rules {
     return data.let<_, List<RuleData>>(Session.json::decodeFromString)
         .toMutableList()
 }

@@ -146,11 +146,13 @@ object ApplicationSession {
 
         Session.widgetManager.apply {
             //val name = "기본 위젯"
-            addWidget(pContext, DummyWidgetSlim::class.java)
-            addWidget(pContext, UptimeWidgetDefault::class.java)
-            addWidget(pContext, UptimeWidgetSlim::class.java)
-            addWidget(pContext, LogsWidget::class.java)
-            addWidget(pContext, LogGenWidget::class.java)
+            addWidget(pContext, StatusWidget)
+            addWidget(pContext, UptimeWidget)
+            addWidget(pContext, LogsWidget)
+            if (GlobalConfig.category("dev").getBoolean("dev_mode", false)) {
+                addWidget(pContext, DummyWidgetSlim::class.java)
+                addWidget(pContext, LogGenWidget::class.java)
+            }
             //addWidget(pContext, DashboardWidget::class.java)
         }
 

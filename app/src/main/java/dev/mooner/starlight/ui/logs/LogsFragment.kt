@@ -67,7 +67,7 @@ class LogsFragment : Fragment(), OnClickListener {
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 val logs = LogCollector.logs.toList()
-                logs.takeIf { l -> l[0].hashCode() != lastHash }
+                logs.takeIf { l -> l.isNotEmpty() && l[0].hashCode() != lastHash }
                     ?.let { l ->
                         if (itemAdapter == null)
                             createAdapter(binding.recyclerViewLogs, l)
@@ -75,7 +75,7 @@ class LogsFragment : Fragment(), OnClickListener {
                             itemAdapter!!.set(l)
                     }
 
-                if (autoScroll) {
+                if (autoScroll && logs.isNotEmpty()) {
                     binding.recyclerViewLogs.post {
                         binding.recyclerViewLogs.smoothScrollToPosition(logs.size - 1)
                     }

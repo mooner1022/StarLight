@@ -9,7 +9,7 @@ package dev.mooner.starlight
 const val PACKAGE_KAKAO_TALK = "com.kakao.talk"
 
 const val WIDGET_DEF_STRING = """
-    ["widget_uptime_slim","widget_logs"]
+    ["widget_status","widget_logs"]
 """
 
 const val ID_VIEW_ITEM_PROJECT = 0
@@ -26,6 +26,7 @@ const val CA_BETA_FEAT = "beta_features"
 const val CA_DEV_MODE  = "dev_mode_config"
 
 const val CF_IDS                = "ids"
+const val CF_LAYOUT             = "layout"
 const val CF_SAFE_MODE          = "safe_mode"
 const val CF_WRITE_INTERNAL_LOG = "write_internal_log"
 const val CF_LOAD_EXT_DEX_LIB   = "load_external_dex_libs"

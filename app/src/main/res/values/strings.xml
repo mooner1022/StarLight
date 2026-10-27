@@ -13,8 +13,6 @@
     <string name="title_logs">Logs</string>
     <string name="title_show_all">Show all</string>
 
-    <string name="title_widgets">Widgets</string>
-    <string name="subtitle_widgets">There are %d Widgets.</string>
 
     <string name="title_notification_rules">Notification Rules</string>
     <string name="subtitle_notification_rules">There are %d Rules.</string>
@@ -116,7 +114,21 @@
     <string name="log_type_text">Text</string>
     <string name="log_type_card">Card</string>
 
-    <string name="widget_config_button_text">Widget settings</string>
+    <string name="home_edit_title">Edit widgets</string>
+    <string name="home_edit_hint">Drag to move · Pull edges to resize</string>
+    <string name="home_edit_add">Add widget</string>
+    <string name="home_edit_remove">Remove widget</string>
+    <string name="home_edit_done">Done</string>
+    <string name="home_edit_entry">Long-press a widget to edit</string>
+    <string name="home_empty_title">No widgets yet</string>
+    <string name="home_empty_description">Add widgets to check your bot at a glance.</string>
+    <string name="home_add_widget">Add widget</string>
+    <string name="widget_load_failed">Couldn\'t load this widget</string>
+    <string name="widget_uptime">Uptime</string>
+    <string name="widget_logs">Logs</string>
+    <string name="widget_logs_more">More</string>
+    <string name="widget_logs_empty">No logs yet!</string>
+    <string name="widget_status">Bot status</string>
 
     <string name="api_cannot_send_to_room">Cannot send message to a room \'%s\' without receiving initial message.</string>
 </resources>
