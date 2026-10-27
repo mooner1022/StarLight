@@ -25,6 +25,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 const val WIDGET_LOGS = "widget_logs"
 
+private const val SETTING_MIN_LEVEL = "min_level"
 private const val MAX_CANDIDATES = 10
 private const val MAX_MESSAGE_LINES = 3
 private val RENDER_DELAY = 200.milliseconds
@@ -36,13 +37,37 @@ val LogsWidget = widget(WIDGET_LOGS) {
     }
     span(default = 4 x 4, min = 2 x 2, max = 8 x 8)
 
+    settings {
+        choice(
+            id = SETTING_MIN_LEVEL,
+            title = translate {
+                Locale.ENGLISH { "Minimum level" }
+                Locale.KOREAN  { "최소 로그 수준" }
+            },
+            options = listOf(
+                LogType.VERBOSE.name to translate {
+                    Locale.ENGLISH { "All" }
+                    Locale.KOREAN  { "전체" }
+                },
+                LogType.INFO.name  to "INFO",
+                LogType.WARN.name  to "WARN",
+                LogType.ERROR.name to "ERROR",
+            ),
+        )
+    }
+
     content {
         val binding = inflate(WidgetLogsBinding::inflate)
+        val minPriority = settings.string(SETTING_MIN_LEVEL)
+            ?.let { runCatching { LogType.valueOf(it) }.getOrNull() }
+            ?.priority
+            ?: LogType.VERBOSE.priority
         val inflater = LayoutInflater.from(context)
         val shown: ArrayDeque<LogData> = ArrayDeque()
 
         fun isVisibleLog(log: LogData): Boolean =
-            log.type != LogType.VERBOSE || GlobalConfig.category(CA_DEV_MODE).getBoolean("show_internal_log", false)
+            log.type.priority >= minPriority &&
+                    (log.type != LogType.VERBOSE || GlobalConfig.category(CA_DEV_MODE).getBoolean("show_internal_log", false))
 
         fun render() {
             val hasLogs = shown.isNotEmpty()

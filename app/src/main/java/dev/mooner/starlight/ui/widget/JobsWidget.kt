@@ -15,6 +15,7 @@ import kotlin.time.Duration.Companion.seconds
 const val WIDGET_JOBS = "widget_jobs"
 
 private const val STUCK_MILLIS = 10_000L
+private const val SETTING_BUSY_ONLY = "busy_only"
 
 private data class JobState(
     val project: Project,
@@ -32,8 +33,19 @@ val JobsWidget = widget(WIDGET_JOBS) {
     }
     span(default = 4 x 2, min = 2 x 1, max = 8 x 6)
 
+    settings {
+        toggle(
+            id = SETTING_BUSY_ONLY,
+            title = translate {
+                Locale.ENGLISH { "Only show busy projects" }
+                Locale.KOREAN  { "작업 중인 프로젝트만 표시" }
+            },
+        )
+    }
+
     content {
         val binding = panel(R.drawable.ic_round_refresh_24, R.string.widget_jobs)
+        val busyOnly = settings.boolean(SETTING_BUSY_ONLY)
         val busySince: MutableMap<ProjectID, Long> = hashMapOf()
         var lastRendered: List<Any>? = null
 
@@ -54,7 +66,9 @@ val JobsWidget = widget(WIDGET_JOBS) {
 
         fun render() {
             val states = collect(System.currentTimeMillis())
-            val visible = states.take(rowCapacity())
+            val visible = states
+                .filter { !busyOnly || it.activeJobs > 0 }
+                .take(rowCapacity())
             val total = states.sumOf(JobState::activeJobs)
             val stuck = states.count(JobState::isStuck)
             val snapshot = listOf(isCompact, total, stuck) + visible.map { listOf(it.project.info.id, it.activeJobs, if (it.isStuck) it.busySeconds else 0L) }
@@ -80,10 +94,18 @@ val JobsWidget = widget(WIDGET_JOBS) {
                 return
 
             if (visible.isEmpty()) {
-                binding.setContent(listOf(createMessage(translate {
-                    Locale.ENGLISH { "No enabled projects" }
-                    Locale.KOREAN  { "활성화된 프로젝트가 없어요" }
-                })))
+                binding.setContent(listOf(createMessage(
+                    if (busyOnly && states.isNotEmpty())
+                        translate {
+                            Locale.ENGLISH { "No running jobs" }
+                            Locale.KOREAN  { "실행 중인 작업이 없어요" }
+                        }
+                    else
+                        translate {
+                            Locale.ENGLISH { "No enabled projects" }
+                            Locale.KOREAN  { "활성화된 프로젝트가 없어요" }
+                        }
+                )))
                 return
             }
             binding.setContent(visible.map { state ->

@@ -25,8 +25,19 @@ val ErrorMonitorWidget = widget(WIDGET_ERRORS) {
     }
     span(default = 4 x 2, min = 2 x 1, max = 8 x 6)
 
+    settings {
+        toggle(
+            id = SETTING_INCLUDE_WARNINGS,
+            title = translate {
+                Locale.ENGLISH { "Show warnings in the list" }
+                Locale.KOREAN  { "목록에 경고도 표시" }
+            },
+        )
+    }
+
     content {
         val binding = panel(R.drawable.ic_round_error_outline_24, R.string.widget_errors)
+        val includeWarnings = settings.boolean(SETTING_INCLUDE_WARNINGS)
         binding.root.setClickAction { it.context.showLogsDialog() }
 
         fun render() {
@@ -44,7 +55,7 @@ val ErrorMonitorWidget = widget(WIDGET_ERRORS) {
             if (isCompact)
                 return
 
-            val recent = latestProjectErrors().take(rowCapacity())
+            val recent = latestProjectErrors(includeWarnings).take(rowCapacity())
             if (recent.isEmpty()) {
                 binding.setContent(listOf(createMessage(translate {
                     Locale.ENGLISH { "No project errors yet" }
@@ -58,7 +69,7 @@ val ErrorMonitorWidget = widget(WIDGET_ERRORS) {
                     value = TimeUtils.formatMillis(log.millis, "HH:mm"),
                     valueColorRes = R.color.text_sub,
                     icon = R.drawable.ic_round_error_outline_24,
-                    iconTintRes = R.color.status_error,
+                    iconTintRes = if (log.isError) R.color.status_error else R.color.status_warning,
                     fill = false,
                 )
             })
@@ -75,13 +86,17 @@ val ErrorMonitorWidget = widget(WIDGET_ERRORS) {
     }
 }
 
-private fun latestProjectErrors(): List<Pair<Project, LogData>> {
+private fun latestProjectErrors(includeWarnings: Boolean): List<Pair<Project, LogData>> {
     if (!Session.isInitComplete)
         return emptyList()
     return Session.projectManager.getProjects()
         .mapNotNull { project ->
             val logs = project.logger.logs
-            synchronized(logs) { logs.lastOrNull { it.isError && it.millis >= LogStats.startedMillis } }
+            synchronized(logs) {
+                logs.lastOrNull { log ->
+                    (log.isError || (includeWarnings && log.type == LogType.WARN)) && log.millis >= LogStats.startedMillis
+                }
+            }
                 ?.let { project to it }
         }
         .sortedByDescending { (_, log) -> log.millis }
@@ -90,4 +105,5 @@ private fun latestProjectErrors(): List<Pair<Project, LogData>> {
 private val LogData.isError: Boolean
     get() = type == LogType.ERROR || type == LogType.CRITICAL
 
+private const val SETTING_INCLUDE_WARNINGS = "include_warnings"
 private val RENDER_INTERVAL = 500.milliseconds
