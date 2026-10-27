@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
+import androidx.core.view.ViewCompat
 import androidx.core.widget.NestedScrollView
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.widget.GridPlacement
@@ -97,13 +98,14 @@ class WidgetGridLayout @JvmOverloads constructor(
     private var gesture: Gesture? = null
     private var lastTouchX = 0f
     private var lastTouchY = 0f
+    private var isParentInterceptDisallowed = false
     private var longPressTarget: View? = null
     private var longPressDown: PointF? = null
 
     private val longPressRunnable = Runnable {
         val target = longPressTarget ?: return@Runnable
         val down = longPressDown ?: return@Runnable
-        parent?.requestDisallowInterceptTouchEvent(true)
+        disallowParentIntercept()
         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         setEditing(true)
         cancelChildTouches()
@@ -278,7 +280,18 @@ class WidgetGridLayout @JvmOverloads constructor(
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (!isEditing)
             trackLongPress(ev)
-        return super.dispatchTouchEvent(ev)
+        val handled = super.dispatchTouchEvent(ev)
+        val action = ev.actionMasked
+        if ((action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) && isParentInterceptDisallowed) {
+            isParentInterceptDisallowed = false
+            scrollParent?.stopNestedScroll(ViewCompat.TYPE_TOUCH)
+        }
+        return handled
+    }
+
+    private fun disallowParentIntercept() {
+        parent?.requestDisallowInterceptTouchEvent(true)
+        isParentInterceptDisallowed = true
     }
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean =
@@ -305,7 +318,7 @@ class WidgetGridLayout @JvmOverloads constructor(
                         ?: EmptyTap(ev.x, ev.y)
                 }
                 if (gesture !is EmptyTap)
-                    parent?.requestDisallowInterceptTouchEvent(true)
+                    disallowParentIntercept()
             }
             MotionEvent.ACTION_MOVE -> when (val current = gesture) {
                 is Pending -> if (hypot(ev.x - current.downX, ev.y - current.downY) > touchSlop)
@@ -458,13 +471,17 @@ class WidgetGridLayout @JvmOverloads constructor(
 
     private fun hitHandle(view: View, x: Float, y: Float): Handle? {
         val decoration = view.foreground as? WidgetEditDecoration ?: return null
-        return decoration.handles.firstOrNull { handle ->
-            val center = decoration.handleCenter(handle, view.width, view.height)
-            hypot(
-                x - (view.left + view.translationX + center.x),
-                y - (view.top + view.translationY + center.y)
-            ) <= handleTouchRadius
-        }
+        return decoration.handles
+            .associateWith { handle ->
+                val center = decoration.handleCenter(handle, view.width, view.height)
+                hypot(
+                    x - (view.left + view.translationX + center.x),
+                    y - (view.top + view.translationY + center.y)
+                )
+            }
+            .filterValues { it <= handleTouchRadius }
+            .minByOrNull { it.value }
+            ?.key
     }
 
     private fun findChildAt(x: Float, y: Float): View? =
