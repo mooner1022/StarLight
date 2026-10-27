@@ -105,6 +105,11 @@ object Diagnostics {
         }
         icon = R.drawable.ic_round_projects_24
         check {
+            if (!Session.isInitComplete)
+                return@check info {
+                    Locale.ENGLISH { "Loading" }
+                    Locale.KOREAN  { "불러오는 중" }
+                }
             val total = Session.projectManager.getProjects().size
             val enabled = Session.projectManager.getEnabledProjects().size
             if (total == 0)
