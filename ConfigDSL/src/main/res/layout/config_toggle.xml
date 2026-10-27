@@ -5,64 +5,65 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="60dp"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp">
+    android:background="?attr/selectableItemBackground"
+    android:minHeight="64dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp">
 
     <ImageView
         android:id="@+id/icon"
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:layout_marginStart="16dp"
-        android:src="@drawable/ic_round_keyboard_arrow_right_24"
+        android:importantForAccessibility="no"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_round_keyboard_arrow_right_24"
         app:tint="@color/text"/>
 
     <TextView
-        tools:text="TEXT"
         android:id="@+id/title"
+        tools:text="TEXT"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:fontFamily="@font/nanumsquare_round_bold"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="12dp"
         android:ellipsize="end"
-        android:maxLines="1"
+        android:fontFamily="@font/nanumsquare_round_bold"
+        android:maxLines="2"
+        android:textColor="@color/text"
         android:textSize="16sp"
-        app:layout_constraintStart_toEndOf="@+id/icon"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/description"
         app:layout_constraintEnd_toStartOf="@+id/toggle"
-        android:layout_marginEnd="8dp"/>
+        app:layout_constraintStart_toEndOf="@+id/icon"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"/>
 
     <TextView
         android:id="@+id/description"
         tools:text="Description"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:visibility="visible"
-        android:fontFamily="@font/nanumsquare_round_light"
+        android:layout_marginTop="2dp"
+        android:fontFamily="@font/nanumsquare_round_regular"
         android:textColor="@color/text_sub"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
+        android:textSize="13sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/icon"
-        app:layout_constraintEnd_toStartOf="@+id/toggle"/>
+        app:layout_constraintEnd_toEndOf="@+id/title"
+        app:layout_constraintStart_toStartOf="@+id/title"
+        app:layout_constraintTop_toBottomOf="@+id/title"/>
 
     <com.google.android.material.switchmaterial.SwitchMaterial
         android:id="@+id/toggle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="32dp"
-        android:thumb="@drawable/switch_thumb"
         android:minWidth="48dp"
         android:minHeight="48dp"
-        app:track="@drawable/switch_track_selector"
+        android:thumb="@drawable/switch_thumb"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:track="@drawable/switch_track_selector"
         app:useMaterialThemeColors="false"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

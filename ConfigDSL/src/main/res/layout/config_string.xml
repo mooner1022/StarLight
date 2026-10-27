@@ -5,62 +5,69 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="80dp">
+    android:minHeight="64dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp">
 
     <ImageView
         android:id="@+id/icon"
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:layout_marginStart="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:importantForAccessibility="no"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_round_add_24"/>
+        app:layout_constraintTop_toTopOf="@+id/title"
+        app:tint="@color/text"/>
 
     <TextView
-        tools:text="TEXT"
         android:id="@+id/title"
+        tools:text="TEXT"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
-        android:fontFamily="@font/nanumsquare_round_extrabold"
+        android:layout_marginStart="16dp"
         android:ellipsize="end"
-        android:maxLines="1"
-        android:textSize="14sp"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/description"
+        android:fontFamily="@font/nanumsquare_round_bold"
+        android:gravity="center_vertical"
+        android:maxLines="2"
+        android:minHeight="24dp"
+        android:textColor="@color/text"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/icon"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
+        android:id="@+id/description"
         tools:text="Description"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:id="@+id/description"
-        android:layout_marginStart="8dp"
-        android:visibility="visible"
-        android:fontFamily="@font/nanumsquare_round_light"
+        android:layout_marginTop="2dp"
+        android:fontFamily="@font/nanumsquare_round_regular"
         android:textColor="@color/text_sub"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintStart_toEndOf="@+id/icon"
-        app:layout_constraintBottom_toTopOf="@+id/editText"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        android:textSize="13sp"
+        app:layout_constraintEnd_toEndOf="@+id/title"
+        app:layout_constraintStart_toStartOf="@+id/title"
+        app:layout_constraintTop_toBottomOf="@+id/title"/>
 
     <EditText
         android:id="@+id/editText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="32dp"
-        android:layout_marginBottom="8dp"
-        android:ems="10"
-        android:fontFamily="sans-serif"
-        android:inputType="textPersonName"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/configdsl_field_background"
+        android:fontFamily="@font/nanumsquare_round_regular"
         android:importantForAutofill="no"
+        android:inputType="text"
+        android:minHeight="44dp"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="10dp"
+        android:textColor="@color/text"
+        android:textColorHint="@color/text_sub"
+        android:textSize="15sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/icon"/>
+        app:layout_constraintEnd_toEndOf="@+id/title"
+        app:layout_constraintStart_toStartOf="@+id/title"
+        app:layout_constraintTop_toBottomOf="@+id/description"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
