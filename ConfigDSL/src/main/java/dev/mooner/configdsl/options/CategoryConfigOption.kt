@@ -9,21 +9,23 @@ package dev.mooner.configdsl.options
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.ColorInt
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.configdsl.*
-import dev.mooner.configdsl.adapters.CategoryRecyclerAdapter
 import dev.mooner.configdsl.utils.hasFlag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonObject
 
 class CategoryConfigOption(
@@ -42,9 +44,18 @@ class CategoryConfigOption(
     override val description : String? = null
     override val dependency  : String? = null
 
-    private val childAdapters: MutableList<CategoryRecyclerAdapter> = arrayListOf()
-    private val eventScope: CoroutineScope =
-        CoroutineScope(Dispatchers.IO)
+    private val childEvents = MutableSharedFlow<EventData>(extraBufferCapacity = Channel.UNLIMITED)
+    private val eventScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var eventJob: Job? = null
+
+    private val values: MutableMap<String, JsonElement> = hashMapOf()
+    private val dependencyValues: MutableMap<String, Boolean> = hashMapOf()
+    private var boundData: Map<String, JsonElement>? = null
+    private var boundHolder: CategoryViewHolder? = null
+
+    init {
+        childOptions.forEach { it.init(childEvents) }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup): CategoryViewHolder {
         val view = LayoutInflater
@@ -60,31 +71,14 @@ class CategoryConfigOption(
         JsonObject(value)
 
     override fun onDraw(holder: CategoryViewHolder, data: MutableMap<String, JsonElement>) {
-        // Implemented in ParentConfigAdapter.kt
-        val childAdapter = CategoryRecyclerAdapter(
-            options    = childOptions,
-            optionData = data,
-            eventScope = eventScope,
-        )
-        val mLayoutManager = LinearLayoutManager(holder.itemView.context)
-        holder.itemList.apply {
-            adapter = childAdapter
-            layoutManager = mLayoutManager
+        if (eventJob?.isActive != true)
+            eventJob = childEvents.onEach(::onChildEvent).launchIn(eventScope)
+        if (data !== boundData) {
+            boundData = data
+            values.clear()
+            values.putAll(data)
+            dependencyValues.clear()
         }
-        childAdapter.eventFlow
-            .filterIsInstance<ValueUpdateData>()
-            .onEach {
-                tryEmitData(RootUpdateData(
-                    rootId   = id,
-                    provider = it.provider,
-                    data     = it.data,
-                    jsonData = it.jsonData
-                ))
-            }
-            .launchIn(eventScope)
-        childAdapter.notifyItemRangeInserted(0, childOptions.size)
-
-        childAdapters += childAdapter
 
         title.nullIfBlank()?.let {
             holder.title.apply {
@@ -93,16 +87,90 @@ class CategoryConfigOption(
                 setTextColor(textColor ?: context.getColor(R.color.text))
             }
         } ?: let {
-            holder.title.visibility = View.INVISIBLE
+            holder.title.visibility = View.GONE
         }
+
+        if (holder.boundOption !== this) {
+            holder.boundOption?.unbind(holder)
+            holder.inflateRows(childOptions)
+            holder.boundOption = this
+        }
+        boundHolder = holder
+        childOptions.forEachIndexed { index, option -> drawRow(option, holder.rows[index]) }
+        applyDependencies(holder)
     }
 
     override fun onDestroyed() {
-        eventScope.coroutineContext.cancelChildren()
-
-        childAdapters.forEach(CategoryRecyclerAdapter::destroy)
-        childAdapters.clear()
+        eventJob?.cancel()
+        eventJob = null
+        boundHolder = null
+        boundData = null
+        for (option in childOptions)
+            option.runCatching(ConfigOption<*, *>::onDestroyed)
     }
+
+    private fun unbind(holder: CategoryViewHolder) {
+        if (boundHolder === holder)
+            boundHolder = null
+    }
+
+    private fun onChildEvent(event: EventData) {
+        when (event) {
+            is ValueUpdateData -> {
+                values[event.provider] = event.jsonData
+                tryEmitData(RootUpdateData(
+                    rootId   = id,
+                    provider = event.provider,
+                    data     = event.data,
+                    jsonData = event.jsonData
+                ))
+            }
+            is DependencyUpdateData -> {
+                dependencyValues[event.provider] = event.data
+                boundHolder?.let(::applyDependencies)
+            }
+            is RedrawRequestData -> {
+                val holder = boundHolder ?: return
+                val index = childOptions.indexOfFirst { it.id == event.provider }
+                if (index != -1)
+                    drawRow(childOptions[index], holder.rows[index])
+            }
+        }
+    }
+
+    private fun drawRow(option: ConfigOption<*, *>, holder: BaseViewHolder) {
+        @Suppress("UNCHECKED_CAST")
+        option as ConfigOption<BaseViewHolder, Any>
+
+        if (holder is DefaultViewHolder) {
+            holder.title.text = option.displayTitle
+            holder.description.text = option.displayDescription
+            holder.description.visibility = if (option.displayDescription.isNullOrEmpty()) View.GONE else View.VISIBLE
+            option.icon.loadTo(holder.icon)
+        }
+
+        val value = values[option.id]
+            ?.let { json -> runCatching { option.dataFromJson(json) }.getOrNull() }
+            ?: option.default
+        option.onDraw(holder, value)
+    }
+
+    private fun applyDependencies(holder: CategoryViewHolder) {
+        childOptions.forEachIndexed { index, option ->
+            val dependency = option.dependency ?: return@forEachIndexed
+            val isInverted = dependency.startsWith('!')
+            val dependencyId = dependency.removePrefix("!")
+            val isEnabled = dependencyValueOf(dependencyId) ?: return@forEachIndexed
+            val enabled = isEnabled xor isInverted
+            holder.rows[index].setEnabled(enabled)
+            option.setEnabled(enabled)
+        }
+    }
+
+    private fun dependencyValueOf(id: String): Boolean? =
+        dependencyValues[id]
+            ?: (values[id] as? JsonPrimitive)?.booleanOrNull
+            ?: (childOptions.find { it.id == id } as? ToggleConfigOption)?.default
 
     private fun String.nullIfBlank(): String? =
         this.ifBlank { null }
@@ -116,8 +184,31 @@ class CategoryConfigOption(
 
     class CategoryViewHolder(itemView: View): BaseViewHolder(itemView) {
 
-        val title   : TextView     = itemView.findViewById(R.id.title)
-        val itemList: RecyclerView = itemView.findViewById(R.id.recyclerViewCategory)
+        val title    : TextView     = itemView.findViewById(R.id.title)
+        val container: LinearLayout = itemView.findViewById(R.id.itemContainer)
+
+        internal var boundOption: CategoryConfigOption? = null
+        internal val rows: MutableList<BaseViewHolder> = arrayListOf()
+
+        internal fun inflateRows(options: List<ConfigOption<*, *>>) {
+            container.removeAllViews()
+            rows.clear()
+            val dividerInset = container.resources.getDimensionPixelSize(R.dimen.configdsl_divider_inset)
+            val dividerEndInset = container.resources.getDimensionPixelSize(R.dimen.card_radius)
+            options.forEachIndexed { index, option ->
+                if (index > 0)
+                    container.addView(View(container.context).apply {
+                        setBackgroundResource(R.color.configdsl_divider)
+                        layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1).apply {
+                            marginStart = dividerInset
+                            marginEnd = dividerEndInset
+                        }
+                    })
+                val row = option.onCreateViewHolder(container)
+                container.addView(row.itemView)
+                rows += row
+            }
+        }
 
         override fun setEnabled(enabled: Boolean) {}
     }

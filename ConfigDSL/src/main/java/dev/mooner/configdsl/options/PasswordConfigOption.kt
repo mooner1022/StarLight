@@ -62,14 +62,14 @@ data class PasswordConfigOption(
                         hasError = false
                 }.show {
                     setCommonAttrs()
-                    title(text = title)
+                    title(text = displayTitle)
 
-                    positiveButton(text = "설정") { dialog ->
+                    positiveButton(R.string.ok) { dialog ->
                         val password = dialog.getInputField().text.toString()
                         val encoded = hashCode(password)
                         notifyUpdated(encoded)
                     }
-                    negativeButton(text = "취소", click = MaterialDialog::dismiss)
+                    negativeButton(R.string.cancel, click = MaterialDialog::dismiss)
                 }
         }
     }

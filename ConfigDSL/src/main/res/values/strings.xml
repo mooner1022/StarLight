@@ -8,4 +8,6 @@
     <string name="finish">Finish</string>
     <string name="create">Create</string>
     <string name="edit">Edit</string>
+    <string name="configdsl_warning">Warning</string>
+    <string name="configdsl_color_not_selected">No color was selected, so nothing was saved.</string>
 </resources>

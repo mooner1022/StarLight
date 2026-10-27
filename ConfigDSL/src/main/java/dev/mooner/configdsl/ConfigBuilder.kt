@@ -1,6 +1,7 @@
 package dev.mooner.configdsl
 
 import android.graphics.Color
+import android.util.Log
 import android.view.View
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
@@ -78,7 +79,12 @@ class ConfigBuilder {
     }
 
     class CategoryConfigBuilder {
-        var id: String by notNull()
+        private var _id: String? = null
+        var id: String
+            get() = _id ?: error("Config category '${title ?: "(untitled)"}' is missing an id")
+            set(value) {
+                _id = value
+            }
         var title: String? = null
         @ColorInt
         var textColor: Int? = null
@@ -93,7 +99,8 @@ class ConfigBuilder {
         }
 
         fun build(): CategoryConfigOption {
-            require(items.isNotEmpty()) { "Field 'items' must not be empty" }
+            require(items.isNotEmpty()) { "Category '$id' must have at least one item" }
+            validateItems(id, items)
 
             return CategoryConfigOption(
                 id = id,
@@ -151,3 +158,19 @@ class ConfigItemBuilder {
         abstract fun build(): ConfigOption<*, *>
     }
 }
+
+private fun validateItems(categoryId: String, items: List<ConfigOption<*, *>>) {
+    val ids: MutableSet<String> = hashSetOf()
+    for (item in items) {
+        require(':' !in item.id) { "Config option id '${item.id}' in category '$categoryId' must not contain ':'" }
+        if (!ids.add(item.id))
+            Log.w(LOG_TAG, "Duplicated config option id '${item.id}' in category '$categoryId'")
+    }
+    for (item in items) {
+        val dependency = item.dependency?.removePrefix("!") ?: continue
+        if (dependency !in ids)
+            Log.w(LOG_TAG, "Config option '${item.id}' in category '$categoryId' depends on unknown option '$dependency'")
+    }
+}
+
+private const val LOG_TAG = "ConfigDSL"

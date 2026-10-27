@@ -81,16 +81,21 @@ data class ListConfigOption(
             notifyUpdated(cfgList)
         }
         val itemTouchCallback = createItemTouchAdapter(recyclerAdapter)
-        ItemTouchHelper(itemTouchCallback).attachToRecyclerView(holder.recyclerViewList)
+        holder.touchHelper?.attachToRecyclerView(null)
+        holder.touchHelper = ItemTouchHelper(itemTouchCallback).also {
+            it.attachToRecyclerView(holder.recyclerViewList)
+        }
         this.itemTouchCallback = itemTouchCallback
 
         holder.recyclerViewList.apply {
             //itemAnimator = FadeInUpAnimator()
-            layoutManager = LinearLayoutManager(context)
+            if (layoutManager == null)
+                layoutManager = LinearLayoutManager(context)
             adapter = recyclerAdapter
-            addItemDecoration(MaterialDividerItemDecoration(context, MaterialDividerItemDecoration.VERTICAL).apply {
-                isLastItemDecorated = false
-            })
+            if (itemDecorationCount == 0)
+                addItemDecoration(MaterialDividerItemDecoration(context, MaterialDividerItemDecoration.VERTICAL).apply {
+                    isLastItemDecorated = false
+                })
         }
         recyclerAdapter.notifyItemRangeInserted(0, data.size)
 
@@ -149,6 +154,8 @@ data class ListConfigOption(
 
         val buttonAddList: Button = itemView.findViewById(R.id.buttonAdd)
         val recyclerViewList: RecyclerView = itemView.findViewById(R.id.recyclerView)
+
+        internal var touchHelper: ItemTouchHelper? = null
 
         override fun setEnabled(enabled: Boolean) {
             super.setEnabled(enabled)

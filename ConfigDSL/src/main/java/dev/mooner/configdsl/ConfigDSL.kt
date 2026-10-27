@@ -32,8 +32,4 @@ object ConfigDSL {
     ): ParentConfigAdapter<*> =
         this.createInstance(configStructure, configData, coroutineContext)
      */
-
-    internal fun getIsDevMode(): Boolean {
-        return true
-    }
 }
