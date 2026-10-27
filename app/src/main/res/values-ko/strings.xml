@@ -128,6 +128,7 @@
     <string name="widget_messages">메시지</string>
     <string name="widget_errors">오류</string>
     <string name="widget_jobs">실행 중 작업</string>
+    <string name="widget_script">스크립트</string>
 
     <string name="api_cannot_send_to_room">메세지가 수신되지 않은 방 \'%s\' 에 메세지를 보낼 수 없습니다.</string>
 </resources>

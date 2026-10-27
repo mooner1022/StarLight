@@ -132,6 +132,7 @@
     <string name="widget_messages">Messages</string>
     <string name="widget_errors">Errors</string>
     <string name="widget_jobs">Running jobs</string>
+    <string name="widget_script">Script</string>
 
     <string name="api_cannot_send_to_room">Cannot send message to a room \'%s\' without receiving initial message.</string>
 </resources>

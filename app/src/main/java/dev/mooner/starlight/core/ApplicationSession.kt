@@ -15,6 +15,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.api.api2.AppApi
 import dev.mooner.starlight.api.api2.BotManagerApi
 import dev.mooner.starlight.api.api2.BroadcastApi
+import dev.mooner.starlight.api.api2.HomeWidgetApi
 import dev.mooner.starlight.api.legacy.*
 import dev.mooner.starlight.api.node.EventEmitterApi
 import dev.mooner.starlight.api.original.*
@@ -37,6 +38,7 @@ import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.stats.LogStats
 import dev.mooner.starlight.stats.MessageStats
+import dev.mooner.starlight.stats.ScriptWidgetEntries
 import dev.mooner.starlight.ui.widget.*
 import dev.mooner.starlight.utils.getKakaoTalkVersion
 import kotlinx.coroutines.Dispatchers
@@ -144,10 +146,12 @@ object ApplicationSession {
             addApi(AppApi())
             addApi(BroadcastApi())
             addApi(BotManagerApi())
+            addApi(HomeWidgetApi())
         }
 
         LogStats.start()
         MessageStats.start()
+        ScriptWidgetEntries.start()
 
         Session.widgetManager.apply {
             //val name = "기본 위젯"
@@ -157,6 +161,7 @@ object ApplicationSession {
             addWidget(pContext, ErrorMonitorWidget)
             addWidget(pContext, JobsWidget)
             addWidget(pContext, MessageActivityWidget)
+            addWidget(pContext, ScriptWidget)
             if (GlobalConfig.category("dev").getBoolean("dev_mode", false)) {
                 addWidget(pContext, DummyWidgetSlim::class.java)
                 addWidget(pContext, LogGenWidget::class.java)
