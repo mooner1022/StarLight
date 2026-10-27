@@ -38,6 +38,8 @@
     <color name="lighter_black">#C3C3C3</color>
     <color name="white">#FFFFFFFF</color>
     <color name="transparent">#00FFFFFF</color>
+    <color name="configdsl_divider">#12000000</color>
+    <color name="configdsl_field">#F2F2F5</color>
     <color name="dialog_day">#4A515B</color>
     <color name="splash_background">#1B1B23</color>
     <color name="sub_dark">#8E82C9</color>

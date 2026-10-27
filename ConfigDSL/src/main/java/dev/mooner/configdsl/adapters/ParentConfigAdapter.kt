@@ -9,16 +9,13 @@ package dev.mooner.configdsl.adapters
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.configdsl.*
-import dev.mooner.configdsl.ConfigDSL.getIsDevMode
-import dev.mooner.configdsl.options.CategoryConfigOption
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.CoroutineContext
-
-private typealias HashCode = Int
+import kotlin.reflect.KClass
 
 class ParentConfigAdapter(
     private var configStructure  : ConfigStructure,
@@ -26,11 +23,9 @@ class ParentConfigAdapter(
     coroutineContext : CoroutineContext,
 ): RecyclerView.Adapter<BaseViewHolder>() {
 
-    //private var descCache: MutableMap<String, String> = hashMapOf()
     private val eventScope = CoroutineScope(coroutineContext + SupervisorJob())
 
-    //private var childAdapters : MutableList<CategoryRecyclerAdapter> = arrayListOf()
-    private val viewTypes     : MutableList<HashCode> = arrayListOf()
+    private val viewTypes     : MutableMap<KClass<*>, Int> = hashMapOf()
     private val viewInstances : MutableList<RootConfigOption<*, *>> = arrayListOf()
 
     private val eventPublisher = MutableSharedFlow<ConfigOption.EventData>(
@@ -42,37 +37,25 @@ class ParentConfigAdapter(
     val isHavingError: Boolean
         get() = configStructure.any(RootConfigOption<*, *>::hasError)
 
-    override fun getItemViewType(position: Int): Int {
-        val viewData = configStructure[position]
-
-        return viewTypes.indexOf(viewData::class.hashCode())
-    }
+    override fun getItemViewType(position: Int): Int =
+        viewTypes.getValue(configStructure[position]::class)
 
     override fun getItemCount(): Int =
-        if (getIsDevMode())
-            configStructure.size
-        else
-            configStructure.count { it !is CategoryConfigOption || !it.isDevModeOnly }
+        configStructure.size
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
-        val instance = viewInstances[viewType]
-        return instance.onCreateViewHolder(parent)
-    }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder =
+        viewInstances[viewType].onCreateViewHolder(parent)
 
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
-        val posData = configStructure[position]
-        val viewData = if (posData is CategoryConfigOption && posData.isDevModeOnly) {
-            if (getIsDevMode()) posData
-            else configStructure[position + 1]
-        } else posData
-
-        val childData = configData[viewData.id] ?: emptyMap()
+        val option = configStructure[position]
+        val childData = configData[option.id] ?: emptyMap()
         @Suppress("UNCHECKED_CAST")
-        (viewData as RootConfigOption<BaseViewHolder, Any>).onDraw(holder, childData)
+        (option as RootConfigOption<BaseViewHolder, Any>).onDraw(holder, childData)
     }
 
     fun updateStruct(structure: ConfigStructure) {
         configStructure = structure
+        register(structure)
     }
 
     fun updateData(data: MutableDataMap) {
@@ -90,15 +73,18 @@ class ParentConfigAdapter(
         configStructure.forEach(RootConfigOption<*, *>::onDestroyed)
     }
 
-    init {
-        for (option in configStructure) {
-            val hash = option::class.hashCode()
-            if (hash !in viewTypes) {
-                viewTypes     += hash
+    private fun register(structure: ConfigStructure) {
+        for (option in structure) {
+            viewTypes.getOrPut(option::class) {
                 viewInstances += option
+                viewInstances.lastIndex
             }
             option.init(eventPublisher)
         }
+    }
+
+    init {
+        register(configStructure)
 
         eventFlow
             .filterIsInstance<ConfigOption.RootUpdateData>()

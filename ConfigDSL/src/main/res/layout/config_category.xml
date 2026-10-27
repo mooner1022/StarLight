@@ -35,10 +35,11 @@
         app:layout_constraintTop_toBottomOf="@+id/title"
         app:cardCornerRadius="@dimen/card_radius">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewCategory"
+        <LinearLayout
+            android:id="@+id/itemContainer"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
     </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

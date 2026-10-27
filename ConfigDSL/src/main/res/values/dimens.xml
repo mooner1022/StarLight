@@ -49,4 +49,6 @@
     <dimen name="editor_chip_height">32dp</dimen>
 
     <dimen name="md_bottomsheet_horizontal_margin">0dp</dimen>
+
+    <dimen name="configdsl_divider_inset">56dp</dimen>
 </resources>

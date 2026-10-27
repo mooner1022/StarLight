@@ -5,6 +5,8 @@
     <color name="background_main">#000000</color>
     <color name="background">#000000</color>
     <color name="cardview">#171717</color>
+    <color name="configdsl_divider">#1AFFFFFF</color>
+    <color name="configdsl_field">#242424</color>
     <color name="background_dialog">#1a1a1a</color>
     <color name="background_card">#171717</color>
     <color name="background_selection_card">#202020</color>

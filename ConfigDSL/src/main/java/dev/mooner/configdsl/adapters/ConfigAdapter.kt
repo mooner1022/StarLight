@@ -61,7 +61,7 @@ class ConfigAdapter private constructor(
 
     fun redraw() {
         checkDestroyed()
-        parentAdapter?.notifyItemRangeChanged(0, configData.size)
+        parentAdapter?.let { it.notifyItemRangeChanged(0, it.itemCount) }
     }
 
     fun destroy() {
