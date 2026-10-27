@@ -42,7 +42,7 @@ object LogCollector {
 
     private val mLogs: MutableList<LogData> = createDeque()
     val logs: List<LogData>
-        get() = mLogs
+        get() = synchronized(mLogs) { mLogs.toList() }
 
     private fun createDeque(): ArrayDeque<LogData> {
         return logBufferMaxSize.let(::ArrayDeque)
@@ -53,10 +53,12 @@ object LogCollector {
             val data = event.log
 
             try {
-                if (mLogs.size >= logBufferMaxSize)
-                    (mLogs as ArrayDeque).removeAt(0)
-                if (appendInternalLog || data.type.priority >= LogType.VERBOSE.priority)
-                    mLogs += data
+                synchronized(mLogs) {
+                    if (mLogs.size >= logBufferMaxSize)
+                        (mLogs as ArrayDeque).removeAt(0)
+                    if (appendInternalLog || data.type.priority >= LogType.VERBOSE.priority)
+                        mLogs += data
+                }
 
                 if (data.type.priority >= LogType.DEBUG.priority) {
                     logFile.appendText("$data\n")
@@ -77,7 +79,7 @@ object LogCollector {
             .getString("log_buffer_max_size", "100")
             .toIntOrNull()
             ?: return
-        if (mLogs.size > nSize) {
+        synchronized(mLogs) {
             while (mLogs.size > nSize) {
                 (mLogs as ArrayDeque).removeAt(0)
             }
