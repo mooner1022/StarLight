@@ -4,18 +4,16 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.text.format.Formatter
+import android.view.LayoutInflater
 import android.widget.EditText
 import android.widget.Toast
 import coil.transform.RoundedCornersTransformation
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.customview.customView
 import dev.mooner.configdsl.Icon
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.color
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.editor.DefaultEditorActivity
 import dev.mooner.starlight.ui.tree.Node
 import dev.mooner.starlight.ui.tree.TreeAdapter
@@ -184,23 +182,27 @@ class FileTreeAdapter(
 
     @SuppressLint("CheckResult")
     private fun showRenameFileDialog(target: File) {
-        MaterialDialog(activity, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            setCommonAttrs()
-            customView(R.layout.dialog_editor_rename_file)
-            noAutoDismiss()
+        val content = LayoutInflater.from(activity).inflate(R.layout.dialog_editor_rename_file, null)
+        val nameInput: EditText = content.findViewById(R.id.edit_text_filename)
+        nameInput.hint = target.name
+        nameInput.setText(target.name)
 
-            val nameInput: EditText = findViewById(R.id.edit_text_filename)!!
-            nameInput.hint = target.name
-            nameInput.setText(target.name)
-
-            positiveButton(res = R.string.ok) {
+        activity.showSheet {
+            title = translate {
+                Locale.ENGLISH { "Rename" }
+                Locale.KOREAN  { "이름 변경" }
+            }
+            icon = R.drawable.ic_round_edit_24
+            content(content)
+            negative(R.string.cancel)
+            positive(R.string.ok, autoDismiss = false) {
                 if (nameInput.text.toString() == target.name)
-                    return@positiveButton it.dismiss()
+                    return@positive it.dismiss()
                 val error = validateFileName(nameInput.text.toString(), target.parentFile)
                 if (error != null) {
                     nameInput.error = error
                     nameInput.requestFocus()
-                    return@positiveButton
+                    return@positive
                 }
 
                 val file = File(target.parentFile, nameInput.text.toString())

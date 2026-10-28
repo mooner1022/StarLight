@@ -22,14 +22,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.bottomsheets.gridItems
-import com.afollestad.materialdialogs.callbacks.onDismiss
-import com.afollestad.materialdialogs.customview.customView
-import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.google.android.material.chip.Chip
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.DialogLogFilterBinding
@@ -42,8 +34,10 @@ import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogType
+import dev.mooner.starlight.ui.common.Sheet
+import dev.mooner.starlight.ui.common.SheetGridItem
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.dp
-import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
 import kotlinx.coroutines.launch
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
@@ -193,14 +187,13 @@ class LogsFragment : Fragment(), OnClickListener {
     context(lifecycle: LifecycleOwner)
     @SuppressLint("CheckResult")
     private fun showLogFilterConfigDialog(context: Context) {
-        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
-            setCommonAttrsWithLifecycle()
-            lifecycleOwner(lifecycle)
-            title(res = R.string.log_filter_settings)
-
-            val inflater = LayoutInflater.from(context as Activity)
-            val binding = DialogLogFilterBinding.inflate(inflater)
-            customView(view = binding.root, scrollable = true)
+        val binding = DialogLogFilterBinding.inflate(LayoutInflater.from(context))
+        lateinit var sheet: Sheet
+        sheet = context.showSheet {
+            lifecycleOwner = lifecycle
+            title = getString(R.string.log_filter_settings)
+            icon = dev.mooner.configdsl.R.drawable.round_filter_alt_24
+            content(binding.root)
 
             binding.cardViewClearFilter.setOnClickListener {
                 autoScroll = true
@@ -218,7 +211,7 @@ class LogsFragment : Fragment(), OnClickListener {
                         remove("message_regex")
                     }
                 }
-                dismiss()
+                sheet.dismiss()
             }
 
             binding.chipGroupTags.apply {
@@ -242,8 +235,8 @@ class LogsFragment : Fragment(), OnClickListener {
             binding.editTextTags.setText(tags.joinToString(","))
             binding.editTextMessage.setText(msgRegex?.pattern() ?: "")
 
-            negativeButton(res = R.string.cancel, click = MaterialDialog::dismiss)
-            positiveButton(res = R.string.ok) {
+            negative(R.string.cancel)
+            positive(R.string.ok, autoDismiss = false) {
                 types = binding.chipGroupTags.checkedChipIds.map(logTypes::get)
                 tags  = binding.editTextTags.text.toString()
                     .ifBlank { null }
@@ -254,7 +247,7 @@ class LogsFragment : Fragment(), OnClickListener {
                                 error = "유효하지 않은 태그 값"
                                 requestFocus()
                             }
-                            return@positiveButton
+                            return@positive
                         }
                     }
                     ?.map(String::trim) ?: emptyList()
@@ -268,7 +261,7 @@ class LogsFragment : Fragment(), OnClickListener {
                                 error = "유효하지 않은 정규식"
                                 requestFocus()
                             }
-                            return@positiveButton
+                            return@positive
                         }
                     }
 
@@ -284,25 +277,23 @@ class LogsFragment : Fragment(), OnClickListener {
     context(lifecycle: LifecycleOwner)
     @SuppressLint("CheckResult")
     private fun showModeSelectDialog(context: Context) {
-        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            var type: LogItem.ViewType = itemAdapter?.viewType ?: LogItem.ViewType.NORMAL
-            with(lifecycle) {
-                setCommonAttrsWithLifecycle()
-            }
+        var type: LogItem.ViewType = itemAdapter?.viewType ?: LogItem.ViewType.NORMAL
+        context.showSheet {
+            lifecycleOwner = lifecycle
+            title = "로그 표시 모드"
+            icon = R.drawable.ic_round_view_day_24
 
-            title(text = "로그 표시 모드")
-            
             val items = listOf(
-                BasicGridItem(
-                    iconRes = R.drawable.ic_round_projects_24,
+                SheetGridItem(
+                    icon = R.drawable.ic_round_projects_24,
                     title = getString(R.string.log_type_card),
                 ),
-                BasicGridItem(
-                    iconRes = dev.mooner.configdsl.R.drawable.ic_round_format_list_bulleted_24,
+                SheetGridItem(
+                    icon = dev.mooner.configdsl.R.drawable.ic_round_format_list_bulleted_24,
                     title = getString(R.string.log_type_text),
                 ),
             )
-            gridItems(items) { _, idx, _ ->
+            grid(items, selected = if (type == LogItem.ViewType.NORMAL) 0 else 1, columns = 2) { _, idx ->
                 type = when(idx) {
                     0 -> LogItem.ViewType.NORMAL
                     1 -> LogItem.ViewType.TEXT

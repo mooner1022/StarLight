@@ -18,19 +18,12 @@ import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.CheckBox
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.getSystemService
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.bottomsheets.gridItems
-import com.afollestad.materialdialogs.callbacks.onDismiss
-import com.afollestad.materialdialogs.customview.customView
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import dev.mooner.peekalert.PeekAlert
@@ -45,13 +38,13 @@ import dev.mooner.starlight.plugincore.plugin.InstalledPlugin
 import dev.mooner.starlight.plugincore.plugin.PluginChange
 import dev.mooner.starlight.plugincore.plugin.PluginInfo
 import dev.mooner.starlight.plugincore.plugin.PluginState
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.plugins.store.PluginStoreActivity
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
 import dev.mooner.starlight.utils.createFailurePeek
 import dev.mooner.starlight.utils.createSuccessPeek
 import dev.mooner.starlight.utils.restartApplication
-import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -154,14 +147,15 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
             setPluginEnabled(item, info, enabled)
             return
         }
-        MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            setCommonAttrsWithLifecycle()
-            title(text = getString(R.string.plugin_disable_title, info.name))
-            message(text = getString(R.string.plugin_dependents_warning, dependents.joinToString()))
-            positiveButton(res = R.string.plugin_disable) {
+        requireContext().showSheet {
+            lifecycleOwner = viewLifecycleOwner
+            title = getString(R.string.plugin_disable_title, info.name)
+            message = getString(R.string.plugin_dependents_warning, dependents.joinToString())
+            icon = R.drawable.ic_round_warning_24
+            positive(R.string.plugin_disable) {
                 setPluginEnabled(item, info, false)
             }
-            negativeButton(res = R.string.cancel)
+            negative(R.string.cancel)
             onDismiss { item.tryUpdateView() }
         }
     }
@@ -257,11 +251,12 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
 
         val context = requireContext()
         var installed = false
-        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            setCommonAttrsWithLifecycle()
-            title(res = R.string.plugin_install_title)
-            message(text = message)
-            positiveButton(res = R.string.plugin_install) {
+        context.showSheet {
+            lifecycleOwner = viewLifecycleOwner
+            title = getString(R.string.plugin_install_title)
+            this.message = message
+            icon = R.drawable.ic_round_plugins_24
+            positive(R.string.plugin_install) {
                 installed = true
                 viewLifecycleOwner.lifecycleScope.launch {
                     val result = runCatching {
@@ -281,7 +276,7 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
                         }
                 }
             }
-            negativeButton(res = R.string.cancel)
+            negative(R.string.cancel)
             onDismiss {
                 if (!installed)
                     file.delete()
@@ -318,15 +313,16 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
     }
 
     private fun showAlignDialog() =
-        MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            setCommonAttrsWithLifecycle()
-            gridItems(aligns.toGridItems()) { dialog, _, item ->
-                alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
-                isReversed = dialog.findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked
+        requireContext().showSheet {
+            lifecycleOwner = viewLifecycleOwner
+            title = getString(R.string.align_title)
+            icon = R.drawable.ic_round_sort_by_alpha_24
+            grid(aligns.toGridItems(), selected = aligns.indexOf(alignState)) { sheet, index ->
+                alignState = aligns[index]
+                isReversed = sheet.isChecked(0)
                 update()
             }
-            customView(R.layout.dialog_align_plugins)
-            findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked = isReversed
+            checkbox(R.string.align_reversed, isReversed)
         }
 
     private fun getAlignByName(name: String): Align<PluginListItem>? =

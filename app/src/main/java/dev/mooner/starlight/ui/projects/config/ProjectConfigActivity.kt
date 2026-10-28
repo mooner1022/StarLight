@@ -13,9 +13,6 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import coil.load
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.Icon
@@ -36,6 +33,7 @@ import dev.mooner.starlight.plugincore.config.data.*
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -380,16 +378,11 @@ class ProjectConfigActivity: AppCompatActivity() {
                         id = "delete_project"
                         title = "프로젝트 제거"
                         setOnClickListener { _ ->
-                            MaterialDialog(
-                                binding.root.context,
-                                BottomSheet(LayoutMode.WRAP_CONTENT)
-                            ).noAutoDismiss().show {
-                                setCommonAttrsWithLifecycle()
-                                cancelOnTouchOutside(true)
-                                //icon(res = R.drawable.ic_round_delete_forever_24)
-                                title(text = "프로젝트를 정말로 제거할까요?")
-                                message(text = "주의: 프로젝트 제거시 복구가 불가합니다.")
-                                positiveButton(text = context.getString(R.string.delete)) {
+                            showSheet {
+                                title = "프로젝트를 정말로 제거할까요?"
+                                message = "주의: 프로젝트 제거시 복구가 불가합니다."
+                                icon = R.drawable.ic_round_delete_forever_24
+                                positive(R.string.delete) {
                                     projectManager.removeProject(
                                         project,
                                         removeFiles = true
@@ -399,12 +392,9 @@ class ProjectConfigActivity: AppCompatActivity() {
                                         "프로젝트를 제거했어요.",
                                         Snackbar.LENGTH_SHORT
                                     ).show()
-                                    dismiss()
                                     finish()
                                 }
-                                negativeButton(text = context.getString(R.string.close)) {
-                                    dismiss()
-                                }
+                                negative(R.string.close)
                             }
                         }
                         icon = Icon.DELETE_SWEEP
@@ -417,24 +407,19 @@ class ProjectConfigActivity: AppCompatActivity() {
     }
 
     private fun showProjectRenameDialog() {
-        MaterialDialog(
-            this,
-            BottomSheet(LayoutMode.WRAP_CONTENT)
-        ).noAutoDismiss().show {
-            var name: String? = null
-            var updateMainScript = true
+        var name: String? = null
+        var updateMainScript = true
 
-            setCommonAttrsWithLifecycle()
-            cancelOnTouchOutside(true)
-            //icon(res = R.drawable.ic_round_delete_forever_24)
-            title(text = translate { 
+        showSheet {
+            title = translate {
                 Locale.ENGLISH { "Rename project" }
                 Locale.KOREAN  { "프로젝트 이름 변경" }
-            })
-            message(text = translate {
+            }
+            message = translate {
                 Locale.ENGLISH { "What name should it be changed to?" }
                 Locale.KOREAN  { "어떤 이름으로 변경할까요?" }
-            })
+            }
+            icon = R.drawable.ic_round_edit_24
             configStruct(this@ProjectConfigActivity) {
                 struct {
                     category {
@@ -488,9 +473,9 @@ class ProjectConfigActivity: AppCompatActivity() {
                     )
                 }
             }
-            positiveButton(text = context.getString(R.string.ok)) {
+            positive(R.string.ok, autoDismiss = false) { sheet ->
                 if (name == null)
-                    return@positiveButton
+                    return@positive
                 project.rename(name!!, !updateMainScript)
                 Snackbar.make(
                     binding.root,
@@ -500,12 +485,10 @@ class ProjectConfigActivity: AppCompatActivity() {
                     },
                     Snackbar.LENGTH_SHORT
                 ).show()
-                dismiss()
+                sheet.dismiss()
                 finish()
             }
-            negativeButton(text = context.getString(R.string.cancel)) {
-                dismiss()
-            }
+            negative(R.string.cancel)
         }
     }
 }

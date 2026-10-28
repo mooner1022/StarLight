@@ -50,8 +50,8 @@ class SheetBuilder internal constructor(private val context: Context) {
     internal var content: ((LayoutInflater, LinearLayout) -> Unit)? = null
     internal var isContentScrollable = true
     internal var grid: SheetGrid? = null
-    internal var onShow: ((Sheet) -> Unit)? = null
-    internal var onDismiss: (() -> Unit)? = null
+    internal val onShow = mutableListOf<(Sheet) -> Unit>()
+    internal val onDismiss = mutableListOf<() -> Unit>()
 
     fun positive(text: CharSequence, autoDismiss: Boolean = true, action: (Sheet) -> Unit = {}) {
         positive = SheetAction(text, autoDismiss, action)
@@ -91,11 +91,11 @@ class SheetBuilder internal constructor(private val context: Context) {
     }
 
     fun onShow(block: (Sheet) -> Unit) {
-        onShow = block
+        onShow += block
     }
 
     fun onDismiss(block: () -> Unit) {
-        onDismiss = block
+        onDismiss += block
     }
 }
 
@@ -204,11 +204,11 @@ fun Context.showSheet(block: SheetBuilder.() -> Unit): Sheet {
 
     dialog.setOnShowListener {
         binding.playEnterAnimation()
-        builder.onShow?.invoke(sheet)
+        builder.onShow.forEach { it(sheet) }
     }
     dialog.setOnDismissListener {
         owner?.lifecycle?.removeObserver(observer)
-        builder.onDismiss?.invoke()
+        builder.onDismiss.forEach { it() }
     }
     dialog.show()
     return sheet

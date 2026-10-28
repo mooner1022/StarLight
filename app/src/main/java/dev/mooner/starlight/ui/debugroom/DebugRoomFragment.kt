@@ -24,10 +24,6 @@ import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMarginsRelative
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.snackbar.Snackbar
@@ -55,6 +51,7 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.plugincore.utils.fireEvent
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 import dev.mooner.starlight.utils.dp
 import dev.mooner.starlight.utils.toBitmap
@@ -304,16 +301,14 @@ class DebugRoomFragment: Fragment() {
     private fun showErrorSnackbar(e: Throwable) {
         Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
             setAction("자세히 보기") {
-                MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                    cornerRadius(25f)
-                    cancelOnTouchOutside(false)
-                    noAutoDismiss()
-                    lifecycleOwner(this@DebugRoomFragment)
-                    title(text = project.info.name + " 에러 로그")
-                    message(text = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString())
-                    positiveButton(text = "닫기") {
-                        dismiss()
-                    }
+                view.context.showSheet {
+                    title = project.info.name + " 에러 로그"
+                    icon = R.drawable.ic_round_error_outline_24
+                    message = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString()
+                    isMessageSelectable = true
+                    cancelOnTouchOutside = false
+                    lifecycleOwner = viewLifecycleOwner
+                    positive(R.string.close)
                 }
             }
         }.show()

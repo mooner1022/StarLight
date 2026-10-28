@@ -20,9 +20,6 @@ import androidx.core.view.*
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.adapters.ConfigAdapter
@@ -50,6 +47,7 @@ import dev.mooner.starlight.plugincore.project.event.getInstance
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.color
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.debugroom.DebugRoomActivity
 import dev.mooner.starlight.ui.debugroom.DebugRoomFragment
 import dev.mooner.starlight.ui.editor.drawer.EditorMessageFragment
@@ -1017,16 +1015,16 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     }
 
     private fun showUnsavedDialog(title: String, message: String, onSave: () -> Unit, onDiscard: () -> Unit) {
-        MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            setCommonAttrs()
-            title(text = title)
-            message(text = message)
-            positiveButton(text = translate {
+        showSheet {
+            this.title = title
+            this.message = message
+            icon = R.drawable.ic_round_save_24
+            positive(translate {
                 Locale.ENGLISH { "Save" }
                 Locale.KOREAN  { "저장" }
             }) { onSave() }
-            negativeButton(res = R.string.cancel)
-            neutralButton(text = translate {
+            negative(R.string.cancel)
+            neutral(translate {
                 Locale.ENGLISH { "Don't save" }
                 Locale.KOREAN  { "저장 안 함" }
             }) { onDiscard() }

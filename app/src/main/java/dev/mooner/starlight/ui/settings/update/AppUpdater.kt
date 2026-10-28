@@ -16,18 +16,15 @@ import androidx.core.content.edit
 import androidx.core.database.getLongOrNull
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.VersionChecker
 import dev.mooner.starlight.utils.createSimplePeek
 import dev.mooner.starlight.utils.getAppVersionCode
 import dev.mooner.starlight.utils.getPackageInfo
-import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
 import io.noties.markwon.AbstractMarkwonPlugin
 import io.noties.markwon.Markwon
 import io.noties.markwon.MarkwonVisitor
@@ -118,18 +115,13 @@ class AppUpdater(private val activity: ComponentActivity) {
                 """.trimMargin()
             )
 
-        MaterialDialog(activity, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
-            with(activity) { setCommonAttrsWithLifecycle() }
-            cancelOnTouchOutside(false)
-            title(text = "새로운 버전 확인 (*˙˘˙*)!")
-            message(text = markdown)
-            positiveButton(res = R.string.ok) {
-                download(version)
-                dismiss()
-            }
-            negativeButton(res = R.string.cancel) {
-                dismiss()
-            }
+        activity.showSheet {
+            title = "새로운 버전 확인 (*˙˘˙*)!"
+            message = markdown
+            icon = dev.mooner.configdsl.R.drawable.ic_round_download_24
+            cancelOnTouchOutside = false
+            positive(R.string.ok) { download(version) }
+            negative(R.string.cancel)
         }
     }
 
