@@ -13,14 +13,11 @@ import androidx.fragment.app.commit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityPluginStoreBinding
+import dev.mooner.starlight.databinding.ItemStoreDependencyBinding
 import dev.mooner.starlight.utils.createSimplePeek
-import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
 import kotlinx.coroutines.launch
 
 class PluginStoreActivity : AppCompatActivity() {
@@ -74,24 +71,27 @@ class PluginStoreActivity : AppCompatActivity() {
             viewModel.install(listOf(plugin.id))
             return
         }
-        val (available, unavailable) = missing.partition { index.find(it) != null }
-        val message = buildString {
-            append(getString(
-                R.string.plugin_store_deps_message,
-                plugin.name,
-                available.joinToString("\n") { "✦ " + index.find(it)!!.name }
-            ))
-            if (unavailable.isNotEmpty())
-                append("\n\n").append(getString(R.string.plugin_store_deps_missing, unavailable.joinToString()))
-        }
-        MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            setCommonAttrsWithLifecycle()
-            title(res = R.string.plugin_store_deps_title)
-            message(text = message)
-            positiveButton(res = R.string.plugin_store_deps_install_all) {
+        val available = missing.mapNotNull { index.find(it.pluginId)?.id }
+        showStoreSheet {
+            title = getString(R.string.plugin_store_deps_title)
+            message = getString(R.string.plugin_store_deps_message, plugin.name)
+            icon = plugin.icon
+            content { inflater, parent ->
+                for (dependency in missing) {
+                    val target = index.find(dependency.pluginId)
+                    ItemStoreDependencyBinding.inflate(inflater, parent, true).apply {
+                        icon.setImageResource(target?.icon ?: R.drawable.ic_round_plugins_24)
+                        name.text = target?.name ?: dependency.pluginId
+                        version.text = "${dependency.pluginId} · ${dependencyRange(dependency)}"
+                        status.setText(if (target != null) R.string.plugin_store_deps_with else R.string.plugin_store_dep_unknown)
+                        status.setTextColor(getColor(if (target != null) R.color.store_gold_deep else R.color.status_error))
+                    }
+                }
+            }
+            positive(getString(R.string.plugin_store_deps_install_all)) {
                 viewModel.install(available + plugin.id)
             }
-            negativeButton(res = R.string.cancel)
+            negative(getString(R.string.cancel))
         }
     }
 

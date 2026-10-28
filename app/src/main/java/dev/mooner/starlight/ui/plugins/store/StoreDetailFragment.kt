@@ -318,11 +318,7 @@ class StoreDetailFragment : Fragment() {
             dependency to ItemStoreDependencyBinding.inflate(layoutInflater, binding.dependencies, true).apply {
                 icon.setImageResource(target?.icon ?: R.drawable.ic_round_plugins_24)
                 name.text = target?.name ?: dependency.pluginId
-                val range = if (dependency.supportedVersion == PluginDependency.VERSION_ANY)
-                    getString(R.string.plugin_store_dep_any)
-                else
-                    getString(R.string.plugin_store_dep_min, dependency.supportedVersion)
-                version.text = "${dependency.pluginId} · $range"
+                version.text = "${dependency.pluginId} · ${requireContext().dependencyRange(dependency)}"
                 if (target != null)
                     root.setOnClickListener { store.openDetail(target.id, null) }
             }

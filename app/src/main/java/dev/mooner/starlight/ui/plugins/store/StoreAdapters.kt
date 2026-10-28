@@ -16,6 +16,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ItemStoreFeaturedBinding
 import dev.mooner.starlight.databinding.ItemStorePluginBinding
 import dev.mooner.starlight.databinding.ItemStoreScreenshotBinding
+import dev.mooner.starlight.plugincore.plugin.PluginDependency
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -37,6 +38,12 @@ internal fun formatCount(count: Int): String =
 
 internal fun StoreIndex.categoryName(id: String): String =
     categories.find { it.id == id }?.name ?: id
+
+internal fun Context.dependencyRange(dependency: PluginDependency): String =
+    if (dependency.supportedVersion == PluginDependency.VERSION_ANY)
+        getString(R.string.plugin_store_dep_any)
+    else
+        getString(R.string.plugin_store_dep_min, dependency.supportedVersion)
 
 internal fun StorePlugin.authorNames(): String =
     authors.joinToString { it.name }

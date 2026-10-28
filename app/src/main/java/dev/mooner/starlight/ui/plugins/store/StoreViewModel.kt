@@ -3,6 +3,7 @@ package dev.mooner.starlight.ui.plugins.store
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.mooner.starlight.plugincore.Info
+import dev.mooner.starlight.plugincore.plugin.PluginDependency
 import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.ui.plugins.knownPlugins
 import kotlinx.coroutines.Job
@@ -94,10 +95,9 @@ class StoreViewModel : ViewModel() {
     fun installedVersionOf(id: String): Version? =
         installed.value[id]
 
-    fun missingDependencies(plugin: StorePlugin): List<String> =
+    fun missingDependencies(plugin: StorePlugin): List<PluginDependency> =
         plugin.latest.dependency
             .filter { !it.isOptional && it.pluginId !in installed.value && tasks.value[it.pluginId] == null }
-            .map { it.pluginId }
 
     fun install(ids: Collection<String>) {
         val index = (state.value as? StoreLoadState.Loaded)?.index ?: return

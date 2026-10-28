@@ -28,9 +28,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.carousel.CarouselLayoutManager
 import com.google.android.material.carousel.CarouselSnapHelper
 import com.google.android.material.carousel.HeroCarouselStrategy
@@ -38,7 +35,7 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.transition.Hold
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentStoreHomeBinding
-import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
+import dev.mooner.starlight.databinding.ItemStoreInfoBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -362,23 +359,28 @@ class StoreHomeFragment : Fragment() {
     }
 
     private fun showRepositorySheet() {
-        val index = shownIndex
-        MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            setCommonAttrsWithLifecycle()
-            title(res = R.string.plugin_store_repository)
-            if (index != null) {
-                val repository = index.repository
-                message(text = getString(
-                    R.string.plugin_store_repository_message,
-                    repository.name,
-                    repository.url,
-                    repository.branch,
-                    repository.commit,
-                    relativeTime(repository.syncedAt),
-                ))
-            }
-            positiveButton(res = R.string.plugin_store_reload) { viewModel.load() }
-            negativeButton(res = R.string.plugin_store_preview_error) { viewModel.load(simulateFailure = true) }
+        val repository = shownIndex?.repository
+        requireContext().showStoreSheet {
+            title = getString(R.string.plugin_store_repository)
+            icon = dev.mooner.configdsl.R.drawable.ic_github
+            note = getString(R.string.plugin_store_repository_message)
+            if (repository != null)
+                content { inflater, parent ->
+                    listOf(
+                        R.string.plugin_store_repository_name   to repository.name,
+                        R.string.plugin_store_repository_url    to repository.url.removePrefix("https://"),
+                        R.string.plugin_store_repository_branch to repository.branch,
+                        R.string.plugin_store_repository_commit to repository.commit,
+                        R.string.plugin_store_repository_synced to relativeTime(repository.syncedAt),
+                    ).forEach { (key, value) ->
+                        ItemStoreInfoBinding.inflate(inflater, parent, true).apply {
+                            this.key.setText(key)
+                            this.value.text = value
+                        }
+                    }
+                }
+            positive(getString(R.string.plugin_store_reload)) { viewModel.load() }
+            negative(getString(R.string.plugin_store_preview_error)) { viewModel.load(simulateFailure = true) }
         }
     }
 
