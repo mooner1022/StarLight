@@ -1,6 +1,8 @@
 package dev.mooner.starlight.plugincore.logger
 
 import dev.mooner.starlight.plugincore.utils.TimeUtils.Companion.formatMillis
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -15,6 +17,8 @@ data class LogData(
     val threadName: String = Thread.currentThread().name,
     @SerialName("m")
     val message: String,
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault
     @SerialName("l")
     val millis: Long = System.currentTimeMillis(),
     @Transient
