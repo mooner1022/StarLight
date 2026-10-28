@@ -90,7 +90,7 @@ class StarFieldView @JvmOverloads constructor(
             invalidate()
         }
 
-    var density: Float = 1f
+    var density: Float = 0.5f
         set(value) {
             if (field == value)
                 return
