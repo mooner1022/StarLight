@@ -53,17 +53,17 @@ internal fun Context.pluginStatus(entry: InstalledPlugin?, change: PluginChange?
     entry ?: return PluginStatus("", R.color.text_sub)
     val info = entry.info
     val version = info?.displayVersion().orEmpty()
-    return when (val state = entry.state) {
+    val state = entry.state
+    if (info != null && !entry.isDuplicate && state !is PluginState.Disabled && !pluginManager.isPluginEnabled(info.id))
+        return PluginStatus(getString(R.string.plugin_status_disable_pending), R.color.main_bright)
+    return when (state) {
         is PluginState.Loaded ->
-            if (pluginManager.isPluginEnabled(info!!.id))
-                PluginStatus(
-                    listOf(version, info.authors.joinToString(), Formatter.formatShortFileSize(this, entry.file.length()))
-                        .filter(String::isNotBlank)
-                        .joinToString(" · "),
-                    R.color.card_enabled
-                )
-            else
-                PluginStatus(getString(R.string.plugin_status_disable_pending), R.color.main_bright)
+            PluginStatus(
+                listOf(version, info!!.authors.joinToString(), Formatter.formatShortFileSize(this, entry.file.length()))
+                    .filter(String::isNotBlank)
+                    .joinToString(" · "),
+                R.color.card_enabled
+            )
         PluginState.Disabled ->
             if (pluginManager.isPluginEnabled(info!!.id))
                 PluginStatus(getString(R.string.plugin_status_enable_pending), R.color.main_bright)

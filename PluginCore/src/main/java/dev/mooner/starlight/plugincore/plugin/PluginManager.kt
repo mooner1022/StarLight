@@ -110,9 +110,9 @@ class PluginManager {
         if (id in _changes)
             return false
         return when (state) {
-            is PluginState.Loaded   -> !isPluginEnabled(id)
             is PluginState.Disabled -> isPluginEnabled(id)
-            else                    -> false
+            is PluginState.Invalid  -> false
+            else                    -> !isPluginEnabled(id)
         }
     }
 
