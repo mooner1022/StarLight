@@ -96,8 +96,24 @@
                 android:textSize="12sp"
                 app:drawableStartCompat="@drawable/ic_store_sparkle_small"
                 tools:text="샘플 데이터로 만든 목업이에요."/>
+
+            <LinearLayout
+                android:id="@+id/checkboxes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical"
+                android:visibility="gone"/>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout
+        android:id="@+id/fixedContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:visibility="gone"/>
 
     <View
         android:id="@+id/buttonsDivider"
@@ -115,6 +131,23 @@
         android:paddingHorizontal="24dp"
         android:paddingTop="14dp"
         android:paddingBottom="20dp">
+
+        <TextView
+            android:id="@+id/neutral"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_store_text_button"
+            android:fontFamily="@font/nanumsquare_neo_extrabold"
+            android:gravity="center"
+            android:paddingHorizontal="18dp"
+            android:textColor="@color/text_sub"
+            android:textSize="14sp"
+            tools:text="저장 안 함"/>
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
 
         <TextView
             android:id="@+id/negative"

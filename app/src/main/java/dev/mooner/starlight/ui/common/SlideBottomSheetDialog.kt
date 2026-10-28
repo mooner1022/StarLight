@@ -29,6 +29,7 @@ open class SlideBottomSheetDialog(context: Context) : BottomSheetDialog(context,
     init {
         behavior.skipCollapsed = true
         behavior.maxHeight = (context.resources.displayMetrics.heightPixels * MAX_HEIGHT_RATIO).toInt()
+        context.resources.getDimensionPixelSize(R.dimen.dialog_width).takeIf { it > 0 }?.let { behavior.maxWidth = it }
         behavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {}
 
@@ -71,6 +72,14 @@ open class SlideBottomSheetDialog(context: Context) : BottomSheetDialog(context,
             super.dismiss()
             isDismissing = false
         }
+    }
+
+    fun dismissImmediately() {
+        sheetAnimator?.removeAllListeners()
+        sheetAnimator?.cancel()
+        isDismissing = false
+        if (isShowing)
+            super.dismiss()
     }
 
     private fun animateSheet(sheet: View, target: Float, duration: Long, interpolator: TimeInterpolator, onEnd: (() -> Unit)? = null) {
