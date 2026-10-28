@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
-import android.view.animation.OvershootInterpolator
 import android.widget.CompoundButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -266,22 +265,6 @@ private fun DialogSheetBinding.updateDivider() {
 }
 
 private fun DialogSheetBinding.playEnterAnimation() {
-    iconFrame.scaleX = 0.4f
-    iconFrame.scaleY = 0.4f
-    iconFrame.animate()
-        .scaleX(1f).scaleY(1f)
-        .setStartDelay(60)
-        .setDuration(480)
-        .setInterpolator(OvershootInterpolator(2.4f))
-        .start()
-    icon.rotation = -120f
-    icon.animate()
-        .rotation(0f)
-        .setStartDelay(60)
-        .setDuration(620)
-        .setInterpolator(DecelerateInterpolator(2f))
-        .start()
-
     val offset = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, root.resources.displayMetrics)
     val targets = listOf(message) + content.children.toList() + listOf(note, checkboxes) + fixedContent.children.toList() + listOf(buttons)
     targets.filter { it.visibility == View.VISIBLE }.forEachIndexed { i, view ->
