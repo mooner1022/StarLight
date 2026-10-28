@@ -94,6 +94,7 @@
             android:minWidth="48dp"
             android:minHeight="48dp"
             android:thumb="@drawable/switch_thumb"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/arrow"
             app:layout_constraintTop_toTopOf="parent"

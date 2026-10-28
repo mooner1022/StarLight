@@ -150,8 +150,7 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
     override fun onToggle(item: PluginListItem, info: PluginInfo, enabled: Boolean) {
         val dependents = if (enabled) emptyList() else requiredDependentsOf(info.id)
         if (dependents.isEmpty()) {
-            pluginManager.setPluginEnabled(info.id, enabled)
-            onPluginsChanged()
+            setPluginEnabled(item, info, enabled)
             return
         }
         MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
@@ -159,11 +158,20 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
             title(text = getString(R.string.plugin_disable_title, info.name))
             message(text = getString(R.string.plugin_dependents_warning, dependents.joinToString()))
             positiveButton(res = R.string.plugin_disable) {
-                pluginManager.setPluginEnabled(info.id, false)
+                setPluginEnabled(item, info, false)
             }
             negativeButton(res = R.string.cancel)
-            onDismiss { onPluginsChanged() }
+            onDismiss { item.tryUpdateView() }
         }
+    }
+
+    private fun setPluginEnabled(item: PluginListItem, info: PluginInfo, enabled: Boolean) {
+        pluginManager.setPluginEnabled(info.id, enabled)
+        if (_binding == null)
+            return
+        item.tryUpdateView()
+        updateNotice()
+        updateTitle()
     }
 
     override fun onRemove(item: PluginListItem, key: String) {
@@ -360,7 +368,6 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
     private fun submitList() {
         val items = sortedItems()
         itemAdapter?.set(items)
-        items.forEach(PluginListItem::tryUpdateView)
         updateEmptyText(isFiltered = searchQuery.isNotEmpty(), isEmpty = items.isEmpty())
         updateNotice()
         updateTitle()

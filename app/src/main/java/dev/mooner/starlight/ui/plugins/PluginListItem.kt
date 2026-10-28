@@ -90,6 +90,10 @@ class PluginListItem(
     private fun isExpandable(): Boolean =
         change !is PluginChange.Removed
 
+    private fun canToggle(): Boolean =
+        info != null && change !is PluginChange.Removed &&
+                entry?.state !is PluginState.Invalid && entry?.isDuplicate != true
+
     private fun ItemPluginBinding.updateState() {
         val context = root.context
         val info = info
@@ -109,11 +113,8 @@ class PluginListItem(
             icon.load(R.drawable.ic_round_plugins_24)
         }
 
-        val canToggle = info != null && change !is PluginChange.Removed &&
-                entry?.state !is PluginState.Invalid && entry?.isDuplicate != true
         toggle.setOnCheckedChangeListener(null)
-        toggle.visibility = if (canToggle) View.VISIBLE else View.INVISIBLE
-        if (canToggle) {
+        if (canToggle()) {
             toggle.isChecked = pluginManager.isPluginEnabled(info!!.id)
             toggle.setOnCheckedChangeListener { _, isChecked ->
                 callback.onToggle(this@PluginListItem, info, isChecked)
@@ -139,6 +140,8 @@ class PluginListItem(
                     duration = ANIM_DURATION
                 })
             }
+        toggle.visibility = if (expanded && canToggle()) View.VISIBLE else View.GONE
+        subtitle.requestLayout()
         val actions = findActions(inflate = expanded)
         if (actions != null) {
             actions.root.visibility = if (expanded) View.VISIBLE else View.GONE
