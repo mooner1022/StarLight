@@ -60,6 +60,12 @@
     <string name="project_settings">Config</string>
     <string name="project_info">Info</string>
     <string name="project_favorite">Like</string>
+    <string name="new_project">New project</string>
+    <string name="project_search_hint">Search projects</string>
+    <string name="project_search_empty">No matching projects.</string>
+    <string name="project_status_running">Running</string>
+    <string name="project_status_off">Off</string>
+    <string name="project_status_not_compiled">Not compiled</string>
 
     <string name="aligned_by">Align: %s</string>
     <string name="default_placeholder" translatable="false">DEFAULT</string>
@@ -105,7 +111,6 @@
     <string name="editor_edit_file_name">Name to be changed</string>
 
     <string name="log_foreground_started">Successfully started foreground task!</string>
-    <string name="log_project_list_update_failure">Failed to update project list: index not found</string>
     <string name="log_filter_settings">Log filter</string>
     <string name="log_filter_auto_scroll">Auto scroll</string>
     <string name="log_filter_types">Types</string>
