@@ -10,14 +10,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.RecyclerView
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.callbacks.onDismiss
-import com.afollestad.materialdialogs.customview.customView
-import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
+import dev.mooner.configdsl.ConfigDSL
 import dev.mooner.configdsl.ConfigOption
 import dev.mooner.configdsl.R
 import dev.mooner.configdsl.options.OnDrawBlock
@@ -55,42 +49,36 @@ class ListRecyclerAdapter(
         holder.container.setOnClickListener {
             if (!isEnabled)
                 return@setOnClickListener
-            MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT))
-                .show {
-                    title(R.string.edit)
-                    cornerRadius(res = R.dimen.card_radius)
-                    if (context is LifecycleOwner)
-                        lifecycleOwner(context as LifecycleOwner)
-                    customView(R.layout.dialog_logs)
-
-                    val recycler: RecyclerView = findViewById(R.id.rvLog)
-
-                    val cloned = data[position].toMutableMap()
-                    val configAdapter = ConfigAdapter.Builder(view.context) {
-                        bind(recycler)
-                        configData(mutableMapOf("list_structure" to cloned))
-                        buildStruct {
-                            category {
-                                id = "list_structure"
-                                items = structure
-                            }
-                        }
-                        onValueUpdated { _, id, _, jsonData ->
-                            cloned[id] = jsonData
-                        }
-                    }.build()
-
-                    onDismiss {
-                        configAdapter.destroy()
+            val recycler = RecyclerView(context).apply {
+                overScrollMode = View.OVER_SCROLL_NEVER
+                isNestedScrollingEnabled = false
+            }
+            val cloned = data[position].toMutableMap()
+            val configAdapter = ConfigAdapter.Builder(context) {
+                bind(recycler)
+                configData(mutableMapOf("list_structure" to cloned))
+                buildStruct {
+                    category {
+                        id = "list_structure"
+                        items = structure
                     }
-
-                    positiveButton(R.string.ok) {
-                        data[position] = JsonObject(cloned)
-                        notifyItemChanged(position)
-                        onValueChangedListener(data)
-                    }
-                    negativeButton(R.string.cancel)
                 }
+                onValueUpdated { _, id, _, jsonData ->
+                    cloned[id] = jsonData
+                }
+            }.build()
+
+            ConfigDSL.dialogProvider.form(
+                context = context,
+                title = context.getString(R.string.edit),
+                content = recycler,
+                onConfirm = {
+                    data[position] = JsonObject(cloned)
+                    notifyItemChanged(position)
+                    onValueChangedListener(data)
+                },
+                onDismiss = configAdapter::destroy,
+            )
         }
     }
 

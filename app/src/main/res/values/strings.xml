@@ -343,4 +343,5 @@
     <string name="intro_done_title">You\'re all set</string>
     <string name="intro_done_subtitle">Create your first bot with the + button in the Projects tab.</string>
     <string name="intro_done_later">You can allow this later in Settings</string>
+    <string name="align_title">Sort by</string>
 </resources>

@@ -7,6 +7,8 @@
 package dev.mooner.configdsl
 
 import dev.mooner.configdsl.adapters.ParentConfigAdapter
+import dev.mooner.configdsl.utils.ConfigDialogProvider
+import dev.mooner.configdsl.utils.MaterialDialogProvider
 import kotlinx.serialization.json.JsonElement
 import kotlin.coroutines.CoroutineContext
 
@@ -20,8 +22,15 @@ object ConfigDSL {
 
     private lateinit var createInstance: ParentAdapterInstanceBlock
 
+    var dialogProvider: ConfigDialogProvider = MaterialDialogProvider
+        private set
+
     fun registerAdapterImpl(createInstance: ParentAdapterInstanceBlock) {
         this.createInstance = createInstance
+    }
+
+    fun registerDialogProvider(provider: ConfigDialogProvider) {
+        dialogProvider = provider
     }
 
     /*

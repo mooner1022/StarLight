@@ -26,16 +26,6 @@ import androidx.lifecycle.lifecycleScope
 import coil.load
 import coil.size.Scale
 import coil.transform.RoundedCornersTransformation
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.WhichButton
-import com.afollestad.materialdialogs.actions.getActionButton
-import com.afollestad.materialdialogs.actions.setActionButtonEnabled
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.bottomsheets.expandBottomSheet
-import com.afollestad.materialdialogs.callbacks.onDismiss
-import com.afollestad.materialdialogs.callbacks.onShow
-import com.afollestad.materialdialogs.customview.customView
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.configdsl.adapters.ConfigAdapter
@@ -53,9 +43,10 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.project.event.getInstance
+import dev.mooner.starlight.ui.common.Sheet
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.createFailurePeek
 import dev.mooner.starlight.utils.dp
-import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -104,256 +95,247 @@ internal fun Fragment.showNewProjectDialog() {
             add(Step.CONFIG)
     }
 
-    MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-        setCommonAttrsWithLifecycle()
-        title(res = R.string.new_project)
-        customView(view = binding.root, scrollable = true, horizontalPadding = false)
-        cancelOnTouchOutside(false)
-        noAutoDismiss()
+    lateinit var sheet: Sheet
 
-        val nameInput = binding.newProjectInput
-        binding.contentRoot.apply {
-            isFocusableInTouchMode = true
-            defaultFocusHighlightEnabled = false
-        }
-        val imm = context.getSystemService<InputMethodManager>()
+    val nameInput = binding.newProjectInput
+    binding.contentRoot.apply {
+        isFocusableInTouchMode = true
+        defaultFocusHighlightEnabled = false
+    }
+    val imm = requireContext().getSystemService<InputMethodManager>()
 
-        fun currentName(): String =
-            nameInput.text.toString().trim()
+    fun currentName(): String =
+        nameInput.text.toString().trim()
 
-        fun nameError(name: String): String? = when {
-            name.isEmpty() -> null
-            !NAME_REGEX.matches(name) -> getString(R.string.project_name_format_error)
-            projectManager.getProjectByName(name, ignoreCase = true) != null -> getString(R.string.project_duplicate_name)
-            else -> null
-        }
+    fun nameError(name: String): String? = when {
+        name.isEmpty() -> null
+        !NAME_REGEX.matches(name) -> getString(R.string.project_name_format_error)
+        projectManager.getProjectByName(name, ignoreCase = true) != null -> getString(R.string.project_duplicate_name)
+        else -> null
+    }
 
-        fun isNameValid(): Boolean =
-            currentName().let { it.isNotEmpty() && nameError(it) == null }
+    fun isNameValid(): Boolean =
+        currentName().let { it.isNotEmpty() && nameError(it) == null }
 
-        fun updateNameHelper() {
-            val name = currentName()
-            val error = nameError(name)
-            val language = selectedLanguage
-            binding.nameHelper.apply {
-                text = when {
-                    error != null -> error
-                    name.isEmpty() || language == null -> null
-                    else -> getString(R.string.project_main_file, "$name.${language.fileExtension}")
-                }
-                setTextColor(context.getColor(if (error != null) R.color.code_error else R.color.text_sub))
+    fun updateNameHelper() {
+        val name = currentName()
+        val error = nameError(name)
+        val language = selectedLanguage
+        binding.nameHelper.apply {
+            text = when {
+                error != null -> error
+                name.isEmpty() || language == null -> null
+                else -> getString(R.string.project_main_file, "$name.${language.fileExtension}")
             }
+            setTextColor(context.getColor(if (error != null) R.color.code_error else R.color.text_sub))
         }
+    }
 
-        fun updateButtons() {
-            val steps = steps()
-            val index = steps.indexOf(step)
-            getActionButton(WhichButton.POSITIVE).text =
-                getString(if (index == steps.lastIndex) R.string.create else R.string.next)
-            getActionButton(WhichButton.NEGATIVE).text =
-                getString(if (index == 0) R.string.cancel else R.string.previous)
-            setActionButtonEnabled(WhichButton.POSITIVE, when (step) {
-                Step.NAME     -> isNameValid()
-                Step.LANGUAGE -> selectedLanguage != null
-                else          -> true
-            })
-        }
+    fun updateButtons() {
+        val steps = steps()
+        val index = steps.indexOf(step)
+        sheet.setPositiveText(getString(if (index == steps.lastIndex) R.string.create else R.string.next))
+        sheet.setNegativeText(getString(if (index == 0) R.string.cancel else R.string.previous))
+        sheet.setPositiveEnabled(when (step) {
+            Step.NAME     -> isNameValid()
+            Step.LANGUAGE -> selectedLanguage != null
+            else          -> true
+        })
+    }
 
-        fun updateStepIndicator() {
-            val steps = steps()
-            val index = steps.indexOf(step)
-            binding.stepCounter.text = getString(R.string.new_project_step_counter, index + 1, steps.size)
-            binding.stepBar.apply {
-                removeAllViews()
-                for (i in steps.indices) {
-                    addView(View(context).apply {
-                        setBackgroundResource(R.drawable.bg_step_segment)
-                        backgroundTintList = ColorStateList.valueOf(context.getColor(
-                            if (i <= index) R.color.main_bright else dev.mooner.configdsl.R.color.configdsl_field
-                        ))
-                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f).apply {
-                            marginStart = if (i == 0) 0 else dp(4)
-                        }
-                    })
-                }
-            }
-        }
-
-        fun prepareConfig(language: Language) {
-            if (configLanguage == language && configAdapter != null)
-                return
-            configAdapter?.destroy()
-            configData.clear()
-            configData[language.id] = ConcurrentHashMap()
-            configAdapter = ConfigAdapter.Builder(context) {
-                bind(binding.pageConfig)
-                structure { language.projectConfigStructure() }
-                configData(configData)
-            }.build()
-            configLanguage = language
-        }
-
-        fun showStep(target: Step, animate: Boolean = true, showKeyboard: Boolean = true) {
-            if (animate)
-                TransitionManager.beginDelayedTransition(binding.contentRoot, AutoTransition().apply {
-                    ordering = TransitionSet.ORDERING_TOGETHER
-                    duration = STEP_ANIM_DURATION
+    fun updateStepIndicator() {
+        val steps = steps()
+        val index = steps.indexOf(step)
+        binding.stepCounter.text = getString(R.string.new_project_step_counter, index + 1, steps.size)
+        binding.stepBar.apply {
+            removeAllViews()
+            for (i in steps.indices) {
+                addView(View(context).apply {
+                    setBackgroundResource(R.drawable.bg_step_segment)
+                    backgroundTintList = ColorStateList.valueOf(context.getColor(
+                        if (i <= index) R.color.main_bright else dev.mooner.configdsl.R.color.configdsl_field
+                    ))
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f).apply {
+                        marginStart = if (i == 0) 0 else dp(4)
+                    }
                 })
-            step = target
-
-            val language = selectedLanguage
-            val (title, description) = when (target) {
-                Step.NAME     -> getString(R.string.new_project_step_name) to getString(R.string.project_name_hint)
-                Step.LANGUAGE -> getString(R.string.new_project_step_language) to getString(R.string.new_project_step_language_description)
-                Step.EVENTS   -> getString(R.string.new_project_step_events) to getString(R.string.project_events_description)
-                Step.CONFIG   -> getString(R.string.new_project_step_config, language?.name) to getString(R.string.new_project_step_config_description)
             }
-            binding.stepTitle.text = title
-            binding.stepDescription.text = description
+        }
+    }
 
-            if (target == Step.CONFIG && language != null)
-                prepareConfig(language)
-            binding.pageName.isVisible = target == Step.NAME
-            binding.pageLanguage.isVisible = target == Step.LANGUAGE
-            binding.pageEvents.isVisible = target == Step.EVENTS
-            binding.pageConfig.isVisible = target == Step.CONFIG
+    fun prepareConfig(language: Language) {
+        if (configLanguage == language && configAdapter != null)
+            return
+        configAdapter?.destroy()
+        configData.clear()
+        configData[language.id] = ConcurrentHashMap()
+        configAdapter = ConfigAdapter.Builder(requireContext()) {
+            bind(binding.pageConfig)
+            structure { language.projectConfigStructure() }
+            configData(configData)
+        }.build()
+        configLanguage = language
+    }
 
-            if (target == Step.NAME) {
-                if (showKeyboard) {
-                    nameInput.requestFocus()
-                    imm?.showSoftInput(nameInput, InputMethodManager.SHOW_IMPLICIT)
+    fun showStep(target: Step, animate: Boolean = true, showKeyboard: Boolean = true) {
+        if (animate)
+            TransitionManager.beginDelayedTransition(binding.contentRoot, AutoTransition().apply {
+                ordering = TransitionSet.ORDERING_TOGETHER
+                duration = STEP_ANIM_DURATION
+            })
+        step = target
+
+        val language = selectedLanguage
+        val (title, description) = when (target) {
+            Step.NAME     -> getString(R.string.new_project_step_name) to getString(R.string.project_name_hint)
+            Step.LANGUAGE -> getString(R.string.new_project_step_language) to getString(R.string.new_project_step_language_description)
+            Step.EVENTS   -> getString(R.string.new_project_step_events) to getString(R.string.project_events_description)
+            Step.CONFIG   -> getString(R.string.new_project_step_config, language?.name) to getString(R.string.new_project_step_config_description)
+        }
+        binding.stepTitle.text = title
+        binding.stepDescription.text = description
+
+        if (target == Step.CONFIG && language != null)
+            prepareConfig(language)
+        binding.pageName.isVisible = target == Step.NAME
+        binding.pageLanguage.isVisible = target == Step.LANGUAGE
+        binding.pageEvents.isVisible = target == Step.EVENTS
+        binding.pageConfig.isVisible = target == Step.CONFIG
+
+        if (target == Step.NAME) {
+            if (showKeyboard) {
+                nameInput.requestFocus()
+                imm?.showSoftInput(nameInput, InputMethodManager.SHOW_IMPLICIT)
+            }
+        } else {
+            imm?.hideSoftInputFromWindow(nameInput.windowToken, 0)
+            binding.contentRoot.requestFocus()
+        }
+
+        updateStepIndicator()
+        updateButtons()
+    }
+
+    fun create() {
+        val name = currentName()
+        val language = selectedLanguage
+        if (language == null || !isNameValid()) {
+            showStep(Step.NAME)
+            return
+        }
+        val presets = configData[language.id]
+            ?.takeIf { configLanguage == language && Step.CONFIG in steps() }
+            ?.toMap()
+            .orEmpty()
+        val selectedEvents = events
+            .filter(EventOption::isSelected)
+            .associate { it.id to it.instance }
+        sheet.dismiss()
+
+        GlobalConfig.edit {
+            getDefaultCategory().setString(CONFIG_LAST_LANGUAGE, language.id)
+        }
+        lifecycleScope.launch(Dispatchers.IO) {
+            runCatching {
+                projectManager.newProject(events = selectedEvents) {
+                    this.name  = name
+                    mainScript = "$name.${language.fileExtension}"
+                    languageId = language.id
                 }
-            } else {
-                imm?.hideSoftInputFromWindow(nameInput.windowToken, 0)
-                binding.contentRoot.requestFocus()
+                if (presets.isNotEmpty()) {
+                    projectManager.getProjectByName(name)?.let { project ->
+                        project.config.edit {
+                            category(language.id).apply { presets.forEach(::setRaw) }
+                        }
+                        language.onConfigUpdated(mapOf(language.id to presets))
+                    }
+                }
+            }.onFailure { e ->
+                LOG.error { "Failed to create project $name: $e" }
+                withContext(Dispatchers.Main) {
+                    if (isAdded)
+                        createFailurePeek(getString(R.string.project_create_failed, name), PeekAlert.Position.Bottom).peek()
+                }
             }
+        }
+    }
 
+    fun goNext() {
+        val steps = steps()
+        val index = steps.indexOf(step)
+        when {
+            step == Step.NAME && !isNameValid() -> updateNameHelper()
+            index < steps.lastIndex             -> showStep(steps[index + 1])
+            else                                -> create()
+        }
+    }
+
+    fun goBack(): Boolean {
+        val steps = steps()
+        val index = steps.indexOf(step)
+        if (index <= 0)
+            return false
+        showStep(steps[index - 1])
+        return true
+    }
+
+    nameInput.doAfterTextChanged {
+        updateNameHelper()
+        updateButtons()
+    }
+    nameInput.setOnEditorActionListener { _, actionId, _ ->
+        if (actionId != EditorInfo.IME_ACTION_NEXT && actionId != EditorInfo.IME_ACTION_DONE)
+            return@setOnEditorActionListener false
+        goNext()
+        true
+    }
+
+    val languageRows = languages.map { language ->
+        ItemNewProjectLanguageBinding.inflate(layoutInflater, binding.pageLanguage, true).apply {
+            tvLanguageId.text = "${language.id} · .${language.fileExtension}"
+            tvLanguageName.text = language.name
+            ivIcon.loadLanguageIcon(language)
+        }
+    }
+    fun updateLanguageSelection() {
+        languageRows.forEachIndexed { index, row ->
+            row.setLanguageSelected(languages[index] == selectedLanguage)
+        }
+    }
+    languageRows.forEachIndexed { index, row ->
+        row.cardWrapper.setOnClickListener {
+            selectedLanguage = languages[index]
+            updateLanguageSelection()
+            updateNameHelper()
             updateStepIndicator()
             updateButtons()
-            expandBottomSheet()
         }
+    }
+    updateLanguageSelection()
 
-        fun create() {
-            val name = currentName()
-            val language = selectedLanguage
-            if (language == null || !isNameValid()) {
-                showStep(Step.NAME)
-                return
-            }
-            val presets = configData[language.id]
-                ?.takeIf { configLanguage == language && Step.CONFIG in steps() }
-                ?.toMap()
-                .orEmpty()
-            val selectedEvents = events
-                .filter(EventOption::isSelected)
-                .associate { it.id to it.instance }
-            dismiss()
-
-            GlobalConfig.edit {
-                getDefaultCategory().setString(CONFIG_LAST_LANGUAGE, language.id)
-            }
-            lifecycleScope.launch(Dispatchers.IO) {
-                runCatching {
-                    projectManager.newProject(events = selectedEvents) {
-                        this.name  = name
-                        mainScript = "$name.${language.fileExtension}"
-                        languageId = language.id
-                    }
-                    if (presets.isNotEmpty()) {
-                        projectManager.getProjectByName(name)?.let { project ->
-                            project.config.edit {
-                                category(language.id).apply { presets.forEach(::setRaw) }
-                            }
-                            language.onConfigUpdated(mapOf(language.id to presets))
-                        }
-                    }
-                }.onFailure { e ->
-                    LOG.error { "Failed to create project $name: $e" }
-                    withContext(Dispatchers.Main) {
-                        if (isAdded)
-                            createFailurePeek(getString(R.string.project_create_failed, name), PeekAlert.Position.Bottom).peek()
-                    }
-                }
-            }
-        }
-
-        fun goNext() {
-            val steps = steps()
-            val index = steps.indexOf(step)
-            when {
-                step == Step.NAME && !isNameValid() -> updateNameHelper()
-                index < steps.lastIndex             -> showStep(steps[index + 1])
-                else                                -> create()
-            }
-        }
-
-        fun goBack(): Boolean {
-            val steps = steps()
-            val index = steps.indexOf(step)
-            if (index <= 0)
-                return false
-            showStep(steps[index - 1])
-            return true
-        }
-
-        nameInput.doAfterTextChanged {
-            updateNameHelper()
-            updateButtons()
-        }
-        nameInput.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId != EditorInfo.IME_ACTION_NEXT && actionId != EditorInfo.IME_ACTION_DONE)
-                return@setOnEditorActionListener false
-            goNext()
-            true
-        }
-
-        val languageRows = languages.map { language ->
-            ItemNewProjectLanguageBinding.inflate(layoutInflater, binding.pageLanguage, true).apply {
-                tvLanguageId.text = "${language.id} · .${language.fileExtension}"
-                tvLanguageName.text = language.name
-                ivIcon.loadLanguageIcon(language)
-            }
-        }
-        fun updateLanguageSelection() {
-            languageRows.forEachIndexed { index, row ->
-                row.setLanguageSelected(languages[index] == selectedLanguage)
-            }
-        }
-        languageRows.forEachIndexed { index, row ->
-            row.cardWrapper.setOnClickListener {
-                selectedLanguage = languages[index]
-                updateLanguageSelection()
-                updateNameHelper()
-                updateStepIndicator()
-                updateButtons()
-            }
-        }
-        updateLanguageSelection()
-
-        for (event in events) {
-            ItemProjectEventBinding.inflate(layoutInflater, binding.pageEvents, true).apply {
-                functionName.text = event.functionName
-                eventId.text = event.id
-                icon.loadPluginIcon(event.pluginId)
+    for (event in events) {
+        ItemProjectEventBinding.inflate(layoutInflater, binding.pageEvents, true).apply {
+            functionName.text = event.functionName
+            eventId.text = event.id
+            icon.loadPluginIcon(event.pluginId)
+            checkbox.isChecked = event.isSelected
+            root.setOnClickListener {
+                event.isSelected = !event.isSelected
                 checkbox.isChecked = event.isSelected
-                root.setOnClickListener {
-                    event.isSelected = !event.isSelected
-                    checkbox.isChecked = event.isSelected
-                }
             }
         }
+    }
 
-        positiveButton(res = R.string.next) { goNext() }
-        negativeButton(res = R.string.cancel) {
+    sheet = requireActivity().showSheet {
+        lifecycleOwner = viewLifecycleOwner
+        title = getString(R.string.new_project)
+        icon = R.drawable.ic_round_add_24
+        content(binding.root)
+        cancelOnTouchOutside = false
+        positive(R.string.next, autoDismiss = false) { goNext() }
+        negative(R.string.cancel, autoDismiss = false) {
             if (!goBack())
                 it.dismiss()
-        }
-        setOnKeyListener { _, keyCode, keyEvent ->
-            if (keyCode != KeyEvent.KEYCODE_BACK || step == Step.NAME)
-                return@setOnKeyListener false
-            if (keyEvent.action == KeyEvent.ACTION_UP)
-                goBack()
-            true
         }
         onShow {
             showStep(Step.NAME, animate = false, showKeyboard = false)
@@ -362,10 +344,17 @@ internal fun Fragment.showNewProjectDialog() {
             configAdapter?.destroy()
             configAdapter = null
         }
-
-        updateNameHelper()
-        updateButtons()
     }
+    sheet.dialog.setOnKeyListener { _, keyCode, keyEvent ->
+        if (keyCode != KeyEvent.KEYCODE_BACK || step == Step.NAME)
+            return@setOnKeyListener false
+        if (keyEvent.action == KeyEvent.ACTION_UP)
+            goBack()
+        true
+    }
+
+    updateNameHelper()
+    updateButtons()
 }
 
 private fun Language.projectConfigStructure(): ConfigStructure =

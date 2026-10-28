@@ -25,6 +25,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import dev.mooner.configdsl.ConfigDSL
 import dev.mooner.starlight.PREF_IS_INITIAL
 import dev.mooner.starlight.R
 import dev.mooner.starlight.event.ApplicationEvent
@@ -35,6 +36,7 @@ import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.ui.common.SheetDialogProvider
 import dev.mooner.starlight.ui.crash.FatalErrorActivity
 import dev.mooner.starlight.ui.splash.intro.IntroActivity
 import dev.mooner.starlight.utils.checkPermissions
@@ -57,6 +59,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         //Logger.v(T, "Application onCreate() called")
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         isStartupAborted = false // explicit reset
+        ConfigDSL.registerDialogProvider(SheetDialogProvider)
 
         mContext = applicationContext
 

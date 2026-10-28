@@ -2,19 +2,13 @@ package dev.mooner.starlight.utils
 
 import android.app.Activity
 import android.content.Context
-import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.UiContext
+import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.callbacks.onDismiss
-import com.afollestad.materialdialogs.callbacks.onShow
-import com.afollestad.materialdialogs.customview.customView
-import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
+import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.configdsl.ConfigBuilder
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.MutableDataMap
@@ -24,14 +18,14 @@ import dev.mooner.peekalert.PeekAlert
 import dev.mooner.peekalert.PeekAlertBuilder
 import dev.mooner.peekalert.createPeekAlert
 import dev.mooner.starlight.R
-import dev.mooner.starlight.databinding.DialogConfigLayoutBinding
-import dev.mooner.starlight.databinding.DialogLogsBinding
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogType
+import dev.mooner.starlight.ui.common.SheetBuilder
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
 import io.noties.markwon.AbstractMarkwonPlugin
 import io.noties.markwon.Markwon
@@ -46,94 +40,73 @@ import kotlin.properties.Delegates.notNull
 
 typealias ConfirmCallback = (confirm: Boolean) -> Unit
 
-@UiContext
 fun Context.showLogsDialog() {
     val logUpdateScope = CoroutineScope(Dispatchers.Default)
+    val context = this
 
-    MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-        setCommonAttrs()
-        cancelOnTouchOutside(true)
-        title(res = R.string.title_logs)
-
-        val activity = this@showLogsDialog
-
-        val binding = DialogLogsBinding.inflate(LayoutInflater.from(activity))
-        customView(view = binding.root)
-
-        onShow { _ ->
+    showSheet {
+        title = getString(R.string.title_logs)
+        icon = R.drawable.ic_round_article_24
+        content(scrollable = false) { _, parent ->
             val showInternalLog = GlobalConfig
                 .category("dev_mode_config")
                 .getBoolean("show_internal_log", false)
             val logs = LogCollector.logs
             val mAdapter = LogsRecyclerViewAdapter().withData(logs)
-            val mLayoutManager = LinearLayoutManager(activity).apply {
-                reverseLayout = true
-                stackFromEnd = true
-            }
-
-            binding.rvLog.apply {
+            val recycler = RecyclerView(context).apply {
+                overScrollMode = View.OVER_SCROLL_NEVER
                 itemAnimator = FadeInUpAnimator()
-                layoutManager = mLayoutManager
+                layoutManager = LinearLayoutManager(context).apply {
+                    reverseLayout = true
+                    stackFromEnd = true
+                }
                 adapter = mAdapter
             }
+            parent.addView(recycler, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                (resources.displayMetrics.heightPixels * 0.5f).toInt(),
+            ))
             mAdapter.notifyItemRangeInserted(0, logs.size)
 
             EventHandler.on<Events.Log.Create>(logUpdateScope) {
                 if (log.type == LogType.VERBOSE && !showInternalLog) return@on
-                binding.rvLog.post {
+                recycler.post {
                     mAdapter.push(log)
-                    binding.rvLog.smoothScrollToPosition(mAdapter.getItems().size - 1)
+                    recycler.smoothScrollToPosition(mAdapter.getItems().size - 1)
                 }
             }
         }
-
-        onDismiss {
-            logUpdateScope.cancel()
-        }
-
-        negativeButton(res = R.string.close) {
-            dismiss()
-        }
-    }
-}
-
-fun showAlertDialog(context: Context, title: String, message: String, onDismiss: ConfirmCallback? = null): MaterialDialog {
-    return MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
-        setCommonAttrs()
-        cancelOnTouchOutside(true)
-        title(text = title)
-        message(text = message)
-        positiveButton(res = R.string.ok) {
-            onDismiss?.invoke(true)
-            dismiss()
-        }
+        onDismiss { logUpdateScope.cancel() }
+        negative(R.string.close)
     }
 }
 
 fun showConfirmDialog(context: Context, title: String, message: String, onDismiss: ConfirmCallback? = null) {
-    MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
-        setCommonAttrs()
-        cancelOnTouchOutside(false)
-        title(text = title)
-        message(text = message)
-        positiveButton(res = R.string.ok) {
+    var isConfirmed = false
+    context.showSheet {
+        this.title = title
+        this.message = message
+        cancelOnTouchOutside = false
+        positive(R.string.ok) {
+            isConfirmed = true
             onDismiss?.invoke(true)
-            dismiss()
         }
-        negativeButton(res = R.string.cancel) {
-            onDismiss?.invoke(false)
-            dismiss()
+        negative(R.string.cancel)
+        onDismiss {
+            if (!isConfirmed)
+                onDismiss?.invoke(false)
         }
     }
 }
 
 fun Context.showErrorLogDialog(title: String, e: Throwable) {
-    MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
-        setCommonAttrs()
-        cancelOnTouchOutside(false)
-        title(text = title)
-        message(text = e.toString() + "\n" + e.stackTraceToString())
-        positiveButton(res = R.string.close, click = MaterialDialog::dismiss)
+    showSheet {
+        this.title = title
+        icon = R.drawable.ic_round_error_outline_24
+        message = e.toString() + "\n" + e.stackTraceToString()
+        isMessageSelectable = true
+        cancelOnTouchOutside = false
+        positive(R.string.close)
     }
 }
 
@@ -156,41 +129,34 @@ fun Context.showChangelogDialog(title: String) {
         .build()
         .toMarkdown(changelog)
 
-    MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
-        setCommonAttrs()
-        cancelOnTouchOutside(false)
-        title(text = title)
-        message(text = markdown)
-        positiveButton(res = R.string.close, click = MaterialDialog::dismiss)
+    showSheet {
+        this.title = title
+        message = markdown
+        cancelOnTouchOutside = false
+        positive(R.string.close)
     }
 }
 
-fun MaterialDialog.setCommonAttrs() {
-    cornerRadius(res = R.dimen.card_radius)
-}
-
 context(lifecycleOwner: LifecycleOwner)
-fun MaterialDialog.setCommonAttrsWithLifecycle() {
-    cornerRadius(res = R.dimen.card_radius)
-    lifecycleOwner(lifecycleOwner)
-}
+fun SheetBuilder.configStruct(context: Context, block: DialogConfigStructBuilder.() -> Unit) {
+    var adapter: ConfigAdapter? = null
+    content { _, parent ->
+        val recycler = RecyclerView(context).apply {
+            overScrollMode = View.OVER_SCROLL_NEVER
+            isNestedScrollingEnabled = false
+        }
+        parent.addView(recycler, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        adapter = ConfigAdapter.Builder(context) {
+            bind(recycler)
+            lifecycleOwner(lifecycleOwner)
 
-context(lifecycleOwner: LifecycleOwner)
-fun MaterialDialog.configStruct(context: Context, block: DialogConfigStructBuilder.() -> Unit) {
-    val binding = DialogConfigLayoutBinding.inflate(layoutInflater, null, false)
-    var adapter: ConfigAdapter? = ConfigAdapter.Builder(context) {
-        bind(binding.configRecyclerView)
-        lifecycleOwner(lifecycleOwner)
-
-        DialogConfigStructBuilder().apply(block).build(this)
-    }.build()
-
+            DialogConfigStructBuilder().apply(block).build(this)
+        }.build()
+    }
     onDismiss {
         adapter?.destroy()
         adapter = null
     }
-
-    customView(view = binding.root)
 }
 
 class DialogConfigStructBuilder {

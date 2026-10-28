@@ -17,6 +17,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import dev.mooner.peekalert.PeekAlert
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityPluginStoreBinding
 import dev.mooner.starlight.databinding.ItemStoreDependencyBinding
@@ -85,10 +86,10 @@ class PluginStoreActivity : AppCompatActivity() {
         val available = missing
             .filter { dependency -> index.find(dependency.pluginId)?.let { dependency.accepts(it.latest.version) } == true }
             .map { it.pluginId }
-        showStoreSheet {
+        showSheet {
             title = getString(R.string.plugin_store_deps_title)
             message = getString(R.string.plugin_store_deps_message, plugin.name)
-            iconUrl = plugin.icon
+            iconLoader = { loadStoreImage(plugin.icon) }
             content { inflater, parent ->
                 for (dependency in missing) {
                     val target = index.find(dependency.pluginId)

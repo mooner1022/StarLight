@@ -17,9 +17,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.transition.TransitionManager
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.button
@@ -36,12 +33,13 @@ import dev.mooner.starlight.plugincore.widget.WidgetInfo
 import dev.mooner.starlight.plugincore.widget.WidgetLayout
 import dev.mooner.starlight.plugincore.widget.WidgetPlacement
 import dev.mooner.starlight.plugincore.widget.WidgetSpan
+import dev.mooner.starlight.ui.common.Sheet
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.LAYOUT_TABLET
 import dev.mooner.starlight.utils.configStruct
 import dev.mooner.starlight.utils.getColorCompat
 import dev.mooner.starlight.utils.isDevMode
 import dev.mooner.starlight.utils.layoutMode
-import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonElement
@@ -207,12 +205,13 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
     }
 
     private fun showAddWidgetSheet() {
-        MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            setCommonAttrsWithLifecycle()
-            maxWidth(res = R.dimen.dialog_width)
-            title(res = R.string.home_add_widget)
+        lateinit var sheet: Sheet
+        sheet = requireContext().showSheet {
+            lifecycleOwner = viewLifecycleOwner
+            title = getString(R.string.home_add_widget)
+            icon = R.drawable.ic_round_add_24
             configStruct(requireContext()) {
-                struct(getAddWidgetStructure(::dismiss))
+                struct(getAddWidgetStructure { sheet.dismiss() })
             }
         }
     }
@@ -220,10 +219,10 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
     private fun showWidgetSettings(card: View) {
         val widget = widgets[card] ?: return
         val form = widget.definition.createSettingsForm(widget.settings) ?: return
-        MaterialDialog(requireContext(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            setCommonAttrsWithLifecycle()
-            maxWidth(res = R.dimen.dialog_width)
-            title(text = widget.definition.name)
+        requireContext().showSheet {
+            lifecycleOwner = viewLifecycleOwner
+            title = widget.definition.name
+            icon = dev.mooner.configdsl.R.drawable.ic_round_settings_24
             configStruct(requireContext()) {
                 struct(form.structure)
                 data { form.data }

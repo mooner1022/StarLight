@@ -33,6 +33,7 @@ import com.google.android.material.carousel.CarouselSnapHelper
 import com.google.android.material.carousel.HeroCarouselStrategy
 import com.google.android.material.chip.Chip
 import com.google.android.material.transition.Hold
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentStoreHomeBinding
 import dev.mooner.starlight.databinding.ItemStoreInfoBinding
@@ -357,7 +358,7 @@ class StoreHomeFragment : Fragment() {
 
     private fun showRepositorySheet() {
         val index = shownIndex
-        requireContext().showStoreSheet {
+        requireContext().showSheet {
             title = getString(R.string.plugin_store_repository)
             icon = dev.mooner.configdsl.R.drawable.ic_github
             if (index != null)

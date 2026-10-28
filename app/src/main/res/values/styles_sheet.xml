@@ -4,6 +4,7 @@
         <item name="bottomSheetStyle">@style/Widget.StarLight.SlideBottomSheet</item>
         <item name="android:windowAnimationStyle">@style/Animation.StarLight.None</item>
         <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
     </style>
 
     <style name="Widget.StarLight.SlideBottomSheet" parent="Widget.MaterialComponents.BottomSheet.Modal">

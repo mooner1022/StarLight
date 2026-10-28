@@ -6,20 +6,18 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.core.net.toUri
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.customview.customView
 import com.google.android.material.chip.ChipGroup
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.editor.DefaultEditorActivity
 import java.io.File
 
@@ -62,25 +60,29 @@ internal fun validateFileName(name: String, parent: File?): String? = when {
 
 @SuppressLint("CheckResult")
 fun Context.showNewFileDialog(root: File, directory: Boolean = false, onFileCreated: (file: File) -> Unit) {
-    MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-        setCommonAttrs()
-        customView(R.layout.dialog_editor_create_file)
-        noAutoDismiss()
-        findViewById<ChipGroup>(R.id.chip_group_file_type)
-            .check(if (directory) R.id.chip_directory else R.id.chip_file)
+    val content = LayoutInflater.from(this).inflate(R.layout.dialog_editor_create_file, null)
+    val chipGroup: ChipGroup = content.findViewById(R.id.chip_group_file_type)
+    chipGroup.check(if (directory) R.id.chip_directory else R.id.chip_file)
 
-        positiveButton(res = R.string.ok) {
-            val nameInput: EditText = findViewById(R.id.edit_text_filename)!!
+    showSheet {
+        title = translate {
+            Locale.ENGLISH { "New file" }
+            Locale.KOREAN  { "새로 만들기" }
+        }
+        icon = R.drawable.ic_round_note_add_24
+        content(content)
+        negative(R.string.cancel)
+        positive(R.string.ok, autoDismiss = false) {
+            val nameInput: EditText = content.findViewById(R.id.edit_text_filename)
             val error = validateFileName(nameInput.text.toString(), root)
             if (error != null) {
                 nameInput.error = error
                 nameInput.requestFocus()
-                return@positiveButton
+                return@positive
             }
 
             val file = File(root, nameInput.text.toString())
 
-            val chipGroup: ChipGroup = findViewById(R.id.chip_group_file_type)
             val selectedId = chipGroup.checkedChipId
             when (selectedId) {
                 R.id.chip_file -> {
@@ -101,7 +103,7 @@ fun Context.showNewFileDialog(root: File, directory: Boolean = false, onFileCrea
                         createFailurePeek(message, PeekAlert.Position.Top).peek()
                     else
                         Toast.makeText(this@showNewFileDialog, message, Toast.LENGTH_LONG).show()
-                    return@positiveButton
+                    return@positive
                 }
             }
             onFileCreated(file)

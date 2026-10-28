@@ -20,14 +20,11 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.transform.RoundedCornersTransformation
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.config.GlobalConfig
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
-import dev.mooner.starlight.utils.setCommonAttrs
 import java.io.File
 
 class DebugRoomChatAdapter(
@@ -155,22 +152,11 @@ class DebugRoomChatAdapter(
     }
 
     private fun showFullMessageDialog(fullMessage: String) {
-        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).noAutoDismiss().show {
-            setCommonAttrs()
-
-            cancelOnTouchOutside(true)
-            title(text = context.getString(R.string.title_show_all))
-            message(text = fullMessage) {
-                messageTextView.apply {
-                    isEnabled       = true
-                    isFocusable     = true
-                    isLongClickable = true
-                    setTextIsSelectable(true)
-                }
-            }
-            positiveButton(text = context.getString(R.string.close)) {
-                dismiss()
-            }
+        context.showSheet {
+            title = context.getString(R.string.title_show_all)
+            message = fullMessage
+            isMessageSelectable = true
+            positive(R.string.close)
         }
     }
 

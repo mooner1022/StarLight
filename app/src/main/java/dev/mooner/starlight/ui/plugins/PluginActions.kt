@@ -4,11 +4,6 @@ import android.content.Context
 import android.text.format.Formatter
 import androidx.annotation.ColorRes
 import androidx.lifecycle.LifecycleOwner
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.checkbox.checkBoxPrompt
-import com.afollestad.materialdialogs.checkbox.isCheckPromptChecked
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session.pluginManager
@@ -19,7 +14,7 @@ import dev.mooner.starlight.plugincore.plugin.PluginInfo
 import dev.mooner.starlight.plugincore.plugin.PluginInstaller
 import dev.mooner.starlight.plugincore.plugin.PluginState
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
-import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
+import dev.mooner.starlight.ui.common.showSheet
 import java.io.File
 
 internal data class PluginStatus(
@@ -157,18 +152,20 @@ internal fun LifecycleOwner.showRemovePluginDialog(
             append("\n\n").append(context.getString(R.string.plugin_dependents_warning, dependents.joinToString()))
     }
 
-    MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-        setCommonAttrsWithLifecycle()
-        title(text = context.getString(R.string.plugin_remove_title, name))
-        message(text = message)
-        if (info != null && entry?.isDuplicate != true)
-            checkBoxPrompt(res = R.string.plugin_remove_delete_data) {}
-        positiveButton(res = R.string.plugin_remove) {
-            val deleteData = info != null && entry?.isDuplicate != true && isCheckPromptChecked()
+    val canDeleteData = info != null && entry?.isDuplicate != true
+    context.showSheet {
+        lifecycleOwner = this@showRemovePluginDialog
+        title = context.getString(R.string.plugin_remove_title, name)
+        this.message = message
+        icon = R.drawable.ic_round_delete_forever_24
+        if (canDeleteData)
+            checkbox(R.string.plugin_remove_delete_data)
+        positive(R.string.plugin_remove) { sheet ->
+            val deleteData = canDeleteData && sheet.isChecked()
             runCatching { pluginManager.uninstall(context.pluginInstaller(), key, keepData = !deleteData) }
                 .onSuccess { onRemoved(name) }
                 .onFailure(onFailure)
         }
-        negativeButton(res = R.string.cancel)
+        negative(R.string.cancel)
     }
 }

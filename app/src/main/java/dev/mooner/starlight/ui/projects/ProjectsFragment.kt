@@ -13,17 +13,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.CheckBox
 import androidx.core.content.getSystemService
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.bottomsheets.gridItems
-import com.afollestad.materialdialogs.customview.customView
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import dev.mooner.peekalert.PeekAlert
@@ -40,6 +34,7 @@ import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.ProjectID
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.*
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
@@ -231,18 +226,18 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
     @SuppressLint("CheckResult")
     private fun showProjectAlignDialog() =
-        MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            setCommonAttrsWithLifecycle()
-            gridItems(aligns.toGridItems()) { dialog, _, item ->
-                alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
-                isReversed = dialog.findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked
-                isActiveFirst = dialog.findViewById<CheckBox>(R.id.checkBoxAlignActiveFirst).isChecked
+        requireActivity().showSheet {
+            lifecycleOwner = viewLifecycleOwner
+            title = getString(R.string.align_title)
+            icon = R.drawable.ic_round_sort_by_alpha_24
+            grid(aligns.toGridItems(), selected = aligns.indexOf(alignState)) { sheet, index ->
+                alignState = aligns[index]
+                isReversed = sheet.isChecked(0)
+                isActiveFirst = sheet.isChecked(1)
                 update()
             }
-            //customView(R.layout.dialog_align_state)
-            customView(R.layout.dialog_align_projects)
-            findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked = isReversed
-            findViewById<CheckBox>(R.id.checkBoxAlignActiveFirst).isChecked = isActiveFirst
+            checkbox(R.string.align_reversed, isReversed)
+            checkbox(R.string.align_active_first, isActiveFirst)
         }
 
     private fun getAlignByName(name: String): Align<Project>? =
