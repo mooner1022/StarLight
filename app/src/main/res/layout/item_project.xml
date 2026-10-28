@@ -12,48 +12,59 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/selectableItemBackground"
-        android:minHeight="68dp"
-        android:paddingVertical="10dp"
-        android:paddingStart="12dp"
-        android:paddingEnd="8dp">
+        android:minHeight="58dp"
+        android:paddingVertical="7dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="6dp">
 
-        <View
-            android:id="@+id/status"
-            android:layout_width="6dp"
+        <FrameLayout
+            android:id="@+id/iconFrame"
+            android:layout_width="34dp"
             android:layout_height="34dp"
-            android:background="@drawable/bg_project_status"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:backgroundTint="@color/card_enabled"/>
+            app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-            android:id="@+id/icon"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_marginStart="14dp"
-            android:importantForAccessibility="no"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/status"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:src="@drawable/ic_js"/>
+            <ImageView
+                android:id="@+id/icon"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                tools:src="@drawable/ic_js"/>
+
+            <FrameLayout
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:layout_gravity="bottom|end"
+                android:background="@drawable/bg_project_status_ring"
+                android:padding="2dp">
+
+                <View
+                    android:id="@+id/status"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_project_status"
+                    tools:backgroundTint="@color/card_enabled"/>
+            </FrameLayout>
+        </FrameLayout>
 
         <TextView
             android:id="@+id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="12dp"
             android:ellipsize="end"
             android:fontFamily="@font/nanumsquare_neo_bold"
             android:maxLines="1"
             android:textColor="@color/text"
-            android:textSize="17sp"
+            android:textSize="16sp"
             app:layout_constrainedWidth="true"
             app:layout_constraintBottom_toTopOf="@+id/subtitle"
             app:layout_constraintEnd_toStartOf="@+id/pin"
             app:layout_constraintHorizontal_bias="0"
             app:layout_constraintHorizontal_chainStyle="packed"
-            app:layout_constraintStart_toEndOf="@+id/icon"
+            app:layout_constraintStart_toEndOf="@+id/iconFrame"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_chainStyle="packed"
             tools:text="WidgetTest"/>
@@ -78,7 +89,7 @@
             android:id="@+id/subtitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="2dp"
             android:layout_marginEnd="8dp"
             android:ellipsize="end"
             android:fontFamily="@font/nanumsquare_neo_regular"
