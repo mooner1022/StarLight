@@ -18,7 +18,6 @@ import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
-import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
@@ -37,10 +36,7 @@ class JSRhino: Language() {
 
     override val id: String = "JS_RHINO"
 
-    override val name: String = translate {
-        Locale.ENGLISH { "JavaScript(RhinoJS)" }
-        Locale.KOREAN  { "자바스크립트(RhinoJS)" }
-    }
+    override val name: String = "JS(RhinoJS)"
 
     override val fileExtension: String = "js"
 
