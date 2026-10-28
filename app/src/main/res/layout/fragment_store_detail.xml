@@ -56,16 +56,16 @@
                     android:layout_gravity="center"
                     android:layout_marginTop="14dp"
                     android:background="@drawable/bg_store_icon_large"
-                    android:elevation="8dp">
+                    android:elevation="8dp"
+                    android:foreground="@drawable/fg_store_icon_border_large">
 
                     <ImageView
                         android:id="@+id/icon"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:layout_gravity="center"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
                         android:importantForAccessibility="no"
-                        app:tint="@color/store_gold"
-                        tools:src="@drawable/ic_round_plugins_24"/>
+                        android:scaleType="centerCrop"
+                        tools:src="@drawable/ic_store_icon_placeholder"/>
                 </FrameLayout>
             </FrameLayout>
 

@@ -4,11 +4,13 @@ import android.content.Context
 import android.text.format.DateUtils
 import android.text.format.Formatter
 import android.util.TypedValue
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
+import android.widget.ImageView
+import androidx.annotation.DrawableRes
+import coil.dispose
+import coil.load
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -20,7 +22,6 @@ import dev.mooner.starlight.plugincore.plugin.PluginDependency
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.random.Random
 
 internal fun Context.formatSize(bytes: Long): String =
     Formatter.formatShortFileSize(this, bytes)
@@ -32,12 +33,21 @@ internal fun compactDate(millis: Long): String =
     if (System.currentTimeMillis() - millis < DateUtils.WEEK_IN_MILLIS) relativeTime(millis)
     else SimpleDateFormat("yy.MM.dd", Locale.getDefault()).format(Date(millis))
 
-internal fun formatCount(count: Int): String =
-    if (count < 1000) count.toString()
-    else String.format(Locale.ROOT, "%.1fK", count / 1000f)
-
 internal fun StoreIndex.categoryName(id: String): String =
-    categories.find { it.id == id }?.name ?: id
+    categories.find { it.id == id }?.name?.get() ?: id
+
+internal fun ImageView.loadStoreImage(path: String?, @DrawableRes placeholder: Int = R.drawable.ic_store_icon_placeholder) {
+    if (path == null) {
+        dispose()
+        setImageResource(placeholder)
+        return
+    }
+    load(StoreSource.resolve(path)) {
+        placeholder(placeholder)
+        error(placeholder)
+        crossfade(true)
+    }
+}
 
 internal fun Context.dependencyRange(dependency: PluginDependency): String =
     if (dependency.supportedVersion == PluginDependency.VERSION_ANY)
@@ -72,6 +82,7 @@ class StorePluginAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder =
         Holder(ItemStorePluginBinding.inflate(LayoutInflater.from(parent.context), parent, false)).apply {
             binding.install.compact = true
+            binding.iconFrame.clipToOutline = true
             binding.install.onCompleted = onCompleted
         }
 
@@ -87,14 +98,14 @@ class StorePluginAdapter(
         val context = holder.itemView.context
         with(holder.binding) {
             card.transitionName = "store_row_${plugin.id}"
-            icon.setImageResource(plugin.icon)
+            icon.loadStoreImage(plugin.icon)
             name.text = plugin.name
             verified.visibility = if (plugin.isVerified) View.VISIBLE else View.GONE
             summary.text = plugin.summary
             meta.text = listOf(
                 plugin.authors.first().name,
                 "v${plugin.latest.version}",
-                context.formatSize(plugin.latest.fileSize),
+                context.formatSize(plugin.latest.size),
             ).joinToString(" · ")
             card.setOnClickListener { onClick(plugin, card) }
             install.setOnClickListener { onInstall(plugin) }
@@ -144,6 +155,7 @@ class StoreFeaturedAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val binding = ItemStoreFeaturedBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         val fadeDistance = binding.root.dp(72).toFloat()
+        binding.iconFrame.clipToOutline = true
         binding.mask.setOnMaskChangedListener { mask ->
             binding.text.translationX = mask.left
             binding.text.alpha = 1f - (mask.left / fadeDistance).coerceIn(0f, 1f)
@@ -157,10 +169,9 @@ class StoreFeaturedAdapter(
         with(holder.binding) {
             mask.transitionName = "store_featured_${plugin.id}"
             stars.seed = position * 31 + 5
-            icon.setImageResource(plugin.icon)
-            bigIcon.setImageResource(plugin.icon)
+            icon.loadStoreImage(plugin.icon)
             category.text = index?.categoryName(plugin.category)
-            headline.text = feature.headline
+            headline.text = feature.headline.get()
             caption.text = "${plugin.name} · ${plugin.authorNames()}"
             mask.setOnClickListener { onClick(plugin, mask) }
         }
@@ -178,32 +189,16 @@ class StoreScreenshotAdapter(
         plugin.screenshots.size
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder =
-        Holder(ItemStoreScreenshotBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+        Holder(ItemStoreScreenshotBinding.inflate(LayoutInflater.from(parent.context), parent, false)).apply {
+            binding.frame.clipToOutline = true
+        }
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val screenshot = plugin.screenshots[position]
         with(holder.binding) {
-            stars.seed = position * 17 + plugin.id.hashCode()
-            icon.setImageResource(plugin.icon)
+            image.loadStoreImage(screenshot.image, R.drawable.ic_store_screenshot_placeholder)
             caption.text = screenshot.caption
-            while (bubbles.childCount > 1)
-                bubbles.removeViewAt(1)
-            val random = Random(screenshot.caption.hashCode())
-            repeat(screenshot.lines) { line ->
-                val isMine = line % 2 == 1
-                bubbles.addView(View(root.context).apply {
-                    setBackgroundResource(R.drawable.bg_store_bubble)
-                    if (isMine)
-                        backgroundTintList = root.context.getColorStateList(R.color.store_gold)
-                    alpha = if (isMine) 0.55f else 1f
-                }, LinearLayout.LayoutParams(
-                    root.dp(50 + random.nextInt(50)),
-                    root.dp(16 + random.nextInt(18)),
-                ).apply {
-                    topMargin = root.dp(10)
-                    gravity = if (isMine) Gravity.END else Gravity.START
-                })
-            }
+            caption.visibility = if (screenshot.caption.isEmpty()) View.GONE else View.VISIBLE
             frame.setOnClickListener(onClick)
         }
     }

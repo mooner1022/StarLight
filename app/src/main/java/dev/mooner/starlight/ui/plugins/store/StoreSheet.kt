@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.LinearLayout
@@ -21,6 +22,7 @@ internal class StoreSheetBuilder {
     var note: CharSequence? = null
     @DrawableRes
     var icon: Int = R.drawable.ic_store_sparkle
+    var iconUrl: String? = null
 
     internal var positive: Pair<String, () -> Unit>? = null
     internal var negative: Pair<String, () -> Unit>? = null
@@ -47,7 +49,17 @@ internal fun Context.showStoreSheet(block: StoreSheetBuilder.() -> Unit): SlideB
 
     with(binding) {
         title.text = builder.title
-        icon.setImageResource(builder.icon)
+        val url = builder.iconUrl
+        if (url != null) {
+            icon.imageTintList = null
+            icon.layoutParams = icon.layoutParams.apply {
+                width = ViewGroup.LayoutParams.MATCH_PARENT
+                height = ViewGroup.LayoutParams.MATCH_PARENT
+            }
+            iconFrame.clipToOutline = true
+            icon.loadStoreImage(url)
+        } else
+            icon.setImageResource(builder.icon)
         message.setTextOrHide(builder.message)
         note.setTextOrHide(builder.note)
         builder.content?.invoke(inflater, content)

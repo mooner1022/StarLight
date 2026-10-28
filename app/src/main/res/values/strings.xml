@@ -233,7 +233,7 @@
     <string name="plugin_disable">Turn off</string>
     <string name="plugin_store_title">Plugin Store</string>
     <string name="plugin_store_subtitle">Find plugins that make StarLight shine</string>
-    <string name="plugin_store_synced">Synced %s</string>
+    <string name="plugin_store_synced">Updated %s</string>
     <string name="plugin_store_search_hint">Search by name, tag or developer</string>
     <string name="plugin_store_category_all">All</string>
     <string name="plugin_store_featured">Featured</string>
@@ -241,7 +241,6 @@
     <string name="plugin_store_results">Results</string>
     <string name="plugin_store_sort_updated">Recently updated</string>
     <string name="plugin_store_sort_name">Name</string>
-    <string name="plugin_store_sort_downloads">Most downloaded</string>
     <string name="plugin_store_updates_title">%d updates available</string>
     <string name="plugin_store_update_all">Update all</string>
     <string name="plugin_store_empty">No plugins match.</string>
@@ -263,7 +262,6 @@
     <string name="plugin_store_incompatible_warning">Built for PluginCore %1$s, so it can\'t be loaded on %2$s.</string>
     <string name="plugin_store_stat_version">Version</string>
     <string name="plugin_store_stat_size">Size</string>
-    <string name="plugin_store_stat_downloads">Downloads</string>
     <string name="plugin_store_stat_updated">Updated</string>
     <string name="plugin_store_section_preview">Preview</string>
     <string name="plugin_store_section_about">About</string>
@@ -300,16 +298,15 @@
     <string name="plugin_store_deps_install_all">Install all</string>
     <string name="plugin_store_restart_pending">%d plugins waiting for restart</string>
     <string name="plugin_store_repository">Repository</string>
-    <string name="plugin_store_repository_message">This is a mockup with sample data. Nothing is downloaded or installed.</string>
+    <string name="plugin_store_repository_message">Installing is still simulated. Nothing is downloaded or installed yet.</string>
     <string name="plugin_store_repository_name">Name</string>
     <string name="plugin_store_repository_url">Address</string>
     <string name="plugin_store_repository_branch">Branch</string>
-    <string name="plugin_store_repository_commit">Commit</string>
-    <string name="plugin_store_repository_synced">Synced</string>
     <string name="plugin_store_reload">Reload</string>
-    <string name="plugin_store_preview_error">Preview error</string>
     <string name="plugin_store_mock">Mockup: %s</string>
-    <string name="plugin_store_mock_restart">This is a mockup, so nothing was installed.</string>
+    <string name="plugin_store_mock_restart">Installing is simulated, so nothing was installed.</string>
     <string name="plugin_store_copied">Copied</string>
     <string name="plugin_store_verified">Verified developer</string>
+    <string name="plugin_store_stat_api">API</string>
+    <string name="plugin_store_repository_updated">Index updated</string>
 </resources>

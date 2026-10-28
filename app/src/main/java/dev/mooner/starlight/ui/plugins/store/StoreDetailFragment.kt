@@ -104,7 +104,7 @@ class StoreDetailFragment : Fragment() {
         with(binding) {
             back.setOnClickListener { parentFragmentManager.popBackStack() }
             share.setOnClickListener {
-                store.showMockPeek(getString(R.string.plugin_store_mock, plugin.sourceUrl ?: index.repository.url))
+                store.showMockPeek(getString(R.string.plugin_store_mock, plugin.source ?: StoreSource.REPOSITORY_URL))
             }
             install.onCompleted = { button -> store.burst(button) }
             install.setOnClickListener {
@@ -132,7 +132,8 @@ class StoreDetailFragment : Fragment() {
 
     private fun bindHeader() {
         with(binding) {
-            icon.setImageResource(plugin.icon)
+            iconFrame.clipToOutline = true
+            icon.loadStoreImage(plugin.icon)
             name.text = plugin.name
             topTitle.text = plugin.name
             authors.text = "${plugin.authorNames()} · ${index.categoryName(plugin.category)}"
@@ -163,8 +164,8 @@ class StoreDetailFragment : Fragment() {
                 StoreInstallState.Installed          -> getString(R.string.plugin_store_hint_installed)
                 is StoreInstallState.Downloading     -> getString(
                     R.string.plugin_store_hint_downloading,
-                    requireContext().formatSize(latest.fileSize * state.progress / 100),
-                    requireContext().formatSize(latest.fileSize),
+                    requireContext().formatSize(latest.size * state.progress / 100),
+                    requireContext().formatSize(latest.size),
                 )
                 StoreInstallState.Verifying          -> getString(R.string.plugin_store_hint_verifying)
                 StoreInstallState.PendingRestart     -> getString(R.string.plugin_store_hint_pending)
@@ -178,10 +179,10 @@ class StoreDetailFragment : Fragment() {
     private fun bindStats() {
         val latest = plugin.latest
         val stats = listOf(
-            "v${latest.version}"                          to R.string.plugin_store_stat_version,
-            requireContext().formatSize(latest.fileSize)  to R.string.plugin_store_stat_size,
-            formatCount(plugin.downloads)                 to R.string.plugin_store_stat_downloads,
-            compactDate(latest.releasedAt)                to R.string.plugin_store_stat_updated,
+            "v${latest.version}"                                    to R.string.plugin_store_stat_version,
+            requireContext().formatSize(latest.size)                to R.string.plugin_store_stat_size,
+            "${latest.apiVersion.major}.${latest.apiVersion.minor}" to R.string.plugin_store_stat_api,
+            compactDate(latest.releasedAtMillis)                    to R.string.plugin_store_stat_updated,
         )
         val parent = binding.stats
         stats.forEachIndexed { i, (value, label) ->
@@ -267,13 +268,13 @@ class StoreDetailFragment : Fragment() {
             ItemStoreReleaseBinding.inflate(layoutInflater, parent, true).apply {
                 version.text = "v${release.version}"
                 latest.visibility = if (i == 0) View.VISIBLE else View.GONE
-                date.text = relativeTime(release.releasedAt)
+                date.text = relativeTime(release.releasedAtMillis)
                 markwon.setMarkdown(changelog, release.changelog)
-                meta.text = "API ${release.apiVersion.major}.${release.apiVersion.minor} · ${requireContext().formatSize(release.fileSize)}"
+                meta.text = "API ${release.apiVersion.major}.${release.apiVersion.minor} · ${requireContext().formatSize(release.size)}"
                 val isCompatible = release.apiVersion compatibleWith Info.PLUGINCORE_VERSION
                 installVersion.visibility = if (i > 0 && isCompatible) View.VISIBLE else View.GONE
                 installVersion.setOnClickListener {
-                    store.showMockPeek(getString(R.string.plugin_store_mock, release.downloadUrl))
+                    store.showMockPeek(getString(R.string.plugin_store_mock, StoreSource.resolve(release.file)))
                 }
                 if (i > 0)
                     root.visibility = View.GONE
@@ -316,7 +317,8 @@ class StoreDetailFragment : Fragment() {
         dependencyRows = dependencies.map { dependency ->
             val target = index.find(dependency.pluginId)
             dependency to ItemStoreDependencyBinding.inflate(layoutInflater, binding.dependencies, true).apply {
-                icon.setImageResource(target?.icon ?: R.drawable.ic_round_plugins_24)
+                iconFrame.clipToOutline = true
+                icon.loadStoreImage(target?.icon)
                 name.text = target?.name ?: dependency.pluginId
                 version.text = "${dependency.pluginId} · ${requireContext().dependencyRange(dependency)}"
                 if (target != null)
@@ -352,15 +354,15 @@ class StoreDetailFragment : Fragment() {
             add(Triple(R.string.plugin_store_info_api, latest.apiVersion.toString(), false))
             add(Triple(
                 R.string.plugin_store_info_native,
-                getString(if (latest.usesNativeLibrary) R.string.plugin_store_info_native_yes else R.string.plugin_store_info_native_no),
+                getString(if (latest.nativeLibrary) R.string.plugin_store_info_native_yes else R.string.plugin_store_info_native_no),
                 false,
             ))
             add(Triple(R.string.plugin_store_info_file, latest.fileName, false))
             add(Triple(R.string.plugin_store_info_sha256, latest.sha256, true))
-            plugin.sourceUrl?.let { add(Triple(R.string.plugin_store_info_source, it.removePrefix("https://"), true)) }
+            plugin.source?.let { add(Triple(R.string.plugin_store_info_source, it.removePrefix("https://"), true)) }
             add(Triple(
                 R.string.plugin_store_info_published,
-                DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(plugin.publishedAt)),
+                DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(plugin.publishedAtMillis)),
                 false,
             ))
         }

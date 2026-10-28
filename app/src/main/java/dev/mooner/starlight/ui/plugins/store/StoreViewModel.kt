@@ -6,6 +6,7 @@ import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.plugin.PluginDependency
 import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.ui.plugins.knownPlugins
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +39,7 @@ sealed interface StoreInstallState {
 }
 
 enum class StoreSort {
-    UPDATED, NAME, DOWNLOADS
+    UPDATED, NAME
 }
 
 class StoreViewModel : ViewModel() {
@@ -53,8 +54,7 @@ class StoreViewModel : ViewModel() {
     val state: StateFlow<StoreLoadState> = _state
 
     private val installed = MutableStateFlow(
-        SampleStoreSource.sampleInstalled +
-                runCatching { knownPlugins().associate { it.id to it.version } }.getOrDefault(emptyMap())
+        runCatching { knownPlugins().associate { it.id to it.version } }.getOrDefault(emptyMap())
     )
     private val tasks = MutableStateFlow<Map<String, Task>>(emptyMap())
 
@@ -79,13 +79,18 @@ class StoreViewModel : ViewModel() {
         load()
     }
 
-    fun load(simulateFailure: Boolean = false) {
+    fun load() {
         loadJob?.cancel()
         hasRevealedContent = false
         _state.value = StoreLoadState.Loading
         loadJob = viewModelScope.launch {
-            _state.value = runCatching { SampleStoreSource.fetchIndex(simulateFailure) }
-                .fold(StoreLoadState::Loaded, StoreLoadState::Failed)
+            _state.value = try {
+                StoreLoadState.Loaded(StoreSource.fetchIndex())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                StoreLoadState.Failed(e)
+            }
         }
     }
 

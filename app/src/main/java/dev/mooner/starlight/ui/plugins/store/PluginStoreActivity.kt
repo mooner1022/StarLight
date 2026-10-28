@@ -75,12 +75,13 @@ class PluginStoreActivity : AppCompatActivity() {
         showStoreSheet {
             title = getString(R.string.plugin_store_deps_title)
             message = getString(R.string.plugin_store_deps_message, plugin.name)
-            icon = plugin.icon
+            iconUrl = plugin.icon
             content { inflater, parent ->
                 for (dependency in missing) {
                     val target = index.find(dependency.pluginId)
                     ItemStoreDependencyBinding.inflate(inflater, parent, true).apply {
-                        icon.setImageResource(target?.icon ?: R.drawable.ic_round_plugins_24)
+                        iconFrame.clipToOutline = true
+                        icon.loadStoreImage(target?.icon)
                         name.text = target?.name ?: dependency.pluginId
                         version.text = "${dependency.pluginId} · ${dependencyRange(dependency)}"
                         status.setText(if (target != null) R.string.plugin_store_deps_with else R.string.plugin_store_dep_unknown)

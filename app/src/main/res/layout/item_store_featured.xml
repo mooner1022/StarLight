@@ -27,11 +27,10 @@
             android:layout_height="130dp"
             android:layout_gravity="end|center_vertical"
             android:layout_marginEnd="-14dp"
-            android:alpha="0.2"
+            android:alpha="0.22"
             android:importantForAccessibility="no"
             android:rotation="-14"
-            app:tint="@color/store_gold"
-            tools:src="@drawable/ic_round_plugins_24"/>
+            android:src="@drawable/ic_logo_transparent"/>
 
         <LinearLayout
             android:id="@+id/text"
@@ -48,17 +47,18 @@
                 android:orientation="horizontal">
 
                 <FrameLayout
+                    android:id="@+id/iconFrame"
                     android:layout_width="38dp"
                     android:layout_height="38dp"
-                    android:background="@drawable/bg_store_icon">
+                    android:background="@drawable/bg_store_icon"
+                    android:foreground="@drawable/fg_store_icon_border">
 
                     <ImageView
                         android:id="@+id/icon"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_gravity="center"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
                         android:importantForAccessibility="no"
-                        app:tint="@color/store_gold"/>
+                        android:scaleType="centerCrop"/>
                 </FrameLayout>
 
                 <TextView

@@ -21,18 +21,18 @@
             android:layout_width="52dp"
             android:layout_height="52dp"
             android:background="@drawable/bg_store_icon"
+            android:foreground="@drawable/fg_store_icon_border"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <ImageView
                 android:id="@+id/icon"
-                android:layout_width="26dp"
-                android:layout_height="26dp"
-                android:layout_gravity="center"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:importantForAccessibility="no"
-                app:tint="@color/store_gold"
-                tools:src="@drawable/ic_round_plugins_24"/>
+                android:scaleType="centerCrop"
+                tools:src="@drawable/ic_store_icon_placeholder"/>
         </FrameLayout>
 
         <TextView

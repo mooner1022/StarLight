@@ -212,8 +212,8 @@ class StoreHomeFragment : Fragment() {
 
     private fun bindIndex(index: StoreIndex) {
         with(binding) {
-            repositoryName.text = index.repository.name
-            repositorySync.text = getString(R.string.plugin_store_synced, relativeTime(index.repository.syncedAt))
+            repositoryName.text = index.name
+            repositorySync.text = getString(R.string.plugin_store_synced, relativeTime(index.generatedAtMillis))
             featuredAdapter.submit(index)
         }
         bindCategories(index)
@@ -247,7 +247,7 @@ class StoreHomeFragment : Fragment() {
         group.removeAllViews()
         val entries = listOf<StoreCategory?>(null) + index.categories
         for (category in entries) {
-            val chip = createChip(category?.name ?: getString(R.string.plugin_store_category_all))
+            val chip = createChip(category?.name?.get() ?: getString(R.string.plugin_store_category_all))
             chip.tag = category?.id
             group.addView(chip)
             if (category?.id == viewModel.category)
@@ -300,9 +300,8 @@ class StoreHomeFragment : Fragment() {
                             plugin.authors.any { it.name.contains(query, ignoreCase = true) })
         }
         return when (viewModel.sort) {
-            StoreSort.UPDATED   -> filtered.sortedByDescending { it.latest.releasedAt }
+            StoreSort.UPDATED   -> filtered.sortedByDescending { it.latest.releasedAtMillis }
             StoreSort.NAME      -> filtered.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
-            StoreSort.DOWNLOADS -> filtered.sortedByDescending { it.downloads }
         }
     }
 
@@ -347,7 +346,6 @@ class StoreHomeFragment : Fragment() {
         binding.sort.setText(when (viewModel.sort) {
             StoreSort.UPDATED   -> R.string.plugin_store_sort_updated
             StoreSort.NAME      -> R.string.plugin_store_sort_name
-            StoreSort.DOWNLOADS -> R.string.plugin_store_sort_downloads
         })
     }
 
@@ -359,19 +357,18 @@ class StoreHomeFragment : Fragment() {
     }
 
     private fun showRepositorySheet() {
-        val repository = shownIndex?.repository
+        val index = shownIndex
         requireContext().showStoreSheet {
             title = getString(R.string.plugin_store_repository)
             icon = dev.mooner.configdsl.R.drawable.ic_github
             note = getString(R.string.plugin_store_repository_message)
-            if (repository != null)
+            if (index != null)
                 content { inflater, parent ->
                     listOf(
-                        R.string.plugin_store_repository_name   to repository.name,
-                        R.string.plugin_store_repository_url    to repository.url.removePrefix("https://"),
-                        R.string.plugin_store_repository_branch to repository.branch,
-                        R.string.plugin_store_repository_commit to repository.commit,
-                        R.string.plugin_store_repository_synced to relativeTime(repository.syncedAt),
+                        R.string.plugin_store_repository_name    to index.name,
+                        R.string.plugin_store_repository_url     to StoreSource.REPOSITORY_URL.removePrefix("https://"),
+                        R.string.plugin_store_repository_branch  to StoreSource.BRANCH,
+                        R.string.plugin_store_repository_updated to relativeTime(index.generatedAtMillis),
                     ).forEach { (key, value) ->
                         ItemStoreInfoBinding.inflate(inflater, parent, true).apply {
                             this.key.setText(key)
@@ -380,7 +377,7 @@ class StoreHomeFragment : Fragment() {
                     }
                 }
             positive(getString(R.string.plugin_store_reload)) { viewModel.load() }
-            negative(getString(R.string.plugin_store_preview_error)) { viewModel.load(simulateFailure = true) }
+            negative(getString(R.string.close))
         }
     }
 

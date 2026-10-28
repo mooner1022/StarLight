@@ -13,18 +13,19 @@
     android:paddingHorizontal="10dp">
 
     <FrameLayout
+        android:id="@+id/iconFrame"
         android:layout_width="38dp"
         android:layout_height="38dp"
-        android:background="@drawable/bg_store_icon">
+        android:background="@drawable/bg_store_icon"
+        android:foreground="@drawable/fg_store_icon_border">
 
         <ImageView
             android:id="@+id/icon"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:layout_gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:importantForAccessibility="no"
-            app:tint="@color/store_gold"
-            tools:src="@drawable/ic_round_plugins_24"/>
+            android:scaleType="centerCrop"
+            tools:src="@drawable/ic_store_icon_placeholder"/>
     </FrameLayout>
 
     <LinearLayout
