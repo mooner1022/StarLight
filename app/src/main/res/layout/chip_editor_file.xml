@@ -1,65 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="@dimen/editor_chip_height"
-    android:layout_marginEnd="8dp"
-    android:orientation="vertical"
-    android:background="@color/transparent">
+    android:foreground="?attr/selectableItemBackground">
 
     <LinearLayout
+        android:id="@+id/tabContent"
         android:layout_width="wrap_content"
-        android:layout_height="0dp"
+        android:layout_height="match_parent"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:layout_weight="1"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:paddingStart="12dp"
+        android:paddingEnd="2dp">
 
         <ImageView
             android:id="@+id/imageViewIcon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="2dp"
-            app:srcCompat="@drawable/ic_round_code_24"
-            app:tint="@color/main_bright"
-            tools:ignore="ImageContrastCheck"/>
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:importantForAccessibility="no"
+            app:srcCompat="@drawable/ic_round_code_24"/>
 
         <TextView
             android:id="@+id/textViewFileName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="4dp"
+            android:layout_marginStart="8dp"
+            android:ellipsize="middle"
             android:fontFamily="@font/nanumsquare_neo_regular"
-            android:maxWidth="400dp"
+            android:maxWidth="200dp"
             android:maxLines="1"
-            android:minWidth="90dp"
-            android:textAlignment="viewStart"
             android:textColor="#EBEBEB"
-            tools:ignore="TextContrastCheck"
-            tools:text="FILE_NAME"/>
+            android:textSize="13sp"
+            tools:text="index.js"/>
+
+        <View
+            android:id="@+id/dirtyDot"
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_editor_dot"
+            android:contentDescription="@string/editor_unsaved_changes"
+            android:visibility="gone"/>
 
         <ImageView
             android:id="@+id/buttonClose"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:srcCompat="@drawable/ic_round_close_24"
-            app:tint="@color/editor_text"/>
+            android:layout_width="32dp"
+            android:layout_height="match_parent"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/close"
+            android:padding="9dp"
+            app:srcCompat="@drawable/ic_round_close_24"/>
     </LinearLayout>
 
     <View
         android:id="@+id/isCurrentMain"
         android:layout_width="match_parent"
-        android:layout_height="3dp"
-        android:background="@color/main_bright"
-        android:layout_weight="0"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+        android:layout_height="2dp"
+        android:layout_gravity="bottom"
+        android:background="@color/main_bright"/>
 
-</LinearLayout>
+</FrameLayout>
