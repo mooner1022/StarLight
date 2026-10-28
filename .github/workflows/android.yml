@@ -156,6 +156,5 @@ jobs:
         done
         cd ..
 
-        gh release list --limit 100 --json tagName --jq '.[].tagName | select(startswith("snapshot-"))' \
-          | tail -n +11 \
+        gh release list --limit 100 --json tagName --jq ".[].tagName | select(startswith(\"snapshot-\") and . != \"$tag\")" \
           | xargs -r -n1 gh release delete --cleanup-tag -y
