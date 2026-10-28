@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.WindowCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -37,6 +38,7 @@ import dev.mooner.starlight.ui.settings.update.checkForUpdate
 import dev.mooner.starlight.ui.settings.update.isAutoUpdateCheckEnabled
 import dev.mooner.starlight.utils.LAYOUT_TABLET
 import dev.mooner.starlight.utils.applyEdgeToEdge
+import dev.mooner.starlight.utils.isNightMode
 import dev.mooner.starlight.utils.layoutMode
 import dev.mooner.starlight.utils.showChangelogDialog
 import kotlinx.coroutines.Dispatchers
@@ -84,6 +86,12 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+
+            val isNight = isNightMode()
+            imageViewLogo.isVisible = !isNight
+            nightHeader.root.isVisible = isNight
+            nightHeader.nightStars.density = 0.25f
+            nightHeader.nightStars.brightness = 0.75f
 
             appBarLayout.addOnOffsetChangedListener(::handleOffsetUpdate)
         }
@@ -191,6 +199,8 @@ class MainActivity : AppCompatActivity() {
             statusText.alpha = alpha
             titleText.alpha = alpha
             imageViewLogo.alpha = alpha
+            nightHeader.root.alpha = alpha
+            nightHeader.nightStars.parallax = -verticalOffset * 0.3f
         }
     }
 

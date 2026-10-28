@@ -66,7 +66,7 @@ data class IconInfo(
                 iconFile != null ->
                     load(iconFile) { scale(Scale.FIT) }
             }
-            imageTintList = iconTintColor?.let(ColorStateList::valueOf)
+            imageTintList = iconTintColor?.let { ColorStateList.valueOf(ConfigDSL.iconTint(context, it)) }
         }
     }
 

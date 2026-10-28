@@ -40,7 +40,7 @@
                     tools:text="정렬: 가나다 역순"
                     app:chipStartPadding="11dp"
                     app:chipEndPadding="8dp"
-                    app:chipIconTint="#80BCBD"
+                    app:chipIconTint="@color/icon_teal"
                     app:chipIcon="@drawable/ic_round_sort_by_alpha_24"
                     app:chipMinHeight="48dp"
                     app:chipCornerRadius="18dp"
@@ -57,7 +57,7 @@
             android:background="@drawable/bg_project_header_button"
             android:contentDescription="@string/project_search_hint"
             android:src="@drawable/ic_round_search_24"
-            app:tint="#80BCBD"/>
+            app:tint="@color/icon_teal"/>
 
         <com.google.android.material.chip.Chip
             android:id="@+id/new_project"
