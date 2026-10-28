@@ -107,7 +107,7 @@ class EditorLogsFragment: Fragment() {
     private fun updateSummary() {
         val binding = _binding ?: return
         val count = logsAdapter.itemCount
-        binding.textLogsSummary.text = getString(R.string.editor_logs_summary, count)
+        binding.textLogsSummary.text = resources.getQuantityString(R.plurals.editor_log_count, count, count)
         binding.textNoLogs.isVisible = count == 0
         binding.buttonClearLogs.isEnabled = count > 0
         binding.buttonClearLogs.alpha = if (count > 0) 1f else 0.4f

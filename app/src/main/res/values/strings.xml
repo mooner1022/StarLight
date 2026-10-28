@@ -116,11 +116,7 @@
     <string name="editor_new_folder">New folder</string>
     <string name="editor_collapse_all">Collapse all</string>
     <string name="editor_clear_logs">Clear logs</string>
-    <string name="editor_files_summary">%1$d files · %2$d folders</string>
-    <string name="editor_logs_summary">%1$d logs</string>
-    <string name="editor_problems_summary">%1$s · %2$d errors · %3$d warnings</string>
     <string name="editor_no_problems">No problems found.</string>
-    <string name="editor_folder_items">%1$d items</string>
     <string name="editor_unsaved_changes">Unsaved changes</string>
     <string name="editor_replace">Replace</string>
     <string name="editor_goto_line">Go to line</string>
@@ -169,4 +165,28 @@
     <string name="widget_script">Script</string>
 
     <string name="api_cannot_send_to_room">Cannot send message to a room \'%s\' without receiving initial message.</string>
+    <plurals name="editor_file_count">
+        <item quantity="one">%d file</item>
+        <item quantity="other">%d files</item>
+    </plurals>
+    <plurals name="editor_folder_count">
+        <item quantity="one">%d folder</item>
+        <item quantity="other">%d folders</item>
+    </plurals>
+    <plurals name="editor_log_count">
+        <item quantity="one">%d log</item>
+        <item quantity="other">%d logs</item>
+    </plurals>
+    <plurals name="editor_error_count">
+        <item quantity="one">%d error</item>
+        <item quantity="other">%d errors</item>
+    </plurals>
+    <plurals name="editor_warning_count">
+        <item quantity="one">%d warning</item>
+        <item quantity="other">%d warnings</item>
+    </plurals>
+    <plurals name="editor_folder_items">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
 </resources>

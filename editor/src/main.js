@@ -149,7 +149,9 @@ const applySettings = () => view.dispatch({
 });
 
 const syncBackground = () => requestAnimationFrame(() => {
-    document.body.style.background = getComputedStyle(view.dom).backgroundColor;
+    const background = getComputedStyle(view.dom).backgroundColor;
+    document.body.style.background = background;
+    WebviewCallback.onEditorBackground(background);
 });
 
 const storeCurrent = () => {

@@ -94,7 +94,12 @@ class FileTreeFragment : Fragment() {
 
     private fun updateSummary() {
         val binding = _binding ?: return
-        binding.textFilesSummary.text = getString(R.string.editor_files_summary, treeAdapter.fileCount, treeAdapter.directoryCount)
+        val files = treeAdapter.fileCount
+        val folders = treeAdapter.directoryCount
+        binding.textFilesSummary.text = listOf(
+            resources.getQuantityString(R.plurals.editor_file_count, files, files),
+            resources.getQuantityString(R.plurals.editor_folder_count, folders, folders),
+        ).joinToString(" · ")
     }
 
     fun refresh(currentFile: File?) {
