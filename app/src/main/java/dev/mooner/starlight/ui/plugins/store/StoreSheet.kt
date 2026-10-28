@@ -1,7 +1,6 @@
 package dev.mooner.starlight.ui.plugins.store
 
 import android.content.Context
-import android.graphics.Color
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -11,10 +10,9 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.core.view.children
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.DialogStoreSheetBinding
+import dev.mooner.starlight.ui.common.SlideBottomSheetDialog
 
 internal class StoreSheetBuilder {
 
@@ -41,9 +39,9 @@ internal class StoreSheetBuilder {
     }
 }
 
-internal fun Context.showStoreSheet(block: StoreSheetBuilder.() -> Unit): BottomSheetDialog {
+internal fun Context.showStoreSheet(block: StoreSheetBuilder.() -> Unit): SlideBottomSheetDialog {
     val builder = StoreSheetBuilder().apply(block)
-    val dialog = BottomSheetDialog(this)
+    val dialog = SlideBottomSheetDialog(this)
     val inflater = LayoutInflater.from(this)
     val binding = DialogStoreSheetBinding.inflate(inflater)
 
@@ -59,12 +57,6 @@ internal fun Context.showStoreSheet(block: StoreSheetBuilder.() -> Unit): Bottom
     }
 
     dialog.setContentView(binding.root)
-    dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-        ?.setBackgroundColor(Color.TRANSPARENT)
-    dialog.behavior.apply {
-        state = BottomSheetBehavior.STATE_EXPANDED
-        skipCollapsed = true
-    }
     dialog.setOnShowListener { binding.playEnterAnimation() }
     dialog.show()
     return dialog
@@ -75,7 +67,7 @@ private fun TextView.setTextOrHide(value: CharSequence?) {
     visibility = if (value.isNullOrEmpty()) View.GONE else View.VISIBLE
 }
 
-private fun TextView.bindAction(dialog: BottomSheetDialog, action: Pair<String, () -> Unit>?) {
+private fun TextView.bindAction(dialog: SlideBottomSheetDialog, action: Pair<String, () -> Unit>?) {
     if (action == null) {
         visibility = View.GONE
         return
