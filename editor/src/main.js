@@ -19,6 +19,7 @@ import { themeFor } from "./themes.js";
 import { lintSource } from "./lint.js";
 import { beautify } from "./beautify.js";
 import { tapToShowDiagnostics } from "./diagnostics.js";
+import { keepFirstTouchSelection } from "./touch.js";
 
 const sessions = new Map();
 const settings = { theme: "tomorrow_night_eighties", fontSize: 15, wrap: false };
@@ -98,6 +99,7 @@ const createState = (code, mode) => {
             foldGutter(),
             lintGutter(),
             tapToShowDiagnostics,
+            keepFirstTouchSelection,
             highlightActiveLineGutter(),
             highlightSpecialChars(),
             history(),
