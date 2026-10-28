@@ -2,6 +2,9 @@ package dev.mooner.starlight.ui.editor.tab
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Color
+import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +13,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import coil.transform.RoundedCornersTransformation
 import dev.mooner.starlight.R
+import dev.mooner.starlight.ui.editor.DefaultEditorActivity
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
@@ -32,6 +36,7 @@ class TabViewAdapter(
 ): RecyclerView.Adapter<TabViewAdapter.TabViewHolder>() {
 
     private var textColor: Int = getTextColor(isDark)
+    private var selectedOverlay: Int = getSelectedOverlay(isDark)
     private var showFileIcon: Boolean = false
     private var alwaysShowClose: Boolean = true
 
@@ -64,15 +69,21 @@ class TabViewAdapter(
                         transformations(RoundedCornersTransformation(dp(4).toFloat()))
                     }
                 }
-                ?: holder.fileIcon.loadWithTint(R.drawable.ic_round_code_24, R.color.main_bright)
+                ?: if (session.language in PLAIN_LANGUAGES)
+                    holder.fileIcon.loadWithTint(dev.mooner.configdsl.R.drawable.ic_round_file_24, null).also {
+                        holder.fileIcon.imageTintList = ColorStateList.valueOf(textColor)
+                    }
+                else
+                    holder.fileIcon.loadWithTint(R.drawable.ic_round_code_24, R.color.main_bright)
 
+        val isSelected = position == selectedIndex
         holder.fileName.text = getUniqueFileName(session.fileName)
-            .let { if (session.isUpdated) "$it *" else it }
         holder.fileName.setTextColor(textColor)
-        if (position == selectedIndex)
-            holder.indicator.visibility = View.VISIBLE
-        else
-            holder.indicator.visibility = View.GONE
+        holder.fileName.alpha = if (isSelected) 1f else 0.7f
+        holder.dirtyDot.visibility = if (session.isUpdated) View.VISIBLE else View.GONE
+        holder.dirtyDot.backgroundTintList = ColorStateList.valueOf(textColor)
+        holder.indicator.visibility = if (isSelected) View.VISIBLE else View.GONE
+        holder.itemView.setBackgroundColor(if (isSelected) selectedOverlay else Color.TRANSPARENT)
 
         holder.closeButton.visibility =
             if (sessions.size > 1 && (alwaysShowClose || position == selectedIndex))
@@ -80,6 +91,7 @@ class TabViewAdapter(
             else
                 View.GONE
         holder.closeButton.imageTintList = ColorStateList.valueOf(textColor)
+        holder.content.updatePadding(right = if (holder.closeButton.isVisible) dp(2) else dp(12))
 
         holder.closeButton.setOnClickListener {
             val index = sessions.indexOf(session)
@@ -160,6 +172,7 @@ class TabViewAdapter(
 
     fun updateTextColor(isDark: Boolean) {
         textColor = getTextColor(isDark)
+        selectedOverlay = getSelectedOverlay(isDark)
 
         notifyItemRangeChanged(0, itemCount)
     }
@@ -173,6 +186,9 @@ class TabViewAdapter(
             return parts.takeLast(2).joinToString("/")
         return fileName
     }
+
+    private fun getSelectedOverlay(isDark: Boolean): Int =
+        if (isDark) Color.argb(20, 0, 0, 0) else Color.argb(26, 255, 255, 255)
 
     private fun getTextColor(isDark: Boolean): Int {
         return if (isDark)
@@ -210,6 +226,12 @@ class TabViewAdapter(
     companion object {
         private const val UNDEFINED = -1
 
+        private val PLAIN_LANGUAGES = setOf(
+            DefaultEditorActivity.Language.PLAIN_TEXT,
+            DefaultEditorActivity.Language.MARKDOWN,
+            DefaultEditorActivity.Language.JSON,
+        )
+
         const val EVENT_SELECTED        = 0
         const val EVENT_CLOSED          = 1
         const val EVENT_CLOSE_REQUESTED = 2
@@ -222,6 +244,8 @@ class TabViewAdapter(
         val fileIcon: ImageView = itemView.findViewById(R.id.imageViewIcon)
         val indicator: View     = itemView.findViewById(R.id.isCurrentMain)
         val closeButton: ImageView = itemView.findViewById(R.id.buttonClose)
+        val dirtyDot: View      = itemView.findViewById(R.id.dirtyDot)
+        val content: View       = itemView.findViewById(R.id.tabContent)
 
         init {
             itemView.setOnClickListener {
