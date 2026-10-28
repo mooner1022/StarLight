@@ -253,9 +253,9 @@ private fun TextView.bindAction(sheet: Sheet, action: SheetAction?) {
     }
     text = action.text
     setOnClickListener {
+        action.action(sheet)
         if (action.autoDismiss)
             sheet.dismiss()
-        action.action(sheet)
     }
 }
 
