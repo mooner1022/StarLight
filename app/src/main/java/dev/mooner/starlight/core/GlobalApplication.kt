@@ -36,7 +36,7 @@ import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.ui.crash.FatalErrorActivity
-import dev.mooner.starlight.ui.splash.quickstart.steps.SetPermissionFragment
+import dev.mooner.starlight.ui.splash.intro.IntroActivity
 import dev.mooner.starlight.utils.checkPermissions
 import dev.mooner.starlight.utils.info
 import kotlinx.coroutines.CoroutineScope
@@ -64,7 +64,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         //pref.edit().clear().commit()
         val isInitial = pref.getBoolean(PREF_IS_INITIAL, true)
 
-        val isPermissionsGrant = checkPermissions(SetPermissionFragment.REQUIRED_PERMISSIONS)
+        val isPermissionsGrant = checkPermissions(IntroActivity.REQUIRED_PERMISSIONS)
 
         if (isInitial || !isPermissionsGrant)
             return

@@ -20,7 +20,6 @@
     <color name="background_chip_accent">#E8D9C4</color>
     <color name="background_popup">#fdfdfd</color>
     <color name="background_log_card">#f7f7f9</color>
-    <color name="background_quickstart">#1B191B</color>
 
     <color name="config_list_item_background">#F0F0F0</color>
 
@@ -126,4 +125,9 @@
     <color name="store_skeleton">#ECE7DF</color>
     <color name="store_shimmer">#B3FFFFFF</color>
     <color name="store_chip_stroke">#E6D7BF</color>
+    <color name="intro_text_sub">#D6CDBF</color>
+    <color name="intro_card">#2C272E</color>
+    <color name="intro_card_stroke">#4DDFC199</color>
+    <color name="intro_icon_bg">#33DFC199</color>
+    <color name="intro_halo">#59DFC199</color>
 </resources>

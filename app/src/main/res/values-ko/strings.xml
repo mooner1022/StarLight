@@ -116,10 +116,6 @@
     <string name="editor_replace">바꾸기</string>
     <string name="editor_goto_line">줄로 이동</string>
 
-    <string name="step_permission">기본 권한 설정</string>
-    <string name="step_read_notification">알림 읽기 허용</string>
-    <string name="step_install_wearable">위치 정보 정책</string>
-    <string name="step_set_basics">기초 설정</string>
     <string name="action_previous_step">이전</string>
     <string name="action_next_step">다음</string>
 
@@ -305,4 +301,41 @@
     <string name="plugin_store_dep_mismatch">버전 안 맞음</string>
     <string name="plugin_store_dep_no_compatible">호환 버전 없음</string>
     <string name="plugin_store_deps_update">함께 업데이트</string>
+    <string name="intro_tagline">스크립트로 빛나는\n나만의 메신저 봇</string>
+    <string name="intro_start">시작하기</string>
+    <string name="intro_next">다음</string>
+    <string name="intro_remaining">%d개 더 허용해 주세요</string>
+    <string name="intro_finish">StarLight 시작하기</string>
+    <string name="intro_prev">이전</string>
+    <string name="intro_tour_eyebrow">둘러보기</string>
+    <string name="intro_tour_title">StarLight로 할 수 있는 일</string>
+    <string name="intro_tour_subtitle">메신저 알림을 읽고, 스크립트로 답하는 봇을 만들어요.</string>
+    <string name="intro_feature_reply_title">메시지에 답장</string>
+    <string name="intro_feature_reply_desc">메신저 알림으로 메시지를 받고, 알림에서 바로 답장해요.</string>
+    <string name="intro_feature_project_title">프로젝트</string>
+    <string name="intro_feature_project_desc">자바스크립트로 봇을 작성하고, 내장 에디터에서 바로 고쳐요.</string>
+    <string name="intro_feature_plugin_title">플러그인 저장소</string>
+    <string name="intro_feature_plugin_desc">저장소의 플러그인으로 언어와 기능을 더해요.</string>
+    <string name="intro_feature_home_title">홈과 로그</string>
+    <string name="intro_feature_home_desc">위젯과 로그로 봇의 상태를 한눈에 확인해요.</string>
+    <string name="intro_required_eyebrow">필수 권한</string>
+    <string name="intro_required_title">권한을 허용해 주세요</string>
+    <string name="intro_required_subtitle">봇을 실행하려면 아래 권한이 필요해요. 각 항목을 누르면 설정으로 이동해요.</string>
+    <string name="intro_optional_eyebrow">권장 설정</string>
+    <string name="intro_optional_title">있으면 더 좋아요</string>
+    <string name="intro_optional_subtitle">봇을 오래 켜 두려면 허용하는 걸 권장해요. 나중에 설정에서도 바꿀 수 있어요.</string>
+    <string name="intro_allow">허용</string>
+    <string name="intro_perm_storage">파일 접근</string>
+    <string name="intro_perm_storage_desc">프로젝트와 플러그인을 기기의 StarLight 폴더에 저장해요.</string>
+    <string name="intro_perm_listener">알림 접근</string>
+    <string name="intro_perm_listener_desc">메신저 알림을 읽어 봇이 메시지를 받고 답장할 수 있게 해요.</string>
+    <string name="intro_perm_overlay">다른 앱 위에 표시</string>
+    <string name="intro_perm_overlay_desc">백그라운드에서 실행 중에도 화면을 띄울 수 있게 해요.</string>
+    <string name="intro_perm_post">알림 표시</string>
+    <string name="intro_perm_post_desc">실행 상태와 오류를 알림으로 알려줘요.</string>
+    <string name="intro_perm_battery">배터리 최적화 제외</string>
+    <string name="intro_perm_battery_desc">시스템이 백그라운드에서 StarLight를 종료하지 않게 해요.</string>
+    <string name="intro_done_title">준비가 끝났어요</string>
+    <string name="intro_done_subtitle">프로젝트 탭의 + 버튼으로 첫 봇을 만들어 보세요.</string>
+    <string name="intro_done_later">나중에 설정에서 허용할 수 있어요</string>
 </resources>

@@ -24,8 +24,7 @@ import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
-import dev.mooner.starlight.ui.splash.quickstart.WelcomeActivity
-import dev.mooner.starlight.ui.splash.quickstart.steps.SetPermissionFragment
+import dev.mooner.starlight.ui.splash.intro.IntroActivity
 import dev.mooner.starlight.utils.applyEdgeToEdge
 import dev.mooner.starlight.utils.checkPermissions
 import dev.mooner.starlight.utils.restartApplication
@@ -62,7 +61,7 @@ class SplashActivity : AppCompatActivity() {
 
         val pref = getSharedPreferences("general", 0)
         val isInitial = pref.getBoolean(PREF_IS_INITIAL, true)
-        val isPermissionsGrant = checkPermissions(SetPermissionFragment.REQUIRED_PERMISSIONS)
+        val isPermissionsGrant = checkPermissions(IntroActivity.REQUIRED_PERMISSIONS)
 
         val imageLoader = ImageLoader.Builder(applicationContext)
             /*
@@ -87,7 +86,8 @@ class SplashActivity : AppCompatActivity() {
 
         if (TEST_QUICK_START || isInitial || !isPermissionsGrant) {
             //ConfigDSL.registerAdapterImpl(::ParentConfigAdapterImpl)
-            startActivity(Intent(this, WelcomeActivity::class.java))
+            startActivity(Intent(this, IntroActivity::class.java)
+                .putExtra(IntroActivity.EXTRA_PERMISSIONS_ONLY, !TEST_QUICK_START && !isInitial))
             finish()
         } else {
             if (GlobalApplication.lastStageValue != null)

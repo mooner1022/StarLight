@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="IntroEyebrow">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">@font/nanumsquare_neo_extrabold</item>
+        <item name="android:letterSpacing">0.18</item>
+        <item name="android:textColor">@color/store_gold</item>
+        <item name="android:textSize">12.5sp</item>
+    </style>
+
+    <style name="IntroTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:fontFamily">@font/nanumsquare_neo_extrabold</item>
+        <item name="android:textColor">@color/store_star</item>
+        <item name="android:textSize">26sp</item>
+    </style>
+
+    <style name="IntroSubtitle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:fontFamily">@font/nanumsquare_neo_regular</item>
+        <item name="android:lineSpacingExtra">3dp</item>
+        <item name="android:textColor">@color/intro_text_sub</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+</resources>
