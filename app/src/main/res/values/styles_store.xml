@@ -5,6 +5,12 @@
         <item name="cornerSize">24dp</item>
     </style>
 
+    <style name="StoreChipText" parent="TextAppearance.MaterialComponents.Chip">
+        <item name="android:fontFamily">@font/nanumsquare_neo_bold</item>
+        <item name="fontFamily">@font/nanumsquare_neo_bold</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
     <style name="StoreSectionTitle">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>

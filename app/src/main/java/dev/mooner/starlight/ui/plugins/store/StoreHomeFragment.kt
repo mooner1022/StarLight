@@ -18,7 +18,6 @@ import android.view.animation.LinearInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.getSystemService
-import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.children
 import androidx.core.view.doOnPreDraw
 import androidx.core.widget.doAfterTextChanged
@@ -271,18 +270,22 @@ class StoreHomeFragment : Fragment() {
             this.text = text
             isCheckable = true
             isCheckedIconVisible = false
+            setTextAppearance(R.style.StoreChipText)
             chipBackgroundColor = requireContext().getColorStateList(R.color.store_chip_background)
             setTextColor(requireContext().getColorStateList(R.color.store_chip_text))
             chipStrokeColor = requireContext().getColorStateList(R.color.store_chip_stroke_selector)
             chipStrokeWidth = dp(1f)
             chipCornerRadius = dp(18f)
             chipMinHeight = dp(38f)
-            typeface = ResourcesCompat.getFont(requireContext(), R.font.nanumsquare_neo_bold)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            chipStartPadding = dp(14f)
+            chipEndPadding = dp(14f)
+            textStartPadding = 0f
+            textEndPadding = 0f
             setChipIconResource(R.drawable.ic_store_sparkle_small)
             chipIconTint = ColorStateList.valueOf(requireContext().getColor(R.color.store_on_gold))
             chipIconSize = dp(12f)
-            iconStartPadding = dp(4f)
+            iconStartPadding = 0f
+            iconEndPadding = dp(5f)
             isChipIconVisible = false
             setOnCheckedChangeListener { _, checked -> isChipIconVisible = checked }
         }
