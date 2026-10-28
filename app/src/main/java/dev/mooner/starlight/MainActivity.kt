@@ -6,12 +6,14 @@
 
 package dev.mooner.starlight
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.WindowCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -84,6 +86,12 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+
+            val isNight = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+            imageViewLogo.isVisible = !isNight
+            nightHeader.root.isVisible = isNight
+            nightHeader.nightStars.density = 0.25f
+            nightHeader.nightStars.brightness = 0.75f
 
             appBarLayout.addOnOffsetChangedListener(::handleOffsetUpdate)
         }
@@ -191,6 +199,8 @@ class MainActivity : AppCompatActivity() {
             statusText.alpha = alpha
             titleText.alpha = alpha
             imageViewLogo.alpha = alpha
+            nightHeader.root.alpha = alpha
+            nightHeader.nightStars.parallax = -verticalOffset * 0.3f
         }
     }
 

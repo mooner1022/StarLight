@@ -87,6 +87,10 @@
             app:layout_collapseMode="parallax"
             app:srcCompat="@drawable/svg_top_title_sunset"/>
 
+        <include
+            android:id="@+id/nightHeader"
+            layout="@layout/view_night_header"/>
+
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/viewPager"
             android:layout_width="match_parent"

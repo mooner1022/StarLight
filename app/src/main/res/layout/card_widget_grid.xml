@@ -6,11 +6,12 @@
     android:layout_height="match_parent"
     app:cardCornerRadius="@dimen/card_radius"
     app:cardElevation="@dimen/card_elevation"
-    app:cardBackgroundColor="@color/cardview">
+    app:cardBackgroundColor="@color/home_widget_card">
 
     <FrameLayout
         android:id="@+id/view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:foreground="@drawable/fg_home_widget"/>
 
 </androidx.cardview.widget.CardView>
