@@ -99,11 +99,4 @@
     <color name="store_chip_stroke">#4A4033</color>
     <color name="home_widget_card">#1A181B</color>
     <color name="home_widget_stroke">#1ADFC199</color>
-    <color name="icon_teal">#9FB1AA</color>
-    <color name="icon_amber">#C8B278</color>
-    <color name="icon_green">#9EB897</color>
-    <color name="icon_slate">#9EA6A2</color>
-    <color name="icon_violet">#A7A3CA</color>
-    <color name="icon_sky">#A0B0B6</color>
-    <color name="icon_navy">#9B9EA5</color>
 </resources>
