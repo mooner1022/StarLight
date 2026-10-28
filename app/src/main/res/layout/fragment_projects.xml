@@ -46,25 +46,18 @@
                     app:chipCornerRadius="18dp"
                     app:chipBackgroundColor="@color/background_chip"/>
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/search_project"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:contentDescription="@string/project_search_hint"
-                    android:maxHeight="48dp"
-                    android:minWidth="48dp"
-                    app:chipBackgroundColor="@color/background_chip"
-                    app:chipCornerRadius="18dp"
-                    app:chipEndPadding="0dp"
-                    app:chipIcon="@drawable/ic_round_search_24"
-                    app:chipIconTint="#80BCBD"
-                    app:chipMinHeight="48dp"
-                    app:chipStartPadding="12dp"
-                    app:textEndPadding="0dp"
-                    app:textStartPadding="0dp"/>
-
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
+
+        <ImageButton
+            android:id="@+id/search_project"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_project_header_button"
+            android:contentDescription="@string/project_search_hint"
+            android:src="@drawable/ic_round_search_24"
+            app:tint="#80BCBD"/>
 
         <com.google.android.material.chip.Chip
             android:id="@+id/new_project"
