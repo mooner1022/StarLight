@@ -160,16 +160,17 @@ class PluginListItem(
     private fun ItemPluginActionsBinding.bind() {
         val entry = entry
         val loaded = (entry?.state as? PluginState.Loaded)?.plugin
-        buttonPluginConfig.setActionEnabled(loaded != null && change == null)
+        val hasConfig = loaded != null && runCatching { loaded.getConfigStructure().isNotEmpty() }.getOrDefault(false)
+        buttonPluginConfig.setActionEnabled(hasConfig && change == null)
         buttonPluginInfo.setActionEnabled(entry != null)
         buttonPluginRemove.setActionEnabled(true)
 
         buttonPluginConfig.setOnClickListener { view ->
-            loaded ?: return@setOnClickListener
+            val plugin = loaded?.takeIf { hasConfig } ?: return@setOnClickListener
             view.context.startActivity(
                 Intent(view.context, PluginConfigActivity::class.java)
-                    .putExtra(PluginConfigActivity.EXTRA_PLUGIN_NAME, loaded.info.name)
-                    .putExtra(PluginConfigActivity.EXTRA_PLUGIN_ID, loaded.info.id)
+                    .putExtra(PluginConfigActivity.EXTRA_PLUGIN_NAME, plugin.info.name)
+                    .putExtra(PluginConfigActivity.EXTRA_PLUGIN_ID, plugin.info.id)
             )
         }
         buttonPluginInfo.setOnClickListener { view ->

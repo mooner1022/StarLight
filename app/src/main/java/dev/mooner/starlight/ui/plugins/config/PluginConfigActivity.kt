@@ -9,17 +9,11 @@ package dev.mooner.starlight.ui.plugins.config
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
-import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.adapters.ConfigAdapter
-import dev.mooner.configdsl.config
-import dev.mooner.configdsl.options.button
-import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityPluginConfigBinding
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.data.FileConfig
-import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
-import dev.mooner.starlight.ui.plugins.showRemovePluginDialog
 import dev.mooner.starlight.utils.bindFadeImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -59,7 +53,7 @@ class PluginConfigActivity: AppCompatActivity() {
                 plugin.onConfigValueUpdated(id, value)
                 fileConfig.category(parentId).setRaw(id, jsonValue)
             }
-            structure { getConfig(plugin) }
+            structure { plugin.getConfigStructure() }
             configData(fileConfig.getMutableData())
             lifecycleOwner(this@PluginConfigActivity)
         }.build()
@@ -81,33 +75,6 @@ class PluginConfigActivity: AppCompatActivity() {
         binding.leave.setOnClickListener { finish() }
 
         binding.pluginName.text = pluginName
-    }
-
-    private fun getConfig(plugin: StarlightPlugin) = plugin.getConfigStructure() + config {
-        category {
-            id = "cautious"
-            title = "위험"
-            textColor = color { "#FF865E" }
-            items {
-                button {
-                    id = "delete_plugin"
-                    title = getString(R.string.plugin_remove)
-                    setOnClickListener { view ->
-                        showRemovePluginDialog(
-                            this@PluginConfigActivity,
-                            plugin.info.id,
-                            onRemoved = { finish() },
-                            onFailure = { e ->
-                                Snackbar.make(view, e.message ?: e.toString(), Snackbar.LENGTH_SHORT).show()
-                            }
-                        )
-                    }
-                    icon = Icon.DELETE_SWEEP
-                    //backgroundColor = Color.parseColor("#B8DFD8")
-                    iconTintColor = color { "#FF5C58" }
-                }
-            }
-        }
     }
 
     companion object {
