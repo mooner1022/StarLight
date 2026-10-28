@@ -66,6 +66,20 @@
     <string name="project_status_running">Running</string>
     <string name="project_status_off">Off</string>
     <string name="project_status_not_compiled">Not compiled</string>
+    <string name="project_name_example">my-bot</string>
+    <string name="project_name_hint">Letters, Korean, numbers, - and _ are allowed.</string>
+    <string name="project_main_file">Main file: %s</string>
+    <string name="project_events_description">Selected events are added as functions to the starting code.</string>
+    <string name="new_project_step_counter" translatable="false">%1$d / %2$d</string>
+    <string name="new_project_step_name">Name your project</string>
+    <string name="new_project_step_language">Choose a language</string>
+    <string name="new_project_step_language_description">The language cannot be changed after the project is created.</string>
+    <string name="new_project_step_events">Choose events</string>
+    <string name="new_project_step_config">%s settings</string>
+    <string name="new_project_step_config_description">Applied to this project. You can change them later in the project settings.</string>
+    <string name="next">Next</string>
+    <string name="previous">Back</string>
+    <string name="project_create_failed">Failed to create project %s</string>
 
     <string name="aligned_by">Align: %s</string>
     <string name="default_placeholder" translatable="false">DEFAULT</string>

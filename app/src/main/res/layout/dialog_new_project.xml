@@ -1,60 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/contentRoot"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:paddingHorizontal="20dp"
+    android:paddingBottom="8dp"
     android:theme="@style/Theme.StarLight">
 
-    <EditText
-        android:id="@+id/editTextNewProjectName"
+    <LinearLayout
+        android:id="@+id/stepBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="32dp"
-        android:ems="10"
-        android:hint="프로젝트명"
-        android:inputType="textPersonName"/>
+        android:layout_height="4dp"
+        android:layout_marginHorizontal="4dp"
+        android:orientation="horizontal"/>
 
     <TextView
-        android:id="@+id/textView2"
+        android:id="@+id/stepCounter"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="38dp"
-        android:layout_marginTop="12dp"
-        android:text="사용 언어"
-        android:textSize="12sp" />
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="14dp"
+        android:fontFamily="@font/nanumsquare_neo_bold"
+        android:textColor="@color/main_bright"
+        android:textSize="12sp"
+        tools:text="1 / 4"/>
 
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/langSelectionGroup"
+    <TextView
+        android:id="@+id/stepTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/widget_card_margin_horizontal"
+        android:layout_marginHorizontal="4dp"
         android:layout_marginTop="4dp"
-        android:layout_marginEnd="@dimen/widget_card_margin_horizontal"
-        android:layout_marginBottom="16dp"
-        android:animateLayoutChanges="true"
-        android:clipToPadding="true"
-        app:selectionRequired="true"
-        app:singleLine="false"
-        app:singleSelection="true">
-
-    </com.google.android.material.chip.ChipGroup>
+        android:fontFamily="@font/nanumsquare_neo_bold"
+        android:textColor="@color/text"
+        android:textSize="18sp"
+        tools:text="@string/new_project_step_name"/>
 
     <TextView
-        android:id="@+id/textView4"
-        android:layout_width="wrap_content"
+        android:id="@+id/stepDescription"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="38dp"
-        android:layout_marginTop="12dp"
-        android:text="사용 이벤트"
-        android:textSize="12sp"/>
+        android:layout_marginHorizontal="4dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="14dp"
+        android:fontFamily="@font/nanumsquare_neo_regular"
+        android:textColor="@color/text_sub"
+        android:textSize="13sp"
+        tools:text="@string/project_name_hint"/>
+
+    <LinearLayout
+        android:id="@+id/pageName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/newProjectInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/configdsl_field_background"
+            android:fontFamily="@font/nanumsquare_neo_regular"
+            android:hint="@string/project_name_example"
+            android:imeOptions="actionNext"
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:maxLength="40"
+            android:maxLines="1"
+            android:paddingHorizontal="14dp"
+            android:textColor="@color/text"
+            android:textColorHint="@color/text_sub"
+            android:textSize="16sp"/>
+
+        <TextView
+            android:id="@+id/nameHelper"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            android:layout_marginTop="6dp"
+            android:fontFamily="@font/nanumsquare_neo_regular"
+            android:textColor="@color/text_sub"
+            android:textSize="12sp"
+            tools:text="@string/project_main_file"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/pageLanguage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"/>
+
+    <LinearLayout
+        android:id="@+id/pageEvents"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/configdsl_field_background"
+        android:orientation="vertical"
+        android:paddingVertical="4dp"
+        android:visibility="gone"/>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvEventIdSelection"
+        android:id="@+id/pageConfig"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"/>
-
+        android:nestedScrollingEnabled="false"
+        android:overScrollMode="never"
+        android:visibility="gone"/>
 </LinearLayout>

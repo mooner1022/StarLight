@@ -62,6 +62,19 @@
     <string name="project_status_running">실행 중</string>
     <string name="project_status_off">꺼짐</string>
     <string name="project_status_not_compiled">컴파일 필요</string>
+    <string name="project_name_example">my-bot</string>
+    <string name="project_name_hint">영문, 한글, 숫자, -, _ 를 사용할 수 있어요.</string>
+    <string name="project_main_file">메인 파일: %s</string>
+    <string name="project_events_description">선택한 이벤트는 기본 코드에 함수로 추가돼요.</string>
+    <string name="new_project_step_name">프로젝트 이름을 정해 주세요</string>
+    <string name="new_project_step_language">사용할 언어를 골라 주세요</string>
+    <string name="new_project_step_language_description">프로젝트를 만든 뒤에는 언어를 바꿀 수 없어요.</string>
+    <string name="new_project_step_events">사용할 이벤트를 골라 주세요</string>
+    <string name="new_project_step_config">%s 설정</string>
+    <string name="new_project_step_config_description">이 프로젝트에 적용돼요. 나중에 프로젝트 설정에서 바꿀 수 있어요.</string>
+    <string name="next">다음</string>
+    <string name="previous">이전</string>
+    <string name="project_create_failed">프로젝트 %s 생성 실패</string>
 
     <string name="aligned_by">정렬: %s</string>
     <string name="default_placeholder">DEFAULT</string>
