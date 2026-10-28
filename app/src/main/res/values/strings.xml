@@ -298,15 +298,16 @@
     <string name="plugin_store_deps_install_all">Install all</string>
     <string name="plugin_store_restart_pending">%d plugins waiting for restart</string>
     <string name="plugin_store_repository">Repository</string>
-    <string name="plugin_store_repository_message">Installing is still simulated. Nothing is downloaded or installed yet.</string>
     <string name="plugin_store_repository_name">Name</string>
     <string name="plugin_store_repository_url">Address</string>
     <string name="plugin_store_repository_branch">Branch</string>
     <string name="plugin_store_reload">Reload</string>
-    <string name="plugin_store_mock">Mockup: %s</string>
-    <string name="plugin_store_mock_restart">Installing is simulated, so nothing was installed.</string>
     <string name="plugin_store_copied">Copied</string>
     <string name="plugin_store_verified">Verified developer</string>
     <string name="plugin_store_stat_api">API</string>
     <string name="plugin_store_repository_updated">Index updated</string>
+    <string name="plugin_store_install_failed">Couldn\'t install %1$s: %2$s</string>
+    <string name="plugin_store_dep_mismatch">Version mismatch</string>
+    <string name="plugin_store_dep_no_compatible">No compatible version</string>
+    <string name="plugin_store_deps_update">Update too</string>
 </resources>

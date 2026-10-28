@@ -39,6 +39,7 @@ import dev.mooner.starlight.databinding.ItemStoreReleaseBinding
 import dev.mooner.starlight.databinding.ItemStoreStatBinding
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.plugin.PluginDependency
+import dev.mooner.starlight.utils.restartApplication
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.launch
 import java.text.DateFormat
@@ -104,12 +105,12 @@ class StoreDetailFragment : Fragment() {
         with(binding) {
             back.setOnClickListener { parentFragmentManager.popBackStack() }
             share.setOnClickListener {
-                store.showMockPeek(getString(R.string.plugin_store_mock, plugin.source ?: StoreSource.REPOSITORY_URL))
+                store.openUrl(plugin.source ?: StoreSource.REPOSITORY_URL)
             }
             install.onCompleted = { button -> store.burst(button) }
             install.setOnClickListener {
                 if (viewModel.installStateOf(plugin.id) == StoreInstallState.PendingRestart)
-                    store.showMockPeek(getString(R.string.plugin_store_mock_restart))
+                    requireContext().restartApplication()
                 else
                     store.requestInstall(plugin)
             }
@@ -273,9 +274,7 @@ class StoreDetailFragment : Fragment() {
                 meta.text = "API ${release.apiVersion.major}.${release.apiVersion.minor} · ${requireContext().formatSize(release.size)}"
                 val isCompatible = release.apiVersion compatibleWith Info.PLUGINCORE_VERSION
                 installVersion.visibility = if (i > 0 && isCompatible) View.VISIBLE else View.GONE
-                installVersion.setOnClickListener {
-                    store.showMockPeek(getString(R.string.plugin_store_mock, StoreSource.resolve(release.url)))
-                }
+                installVersion.setOnClickListener { store.requestInstall(plugin, release) }
                 if (i > 0)
                     root.visibility = View.GONE
             }
@@ -330,11 +329,10 @@ class StoreDetailFragment : Fragment() {
 
     private fun bindDependencyStates(states: Map<String, StoreInstallState>) {
         for ((dependency, row) in dependencyRows) {
-            val state = states[dependency.pluginId]
-            val isInstalled = viewModel.installedVersionOf(dependency.pluginId) != null ||
-                    state == StoreInstallState.PendingRestart
+            val version = viewModel.installedVersionOf(dependency.pluginId)
             val (text, color) = when {
-                isInstalled                             -> R.string.plugin_store_dep_installed to R.color.status_ok
+                version != null && dependency.accepts(version) -> R.string.plugin_store_dep_installed to R.color.status_ok
+                version != null                         -> R.string.plugin_store_dep_mismatch to R.color.status_warning
                 index.find(dependency.pluginId) == null -> R.string.plugin_store_dep_unknown to R.color.status_error
                 dependency.isOptional                   -> R.string.plugin_store_dep_optional to R.color.text_sub
                 else                                    -> R.string.plugin_store_dep_required to R.color.status_warning
@@ -359,25 +357,29 @@ class StoreDetailFragment : Fragment() {
             ))
             add(Triple(R.string.plugin_store_info_file, latest.fileName, false))
             add(Triple(R.string.plugin_store_info_sha256, latest.sha256, true))
-            plugin.source?.let { add(Triple(R.string.plugin_store_info_source, it.removePrefix("https://"), true)) }
+            plugin.source?.let { add(Triple(R.string.plugin_store_info_source, it, true)) }
             add(Triple(
                 R.string.plugin_store_info_published,
                 DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(plugin.publishedAtMillis)),
                 false,
             ))
         }
-        for ((key, value, copyable) in rows)
+        for ((key, nullableValue, copyable) in rows) {
+            val value = nullableValue.orEmpty()
             ItemStoreInfoBinding.inflate(layoutInflater, binding.info, true).apply {
                 this.key.setText(key)
-                this.value.text = value
+                this.value.text = if (key == R.string.plugin_store_info_source) value.removePrefix("https://") else value
+                if (key == R.string.plugin_store_info_source)
+                    root.setOnClickListener { store.openUrl(value) }
                 if (copyable)
                     root.setOnLongClickListener {
                         requireContext().getSystemService<ClipboardManager>()
                             ?.setPrimaryClip(ClipData.newPlainText(getString(key), value))
-                        store.showMockPeek(getString(R.string.plugin_store_copied))
+                        store.showPeek(getString(R.string.plugin_store_copied))
                         true
                     }
             }
+        }
     }
 
     private fun playEnterAnimation(delayed: Boolean) {

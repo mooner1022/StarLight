@@ -1,23 +1,33 @@
 package dev.mooner.starlight.ui.plugins.store
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.mooner.starlight.plugincore.Info
+import dev.mooner.starlight.plugincore.Session.pluginManager
+import dev.mooner.starlight.plugincore.plugin.PluginChange
 import dev.mooner.starlight.plugincore.plugin.PluginDependency
 import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.ui.plugins.knownPlugins
+import dev.mooner.starlight.ui.plugins.pluginInstaller
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.random.Random
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import java.io.IOException
 
 sealed interface StoreLoadState {
     data object Loading: StoreLoadState
@@ -38,11 +48,16 @@ sealed interface StoreInstallState {
         get() = this is Downloading || this == Verifying
 }
 
+data class StoreInstallError(
+    val pluginName: String,
+    val error: Throwable,
+)
+
 enum class StoreSort {
     UPDATED, NAME
 }
 
-class StoreViewModel : ViewModel() {
+class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
     private sealed interface Task {
         data class Downloading(val progress: Int): Task
@@ -53,10 +68,12 @@ class StoreViewModel : ViewModel() {
     private val _state = MutableStateFlow<StoreLoadState>(StoreLoadState.Loading)
     val state: StateFlow<StoreLoadState> = _state
 
-    private val installed = MutableStateFlow(
-        runCatching { knownPlugins().associate { it.id to it.version } }.getOrDefault(emptyMap())
-    )
-    private val tasks = MutableStateFlow<Map<String, Task>>(emptyMap())
+    private val installed = MutableStateFlow(installedVersions())
+    private val tasks = MutableStateFlow(pendingTasks())
+    private val installLock = Mutex()
+
+    private val _errors = Channel<StoreInstallError>(Channel.BUFFERED)
+    val errors: Flow<StoreInstallError> = _errors.receiveAsFlow()
 
     val installStates: StateFlow<Map<String, StoreInstallState>> =
         combine(_state, installed, tasks) { state, installed, tasks ->
@@ -82,6 +99,7 @@ class StoreViewModel : ViewModel() {
     fun load() {
         loadJob?.cancel()
         hasRevealedContent = false
+        installed.value = installedVersions()
         _state.value = StoreLoadState.Loading
         loadJob = viewModelScope.launch {
             _state.value = try {
@@ -100,38 +118,75 @@ class StoreViewModel : ViewModel() {
     fun installedVersionOf(id: String): Version? =
         installed.value[id]
 
-    fun missingDependencies(plugin: StorePlugin): List<PluginDependency> =
-        plugin.latest.dependency
-            .filter { !it.isOptional && it.pluginId !in installed.value && tasks.value[it.pluginId] == null }
+    fun missingDependencies(release: StoreRelease): List<PluginDependency> =
+        release.dependency.filter { dependency ->
+            val version = installed.value[dependency.pluginId]
+            !dependency.isOptional && (version == null || !dependency.accepts(version))
+        }
 
-    fun install(ids: Collection<String>) {
+    fun install(plugin: StorePlugin, release: StoreRelease = plugin.latest, dependencies: List<String> = emptyList()) {
         val index = (state.value as? StoreLoadState.Loaded)?.index ?: return
-        for (id in ids) {
-            val plugin = index.find(id) ?: continue
-            if (tasks.value[id].let { it != null && it != Task.Done })
-                continue
-            viewModelScope.launch { simulateInstall(plugin) }
+        val queue = dependencies.mapNotNull { id -> index.find(id)?.let { it to it.latest } } + (plugin to release)
+        val pending = queue.filter { (target, _) -> tasks.value[target.id].let { it == null || it == Task.Done } }
+        for ((target, _) in pending)
+            setTask(target.id, Task.Downloading(0))
+        viewModelScope.launch {
+            installLock.withLock {
+                for ((target, targetRelease) in pending) {
+                    try {
+                        installRelease(target, targetRelease)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        for ((rest, _) in pending.dropWhile { it.first != target })
+                            clearTask(rest.id)
+                        _errors.send(StoreInstallError(target.name, e))
+                        break
+                    }
+                }
+            }
         }
     }
 
-    private suspend fun simulateInstall(plugin: StorePlugin) {
-        val id = plugin.id
-        var progress = 0
-        setTask(id, Task.Downloading(0))
-        delay(250)
-        while (progress < 100) {
-            progress = (progress + Random.nextInt(4, 13)).coerceAtMost(100)
-            setTask(id, Task.Downloading(progress))
-            delay(Random.nextLong(40, 110))
+    private suspend fun installRelease(plugin: StorePlugin, release: StoreRelease) {
+        val context = getApplication<Application>()
+        val file = context.cacheDir.resolve("store").apply { mkdirs() }.resolve(release.fileName)
+        try {
+            setTask(plugin.id, Task.Downloading(0))
+            StoreSource.download(StoreSource.resolve(release.url), file, release.size) { progress ->
+                setTask(plugin.id, Task.Downloading(progress))
+            }
+            setTask(plugin.id, Task.Verifying)
+            withContext(Dispatchers.IO) {
+                val installer = context.pluginInstaller()
+                val info = installer.inspect(file)
+                if (info.id != plugin.id || info.version != release.version)
+                    throw IOException("${release.fileName} contains ${info.id} ${info.version}")
+                pluginManager.install(installer, file, release.sha256)
+            }
+            installed.update { it + (plugin.id to release.version) }
+            setTask(plugin.id, Task.Done)
+        } finally {
+            file.delete()
         }
-        setTask(id, Task.Verifying)
-        delay(700)
-        installed.update { it + (id to plugin.latest.version) }
-        setTask(id, Task.Done)
     }
 
     private fun setTask(id: String, task: Task) =
         tasks.update { it + (id to task) }
+
+    private fun clearTask(id: String) =
+        tasks.update { it - id }
+
+    private fun installedVersions(): Map<String, Version> =
+        runCatching { knownPlugins().associate { it.id to it.version } }.getOrDefault(emptyMap())
+
+    private fun pendingTasks(): Map<String, Task> =
+        runCatching {
+            pluginManager.changes.values
+                .filter { it is PluginChange.Installed || it is PluginChange.Updated }
+                .mapNotNull { it.info?.id }
+                .associateWith<String, Task> { Task.Done }
+        }.getOrDefault(emptyMap())
 
     private fun stateOf(plugin: StorePlugin, installed: Version?, task: Task?): StoreInstallState =
         when {

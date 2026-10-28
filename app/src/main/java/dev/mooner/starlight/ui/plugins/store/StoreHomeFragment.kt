@@ -36,6 +36,7 @@ import com.google.android.material.transition.Hold
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentStoreHomeBinding
 import dev.mooner.starlight.databinding.ItemStoreInfoBinding
+import dev.mooner.starlight.utils.restartApplication
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -336,7 +337,7 @@ class StoreHomeFragment : Fragment() {
                 return
             updatesTitle.text = getString(R.string.plugin_store_updates_title, updatable.size)
             updatesNames.text = updatable.joinToString { it.name }
-            updateAll.setOnClickListener { viewModel.install(updatable.map(StorePlugin::id)) }
+            updateAll.setOnClickListener { updatable.forEach { viewModel.install(it) } }
         }
     }
 
@@ -349,7 +350,7 @@ class StoreHomeFragment : Fragment() {
 
     private fun onInstallClicked(plugin: StorePlugin) {
         if (viewModel.installStateOf(plugin.id) == StoreInstallState.PendingRestart)
-            store.showMockPeek(getString(R.string.plugin_store_mock_restart))
+            requireContext().restartApplication()
         else
             store.requestInstall(plugin)
     }
@@ -359,7 +360,6 @@ class StoreHomeFragment : Fragment() {
         requireContext().showStoreSheet {
             title = getString(R.string.plugin_store_repository)
             icon = dev.mooner.configdsl.R.drawable.ic_github
-            note = getString(R.string.plugin_store_repository_message)
             if (index != null)
                 content { inflater, parent ->
                     listOf(

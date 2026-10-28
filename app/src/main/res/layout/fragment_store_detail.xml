@@ -299,7 +299,7 @@
             android:layout_marginEnd="4dp"
             android:contentDescription="@string/plugin_store_info_source"
             android:elevation="2dp"
-            android:src="@drawable/ic_round_share_24"
+            android:src="@drawable/ic_round_launch_24"
             app:tint="@color/store_star"/>
     </FrameLayout>
 </FrameLayout>

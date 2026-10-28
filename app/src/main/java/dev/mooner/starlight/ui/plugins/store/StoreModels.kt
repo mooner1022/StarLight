@@ -127,5 +127,9 @@ data class StoreIndex(
         plugins.find { it.id == id }
 }
 
+fun PluginDependency.accepts(version: Version): Boolean =
+    supportedVersion == PluginDependency.VERSION_ANY ||
+            Version.fromString(supportedVersion) compatibleWith version
+
 private fun parseInstant(value: String): Long =
     runCatching { Instant.parse(value).toEpochMilli() }.getOrDefault(0L)

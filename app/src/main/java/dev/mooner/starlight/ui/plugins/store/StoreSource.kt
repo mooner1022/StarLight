@@ -1,8 +1,10 @@
 package dev.mooner.starlight.ui.plugins.store
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -24,6 +26,43 @@ object StoreSource {
     fun resolve(path: String): String =
         if (path.startsWith("https://") || path.startsWith("http://")) path
         else RAW_BASE + path.removePrefix("/")
+
+    suspend fun download(url: String, dest: File, expectedSize: Long, onProgress: (Int) -> Unit) =
+        withContext(Dispatchers.IO) {
+            val connection = URL(url).openConnection() as HttpURLConnection
+            try {
+                connection.connectTimeout = TIMEOUT_MILLIS
+                connection.readTimeout = TIMEOUT_MILLIS
+                val code = connection.responseCode
+                if (code != HttpURLConnection.HTTP_OK)
+                    throw IOException("HTTP $code")
+                val total = connection.contentLengthLong.takeIf { it > 0 } ?: expectedSize
+                var read = 0L
+                var reported = -1
+                connection.inputStream.use { input ->
+                    dest.outputStream().use { output ->
+                        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                        while (true) {
+                            ensureActive()
+                            val count = input.read(buffer)
+                            if (count < 0)
+                                break
+                            output.write(buffer, 0, count)
+                            read += count
+                            val progress = if (total > 0) (read * 100 / total).toInt().coerceIn(0, 100) else 0
+                            if (progress != reported) {
+                                reported = progress
+                                onProgress(progress)
+                            }
+                        }
+                    }
+                }
+                if (expectedSize > 0 && read != expectedSize)
+                    throw IOException("Expected $expectedSize bytes, got $read")
+            } finally {
+                connection.disconnect()
+            }
+        }
 
     suspend fun fetchIndex(): StoreIndex =
         withContext(Dispatchers.IO) {

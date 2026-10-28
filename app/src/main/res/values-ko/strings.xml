@@ -293,15 +293,16 @@
     <string name="plugin_store_deps_install_all">모두 설치</string>
     <string name="plugin_store_restart_pending">플러그인 %d개가 재시작을 기다리고 있어요</string>
     <string name="plugin_store_repository">저장소</string>
-    <string name="plugin_store_repository_message">설치는 아직 시뮬레이션이에요. 실제로 내려받거나 설치하지 않아요.</string>
     <string name="plugin_store_repository_name">이름</string>
     <string name="plugin_store_repository_url">주소</string>
     <string name="plugin_store_repository_branch">브랜치</string>
     <string name="plugin_store_reload">다시 불러오기</string>
-    <string name="plugin_store_mock">목업: %s</string>
-    <string name="plugin_store_mock_restart">설치는 시뮬레이션이라 실제로 설치된 플러그인은 없어요.</string>
     <string name="plugin_store_copied">복사했어요</string>
     <string name="plugin_store_verified">인증된 개발자</string>
     <string name="plugin_store_stat_api">API</string>
     <string name="plugin_store_repository_updated">목록 갱신</string>
+    <string name="plugin_store_install_failed">%1$s을(를) 설치하지 못했어요: %2$s</string>
+    <string name="plugin_store_dep_mismatch">버전 안 맞음</string>
+    <string name="plugin_store_dep_no_compatible">호환 버전 없음</string>
+    <string name="plugin_store_deps_update">함께 업데이트</string>
 </resources>
