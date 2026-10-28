@@ -33,6 +33,7 @@ class TabViewAdapter(
 
     private var textColor: Int = getTextColor(isDark)
     private var showFileIcon: Boolean = false
+    private var alwaysShowClose: Boolean = true
 
     private val eventJob: Job = Job()
     private var selectedIndex = UNDEFINED
@@ -73,37 +74,40 @@ class TabViewAdapter(
         else
             holder.indicator.visibility = View.GONE
 
-        if (sessions.size == 1)
-            holder.closeButton.visibility = View.GONE
-        else
-            holder.closeButton.visibility = View.VISIBLE
+        holder.closeButton.visibility =
+            if (sessions.size > 1 && (alwaysShowClose || position == selectedIndex))
+                View.VISIBLE
+            else
+                View.GONE
         holder.closeButton.imageTintList = ColorStateList.valueOf(textColor)
 
         holder.closeButton.setOnClickListener {
-            val actualIndex = sessions.indexOf(session)
-            sessions.removeAt(actualIndex)
-            notifyItemRemoved(actualIndex)
-
-            if (actualIndex != selectedIndex)
-                selectedIndex --
-
-            if (actualIndex != sessions.size)
-                notifyItemRangeChanged(actualIndex, sessions.size)
-            else if (sessions.size == 1)
-                notifyItemChanged(0)
-
-            onItemEvent?.invoke(EVENT_CLOSED, actualIndex, session)
+            val index = sessions.indexOf(session)
+            if (index != -1)
+                onItemEvent?.invoke(EVENT_CLOSE_REQUESTED, index, session)
         }
     }
 
     override fun getItemCount(): Int =
         sessions.size
 
-    fun addItem(item: EditorSession) {
-        sessions += item
-        val pos = sessions.size - 1
-        notifyItemChanged(pos)
-        mRecyclerView?.scrollToPosition(pos)
+    fun remove(session: EditorSession) {
+        val index = sessions.indexOf(session)
+        if (index == -1) return
+
+        val wasSelected = index == selectedIndex
+        sessions.removeAt(index)
+        notifyItemRemoved(index)
+        if (index < selectedIndex)
+            selectedIndex--
+        else if (wasSelected)
+            selectedIndex = UNDEFINED
+
+        if (sessions.size == 1)
+            notifyItemChanged(0)
+        if (wasSelected && sessions.isNotEmpty())
+            setSelected((index - 1).coerceAtLeast(0))
+        onItemEvent?.invoke(EVENT_CLOSED, index, session)
     }
 
     fun setSessionContentUpdated(index: Int, isUpdated: Boolean) {
@@ -146,6 +150,7 @@ class TabViewAdapter(
         if (orgSelection != UNDEFINED)
             notifyItemChanged(orgSelection)
         notifyItemChanged(index)
+        mRecyclerView?.smoothScrollToPosition(index)
 
         onItemEvent?.invoke(EVENT_SELECTED, index, sessions[index])
     }
@@ -176,23 +181,23 @@ class TabViewAdapter(
     private suspend fun onGlobalConfigUpdated(event: Events.Config.GlobalConfigUpdate) =
         with(event) {
             LOG.verbose { "Config updated" }
-            GlobalConfig
-                .category("e_files")
-                .getBoolean("show_lang_icon", true)
-                .also { cfg ->
-                    if (showFileIcon != cfg) {
-                        showFileIcon = cfg
-                        withContext(Dispatchers.Main) {
-                            notifyItemRangeChanged(0, sessions.size)
-                        }
-                    }
+            val category = GlobalConfig.category("e_files")
+            val showIcon = category.getBoolean("show_lang_icon", true)
+            val showClose = category.getBoolean("always_show_close_button", true)
+            if (showFileIcon != showIcon || alwaysShowClose != showClose) {
+                showFileIcon = showIcon
+                alwaysShowClose = showClose
+                withContext(Dispatchers.Main) {
+                    notifyItemRangeChanged(0, sessions.size)
                 }
+            }
         }
 
     init {
-        showFileIcon = GlobalConfig
-            .category("e_files")
-            .getBoolean("show_lang_icon", true)
+        GlobalConfig.category("e_files").also { category ->
+            showFileIcon = category.getBoolean("show_lang_icon", true)
+            alwaysShowClose = category.getBoolean("always_show_close_button", true)
+        }
 
         CoroutineScope(Dispatchers.Default + eventJob).launch {
             EventHandler.on(this, ::onGlobalConfigUpdated)
@@ -202,8 +207,9 @@ class TabViewAdapter(
     companion object {
         private const val UNDEFINED = -1
 
-        const val EVENT_SELECTED = 0
-        const val EVENT_CLOSED   = 1
+        const val EVENT_SELECTED        = 0
+        const val EVENT_CLOSED          = 1
+        const val EVENT_CLOSE_REQUESTED = 2
     }
 
     inner class TabViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {

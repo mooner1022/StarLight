@@ -12,16 +12,22 @@
         android:icon="@drawable/ic_round_save_24"
         app:showAsAction="ifRoom"/>
     <item
+        android:id="@+id/menu_find"
+        android:title="@string/editor_find"
+        android:icon="@drawable/ic_round_search_24"
+        app:showAsAction="ifRoom"/>
+    <item
         android:id="@+id/menu_debug_room"
         android:title="@string/debug_room"
         android:icon="@drawable/ic_round_mark_chat_read_24"
         app:showAsAction="ifRoom"/>
-
-    <item android:title="@string/text_actions">
-        <menu>
-            <item
-                android:id="@+id/code_beautify"
-                android:title="@string/beautify" />
-        </menu>
-    </item>
+    <item
+        android:id="@+id/menu_replace"
+        android:title="@string/editor_replace"/>
+    <item
+        android:id="@+id/menu_goto_line"
+        android:title="@string/editor_goto_line"/>
+    <item
+        android:id="@+id/code_beautify"
+        android:title="@string/beautify"/>
 </menu>

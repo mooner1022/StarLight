@@ -4,9 +4,7 @@ interface WebviewCallback {
 
     fun onLoadComplete()
 
-    fun onContentChanged(sessionId: String?, code: String?)
+    fun onDirtyChanged(sessionId: String, dirty: Boolean)
 
     fun onAnnotationUpdated(list: String)
-
-    fun requestSession(sessionId: String?)
 }
