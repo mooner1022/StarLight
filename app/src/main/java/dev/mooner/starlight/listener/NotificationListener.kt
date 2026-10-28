@@ -41,7 +41,6 @@ import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.ui.settings.notifications.RuleData
 import dev.mooner.starlight.utils.decodeIfNotBlank
-import dev.mooner.starlight.utils.isNoobMode
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -138,7 +137,7 @@ class NotificationListener: NotificationListenerService() {
                     }
 
                     if (logRecMessage) {
-                        LOG.verbose {
+                        LOG.info {
                             """
                             pkgName(userID) : $pkgName($userId)
                             userHash: ${data.sender.profileHash}
@@ -288,7 +287,7 @@ class NotificationListener: NotificationListenerService() {
         }
 
         fun updateRules() {
-            if (isNoobMode || GlobalConfig.category("noti_rules").getBoolean("auto_rule", true)) {
+            if (GlobalConfig.category("noti_rules").getBoolean("auto_rule", true)) {
                 val rule = detectRule()
                 rules = listOf(rule)
                 LOG.verbose { "notificationRules(auto)= $rules" }

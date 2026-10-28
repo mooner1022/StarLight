@@ -7,19 +7,19 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.options.ButtonConfigOption
 import dev.mooner.starlight.databinding.FragmentSettingsBinding
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.utils.onSaveConfigAdapter
-import dev.mooner.starlight.utils.isNoobMode
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import dev.mooner.starlight.ui.settings.getSettingsStruct as actualSettingStruct
 
 class SettingsFragment : Fragment() {
 
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
     private var configAdapter: ConfigAdapter? = null
+    private var structure: ConfigStructure = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -60,7 +60,23 @@ class SettingsFragment : Fragment() {
     }
 
     private fun getSettingStruct(): ConfigStructure =
-        if (isNoobMode) getNoobSettingStruct() else actualSettingStruct()
+        getSettingsStruct().also { structure = it }
+
+    override fun onResume() {
+        super.onResume()
+        refreshStatus()
+    }
+
+    internal fun refreshStatus() {
+        val context = context ?: return
+        val descriptions = mapOf(
+            OPTION_NOTIFICATION_ACCESS  to context.notificationAccessDescription(),
+            OPTION_BATTERY_OPTIMIZATION to context.batteryOptimizationDescription(),
+            OPTION_CLEAR_LOGS           to context.logFilesDescription(),
+        )
+        for ((id, description) in descriptions)
+            (structure.findOptionById(id) as? ButtonConfigOption)?.updateDescription(description)
+    }
 
     override fun onDestroyView() {
         configAdapter?.destroy()

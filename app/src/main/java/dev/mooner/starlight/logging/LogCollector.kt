@@ -6,7 +6,9 @@
 
 package dev.mooner.starlight.logging
 
-import dev.mooner.starlight.CA_DEV_MODE
+import dev.mooner.starlight.CA_LOGS
+import dev.mooner.starlight.CF_LOG_BUFFER_SIZE
+import dev.mooner.starlight.CF_LOG_RETENTION
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
@@ -17,6 +19,7 @@ import dev.mooner.starlight.plugincore.utils.TimeUtils
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import kotlinx.coroutines.*
 import java.io.File
+import java.time.LocalDate
 
 object LogCollector {
 
@@ -27,16 +30,13 @@ object LogCollector {
     private val logWriteScope: CoroutineScope =
         CoroutineScope(Dispatchers.IO.limitedParallelism(1)) + SupervisorJob()
 
-    private var appendInternalLog: Boolean =
-        GlobalConfig
-            .category(CA_DEV_MODE)
-            .getBoolean("append_internal_log", false)
+    val retentionDays = listOf(3, 7, 30, 0)
+    const val DEFAULT_RETENTION_INDEX = 2
+    val bufferSizes = listOf(100, 300, 500, 1000)
 
-    private var logBufferMaxSize: Int =
-        GlobalConfig
-            .category("general")
-            .getString("log_buffer_max_size", "100")
-            .toInt()
+    private val logDirectory = File(getStarLightDirectory(), "logs")
+
+    private var logBufferMaxSize: Int = configuredBufferSize()
 
     private val logFile: File
 
@@ -56,8 +56,7 @@ object LogCollector {
                 synchronized(mLogs) {
                     if (mLogs.size >= logBufferMaxSize)
                         (mLogs as ArrayDeque).removeAt(0)
-                    if (appendInternalLog || data.type.priority >= LogType.VERBOSE.priority)
-                        mLogs += data
+                    mLogs += data
                 }
 
                 if (data.type.priority >= LogType.DEBUG.priority) {
@@ -70,15 +69,7 @@ object LogCollector {
     }
 
     private fun onGlobalConfigUpdate(event: Events.Config.GlobalConfigUpdate) {
-        appendInternalLog = GlobalConfig
-            .category(CA_DEV_MODE)
-            .getBoolean("append_internal_log", false)
-
-        val nSize = GlobalConfig
-            .category("general")
-            .getString("log_buffer_max_size", "100")
-            .toIntOrNull()
-            ?: return
+        val nSize = configuredBufferSize()
         synchronized(mLogs) {
             while (mLogs.size > nSize) {
                 (mLogs as ArrayDeque).removeAt(0)
@@ -87,9 +78,40 @@ object LogCollector {
         logBufferMaxSize = nSize
     }
 
+    private fun configuredBufferSize(): Int =
+        bufferSizes.getOrElse(GlobalConfig.category(CA_LOGS).getInt(CF_LOG_BUFFER_SIZE, 0)) { bufferSizes.first() }
+
+    private fun deleteExpiredLogs() {
+        val days = retentionDays.getOrElse(GlobalConfig.category(CA_LOGS).getInt(CF_LOG_RETENTION, DEFAULT_RETENTION_INDEX)) { 0 }
+        if (days <= 0)
+            return
+        val oldest = LocalDate.now().minusDays(days - 1L)
+        logDirectory.listFiles()?.forEach { dir ->
+            val date = runCatching { LocalDate.parse(dir.name) }.getOrNull() ?: return@forEach
+            if (date.isBefore(oldest))
+                dir.deleteRecursively()
+        }
+    }
+
+    fun logFileStats(): Pair<Int, Long> {
+        val files = logDirectory.walkTopDown()
+            .filter { it.isFile && it.extension == "log" }
+            .toList()
+        return files.size to files.sumOf(File::length)
+    }
+
+    fun clearLogFiles() {
+        logDirectory.listFiles()?.forEach { file ->
+            if (file != logFile.parentFile)
+                file.deleteRecursively()
+            else
+                file.listFiles()?.forEach { if (it != logFile) it.delete() }
+        }
+    }
+
     init {
         val dirName = TimeUtils.formatCurrentDate("yyyy-MM-dd")
-        val dir = File(getStarLightDirectory(), "logs").resolve(dirName)
+        val dir = logDirectory.resolve(dirName)
         if (!dir.exists() || !dir.isDirectory) {
             dir.mkdirs()
         }
@@ -100,6 +122,8 @@ object LogCollector {
 
         if (!logFile.exists())
             logFile.createNewFile()
+
+        logWriteScope.launch { deleteExpiredLogs() }
 
         EventHandler.apply {
             on(logCollectionScope, ::onLogCreated)

@@ -22,7 +22,6 @@ import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
-import dev.mooner.starlight.utils.isNoobMode
 import dev.mooner.starlight.utils.toURI
 import org.mozilla.javascript.*
 import org.mozilla.javascript.Function
@@ -124,7 +123,7 @@ class JSRhino: Language() {
                 context.evaluateString(scope, importLines.toString(), "import", 1, null)
 
             val langConf = getLanguageConfig()
-            if (langConf.getBoolean("load_ext_modules", true) || isNoobMode) {
+            if (langConf.getBoolean("load_ext_modules", true)) {
                 LOG.verboseTranslated {
                     Locale.ENGLISH { "[Load external modules] Option enabled" }
                     Locale.KOREAN  { "[외부 모듈 로드] 설정 활성화됨" }
@@ -225,7 +224,7 @@ class JSRhino: Language() {
             "file://${path}/".toUri().toURI()
 
         val requirePath: MutableList<File> = arrayListOf()
-        if (GlobalConfig.category("project").getBoolean("load_global_libraries", false) || isNoobMode)
+        if (GlobalConfig.category("project").getBoolean("load_global_libraries", false))
             getStarLightDirectory()
                 .resolve("modules")
                 .let(requirePath::add)

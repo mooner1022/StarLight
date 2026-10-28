@@ -38,7 +38,6 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
-import dev.mooner.starlight.utils.isNoobMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -123,7 +122,7 @@ class JSNeon: Language() {
                 if (project != null)
                     context.defineGlobals(project)
 
-                if (langConf.getBoolean(CONF_LOAD_EXT_MODULES, true) || isNoobMode) {
+                if (langConf.getBoolean(CONF_LOAD_EXT_MODULES, true)) {
                     LOG.verboseTranslated {
                         Locale.ENGLISH { "[Load external modules] Option enabled" }
                         Locale.KOREAN  { "[외부 모듈 로드] 설정 활성화됨" }
@@ -291,7 +290,7 @@ class JSNeon: Language() {
     private fun getModulePaths(project: Project?): List<File> {
         val paths: MutableList<File> = arrayListOf()
         project?.directory?.let(paths::add)
-        if (GlobalConfig.category("project").getBoolean("load_global_libraries", false) || isNoobMode)
+        if (GlobalConfig.category("project").getBoolean("load_global_libraries", false))
             getStarLightDirectory()
                 .resolve("modules")
                 .let(paths::add)

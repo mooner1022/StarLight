@@ -47,17 +47,6 @@ fun Context.startDevModeActivity() {
                         iconTintColor = color { "#87AAAA" }
                         defaultValue = false
                     }
-                    /*
-                    toggle {
-                        dependency = "show_internal_log"
-                        id = "append_internal_log"
-                        title = "내부 로그 기록"
-                        description = "앱 내부의 디버깅용 로그를 로그 배열에 기록합니다. 부하가 증가합니다."
-                        icon = Icon.EDIT
-                        iconTintColor = color { "#87AAAA" }
-                        defaultValue = false
-                    }
-                     */
                     spinner {
                         id = "update_channel"
                         title = "업데이트 확인 채널"
@@ -129,11 +118,6 @@ fun Context.startDevModeActivity() {
                         icon = Icon.COMPRESS
                         iconTintColor = color { "#87AAAA" }
                         defaultValue = false
-                    }
-                    button {
-                        id = "use_on_notification_posted"
-                        title = "onNotificationPosted 이벤트 사용"
-                        description = "이 설정은 '알림, 이벤트' 항목으로 이동되었어요 :3"
                     }
                 }
             }
