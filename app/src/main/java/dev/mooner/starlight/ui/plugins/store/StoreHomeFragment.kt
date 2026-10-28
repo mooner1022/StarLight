@@ -196,11 +196,10 @@ class StoreHomeFragment : Fragment() {
                         return
                     shownIndex = state.index
                     bindIndex(state.index)
-                    error.visibility = View.GONE
+                    error.hideNow()
                     if (viewModel.hasRevealedContent) {
-                        skeleton.visibility = View.GONE
-                        content.visibility = View.VISIBLE
-                        content.alpha = 1f
+                        skeleton.hideNow()
+                        content.showNow()
                     } else {
                         viewModel.hasRevealedContent = true
                         reveal()
@@ -223,8 +222,7 @@ class StoreHomeFragment : Fragment() {
     private fun reveal() {
         with(binding) {
             skeleton.fadeOut()
-            content.alpha = 1f
-            content.visibility = View.VISIBLE
+            content.showNow()
             val offset = dp(28f)
             content.children.forEachIndexed { i, child ->
                 child.alpha = 0f
@@ -410,6 +408,17 @@ class StoreHomeFragment : Fragment() {
             alpha = 0f
         visibility = View.VISIBLE
         animate().alpha(1f).setDuration(280).start()
+    }
+
+    private fun View.showNow() {
+        animate().cancel()
+        alpha = 1f
+        visibility = View.VISIBLE
+    }
+
+    private fun View.hideNow() {
+        animate().cancel()
+        visibility = View.GONE
     }
 
     private fun View.fadeOut() {
