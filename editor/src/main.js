@@ -215,7 +215,9 @@ const COMMANDS = {
     find: (v) => openSearchPanel(v),
     replace: (v) => openSearchPanel(v),
     gotoline: (v) => gotoLine(v),
-    indent: (v) => indentMore(v),
+    indent: (v) => v.state.selection.ranges.some((r) => !r.empty)
+        ? indentMore(v)
+        : v.dispatch(v.state.update(v.state.replaceSelection(v.state.facet(indentUnit)), { scrollIntoView: true, userEvent: "input" })),
     blockoutdent: (v) => indentLess(v),
 };
 
