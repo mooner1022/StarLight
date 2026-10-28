@@ -18,6 +18,8 @@ import com.google.android.material.chip.ChipGroup
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.R
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.ui.editor.DefaultEditorActivity
 import java.io.File
 
@@ -39,6 +41,24 @@ fun getLanguageByExtension(ext: String): DefaultEditorActivity.Language? =
 fun String.toFile(): File =
     File(this)
 
+private val FILE_NAME_REGEX = "(^[-_.A-Za-z0-9/]+$)".toRegex()
+
+internal fun validateFileName(name: String, parent: File?): String? = when {
+    name.isEmpty() -> translate {
+        Locale.ENGLISH { "Enter a name for the file or folder." }
+        Locale.KOREAN  { "폴더/파일의 이름을 입력해주세요." }
+    }
+    !FILE_NAME_REGEX.matches(name) -> translate {
+        Locale.ENGLISH { "Only letters, numbers, -, _, . and / are allowed." }
+        Locale.KOREAN  { "영문, 숫자, -, _, ., / 만 사용할 수 있어요." }
+    }
+    File(parent, name).exists() -> translate {
+        Locale.ENGLISH { "A file with this name already exists." }
+        Locale.KOREAN  { "이미 존재하는 이름이에요." }
+    }
+    else -> null
+}
+
 
 @SuppressLint("CheckResult")
 fun Context.showNewFileDialog(root: File, onFileCreated: (file: File) -> Unit) {
@@ -49,23 +69,14 @@ fun Context.showNewFileDialog(root: File, onFileCreated: (file: File) -> Unit) {
 
         positiveButton(res = R.string.ok) {
             val nameInput: EditText = findViewById(R.id.edit_text_filename)!!
-            if (nameInput.text.isEmpty()) {
-                nameInput.error = "폴더/파일의 이름을 입력해주세요."
-                nameInput.requestFocus()
-                return@positiveButton
-            }
-            if (!"(^[-_.A-Za-z0-9/]+$)".toRegex().matches(nameInput.text.toString())) {
-                nameInput.error = "허용되지 않는 문자가 포함되어 있어요."
+            val error = validateFileName(nameInput.text.toString(), root)
+            if (error != null) {
+                nameInput.error = error
                 nameInput.requestFocus()
                 return@positiveButton
             }
 
             val file = File(root, nameInput.text.toString())
-            if (file.exists()) {
-                nameInput.error = "이미 존재하는 이름이에요."
-                nameInput.requestFocus()
-                return@positiveButton
-            }
 
             val chipGroup: ChipGroup = findViewById(R.id.chip_group_file_type)
             val selectedId = chipGroup.checkedChipId
@@ -80,10 +91,14 @@ fun Context.showNewFileDialog(root: File, onFileCreated: (file: File) -> Unit) {
                 R.id.chip_directory ->
                     file.mkdirs()
                 View.NO_ID -> {
+                    val message = translate {
+                        Locale.ENGLISH { "Choose what to create. (Folder/File)" }
+                        Locale.KOREAN  { "생성할 종류를 선택해 주세요. (폴더/파일)" }
+                    }
                     if (this@showNewFileDialog is Activity)
-                        createFailurePeek("생성할 종류를 선택해 주세요. (폴더/파일)", PeekAlert.Position.Top).peek()
+                        createFailurePeek(message, PeekAlert.Position.Top).peek()
                     else
-                        Toast.makeText(this@showNewFileDialog, "생성할 종류를 선택해 주세요. (폴더/파일)", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@showNewFileDialog, message, Toast.LENGTH_LONG).show()
                     return@positiveButton
                 }
             }

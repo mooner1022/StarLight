@@ -70,6 +70,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import org.mozilla.javascript.RhinoException
@@ -165,6 +166,11 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.START)
 
         binding.root.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
+            override fun onDrawerOpened(drawerView: View) {
+                if (drawerView.id == R.id.drawer_fileTree)
+                    fileTreeDrawer?.refreshFiles(currentFile)
+            }
+
             override fun onDrawerStateChanged(newState: Int) {
                 if (newState == DrawerLayout.STATE_IDLE)
                     return
@@ -424,6 +430,8 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
     @JavascriptInterface
     override fun onAnnotationUpdated(list: String) {
+        val count = runCatching { json.parseToJsonElement(list).jsonArray.size }.getOrDefault(0)
+        runOnUiThread { fileTreeDrawer?.updateMessageCount(count) }
         lifecycleScope.launch {
             EventHandler.fireEvent(EditorMessageFragment.EditorAnnotationReturnEvent(list))
         }
@@ -448,6 +456,50 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
         val language = getLanguageByExtension(file.extension) ?: Language.PLAIN_TEXT
         addSession(relPath, language, file.readText(), true)
+    }
+
+    internal val currentFile: File?
+        get() = tabAdapter?.selectedSession?.let { getBaseDirectory().resolve(it.fileName) }
+
+    private fun sessionsUnder(target: File): List<EditorSession> {
+        val base = getBaseDirectory()
+        return sessions.filter { base.resolve(it.fileName).startsWith(target) }
+    }
+
+    internal fun renameFile(target: File, dest: File, onDone: (renamed: Boolean) -> Unit) {
+        lifecycleScope.launch {
+            val affected = sessionsUnder(target)
+            val dirty = affected.filter(EditorSession::isUpdated).map(EditorSession::sessionId)
+            if (dirty.isNotEmpty() && !saveAll(dirty, silent = true))
+                return@launch onDone(false)
+            if (!target.renameTo(dest))
+                return@launch onDone(false)
+
+            val base = getBaseDirectory()
+            for (session in affected) {
+                val oldFile = base.resolve(session.fileName)
+                val newFile = if (oldFile == target) dest else dest.resolve(oldFile.relativeTo(target))
+                replaceSession(session, newFile.relativeTo(base).path)
+            }
+            onDone(true)
+        }
+    }
+
+    internal fun onFileDeleted(target: File) {
+        for (session in sessionsUnder(target))
+            tabAdapter?.remove(session)
+    }
+
+    private fun replaceSession(old: EditorSession, fileName: String) {
+        val index = sessions.indexOf(old)
+        if (index == -1) return
+        val session = EditorSession(fileName.hashCode(), fileName, getLanguageFromFileName(fileName, Language.PLAIN_TEXT), null)
+        val wasSelected = tabAdapter?.selectedSession == old
+        sessions[index] = session
+        closeSession(old.sessionId)
+        tabAdapter?.notifyItemChanged(index)
+        if (wasSelected)
+            setSession(session)
     }
 
     fun closeDrawer(gravity: Int, animate: Boolean) {
@@ -673,8 +725,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                     updatePadding(top = textPadding)
                 }
                 isHapticFeedbackEnabled = true
-                setOnClickListener { view ->
-                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                val action = {
                     when(key) {
                         '↺' -> undo()
                         '↻' -> redo()
@@ -684,8 +735,48 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                         else -> insertText(key.toString())
                     }
                 }
+                if (key in REPEATING_HOT_KEYS)
+                    setRepeatingAction(action)
+                else
+                    setOnClickListener { view ->
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        action()
+                    }
             }
             binding.layoutHotKeys.addView(textView)
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun View.setRepeatingAction(action: () -> Unit) {
+        var repeated = false
+        val repeat = object : Runnable {
+            override fun run() {
+                repeated = true
+                action()
+                postDelayed(this, HOT_KEY_REPEAT_INTERVAL)
+            }
+        }
+        setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    repeated = false
+                    view.isPressed = true
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    view.postDelayed(repeat, HOT_KEY_REPEAT_DELAY)
+                }
+                MotionEvent.ACTION_UP -> {
+                    view.isPressed = false
+                    view.removeCallbacks(repeat)
+                    if (!repeated)
+                        action()
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    view.isPressed = false
+                    view.removeCallbacks(repeat)
+                }
+            }
+            true
         }
     }
 
@@ -1131,6 +1222,9 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
         private const val HOT_KEYS = "↺↻⇒←→[]{}()<>;=.'\"+-*/\\:&|"
         private const val DEFAULT_FONT_SIZE = 15
+        private const val REPEATING_HOT_KEYS = "↺↻←→"
+        private const val HOT_KEY_REPEAT_DELAY = 400L
+        private const val HOT_KEY_REPEAT_INTERVAL = 60L
         private val DEFAULT_THEME = Theme.TOMORROW_NIGHT_EIGHTIES
     }
 

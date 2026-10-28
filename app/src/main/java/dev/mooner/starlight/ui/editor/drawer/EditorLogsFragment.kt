@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import dev.mooner.starlight.databinding.FragmentEditorLogsBinding
@@ -44,8 +45,7 @@ class EditorLogsFragment: Fragment() {
 
         val logger = project.logger
         val mAdapter = LogsRecyclerViewAdapter()
-            .withData(logger.logs, LogItem.ViewType.TEXT)
-        println(logger.logs.size)
+            .withData(logger.logs.toList(), LogItem.ViewType.TEXT)
 
         val mLayoutManager = LinearLayoutManager(activity).apply {
             reverseLayout = true
@@ -55,12 +55,15 @@ class EditorLogsFragment: Fragment() {
             layoutManager = mLayoutManager
             adapter = mAdapter
         }
-        mAdapter.notifyItemRangeInserted(0, logger.logs.size)
+        binding.textNoLogs.isVisible = mAdapter.itemCount == 0
 
         listenerId = logger.addOnLogCreateListener { log ->
-            binding.rvEditorLogs.post {
+            val view = _binding?.rvEditorLogs ?: return@addOnLogCreateListener
+            view.post {
+                val binding = _binding ?: return@post
                 mAdapter.push(log)
-                binding.rvEditorLogs.smoothScrollToPosition(mAdapter.getItems().size - 1)
+                binding.textNoLogs.isVisible = false
+                binding.rvEditorLogs.scrollToPosition(mAdapter.itemCount - 1)
             }
         }
 
@@ -70,6 +73,7 @@ class EditorLogsFragment: Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         listenerId?.let(project.logger::removeOnLogCreateListener)
+        _binding = null
     }
 
 

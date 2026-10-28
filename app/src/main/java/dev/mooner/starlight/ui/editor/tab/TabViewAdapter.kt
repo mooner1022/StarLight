@@ -134,6 +134,9 @@ class TabViewAdapter(
         mRecyclerView = null
     }
 
+    val selectedSession: EditorSession?
+        get() = sessions.getOrNull(selectedIndex)
+
     fun setSelected(fileName: String) {
         sessions.indexOfFirst { it.fileName == fileName }.also { idx ->
             if (idx != -1)

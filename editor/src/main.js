@@ -13,7 +13,7 @@ import {
     snippetCompletion,
 } from "@codemirror/autocomplete";
 import { gotoLine, highlightSelectionMatches, openSearchPanel, search, searchKeymap } from "@codemirror/search";
-import { forEachDiagnostic, lintGutter, linter, setDiagnostics } from "@codemirror/lint";
+import { forEachDiagnostic, lintGutter, linter, setDiagnostics, setDiagnosticsEffect } from "@codemirror/lint";
 import { languageFor } from "./languages.js";
 import { themeFor } from "./themes.js";
 import { lintSource } from "./lint.js";
@@ -79,6 +79,12 @@ const reportDirty = (id) => {
     WebviewCallback.onDirtyChanged(id, dirty);
 };
 
+let annotationTimer = null;
+const scheduleAnnotations = () => {
+    clearTimeout(annotationTimer);
+    annotationTimer = setTimeout(() => window.requestAnnotations(), 300);
+};
+
 let dirtyTimer = null;
 const scheduleDirty = () => {
     clearTimeout(dirtyTimer);
@@ -122,6 +128,8 @@ const createState = (code, mode) => {
             wrapCompartment.of(settings.wrap ? EditorView.lineWrapping : []),
             EditorView.updateListener.of((update) => {
                 if (update.docChanged) scheduleDirty();
+                if (update.transactions.some((tr) => tr.effects.some((e) => e.is(setDiagnosticsEffect))))
+                    scheduleAnnotations();
             }),
         ],
     });
@@ -164,6 +172,7 @@ window.setSession = (id, mode, code) => {
     view.setState(session.state);
     applySettings();
     view.scrollDOM.scrollTop = session.scrollTop;
+    scheduleAnnotations();
 };
 
 window.closeSession = (id) => {
