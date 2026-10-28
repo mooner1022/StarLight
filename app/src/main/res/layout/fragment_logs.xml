@@ -40,7 +40,7 @@
                 app:chipCornerRadius="18dp"
                 app:chipEndPadding="8dp"
                 app:chipIcon="@drawable/ic_round_layers_24"
-                app:chipIconTint="@color/code_string"
+                app:chipIconTint="@color/icon_green"
                 app:chipMinHeight="48dp"
                 app:chipStartPadding="11dp"/>
 
@@ -56,7 +56,7 @@
                 app:chipCornerRadius="18dp"
                 app:chipEndPadding="8dp"
                 app:chipIcon="@drawable/round_filter_alt_24"
-                app:chipIconTint="#50727B"
+                app:chipIconTint="@color/icon_slate"
                 app:chipMinHeight="48dp"
                 app:chipStartPadding="11dp"/>
 
@@ -74,7 +74,7 @@
                 app:chipCornerRadius="18dp"
                 app:chipEndPadding="8dp"
                 app:chipIcon="@drawable/ic_round_download_24"
-                app:chipIconTint="#9195F6"
+                app:chipIconTint="@color/icon_violet"
                 app:chipMinHeight="48dp"
                 app:chipStartPadding="11dp"/>
 

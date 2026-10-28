@@ -41,4 +41,11 @@ object ConfigDSL {
     ): ParentConfigAdapter<*> =
         this.createInstance(configStructure, configData, coroutineContext)
      */
+
+    var iconTint: (android.content.Context, Int) -> Int = { _, color -> color }
+        private set
+
+    fun registerIconTint(transform: (context: android.content.Context, color: Int) -> Int) {
+        iconTint = transform
+    }
 }

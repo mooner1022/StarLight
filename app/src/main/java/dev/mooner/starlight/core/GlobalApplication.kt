@@ -41,6 +41,7 @@ import dev.mooner.starlight.ui.crash.FatalErrorActivity
 import dev.mooner.starlight.ui.splash.intro.IntroActivity
 import dev.mooner.starlight.utils.checkPermissions
 import dev.mooner.starlight.utils.info
+import dev.mooner.starlight.utils.nightIconTint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
@@ -56,6 +57,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
 
     override fun onCreate() {
         super.onCreate()
+        ConfigDSL.registerIconTint { context, color -> context.nightIconTint(color) }
         //Logger.v(T, "Application onCreate() called")
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         isStartupAborted = false // explicit reset
