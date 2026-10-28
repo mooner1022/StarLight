@@ -62,6 +62,7 @@ class MainActivity : AppCompatActivity() {
         binding.apply {
             viewPager.adapter = ViewPagerAdapter(this@MainActivity)
             viewPager.registerOnPageChangeCallback(getOnPageChangeCallback())
+            viewPager.getChildAt(0).defaultFocusHighlightEnabled = false
 
             bottomMenu.setItemSelected(R.id.nav_home, isSelected = true)
             bottomMenu.setOnItemSelectedListener(::handleMenuItemSelection)

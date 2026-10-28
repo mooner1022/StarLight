@@ -13,8 +13,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.CheckBox
 import android.widget.EditText
+import androidx.core.content.getSystemService
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -41,7 +45,6 @@ import dev.mooner.starlight.plugincore.config.GlobalConfig.getDefaultCategory
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
-import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.ProjectID
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
@@ -52,11 +55,8 @@ import dev.mooner.starlight.utils.*
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
 import java.lang.ref.WeakReference
 import kotlin.math.min
-
-private val LOG = LoggerFactory.logger {  }
 
 class ProjectsFragment : Fragment(), View.OnClickListener {
 
@@ -65,10 +65,10 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
     private var updateReceiveScope: CoroutineScope? = null
 
-    private val updatedProjects: MutableSet<Project> = hashSetOf()
-
-    private lateinit var projects: MutableList<Project>
+    private var projects: List<Project> = emptyList()
+    private val listItems: MutableMap<ProjectID, ProjectListItem> = hashMapOf()
     private var itemAdapter: ItemAdapter<ProjectListItem>? = null
+    private var searchQuery: String = ""
 
     private val aligns = arrayOf(
         ALIGN_GANADA,
@@ -94,15 +94,31 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         itemAdapter = ItemAdapter()
         val fastAdapter = FastAdapter.with(itemAdapter!!)
 
-        projects = projectManager.getProjects().toMutableList()
+        projects = projectManager.getProjects()
 
         binding.apply {
-            binding.alignProject.text = getString(R.string.aligned_by)
-                .format(if (isReversed) alignState.reversedName else alignState.name)
-            binding.alignProject.setChipIconResource(alignState.icon)
+            updateAlignChip()
 
             alignProject.setOnClickListener(this@ProjectsFragment)
+            searchProject.setOnClickListener(this@ProjectsFragment)
+            searchClose.setOnClickListener(this@ProjectsFragment)
             newProject.setOnClickListener(this@ProjectsFragment)
+
+            searchInput.doAfterTextChanged { text ->
+                val query = text?.toString()?.trim().orEmpty()
+                if (query != searchQuery) {
+                    searchQuery = query
+                    submitList()
+                }
+            }
+            searchInput.setOnEditorActionListener { view, actionId, _ ->
+                if (actionId != EditorInfo.IME_ACTION_SEARCH)
+                    return@setOnEditorActionListener false
+                requireContext().getSystemService<InputMethodManager>()
+                    ?.hideSoftInputFromWindow(view.windowToken, 0)
+                view.clearFocus()
+                true
+            }
 
             recyclerViewProjectList.setup(fastAdapter)
         }
@@ -116,14 +132,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             }
         }
 
-        lifecycleScope.launchWhenCreated {
-            updateEmptyText()
-            val weakThis = WeakReference<Fragment>(this@ProjectsFragment)
-            sortDataAsync()
-                .map { ProjectListItem(weakThis).withProject(it) }
-                .toList()
-                .also(::reloadList)
-        }
+        submitList()
 
         return binding.root
     }
@@ -131,15 +140,17 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     override fun onClick(view: View) {
         when(view.id) {
             R.id.align_project -> showProjectAlignDialog()
+            R.id.search_project -> setSearchVisible(binding.searchBar.visibility != View.VISIBLE)
+            R.id.searchClose -> setSearchVisible(false)
             R.id.new_project -> showNewProjectDialog()
         }
     }
 
     private suspend fun onProjectUpdated(event: Events.Project.InfoUpdate) =
-        itemAdapter?.updateProjectView(event.project)
+        updateProjectView(event.project)
 
     private suspend fun onProjectCompiled(event: Events.Project.Compile) =
-        itemAdapter?.updateProjectView(event.project)
+        updateProjectView(event.project)
 
     private suspend fun onProjectDeleted(event: Events.Project.Delete) =
         notifyProjectRemoved(event.projectId, event.projectName)
@@ -153,40 +164,55 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
         this.adapter = adapter
     }
 
-    private suspend fun updateEmptyText() = withContext(Dispatchers.Main) {
-        if (projects.isEmpty()) {
-            with(binding.textViewNoProjectYet) {
-                visibility = View.VISIBLE
-
-                setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_box_empty, 0, 0)
-                text = getString(R.string.no_projects)
-            }
+    private fun setSearchVisible(visible: Boolean) {
+        val input = binding.searchInput
+        val imm = requireContext().getSystemService<InputMethodManager>()
+        binding.searchBar.visibility = if (visible) View.VISIBLE else View.GONE
+        if (visible) {
+            input.requestFocus()
+            imm?.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
         } else {
-            binding.textViewNoProjectYet.visibility = View.GONE
+            imm?.hideSoftInputFromWindow(input.windowToken, 0)
+            input.text.clear()
+            input.clearFocus()
         }
     }
 
-    private suspend fun ItemAdapter<ProjectListItem>.updateProjectView(project: Project) {
-        val index = getAdapterPosition(project.info.id.getLongHash())
-        LOG.verbose { "updateProjectView ${project.info.name}, index $index" }
-        if (index == -1) {
-            with(requireContext()) {
-                LOG.warn(R.string.log_project_list_update_failure)
+    private fun updateEmptyText(isFiltered: Boolean, isEmpty: Boolean) {
+        with(binding.textViewNoProjectYet) {
+            when {
+                !isEmpty -> visibility = View.GONE
+                isFiltered -> {
+                    visibility = View.VISIBLE
+                    setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                    text = getString(R.string.project_search_empty)
+                }
+                else -> {
+                    visibility = View.VISIBLE
+                    setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_box_empty, 0, 0)
+                    text = getString(R.string.no_projects)
+                }
             }
-            return
         }
+    }
+
+    private suspend fun updateProjectView(project: Project) {
         withContext(Dispatchers.Main) {
-            getAdapterItem(index).tryUpdateView()
+            if (_binding == null)
+                return@withContext
+            listItems[project.info.id]?.tryUpdateView()
             updateTitle(projects)
         }
     }
 
     private suspend fun notifyProjectRemoved(projectId: ProjectID, projectName: String) {
         withContext(Dispatchers.Main) {
-            binding.recyclerViewProjectList.post {
-                itemAdapter?.removeByIdentifier(projectId.getLongHash())
-            }
-            projects.removeIf { it.info.id == projectId }
+            if (_binding == null)
+                return@withContext
+            listItems -= projectId
+            projects = projectManager.getProjects()
+            submitList()
+            updateTitle(projects)
             createSuccessPeek(translate {
                 Locale.ENGLISH { "Successfully removed project $projectName" }
                 Locale.KOREAN  { "프로젝트 $projectName 삭제 완료" }
@@ -195,21 +221,20 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     }
 
     private suspend fun notifyProjectAdded(project: Project) {
-        projects = projectManager.getProjects().toMutableList()
-        val weakRef = WeakReference<Fragment>(this)
         withContext(Dispatchers.Main) {
-            updateEmptyText()
+            if (_binding == null)
+                return@withContext
+            projects = projectManager.getProjects()
+            submitList()
+            updateTitle(projects)
             binding.recyclerViewProjectList.post {
-                itemAdapter?.apply {
-                    add(ProjectListItem(weakRef).withProject(project))
-                    scrollTo(project)
-                }
+                itemAdapter?.scrollTo(project)
             }
         }
     }
 
     private fun updateTitle(projects: List<Project>) {
-        val activity = activity as MainActivity
+        val activity = activity as? MainActivity ?: return
 
         val count = projects.count { it.info.isEnabled }
         activity.binding.statusText.text = getString(R.string.subtitle_projects).format(count)
@@ -319,41 +344,40 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     private fun getAlignByName(name: String): Align<Project>? =
         aligns.find { it.name == name }
 
-    private fun sortDataAsync(): Flow<Project> =
-        flow {
-            val comparable = compareByDescending<Project> { it.info.isPinned }
-                .thenByDescending(Project::isCompiled)
-                .thenComparing(alignState.comparator)
-            val sorted = if (isReversed)
-                projects
-                    .sortedWith(comparable)
-                    .reversed()
-            else
-                projects
-                    .sortedWith(comparable)
-            emitAll(sorted.asFlow())
-        }
+    private fun sortedProjects(): List<Project> {
+        val align = alignState.comparator
+        val alignComparator = Comparator<Project> { a, b -> align.compare(a, b) }
+            .let { if (isReversed) it.reversed() else it }
+        val comparator = compareByDescending<Project> { it.info.isPinned }
+            .let { if (isActiveFirst) it.thenByDescending { project -> project.isCompiled && project.info.isEnabled } else it }
+            .then(alignComparator)
 
-    private fun reloadList(list: List<ProjectListItem>) {
-        binding.recyclerViewProjectList.post {
-            itemAdapter?.set(list)
-        }
+        val query = searchQuery
+        return projects
+            .filter { query.isEmpty() || it.info.name.contains(query, ignoreCase = true) }
+            .sortedWith(comparator)
     }
 
-    private fun update() {
-        val weakThis = WeakReference<Fragment>(this@ProjectsFragment)
-        lifecycleScope.launch {
-            sortDataAsync()
-                .map { ProjectListItem(weakThis).withProject(it) }
-                .toList()
-                .also(::reloadList)
+    private fun submitList() {
+        val weakThis = WeakReference<Fragment>(this)
+        listItems.keys.retainAll(projects.map { it.info.id }.toSet())
+        val items = sortedProjects().map { project ->
+            listItems.getOrPut(project.info.id) { ProjectListItem(weakThis) }
+                .withProject(project)
         }
+        itemAdapter?.set(items)
+        updateEmptyText(isFiltered = searchQuery.isNotEmpty(), isEmpty = items.isEmpty())
+    }
 
-        //binding.textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
-        //binding.alignStateIcon.load(alignState.icon)
+    private fun updateAlignChip() {
         binding.alignProject.text = getString(R.string.aligned_by)
             .format(if (isReversed) alignState.reversedName else alignState.name)
         binding.alignProject.setChipIconResource(alignState.icon)
+    }
+
+    private fun update() {
+        submitList()
+        updateAlignChip()
 
         GlobalConfig.edit {
             getDefaultCategory().apply {
@@ -366,15 +390,11 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
     private fun ItemAdapter<ProjectListItem>.scrollTo(project: Project) {
         val index = getAdapterPosition(project.info.id.getLongHash())
-        if (index == -1) {
-            with(requireContext()) {
-                LOG.warn(R.string.log_project_list_update_failure)
-            }
+        if (index == -1)
             return
-        }
         binding.recyclerViewProjectList.postDelayed({
             val scrollIdx = min(index + 2, adapterItemCount - 1)
-            binding.recyclerViewProjectList.smoothScrollToPosition(scrollIdx)
+            _binding?.recyclerViewProjectList?.smoothScrollToPosition(scrollIdx)
         }, 500)
     }
 
@@ -384,24 +404,13 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             updateReceiveScope!!.cancel()
             updateReceiveScope = null
         }
-        if (itemAdapter != null)
-            itemAdapter = null
+        itemAdapter = null
+        listItems.clear()
+        _binding = null
     }
 
     override fun onResume() {
         super.onResume()
-        if (updatedProjects.isNotEmpty()) {
-            for (project in updatedProjects) {
-                val index = itemAdapter?.getAdapterPosition(project.info.id.getLongHash())
-                if (index == -1) {
-                    with(requireContext()) {
-                        LOG.warn(R.string.log_project_list_update_failure)
-                    }
-                    continue
-                }
-            }
-            updatedProjects.clear()
-        }
         updateTitle(projects)
     }
 
@@ -411,7 +420,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             name = "가나다 순",
             reversedName = "가나다 역순",
             icon = R.drawable.ic_round_sort_by_alpha_24,
-            comparator = compareBy { it.info.name }
+            comparator = compareBy(String.CASE_INSENSITIVE_ORDER) { it.info.name }
         )
 
         @JvmStatic
