@@ -130,4 +130,6 @@
     <color name="intro_card_stroke">#4DDFC199</color>
     <color name="intro_icon_bg">#33DFC199</color>
     <color name="intro_halo">#59DFC199</color>
+    <color name="home_widget_card">@color/cardview</color>
+    <color name="home_widget_stroke">#00000000</color>
 </resources>

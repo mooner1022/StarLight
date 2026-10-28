@@ -97,4 +97,6 @@
     <color name="store_skeleton">#252321</color>
     <color name="store_shimmer">#1AFFFFFF</color>
     <color name="store_chip_stroke">#4A4033</color>
+    <color name="home_widget_card">#1A181B</color>
+    <color name="home_widget_stroke">#1ADFC199</color>
 </resources>
