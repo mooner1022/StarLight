@@ -79,12 +79,13 @@ class EditorMessageFragment : Fragment() {
             val binding = _binding ?: return@launch
             rvAdapter.set(annotations.map(EditorAnnotationItem::withAnnotation))
             binding.boxNoErrorYet.isVisible = annotations.isEmpty()
-            binding.textProblemsSummary.text = getString(
-                R.string.editor_problems_summary,
+            val errors = annotations.count { it.type == "error" }
+            val warnings = annotations.count { it.type == "warning" }
+            binding.textProblemsSummary.text = listOf(
                 event.fileName ?: "-",
-                annotations.count { it.type == "error" },
-                annotations.count { it.type == "warning" },
-            )
+                resources.getQuantityString(R.plurals.editor_error_count, errors, errors),
+                resources.getQuantityString(R.plurals.editor_warning_count, warnings, warnings),
+            ).joinToString(" · ")
         }
     }
 

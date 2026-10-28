@@ -2,6 +2,7 @@ package dev.mooner.starlight.ui.editor
 
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.os.Build
@@ -440,6 +441,18 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
     internal var problemCounts: Pair<Int, Int> = 0 to 0
         private set
+
+    internal var editorBackground: Int? = null
+        private set
+
+    @JavascriptInterface
+    override fun onEditorBackground(color: String) {
+        val channels = CSS_RGB.find(color)?.groupValues?.drop(1)?.map(String::toInt) ?: return
+        runOnUiThread {
+            editorBackground = Color.rgb(channels[0], channels[1], channels[2])
+            fileTreeDrawer?.applyBackground(editorBackground)
+        }
+    }
 
     internal val isDarkTheme: Boolean
         get() = theme.themeStyle == ThemeStyle.Dark
@@ -1239,6 +1252,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
         private const val HOT_KEYS = "↺↻⇒←→[]{}()<>;=.'\"+-*/\\:&|"
         private const val DEFAULT_FONT_SIZE = 15
+        private val CSS_RGB = "rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)".toRegex()
         private const val REPEATING_HOT_KEYS = "↺↻←→"
         private const val HOT_KEY_REPEAT_DELAY = 400L
         private const val HOT_KEY_REPEAT_INTERVAL = 60L

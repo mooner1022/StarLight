@@ -7,4 +7,6 @@ interface WebviewCallback {
     fun onDirtyChanged(sessionId: String, dirty: Boolean)
 
     fun onAnnotationUpdated(list: String)
+
+    fun onEditorBackground(color: String)
 }

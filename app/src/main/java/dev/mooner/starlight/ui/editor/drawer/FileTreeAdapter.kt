@@ -76,7 +76,7 @@ class FileTreeAdapter(
         holder.name.setTextColor(context.getColor(if (isCurrent) R.color.main_dark else R.color.text))
         holder.name.typeface = getTypeface(context, if (isCurrent) R.font.nanumsquare_neo_bold else R.font.nanumsquare_neo_regular)
         holder.meta.text = if (file.isDirectory)
-            context.getString(R.string.editor_folder_items, node.children.size)
+            context.resources.getQuantityString(R.plurals.editor_folder_items, node.children.size, node.children.size)
         else
             Formatter.formatShortFileSize(context, node.size)
 

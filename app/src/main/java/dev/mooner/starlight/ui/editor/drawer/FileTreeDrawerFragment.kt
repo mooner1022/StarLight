@@ -69,7 +69,10 @@ class FileTreeDrawerFragment : Fragment() {
         }.attach()
 
         refreshHeader()
-        (activity as? DefaultEditorActivity)?.let { updateMessageCount(it.problemCounts) }
+        (activity as? DefaultEditorActivity)?.let {
+            updateMessageCount(it.problemCounts)
+            applyBackground(it.editorBackground)
+        }
 
         return binding.root
     }
@@ -102,6 +105,12 @@ class FileTreeDrawerFragment : Fragment() {
             backgroundColor = requireContext().getColor(if (errors > 0) R.color.code_orange else R.color.code_yellow)
             badgeTextColor = requireContext().getColor(R.color.white)
         }
+    }
+
+    fun applyBackground(color: Int?) {
+        val binding = _binding ?: return
+        if (color != null)
+            binding.root.setBackgroundColor(color)
     }
 
     fun refreshHeader() {
