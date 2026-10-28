@@ -63,15 +63,21 @@ class FileTreeFragment : Fragment() {
             itemAnimator = null
         }
 
-        treeAdapter.notifyItemRangeChanged(0, treeAdapter.itemCount)
-
         binding.buttonNewFile.setOnClickListener {
-            requireActivity().showNewFileDialog(parent) {
-                treeAdapter.requestUpdate()
-            }
+            requireActivity().showNewFileDialog(parent, treeAdapter::onFileCreated)
         }
 
         return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    fun refresh(currentFile: File?) {
+        treeAdapter.currentFile = currentFile
+        treeAdapter.requestUpdate()
     }
 
     companion object {

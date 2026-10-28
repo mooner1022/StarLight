@@ -16,24 +16,24 @@
         app:cardElevation="@dimen/card_elevation"
         app:cardMaxElevation="@dimen/card_elevation">
 
-        <androidx.core.widget.NestedScrollView
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvEditorLogs"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fillViewport="true"
-            android:scrollbars="none"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingVertical="8dp"/>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvEditorLogs"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingTop="8dp"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
-
-        </androidx.core.widget.NestedScrollView>
+        <TextView
+            android:id="@+id/textNoLogs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:fontFamily="@font/nanumsquare_round_regular"
+            android:text="@string/widget_logs_empty"
+            android:textColor="@color/text_sub"
+            android:textSize="15sp"
+            android:visibility="gone"/>
     </androidx.cardview.widget.CardView>
 
 </FrameLayout>

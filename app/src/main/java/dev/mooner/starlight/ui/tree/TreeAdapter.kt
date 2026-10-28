@@ -11,6 +11,7 @@ import androidx.annotation.CallSuper
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.starlight.databinding.TreeNodeBinding
+import dev.mooner.starlight.utils.dp
 
 abstract class TreeAdapter <T> (
     private val context: Context,
@@ -38,10 +39,21 @@ abstract class TreeAdapter <T> (
         }
     }
 
-    fun replaceAll(nodes: List<Node<T>>) {
+    @SuppressLint("NotifyDataSetChanged")
+    fun replaceAll(nodes: List<Node<T>>, isExpanded: (Node<T>) -> Boolean = { false }) {
         displayedNodes.clear()
-        displayNodes(nodes)
-        notifyItemRangeChanged(0, displayedNodes.size)
+        displayExpanded(nodes, isExpanded)
+        notifyDataSetChanged()
+    }
+
+    private fun displayExpanded(nodes: List<Node<T>>, isExpanded: (Node<T>) -> Boolean) {
+        for (node in nodes) {
+            displayedNodes += node
+            if (!node.isLeaf && isExpanded(node)) {
+                node.expand()
+                displayExpanded(node.children, isExpanded)
+            }
+        }
     }
 
     private fun addChildNodes(parent: Node<T>, startIndex: Int): Int {
@@ -108,11 +120,9 @@ abstract class TreeAdapter <T> (
     override fun getItemCount(): Int =
         displayedNodes.size
 
-    @SuppressLint("NotifyDataSetChanged")
-    protected fun recreateWith(fullNode: List<Node<T>>) {
-        fullNode.forEach { println("R: " + it.content) }
+    protected fun recreateWith(fullNode: List<Node<T>>, isExpanded: (Node<T>) -> Boolean = { false }) {
         this.fullNode = fullNode
-        replaceAll(fullNode)
+        replaceAll(fullNode, isExpanded)
     }
 
     init {
@@ -120,7 +130,7 @@ abstract class TreeAdapter <T> (
     }
 
     companion object {
-        private const val DEF_PADDING = 50
+        private const val INDENT_DP = 20
     }
 
     inner class TreeViewHolder(
@@ -133,7 +143,7 @@ abstract class TreeAdapter <T> (
 
         fun <T> setIndent(node: Node<T>) {
             binding.root.apply {
-                setPadding(node.depth * DEF_PADDING, paddingTop, paddingRight, paddingBottom)
+                setPadding(dp(node.depth * INDENT_DP), paddingTop, paddingRight, paddingBottom)
             }
         }
     }

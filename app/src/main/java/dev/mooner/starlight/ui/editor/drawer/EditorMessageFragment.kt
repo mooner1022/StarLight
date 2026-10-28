@@ -11,6 +11,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -69,15 +70,21 @@ class EditorMessageFragment : Fragment() {
 
     private fun onEditorAnnotationReturn(event: EditorAnnotationReturnEvent) {
         lifecycleScope.launch(Dispatchers.Main) {
-            val annotations: List<Annotation> = Session.json.decodeFromString(event.jsonString)
-            rvAdapter.clear()
+            val annotations: List<Annotation> = Session.json.decodeFromString<List<Annotation>>(event.jsonString)
+                .sortedWith(compareBy({ SEVERITY_ORDER.indexOf(it.type).let { i -> if (i == -1) SEVERITY_ORDER.size else i } }, Annotation::row, Annotation::column))
+            val binding = _binding ?: return@launch
             rvAdapter.set(annotations.map(EditorAnnotationItem::withAnnotation))
-            (requireParentFragment() as FileTreeDrawerFragment).updateMessageCount(annotations.size)
-            if (annotations.isNotEmpty())
-                binding.boxNoErrorYet.visibility = View.GONE
-            else
-                binding.boxNoErrorYet.visibility = View.VISIBLE
+            binding.boxNoErrorYet.isVisible = annotations.isEmpty()
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    companion object {
+        private val SEVERITY_ORDER = listOf("error", "warning", "info")
     }
 
     @Serializable

@@ -11,6 +11,8 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import com.mikepenz.fastadapter.binding.AbstractBindingItem
 import dev.mooner.starlight.databinding.CardEditorAnnotationBinding
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.color
 
 class EditorAnnotationItem private constructor(
@@ -24,7 +26,10 @@ class EditorAnnotationItem private constructor(
         super.bindView(binding, payloads)
 
         binding.apply {
-            tvLineNumber.text        = "${annotation.row + 1}\t:${annotation.column}"
+            tvLineNumber.text        = translate {
+                Locale.ENGLISH { "Line ${annotation.row + 1}, column ${annotation.column + 1}" }
+                Locale.KOREAN  { "${annotation.row + 1}번째 줄, ${annotation.column + 1}번째 칸" }
+            }
             tvAnnotationMessage.text = annotation.text
             cvTypeIndicator.setCardBackgroundColor(getColorByType(annotation.type))
         }

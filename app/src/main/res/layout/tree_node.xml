@@ -3,8 +3,9 @@
                                                    xmlns:app="http://schemas.android.com/apk/res-auto"
                                                    xmlns:tools="http://schemas.android.com/tools"
                                                    android:layout_width="match_parent"
-                                                   android:layout_height="36dp"
-                                                   android:background="@color/transparent">
+                                                   android:layout_height="44dp"
+                                                   android:background="?attr/selectableItemBackground"
+                                                   android:paddingEnd="12dp">
 
     <ImageView
         android:id="@+id/arrowCollapse"
@@ -29,11 +30,16 @@
 
     <TextView
         android:id="@+id/textViewLabel"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
+        android:layout_marginStart="8dp"
+        android:ellipsize="middle"
+        android:fontFamily="@font/nanumsquare_neo_regular"
         android:maxLines="1"
+        android:textColor="@color/text"
+        android:textSize="15sp"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/imageViewIcon"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="FILE_OR_DIR_NAME"/>

@@ -83,14 +83,25 @@ class FileTreeDrawerFragment : Fragment() {
     }
 
     fun openTabAt(index: Int) {
-        binding.viewPager.setCurrentItem(index, false)
+        _binding?.viewPager?.setCurrentItem(index, false)
     }
 
     fun updateMessageCount(count: Int) {
+        val topMenu = _binding?.topMenu ?: return
         if (count <= 0)
-            binding.topMenu.dismissBadge(R.id.nav_warnings)
+            topMenu.dismissBadge(R.id.nav_warnings)
         else
-            binding.topMenu.showBadge(R.id.nav_warnings, count)
+            topMenu.showBadge(R.id.nav_warnings, count)
+    }
+
+    fun refreshFiles(currentFile: File?) {
+        if (_binding == null) return
+        (childFragmentManager.findFragmentByTag("f0") as? FileTreeFragment)?.refresh(currentFile)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
     private fun setOnTabSelectedListener(block: (id: Int) -> Unit) =
