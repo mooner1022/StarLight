@@ -153,12 +153,8 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    override fun hashCode(): Int {
-        var result = info.id.hashCode()
-        result = 31 * result + isEnabled.hashCode()
-        result = 31 * result + fileSize.hashCode()
-        return result
-    }
+    override fun hashCode(): Int =
+        info.id.hashCode()
 
     final override fun init(
         info        : PluginInfo,
