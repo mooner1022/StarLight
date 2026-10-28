@@ -354,14 +354,14 @@ class ProjectImpl private constructor(
             val folder = File(dir.path, info.name)
                 .also(File::mkdirs)
 
+            for ((eventId, _) in events)
+                info.allowedEventIds += eventId
+
             File(folder.path, INFO_FILE_NAME)
                 .writeText(json.encodeToString(info), Charsets.UTF_8)
 
             File(folder.path, info.mainScript)
                 .writeText(getLanguage(info).formatDefaultCode(info.mainScript, events.values.toList()), Charsets.UTF_8)
-
-            for ((eventId, _) in events)
-                info.allowedEventIds += eventId
 
             return loadFrom(folder, info)
         }
