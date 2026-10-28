@@ -175,9 +175,9 @@ class LogsRecyclerViewAdapter
                         else
                             color { "#A3A3A3" }
                         textModeStateIndicator.setBackgroundColor(color)
-                        val tag = "%s %s - %s:"
+                        val tag = "%s %s%s:"
                             .format(data.type.name.substring(0, 1),
-                                TimeUtils.formatMillis(data.millis, "HH:mm:ss.SSS"), data.tag)
+                                TimeUtils.formatMillis(data.millis, "HH:mm:ss.SSS"), data.tag?.let { " - $it" }.orEmpty())
                         textModeMessage.text = "$tag\n${data.message}"
                         textModeMessage.text.toSpannable().let { span ->
                             span.setSpan(ForegroundColorSpan(color), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
