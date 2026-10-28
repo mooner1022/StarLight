@@ -6,7 +6,6 @@
 
 package dev.mooner.starlight
 
-import android.content.res.Configuration
 import android.os.Bundle
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
@@ -39,6 +38,7 @@ import dev.mooner.starlight.ui.settings.update.checkForUpdate
 import dev.mooner.starlight.ui.settings.update.isAutoUpdateCheckEnabled
 import dev.mooner.starlight.utils.LAYOUT_TABLET
 import dev.mooner.starlight.utils.applyEdgeToEdge
+import dev.mooner.starlight.utils.isNightMode
 import dev.mooner.starlight.utils.layoutMode
 import dev.mooner.starlight.utils.showChangelogDialog
 import kotlinx.coroutines.Dispatchers
@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            val isNight = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+            val isNight = isNightMode()
             imageViewLogo.isVisible = !isNight
             nightHeader.root.isVisible = isNight
             nightHeader.nightStars.density = 0.25f

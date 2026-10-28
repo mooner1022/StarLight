@@ -40,7 +40,7 @@
                     tools:text="정렬: 가나다 순"
                     app:chipStartPadding="11dp"
                     app:chipEndPadding="8dp"
-                    app:chipIconTint="#80BCBD"
+                    app:chipIconTint="@color/icon_teal"
                     app:chipIcon="@drawable/ic_round_sort_by_alpha_24"
                     app:chipMinHeight="48dp"
                     app:chipCornerRadius="18dp"
@@ -57,7 +57,7 @@
             android:background="@drawable/bg_project_header_button"
             android:contentDescription="@string/plugin_store"
             android:src="@drawable/ic_round_cloud_download_24"
-            app:tint="#E9B824"/>
+            app:tint="@color/icon_amber"/>
 
         <ImageButton
             android:id="@+id/search_plugin"
@@ -67,7 +67,7 @@
             android:background="@drawable/bg_project_header_button"
             android:contentDescription="@string/plugin_search_hint"
             android:src="@drawable/ic_round_search_24"
-            app:tint="#80BCBD"/>
+            app:tint="@color/icon_teal"/>
 
         <com.google.android.material.chip.Chip
             android:id="@+id/install_plugin"

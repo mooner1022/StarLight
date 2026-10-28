@@ -132,4 +132,11 @@
     <color name="intro_halo">#59DFC199</color>
     <color name="home_widget_card">@color/cardview</color>
     <color name="home_widget_stroke">#00000000</color>
+    <color name="icon_teal">#80BCBD</color>
+    <color name="icon_amber">#E9B824</color>
+    <color name="icon_green">#7ACA8A</color>
+    <color name="icon_slate">#50727B</color>
+    <color name="icon_violet">#9195F6</color>
+    <color name="icon_sky">#7AB2D3</color>
+    <color name="icon_navy">#4A628A</color>
 </resources>
