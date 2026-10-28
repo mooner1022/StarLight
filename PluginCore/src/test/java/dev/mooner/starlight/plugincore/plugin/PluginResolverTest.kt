@@ -1,7 +1,6 @@
 package dev.mooner.starlight.plugincore.plugin
 
 import dev.mooner.starlight.plugincore.plugin.PluginDependency.Companion.VERSION_ANY
-import dev.mooner.starlight.plugincore.plugin.PluginResolver.Exclusion
 import dev.mooner.starlight.plugincore.version.Version
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -30,8 +29,8 @@ class PluginResolverTest {
     private fun dependency(id: String, version: String = VERSION_ANY, optional: Boolean = false) =
         PluginDependency(id, version, isOptional = optional)
 
-    private fun resolve(vararg plugins: PluginInfo) =
-        PluginResolver.resolve(plugins.associateBy(PluginInfo::id), coreVersion)
+    private fun resolve(vararg plugins: PluginInfo, disabled: Set<String> = emptySet()) =
+        PluginResolver.resolve(plugins.associateBy(PluginInfo::id), coreVersion, disabled)
 
     @Test
     fun ordersDependenciesFirst() {
@@ -54,7 +53,7 @@ class PluginResolverTest {
     fun excludesIncompatibleApiVersion() {
         val result = resolve(plugin("a", apiVersion = Version(2, 0, 0)), plugin("b"))
         assertEquals(listOf("b"), result.order)
-        assertEquals(Exclusion.IncompatibleApi(Version(2, 0, 0)), result.excluded["a"])
+        assertEquals(PluginExclusion.IncompatibleApi(Version(2, 0, 0)), result.excluded["a"])
     }
 
     @Test
@@ -62,7 +61,7 @@ class PluginResolverTest {
         val required = dependency("x")
         val result = resolve(plugin("a", dependency = arrayOf(required)))
         assertTrue(result.order.isEmpty())
-        assertEquals(Exclusion.MissingDependency(required), result.excluded["a"])
+        assertEquals(PluginExclusion.MissingDependency(required), result.excluded["a"])
     }
 
     @Test
@@ -88,9 +87,9 @@ class PluginResolverTest {
             plugin("c", apiVersion = Version(0, 9, 0)),
         )
         assertTrue(result.order.isEmpty())
-        assertTrue(result.excluded["a"] is Exclusion.ExcludedDependency)
-        assertTrue(result.excluded["b"] is Exclusion.ExcludedDependency)
-        assertTrue(result.excluded["c"] is Exclusion.IncompatibleApi)
+        assertTrue(result.excluded["a"] is PluginExclusion.ExcludedDependency)
+        assertTrue(result.excluded["b"] is PluginExclusion.ExcludedDependency)
+        assertTrue(result.excluded["c"] is PluginExclusion.IncompatibleApi)
     }
 
     @Test
@@ -110,7 +109,7 @@ class PluginResolverTest {
             plugin("b", version = "1.0.0"),
         )
         assertEquals(listOf("b"), result.order)
-        assertEquals(Exclusion.IncompatibleDependency(required, Version(1, 0, 0)), result.excluded["a"])
+        assertEquals(PluginExclusion.IncompatibleDependency(required, Version(1, 0, 0)), result.excluded["a"])
     }
 
     @Test
@@ -121,7 +120,20 @@ class PluginResolverTest {
             plugin("c"),
         )
         assertEquals(listOf("c"), result.order)
-        assertEquals(Exclusion.CircularDependency, result.excluded["a"])
-        assertEquals(Exclusion.CircularDependency, result.excluded["b"])
+        assertEquals(PluginExclusion.CircularDependency, result.excluded["a"])
+        assertEquals(PluginExclusion.CircularDependency, result.excluded["b"])
+    }
+
+    @Test
+    fun excludesDisabledPluginsAndTheirDependents() {
+        val result = resolve(
+            plugin("a", dependency = arrayOf(dependency("b"))),
+            plugin("b"),
+            plugin("c", dependency = arrayOf(dependency("b", optional = true))),
+            disabled = setOf("b"),
+        )
+        assertEquals(listOf("c"), result.order)
+        assertEquals(PluginExclusion.Disabled, result.excluded["b"])
+        assertTrue(result.excluded["a"] is PluginExclusion.ExcludedDependency)
     }
 }

@@ -8,23 +8,21 @@ internal object PluginResolver {
 
     data class Resolution(
         val order: List<String>,
-        val excluded: Map<String, Exclusion>
+        val excluded: Map<String, PluginExclusion>
     )
 
-    sealed class Exclusion {
-        data class IncompatibleApi(val apiVersion: Version): Exclusion()
-        data class MissingDependency(val dependency: PluginDependency): Exclusion()
-        data class ExcludedDependency(val dependency: PluginDependency): Exclusion()
-        data class IncompatibleDependency(val dependency: PluginDependency, val found: Version): Exclusion()
-        data object CircularDependency: Exclusion()
-    }
-
-    fun resolve(infos: Map<String, PluginInfo>, coreVersion: Version): Resolution {
-        val excluded: MutableMap<String, Exclusion> = linkedMapOf()
+    fun resolve(
+        infos: Map<String, PluginInfo>,
+        coreVersion: Version,
+        disabled: Set<String> = emptySet()
+    ): Resolution {
+        val excluded: MutableMap<String, PluginExclusion> = linkedMapOf()
 
         for ((id, info) in infos) {
-            if (info.apiVersion incompatibleWith coreVersion)
-                excluded[id] = Exclusion.IncompatibleApi(info.apiVersion)
+            if (id in disabled)
+                excluded[id] = PluginExclusion.Disabled
+            else if (info.apiVersion incompatibleWith coreVersion)
+                excluded[id] = PluginExclusion.IncompatibleApi(info.apiVersion)
         }
 
         var updated = true
@@ -69,7 +67,7 @@ internal object PluginResolver {
 
         for (id in candidates.sorted()) {
             if (id !in order)
-                excluded[id] = Exclusion.CircularDependency
+                excluded[id] = PluginExclusion.CircularDependency
         }
         return Resolution(order, excluded)
     }
@@ -77,15 +75,15 @@ internal object PluginResolver {
     private fun checkDependency(
         dependency: PluginDependency,
         infos: Map<String, PluginInfo>,
-        excluded: Map<String, Exclusion>
-    ): Exclusion? {
+        excluded: Map<String, PluginExclusion>
+    ): PluginExclusion? {
         val info = infos[dependency.pluginId]
-            ?: return Exclusion.MissingDependency(dependency)
+            ?: return PluginExclusion.MissingDependency(dependency)
         if (dependency.pluginId in excluded)
-            return Exclusion.ExcludedDependency(dependency)
+            return PluginExclusion.ExcludedDependency(dependency)
         if (dependency.supportedVersion != VERSION_ANY &&
             Version.fromString(dependency.supportedVersion) incompatibleWith info.version)
-            return Exclusion.IncompatibleDependency(dependency, info.version)
+            return PluginExclusion.IncompatibleDependency(dependency, info.version)
         return null
     }
 }

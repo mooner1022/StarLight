@@ -113,6 +113,7 @@ object ApplicationSession {
                 .collect()
         } else {
             logger.info { "Skipping plugin load..." }
+            Session.pluginLoader.scanPlugins()
         }
 
         emit(context.getString(R.string.step_default_lib))
