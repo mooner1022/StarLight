@@ -15,6 +15,7 @@ import androidx.core.view.setMargins
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.configdsl.*
+import dev.mooner.configdsl.adapters.OnValueUpdatedListener
 import dev.mooner.configdsl.options.CategoryConfigOption
 import dev.mooner.starlight.utils.startConfigActivity
 import kotlinx.serialization.json.JsonElement
@@ -31,7 +32,13 @@ class PageConfigOption(
     override val default    : MutableDataMapEntry = hashMapOf(),
     override val childOptions: ConfigStructure,
     private val isRootOption: Boolean = false,
+    private val sharedData: SharedPageData? = null,
 ): RootConfigOption<PageConfigOption.PageViewHolder, MutableDataMapEntry>() {
+
+    class SharedPageData(
+        val saved: () -> MutableDataMap,
+        val onValueUpdated: OnValueUpdatedListener,
+    )
 
     override val dependency : String? = null
 
@@ -66,6 +73,16 @@ class PageConfigOption(
         holder.description.text = getDesc()
         icon.loadTo(holder.icon)
         holder.layout.setOnClickListener {
+            if (sharedData != null) {
+                holder.itemView.context.startConfigActivity(
+                    title = title,
+                    subTitle = description ?: "설정",
+                    struct = childOptions,
+                    saved = sharedData.saved(),
+                    onValueUpdated = sharedData.onValueUpdated,
+                )
+                return@setOnClickListener
+            }
             holder.itemView.context.startConfigActivity(
                 title = title,
                 subTitle = description ?: "설정",
@@ -130,6 +147,12 @@ class PageConfigBuilder(
 
     var default: MutableDataMapEntry = hashMapOf()
 
+    private var sharedData: PageConfigOption.SharedPageData? = null
+
+    fun shareData(saved: () -> MutableDataMap, onValueUpdated: OnValueUpdatedListener) {
+        sharedData = PageConfigOption.SharedPageData(saved, onValueUpdated)
+    }
+
     @ConfigBuilderDsl
     fun structure(builder: ConfigBuilder.() -> Unit) {
         structure = ConfigBuilder()
@@ -149,6 +172,7 @@ class PageConfigBuilder(
             default      = default,
             childOptions      = structure,
             isRootOption = isRootOption,
+            sharedData   = sharedData,
         )
     }
 }

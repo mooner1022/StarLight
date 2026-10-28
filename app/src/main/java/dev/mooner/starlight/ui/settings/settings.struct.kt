@@ -32,6 +32,7 @@ import dev.mooner.starlight.CF_LOG_RETENTION
 import dev.mooner.starlight.R
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.config.GlobalConfig
+import dev.mooner.starlight.plugincore.utils.onSaveConfigAdapter
 import dev.mooner.starlight.ui.config.options.page
 import dev.mooner.starlight.ui.config.options.singleCategoryPage
 import dev.mooner.starlight.ui.settings.dev.startDevModeActivity
@@ -64,22 +65,6 @@ internal fun SettingsFragment.getSettingsStruct() = config {
                 defaultValue = true
             }
             button {
-                id = "restart_application"
-                title = "앱 재시작"
-                description = "모든 프로세스를 안전하게 종료하고 재시작합니다."
-                icon = Icon.REFRESH
-                iconTintColor = requireContext().getColor(R.color.code_orange)
-                setOnClickListener(requireActivity()::restartApplication)
-            }
-        }
-    }
-    singleCategoryPage {
-        id = "permissions"
-        title = "권한"
-        icon = Icon.LOCK
-        iconTintColor = color { "#C8E4B2" }
-        items {
-            button {
                 id = OPTION_NOTIFICATION_ACCESS
                 title = "알림 접근 권한"
                 description = requireContext().notificationAccessDescription()
@@ -101,53 +86,68 @@ internal fun SettingsFragment.getSettingsStruct() = config {
                     view.context.openBatteryOptimizationSettings()
                 }
             }
+            button {
+                id = "restart_application"
+                title = "앱 재시작"
+                description = "모든 프로세스를 안전하게 종료하고 재시작합니다."
+                icon = Icon.REFRESH
+                iconTintColor = requireContext().getColor(R.color.code_orange)
+                setOnClickListener(requireActivity()::restartApplication)
+            }
         }
     }
-    singleCategoryPage {
-        id = "project"
-        title = "프로젝트"
+    page {
+        id = "project_plugin"
+        title = "프로젝트, 플러그인"
         icon = Icon.PROJECTS
         iconTintColor = color { "#B4CFB0" }
-        items {
-            toggle {
-                id = "compile_animation"
-                title = "컴파일 애니메이션"
-                description = "컴파일이 끝난 뒤 진행 표시줄이 끝까지 차오르는 것을 잠시 보여줍니다. 끄면 바로 사라집니다."
-                icon = Icon.COMPRESS
-                iconTintColor = color { "#FEAC5E" }
-                defaultValue = true
-            }
-            toggle {
-                id = "load_global_libraries"
-                title = "전역 모듈 로드"
-                description = "StarLight/modules 폴더를 모듈 로드 경로에 포함합니다."
-                icon = Icon.FOLDER
-                iconTintColor = color { "#4BC0C8" }
-                defaultValue = false
-                warnOnEnable {
-                    """
-                    |이 기능은 신뢰할 수 없는 코드를 기기에서 실행할 수 있으며, 이로 인해 발생하는 어떠한 상해나 손실도 본 앱의 개발자는 보장하지 않습니다.
-                    |기능을 활성화 할까요?
-                    """.trimMargin()
+        shareData(GlobalConfig::getMutableData, GlobalConfig::onSaveConfigAdapter)
+        structure {
+            category {
+                id = "project"
+                title = "프로젝트"
+                textColor = requireContext().getColor(R.color.main_bright)
+                items {
+                    toggle {
+                        id = "compile_animation"
+                        title = "컴파일 애니메이션"
+                        description = "컴파일이 끝난 뒤 진행 표시줄이 끝까지 차오르는 것을 잠시 보여줍니다. 끄면 바로 사라집니다."
+                        icon = Icon.COMPRESS
+                        iconTintColor = color { "#FEAC5E" }
+                        defaultValue = true
+                    }
+                    toggle {
+                        id = "load_global_libraries"
+                        title = "전역 모듈 로드"
+                        description = "StarLight/modules 폴더를 모듈 로드 경로에 포함합니다."
+                        icon = Icon.FOLDER
+                        iconTintColor = color { "#4BC0C8" }
+                        defaultValue = false
+                        warnOnEnable {
+                            """
+                            |이 기능은 신뢰할 수 없는 코드를 기기에서 실행할 수 있으며, 이로 인해 발생하는 어떠한 상해나 손실도 본 앱의 개발자는 보장하지 않습니다.
+                            |기능을 활성화 할까요?
+                            """.trimMargin()
+                        }
+                    }
                 }
             }
-        }
-    }
-    singleCategoryPage {
-        id = "plugin"
-        title = "플러그인"
-        icon = Icon.ARCHIVE
-        iconTintColor = color { "#95D1CC" }
-        items {
-            toggle {
-                id = "safe_mode"
-                title = "안전 모드"
-                description = "플러그인을 불러오지 않고 앱을 실행합니다. 앱을 재시작하면 적용됩니다."
-                icon = Icon.LAYERS_CLEAR
-                iconTintColor = color { "#95D1CC" }
-                defaultValue = false
-                setOnValueChangedListener { view, _ ->
-                    view.context.confirmRestart()
+            category {
+                id = "plugin"
+                title = "플러그인"
+                textColor = requireContext().getColor(R.color.main_bright)
+                items {
+                    toggle {
+                        id = "safe_mode"
+                        title = "안전 모드"
+                        description = "플러그인을 불러오지 않고 앱을 실행합니다. 앱을 재시작하면 적용됩니다."
+                        icon = Icon.LAYERS_CLEAR
+                        iconTintColor = color { "#95D1CC" }
+                        defaultValue = false
+                        setOnValueChangedListener { view, _ ->
+                            view.context.confirmRestart()
+                        }
+                    }
                 }
             }
         }
