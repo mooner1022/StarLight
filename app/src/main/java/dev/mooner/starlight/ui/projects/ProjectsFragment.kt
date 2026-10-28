@@ -6,9 +6,7 @@
 
 package dev.mooner.starlight.ui.projects
 
-import android.animation.LayoutTransition
 import android.annotation.SuppressLint
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,11 +14,9 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.CheckBox
-import android.widget.EditText
 import androidx.core.content.getSystemService
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.afollestad.materialdialogs.LayoutMode
@@ -28,17 +24,12 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.bottomsheets.gridItems
 import com.afollestad.materialdialogs.customview.customView
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
-import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
-import dev.mooner.starlight.databinding.DialogNewProjectBinding
 import dev.mooner.starlight.databinding.FragmentProjectsBinding
-import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.GlobalConfig.getDefaultCategory
@@ -47,8 +38,6 @@ import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.ProjectID
-import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
-import dev.mooner.starlight.plugincore.project.event.getInstance
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.utils.*
@@ -254,91 +243,6 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             customView(R.layout.dialog_align_projects)
             findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked = isReversed
             findViewById<CheckBox>(R.id.checkBoxAlignActiveFirst).isChecked = isActiveFirst
-        }
-
-    @SuppressLint("CheckResult")
-    private fun showNewProjectDialog() =
-        MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            val binding = DialogNewProjectBinding.inflate(layoutInflater, view, false)
-            setCommonAttrsWithLifecycle()
-            customView(view = binding.root, scrollable = false, horizontalPadding = false)
-            cancelOnTouchOutside(true)
-            noAutoDismiss()
-
-            val nameEditText: EditText = binding.editTextNewProjectName
-            nameEditText.text.clear()
-
-            val chipGroup: ChipGroup = binding.langSelectionGroup
-            chipGroup.layoutTransition.enableTransitionType(LayoutTransition.CHANGING)
-            val languages = Session.languageManager.getLanguages()
-            for ((index, language) in languages.withIndex()) {
-                Chip(this.windowContext).apply {
-                    id = index
-                    text = language.name
-                    setChipBackgroundColorResource(R.color.chip_selector)
-                    if (language.id == "JS_RHINO")
-                        setChipIconResource(R.drawable.ic_js)
-                    else {
-                        val iconFile = language.getIconFile()
-                        if (iconFile.exists())
-                            chipIcon = Drawable.createFromPath(language.getIconFile().path)
-                        else
-                            setChipIconResource(R.drawable.ic_round_developer_mode_24)
-                    }
-                    chipMinHeight = dp(36f)
-                    isCheckable = true
-                    if (index == 0)
-                        isChecked = true
-                }.also(chipGroup::addView)
-            }
-
-            val recyclerView = binding.rvEventIdSelection
-            val mAdapter = ProjectEventSelectionAdapter(
-                ProjectEventManager.filterAllowedEvents(setOf("*")).map { eventId ->
-                    val instance = ProjectEventManager.findFirst(eventId)!!.getInstance()
-
-                    if (eventId == "starlight.message.create")
-                        ProjectEventSelectionAdapter.EventData.fromEvent(eventId, instance)
-                            .also { it.isSelected = true }
-                    else
-                        ProjectEventSelectionAdapter.EventData.fromEvent(eventId, instance)
-                }.sortedBy(ProjectEventSelectionAdapter.EventData::pluginId)
-            )
-            recyclerView.adapter = mAdapter
-            recyclerView.layoutManager = LinearLayoutManager(context)
-            mAdapter.notifyItemRangeInserted(0, mAdapter.itemCount)
-
-            positiveButton(res = R.string.create) {
-                val projectName = nameEditText.text.toString()
-                if (projectManager.getProjectByName(projectName, ignoreCase = true) != null) {
-                    nameEditText.error = getString(R.string.project_duplicate_name)
-                    nameEditText.requestFocus()
-                    return@positiveButton
-                }
-                if (!"(^[-_\\dA-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+\$)".toRegex().matches(projectName)) {
-                    nameEditText.error = getString(R.string.project_name_format_error)
-                    nameEditText.requestFocus()
-                    return@positiveButton
-                }
-
-                val id = chipGroup.checkedChipId
-                if (id == View.NO_ID) {
-                    Snackbar.make(this.view, getString(R.string.project_select_language), Snackbar.LENGTH_SHORT).show()
-                    return@positiveButton
-                }
-                val selectedLang = Session.languageManager.getLanguages()[id]
-                it.dismiss()
-                lifecycleScope.launch(Dispatchers.IO) {
-                    projectManager.newProject(events = mAdapter.getSelectedEventIds()) {
-                        name       = projectName
-                        mainScript = "$projectName.${selectedLang.fileExtension}"
-                        languageId = selectedLang.id
-                    }
-                }
-            }
-            negativeButton(res = R.string.cancel) {
-                it.dismiss()
-            }
         }
 
     private fun getAlignByName(name: String): Align<Project>? =

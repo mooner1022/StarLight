@@ -4,12 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="6dp"
+    android:layout_marginBottom="8dp"
     android:background="@android:color/transparent"
     android:gravity="center"
     android:minHeight="52dp"
-    android:paddingStart="@dimen/widget_card_margin_horizontal"
-    android:paddingEnd="@dimen/widget_card_margin_horizontal">
+    android:orientation="horizontal">
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_wrapper"
@@ -27,41 +26,41 @@
             android:layout_height="wrap_content"
             android:gravity="start|center_vertical"
             android:orientation="horizontal"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp">
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
 
             <ImageView
                 android:id="@+id/ivIcon"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:layout_marginStart="12dp"
-                app:srcCompat="@drawable/ic_round_ios_share_24"/>
+                android:importantForAccessibility="no"/>
 
             <LinearLayout
-                android:id="@+id/weight"
+                android:id="@+id/textWrapper"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/tvPluginId"
+                    android:id="@+id/tvLanguageId"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/wantedsans_medium"
                     android:textColor="@color/text_sub"
-                    tools:text="starlight"/>
+                    tools:text="js_neon · .js"/>
 
                 <TextView
-                    android:id="@+id/tvEventId"
+                    android:id="@+id/tvLanguageName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/wantedsans_regular"
                     android:textColor="@color/text"
                     android:textSize="18sp"
-                    android:bufferType="spannable"
-                    tools:text="starlight.message.create"/>
+                    tools:text="JS(NeonJS)"/>
             </LinearLayout>
         </LinearLayout>
 
