@@ -22,7 +22,8 @@ object StoreSource {
     }
 
     fun resolve(path: String): String =
-        RAW_BASE + path.removePrefix("/")
+        if (path.startsWith("https://") || path.startsWith("http://")) path
+        else RAW_BASE + path.removePrefix("/")
 
     suspend fun fetchIndex(): StoreIndex =
         withContext(Dispatchers.IO) {

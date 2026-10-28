@@ -71,7 +71,7 @@ data class StoreRelease(
     val apiVersion: Version,
     val releasedAt: String,
     val changelog: String = "",
-    val file: String,
+    val url: String,
     val size: Long,
     val sha256: String,
     val dependency: List<PluginDependency> = emptyList(),
@@ -81,7 +81,7 @@ data class StoreRelease(
         get() = parseInstant(releasedAt)
 
     val fileName: String
-        get() = file.substringAfterLast('/')
+        get() = url.substringAfterLast('/')
 }
 
 @Serializable

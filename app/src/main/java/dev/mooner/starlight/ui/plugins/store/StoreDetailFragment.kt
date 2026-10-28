@@ -274,7 +274,7 @@ class StoreDetailFragment : Fragment() {
                 val isCompatible = release.apiVersion compatibleWith Info.PLUGINCORE_VERSION
                 installVersion.visibility = if (i > 0 && isCompatible) View.VISIBLE else View.GONE
                 installVersion.setOnClickListener {
-                    store.showMockPeek(getString(R.string.plugin_store_mock, StoreSource.resolve(release.file)))
+                    store.showMockPeek(getString(R.string.plugin_store_mock, StoreSource.resolve(release.url)))
                 }
                 if (i > 0)
                     root.visibility = View.GONE
