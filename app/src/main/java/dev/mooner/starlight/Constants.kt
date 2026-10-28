@@ -14,6 +14,7 @@ const val WIDGET_DEF_STRING = """
 
 const val ID_VIEW_ITEM_PROJECT = 0
 const val ID_VIEW_ITEM_LOG     = 1
+const val ID_VIEW_ITEM_PLUGIN  = 2
 
 const val PREF_IS_INITIAL = "isFirstOpen"
 

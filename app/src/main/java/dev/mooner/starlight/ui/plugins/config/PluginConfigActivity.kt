@@ -8,22 +8,19 @@ package dev.mooner.starlight.ui.plugins.config
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.snackbar.Snackbar
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.button
+import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityPluginConfigBinding
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.data.FileConfig
 import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
+import dev.mooner.starlight.ui.plugins.showRemovePluginDialog
 import dev.mooner.starlight.utils.bindFadeImage
-import dev.mooner.starlight.utils.restartApplication
-import dev.mooner.starlight.utils.setCommonAttrsWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -94,26 +91,16 @@ class PluginConfigActivity: AppCompatActivity() {
             items {
                 button {
                     id = "delete_plugin"
-                    title = "플러그인 제거"
+                    title = getString(R.string.plugin_remove)
                     setOnClickListener { view ->
-                        MaterialDialog(binding.root.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                            setCommonAttrsWithLifecycle()
-                            title(text = "정말 [${plugin.info.fullName}](을)를 삭제할까요?")
-                            message(text = "주의: 모든 설정과 하위 디렉토리가 함께 삭제되며, 되돌릴 수 없습니다.")
-                            positiveButton(text = "확인") { dialog ->
-                                pluginManager.removePlugin(plugin.info.id)
-                                Snackbar.make(view, "플러그인을 삭제했습니다.\n앱을 재시작할까요?", Snackbar.LENGTH_LONG)
-                                    .setAction("확인") {
-                                        restartApplication()
-                                    }
-                                    .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
-                                    .show()
-                                dialog.dismiss()
+                        showRemovePluginDialog(
+                            this@PluginConfigActivity,
+                            plugin.info.id,
+                            onRemoved = { finish() },
+                            onFailure = { e ->
+                                Snackbar.make(view, e.message ?: e.toString(), Snackbar.LENGTH_SHORT).show()
                             }
-                            negativeButton(text = "취소") { dialog ->
-                                dialog.dismiss()
-                            }
-                        }
+                        )
                     }
                     icon = Icon.DELETE_SWEEP
                     //backgroundColor = Color.parseColor("#B8DFD8")
@@ -124,8 +111,8 @@ class PluginConfigActivity: AppCompatActivity() {
     }
 
     companion object {
-        private const val EXTRA_PLUGIN_NAME       = "pluginName"
-        private const val EXTRA_PLUGIN_ID         = "pluginId"
+        const val EXTRA_PLUGIN_NAME               = "pluginName"
+        const val EXTRA_PLUGIN_ID                 = "pluginId"
         private const val PLUGIN_CONFIG_FILE_NAME = "config-plugin.json"
     }
 }
