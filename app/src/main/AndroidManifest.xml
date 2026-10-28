@@ -64,6 +64,7 @@
         <activity android:name=".ui.settings.info.AppInfoActivity"/>
         <activity android:name=".ui.crash.FatalErrorActivity"/>
         <activity android:name=".ui.plugins.config.PluginConfigActivity"/>
+        <activity android:name=".ui.plugins.store.PluginStoreActivity"/>
         <activity
             android:name=".ui.splash.SplashActivity"
             android:exported="true">

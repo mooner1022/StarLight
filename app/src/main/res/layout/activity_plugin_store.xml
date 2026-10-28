@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    tools:context=".ui.plugins.store.PluginStoreActivity">
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/storeContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <LinearLayout
+        android:id="@+id/restartBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_store_restart"
+        android:elevation="10dp"
+        android:gravity="center_vertical"
+        android:minHeight="60dp"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="8dp"
+        android:visibility="invisible"
+        tools:visibility="visible">
+
+        <ImageView
+            android:id="@+id/restartStar"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_store_sparkle"/>
+
+        <TextView
+            android:id="@+id/restartText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="12dp"
+            android:layout_weight="1"
+            android:fontFamily="@font/nanumsquare_neo_bold"
+            android:textColor="@color/store_star"
+            android:textSize="13sp"
+            tools:text="플러그인 2개가 재시작을 기다리고 있어요"/>
+
+        <TextView
+            android:id="@+id/restartAction"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_store_gold_pill"
+            android:fontFamily="@font/nanumsquare_neo_extrabold"
+            android:gravity="center"
+            android:paddingHorizontal="18dp"
+            android:text="@string/plugin_restart"
+            android:textColor="@color/store_on_gold"
+            android:textSize="13sp"/>
+    </LinearLayout>
+
+    <dev.mooner.starlight.ui.plugins.store.SparkleBurstView
+        android:id="@+id/sparkles"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:elevation="12dp"
+        android:focusable="false"/>
+</FrameLayout>

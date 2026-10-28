@@ -56,10 +56,10 @@ class PluginManager {
             ?.toSet()
             .orEmpty()
 
-    fun install(installer: PluginInstaller, file: File, sha256: String? = null): PluginChange {
+    fun install(installer: PluginInstaller, file: File, sha256: String? = null, repository: PluginRepository? = null): PluginChange {
         val id = installer.inspect(file).id
         val previous = getInstalled(id)?.info
-        val info = installer.install(file, sha256)
+        val info = installer.install(file, sha256, repository)
         val change = if (previous == null)
             PluginChange.Installed(info)
         else

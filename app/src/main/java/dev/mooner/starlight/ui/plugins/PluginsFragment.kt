@@ -7,6 +7,7 @@
 package dev.mooner.starlight.ui.plugins
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -44,6 +45,7 @@ import dev.mooner.starlight.plugincore.plugin.InstalledPlugin
 import dev.mooner.starlight.plugincore.plugin.PluginChange
 import dev.mooner.starlight.plugincore.plugin.PluginInfo
 import dev.mooner.starlight.plugincore.plugin.PluginState
+import dev.mooner.starlight.ui.plugins.store.PluginStoreActivity
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
 import dev.mooner.starlight.utils.createFailurePeek
@@ -139,8 +141,7 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
     override fun onClick(view: View) {
         when(view.id) {
             R.id.align_plugin   -> showAlignDialog()
-            R.id.plugin_store   ->
-                createFailurePeek(getString(R.string.plugin_store_soon), PeekAlert.Position.Bottom).peekAboveBars()
+            R.id.plugin_store   -> startActivity(Intent(requireContext(), PluginStoreActivity::class.java))
             R.id.search_plugin  -> setSearchVisible(binding.searchBar.visibility != View.VISIBLE)
             R.id.searchClose    -> setSearchVisible(false)
             R.id.install_plugin -> pickPluginFile.launch(arrayOf("*/*"))

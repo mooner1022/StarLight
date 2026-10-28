@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/detailRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="110dp">
+
+            <FrameLayout
+                android:id="@+id/banner"
+                android:layout_width="match_parent"
+                android:layout_height="236dp"
+                android:background="@drawable/bg_store_hero">
+
+                <dev.mooner.starlight.ui.plugins.store.StarFieldView
+                    android:id="@+id/stars"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+
+                <View
+                    android:id="@+id/haloOuter"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="14dp"
+                    android:alpha="0.25"
+                    android:background="@drawable/bg_store_halo"/>
+
+                <View
+                    android:id="@+id/haloInner"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="14dp"
+                    android:alpha="0.25"
+                    android:background="@drawable/bg_store_halo"/>
+
+                <FrameLayout
+                    android:id="@+id/iconFrame"
+                    android:layout_width="92dp"
+                    android:layout_height="92dp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_store_icon_large"
+                    android:elevation="8dp"
+                    android:foreground="@drawable/fg_store_icon_border_large">
+
+                    <ImageView
+                        android:id="@+id/icon"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:importantForAccessibility="no"
+                        android:scaleType="centerCrop"
+                        tools:src="@drawable/ic_store_icon_placeholder"/>
+                </FrameLayout>
+            </FrameLayout>
+
+            <LinearLayout
+                android:id="@+id/detailContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="20dp">
+
+                <TextView
+                    android:id="@+id/name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:fontFamily="@font/nanumsquare_round_extrabold"
+                    android:gravity="center"
+                    android:textColor="@color/text"
+                    android:textSize="24sp"
+                    tools:text="Discord 브릿지"/>
+
+                <TextView
+                    android:id="@+id/authors"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="6dp"
+                    android:drawablePadding="5dp"
+                    android:fontFamily="@font/nanumsquare_neo_bold"
+                    android:textColor="@color/store_gold_deep"
+                    android:textSize="13sp"
+                    tools:text="mooner1022 · 메신저 연동"/>
+
+                <TextView
+                    android:id="@+id/pluginId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="@font/jbmono_nl_regular"
+                    android:textColor="@color/text_sub"
+                    android:textSize="11sp"
+                    tools:text="dev.mooner.discord"/>
+
+                <dev.mooner.starlight.ui.plugins.store.StoreInstallButton
+                    android:id="@+id/install"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="20dp"/>
+
+                <TextView
+                    android:id="@+id/installHint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/nanumsquare_neo_regular"
+                    android:gravity="center"
+                    android:textColor="@color/text_sub"
+                    android:textSize="12sp"
+                    tools:text="설치 후 앱을 다시 시작하면 적용돼요"/>
+
+                <TextView
+                    android:id="@+id/warning"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_store_warning"
+                    android:drawablePadding="10dp"
+                    android:fontFamily="@font/nanumsquare_neo_regular"
+                    android:gravity="center_vertical"
+                    android:padding="14dp"
+                    android:textColor="@color/text"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    app:drawableStartCompat="@drawable/ic_round_warning_24"
+                    app:drawableTint="@color/status_error"
+                    tools:text="PluginCore 0.2용으로 만들어져 현재 버전에서는 불러올 수 없어요."
+                    tools:visibility="visible"/>
+
+                <LinearLayout
+                    android:id="@+id/stats"
+                    style="@style/StoreCard"
+                    android:layout_marginTop="18dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="14dp"/>
+
+                <com.google.android.flexbox.FlexboxLayout
+                    android:id="@+id/tags"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    app:flexWrap="wrap"
+                    app:justifyContent="center"/>
+
+                <TextView
+                    android:id="@+id/previewTitle"
+                    style="@style/StoreSectionTitle"
+                    android:text="@string/plugin_store_section_preview"/>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/screenshots"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="-20dp"
+                    android:clipToPadding="false"
+                    android:nestedScrollingEnabled="false"
+                    android:paddingHorizontal="20dp"/>
+
+                <TextView
+                    style="@style/StoreSectionTitle"
+                    android:text="@string/plugin_store_section_about"/>
+
+                <LinearLayout
+                    android:id="@+id/aboutCard"
+                    style="@style/StoreCard">
+
+                    <TextView
+                        android:id="@+id/description"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nanumsquare_neo_regular"
+                        android:lineSpacingExtra="4dp"
+                        android:textColor="@color/text"
+                        android:textSize="14sp"/>
+
+                    <TextView
+                        android:id="@+id/descriptionMore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/nanumsquare_neo_extrabold"
+                        android:gravity="center_vertical"
+                        android:text="@string/plugin_store_more"
+                        android:textColor="@color/store_gold_deep"
+                        android:textSize="13sp"/>
+                </LinearLayout>
+
+                <TextView
+                    style="@style/StoreSectionTitle"
+                    android:text="@string/plugin_store_section_changes"/>
+
+                <LinearLayout
+                    android:id="@+id/releasesCard"
+                    style="@style/StoreCard"
+                    android:paddingVertical="8dp">
+
+                    <LinearLayout
+                        android:id="@+id/releases"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"/>
+
+                    <TextView
+                        android:id="@+id/releasesMore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:drawablePadding="2dp"
+                        android:fontFamily="@font/nanumsquare_neo_extrabold"
+                        android:gravity="center_vertical"
+                        android:textColor="@color/store_gold_deep"
+                        android:textSize="13sp"
+                        app:drawableEndCompat="@drawable/ic_round_keyboard_arrow_down_24"
+                        app:drawableTint="@color/store_gold_deep"
+                        tools:text="이전 버전 2개"/>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/dependenciesTitle"
+                    style="@style/StoreSectionTitle"
+                    android:text="@string/plugin_store_section_dependencies"/>
+
+                <LinearLayout
+                    android:id="@+id/dependencies"
+                    style="@style/StoreCard"
+                    android:paddingVertical="6dp"/>
+
+                <TextView
+                    style="@style/StoreSectionTitle"
+                    android:text="@string/plugin_store_section_info"/>
+
+                <LinearLayout
+                    android:id="@+id/info"
+                    style="@style/StoreCard"
+                    android:paddingVertical="6dp"/>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <FrameLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp">
+
+        <View
+            android:id="@+id/topBarBackground"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:background="@color/background"
+            android:elevation="2dp"/>
+
+        <ImageButton
+            android:id="@+id/back"
+            style="@style/StoreTopBarButton"
+            android:layout_gravity="start|center_vertical"
+            android:layout_marginStart="4dp"
+            android:contentDescription="@string/cancel"
+            android:elevation="2dp"
+            android:src="@drawable/ic_round_arrow_left_24"
+            app:tint="@color/store_star"/>
+
+        <TextView
+            android:id="@+id/topTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginHorizontal="64dp"
+            android:alpha="0"
+            android:elevation="2dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/nanumsquare_round_extrabold"
+            android:maxLines="1"
+            android:textColor="@color/text"
+            android:textSize="16sp"/>
+
+        <ImageButton
+            android:id="@+id/share"
+            style="@style/StoreTopBarButton"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="4dp"
+            android:contentDescription="@string/plugin_store_info_source"
+            android:elevation="2dp"
+            android:src="@drawable/ic_round_launch_24"
+            app:tint="@color/store_star"/>
+    </FrameLayout>
+</FrameLayout>

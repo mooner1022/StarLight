@@ -14,8 +14,9 @@ class PluginInstaller(
     fun inspect(file: File): PluginInfo =
         readPluginInfo(file)
 
-    fun install(source: File, sha256: String? = null): PluginInfo {
-        if (sha256 != null && !source.sha256().equals(sha256, ignoreCase = true))
+    fun install(source: File, sha256: String? = null, repository: PluginRepository? = null): PluginInfo {
+        val checksum = source.sha256()
+        if (sha256 != null && !checksum.equals(sha256, ignoreCase = true))
             throw InvalidPluginException("Checksum mismatch: ${source.name}")
         val info = readPluginInfo(source)
 
@@ -35,8 +36,25 @@ class PluginInstaller(
         for (file in replaced)
             if (file != target)
                 file.delete()
+        writeOrigin(info.id, PluginOrigin(repository, checksum, System.currentTimeMillis()))
         return info
     }
+
+    fun originOf(id: String): PluginOrigin? {
+        val origin = runCatching { json.decodeFromString<PluginOrigin>(originFileOf(id).readText()) }.getOrNull()
+            ?: return null
+        val file = fileOf(id).takeIf(File::isFile) ?: return null
+        return origin.takeIf { file.sha256().equals(it.sha256, ignoreCase = true) }
+    }
+
+    private fun writeOrigin(id: String, origin: PluginOrigin) {
+        val file = originFileOf(id)
+        file.parentFile?.mkdirs()
+        file.writeText(json.encodeToString(PluginOrigin.serializer(), origin))
+    }
+
+    private fun originFileOf(id: String): File =
+        internalDir.resolve("plugin_origins").resolve("$id.json")
 
     fun fileOf(id: String): File =
         pluginsDir.resolve(fileNameOf(id))
@@ -47,6 +65,7 @@ class PluginInstaller(
                 throw IOException("Failed to delete $target")
         if (info == null)
             return
+        originFileOf(info.id).delete()
         val internal = internalDir.resolve("plugin_data").resolve(info.id)
         if (keepData) {
             internal.resolve("assets").deleteRecursively()

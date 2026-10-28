@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ShapeAppearance.StarLight.StoreFeatured" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+
+    <style name="StoreChipText" parent="TextAppearance.MaterialComponents.Chip">
+        <item name="android:fontFamily">@font/nanumsquare_neo_bold</item>
+        <item name="fontFamily">@font/nanumsquare_neo_bold</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="StoreSectionTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">28dp</item>
+        <item name="android:layout_marginBottom">12dp</item>
+        <item name="android:drawablePadding">8dp</item>
+        <item name="android:fontFamily">@font/nanumsquare_round_extrabold</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textColor">@color/text</item>
+        <item name="android:textSize">17sp</item>
+        <item name="drawableStartCompat">@drawable/ic_store_sparkle_small</item>
+    </style>
+
+    <style name="StoreCard">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/bg_store_card</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">18dp</item>
+    </style>
+
+    <style name="StoreTopBarButton">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:scaleType">fitCenter</item>
+    </style>
+
+    <style name="StoreSkeleton">
+        <item name="android:background">@drawable/bg_store_skeleton</item>
+    </style>
+</resources>
