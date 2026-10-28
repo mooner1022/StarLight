@@ -28,6 +28,7 @@ open class SlideBottomSheetDialog(context: Context) : BottomSheetDialog(context,
 
     init {
         behavior.skipCollapsed = true
+        behavior.maxHeight = (context.resources.displayMetrics.heightPixels * MAX_HEIGHT_RATIO).toInt()
         behavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {}
 
@@ -96,6 +97,7 @@ open class SlideBottomSheetDialog(context: Context) : BottomSheetDialog(context,
 
     companion object {
         private const val SCRIM_ALPHA = 128f
+        private const val MAX_HEIGHT_RATIO = 0.85f
         private const val ENTER_DURATION = 300L
         private const val EXIT_DURATION = 220L
     }

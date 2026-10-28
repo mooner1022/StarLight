@@ -54,6 +54,8 @@ internal fun Context.showStoreSheet(block: StoreSheetBuilder.() -> Unit): SlideB
         content.visibility = if (content.childCount > 0) View.VISIBLE else View.GONE
         positive.bindAction(dialog, builder.positive)
         negative.bindAction(dialog, builder.negative)
+        scroll.setOnScrollChangeListener { _, _, _, _, _ -> updateDivider() }
+        scroll.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateDivider() }
     }
 
     dialog.setContentView(binding.root)
@@ -77,6 +79,12 @@ private fun TextView.bindAction(dialog: SlideBottomSheetDialog, action: Pair<Str
         dialog.dismiss()
         action.second()
     }
+}
+
+private fun DialogStoreSheetBinding.updateDivider() {
+    val target = if (scroll.canScrollVertically(1)) 1f else 0f
+    if (buttonsDivider.alpha != target)
+        buttonsDivider.animate().alpha(target).setDuration(150).start()
 }
 
 private fun DialogStoreSheetBinding.playEnterAnimation() {
