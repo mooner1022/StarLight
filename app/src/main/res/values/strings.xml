@@ -121,10 +121,6 @@
     <string name="editor_replace">Replace</string>
     <string name="editor_goto_line">Go to line</string>
 
-    <string name="step_permission">Allow default permissions</string>
-    <string name="step_read_notification">Allow notification read</string>
-    <string name="step_install_wearable">Location policy</string>
-    <string name="step_set_basics">Required set-ups</string>
     <string name="action_previous_step">Prev.</string>
     <string name="action_next_step">Next</string>
 
@@ -310,4 +306,41 @@
     <string name="plugin_store_dep_mismatch">Version mismatch</string>
     <string name="plugin_store_dep_no_compatible">No compatible version</string>
     <string name="plugin_store_deps_update">Update too</string>
+    <string name="intro_tagline">Your own messenger bot,\nlit up by scripts</string>
+    <string name="intro_start">Get started</string>
+    <string name="intro_next">Next</string>
+    <string name="intro_remaining">%d left to allow</string>
+    <string name="intro_finish">Start StarLight</string>
+    <string name="intro_prev">Back</string>
+    <string name="intro_tour_eyebrow">TOUR</string>
+    <string name="intro_tour_title">What StarLight does</string>
+    <string name="intro_tour_subtitle">Bots that read your messenger notifications and reply with scripts.</string>
+    <string name="intro_feature_reply_title">Replies to messages</string>
+    <string name="intro_feature_reply_desc">Reads messenger notifications and answers right from them.</string>
+    <string name="intro_feature_project_title">Projects</string>
+    <string name="intro_feature_project_desc">Write bots in JavaScript and edit them in the built-in editor.</string>
+    <string name="intro_feature_plugin_title">Plugin store</string>
+    <string name="intro_feature_plugin_desc">Add languages and features with plugins from the store.</string>
+    <string name="intro_feature_home_title">Home and logs</string>
+    <string name="intro_feature_home_desc">See how your bots are doing with widgets and logs.</string>
+    <string name="intro_required_eyebrow">REQUIRED</string>
+    <string name="intro_required_title">Allow access</string>
+    <string name="intro_required_subtitle">StarLight needs these to run bots. Tap each one to open its settings.</string>
+    <string name="intro_optional_eyebrow">RECOMMENDED</string>
+    <string name="intro_optional_title">Nice to have</string>
+    <string name="intro_optional_subtitle">Recommended for bots that keep running. You can change these later in Settings.</string>
+    <string name="intro_allow">Allow</string>
+    <string name="intro_perm_storage">File access</string>
+    <string name="intro_perm_storage_desc">Projects and plugins are kept in the StarLight folder on your device.</string>
+    <string name="intro_perm_listener">Notification access</string>
+    <string name="intro_perm_listener_desc">Reads messenger notifications so bots can receive and reply.</string>
+    <string name="intro_perm_overlay">Display over other apps</string>
+    <string name="intro_perm_overlay_desc">Lets StarLight open screens while it runs in the background.</string>
+    <string name="intro_perm_post">Notifications</string>
+    <string name="intro_perm_post_desc">Shows the running status and errors as notifications.</string>
+    <string name="intro_perm_battery">Ignore battery optimization</string>
+    <string name="intro_perm_battery_desc">Keeps the system from stopping StarLight in the background.</string>
+    <string name="intro_done_title">You\'re all set</string>
+    <string name="intro_done_subtitle">Create your first bot with the + button in the Projects tab.</string>
+    <string name="intro_done_later">You can allow this later in Settings</string>
 </resources>

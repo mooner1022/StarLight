@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/pageContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingHorizontal="28dp">
+
+        <FrameLayout
+            android:id="@+id/logoFrame"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:tag="pop">
+
+            <View
+                android:layout_width="170dp"
+                android:layout_height="170dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_intro_logo_glow"/>
+
+            <View
+                android:id="@+id/haloOuter"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_intro_halo"/>
+
+            <View
+                android:id="@+id/haloInner"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_intro_halo"/>
+
+            <ImageView
+                android:id="@+id/logo"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_logo_transparent"/>
+
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="@font/nanumsquare_neo_regular"
+            android:text="Project ✦"
+            android:textColor="@color/store_gold_bright"
+            android:textSize="20sp"
+            tools:ignore="HardcodedText"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/nanumsquare_neo_extrabold"
+            android:letterSpacing="0.3"
+            android:text="StarLight"
+            android:textColor="@color/store_star"
+            android:textSize="34sp"
+            tools:ignore="HardcodedText"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:fontFamily="@font/nanumsquare_neo_regular"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:text="@string/intro_tagline"
+            android:textColor="@color/intro_text_sub"
+            android:textSize="16sp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/bg_intro_version"
+            android:fontFamily="@font/nanumsquare_neo_bold"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="5dp"
+            android:text="@string/app_version"
+            android:textColor="@color/store_gold"
+            android:textSize="12sp"/>
+
+    </LinearLayout>
+
+</FrameLayout>

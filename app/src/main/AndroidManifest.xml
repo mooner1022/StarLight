@@ -35,7 +35,7 @@
         android:theme="@style/Theme.StarLight.NoActionBar"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".ui.splash.quickstart.WelcomeActivity"
+            android:name=".ui.splash.intro.IntroActivity"
             android:exported="false"/>
         <activity
             android:name=".ui.settings.solver.ProblemSolverActivity"
@@ -56,9 +56,6 @@
         </activity>
         <activity
             android:name=".ui.settings.notifications.NotificationRulesActivity"
-            android:exported="false"/>
-        <activity
-            android:name=".ui.splash.quickstart.QuickStartActivity"
             android:exported="false"/>
         <activity android:name=".ui.config.ConfigActivity"/>
         <activity android:name=".ui.settings.info.AppInfoActivity"/>
