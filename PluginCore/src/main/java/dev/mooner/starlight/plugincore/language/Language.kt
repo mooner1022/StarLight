@@ -79,21 +79,10 @@ abstract class Language {
 
         val imports: MutableSet<String> = hashSetOf()
 
-        val duplicated: MutableSet<String> = hashSetOf()
-        for (event in events) {
-            if (event.functionName in duplicated)
-                continue
-            if (events.count { it.functionName == event.functionName } > 1)
-                duplicated += event.functionName
-        }
-
+        val emitted: MutableSet<String> = hashSetOf()
         val body = buildString {
             for (event in events) {
-                if (event.functionName in duplicated)
-                    continue
-
                 val generated = codeGenerator.generateFunction(event.functionName, event.argTypes, null)
-                imports += generated.imports
                 append("\n")
                 if (event.functionComment != null)
                     append(codeGenerator.generateComment(
@@ -101,7 +90,7 @@ abstract class Language {
                         isDocument = true,
                         content = event.functionComment!!
                     )).append("\n")
-                if (event.functionName in duplicated) {
+                if (!emitted.add(event.functionName)) {
                     append(codeGenerator
                         .generateComment(
                             isMultiLine = false,
@@ -115,9 +104,9 @@ abstract class Language {
                             content = generated.function
                         )
                     ).append("\n")
-                    duplicated += event.functionName
                     continue
                 }
+                imports += generated.imports
                 append(generated.function).append("\n")
             }
         }
