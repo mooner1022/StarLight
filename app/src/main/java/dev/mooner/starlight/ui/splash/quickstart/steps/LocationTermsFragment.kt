@@ -52,8 +52,6 @@ class LocationTermsFragment : Fragment() {
             lifecycleOwner(this@LocationTermsFragment)
             onValueUpdated { _, id, value, _ ->
                 val (pk, key) = when(id) {
-                    "noob" ->
-                        "general" to "newbie_mode"
                     "use_ext_module" ->
                         "project" to "load_global_libraries"
                     "use_plugin" ->
@@ -76,19 +74,11 @@ class LocationTermsFragment : Fragment() {
                 title = "부가 설정"
                 items {
                     toggle {
-                        id = "noob"
-                        title = "쉬운 사용 모드"
-                        description = "초심자를 위한 쉬운 사용 모드를 사용합니다."
-                        icon = Icon.ECO
-                        defaultValue = false
-                    }
-                    toggle {
                         id = "use_ext_module"
                         title = "외부 모듈 사용"
                         description = "'modules' 폴더 내의 모듈 코드를 실행합니다."
                         icon = Icon.DEVELOPER_MODE
                         defaultValue = true
-                        dependency = "!noob"
                     }
                     toggle {
                         id = "use_plugin"
@@ -96,7 +86,6 @@ class LocationTermsFragment : Fragment() {
                         description = "플러그인 기능을 활성화 합니다."
                         icon = Icon.DEVELOPER_BOARD
                         defaultValue = true
-                        dependency = "!noob"
                     }
                 }
             }

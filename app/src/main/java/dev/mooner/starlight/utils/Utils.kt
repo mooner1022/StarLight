@@ -82,8 +82,6 @@ fun Uri.toURI(): URI =
 
 val isDevMode get() =
     Session.isInitComplete && GlobalConfig.category("dev").getBoolean("dev_mode", false)
-val isNoobMode get() =
-    Session.isInitComplete && GlobalConfig.category("general").getBoolean("newbie_mode", false)
 
 const val LAYOUT_DEFAULT = 0
 const val LAYOUT_TABLET  = 1
