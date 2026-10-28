@@ -3,7 +3,7 @@
     <style name="ThemeOverlay.StarLight.SlideBottomSheet" parent="ThemeOverlay.MaterialComponents.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/Widget.StarLight.SlideBottomSheet</item>
         <item name="android:windowAnimationStyle">@style/Animation.StarLight.None</item>
-        <item name="android:backgroundDimAmount">0</item>
+        <item name="android:backgroundDimEnabled">false</item>
     </style>
 
     <style name="Widget.StarLight.SlideBottomSheet" parent="Widget.MaterialComponents.BottomSheet.Modal">
