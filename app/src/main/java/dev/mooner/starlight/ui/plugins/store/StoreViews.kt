@@ -84,6 +84,26 @@ class StarFieldView @JvmOverloads constructor(
             invalidate()
         }
 
+    var parallaxX: Float = 0f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var density: Float = 1f
+        set(value) {
+            if (field == value)
+                return
+            field = value
+            generate(width, height)
+        }
+
+    var brightness: Float = 1f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
     var seed: Int = 7
         set(value) {
             if (field == value)
@@ -116,7 +136,7 @@ class StarFieldView @JvmOverloads constructor(
             return
         val random = Random(seed)
         val cell = dp(26f)
-        val count = ((w * h) / (cell * cell)).toInt().coerceIn(12, 180)
+        val count = (((w * h) / (cell * cell)).toInt().coerceIn(12, 180) * density).toInt()
         repeat(count) {
             val sparkle = random.nextFloat() < 0.12f
             stars += Star(
@@ -138,17 +158,18 @@ class StarFieldView @JvmOverloads constructor(
             val y = star.y - parallax * star.depth
             if (y < -star.radius * 2 || y > height + star.radius * 2)
                 continue
+            val x = if (parallaxX == 0f) star.x else (star.x - parallaxX * star.depth).mod(width.toFloat())
             paint.color = if (star.isGold) goldColor else starColor
-            paint.alpha = (twinkle * 255).toInt()
+            paint.alpha = (twinkle * brightness * 255).toInt()
             if (star.isSparkle) {
                 val radius = star.radius * (0.75f + 0.35f * twinkle)
                 path.reset()
-                path.addSparkle(star.x, y, radius)
+                path.addSparkle(x, y, radius)
                 canvas.drawPath(path, paint)
-                paint.alpha = (twinkle * 60).toInt()
-                canvas.drawCircle(star.x, y, radius * 0.9f, paint)
+                paint.alpha = (twinkle * brightness * 60).toInt()
+                canvas.drawCircle(x, y, radius * 0.9f, paint)
             } else {
-                canvas.drawCircle(star.x, y, star.radius, paint)
+                canvas.drawCircle(x, y, star.radius, paint)
             }
         }
         drawShootingStar(canvas)
