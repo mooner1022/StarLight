@@ -15,6 +15,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.withStarted
 import androidx.transition.ChangeBounds
 import androidx.transition.TransitionManager
 import androidx.viewpager2.widget.ViewPager2
@@ -30,6 +31,10 @@ import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.utils.hasFlag
 import dev.mooner.starlight.ui.ViewPagerAdapter
 import dev.mooner.starlight.ui.plugins.pluginsSubtitle
+import dev.mooner.starlight.ui.settings.update.AppUpdater
+import dev.mooner.starlight.ui.settings.update.UpdateCheckResult
+import dev.mooner.starlight.ui.settings.update.checkForUpdate
+import dev.mooner.starlight.ui.settings.update.isAutoUpdateCheckEnabled
 import dev.mooner.starlight.utils.LAYOUT_TABLET
 import dev.mooner.starlight.utils.applyEdgeToEdge
 import dev.mooner.starlight.utils.layoutMode
@@ -42,6 +47,7 @@ import kotlin.math.abs
 class MainActivity : AppCompatActivity() {
 
     lateinit var binding: ActivityMainBinding
+    private lateinit var updater: AppUpdater
     private var currentTabId: Int = R.id.nav_home
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,6 +55,7 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        updater = AppUpdater(this)
         applyEdgeToEdge(binding.root) { _, _ ->
             window.navigationBarColor = ContextCompat.getColor(this, R.color.cardview)
         }
@@ -98,6 +105,20 @@ class MainActivity : AppCompatActivity() {
             showChangelogDialog("StarLight 업데이트 완료!")
             prefs.edit {
                 putInt("lastVersionCode", BuildConfig.VERSION_CODE)
+            }
+        } else if (savedInstanceState == null) {
+            checkUpdateOnStart()
+        }
+    }
+
+    private fun checkUpdateOnStart() {
+        if (isUpdateChecked || !isAutoUpdateCheckEnabled)
+            return
+        isUpdateChecked = true
+        lifecycleScope.launch {
+            val update = checkForUpdate() as? UpdateCheckResult.Available ?: return@launch
+            withStarted {
+                updater.showUpdateDialog(update)
             }
         }
     }
@@ -203,5 +224,9 @@ class MainActivity : AppCompatActivity() {
         binding.titleText.text  = title
         binding.statusText.text = status
         currentTabId = id
+    }
+
+    companion object {
+        private var isUpdateChecked = false
     }
 }
