@@ -10,8 +10,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.widget.TooltipCompat
 import androidx.core.view.GravityCompat
 import androidx.fragment.app.Fragment
+import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentFileTreeBinding
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.ui.editor.DefaultEditorActivity
@@ -50,7 +52,11 @@ class FileTreeFragment : Fragment() {
             }
         else
             FileTreeAdapter(activity, parent, lockedFiles) {}
+        treeAdapter.currentFile = (activity as? DefaultEditorActivity)?.currentFile
     }
+
+    override fun onGetLayoutInflater(savedInstanceState: Bundle?): LayoutInflater =
+        editorThemedInflater(super.onGetLayoutInflater(savedInstanceState))
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -64,8 +70,19 @@ class FileTreeFragment : Fragment() {
         }
 
         binding.buttonNewFile.setOnClickListener {
-            requireActivity().showNewFileDialog(parent, treeAdapter::onFileCreated)
+            requireActivity().showNewFileDialog(parent, onFileCreated = treeAdapter::onFileCreated)
         }
+        binding.buttonNewFolder.setOnClickListener {
+            requireActivity().showNewFileDialog(parent, directory = true, onFileCreated = treeAdapter::onFileCreated)
+        }
+        binding.buttonCollapseAll.setOnClickListener {
+            treeAdapter.collapseAll()
+        }
+        for (button in listOf(binding.buttonNewFile, binding.buttonNewFolder, binding.buttonCollapseAll))
+            TooltipCompat.setTooltipText(button, button.contentDescription)
+
+        treeAdapter.onTreeChanged = ::updateSummary
+        updateSummary()
 
         return binding.root
     }
@@ -73,6 +90,11 @@ class FileTreeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun updateSummary() {
+        val binding = _binding ?: return
+        binding.textFilesSummary.text = getString(R.string.editor_files_summary, treeAdapter.fileCount, treeAdapter.directoryCount)
     }
 
     fun refresh(currentFile: File?) {
@@ -84,8 +106,6 @@ class FileTreeFragment : Fragment() {
 
         private const val ARG_MAIN_SCRIPT = "mainScript"
         private const val ARG_FILE_PATH   = "filePath"
-        private const val TYPE_FILE       = 0
-        private const val TYPE_DIR        = 1
 
         private val LOCKED_FILE_NAMES = setOf(
             "project.json",

@@ -7,12 +7,12 @@
 package dev.mooner.starlight.ui.editor.drawer
 
 import android.annotation.SuppressLint
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import com.mikepenz.fastadapter.binding.AbstractBindingItem
+import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.CardEditorAnnotationBinding
-import dev.mooner.starlight.plugincore.translation.Locale
-import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.color
 
 class EditorAnnotationItem private constructor(
@@ -26,17 +26,23 @@ class EditorAnnotationItem private constructor(
         super.bindView(binding, payloads)
 
         binding.apply {
-            tvLineNumber.text        = translate {
-                Locale.ENGLISH { "Line ${annotation.row + 1}, column ${annotation.column + 1}" }
-                Locale.KOREAN  { "${annotation.row + 1}번째 줄, ${annotation.column + 1}번째 칸" }
-            }
+            tvLineNumber.text        = "${annotation.row + 1}:${annotation.column + 1}"
             tvAnnotationMessage.text = annotation.text
-            cvTypeIndicator.setCardBackgroundColor(getColorByType(annotation.type))
+            iconSeverity.setImageResource(getIconByType(annotation.type))
+            iconSeverity.imageTintList = ColorStateList.valueOf(getColorByType(annotation.type))
         }
     }
 
     override fun createBinding(inflater: LayoutInflater, parent: ViewGroup?): CardEditorAnnotationBinding =
         CardEditorAnnotationBinding.inflate(inflater, parent, false)
+
+    private fun getIconByType(type: String): Int {
+        return when(type) {
+            "error"   -> R.drawable.ic_round_error_outline_24
+            "warning" -> R.drawable.ic_round_warning_24
+            else      -> R.drawable.ic_round_info_24
+        }
+    }
 
     private fun getColorByType(type: String): Int {
         return when(type) {

@@ -111,6 +111,17 @@
     <string name="save">Save</string>
     <string name="debug_room">Debug Room</string>
     <string name="editor_find">Find</string>
+    <string name="editor_drawer_problems">Problems</string>
+    <string name="editor_new_file_short">New file</string>
+    <string name="editor_new_folder">New folder</string>
+    <string name="editor_collapse_all">Collapse all</string>
+    <string name="editor_clear_logs">Clear logs</string>
+    <string name="editor_files_summary">%1$d files · %2$d folders</string>
+    <string name="editor_logs_summary">%1$d logs</string>
+    <string name="editor_problems_summary">%1$s · %2$d errors · %3$d warnings</string>
+    <string name="editor_no_problems">No problems found.</string>
+    <string name="editor_folder_items">%1$d items</string>
+    <string name="editor_unsaved_changes">Unsaved changes</string>
     <string name="editor_replace">Replace</string>
     <string name="editor_goto_line">Go to line</string>
 

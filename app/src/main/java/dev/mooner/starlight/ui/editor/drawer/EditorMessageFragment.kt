@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
+import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentEditorMessageBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.event.Event
@@ -36,6 +37,9 @@ class EditorMessageFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var rvAdapter: ItemAdapter<EditorAnnotationItem>
+
+    override fun onGetLayoutInflater(savedInstanceState: Bundle?): LayoutInflater =
+        editorThemedInflater(super.onGetLayoutInflater(savedInstanceState))
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -75,6 +79,12 @@ class EditorMessageFragment : Fragment() {
             val binding = _binding ?: return@launch
             rvAdapter.set(annotations.map(EditorAnnotationItem::withAnnotation))
             binding.boxNoErrorYet.isVisible = annotations.isEmpty()
+            binding.textProblemsSummary.text = getString(
+                R.string.editor_problems_summary,
+                event.fileName ?: "-",
+                annotations.count { it.type == "error" },
+                annotations.count { it.type == "warning" },
+            )
         }
     }
 
@@ -98,6 +108,7 @@ class EditorMessageFragment : Fragment() {
 
     internal data class EditorAnnotationReturnEvent(
         val jsonString: String,
+        val fileName: String?,
         val coroutineScope: CoroutineScope = eventHandlerScope()
     ): Event, CoroutineScope by coroutineScope
 }

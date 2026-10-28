@@ -71,6 +71,8 @@ import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import org.mozilla.javascript.RhinoException
@@ -201,14 +203,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
         if (showFileTree) {
             //Right drawer (File Tree)
-            fileTreeDrawer = FileTreeDrawerFragment
-                .newInstance(getBaseDirectory(), getProject())
-            supportFragmentManager.beginTransaction().apply {
-                replace(
-                    R.id.drawer_fileTree,
-                    fileTreeDrawer!!
-                )
-            }.commit()
+            attachFileTreeDrawer()
         }
 
         configAdapter = ConfigAdapter.Builder(this) {
@@ -379,7 +374,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                             binding.root.closeDrawer(GravityCompat.START, true)
                         else {
                             binding.root.openDrawer(GravityCompat.START, true)
-                            fileTreeDrawer?.openTabAt(1)
+                            fileTreeDrawer?.openLogs()
                         }
                     }
                     else ->
@@ -430,11 +425,29 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
     @JavascriptInterface
     override fun onAnnotationUpdated(list: String) {
-        val count = runCatching { json.parseToJsonElement(list).jsonArray.size }.getOrDefault(0)
-        runOnUiThread { fileTreeDrawer?.updateMessageCount(count) }
-        lifecycleScope.launch {
-            EventHandler.fireEvent(EditorMessageFragment.EditorAnnotationReturnEvent(list))
+        val types = runCatching {
+            json.parseToJsonElement(list).jsonArray.map { it.jsonObject["type"]?.jsonPrimitive?.content }
+        }.getOrDefault(emptyList())
+        runOnUiThread {
+            problemCounts = types.count { it == "error" } to types.count { it == "warning" }
+            fileTreeDrawer?.updateMessageCount(problemCounts)
+            val fileName = currentFile?.name
+            lifecycleScope.launch {
+                EventHandler.fireEvent(EditorMessageFragment.EditorAnnotationReturnEvent(list, fileName))
+            }
         }
+    }
+
+    internal var problemCounts: Pair<Int, Int> = 0 to 0
+        private set
+
+    internal val isDarkTheme: Boolean
+        get() = theme.themeStyle == ThemeStyle.Dark
+
+    private fun attachFileTreeDrawer() {
+        fileTreeDrawer = FileTreeDrawerFragment
+            .newInstance(getBaseDirectory(), getProject())
+            .also { supportFragmentManager.beginTransaction().replace(R.id.drawer_fileTree, it).commit() }
     }
 
     fun openFile(file: File) {
@@ -560,6 +573,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             project
                 .compileAsync()
                 .onCompletion { e ->
+                    fileTreeDrawer?.refreshHeader()
                     if (e != null)
                         return@onCompletion
                     peek.hide()
@@ -853,9 +867,12 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                     defaultIndex = DEFAULT_THEME.ordinal
                     setOnItemSelectedListener { _, index ->
                         val selectedTheme = themes[index]
+                        val styleChanged = selectedTheme.themeStyle != theme.themeStyle
                         theme = selectedTheme
                         setTheme(selectedTheme)
                         updateColor()
+                        if (styleChanged && showFileTree)
+                            attachFileTreeDrawer()
                     }
                 }
             }

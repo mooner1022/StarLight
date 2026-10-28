@@ -106,6 +106,17 @@
     <string name="save">저장</string>
     <string name="debug_room">디버그 룸</string>
     <string name="editor_find">찾기</string>
+    <string name="editor_drawer_problems">문제</string>
+    <string name="editor_new_file_short">새 파일</string>
+    <string name="editor_new_folder">새 폴더</string>
+    <string name="editor_collapse_all">모두 접기</string>
+    <string name="editor_clear_logs">로그 지우기</string>
+    <string name="editor_files_summary">파일 %1$d개 · 폴더 %2$d개</string>
+    <string name="editor_logs_summary">로그 %1$d개</string>
+    <string name="editor_problems_summary">%1$s · 오류 %2$d · 경고 %3$d</string>
+    <string name="editor_no_problems">발견된 문제가 없어요.</string>
+    <string name="editor_folder_items">%1$d개 항목</string>
+    <string name="editor_unsaved_changes">저장하지 않은 변경사항</string>
     <string name="editor_replace">바꾸기</string>
     <string name="editor_goto_line">줄로 이동</string>
 
