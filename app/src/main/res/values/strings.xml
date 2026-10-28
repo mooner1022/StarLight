@@ -110,6 +110,9 @@
     <string name="compile">Compile</string>
     <string name="save">Save</string>
     <string name="debug_room">Debug Room</string>
+    <string name="editor_find">Find</string>
+    <string name="editor_replace">Replace</string>
+    <string name="editor_goto_line">Go to line</string>
 
     <string name="step_permission">Allow default permissions</string>
     <string name="step_read_notification">Allow notification read</string>
