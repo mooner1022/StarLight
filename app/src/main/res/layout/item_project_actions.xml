@@ -6,78 +6,83 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:paddingHorizontal="8dp"
-    android:paddingBottom="8dp">
+    android:paddingBottom="6dp">
 
-    <LinearLayout
-        android:id="@+id/actionRow"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/buttonEditCode"
-            style="@style/ProjectAction"
-            android:text="@string/project_edit"
-            app:drawableTopCompat="@drawable/ic_round_edit_24"/>
-
-        <TextView
-            android:id="@+id/buttonRecompile"
-            style="@style/ProjectAction"
-            android:text="@string/project_compile"
-            app:drawableTopCompat="@drawable/ic_round_refresh_24"/>
-
-        <TextView
-            android:id="@+id/buttonDebugRoom"
-            style="@style/ProjectAction"
-            android:text="@string/project_debugroom"
-            app:drawableTopCompat="@drawable/ic_round_insert_comment_24"/>
-
-        <TextView
-            android:id="@+id/buttonProjectConfig"
-            style="@style/ProjectAction"
-            android:text="@string/project_settings"
-            app:drawableTopCompat="@drawable/ic_round_settings_24"/>
-
-        <TextView
-            android:id="@+id/buttonProjectInfo"
-            style="@style/ProjectAction"
-            android:text="@string/project_info"
-            app:drawableTopCompat="@drawable/ic_round_info_24"/>
-
-        <TextView
-            android:id="@+id/buttonProjectPin"
-            style="@style/ProjectAction"
-            android:text="@string/project_favorite"
-            app:drawableTopCompat="@drawable/ic_round_star_24"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/progressWrapper"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:gravity="center_vertical"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="20dp"
-            android:layout_marginHorizontal="16dp"
-            android:progressDrawable="@drawable/round_progressbar"/>
-
-        <TextView
-            android:id="@+id/progressState"
+        <LinearLayout
+            android:id="@+id/actionRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="4dp"
-            android:fontFamily="@font/nanumsquare_neo_bold"
-            android:textAlignment="textEnd"
-            android:textColor="@color/text_sub"
-            android:textSize="12sp"/>
-    </LinearLayout>
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/buttonEditCode"
+                style="@style/ProjectAction"
+                android:text="@string/project_edit"
+                app:drawableTopCompat="@drawable/ic_round_edit_24"/>
+
+            <TextView
+                android:id="@+id/buttonRecompile"
+                style="@style/ProjectAction"
+                android:text="@string/project_compile"
+                app:drawableTopCompat="@drawable/ic_round_refresh_24"/>
+
+            <TextView
+                android:id="@+id/buttonDebugRoom"
+                style="@style/ProjectAction"
+                android:text="@string/project_debugroom"
+                app:drawableTopCompat="@drawable/ic_round_insert_comment_24"/>
+
+            <TextView
+                android:id="@+id/buttonProjectConfig"
+                style="@style/ProjectAction"
+                android:text="@string/project_settings"
+                app:drawableTopCompat="@drawable/ic_round_settings_24"/>
+
+            <TextView
+                android:id="@+id/buttonProjectInfo"
+                style="@style/ProjectAction"
+                android:text="@string/project_info"
+                app:drawableTopCompat="@drawable/ic_round_info_24"/>
+
+            <TextView
+                android:id="@+id/buttonProjectPin"
+                style="@style/ProjectAction"
+                android:text="@string/project_favorite"
+                app:drawableTopCompat="@drawable/ic_round_star_24"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/progressWrapper"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="20dp"
+                android:layout_marginHorizontal="16dp"
+                android:progressDrawable="@drawable/round_progressbar"/>
+
+            <TextView
+                android:id="@+id/progressState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/nanumsquare_neo_bold"
+                android:textAlignment="textEnd"
+                android:textColor="@color/text_sub"
+                android:textSize="12sp"/>
+        </LinearLayout>
+    </FrameLayout>
 
     <com.google.android.flexbox.FlexboxLayout
         android:id="@+id/customButtons"

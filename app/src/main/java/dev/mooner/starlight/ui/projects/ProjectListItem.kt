@@ -11,6 +11,7 @@ import android.content.res.ColorStateList
 import android.os.Build
 import android.transition.AutoTransition
 import android.transition.TransitionManager
+import android.transition.TransitionSet
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -119,7 +120,10 @@ class ProjectListItem(
     private fun ItemProjectBinding.setExpanded(project: Project, expanded: Boolean, animate: Boolean) {
         if (animate)
             (root.parent?.parent as? ViewGroup)?.let {
-                TransitionManager.beginDelayedTransition(it, AutoTransition().apply { duration = ANIM_DURATION })
+                TransitionManager.beginDelayedTransition(it, AutoTransition().apply {
+                    ordering = TransitionSet.ORDERING_TOGETHER
+                    duration = ANIM_DURATION
+                })
             }
         val actions = findActions(inflate = expanded)
         if (actions != null) {
