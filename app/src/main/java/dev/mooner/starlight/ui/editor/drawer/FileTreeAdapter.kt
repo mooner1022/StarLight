@@ -3,6 +3,7 @@ package dev.mooner.starlight.ui.editor.drawer
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.text.format.Formatter
 import android.widget.EditText
 import android.widget.Toast
 import coil.transform.RoundedCornersTransformation
@@ -26,7 +27,8 @@ import kotlinx.coroutines.flow.onEach
 import java.io.File
 
 typealias OnFileSelectedListener = (file: File) -> Unit
-typealias FileNode = Node<File>
+
+class FileNode(file: File, val size: Long): Node<File>(file)
 
 class FileTreeAdapter(
     private val activity: Activity,
@@ -40,31 +42,43 @@ class FileTreeAdapter(
 
     var currentFile: File? = null
 
+    var onTreeChanged: (() -> Unit)? = null
+
+    val fileCount: Int
+        get() = countNodes(rootNodes) { it.content.isFile }
+
+    val directoryCount: Int
+        get() = countNodes(rootNodes) { it.content.isDirectory }
+
     override fun onBindViewHolder(holder: TreeViewHolder, position: Int) {
         super.onBindViewHolder(holder, position)
-        val node = displayedNodes[position]
+        val node = displayedNodes[position] as FileNode
         val file = node.content
+        val context = holder.root.context
 
-        val icon = when(getLanguageByExtension(file.extension)) {
-            DefaultEditorActivity.Language.JAVASCRIPT -> R.drawable.ic_js
-            DefaultEditorActivity.Language.PYTHON     -> R.drawable.ic_python
-            else -> {
-                if (file.isDirectory)
-                    dev.mooner.configdsl.R.drawable.ic_round_folder_24
-                else
-                    null
-            }
+        val language = getLanguageByExtension(file.extension)
+        when {
+            file.isDirectory ->
+                holder.icon.setTintedIcon(dev.mooner.configdsl.R.drawable.ic_round_folder_24, R.color.main_bright)
+            language == DefaultEditorActivity.Language.JAVASCRIPT || language == DefaultEditorActivity.Language.PYTHON ->
+                holder.icon.loadWithTint(language.icon!!, null) {
+                    transformations(RoundedCornersTransformation(dp(4).toFloat()))
+                }
+            language == null || language in PLAIN_LANGUAGES ->
+                holder.icon.setTintedIcon(dev.mooner.configdsl.R.drawable.ic_round_file_24, R.color.text_sub)
+            else ->
+                holder.icon.setTintedIcon(R.drawable.ic_round_code_24, R.color.main_bright)
         }
 
-        icon?.let { holder.icon.loadWithTint(it, null) {
-            transformations(RoundedCornersTransformation(dp(4).toFloat()))
-        } }
-            ?: holder.icon.loadWithTint(R.drawable.ic_round_code_24, R.color.main_bright)
-
         val isCurrent = file == currentFile
+        holder.root.setBackgroundResource(if (isCurrent) R.drawable.bg_tree_node_current else 0)
         holder.name.text = file.name
-        holder.name.setTextColor(activity.getColor(if (isCurrent) R.color.main_dark else R.color.text))
-        holder.name.typeface = getTypeface(activity, if (isCurrent) R.font.nanumsquare_neo_bold else R.font.nanumsquare_neo_regular)
+        holder.name.setTextColor(context.getColor(if (isCurrent) R.color.main_dark else R.color.text))
+        holder.name.typeface = getTypeface(context, if (isCurrent) R.font.nanumsquare_neo_bold else R.font.nanumsquare_neo_regular)
+        holder.meta.text = if (file.isDirectory)
+            context.getString(R.string.editor_folder_items, node.children.size)
+        else
+            Formatter.formatShortFileSize(context, node.size)
 
         if (file.isFile)
             holder.root.setOnClickListener {
@@ -110,7 +124,7 @@ class FileTreeAdapter(
         }.onEach { title ->
             when (title) {
                 newFile ->
-                    activity.showNewFileDialog(file, ::onFileCreated)
+                    activity.showNewFileDialog(file, onFileCreated = ::onFileCreated)
                 rename ->
                     showRenameFileDialog(file)
                 delete -> {
@@ -140,6 +154,11 @@ class FileTreeAdapter(
                 if (node.content.startsWith(from)) to.resolve(node.content.relativeTo(from)) else node.content
             }
         super.recreateWith(walkAndMap(root)) { it.content in expanded }
+        onTreeChanged?.invoke()
+    }
+
+    private fun android.widget.ImageView.setTintedIcon(res: Int, tint: Int) {
+        loadWithTint(res, tint)
     }
 
     private fun showDeleteConfirmDialog(context: Context, file: File) {
@@ -202,11 +221,20 @@ class FileTreeAdapter(
     }
 
     companion object {
+        private val PLAIN_LANGUAGES = setOf(
+            DefaultEditorActivity.Language.PLAIN_TEXT,
+            DefaultEditorActivity.Language.MARKDOWN,
+            DefaultEditorActivity.Language.JSON,
+        )
+
+        private fun countNodes(nodes: List<Node<File>>, predicate: (Node<File>) -> Boolean): Int =
+            nodes.sumOf { (if (predicate(it)) 1 else 0) + countNodes(it.children, predicate) }
+
         private fun walkAndMap(root: File): List<FileNode> {
             val result: MutableList<FileNode> = arrayListOf()
 
             root.walk().maxDepth(1).drop(1).forEach {
-                val node = FileNode(it)
+                val node = FileNode(it, if (it.isFile) it.length() else 0L)
                 if (it.isDirectory)
                     node.addChild(*walkAndMap(it).toTypedArray())
                 result += node

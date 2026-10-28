@@ -61,11 +61,13 @@ internal fun validateFileName(name: String, parent: File?): String? = when {
 
 
 @SuppressLint("CheckResult")
-fun Context.showNewFileDialog(root: File, onFileCreated: (file: File) -> Unit) {
+fun Context.showNewFileDialog(root: File, directory: Boolean = false, onFileCreated: (file: File) -> Unit) {
     MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
         setCommonAttrs()
         customView(R.layout.dialog_editor_create_file)
         noAutoDismiss()
+        findViewById<ChipGroup>(R.id.chip_group_file_type)
+            .check(if (directory) R.id.chip_directory else R.id.chip_file)
 
         positiveButton(res = R.string.ok) {
             val nameInput: EditText = findViewById(R.id.edit_text_filename)!!
