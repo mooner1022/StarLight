@@ -138,7 +138,7 @@ internal fun Fragment.showNewProjectDialog() {
             binding.nameHelper.apply {
                 text = when {
                     error != null -> error
-                    name.isEmpty() || language == null -> getString(R.string.project_name_hint)
+                    name.isEmpty() || language == null -> null
                     else -> getString(R.string.project_main_file, "$name.${language.fileExtension}")
                 }
                 setTextColor(context.getColor(if (error != null) R.color.code_error else R.color.text_sub))
@@ -193,7 +193,7 @@ internal fun Fragment.showNewProjectDialog() {
             configLanguage = language
         }
 
-        fun showStep(target: Step, animate: Boolean = true) {
+        fun showStep(target: Step, animate: Boolean = true, showKeyboard: Boolean = true) {
             if (animate)
                 TransitionManager.beginDelayedTransition(binding.contentRoot, AutoTransition().apply {
                     ordering = TransitionSet.ORDERING_TOGETHER
@@ -219,8 +219,10 @@ internal fun Fragment.showNewProjectDialog() {
             binding.pageConfig.isVisible = target == Step.CONFIG
 
             if (target == Step.NAME) {
-                nameInput.requestFocus()
-                imm?.showSoftInput(nameInput, InputMethodManager.SHOW_IMPLICIT)
+                if (showKeyboard) {
+                    nameInput.requestFocus()
+                    imm?.showSoftInput(nameInput, InputMethodManager.SHOW_IMPLICIT)
+                }
             } else {
                 imm?.hideSoftInputFromWindow(nameInput.windowToken, 0)
                 binding.contentRoot.requestFocus()
@@ -354,7 +356,7 @@ internal fun Fragment.showNewProjectDialog() {
             true
         }
         onShow {
-            showStep(Step.NAME, animate = false)
+            showStep(Step.NAME, animate = false, showKeyboard = false)
         }
         onDismiss {
             configAdapter?.destroy()
