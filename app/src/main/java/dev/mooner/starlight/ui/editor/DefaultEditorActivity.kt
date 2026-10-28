@@ -164,6 +164,16 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         if (!showFileTree)
             binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.START)
 
+        binding.root.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
+            override fun onDrawerStateChanged(newState: Int) {
+                if (newState == DrawerLayout.STATE_IDLE)
+                    return
+                codeView?.clearFocus()
+                WindowCompat.getInsetsController(window, window.decorView)
+                    .hide(WindowInsetsCompat.Type.ime())
+            }
+        })
+
         if (getProject() != null && layoutMode == LAYOUT_TABLET) {
             // Left drawer (Debug Chat)
             //binding.debugChat!!.leave.visibility = View.INVISIBLE
