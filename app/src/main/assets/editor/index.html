@@ -154,6 +154,17 @@
         editor.resize();
     }
 
+    editor.container.addEventListener("scroll", () => {
+        editor.container.scrollTop = 0;
+        editor.container.scrollLeft = 0;
+    });
+
+    window.addEventListener("resize", () => {
+        if (!editor.isFocused()) return;
+        editor.resize(true);
+        editor.renderer.scrollCursorIntoView(null, 0.5);
+    });
+
     editor.renderer.on("themeLoaded", () =>
         document.body.style.background = getComputedStyle(editor.container).backgroundColor);
 
