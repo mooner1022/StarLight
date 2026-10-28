@@ -23,13 +23,13 @@ import dev.mooner.starlight.databinding.ActivityMainBinding
 import dev.mooner.starlight.diagnostics.Diagnostics
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.utils.hasFlag
 import dev.mooner.starlight.ui.ViewPagerAdapter
+import dev.mooner.starlight.ui.plugins.pluginsSubtitle
 import dev.mooner.starlight.utils.LAYOUT_TABLET
 import dev.mooner.starlight.utils.applyEdgeToEdge
 import dev.mooner.starlight.utils.layoutMode
@@ -187,8 +187,7 @@ class MainActivity : AppCompatActivity() {
 
                 R.id.nav_plugins ->
                     getText(R.string.title_plugins) to
-                            getString(R.string.subtitle_plugins)
-                                .format(pluginManager.plugins.size)
+                            pluginsSubtitle()
 
                 R.id.nav_logs ->
                     getString(R.string.title_logs) to ""

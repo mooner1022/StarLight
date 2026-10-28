@@ -11,7 +11,6 @@ import dalvik.system.PathClassLoader
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
-import dev.mooner.starlight.plugincore.plugin.PluginResolver.Exclusion
 import dev.mooner.starlight.plugincore.plugin.arch.Arch
 import dev.mooner.starlight.plugincore.plugin.arch.getArch
 import dev.mooner.starlight.plugincore.translation.Locale
@@ -19,16 +18,12 @@ import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.copyAsReadOnly
 import dev.mooner.starlight.plugincore.utils.errorTranslated
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
-import dev.mooner.starlight.plugincore.utils.readString
 import dev.mooner.starlight.plugincore.utils.warnTranslated
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.File
-import java.io.FileNotFoundException
 import java.io.IOException
-import java.io.InputStream
 import java.lang.reflect.Method
-import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
 private val logger = LoggerFactory.logger {  }
@@ -41,37 +36,19 @@ class PluginLoader {
 
     fun loadPlugins(context: Context, dir: File = defDirectory): Flow<Any> =
         flow {
-            if (!dir.exists() || !dir.isDirectory) {
-                dir.mkdirs()
-                emit(emptySet<StarlightPlugin>())
-            }
-
-            val pluginFiles: MutableMap<String, Pair<File, PluginInfo>> = hashMapOf()
-
-            for (file in dir.listFiles { it -> it.extension in SUPPORTED_EXT } ?: arrayOf()) {
-                val info: PluginInfo
-                try {
-                    info = loadInfoFile(file)
-                    if (info.id.trim().lowercase() in PRESERVED_IDS)
-                        throw IllegalArgumentException("Preserved or unusable plugin id: ${info.id}")
-                    pluginFiles[info.id] = file to info
-                } catch (e: FileNotFoundException) {
-                    logger.error(e)
-                    //throw InvalidPluginException(e.toString())
-                } catch (e: IllegalStateException) {
-                    logger.error(e)
-                    //throw InvalidPluginException(e.toString())
-                } catch (e: Exception) {
-                    logger.error { "Unexpected error while loading plugin info: $e" }
-                }
-            }
+            val entries: MutableMap<File, InstalledPlugin> = linkedMapOf()
+            val candidates = scan(dir, entries)
 
             val resolution = PluginResolver.resolve(
-                pluginFiles.mapValues { (_, value) -> value.second },
-                Info.PLUGINCORE_VERSION
+                candidates.mapValues { (_, value) -> value.second },
+                Info.PLUGINCORE_VERSION,
+                Session.pluginManager.getDisabledIds()
             )
-            for ((id, exclusion) in resolution.excluded)
-                logExclusion(pluginFiles[id]!!.second, exclusion)
+            for ((id, exclusion) in resolution.excluded) {
+                val (file, info) = candidates[id]!!
+                logExclusion(info, exclusion)
+                entries[file] = InstalledPlugin(file, info, exclusion.toState())
+            }
 
             Session.pluginManager.purge()
 
@@ -82,47 +59,112 @@ class PluginLoader {
             }
 
             for (id in resolution.order) {
-                val (file, info) = pluginFiles[id]!!
+                val (file, info) = candidates[id]!!
                 emit(info.name)
 
-                try {
+                entries[file] = try {
                     val plugin = loadPlugin(context, file, info)
 
                     Session.pluginManager.addPlugin(plugin)
                     plugin.getListeners().forEach(EventListener::onEnable)
+                    InstalledPlugin(file, info, PluginState.Loaded(plugin))
                 } catch (e: Throwable) {
                     logger.error(e)
                     if (Info.DEBUG)
                         e.printStackTrace()
+                    InstalledPlugin(file, info, PluginState.Failed(e))
                 }
             }
 
+            context.codeCacheDir.resolve("plugins")
+                .listFiles { file -> file.name !in candidates }
+                ?.forEach(File::deleteRecursively)
+
+            Session.pluginManager.setInstalled(entries.values.toList())
             emit(Session.pluginManager.plugins)
         }
 
-    private fun logExclusion(info: PluginInfo, exclusion: Exclusion) {
+    fun scanPlugins(dir: File = defDirectory) {
+        val entries: MutableMap<File, InstalledPlugin> = linkedMapOf()
+        val disabled = Session.pluginManager.getDisabledIds()
+        for ((id, value) in scan(dir, entries)) {
+            val (file, info) = value
+            entries[file] = InstalledPlugin(file, info, if (id in disabled) PluginState.Disabled else PluginState.SafeMode)
+        }
+        Session.pluginManager.setInstalled(entries.values.toList())
+    }
+
+    private fun scan(dir: File, entries: MutableMap<File, InstalledPlugin>): Map<String, Pair<File, PluginInfo>> {
+        if (!dir.isDirectory)
+            dir.mkdirs()
+
+        val found: MutableMap<String, MutableList<Pair<File, PluginInfo>>> = linkedMapOf()
+        val files = dir.listFiles { file -> file.isFile && file.extension in SUPPORTED_EXT }
+            ?.sortedBy(File::getName)
+            .orEmpty()
+        for (file in files) {
+            try {
+                val info = PluginInstaller.readPluginInfo(file)
+                found.getOrPut(info.id) { arrayListOf() } += file to info
+            } catch (e: Exception) {
+                logger.error { "Failed to read plugin info from ${file.name}: $e" }
+                entries[file] = InstalledPlugin(file, null, PluginState.Invalid(e))
+            }
+        }
+
+        return found.mapValues { (id, list) ->
+            val kept = list.maxWith(
+                compareBy<Pair<File, PluginInfo>> { it.second.version }
+                    .thenBy { it.first.name == PluginInstaller.fileNameOf(id) }
+                    .thenBy { it.first.lastModified() }
+            )
+            for (other in list) {
+                if (other === kept)
+                    continue
+                val exclusion = PluginExclusion.DuplicateId(kept.first)
+                logExclusion(other.second, exclusion)
+                entries[other.first] = InstalledPlugin(other.first, other.second, PluginState.Excluded(exclusion))
+            }
+            kept
+        }
+    }
+
+    private fun PluginExclusion.toState(): PluginState =
+        if (this == PluginExclusion.Disabled)
+            PluginState.Disabled
+        else
+            PluginState.Excluded(this)
+
+    private fun logExclusion(info: PluginInfo, exclusion: PluginExclusion) {
         when (exclusion) {
-            is Exclusion.IncompatibleApi ->
+            PluginExclusion.Disabled ->
+                logger.info { "Skipping disabled plugin: ${info.fullName}" }
+            is PluginExclusion.DuplicateId ->
+                logger.warnTranslated {
+                    Locale.ENGLISH { "Plugin ${info.fullName} was skipped because ${exclusion.kept.name} has the same id." }
+                    Locale.KOREAN  { "같은 id를 가진 ${exclusion.kept.name} 파일이 있어 플러그인 ${info.fullName}을(를) 건너뛰었어요." }
+                }
+            is PluginExclusion.IncompatibleApi ->
                 logger.warnTranslated {
                     Locale.ENGLISH { "Incompatible PluginCore version(${exclusion.apiVersion}) found on plugin: ${info.fullName}" }
                     Locale.KOREAN  { "현재 버전 (${Info.PLUGINCORE_VERSION})과 호환되지 않는 PluginCore 의존성(${exclusion.apiVersion}) 발견: 플러그인 ${info.fullName}" }
                 }
-            is Exclusion.MissingDependency ->
+            is PluginExclusion.MissingDependency ->
                 logger.errorTranslated {
                     Locale.ENGLISH { "Required dependency ${exclusion.dependency} for plugin ${info.fullName} wasn't found." }
                     Locale.KOREAN  { "플러그인 ${info.fullName}에 필요한 종속성 ${exclusion.dependency} 을(를) 찾을 수 없습니다." }
                 }
-            is Exclusion.ExcludedDependency ->
+            is PluginExclusion.ExcludedDependency ->
                 logger.errorTranslated {
                     Locale.ENGLISH { "Required dependency ${exclusion.dependency} for plugin ${info.fullName} couldn't be loaded." }
                     Locale.KOREAN  { "플러그인 ${info.fullName}에 필요한 종속성 ${exclusion.dependency} 을(를) 로드할 수 없습니다." }
                 }
-            is Exclusion.IncompatibleDependency ->
+            is PluginExclusion.IncompatibleDependency ->
                 logger.errorTranslated {
                     Locale.ENGLISH { "Incompatible dependency version(required: ${exclusion.dependency.supportedVersion}, found: ${exclusion.found}) found on plugin: ${info.name}" }
                     Locale.KOREAN  { "요구된 버전과 다른 종속성 버전(required: ${exclusion.dependency.supportedVersion}, found: ${exclusion.found})이 발견되었습니다. 플러그인: ${info.name}" }
                 }
-            Exclusion.CircularDependency ->
+            PluginExclusion.CircularDependency ->
                 logger.errorTranslated {
                     Locale.ENGLISH { "Circular dependency found on plugin: ${info.fullName}" }
                     Locale.KOREAN  { "순환 종속성이 발견되었습니다. 플러그인: ${info.fullName}" }
@@ -305,31 +347,6 @@ class PluginLoader {
             throw IllegalStateException("Failed to load asset: $e")
         } finally {
             jar?.close()
-        }
-    }
-
-    private fun loadInfoFile(file: File): PluginInfo {
-        var jar: JarFile? = null
-        var stream: InputStream? = null
-
-        try {
-            jar = JarFile(file)
-            val ent: JarEntry = jar.getJarEntry("assets/starlight.json")
-                ?: let {
-                    val legacyPath = jar.getJarEntry("res/raw/starlight.json") // Should be removed after
-                    if (legacyPath != null)
-                        logger.warn { "res/raw 경로는 더 이상 사용되지 않습니다. assets 경로를 사용하세요." }
-                    legacyPath
-                }
-                ?: throw FileNotFoundException("Cannot find starlight.json")
-
-            stream = jar.getInputStream(ent)
-            return PluginInfo.decodeFromString(stream.readString())
-        } catch (e: IOException) {
-            throw IllegalStateException("Cannot open starlight.json: $e")
-        } finally {
-            jar?.close()
-            stream?.close()
         }
     }
 

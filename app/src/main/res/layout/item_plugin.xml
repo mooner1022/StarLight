@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:minHeight="58dp"
+        android:paddingVertical="7dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="6dp">
+
+        <FrameLayout
+            android:id="@+id/iconFrame"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/icon"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                tools:src="@drawable/ic_round_plugins_24"/>
+
+            <FrameLayout
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:layout_gravity="bottom|end"
+                android:background="@drawable/bg_project_status_ring"
+                android:padding="2dp">
+
+                <View
+                    android:id="@+id/status"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_project_status"
+                    tools:backgroundTint="@color/card_enabled"/>
+            </FrameLayout>
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/nanumsquare_neo_bold"
+            android:maxLines="1"
+            android:textColor="@color/text"
+            android:textSize="16sp"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintBottom_toTopOf="@+id/subtitle"
+            app:layout_constraintEnd_toStartOf="@+id/toggle"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintStart_toEndOf="@+id/iconFrame"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed"
+            tools:text="Discord"/>
+
+        <TextView
+            android:id="@+id/subtitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="8dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/nanumsquare_neo_regular"
+            android:maxLines="2"
+            android:textColor="@color/text_sub"
+            android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/toggle"
+            app:layout_constraintStart_toStartOf="@+id/title"
+            app:layout_constraintTop_toBottomOf="@+id/title"
+            tools:text="v1.0.0 · mooner · 3.8 MB"/>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:thumb="@drawable/switch_thumb"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/arrow"
+            app:layout_constraintTop_toTopOf="parent"
+            app:track="@drawable/switch_track_selector"
+            app:useMaterialThemeColors="false"/>
+
+        <ImageView
+            android:id="@+id/arrow"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="6dp"
+            android:importantForAccessibility="no"
+            android:padding="4dp"
+            android:src="@drawable/ic_round_keyboard_arrow_down_24"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/text_sub"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <ViewStub
+        android:id="@+id/actionsStub"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inflatedId="@+id/actions"
+        android:layout="@layout/item_plugin_actions"/>
+</LinearLayout>
