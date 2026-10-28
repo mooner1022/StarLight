@@ -9,18 +9,15 @@ data class EditorSession(
     val language: DefaultEditorActivity.Language,
     var code: String?,
     @kotlinx.serialization.Transient
-    var isUpdated: Boolean = false
+    var isUpdated: Boolean = false,
+    @kotlinx.serialization.Transient
+    var isLoaded: Boolean = false,
 ) {
 
     override fun equals(other: Any?): Boolean {
         return other is EditorSession && other.sessionId == sessionId
     }
 
-    override fun hashCode(): Int {
-        var result = sessionId
-        result = 31 * result + fileName.hashCode()
-        result = 31 * result + language.hashCode()
-        result = 31 * result + (code?.hashCode() ?: 0)
-        return result
-    }
+    override fun hashCode(): Int =
+        sessionId
 }

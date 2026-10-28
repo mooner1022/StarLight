@@ -8,9 +8,10 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.CallSuper
-import androidx.constraintlayout.widget.ConstraintLayout
+import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.starlight.databinding.TreeNodeBinding
+import dev.mooner.starlight.utils.dp
 
 abstract class TreeAdapter <T> (
     private val context: Context,
@@ -18,6 +19,9 @@ abstract class TreeAdapter <T> (
 ): RecyclerView.Adapter<TreeAdapter<T>.TreeViewHolder>() {
 
     protected val displayedNodes: MutableList<Node<T>> = arrayListOf()
+
+    protected val rootNodes: List<Node<T>>
+        get() = fullNode
 
     private fun displayNodes(nodes: List<Node<T>>) {
         for (node in nodes) {
@@ -38,10 +42,26 @@ abstract class TreeAdapter <T> (
         }
     }
 
-    fun replaceAll(nodes: List<Node<T>>) {
+    @SuppressLint("NotifyDataSetChanged")
+    fun replaceAll(nodes: List<Node<T>>, isExpanded: (Node<T>) -> Boolean = { false }) {
         displayedNodes.clear()
-        displayNodes(nodes)
-        notifyItemRangeChanged(0, displayedNodes.size)
+        displayExpanded(nodes, isExpanded)
+        notifyDataSetChanged()
+    }
+
+    fun collapseAll() {
+        fullNode.forEach(Node<T>::collapseAll)
+        replaceAll(fullNode)
+    }
+
+    private fun displayExpanded(nodes: List<Node<T>>, isExpanded: (Node<T>) -> Boolean) {
+        for (node in nodes) {
+            displayedNodes += node
+            if (!node.isLeaf && isExpanded(node)) {
+                node.expand()
+                displayExpanded(node.children, isExpanded)
+            }
+        }
     }
 
     private fun addChildNodes(parent: Node<T>, startIndex: Int): Int {
@@ -78,7 +98,7 @@ abstract class TreeAdapter <T> (
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TreeViewHolder {
-        val binding = TreeNodeBinding.inflate(LayoutInflater.from(context), parent, false)
+        val binding = TreeNodeBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return TreeViewHolder(binding)
     }
 
@@ -108,11 +128,9 @@ abstract class TreeAdapter <T> (
     override fun getItemCount(): Int =
         displayedNodes.size
 
-    @SuppressLint("NotifyDataSetChanged")
-    protected fun recreateWith(fullNode: List<Node<T>>) {
-        fullNode.forEach { println("R: " + it.content) }
+    protected fun recreateWith(fullNode: List<Node<T>>, isExpanded: (Node<T>) -> Boolean = { false }) {
         this.fullNode = fullNode
-        replaceAll(fullNode)
+        replaceAll(fullNode, isExpanded)
     }
 
     init {
@@ -120,20 +138,22 @@ abstract class TreeAdapter <T> (
     }
 
     companion object {
-        private const val DEF_PADDING = 50
+        private const val INDENT_DP = 16
+        private const val BASE_PADDING_DP = 4
     }
 
     inner class TreeViewHolder(
         private val binding: TreeNodeBinding
     ): RecyclerView.ViewHolder(binding.root) {
-        val root: ConstraintLayout = binding.root
+        val root: LinearLayout = binding.root
         val arrow: ImageView = binding.arrowCollapse
         val icon: ImageView  = binding.imageViewIcon
         val name: TextView   = binding.textViewLabel
+        val meta: TextView   = binding.textViewMeta
 
         fun <T> setIndent(node: Node<T>) {
             binding.root.apply {
-                setPadding(node.depth * DEF_PADDING, paddingTop, paddingRight, paddingBottom)
+                setPadding(dp(BASE_PADDING_DP + node.depth * INDENT_DP), paddingTop, paddingRight, paddingBottom)
             }
         }
     }

@@ -94,10 +94,8 @@
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/drawer_fileTree"
-        android:layout_width="match_parent"
+        android:layout_width="@dimen/editor_drawer_width"
         android:layout_height="match_parent"
-        android:paddingStart="0dp"
-        android:paddingEnd="20dp"
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
         android:clickable="true"

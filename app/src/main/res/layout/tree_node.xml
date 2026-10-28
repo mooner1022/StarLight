@@ -1,53 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
-                                                   xmlns:tools="http://schemas.android.com/tools"
-                                                   android:layout_width="match_parent"
-                                                   android:layout_height="36dp"
-                                                   android:background="@color/transparent">
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:foreground="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="40dp"
+    android:orientation="horizontal"
+    android:paddingEnd="12dp">
 
     <ImageView
         android:id="@+id/arrowCollapse"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="4dp"
+        android:importantForAccessibility="no"
         app:srcCompat="@drawable/ic_round_keyboard_arrow_down_24"
-        app:tint="@color/text"/>
+        app:tint="@color/text_sub"/>
 
     <ImageView
         android:id="@+id/imageViewIcon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/arrowCollapse"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_round_code_24"
-        app:tint="@color/main_bright"/>
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="4dp"
+        android:importantForAccessibility="no"
+        app:srcCompat="@drawable/ic_round_code_24"/>
 
     <TextView
         android:id="@+id/textViewLabel"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
+        android:layout_marginStart="10dp"
+        android:layout_weight="1"
+        android:ellipsize="middle"
+        android:fontFamily="@font/nanumsquare_neo_regular"
         android:maxLines="1"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/imageViewIcon"
-        app:layout_constraintTop_toTopOf="parent"
+        android:textColor="@color/text"
+        android:textSize="14sp"
         tools:text="FILE_OR_DIR_NAME"/>
 
-    <ImageButton
-        android:id="@+id/imageButton2"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:background="@color/transparent"
-        android:contentDescription="@string/add"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_round_add_24"/>
+    <TextView
+        android:id="@+id/textViewMeta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:fontFamily="@font/nanumsquare_neo_regular"
+        android:maxLines="1"
+        android:textColor="@color/text_sub"
+        android:textSize="12sp"
+        tools:text="1.2 KB"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

@@ -341,7 +341,7 @@ class ProjectImpl private constructor(
     companion object {
         private const val CONFIG_FILE_NAME  = "config.json"
         private const val INFO_FILE_NAME    = "project.json"
-        private const val LOGS_FILE_NAME    = "logs-local.json"
+        private const val LOGS_FILE_NAME    = "logs.json"
 
         private const val DEF_THREAD_POOL_SIZE = 3
 

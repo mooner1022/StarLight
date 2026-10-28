@@ -9,6 +9,7 @@
     <dimen name="icon_width">24dp</dimen>
 
     <dimen name="editor_drawer_max_width">344dp</dimen>
+    <dimen name="editor_drawer_width">328dp</dimen>
 
     <dimen name="card_height">54dp</dimen>
     <dimen name="card_radius">14dp</dimen>

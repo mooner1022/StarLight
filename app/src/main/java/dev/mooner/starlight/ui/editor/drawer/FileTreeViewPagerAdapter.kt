@@ -6,8 +6,10 @@
 
 package dev.mooner.starlight.ui.editor.drawer
 
+import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import dev.mooner.starlight.R
 
 class FileTreeViewPagerAdapter(
     fragment: FileTreeDrawerFragment,
@@ -16,18 +18,27 @@ class FileTreeViewPagerAdapter(
     private val rootPath: String
 ): FragmentStateAdapter(fragment) {
 
-    override fun getItemCount(): Int =
-        PAGE_COUNT
+    val logsPosition: Int?
+        get() = if (projectId != null) 1 else null
 
-    override fun createFragment(position: Int): Fragment =
-        when(position) {
-            0 -> FileTreeFragment.newInstance(rootPath, mainScript)
-            1 -> if (projectId != null) EditorLogsFragment.newInstance(projectId) else createFragment(2)
-            2 -> EditorMessageFragment()
-            else -> createFragment(0)
+    val problemsPosition: Int
+        get() = itemCount - 1
+
+    override fun getItemCount(): Int =
+        if (projectId != null) 3 else 2
+
+    @StringRes
+    fun titleAt(position: Int): Int =
+        when (position) {
+            0                -> R.string.menu_file_tree
+            problemsPosition -> R.string.editor_drawer_problems
+            else             -> R.string.title_logs
         }
 
-    companion object {
-        private const val PAGE_COUNT = 3
-    }
+    override fun createFragment(position: Int): Fragment =
+        when (position) {
+            0                -> FileTreeFragment.newInstance(rootPath, mainScript)
+            problemsPosition -> EditorMessageFragment()
+            else             -> EditorLogsFragment.newInstance(projectId!!)
+        }
 }

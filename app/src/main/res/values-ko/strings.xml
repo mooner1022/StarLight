@@ -105,6 +105,16 @@
     <string name="compile">컴파일</string>
     <string name="save">저장</string>
     <string name="debug_room">디버그 룸</string>
+    <string name="editor_find">찾기</string>
+    <string name="editor_drawer_problems">문제</string>
+    <string name="editor_new_file_short">새 파일</string>
+    <string name="editor_new_folder">새 폴더</string>
+    <string name="editor_collapse_all">모두 접기</string>
+    <string name="editor_clear_logs">로그 지우기</string>
+    <string name="editor_no_problems">발견된 문제가 없어요.</string>
+    <string name="editor_unsaved_changes">저장하지 않은 변경사항</string>
+    <string name="editor_replace">바꾸기</string>
+    <string name="editor_goto_line">줄로 이동</string>
 
     <string name="step_permission">기본 권한 설정</string>
     <string name="step_read_notification">알림 읽기 허용</string>
@@ -150,4 +160,28 @@
     <string name="widget_script">스크립트</string>
 
     <string name="api_cannot_send_to_room">메세지가 수신되지 않은 방 \'%s\' 에 메세지를 보낼 수 없습니다.</string>
+    <plurals name="editor_file_count">
+        <item quantity="one">파일 %d개</item>
+        <item quantity="other">파일 %d개</item>
+    </plurals>
+    <plurals name="editor_folder_count">
+        <item quantity="one">폴더 %d개</item>
+        <item quantity="other">폴더 %d개</item>
+    </plurals>
+    <plurals name="editor_log_count">
+        <item quantity="one">로그 %d개</item>
+        <item quantity="other">로그 %d개</item>
+    </plurals>
+    <plurals name="editor_error_count">
+        <item quantity="one">오류 %d</item>
+        <item quantity="other">오류 %d</item>
+    </plurals>
+    <plurals name="editor_warning_count">
+        <item quantity="one">경고 %d</item>
+        <item quantity="other">경고 %d</item>
+    </plurals>
+    <plurals name="editor_folder_items">
+        <item quantity="one">%d개 항목</item>
+        <item quantity="other">%d개 항목</item>
+    </plurals>
 </resources>

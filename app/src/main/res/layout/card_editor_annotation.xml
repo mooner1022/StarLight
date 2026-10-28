@@ -5,48 +5,50 @@
   ~ This code is licensed under the GNU General Public License v3.0.
   -->
 
-<androidx.constraintlayout.widget.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="36dp"
-    app:layout_minHeight="36dp">
+    android:background="?attr/selectableItemBackground"
+    android:minHeight="52dp"
+    android:orientation="horizontal"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="10dp">
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/cvTypeIndicator"
-        android:layout_width="8dp"
-        android:layout_height="24dp"
-        android:layout_marginStart="10dp"
-        app:cardBackgroundColor="@color/monokai_pro_pink"
-        app:cardCornerRadius="4dp"
-        app:cardElevation="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+    <ImageView
+        android:id="@+id/iconSeverity"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginTop="1dp"
+        android:layout_marginEnd="12dp"
+        android:importantForAccessibility="no"
+        tools:src="@drawable/ic_round_warning_24"/>
 
-    <TextView
-        android:id="@+id/tvLineNumber"
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="4dp"
-        android:fontFamily="@font/nanumsquare_round_bold"
-        android:textSize="12sp"
-        app:layout_constraintStart_toEndOf="@+id/cvTypeIndicator"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="ERR MSG"/>
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/tvAnnotationMessage"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:fontFamily="@font/nanumsquare_round_regular"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/cvTypeIndicator"
-        app:layout_constraintTop_toBottomOf="@+id/tvLineNumber"
-        tools:text="ERR MSG"/>
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/tvAnnotationMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/nanumsquare_neo_regular"
+            android:textColor="@color/text"
+            android:textSize="14sp"
+            tools:text="Missing semicolon."/>
+
+        <TextView
+            android:id="@+id/tvLineNumber"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="@font/jbmono_nl_regular"
+            android:textColor="@color/text_sub"
+            android:textSize="12sp"
+            tools:text="6:7"/>
+    </LinearLayout>
+</LinearLayout>

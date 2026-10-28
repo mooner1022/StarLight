@@ -2,14 +2,13 @@ package dev.mooner.starlight.ui.editor
 
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.text.InputType
-import android.util.Base64
 import android.view.*
+import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
@@ -19,27 +18,35 @@ import android.widget.Toast
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.*
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.drawerlayout.widget.DrawerLayout.DrawerListener
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
+import com.afollestad.materialdialogs.LayoutMode
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.seekbar
 import dev.mooner.configdsl.options.spinner
-import dev.mooner.configdsl.options.string
 import dev.mooner.configdsl.options.toggle
+import dev.mooner.neonjs.NeonSyntaxException
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.peekalert.PeekAlertBuilder
 import dev.mooner.peekalert.createPeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityDefaultEditorBinding
 import dev.mooner.starlight.logging.bindLogNotifier
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
+import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.editor.CodeEditorActivity
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
+import dev.mooner.starlight.plugincore.project.event.getInstance
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.color
@@ -52,13 +59,27 @@ import dev.mooner.starlight.ui.editor.tab.TabItemMoveCallbackListener
 import dev.mooner.starlight.ui.editor.tab.TabViewAdapter
 import dev.mooner.starlight.utils.*
 import jp.wasabeef.recyclerview.animators.FadeInAnimator
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import org.mozilla.javascript.RhinoException
 import java.io.File
 import java.util.*
-import kotlin.math.max
+import kotlin.coroutines.resume
 import kotlin.properties.Delegates.notNull
 
 private val logger = LoggerFactory.logger {  }
@@ -72,11 +93,12 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     private var theme          : Theme = DEFAULT_THEME
 
     private var mainScriptName : String by notNull()
-    private var code           : String by notNull()
+    private var mainLanguage   : Language by notNull()
     private val sessions       : MutableList<EditorSession> = arrayListOf()
-    private var currentSession : EditorSession? = null
     private val isCodeUpdated  : Boolean get() = sessions.any { it.isUpdated }
-    private var isDebugTabOpen : Boolean = false
+    private var bottomInsetDp  : Int = 0
+    @Volatile
+    private var isEditorReady  : Boolean = false
 
     private var tabAdapter     : TabViewAdapter? = null
     private var configAdapter  : ConfigAdapter? = null
@@ -91,6 +113,11 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         GlobalConfig
             .category("e_general")
             .getBoolean("show_hot_keys", true)
+
+    private val rememberTabs   : Boolean get() =
+        GlobalConfig
+            .category("e_files")
+            .getBoolean("remember_tabs", true)
 
     @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -141,20 +168,19 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         if (!showFileTree)
             binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.START)
 
-        binding.root.addDrawerListener(object : DrawerListener {
-            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
-
+        binding.root.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
             override fun onDrawerOpened(drawerView: View) {
-                if (drawerView.id == R.id.drawer_debugChat)
-                    isDebugTabOpen = true
+                if (drawerView.id == R.id.drawer_fileTree)
+                    fileTreeDrawer?.refreshFiles(currentFile)
             }
 
-            override fun onDrawerClosed(drawerView: View) {
-                if (drawerView.id == R.id.drawer_debugChat)
-                    isDebugTabOpen = false
+            override fun onDrawerStateChanged(newState: Int) {
+                if (newState == DrawerLayout.STATE_IDLE)
+                    return
+                codeView?.clearFocus()
+                WindowCompat.getInsetsController(window, window.decorView)
+                    .hide(WindowInsetsCompat.Type.ime())
             }
-
-            override fun onDrawerStateChanged(newState: Int) {}
         })
 
         if (getProject() != null && layoutMode == LAYOUT_TABLET) {
@@ -178,14 +204,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
         if (showFileTree) {
             //Right drawer (File Tree)
-            fileTreeDrawer = FileTreeDrawerFragment
-                .newInstance(getBaseDirectory(), getProject())
-            supportFragmentManager.beginTransaction().apply {
-                replace(
-                    R.id.drawer_fileTree,
-                    fileTreeDrawer!!
-                )
-            }.commit()
+            attachFileTreeDrawer()
         }
 
         configAdapter = ConfigAdapter.Builder(this) {
@@ -196,11 +215,8 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                 GlobalConfig.edit {
                     category(parentId).setRaw(id, jsonData)
                 }
-                if (parentId == "e_code" && id == "font_size") {
-                    val fontSize = (data as String).toIntOrNull()
-                        ?: return@onValueUpdated
-                    setFontSize(fontSize)
-                }
+                if (parentId == "e_code" && id == "font_size")
+                    (data as? Int)?.let(::setFontSize)
             }
         }.build()
 
@@ -221,6 +237,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             }
             Language.JAVASCRIPT
         }
+        mainLanguage = lang
         logger.verbose {
             translate {
                 Locale.ENGLISH { "File extension: $ext, Auto-detected language: $lang" }
@@ -228,18 +245,19 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             }
         }
 
-        code = readCode(fileName) ?: return let {
+        val code = readCode(fileName) ?: return let {
             Toast.makeText(this, "Unable to locate main script file '${fileName}'", Toast.LENGTH_LONG).show()
             finish()
         }
 
-        //readCodeOrDefault(fileName, getProject().getLanguage())
         val savedTabs: Collection<String> =
             project?.config
+                ?.takeIf { rememberTabs }
                 ?.category("editor")
                 ?.getString("saved_tabs", "[]")
-                ?.let<_, MutableList<String>>(json::decodeFromString)
+                ?.let { runCatching { json.decodeFromString<MutableList<String>>(it) }.getOrNull() }
                 ?.also { if (fileName in it) it -= fileName }
+                ?.filter { getBaseDirectory().resolve(it).isFile }
                 ?: emptyList()
 
         addSession(fileName, lang, code)
@@ -247,8 +265,6 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             val language = getLanguageFromFileName(tab, Language.PLAIN_TEXT)
             addSession(tab, language)
         }
-        //addSession("dummy.ts", Language.TYPESCRIPT)
-        //addSession("fuck_python.py", Language.PYTHON)
 
         tabAdapter = setupTabAdapter()
 
@@ -261,11 +277,17 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                 displayZoomControls = false
                 allowFileAccess = true
                 allowContentAccess = true
-                webChromeClient = WebChromeClient()
                 setSupportZoom(false)
                 cacheMode = WebSettings.LOAD_CACHE_ONLY
-                addJavascriptInterface(this@DefaultEditorActivity, "WebviewCallback")
             }
+            webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+                    if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR)
+                        logger.verbose { "Editor console: ${message.message()} (${message.sourceId()}:${message.lineNumber()})" }
+                    return true
+                }
+            }
+            addJavascriptInterface(this@DefaultEditorActivity, "WebviewCallback")
             loadUrl(ENTRY_POINT)
         }
         binding.webviewContainer.addView(codeView)
@@ -298,11 +320,12 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     override fun onDestroy() {
         getProject()?.let { proj ->
             proj.config.edit {
-                val str = Json.encodeToString(sessions.map { it.fileName })
-                category("editor").setString("saved_tabs", str)
+                val tabs = if (rememberTabs) sessions.map { it.fileName } else emptyList()
+                category("editor").setString("saved_tabs", Json.encodeToString(tabs))
             }
         }
 
+        binding.webviewContainer.removeAllViews()
         codeView?.destroy()
         codeView = null
 
@@ -344,7 +367,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             if (event.isCtrlPressed) {
                 when(event.keyCode) {
                     KeyEvent.KEYCODE_S ->
-                        saveCode()
+                        lifecycleScope.launch { saveAll() }
                     KeyEvent.KEYCODE_E ->
                         compileProject()
                     KeyEvent.KEYCODE_L -> {
@@ -352,7 +375,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                             binding.root.closeDrawer(GravityCompat.START, true)
                         else {
                             binding.root.openDrawer(GravityCompat.START, true)
-                            fileTreeDrawer?.openTabAt(1)
+                            fileTreeDrawer?.openLogs()
                         }
                     }
                     else ->
@@ -364,7 +387,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             else if (event.keyCode == KeyEvent.KEYCODE_ESCAPE && bypassEscape) {
                 return true
             } else if (event.keyCode == KeyEvent.KEYCODE_TAB) {
-                appendText("    ")
+                execCommand(if (event.isShiftPressed) "blockoutdent" else "indent")
                 return true
             }
         }
@@ -373,67 +396,71 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
     @JavascriptInterface
     override fun onLoadComplete() {
+        isEditorReady = true
         setTheme(theme)
+        setBottomInset(bottomInsetDp)
         runOnUiThread {
             tabAdapter!!.setSelected(mainScriptName)
         }
-        resetUndoStack()
 
         with(GlobalConfig.category("e_code")) {
-            val fontSize = getString("font_size")?.toInt()
-            if (fontSize != null)
-                setFontSize(fontSize)
-            val wrapText = getBoolean("wrap_text")
-            if (wrapText == true)
-                setWordWrap(wrapText)
+            getInt("font_size")?.let(::setFontSize)
+            if (getBoolean("wrap_text") == true)
+                setWordWrap(true)
+        }
+
+        executeScript("setApis(${buildApiCompletions()})")
+        buildEventSnippets()?.let { snippets ->
+            executeScript("setSnippets(${JsonPrimitive(mainLanguage.editorName)}, $snippets)")
         }
     }
 
     @JavascriptInterface
-    override fun onContentChanged(sessionId: String?, code: String?) {
-        if (isDebugTabOpen)
-            return
-        currentSession?.let {
-            it.code = code
-            if (!it.isUpdated) {
-                it.isUpdated = true
-                runOnUiThread {
-                    tabAdapter?.notifyItemChanged(tabAdapter!!.sessions.indexOf(currentSession))
-                }
-            }
+    override fun onDirtyChanged(sessionId: String, dirty: Boolean) {
+        runOnUiThread {
+            val index = sessions.indexOfFirst { it.sessionId.toString() == sessionId }
+            if (index != -1)
+                tabAdapter?.setSessionContentUpdated(index, dirty)
         }
     }
 
     @JavascriptInterface
     override fun onAnnotationUpdated(list: String) {
-        logger.verbose { "list: $list" }
-        lifecycleScope.launch {
-            EventHandler.fireEvent(EditorMessageFragment.EditorAnnotationReturnEvent(list))
+        val types = runCatching {
+            json.parseToJsonElement(list).jsonArray.map { it.jsonObject["type"]?.jsonPrimitive?.content }
+        }.getOrDefault(emptyList())
+        runOnUiThread {
+            problemCounts = types.count { it == "error" } to types.count { it == "warning" }
+            fileTreeDrawer?.updateMessageCount(problemCounts)
+            val fileName = currentFile?.name
+            lifecycleScope.launch {
+                EventHandler.fireEvent(EditorMessageFragment.EditorAnnotationReturnEvent(list, fileName))
+            }
         }
     }
 
+    internal var problemCounts: Pair<Int, Int> = 0 to 0
+        private set
+
+    internal var editorBackground: Int? = null
+        private set
+
     @JavascriptInterface
-    override fun requestSession(sessionId: String?) {
-        if (sessionId == null) return
-        logger.verbose {
-            translate {
-                Locale.ENGLISH { "Editor requested session with id: $sessionId" }
-                Locale.KOREAN  { "에디터가 세션을 요청함: $sessionId" }
-            }
+    override fun onEditorBackground(color: String) {
+        val channels = CSS_RGB.find(color)?.groupValues?.drop(1)?.map(String::toInt) ?: return
+        runOnUiThread {
+            editorBackground = Color.rgb(channels[0], channels[1], channels[2])
+            fileTreeDrawer?.applyBackground(editorBackground)
         }
-        val requestedSession = sessions.find { it.sessionId == sessionId.toInt() } ?: let {
-            logger.error {
-                translate {
-                    Locale.ENGLISH { "Editor requested session with id: $sessionId, but not found" }
-                    Locale.KOREAN  { "에디터가 세션을 요청했지만 찾지 못함: $sessionId" }
-                }
-            }
-            return
-        }
-        if (requestedSession.code == null) {
-            requestedSession.code = readCode(requestedSession.fileName) ?: ""
-        }
-        setSession(requestedSession)
+    }
+
+    internal val isDarkTheme: Boolean
+        get() = theme.themeStyle == ThemeStyle.Dark
+
+    private fun attachFileTreeDrawer() {
+        fileTreeDrawer = FileTreeDrawerFragment
+            .newInstance(getBaseDirectory(), getProject())
+            .also { supportFragmentManager.beginTransaction().replace(R.id.drawer_fileTree, it).commit() }
     }
 
     fun openFile(file: File) {
@@ -455,6 +482,50 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
         val language = getLanguageByExtension(file.extension) ?: Language.PLAIN_TEXT
         addSession(relPath, language, file.readText(), true)
+    }
+
+    internal val currentFile: File?
+        get() = tabAdapter?.selectedSession?.let { getBaseDirectory().resolve(it.fileName) }
+
+    private fun sessionsUnder(target: File): List<EditorSession> {
+        val base = getBaseDirectory()
+        return sessions.filter { base.resolve(it.fileName).startsWith(target) }
+    }
+
+    internal fun renameFile(target: File, dest: File, onDone: (renamed: Boolean) -> Unit) {
+        lifecycleScope.launch {
+            val affected = sessionsUnder(target)
+            val dirty = affected.filter(EditorSession::isUpdated).map(EditorSession::sessionId)
+            if (dirty.isNotEmpty() && !saveAll(dirty, silent = true))
+                return@launch onDone(false)
+            if (!target.renameTo(dest))
+                return@launch onDone(false)
+
+            val base = getBaseDirectory()
+            for (session in affected) {
+                val oldFile = base.resolve(session.fileName)
+                val newFile = if (oldFile == target) dest else dest.resolve(oldFile.relativeTo(target))
+                replaceSession(session, newFile.relativeTo(base).path)
+            }
+            onDone(true)
+        }
+    }
+
+    internal fun onFileDeleted(target: File) {
+        for (session in sessionsUnder(target))
+            tabAdapter?.remove(session)
+    }
+
+    private fun replaceSession(old: EditorSession, fileName: String) {
+        val index = sessions.indexOf(old)
+        if (index == -1) return
+        val session = EditorSession(fileName.hashCode(), fileName, getLanguageFromFileName(fileName, Language.PLAIN_TEXT), null)
+        val wasSelected = tabAdapter?.selectedSession == old
+        sessions[index] = session
+        closeSession(old.sessionId)
+        tabAdapter?.notifyItemChanged(index)
+        if (wasSelected)
+            setSession(session)
     }
 
     fun closeDrawer(gravity: Int, animate: Boolean) {
@@ -488,9 +559,14 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     }
 
     private fun compileProject() {
-        saveCode()
         val project = getProject() ?: return
+        lifecycleScope.launch {
+            if (saveAll(silent = true))
+                compileProject(project)
+        }
+    }
 
+    private fun compileProject(project: Project) {
         val peek = createSimplePeek(
             text = translate {
                 Locale.ENGLISH { "Compiling project [${project.info.name}]..." }
@@ -510,6 +586,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             project
                 .compileAsync()
                 .onCompletion { e ->
+                    fileTreeDrawer?.refreshHeader()
                     if (e != null)
                         return@onCompletion
                     peek.hide()
@@ -525,6 +602,10 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                     }.peek()
                 }
                 .catch { e ->
+                    e.sourcePosition()?.let { (line, column) ->
+                        tabAdapter?.setSelected(mainScriptName)
+                        markError(line - 1, column, e.message ?: e.toString())
+                    }
                     peek.hide()
                     delay(300L)
                     peek.apply {
@@ -534,7 +615,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                         setTitleColor(R.color.white)
                         setTitle(translate {
                             Locale.ENGLISH { "Failed to compile [${project.info.name}]" }
-                            Locale.ENGLISH { "[${project.info.name}] 컴파일 실패" }
+                            Locale.KOREAN  { "[${project.info.name}] 컴파일 실패" }
                         })
                         setTitleTypeface(getTypeface(this@DefaultEditorActivity, R.font.nanumsquare_neo_regular)!!)
                         setTitleSize(10f)
@@ -542,8 +623,14 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                         setText(e.toString())
                         setTextTypeface(getTypeface(this@DefaultEditorActivity, R.font.nanumsquare_neo_bold)!!)
                         setTextSize(12f)
-                        setAction("자세히", textColorRes = R.color.text) {
-                            binding.root.context.showErrorLogDialog(project.info.name + " 에러 로그", e)
+                        setAction(translate {
+                            Locale.ENGLISH { "Details" }
+                            Locale.KOREAN  { "자세히" }
+                        }, textColorRes = R.color.text) {
+                            binding.root.context.showErrorLogDialog(translate {
+                                Locale.ENGLISH { "${project.info.name} error log" }
+                                Locale.KOREAN  { "${project.info.name} 에러 로그" }
+                            }, e)
                         }
                         setBackgroundColor(res = R.color.code_error)
                     }.peek()
@@ -563,21 +650,12 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                             Locale.KOREAN  { "선택한 index: $index, item: ${item.fileName}" }
                         }
                     }
-                    item.code = readCode(item.fileName) ?: ""
-                    currentSession = item
                     setSession(item)
                 }
-                TabViewAdapter.EVENT_CLOSED -> {
-                    sessions.remove(item)
-                    if (currentSession != item)
-                        return@TabViewAdapter
-
-                    logger.verbose { "closed, idx = $index" }
-                    val idx = max(index - 1, 0)
-                    val nearest = tabAdapter!!.sessions[idx]
-                    tabAdapter!!.setSelected(idx)
-                    closeSession(item.sessionId, nearest.sessionId)
-                }
+                TabViewAdapter.EVENT_CLOSE_REQUESTED ->
+                    confirmTabClose(item)
+                TabViewAdapter.EVENT_CLOSED ->
+                    closeSession(item.sessionId)
             }
         }.also(binding.rvOpenFiles::setAdapter)
         binding.rvOpenFiles.itemAnimator = FadeInAnimator()
@@ -616,6 +694,9 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         val textColorStateList = ColorStateList.valueOf(textColor)
 
         supportActionBar!!.setBackgroundDrawable(color.toDrawable())
+        window.statusBarColor = color
+        WindowCompat.getInsetsController(window, window.decorView)
+            .isAppearanceLightStatusBars = theme.isTextDark
         binding.toolbarEditor.apply {
             setTitleTextColor(textColor)
             navigationIcon!!.colorFilter = PorterDuffColorFilter(textColor, PorterDuff.Mode.MULTIPLY)
@@ -671,17 +752,58 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                     updatePadding(top = textPadding)
                 }
                 isHapticFeedbackEnabled = true
-                setOnClickListener { view ->
-                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                val action = {
                     when(key) {
                         '↺' -> undo()
                         '↻' -> redo()
-                        '⇒' -> appendText("    ")
-                        else -> appendText(key.toString())
+                        '⇒' -> execCommand("indent")
+                        '←' -> moveCursor(-1)
+                        '→' -> moveCursor(1)
+                        else -> insertText(key.toString())
                     }
                 }
+                if (key in REPEATING_HOT_KEYS)
+                    setRepeatingAction(action)
+                else
+                    setOnClickListener { view ->
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        action()
+                    }
             }
             binding.layoutHotKeys.addView(textView)
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun View.setRepeatingAction(action: () -> Unit) {
+        var repeated = false
+        val repeat = object : Runnable {
+            override fun run() {
+                repeated = true
+                action()
+                postDelayed(this, HOT_KEY_REPEAT_INTERVAL)
+            }
+        }
+        setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    repeated = false
+                    view.isPressed = true
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    view.postDelayed(repeat, HOT_KEY_REPEAT_DELAY)
+                }
+                MotionEvent.ACTION_UP -> {
+                    view.isPressed = false
+                    view.removeCallbacks(repeat)
+                    if (!repeated)
+                        action()
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    view.isPressed = false
+                    view.removeCallbacks(repeat)
+                }
+            }
+            true
         }
     }
 
@@ -691,11 +813,17 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
         binding.bottomSheet.cardViewTopRadius.radius =
             if (visible && behavior.state != BottomSheetBehavior.STATE_EXPANDED) dp(20).toFloat() else 0f
-        val (peekHeight, visibility) = when(visible) {
-            true -> dp(64) to View.VISIBLE
-            false -> dp(24) to View.GONE
+        val (peekHeightDp, visibility) = when(visible) {
+            true -> 64 to View.VISIBLE
+            false -> 24 to View.GONE
         }
-        behavior.setPeekHeight(peekHeight, true)
+        val cornerDp = if (visible) 20 else 0
+        behavior.setPeekHeight(dp(peekHeightDp), true)
+        binding.webviewContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+            bottomMargin = dp(peekHeightDp - cornerDp)
+        }
+        bottomInsetDp = cornerDp
+        setBottomInset(cornerDp)
         binding.scrollViewHotKeys.visibility = visibility
         binding.layoutHotKeys.visibility = visibility
     }
@@ -722,16 +850,16 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                         setHotKeyVisibility(isEnabled)
                     }
                 }
-                toggle { 
+                toggle {
                     id = "bypass_escape"
-                    title = translate { 
-                        Locale.ENGLISH { "Bypass Escape" }
-                        Locale.ENGLISH { "ESC 키 입력 무시" }
-                        icon = Icon.EXIT_TO_APP
-                        defaultValue = true
-                        setOnValueChangedListener { _, isEnabled ->
-                            bypassEscape = isEnabled
-                        }
+                    title = translate {
+                        Locale.ENGLISH { "Ignore ESC key" }
+                        Locale.KOREAN  { "ESC 키 입력 무시" }
+                    }
+                    icon = Icon.EXIT_TO_APP
+                    defaultValue = true
+                    setOnValueChangedListener { _, isEnabled ->
+                        bypassEscape = isEnabled
                     }
                 }
                 val themes = Theme.entries.toTypedArray()
@@ -749,11 +877,15 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                         }
                         "${t.shownName} ($styleName)"
                     }
+                    defaultIndex = DEFAULT_THEME.ordinal
                     setOnItemSelectedListener { _, index ->
                         val selectedTheme = themes[index]
+                        val styleChanged = selectedTheme.themeStyle != theme.themeStyle
                         theme = selectedTheme
                         setTheme(selectedTheme)
                         updateColor()
+                        if (styleChanged && showFileTree)
+                            attachFileTreeDrawer()
                     }
                 }
             }
@@ -766,16 +898,16 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             }
             textColor = titleTextColor
             items {
-                string {
+                seekbar {
                     id = "font_size"
                     title = translate {
-                        Locale.ENGLISH { "Font size(px)" }
-                        Locale.KOREAN  { "폰트 크기(px)" }
+                        Locale.ENGLISH { "Font size" }
+                        Locale.KOREAN  { "글자 크기" }
                     }
                     icon = Icon.TEXT_FIELDS
-                    hint = "15"
-                    defaultValue = "15"
-                    inputType = InputType.TYPE_CLASS_NUMBER
+                    min = 8
+                    max = 32
+                    defaultValue = DEFAULT_FONT_SIZE
                 }
                 toggle {
                     id = "wrap_text"
@@ -830,72 +962,159 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         }
     }
 
-    private fun saveCode() {
-        var savedCount = 0
-        for ((index, session) in tabAdapter!!.sessions.withIndex()) {
-            if (session.isUpdated && session.code != null) {
-                session.isUpdated = false
-                tabAdapter?.notifyItemChanged(index)
-                saveCode(session.fileName, session.code!!)
-                savedCount++
+    private suspend fun collectDirty(sessionIds: List<Int>?): Map<String, String> =
+        suspendCancellableCoroutine { cont ->
+            val view = codeView ?: return@suspendCancellableCoroutine cont.resume(emptyMap())
+            val filter = sessionIds?.let { ids -> JsonArray(ids.map { JsonPrimitive(it.toString()) }) } ?: "null"
+            view.evaluateJavascript("collectDirty($filter)") { result ->
+                cont.resume(runCatching { json.decodeFromString<Map<String, String>>(result) }.getOrDefault(emptyMap()))
             }
         }
-        /*
-        if (isCodeChanged) {
-            saveCode(getProject().info.mainScript, code)
-            /*
-            if (fileDir.isFile) fileDir.writeText(this.code)
-            else logger.error { "Destination '${fileDir.path}' is not a file") }
-             */
-            isCodeChanged = false
+
+    private suspend fun saveAll(sessionIds: List<Int>? = null, silent: Boolean = false): Boolean {
+        val targets = collectDirty(sessionIds).mapNotNull { (id, code) ->
+            sessions.find { it.sessionId.toString() == id }?.let { it to code }
         }
-         */
+        val failed = withContext(Dispatchers.IO) {
+            targets
+                .filterNot { (session, code) -> saveCode(session.fileName, code) }
+                .map { (session, _) -> session }
+        }
+        for ((session, _) in targets) {
+            val index = sessions.indexOf(session)
+            if (session in failed)
+                markDirty(session.sessionId)
+            else if (index != -1)
+                tabAdapter?.setSessionContentUpdated(index, false)
+        }
+
+        if (failed.isNotEmpty()) {
+            createPeek(translate {
+                Locale.ENGLISH { "Failed to save ${failed.joinToString { it.fileName }}" }
+                Locale.KOREAN  { "${failed.joinToString { it.fileName }} 저장 실패" }
+            }) {
+                iconRes = R.drawable.ic_round_error_outline_24
+                backgroundColor(R.color.code_error)
+            }.apply {
+                setTextColor(R.color.white)
+            }.peek()
+            return false
+        }
+        if (silent)
+            return true
+
+        val savedCount = targets.size
         createPeek(translate {
-            Locale.ENGLISH { "Saved $savedCount files" }
-            Locale.KOREAN  { "${savedCount}개 파일 저장 완료" }
+            Locale.ENGLISH { if (savedCount == 0) "No changes to save" else "Saved $savedCount file(s)" }
+            Locale.KOREAN  { if (savedCount == 0) "저장할 변경사항이 없어요" else "${savedCount}개 파일 저장 완료" }
         }) {
             iconRes = dev.mooner.configdsl.R.drawable.ic_round_check_24
             iconTint(R.color.noctis_green)
         }.apply {
             setTextColor(R.color.text_clear)
         }.peek()
+        return true
+    }
+
+    private fun showUnsavedDialog(title: String, message: String, onSave: () -> Unit, onDiscard: () -> Unit) {
+        MaterialDialog(this, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            setCommonAttrs()
+            title(text = title)
+            message(text = message)
+            positiveButton(text = translate {
+                Locale.ENGLISH { "Save" }
+                Locale.KOREAN  { "저장" }
+            }) { onSave() }
+            negativeButton(res = R.string.cancel)
+            neutralButton(text = translate {
+                Locale.ENGLISH { "Don't save" }
+                Locale.KOREAN  { "저장 안 함" }
+            }) { onDiscard() }
+        }
+    }
+
+    private fun confirmTabClose(session: EditorSession) {
+        if (!session.isUpdated) {
+            tabAdapter?.remove(session)
+            return
+        }
+        showUnsavedDialog(
+            title = translate {
+                Locale.ENGLISH { "Save changes to ${session.fileName}?" }
+                Locale.KOREAN  { "${session.fileName}의 변경사항을 저장할까요?" }
+            },
+            message = translate {
+                Locale.ENGLISH { "Unsaved changes will be lost if you close this tab." }
+                Locale.KOREAN  { "저장하지 않으면 이 탭의 변경사항이 사라져요." }
+            },
+            onSave = {
+                lifecycleScope.launch {
+                    if (saveAll(listOf(session.sessionId), silent = true))
+                        tabAdapter?.remove(session)
+                }
+            },
+            onDiscard = { tabAdapter?.remove(session) }
+        )
+    }
+
+    private fun confirmEditorExit(onExit: () -> Unit) {
+        if (!isCodeUpdated)
+            return onExit()
+        val unsaved = sessions.filter(EditorSession::isUpdated)
+        showUnsavedDialog(
+            title = translate {
+                Locale.ENGLISH { "Save changes before leaving?" }
+                Locale.KOREAN  { "나가기 전에 저장할까요?" }
+            },
+            message = translate {
+                Locale.ENGLISH { "Unsaved: ${unsaved.joinToString { it.fileName }}" }
+                Locale.KOREAN  { "저장하지 않은 파일: ${unsaved.joinToString { it.fileName }}" }
+            },
+            onSave = {
+                lifecycleScope.launch {
+                    if (saveAll(silent = true))
+                        onExit()
+                }
+            },
+            onDiscard = onExit
+        )
     }
 
     private fun beautifyCode() =
         executeScript("beautifyCode()")
 
-    private fun resetUndoStack() =
-        executeScript("resetUndoStack()")
-
-    private fun encode(text: String): String =
-        Base64.encodeToString(Uri.encode(text, "utf-8").toByteArray(), 0)
-
-    private fun executeScript(script: String) =
-        codeView?.post { codeView?.loadUrl("javascript:$script") }
-
-    private fun setSession(session: EditorSession) {
-        setSession(session.sessionId, session.language, session.code!!)
+    private fun executeScript(script: String) {
+        if (isEditorReady)
+            codeView?.post { codeView?.evaluateJavascript(script, null) }
     }
 
-    private fun setSession(sessionId: Int, lang: Language, code: String) =
-        executeScript("""setSession("$sessionId", "${lang.editorName}", "${encode(code)}")""")
+    private fun setSession(session: EditorSession) {
+        if (!isEditorReady)
+            return
+        val code = if (session.isLoaded) null else session.code ?: readCode(session.fileName) ?: ""
+        session.isLoaded = true
+        session.code = null
+        val codeArg = code?.let(::JsonPrimitive) ?: "null"
+        executeScript("setSession(${JsonPrimitive(session.sessionId.toString())}, ${JsonPrimitive(session.language.editorName)}, $codeArg)")
+    }
 
-    private fun closeSession(sessionId: Int, openSessionId: Int?) =
-        executeScript("""closeSession("$sessionId", "$openSessionId")""")
+    private fun closeSession(sessionId: Int) =
+        executeScript("closeSession(${JsonPrimitive(sessionId.toString())})")
+
+    private fun markDirty(sessionId: Int) =
+        executeScript("markDirty(${JsonPrimitive(sessionId.toString())})")
 
     private fun setTheme(theme: Theme) =
-        executeScript("""setTheme("${theme.editorName}")""")
+        executeScript("setTheme(${JsonPrimitive(theme.editorName)})")
 
-    @Suppress("unused")
-    private fun setLanguage(lang: Language) =
-        executeScript("""setLanguage("${lang.editorName}")""")
+    private fun insertText(text: String) =
+        executeScript("insertText(${JsonPrimitive(text)})")
 
-    private fun appendText(text: String) =
-        executeScript("""appendText("${encode(text)}")""")
+    private fun execCommand(name: String) =
+        executeScript("execCommand(${JsonPrimitive(name)})")
 
-    @Suppress("unused")
-    private fun setChanged(changed: Boolean) =
-        executeScript("""setChanged("$changed")""")
+    private fun moveCursor(dx: Int) =
+        executeScript("moveCursor($dx)")
 
     private fun undo() =
         executeScript("undo()")
@@ -904,10 +1123,13 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         executeScript("redo()")
 
     private fun setFontSize(size: Int) =
-        executeScript("setFontSize(${size})")
+        executeScript("setFontSize($size)")
 
     private fun setWordWrap(wrap: Boolean) =
-        executeScript("setWordWrap(${wrap})")
+        executeScript("setWordWrap($wrap)")
+
+    private fun setBottomInset(dp: Int) =
+        executeScript("setBottomInset($dp)")
 
     internal fun requestAnnotations() =
         executeScript("requestAnnotations()")
@@ -915,33 +1137,69 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     internal fun gotoLine(row: Int, column: Int) =
         executeScript("_gotoLine($row, $column)")
 
-    private fun confirmEditorExit(onExit: () -> Unit) {
-        if (isCodeUpdated) {
-            showConfirmDialog(
-                context = this,
-                title = translate {
-                    Locale.ENGLISH { "⚠️ There are changes unsaved" }
-                    Locale.KOREAN  { "⚠️ 저장하지 않은 변경사항이 있어요" }
-                },
-                message = translate {
-                    Locale.ENGLISH { "There are files or changes that are unsaved yet, force close?\n" +
-                            "⚠️ All unsaved changes will be discarded." }
-                    Locale.KOREAN  { "아직 저장하지 않은 코드가 있어요. 수정을 종료할까요?\n" +
-                            "⚠️ 모든 저장되지 않은 수정 사항은 사라집니다." }
-                },
-                onDismiss = { confirm ->
-                    if (confirm)
-                        onExit()
+    private fun markError(row: Int, column: Int, text: String) =
+        executeScript("markError($row, $column, ${JsonPrimitive(text)})")
+
+    private fun Throwable.sourcePosition(): Pair<Int, Int>? =
+        generateSequence(this, Throwable::cause).firstNotNullOfOrNull { e ->
+            when (e) {
+                is NeonSyntaxException -> e.line to e.column
+                is RhinoException      -> e.lineNumber() to e.columnNumber()
+                else                   -> null
+            }
+        }?.takeIf { (line, _) -> line > 0 }
+
+    private fun buildApiCompletions(): String =
+        buildJsonArray {
+            for (api in Session.apiManager.getApis()) {
+                addJsonObject {
+                    put("name", api.name)
+                    putJsonArray("members") {
+                        api.objects
+                            .filterNot { '$' in it.name }
+                            .distinctBy(ApiObject::name)
+                            .forEach { member ->
+                                addJsonObject {
+                                    put("name", member.name)
+                                    put("caption", when (member) {
+                                        is ApiObject.Function ->
+                                            member.name + member.args.joinToString(prefix = "(", postfix = ")") { it.simpleName }
+                                        is ApiObject.Value ->
+                                            member.name
+                                    })
+                                    put("returns", member.returns.simpleName.takeUnless { it == "Unit" } ?: "void")
+                                }
+                            }
+                    }
                 }
-            )
-        } else
-            onExit()
+            }
+        }.toString()
+
+    private fun buildEventSnippets(): String? {
+        val generator = getProject()?.getLanguage()?.codeGenerator
+            ?: return null
+        val events = ProjectEventManager.filterAllowedEvents(setOf("*"))
+            .mapNotNull { id -> ProjectEventManager.findFirst(id)?.getInstance() }
+            .distinctBy { it.functionName }
+        return buildJsonArray {
+            for (event in events) {
+                val function = generator.generateFunction(event.functionName, event.argTypes, null).function
+                addJsonObject {
+                    put("name", event.functionName)
+                    put("tabTrigger", event.functionName)
+                    put("content", function.replace("$", "\\$").replaceFirst("\n    \n", "\n\t\${0}\n"))
+                }
+            }
+        }.toString()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.menu_save -> saveCode()
+            R.id.menu_save -> lifecycleScope.launch { saveAll() }
             R.id.menu_recompile -> compileProject()
+            R.id.menu_find -> execCommand("find")
+            R.id.menu_replace -> execCommand("replace")
+            R.id.menu_goto_line -> execCommand("gotoline")
             R.id.code_beautify -> beautifyCode()
             R.id.menu_debug_room -> {
                 val project = getProject() ?: return false
@@ -982,20 +1240,22 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                     if (!wasOpen)
                         binding.root.closeDrawer(GravityCompat.END)
                 }
+        else if (binding.root.isDrawerOpen(GravityCompat.START))
+            binding.root.closeDrawer(GravityCompat.START)
         else
-            confirmEditorExit {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-                    super.onBackPressedDispatcher.onBackPressed()
-                else
-                    super.onBackPressed()
-            }
+            confirmEditorExit(::finish)
     }
 
     companion object {
         const val EXTRA_SHOW_FILE_TREE = "showFileTree"
         const val ENTRY_POINT          = "file:///android_asset/editor/index.html"
 
-        private const val HOT_KEYS = "↺↻⇒[]{}()<>;=.'\"+-*/\\:&|"
+        private const val HOT_KEYS = "↺↻⇒←→[]{}()<>;=.'\"+-*/\\:&|"
+        private const val DEFAULT_FONT_SIZE = 15
+        private val CSS_RGB = "rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)".toRegex()
+        private const val REPEATING_HOT_KEYS = "↺↻←→"
+        private const val HOT_KEY_REPEAT_DELAY = 400L
+        private const val HOT_KEY_REPEAT_INTERVAL = 60L
         private val DEFAULT_THEME = Theme.TOMORROW_NIGHT_EIGHTIES
     }
 
