@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="-10dp"
+    android:background="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="60dp"
+    android:orientation="horizontal"
+    android:paddingHorizontal="10dp">
+
+    <FrameLayout
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:background="@drawable/bg_store_icon">
+
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            app:tint="@color/store_gold"
+            tools:src="@drawable/ic_round_plugins_24"/>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/nanumsquare_neo_bold"
+            android:maxLines="1"
+            android:textColor="@color/text"
+            android:textSize="14sp"
+            tools:text="NetKit"/>
+
+        <TextView
+            android:id="@+id/version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/nanumsquare_neo_regular"
+            android:maxLines="1"
+            android:textColor="@color/text_sub"
+            android:textSize="11sp"
+            tools:text="dev.mooner.netkit · 1.2.0 이상"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_store_pill"
+        android:fontFamily="@font/nanumsquare_neo_extrabold"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="4dp"
+        android:textSize="11sp"
+        tools:text="설치됨"/>
+</LinearLayout>

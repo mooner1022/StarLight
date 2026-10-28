@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.carousel.MaskableFrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mask"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginHorizontal="4dp"
+    android:foreground="?attr/selectableItemBackground"
+    app:shapeAppearance="@style/ShapeAppearance.StarLight.StoreFeatured">
+
+    <FrameLayout
+        android:id="@+id/card"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_store_featured">
+
+        <dev.mooner.starlight.ui.plugins.store.StarFieldView
+            android:id="@+id/stars"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <ImageView
+            android:id="@+id/bigIcon"
+            android:layout_width="130dp"
+            android:layout_height="130dp"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="-14dp"
+            android:alpha="0.2"
+            android:importantForAccessibility="no"
+            android:rotation="-14"
+            app:tint="@color/store_gold"
+            tools:src="@drawable/ic_round_plugins_24"/>
+
+        <LinearLayout
+            android:id="@+id/text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="bottom"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <FrameLayout
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:background="@drawable/bg_store_icon">
+
+                    <ImageView
+                        android:id="@+id/icon"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:importantForAccessibility="no"
+                        app:tint="@color/store_gold"/>
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/category"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:fontFamily="@font/nanumsquare_neo_extrabold"
+                    android:letterSpacing="0.1"
+                    android:textColor="@color/store_gold"
+                    android:textSize="11sp"
+                    tools:text="메신저 연동"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/headline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:fontFamily="@font/nanumsquare_round_extrabold"
+                android:maxLines="2"
+                android:textColor="@color/store_star"
+                android:textSize="20sp"
+                tools:text="카카오톡과 디스코드를 하나로"/>
+
+            <TextView
+                android:id="@+id/caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:alpha="0.65"
+                android:ellipsize="end"
+                android:fontFamily="@font/nanumsquare_neo_regular"
+                android:maxLines="1"
+                android:textColor="@color/store_star"
+                android:textSize="12sp"
+                tools:text="Discord 브릿지 · mooner1022"/>
+        </LinearLayout>
+    </FrameLayout>
+</com.google.android.material.carousel.MaskableFrameLayout>

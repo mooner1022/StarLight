@@ -113,4 +113,17 @@
     <color name="light_blue_600">#FF039BE5</color>
     <color name="gray_400">#FFBDBDBD</color>
     <color name="gray_600">#FF757575</color>
+
+    <color name="store_night">#1B191B</color>
+    <color name="store_night_light">#2E2833</color>
+    <color name="store_gold">#DFC199</color>
+    <color name="store_gold_deep">#AD977A</color>
+    <color name="store_gold_bright">#F4E1BC</color>
+    <color name="store_star">#FFF7E8</color>
+    <color name="store_on_gold">#3A2F1F</color>
+    <color name="store_gold_soft">#F3EADC</color>
+    <color name="store_restart_button">#1B191B</color>
+    <color name="store_skeleton">#ECE7DF</color>
+    <color name="store_shimmer">#B3FFFFFF</color>
+    <color name="store_chip_stroke">#E6D7BF</color>
 </resources>

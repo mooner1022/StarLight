@@ -91,4 +91,10 @@
     <color name="orange_box_grey">#90a9b3</color>
     <color name="orange_box_dark_grey">#414d63</color>
     <color name="orange_box_white">#ffffff</color>
+
+    <color name="store_gold_soft">#2A251E</color>
+    <color name="store_restart_button">#3A3226</color>
+    <color name="store_skeleton">#252321</color>
+    <color name="store_shimmer">#1AFFFFFF</color>
+    <color name="store_chip_stroke">#4A4033</color>
 </resources>

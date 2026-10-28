@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="138dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="12dp"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/frame"
+        android:layout_width="match_parent"
+        android:layout_height="228dp"
+        android:background="@drawable/bg_store_screenshot"
+        android:clipToOutline="true"
+        android:foreground="?attr/selectableItemBackground">
+
+        <dev.mooner.starlight.ui.plugins.store.StarFieldView
+            android:id="@+id/stars"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.6"/>
+
+        <LinearLayout
+            android:id="@+id/bubbles"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/icon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:importantForAccessibility="no"
+                    app:tint="@color/store_gold"/>
+
+                <View
+                    android:layout_width="54dp"
+                    android:layout_height="8dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_store_bubble"/>
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:ellipsize="end"
+        android:fontFamily="@font/nanumsquare_neo_bold"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="@color/text_sub"
+        android:textSize="12sp"
+        tools:text="채널 연결 설정"/>
+</LinearLayout>
