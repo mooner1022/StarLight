@@ -15,8 +15,11 @@ import dev.mooner.starlight.plugincore.plugin.PluginState
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.ui.plugins.knownPlugins
+import dev.mooner.starlight.ui.plugins.pluginInstaller
 import dev.mooner.starlight.ui.plugins.pluginStatus
 import dev.mooner.starlight.utils.startConfigActivity
+import java.text.DateFormat
+import java.util.Date
 
 fun Context.startPluginInfoActivity(
     entry: InstalledPlugin
@@ -27,6 +30,8 @@ fun Context.startPluginInfoActivity(
         Locale.ENGLISH { "None" }
         Locale.KOREAN  { "없음" }
     }
+
+    val origin = info?.let { pluginInstaller().originOf(it.id) }
 
     val items = config {
         val defaultColor = getColor(R.color.main_bright)
@@ -134,6 +139,36 @@ fun Context.startPluginInfoActivity(
                     }
                     icon = Icon.FOLDER
                     iconTintColor = color { "#7A69C7" }
+                }
+                button {
+                    id = "origin"
+                    title = translate {
+                        Locale.ENGLISH { "Source" }
+                        Locale.KOREAN  { "출처" }
+                    }
+                    val repository = origin?.repository
+                    icon = if (repository != null) Icon.CLOUD_DOWNLOAD else Icon.FOLDER
+                    iconTintColor = color { "#E9B824" }
+                    description = buildString {
+                        if (repository != null) {
+                            append(translate {
+                                Locale.ENGLISH { "Plugin store · ${repository.name}" }
+                                Locale.KOREAN  { "플러그인 저장소 · ${repository.name}" }
+                            })
+                            append('\n').append(repository.url.removePrefix("https://"))
+                        } else
+                            append(translate {
+                                Locale.ENGLISH { "Local file" }
+                                Locale.KOREAN  { "로컬 파일" }
+                            })
+                        if (origin != null) {
+                            val date = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(origin.installedAt))
+                            append('\n').append(translate {
+                                Locale.ENGLISH { "Installed $date" }
+                                Locale.KOREAN  { "$date 설치" }
+                            })
+                        }
+                    }
                 }
                 if (info != null)
                     button {

@@ -7,6 +7,7 @@ import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.plugin.PluginChange
 import dev.mooner.starlight.plugincore.plugin.PluginDependency
+import dev.mooner.starlight.plugincore.plugin.PluginRepository
 import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.ui.plugins.knownPlugins
 import dev.mooner.starlight.ui.plugins.pluginInstaller
@@ -130,11 +131,12 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         val pending = queue.filter { (target, _) -> tasks.value[target.id].let { it == null || it == Task.Done } }
         for ((target, _) in pending)
             setTask(target.id, Task.Downloading(0))
+        val repository = PluginRepository(index.name, StoreSource.REPOSITORY_URL)
         viewModelScope.launch {
             installLock.withLock {
                 for ((target, targetRelease) in pending) {
                     try {
-                        installRelease(target, targetRelease)
+                        installRelease(target, targetRelease, repository)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -148,7 +150,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private suspend fun installRelease(plugin: StorePlugin, release: StoreRelease) {
+    private suspend fun installRelease(plugin: StorePlugin, release: StoreRelease, repository: PluginRepository) {
         val context = getApplication<Application>()
         val file = context.cacheDir.resolve("store").apply { mkdirs() }.resolve(release.fileName)
         try {
@@ -162,7 +164,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
                 val info = installer.inspect(file)
                 if (info.id != plugin.id || info.version != release.version)
                     throw IOException("${release.fileName} contains ${info.id} ${info.version}")
-                pluginManager.install(installer, file, release.sha256)
+                pluginManager.install(installer, file, release.sha256, repository)
             }
             installed.update { it + (plugin.id to release.version) }
             setTask(plugin.id, Task.Done)
