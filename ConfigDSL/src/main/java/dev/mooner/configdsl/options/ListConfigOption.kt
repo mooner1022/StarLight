@@ -14,17 +14,11 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.callbacks.onDismiss
-import com.afollestad.materialdialogs.customview.customView
 import com.google.android.material.divider.MaterialDividerItemDecoration
 import dev.mooner.configdsl.*
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.adapters.ListRecyclerAdapter
 import dev.mooner.configdsl.utils.PrimitiveTypedString
-import dev.mooner.configdsl.utils.setCommonAttrs
 import dev.mooner.configdsl.utils.toJsonElement
 import kotlinx.serialization.json.*
 import kotlin.properties.Delegates.notNull
@@ -101,41 +95,39 @@ data class ListConfigOption(
 
         holder.buttonAddList.setOnClickListener {
             val configData: MutableMap<String, JsonElement> = mutableMapOf()
-            MaterialDialog(holder.itemView.context, BottomSheet(LayoutMode.WRAP_CONTENT))
-                .show {
-                    title(R.string.add)
-                    setCommonAttrs()
-                    customView(R.layout.dialog_logs)
-
-                    val recycler: RecyclerView = findViewById(R.id.rvLog)
-                    val configAdapter = ConfigAdapter.Builder(view.context) {
-                        bind(recycler)
-                        onValueUpdated { _, id, _, jsonData ->
-                            configData[id] = jsonData
-                        }
-                        structure {
-                            config {
-                                category {
-                                    id = "list_structure"
-                                    items = structure
-                                }
-                            }
-                        }
-                    }.build()
-
-                    onDismiss {
-                        configAdapter.destroy()
-                    }
-
-                    positiveButton(R.string.ok) {
-                        if (configData.isNotEmpty()) {
-                            recyclerAdapter.data += JsonObject(transformData(configData))
-                            recyclerAdapter.notifyItemInserted(recyclerAdapter.data.size)
-                            notifyUpdated(recyclerAdapter.data)
-                        }
-                    }
-                    negativeButton(R.string.cancel)
+            val context = holder.itemView.context
+            val recycler = RecyclerView(context).apply {
+                overScrollMode = View.OVER_SCROLL_NEVER
+                isNestedScrollingEnabled = false
+            }
+            val configAdapter = ConfigAdapter.Builder(context) {
+                bind(recycler)
+                onValueUpdated { _, id, _, jsonData ->
+                    configData[id] = jsonData
                 }
+                structure {
+                    config {
+                        category {
+                            id = "list_structure"
+                            items = structure
+                        }
+                    }
+                }
+            }.build()
+
+            ConfigDSL.dialogProvider.form(
+                context = context,
+                title = context.getString(R.string.add),
+                content = recycler,
+                onConfirm = {
+                    if (configData.isNotEmpty()) {
+                        recyclerAdapter.data += JsonObject(transformData(configData))
+                        recyclerAdapter.notifyItemInserted(recyclerAdapter.data.size)
+                        notifyUpdated(recyclerAdapter.data)
+                    }
+                },
+                onDismiss = configAdapter::destroy,
+            )
         }
     }
 

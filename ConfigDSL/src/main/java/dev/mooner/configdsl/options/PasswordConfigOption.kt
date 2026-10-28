@@ -8,13 +8,7 @@ package dev.mooner.configdsl.options
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.input.getInputField
-import com.afollestad.materialdialogs.input.input
 import dev.mooner.configdsl.*
-import dev.mooner.configdsl.utils.setCommonAttrs
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
@@ -51,26 +45,14 @@ data class PasswordConfigOption(
         holder.layout.setOnClickListener {
             if (!holder.layout.isEnabled)
                 return@setOnClickListener
-            MaterialDialog(it.context, BottomSheet(LayoutMode.WRAP_CONTENT))
-                .input(waitForPositiveButton = false) { dialog, text ->
-                    val require = require(text.toString())
-                    if (require != null) {
-                        dialog.getInputField().error = require
-                        hasError = true
-                        return@input
-                    } else
-                        hasError = false
-                }.show {
-                    setCommonAttrs()
-                    title(text = displayTitle)
-
-                    positiveButton(R.string.ok) { dialog ->
-                        val password = dialog.getInputField().text.toString()
-                        val encoded = hashCode(password)
-                        notifyUpdated(encoded)
-                    }
-                    negativeButton(R.string.cancel, click = MaterialDialog::dismiss)
-                }
+            ConfigDSL.dialogProvider.password(
+                context = it.context,
+                title = displayTitle,
+                validate = { text ->
+                    require(text).also { error -> hasError = error != null }
+                },
+                onConfirm = { password -> notifyUpdated(hashCode(password)) },
+            )
         }
     }
 }
