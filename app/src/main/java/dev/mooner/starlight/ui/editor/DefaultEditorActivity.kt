@@ -958,6 +958,8 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     }
 
     private fun setSession(session: EditorSession) {
+        if (!isEditorReady)
+            return
         val code = if (session.isLoaded) null else session.code ?: readCode(session.fileName) ?: ""
         session.isLoaded = true
         session.code = null
