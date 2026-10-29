@@ -305,6 +305,16 @@ class StoreHomeFragment : Fragment() {
         }
     }
 
+    private fun groupByCategory(index: StoreIndex, plugins: List<StorePlugin>): List<StoreListItem> {
+        val groups = plugins.groupBy { it.category }
+        val known = index.categories.map { it.id }
+        val order = known.filter(groups::containsKey) + (groups.keys - known.toSet())
+        return order.flatMap { id ->
+            val members = groups.getValue(id)
+            listOf(StoreListItem.Header(id, index.categoryName(id), members.size)) + members.map(StoreListItem::Row)
+        }
+    }
+
     private fun submitList() {
         val index = shownIndex ?: return
         val items = filteredPlugins(index)
@@ -319,7 +329,10 @@ class StoreHomeFragment : Fragment() {
             listCount.text = items.size.toString()
             empty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
         }
-        listAdapter.submitList(items)
+        listAdapter.submitList(
+            if (viewModel.category == null) groupByCategory(index, items)
+            else items.map(StoreListItem::Row)
+        )
         updateUpdatesCard()
     }
 
