@@ -25,6 +25,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mikepenz.fastadapter.FastAdapter
+import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.MainActivity
@@ -35,6 +36,7 @@ import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.GlobalConfig.getDefaultCategory
 import dev.mooner.starlight.plugincore.plugin.InstalledPlugin
+import dev.mooner.starlight.plugincore.plugin.PluginCategory
 import dev.mooner.starlight.plugincore.plugin.PluginChange
 import dev.mooner.starlight.plugincore.plugin.PluginInfo
 import dev.mooner.starlight.plugincore.plugin.PluginState
@@ -56,7 +58,7 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
     private val binding get() = _binding!!
 
     private val listItems: MutableMap<String, PluginListItem> = hashMapOf()
-    private var itemAdapter: ItemAdapter<PluginListItem>? = null
+    private var itemAdapter: ItemAdapter<GenericItem>? = null
     private var searchQuery: String = ""
 
     private val aligns = arrayOf(
@@ -362,9 +364,18 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
                 info?.authors?.any { it.contains(query, ignoreCase = true) } == true
     }
 
+    private fun groupByCategory(items: List<PluginListItem>): List<GenericItem> {
+        val groups = items.groupBy(PluginListItem::category)
+        val order = groups.keys.sortedBy(PluginCategory::ordinal)
+        return order.flatMapIndexed { i, category ->
+            val members = groups.getValue(category)
+            listOf(PluginCategoryHeaderItem(category, requireContext().pluginCategoryName(category), members.size, isFirst = i == 0)) + members
+        }
+    }
+
     private fun submitList() {
         val items = sortedItems()
-        itemAdapter?.set(items)
+        itemAdapter?.set(groupByCategory(items))
         updateEmptyText(isFiltered = searchQuery.isNotEmpty(), isEmpty = items.isEmpty())
         updateNotice()
         updateTitle()

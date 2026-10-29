@@ -28,7 +28,8 @@ data class PluginInfo(
     @SerialName("uses_native_lib")
     val usesNativeLibrary   : Boolean = false,
     val authors             : List<String>,
-    val description         : String
+    val description         : String,
+    val category            : PluginCategory = PluginCategory.DEFAULT,
 ) {
 
     val fullName = "$name v$version"

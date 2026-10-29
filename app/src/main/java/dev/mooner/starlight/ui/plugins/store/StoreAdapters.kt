@@ -9,12 +9,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.annotation.DrawableRes
+import androidx.core.view.updatePadding
 import coil.dispose
 import coil.load
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.starlight.R
+import dev.mooner.starlight.databinding.ItemStoreCategoryHeaderBinding
 import dev.mooner.starlight.databinding.ItemStoreFeaturedBinding
 import dev.mooner.starlight.databinding.ItemStorePluginBinding
 import dev.mooner.starlight.databinding.ItemStoreScreenshotBinding
@@ -61,42 +63,74 @@ internal fun StorePlugin.authorNames(): String =
 private fun View.dp(value: Int): Int =
     TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value.toFloat(), resources.displayMetrics).toInt()
 
+sealed interface StoreListItem {
+    data class Header(val id: String, val name: String, val count: Int) : StoreListItem
+    data class Row(val plugin: StorePlugin) : StoreListItem
+}
+
 class StorePluginAdapter(
     private val onClick: (StorePlugin, View) -> Unit,
     private val onInstall: (StorePlugin) -> Unit,
     private val onCompleted: (View) -> Unit,
-) : ListAdapter<StorePlugin, StorePluginAdapter.Holder>(DIFF) {
+) : ListAdapter<StoreListItem, RecyclerView.ViewHolder>(DIFF) {
 
     class Holder(val binding: ItemStorePluginBinding) : RecyclerView.ViewHolder(binding.root)
+
+    class HeaderHolder(val binding: ItemStoreCategoryHeaderBinding) : RecyclerView.ViewHolder(binding.root)
 
     var installStates: Map<String, StoreInstallState> = emptyMap()
         set(value) {
             val old = field
             field = value
-            currentList.forEachIndexed { position, plugin ->
-                if (old[plugin.id] != value[plugin.id])
+            currentList.forEachIndexed { position, item ->
+                if (item is StoreListItem.Row && old[item.plugin.id] != value[item.plugin.id])
                     notifyItemChanged(position, PAYLOAD_STATE)
             }
         }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder =
-        Holder(ItemStorePluginBinding.inflate(LayoutInflater.from(parent.context), parent, false)).apply {
+    override fun getItemViewType(position: Int): Int =
+        when (getItem(position)) {
+            is StoreListItem.Header -> TYPE_HEADER
+            is StoreListItem.Row    -> TYPE_ROW
+        }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        if (viewType == TYPE_HEADER)
+            return HeaderHolder(ItemStoreCategoryHeaderBinding.inflate(inflater, parent, false))
+        return Holder(ItemStorePluginBinding.inflate(inflater, parent, false)).apply {
             binding.install.compact = true
             binding.iconFrame.clipToOutline = true
             binding.install.onCompleted = onCompleted
         }
+    }
 
-    override fun onBindViewHolder(holder: Holder, position: Int, payloads: MutableList<Any>) {
-        if (PAYLOAD_STATE in payloads)
-            holder.bindState(getItem(position), animate = true)
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
+        val item = getItem(position)
+        if (PAYLOAD_STATE in payloads && holder is Holder && item is StoreListItem.Row)
+            holder.bindState(item.plugin, animate = true)
         else
             super.onBindViewHolder(holder, position, payloads)
     }
 
-    override fun onBindViewHolder(holder: Holder, position: Int) {
-        val plugin = getItem(position)
-        val context = holder.itemView.context
-        with(holder.binding) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val item = getItem(position)) {
+            is StoreListItem.Header -> (holder as HeaderHolder).bind(item, position)
+            is StoreListItem.Row    -> (holder as Holder).bind(item.plugin)
+        }
+    }
+
+    private fun HeaderHolder.bind(header: StoreListItem.Header, position: Int) {
+        with(binding) {
+            name.text = header.name
+            count.text = header.count.toString()
+            root.updatePadding(top = root.dp(if (position == 0) 6 else 18))
+        }
+    }
+
+    private fun Holder.bind(plugin: StorePlugin) {
+        val context = itemView.context
+        with(binding) {
             card.transitionName = "store_row_${plugin.id}"
             icon.loadStoreImage(plugin.icon)
             name.text = plugin.name
@@ -110,7 +144,7 @@ class StorePluginAdapter(
             card.setOnClickListener { onClick(plugin, card) }
             install.setOnClickListener { onInstall(plugin) }
         }
-        holder.bindState(plugin, animate = false)
+        bindState(plugin, animate = false)
     }
 
     private fun Holder.bindState(plugin: StorePlugin, animate: Boolean) {
@@ -120,12 +154,17 @@ class StorePluginAdapter(
 
     companion object {
         private const val PAYLOAD_STATE = "state"
+        private const val TYPE_HEADER = 0
+        private const val TYPE_ROW = 1
 
-        private val DIFF = object : DiffUtil.ItemCallback<StorePlugin>() {
-            override fun areItemsTheSame(oldItem: StorePlugin, newItem: StorePlugin): Boolean =
-                oldItem.id == newItem.id
+        private val DIFF = object : DiffUtil.ItemCallback<StoreListItem>() {
+            override fun areItemsTheSame(oldItem: StoreListItem, newItem: StoreListItem): Boolean =
+                when (oldItem) {
+                    is StoreListItem.Header -> newItem is StoreListItem.Header && oldItem.id == newItem.id
+                    is StoreListItem.Row    -> newItem is StoreListItem.Row && oldItem.plugin.id == newItem.plugin.id
+                }
 
-            override fun areContentsTheSame(oldItem: StorePlugin, newItem: StorePlugin): Boolean =
+            override fun areContentsTheSame(oldItem: StoreListItem, newItem: StoreListItem): Boolean =
                 oldItem == newItem
         }
     }

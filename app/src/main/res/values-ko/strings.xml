@@ -193,6 +193,12 @@
     <string name="plugin_status_disabled">꺼짐</string>
     <string name="plugin_status_safe_mode">안전 모드</string>
     <string name="plugin_status_invalid">올바른 플러그인 파일이 아니에요</string>
+    <string name="plugin_category_messenger">메신저 연동</string>
+    <string name="plugin_category_engine">스크립트 엔진</string>
+    <string name="plugin_category_library">라이브러리</string>
+    <string name="plugin_category_utility">유틸리티</string>
+    <string name="plugin_category_devtools">개발 도구</string>
+    <string name="plugin_category_other">기타</string>
     <string name="plugin_status_failed">로드 실패: %s</string>
     <string name="plugin_status_incompatible_api">PluginCore %1$s용 (현재 %2$s)</string>
     <string name="plugin_status_missing_dependency">필요한 플러그인 없음: %s</string>
