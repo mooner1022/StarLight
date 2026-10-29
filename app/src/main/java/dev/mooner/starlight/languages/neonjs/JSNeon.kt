@@ -108,7 +108,7 @@ class JSNeon: Language() {
         val context = engine.newContext()
         return try {
             withClassLoader(classLoader) {
-                for (api in apis.filter { it.isSupported }) {
+                for (api in apis.filter { it.isExposed }) {
                     when (api.instanceType) {
                         InstanceType.CLASS ->
                             context.exposeClass(api.name, api.instanceClass)
@@ -197,7 +197,7 @@ class JSNeon: Language() {
         return engine.newContext().use { context ->
             if (allowJavaAccess && allowApiAccess) {
                 for (api in Session.apiManager.getApis()) {
-                    if (api.instanceType == InstanceType.OBJECT || !api.isSupported)
+                    if (api.instanceType == InstanceType.OBJECT || !api.isExposed)
                         continue
                     context.exposeClass(api.name, api.instanceClass)
                 }
@@ -214,8 +214,8 @@ class JSNeon: Language() {
         }
     }
 
-    private val Api<*>.isSupported: Boolean
-        get() = this.name != "Java" && SUPPORTED_API_PACKAGES.any { javaClass.name.startsWith("$it.") }
+    private val Api<*>.isExposed: Boolean
+        get() = name !in EXCLUDED_API_NAMES
 
     private fun createConsole(project: Project) = NeonConsole { level, message ->
         when (level) {
@@ -390,10 +390,8 @@ class JSNeon: Language() {
         private const val CONF_EXT_MODULE_SANDBOX = "load_ext_module_sandbox"
         private const val DEF_OPTIMIZATION_LEVEL = 2 // Adaptive
 
-        private val SUPPORTED_API_PACKAGES = setOf(
-            "dev.mooner.starlight.api.original",
-            "dev.mooner.starlight.api.api2",
-            "dev.mooner.starlight.api.legacy",
+        private val EXCLUDED_API_NAMES = setOf(
+            "Java",
         )
 
         private val hostAccess: HostAccess = HostAccess.builder(HostAccess.Level.ALL)
