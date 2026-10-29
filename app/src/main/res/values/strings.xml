@@ -198,6 +198,12 @@
     <string name="plugin_status_disabled">Off</string>
     <string name="plugin_status_safe_mode">Not loaded in safe mode</string>
     <string name="plugin_status_invalid">Not a valid plugin file</string>
+    <string name="plugin_category_messenger">Messengers</string>
+    <string name="plugin_category_engine">Script engines</string>
+    <string name="plugin_category_library">Libraries</string>
+    <string name="plugin_category_utility">Utilities</string>
+    <string name="plugin_category_devtools">Developer tools</string>
+    <string name="plugin_category_other">Other</string>
     <string name="plugin_status_failed">Failed to load: %s</string>
     <string name="plugin_status_incompatible_api">Built for PluginCore %1$s (current %2$s)</string>
     <string name="plugin_status_missing_dependency">Requires %s</string>

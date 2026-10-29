@@ -18,6 +18,7 @@ import dev.mooner.starlight.databinding.ItemPluginActionsBinding
 import dev.mooner.starlight.databinding.ItemPluginBinding
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.plugin.InstalledPlugin
+import dev.mooner.starlight.plugincore.plugin.PluginCategory
 import dev.mooner.starlight.plugincore.plugin.PluginChange
 import dev.mooner.starlight.plugincore.plugin.PluginInfo
 import dev.mooner.starlight.plugincore.plugin.PluginState
@@ -51,6 +52,9 @@ class PluginListItem(
 
     val name: String
         get() = info?.takeUnless { entry?.isDuplicate == true }?.name ?: entry?.file?.name ?: key
+
+    val category: PluginCategory
+        get() = info?.category ?: PluginCategory.DEFAULT
 
     private var binding: ItemPluginBinding? = null
     private var isExpanded: Boolean = false
