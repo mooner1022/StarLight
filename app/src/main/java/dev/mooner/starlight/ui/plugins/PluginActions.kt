@@ -8,6 +8,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.plugin.InstalledPlugin
+import dev.mooner.starlight.plugincore.plugin.PluginCategory
 import dev.mooner.starlight.plugincore.plugin.PluginChange
 import dev.mooner.starlight.plugincore.plugin.PluginExclusion
 import dev.mooner.starlight.plugincore.plugin.PluginInfo
@@ -31,6 +32,16 @@ internal fun Context.pluginIconFile(id: String): File =
 
 internal fun PluginInfo.displayVersion(): String =
     "v$version"
+
+internal fun Context.pluginCategoryName(category: PluginCategory): String =
+    getString(when (category) {
+        PluginCategory.MESSENGER -> R.string.plugin_category_messenger
+        PluginCategory.ENGINE    -> R.string.plugin_category_engine
+        PluginCategory.LIBRARY   -> R.string.plugin_category_library
+        PluginCategory.UTILITY   -> R.string.plugin_category_utility
+        PluginCategory.DEVTOOLS  -> R.string.plugin_category_devtools
+        PluginCategory.OTHER     -> R.string.plugin_category_other
+    })
 
 internal fun Context.pluginStatus(entry: InstalledPlugin?, change: PluginChange?): PluginStatus {
     when (change) {
