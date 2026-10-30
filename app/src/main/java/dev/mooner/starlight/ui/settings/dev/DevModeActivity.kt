@@ -39,6 +39,16 @@ fun Context.startDevModeActivity() {
                 title = "개발자 모드"
                 textColor = getColor(R.color.main_bright)
                 items {
+                    button {
+                        id = "configdsl_preview"
+                        title = "ConfigDSL 미리보기"
+                        description = "새로 추가한 설정 요소를 한 화면에서 확인해요"
+                        icon = Icon.LAYERS
+                        iconTintColor = color { "#87AAAA" }
+                        setOnClickListener { view ->
+                            view.context.startConfigDslPreview()
+                        }
+                    }
                     toggle {
                         id = "show_internal_log"
                         title = "내부 로그 표시"
