@@ -7,13 +7,10 @@
 package dev.mooner.starlight.ui.settings.update
 
 import android.content.Context
-import androidx.lifecycle.lifecycleScope
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.configdsl.config
-import dev.mooner.configdsl.findOption
-import dev.mooner.configdsl.options.ButtonConfigOption
 import dev.mooner.configdsl.options.button
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
@@ -26,13 +23,11 @@ import dev.mooner.starlight.plugincore.utils.TimeUtils
 import dev.mooner.starlight.plugincore.utils.onSaveConfigAdapter
 import dev.mooner.starlight.ui.config.ConfigActivity
 import dev.mooner.starlight.utils.*
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
 
 class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
 
     private var updater: AppUpdater? = null
-    private var checkUpdateButton: ButtonConfigOption? = null
 
     override val title: String = "설정"
 
@@ -66,8 +61,9 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
                         description = activity.lastUpdateCheckDescription()
                         icon = Icon.CLOUD_DOWNLOAD
                         iconTintColor = color("#748DA6")
-                        setOnClickListener { _ ->
-                            activity.checkUpdate()
+                        action {
+                            if (activity.checkUpdate())
+                                setDescription(activity.lastUpdateCheckDescription())
                         }
                     }
                 }
@@ -110,8 +106,6 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
                     }
                 }
             }
-        }.also { struct ->
-            checkUpdateButton = struct.findOption("updates", "check_update") as? ButtonConfigOption
         }
     }
 
@@ -127,51 +121,36 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
         return "마지막 확인: $formatted"
     }
 
-    private fun ConfigActivity.checkUpdate() {
-        createSimplePeek(
-            text = translate {
-                Locale.ENGLISH { "Plz wait for a sec..." }
-                Locale.KOREAN  { "서버를 열심히 뒤져보는 중..." }
-            }
-        ) {
-            position = PeekAlert.Position.Bottom
-            iconRes = dev.mooner.configdsl.R.drawable.ic_round_cloud_24
-            iconTint(res = R.color.main_bright)
-            backgroundColor(res = R.color.background_popup)
-        }.peek()
-
-        lifecycleScope.launch {
-            val result = checkForUpdate()
-            when (result) {
-                UpdateCheckResult.Failed ->
-                    createSimplePeek(
-                        text = translate {
-                            Locale.ENGLISH { "Failed to parse or fetch version info from server. Please try again later." }
-                            Locale.KOREAN  { "서버로부터 버전 정보를 불러오는 데 실패했어요. 나중에 다시 시도해주세요." }
-                        }
-                    ) {
-                        position = PeekAlert.Position.Bottom
-                        iconRes = dev.mooner.configdsl.R.drawable.ic_round_close_24
-                        iconTint(res = R.color.code_error)
-                        backgroundColor(res = R.color.background_popup)
-                    }.peek()
-                UpdateCheckResult.UpToDate ->
-                    createSimplePeek(
-                        text = translate {
-                            Locale.ENGLISH { "App is already on the newest version." }
-                            Locale.KOREAN  { "앱이 이미 최신 버전이에요." }
-                        }
-                    ) {
-                        position = PeekAlert.Position.Bottom
-                        iconRes = dev.mooner.configdsl.R.drawable.ic_round_check_24
-                        iconTint(res = R.color.noctis_green)
-                        backgroundColor(res = R.color.background_popup)
-                    }.peek()
-                is UpdateCheckResult.Available ->
-                    updater?.showUpdateDialog(result)
-            }
-            if (result != UpdateCheckResult.Failed)
-                checkUpdateButton?.updateDescription(lastUpdateCheckDescription())
+    private suspend fun ConfigActivity.checkUpdate(): Boolean {
+        val result = checkForUpdate()
+        when (result) {
+            UpdateCheckResult.Failed ->
+                createSimplePeek(
+                    text = translate {
+                        Locale.ENGLISH { "Failed to parse or fetch version info from server. Please try again later." }
+                        Locale.KOREAN  { "서버로부터 버전 정보를 불러오는 데 실패했어요. 나중에 다시 시도해주세요." }
+                    }
+                ) {
+                    position = PeekAlert.Position.Bottom
+                    iconRes = dev.mooner.configdsl.R.drawable.ic_round_close_24
+                    iconTint(res = R.color.code_error)
+                    backgroundColor(res = R.color.background_popup)
+                }.peek()
+            UpdateCheckResult.UpToDate ->
+                createSimplePeek(
+                    text = translate {
+                        Locale.ENGLISH { "App is already on the newest version." }
+                        Locale.KOREAN  { "앱이 이미 최신 버전이에요." }
+                    }
+                ) {
+                    position = PeekAlert.Position.Bottom
+                    iconRes = dev.mooner.configdsl.R.drawable.ic_round_check_24
+                    iconTint(res = R.color.noctis_green)
+                    backgroundColor(res = R.color.background_popup)
+                }.peek()
+            is UpdateCheckResult.Available ->
+                updater?.showUpdateDialog(result)
         }
+        return result != UpdateCheckResult.Failed
     }
 }
