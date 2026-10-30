@@ -24,7 +24,10 @@ import dev.mooner.configdsl.ConfigOption
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.RootConfigOption
 import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.InfoState
+import dev.mooner.configdsl.options.OptionStatus
 import dev.mooner.configdsl.options.button
+import dev.mooner.configdsl.options.info
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
 import dev.mooner.starlight.CF_LOG_BUFFER_SIZE
@@ -64,23 +67,27 @@ internal fun SettingsFragment.getSettingsStruct() = config {
                 iconTintColor = color { "#7ACA8A" }
                 defaultValue = true
             }
-            button {
+            info {
                 id = OPTION_NOTIFICATION_ACCESS
                 title = "알림 접근 권한"
-                description = requireContext().notificationAccessDescription()
+                description = "메신저 알림을 받으려면 허용해야 해요."
                 icon = Icon.NOTIFICATIONS_ACTIVE
-                iconTintColor = color { "#C8E4B2" }
+                val state = requireContext().notificationAccessState()
+                value = state.value
+                status = state.status
                 setOnClickListener { view ->
                     refreshStatusOnReturn(view)
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                 }
             }
-            button {
+            info {
                 id = OPTION_BATTERY_OPTIMIZATION
                 title = "배터리 최적화 예외"
-                description = requireContext().batteryOptimizationDescription()
+                description = "예외로 두지 않으면 백그라운드에서 앱이 종료될 수 있어요."
                 icon = Icon.ECO
-                iconTintColor = color { "#9ED2BE" }
+                val state = requireContext().batteryOptimizationState()
+                value = state.value
+                status = state.status
                 setOnClickListener { view ->
                     refreshStatusOnReturn(view)
                     view.context.openBatteryOptimizationSettings()
@@ -252,17 +259,10 @@ internal fun SettingsFragment.getSettingsStruct() = config {
                 description = requireContext().logFilesDescription()
                 icon = Icon.DELETE_SWEEP
                 iconTintColor = color { "#FF5C58" }
-                setOnClickListener { view ->
-                    showConfirmDialog(
-                        view.context,
-                        title = "로그 파일을 정리할까요?",
-                        message = "현재 실행 중인 로그를 제외한 모든 로그 파일이 삭제됩니다."
-                    ) { confirm ->
-                        if (!confirm)
-                            return@showConfirmDialog
-                        LogCollector.clearLogFiles()
-                        refreshStatus()
-                    }
+                confirm("현재 실행 중인 로그를 제외한 모든 로그 파일이 삭제됩니다.")
+                setOnClickListener { _ ->
+                    LogCollector.clearLogFiles()
+                    refreshStatus()
                 }
             }
         }
@@ -324,17 +324,17 @@ internal fun List<ConfigOption<*, *>>.findOptionById(id: String): ConfigOption<*
     return null
 }
 
-internal fun Context.notificationAccessDescription(): String =
+internal fun Context.notificationAccessState(): InfoState =
     if (packageName in NotificationManagerCompat.getEnabledListenerPackages(this))
-        "허용됨"
+        InfoState("허용됨", OptionStatus.OK)
     else
-        "허용되지 않음 · 알림을 받으려면 허용해야 합니다."
+        InfoState("허용 안 됨", OptionStatus.WARNING)
 
-internal fun Context.batteryOptimizationDescription(): String =
+internal fun Context.batteryOptimizationState(): InfoState =
     if (getSystemService<PowerManager>()?.isIgnoringBatteryOptimizations(packageName) == true)
-        "예외로 설정됨"
+        InfoState("예외로 설정됨", OptionStatus.OK)
     else
-        "설정되지 않음 · 백그라운드에서 앱이 종료될 수 있습니다."
+        InfoState("설정 안 됨", OptionStatus.WARNING)
 
 internal fun Context.logFilesDescription(): String {
     val (count, size) = LogCollector.logFileStats()
