@@ -114,6 +114,11 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
     abstract fun activeJobs(): Int
 
     /**
+     * Returns the number of events waiting for the project to run them.
+     */
+    open fun queuedEvents(): Int = 0
+
+    /**
      * Cancels all running jobs.
      */
     abstract fun stopAllJobs()

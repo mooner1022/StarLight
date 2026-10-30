@@ -20,6 +20,7 @@ private const val SETTING_BUSY_ONLY = "busy_only"
 private data class JobState(
     val project: Project,
     val activeJobs: Int,
+    val queuedEvents: Int,
     val busySeconds: Long,
 ) {
     val isStuck: Boolean
@@ -60,8 +61,8 @@ val JobsWidget = widget(WIDGET_JOBS) {
                 else
                     busySince -= id
                 val busySeconds = busySince[id]?.let { (now - it) / 1000 } ?: 0
-                JobState(project, active, busySeconds)
-            }.sortedWith(compareByDescending<JobState> { it.activeJobs }.thenBy { it.project.info.name })
+                JobState(project, active, project.queuedEvents(), busySeconds)
+            }.sortedWith(compareByDescending<JobState> { it.activeJobs }.thenByDescending { it.queuedEvents }.thenBy { it.project.info.name })
         }
 
         fun render() {
@@ -70,8 +71,10 @@ val JobsWidget = widget(WIDGET_JOBS) {
                 .filter { !busyOnly || it.activeJobs > 0 }
                 .take(rowCapacity())
             val total = states.sumOf(JobState::activeJobs)
+            val queued = states.sumOf(JobState::queuedEvents)
             val stuck = states.count(JobState::isStuck)
-            val snapshot = listOf(isCompact, total, stuck) + visible.map { listOf(it.project.info.id, it.activeJobs, if (it.isStuck) it.busySeconds else 0L) }
+            val snapshot = listOf(isCompact, total, queued, stuck) +
+                    visible.map { listOf(it.project.info.id, it.activeJobs, it.queuedEvents, if (it.isStuck) it.busySeconds else 0L) }
             if (snapshot == lastRendered)
                 return
             lastRendered = snapshot
@@ -81,6 +84,10 @@ val JobsWidget = widget(WIDGET_JOBS) {
                     Locale.ENGLISH { "$stuck may be stuck" }
                     Locale.KOREAN  { "${stuck}개 멈춤 의심" }
                 }, R.color.status_warning)
+                queued > 0 -> binding.setSummary(translate {
+                    Locale.ENGLISH { "$total running · $queued queued" }
+                    Locale.KOREAN  { "${total}개 실행 중 · ${queued}개 대기" }
+                }, R.color.main_dark)
                 total > 0 -> binding.setSummary(translate {
                     Locale.ENGLISH { "$total running" }
                     Locale.KOREAN  { "${total}개 실행 중" }
@@ -113,6 +120,10 @@ val JobsWidget = widget(WIDGET_JOBS) {
                     state.isStuck -> translate {
                         Locale.ENGLISH { "${state.activeJobs} · ${state.busySeconds}s" }
                         Locale.KOREAN  { "${state.activeJobs}개 · ${state.busySeconds}초째" }
+                    }
+                    state.queuedEvents > 0 -> translate {
+                        Locale.ENGLISH { "${state.activeJobs} · ${state.queuedEvents} queued" }
+                        Locale.KOREAN  { "${state.activeJobs} · 대기 ${state.queuedEvents}" }
                     }
                     else -> state.activeJobs.toString()
                 }

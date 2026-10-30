@@ -113,8 +113,8 @@ fun Context.startDevModeActivity() {
                     }
                     toggle {
                         id = "change_thread_pool_size"
-                        title = "Thread Pool 크기 변경"
-                        description = "프로젝트가 실행되는 Thread pool의 크기를 가변적으로 변경하는 설정을 추가합니다."
+                        title = "동시 실행 수 변경"
+                        description = "프로젝트의 이벤트를 동시에 몇 개까지 실행할지 정하는 설정을 추가합니다."
                         icon = Icon.COMPRESS
                         iconTintColor = color { "#87AAAA" }
                         defaultValue = false

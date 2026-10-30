@@ -16,6 +16,9 @@ dependencyResolutionManagement {
             dirs("libs")
         }
         maven { url = uri("https://jitpack.io") }
+        maven("https://mooner1022.github.io/neon-js/maven") {
+            content { includeGroup("dev.mooner.neonjs") }
+        }
     }
 }
 
