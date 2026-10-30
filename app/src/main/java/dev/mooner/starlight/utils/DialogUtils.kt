@@ -2,9 +2,11 @@ package dev.mooner.starlight.utils
 
 import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,6 +16,7 @@ import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.adapters.OnValueUpdatedListener
+import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.peekalert.PeekAlertBuilder
 import dev.mooner.peekalert.createPeekAlert
@@ -265,6 +268,28 @@ fun Activity.createFailurePeek(title: String, position: PeekAlert.Position): Pee
         iconTint(res = R.color.code_error)
         backgroundColor(res = R.color.background_popup)
     }
+}
+
+fun Context.findActivity(): Activity? =
+    generateSequence(this) { (it as? ContextWrapper)?.baseContext }
+        .filterIsInstance<Activity>()
+        .firstOrNull()
+
+fun Context.peek(text: String, type: PeekType = PeekType.INFO, position: PeekAlert.Position = PeekAlert.Position.Bottom) {
+    val activity = findActivity()
+        ?: return Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+    if (activity.isFinishing || activity.isDestroyed)
+        return
+    when (type) {
+        PeekType.SUCCESS -> activity.createSuccessPeek(text, position)
+        PeekType.ERROR   -> activity.createFailurePeek(text, position)
+        PeekType.INFO    -> activity.createSimplePeek(text = text) {
+            this.position = position
+            iconRes = dev.mooner.configdsl.R.drawable.ic_round_info_24
+            iconTint(res = R.color.main_bright)
+            backgroundColor(res = R.color.background_popup)
+        }
+    }.peek()
 }
 
 private fun PeekAlertBuilder.setup(context: Context, title: String?, text: String) {
