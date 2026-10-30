@@ -50,10 +50,30 @@ class PluginResolverTest {
     }
 
     @Test
+    fun acceptsOlderApiVersionsWithinSupportedRange() {
+        val result = resolve(plugin("a", apiVersion = Version(0, 3, 0)), plugin("b", apiVersion = Version(0, 9, 4)))
+        assertEquals(listOf("a", "b"), result.order)
+        assertTrue(result.excluded.isEmpty())
+    }
+
+    @Test
+    fun excludesApiVersionOlderThanMinimum() {
+        val result = resolve(plugin("a", apiVersion = Version(0, 2, 9)), plugin("b"))
+        assertEquals(
+            PluginExclusion.IncompatibleApi(Version(0, 2, 9), ApiCompatibility.Outdated(Version(0, 2, 9), Version(0, 3, 0))),
+            result.excluded["a"]
+        )
+        assertEquals(listOf("b"), result.order)
+    }
+
+    @Test
     fun excludesIncompatibleApiVersion() {
         val result = resolve(plugin("a", apiVersion = Version(2, 0, 0)), plugin("b"))
         assertEquals(listOf("b"), result.order)
-        assertEquals(PluginExclusion.IncompatibleApi(Version(2, 0, 0)), result.excluded["a"])
+        assertEquals(
+            PluginExclusion.IncompatibleApi(Version(2, 0, 0), ApiCompatibility.RequiresNewerApp(Version(2, 0, 0), coreVersion)),
+            result.excluded["a"]
+        )
     }
 
     @Test
@@ -84,7 +104,7 @@ class PluginResolverTest {
         val result = resolve(
             plugin("a", dependency = arrayOf(dependency("b"))),
             plugin("b", dependency = arrayOf(dependency("c"))),
-            plugin("c", apiVersion = Version(0, 9, 0)),
+            plugin("c", apiVersion = Version(0, 2, 0)),
         )
         assertTrue(result.order.isEmpty())
         assertTrue(result.excluded["a"] is PluginExclusion.ExcludedDependency)

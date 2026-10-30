@@ -146,8 +146,20 @@ class PluginLoader {
                 }
             is PluginExclusion.IncompatibleApi ->
                 logger.warnTranslated {
-                    Locale.ENGLISH { "Incompatible PluginCore version(${exclusion.apiVersion}) found on plugin: ${info.fullName}" }
-                    Locale.KOREAN  { "현재 버전 (${Info.PLUGINCORE_VERSION})과 호환되지 않는 PluginCore 의존성(${exclusion.apiVersion}) 발견: 플러그인 ${info.fullName}" }
+                    when (val reason = exclusion.reason) {
+                        is ApiCompatibility.RequiresNewerApp -> {
+                            Locale.ENGLISH { "Plugin ${info.fullName} requires PluginCore ${reason.required} or newer (current ${reason.current})." }
+                            Locale.KOREAN  { "플러그인 ${info.fullName}은(는) PluginCore ${reason.required} 이상이 필요해요. (현재 ${reason.current})" }
+                        }
+                        is ApiCompatibility.Outdated -> {
+                            Locale.ENGLISH { "Plugin ${info.fullName} targets PluginCore ${reason.apiVersion}, older than the supported ${reason.minimum}." }
+                            Locale.KOREAN  { "플러그인 ${info.fullName}은(는) 지원 범위(${reason.minimum} 이상)보다 오래된 PluginCore ${reason.apiVersion}용이에요." }
+                        }
+                        ApiCompatibility.Compatible -> {
+                            Locale.ENGLISH { "Plugin ${info.fullName} was excluded for its PluginCore version ${exclusion.apiVersion}." }
+                            Locale.KOREAN  { "플러그인 ${info.fullName}이(가) PluginCore 버전(${exclusion.apiVersion}) 때문에 제외됐어요." }
+                        }
+                    }
                 }
             is PluginExclusion.MissingDependency ->
                 logger.errorTranslated {
