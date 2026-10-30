@@ -39,6 +39,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import org.commonmark.node.SoftLineBreak
 import java.io.Reader
+import java.lang.ref.WeakReference
 import kotlin.properties.Delegates.notNull
 
 typealias ConfirmCallback = (confirm: Boolean) -> Unit
@@ -275,12 +276,15 @@ fun Context.findActivity(): Activity? =
         .filterIsInstance<Activity>()
         .firstOrNull()
 
+private var lastPeek: WeakReference<PeekAlert>? = null
+
 fun Context.peek(text: String, type: PeekType = PeekType.INFO, position: PeekAlert.Position = PeekAlert.Position.Bottom) {
     val activity = findActivity()
         ?: return Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
     if (activity.isFinishing || activity.isDestroyed)
         return
-    when (type) {
+    lastPeek?.get()?.hide()
+    val peek = when (type) {
         PeekType.SUCCESS -> activity.createSuccessPeek(text, position)
         PeekType.ERROR   -> activity.createFailurePeek(text, position)
         PeekType.INFO    -> activity.createSimplePeek(text = text) {
@@ -289,7 +293,9 @@ fun Context.peek(text: String, type: PeekType = PeekType.INFO, position: PeekAle
             iconTint(res = R.color.main_bright)
             backgroundColor(res = R.color.background_popup)
         }
-    }.peek()
+    }
+    lastPeek = WeakReference(peek)
+    peek.peek()
 }
 
 private fun PeekAlertBuilder.setup(context: Context, title: String?, text: String) {
