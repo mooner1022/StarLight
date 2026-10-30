@@ -13,6 +13,7 @@ import android.content.Context
 import android.os.Build
 import android.view.ViewGroup.LayoutParams
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -173,7 +174,8 @@ private fun Context.buildNotification(id: Int, block: NotificationApi.Notificati
     }.apply {
         setContentTitle(builder.mTitle)
         setSubText(builder.mText)
-        setSmallIcon(R.mipmap.ic_launcher)
+        setSmallIcon(R.drawable.ic_notification)
+        color = ContextCompat.getColor(this@buildNotification, R.color.main_bright)
         if (builder.lightArgb != null)
             setLights(builder.lightArgb!!, builder.lightOnMs, builder.lightOffMs)
         setShowWhen(false)
