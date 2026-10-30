@@ -43,7 +43,6 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -142,7 +141,7 @@ class JSNeon: Language() {
                         val type = if (rejection) "Unhandled promise rejection" else "Uncaught exception"
                         project.logger.error("$type: ${error.message}${error.jsStack?.let { "\n$it" }.orEmpty()}")
                     }
-                    eventLoops[context] = EventLoop(context, project).apply { drain() }
+                    eventLoops[context] = EventLoop(context, project).apply { start() }
                 }
                 module
             }
@@ -155,7 +154,7 @@ class JSNeon: Language() {
 
     override fun destroy(scope: Any) {
         val context = (scope as NeonValue).context
-        eventLoops -= context
+        eventLoops.remove(context)?.stop()
         context.interrupt()
         context.close()
         context.engine.close()
@@ -176,7 +175,7 @@ class JSNeon: Language() {
             return null
         }
         return withClassLoader(null) {
-            function.call(*args).also { eventLoops[module.context]?.drain() }
+            function.call(*args)
         }.`as`(Any::class.java)
     }
 
@@ -250,7 +249,6 @@ class JSNeon: Language() {
                     runCatching {
                         withClassLoader(null) {
                             callback.call(*params)
-                            eventLoops[this@defineGlobals]?.drain()
                         }
                     }.onFailure { e ->
                         project.logger.error("Exception on timer $id: $e")
@@ -341,33 +339,30 @@ class JSNeon: Language() {
         private val project: Project
     ) {
 
-        private val isPumping = AtomicBoolean()
+        private val isScheduled = AtomicBoolean()
 
-        fun drain() {
-            if (context.runEventLoop(0) || !isPumping.compareAndSet(false, true))
+        fun start() {
+            context.setExternalJobListener(::schedule)
+            schedule()
+        }
+
+        fun stop() {
+            context.setExternalJobListener(null)
+        }
+
+        /** Runs what the engine has ready (fetch, socket, host future completions) as a task of the project. */
+        private fun schedule() {
+            if (!isScheduled.compareAndSet(false, true))
                 return
-            project.launch(Dispatchers.IO) {
+            project.launch {
+                isScheduled.set(false)
                 try {
-                    withClassLoader(null) {
-                        do {
-                            while (isActive && !context.runEventLoop(PUMP_TIMEOUT_MILLIS))
-                                continue
-                            isPumping.set(false)
-                        } while (isActive && !context.runEventLoop(0) && isPumping.compareAndSet(false, true))
-                    }
+                    withClassLoader(null) { context.runEventLoop(0) }
                 } catch (e: Exception) {
-                    isPumping.set(false)
                     if (e !is NeonInterruptedException && e !is IllegalStateException)
                         project.logger.error("Exception on event loop: $e")
                 }
-            }.invokeOnCompletion { e ->
-                if (e != null)
-                    isPumping.set(false)
             }
-        }
-
-        companion object {
-            private const val PUMP_TIMEOUT_MILLIS = 1000L
         }
     }
 
