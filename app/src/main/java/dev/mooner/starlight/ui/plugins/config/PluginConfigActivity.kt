@@ -14,11 +14,16 @@ import dev.mooner.starlight.databinding.ActivityPluginConfigBinding
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.data.FileConfig
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.utils.bindFadeImage
 import dev.mooner.starlight.utils.peek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+
+private val LOG = LoggerFactory.logger {  }
 
 class PluginConfigActivity: AppCompatActivity() {
 
@@ -43,6 +48,12 @@ class PluginConfigActivity: AppCompatActivity() {
         val configFile = File(plugin.getExternalDataDirectory(), PLUGIN_CONFIG_FILE_NAME)
         val fileConfig = FileConfig(configFile)
 
+        val pluginStructure = runPluginCall(pluginName) { plugin.getConfigStructure() }
+        if (pluginStructure == null) {
+            finish()
+            return
+        }
+
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.configRecyclerView)
             onValueUpdated { parentId, id, value, jsonValue ->
@@ -51,10 +62,10 @@ class PluginConfigActivity: AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         fabProjectConfig.show()
                     }
-                plugin.onConfigValueUpdated(id, value)
+                runPluginCall(pluginName) { plugin.onConfigValueUpdated(id, value) }
                 fileConfig.category(parentId).setRaw(id, jsonValue)
             }
-            structure { plugin.getConfigStructure() }
+            structure { pluginStructure }
             configData(fileConfig.getMutableData())
             lifecycleOwner(this@PluginConfigActivity)
         }.build()
@@ -66,7 +77,7 @@ class PluginConfigActivity: AppCompatActivity() {
                 return@setOnClickListener
             }
             fileConfig.push()
-            plugin.onConfigUpdated(fileConfig, updatedIDs)
+            runPluginCall(pluginName) { plugin.onConfigUpdated(fileConfig, updatedIDs) }
             peek("설정 저장 완료!", PeekType.SUCCESS)
             fabProjectConfig.hide()
         }
@@ -77,6 +88,25 @@ class PluginConfigActivity: AppCompatActivity() {
 
         binding.pluginName.text = pluginName
     }
+
+    private inline fun <T> runPluginCall(pluginName: String, block: () -> T): T? =
+        try {
+            block()
+        } catch (e: Exception) {
+            logPluginError(pluginName, e)
+            null
+        } catch (e: LinkageError) {
+            logPluginError(pluginName, e)
+            null
+        }
+
+    private fun logPluginError(pluginName: String, error: Throwable) =
+        LOG.error {
+            translate {
+                Locale.ENGLISH { "Plugin $pluginName failed while handling its settings: $error" }
+                Locale.KOREAN  { "플러그인 $pluginName 의 설정을 처리하다 오류가 났어요: $error" }
+            }
+        }
 
     companion object {
         const val EXTRA_PLUGIN_NAME               = "pluginName"
