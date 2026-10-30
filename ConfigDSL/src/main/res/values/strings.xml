@@ -10,4 +10,9 @@
     <string name="edit">Edit</string>
     <string name="configdsl_warning">Warning</string>
     <string name="configdsl_color_not_selected">No color was selected, so nothing was saved.</string>
+    <string name="configdsl_copied">Copied to clipboard</string>
+    <string name="configdsl_item_count">%d items</string>
+    <string name="configdsl_list_empty">Nothing to show</string>
+    <string name="configdsl_show_more">Show %d more</string>
+    <string name="configdsl_show_less">Show less</string>
 </resources>
