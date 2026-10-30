@@ -13,8 +13,11 @@ import android.os.Build
 import androidx.core.content.edit
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.OptionStatus
 import dev.mooner.configdsl.options.button
+import dev.mooner.configdsl.options.info
 import dev.mooner.configdsl.options.spinner
+import dev.mooner.configdsl.options.textList
 import dev.mooner.configdsl.options.toggle
 import dev.mooner.starlight.R
 import dev.mooner.starlight.WIDGET_DEF_STRING
@@ -106,12 +109,12 @@ fun Context.startDevModeActivity() {
                 title = "실험적 기능"
                 textColor = getColor(R.color.main_bright)
                 items {
-                    button {
+                    info {
                         id = "caution"
                         title = "주의"
                         description = "아래 설정들은 실험적이며, 사용 시 앱이 작동하지 않거나 기기에 손상을 줄 수 있습니다.\n이 기능들을 사용함으로서 발생하는 문제에 대해 개발자는 책임을 지지 않습니다."
                         icon = Icon.ERROR
-                        iconTintColor = color { "#FF865E" }
+                        status = OptionStatus.WARNING
                     }
                     toggle {
                         id = "load_external_dex_libs"
@@ -136,10 +139,14 @@ fun Context.startDevModeActivity() {
                 title = "debug info"
                 textColor = getColor(R.color.main_bright)
                 items {
-                    fun debugInfo(title: String, value: String) = button {
+                    fun debugInfo(title: String, value: String) = info {
                         id = title
                         this.title = title
-                        description = value
+                        if (value.length > 24 || '\n' in value)
+                            description = value
+                        else
+                            this.value = value
+                        copyable = true
                     }
                     val (screenWidth, screenHeight) = getScreenSizeDp(this@startDevModeActivity)
                     val layoutModeString = when(layoutMode) {
@@ -168,7 +175,13 @@ fun Context.startDevModeActivity() {
                     debugInfo("layoutMode", "$layoutMode ($layoutModeString)")
                     debugInfo("uiMode", "$uiMode ($uiModeString)")
                     debugInfo("widgets", GlobalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
-                    debugInfo("plugins", pluginManager.plugins.joinToString { it.info.id })
+                    textList {
+                        id = "plugins"
+                        title = "plugins"
+                        lines = pluginManager.plugins.map { it.info.id }
+                        monospace = true
+                        copyable = true
+                    }
                     //debugInfo("libs", )
                     debugInfo("pluginSafeMode", GlobalConfig.category("plugin").getBoolean("safe_mode").toString())
                     debugInfo("baseDirectory", getStarLightDirectory().path)
