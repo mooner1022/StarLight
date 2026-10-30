@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
     android:minHeight="64dp"
@@ -29,13 +29,14 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
+        android:layout_marginEnd="12dp"
         android:ellipsize="end"
         android:fontFamily="@font/nanumsquare_round_bold"
         android:maxLines="2"
         android:textColor="@color/text"
         android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/description"
-        app:layout_constraintEnd_toStartOf="@+id/value"
+        app:layout_constraintEnd_toStartOf="@+id/trailingStart"
         app:layout_constraintStart_toEndOf="@+id/icon"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed"/>
@@ -54,20 +55,28 @@
         app:layout_constraintStart_toStartOf="@+id/title"
         app:layout_constraintTop_toBottomOf="@+id/title"/>
 
-    <TextView
-        android:id="@+id/value"
-        tools:text="v1.0.0"
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/valueLimit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:maxWidth="160dp"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.4"/>
+
+    <TextView
+        android:id="@+id/value"
+        tools:text="2026/10/30 12:34:56"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:ellipsize="end"
         android:maxLines="1"
         android:fontFamily="@font/nanumsquare_round_regular"
         android:textColor="@color/text_sub"
         android:textSize="14sp"
+        app:layout_constrainedWidth="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1"
+        app:layout_constraintStart_toStartOf="@+id/valueLimit"
         app:layout_constraintTop_toTopOf="parent"/>
 
     <com.google.android.material.progressindicator.CircularProgressIndicator
@@ -81,5 +90,12 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/trailingStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="start"
+        app:constraint_referenced_ids="value,progress"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
