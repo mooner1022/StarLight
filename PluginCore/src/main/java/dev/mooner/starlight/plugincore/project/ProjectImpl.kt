@@ -31,7 +31,10 @@ import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.hasFile
 import dev.mooner.starlight.plugincore.utils.require
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.encodeToString
@@ -57,6 +60,8 @@ class ProjectImpl private constructor(
 
     @Volatile
     private var executor: ProjectExecutor? = null
+
+    private val lastDropWarning = AtomicLong()
 
     private val infoWriteScope = CoroutineScope(Dispatchers.IO.limitedParallelism(1))
 
@@ -122,7 +127,7 @@ class ProjectImpl private constructor(
             onException(e)
         }
 
-        obtainExecutor().scope.launch {
+        obtainExecutor().post {
             JobLocker.withLock(threadPoolName!!) {
                 runCatching { lang.callFunction(langScope!!, name, args) }
                     .onFailure(::onError)
@@ -313,16 +318,28 @@ class ProjectImpl private constructor(
 
     private fun obtainExecutor(): ProjectExecutor =
         executor ?: synchronized(this) {
-            executor ?: ProjectExecutor("$tag-worker", getThreadPoolSize()).also {
+            executor ?: ProjectExecutor("$tag-worker", getConcurrency(), ::onEventDropped).also {
                 threadPoolName = it.name
                 executor = it
-                Logger.v(tag, "Allocated thread pool ${it.name} with ${it.size} threads to project ${info.name}")
+                Logger.v(tag, "Allocated ${it.name} (concurrency ${it.concurrency}) to project ${info.name}")
             }
         }
 
-    private fun getThreadPoolSize(): Int =
+    private fun getConcurrency(): Int =
         config.category("beta_features")
-            .getInt("thread_pool_size", DEF_THREAD_POOL_SIZE)
+            .getInt("thread_pool_size", lang.defaultConcurrency)
+            .coerceAtLeast(1)
+
+    private fun onEventDropped() {
+        val now = System.currentTimeMillis()
+        val last = lastDropWarning.get()
+        if (now - last < DROP_WARNING_INTERVAL_MILLIS || !lastDropWarning.compareAndSet(last, now))
+            return
+        logger.w(tag, translate {
+            Locale.ENGLISH { "Event buffer is full, dropped the oldest events" }
+            Locale.KOREAN  { "이벤트 버퍼가 가득 차 가장 오래된 이벤트를 버렸어요" }
+        })
+    }
 
     /*
     private fun notifyStateUpdated(state: ProjectLifecycle.State) {
@@ -343,7 +360,7 @@ class ProjectImpl private constructor(
         private const val INFO_FILE_NAME    = "project.json"
         private const val LOGS_FILE_NAME    = "logs.json"
 
-        private const val DEF_THREAD_POOL_SIZE = 3
+        private const val DROP_WARNING_INTERVAL_MILLIS = 5_000L
 
         private val infoJson = Json {
             encodeDefaults = true
@@ -376,16 +393,47 @@ class ProjectImpl private constructor(
     }
 }
 
-@OptIn(DelicateCoroutinesApi::class)
-private class ProjectExecutor(
+/**
+ * A project's share of the app's workers ([Dispatchers.IO]): its events wait in a bounded buffer and run on the shared
+ * threads, at most [concurrency] at once, in arrival order when that is 1. What is launched in [scope] (timers,
+ * plugins) runs under the same limit, between events.
+ */
+internal class ProjectExecutor(
     val name: String,
-    val size: Int
+    val concurrency: Int,
+    private val onDropped: () -> Unit,
 ) {
-    val dispatcher = newFixedThreadPoolContext(size, name)
-    val scope = CoroutineScope(SupervisorJob() + dispatcher)
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(concurrency) + CoroutineName(name))
+
+    @Volatile
+    private var closed = false
+
+    private val events = Channel<() -> Unit>(EVENT_BUFFER_SIZE, BufferOverflow.DROP_OLDEST) {
+        if (!closed) onDropped()
+    }
+
+    init {
+        repeat(concurrency) {
+            scope.launch {
+                for (event in events) {
+                    event()
+                    yield()
+                }
+            }
+        }
+    }
+
+    fun post(event: () -> Unit) {
+        events.trySend(event)
+    }
 
     fun shutdown() {
+        closed = true
+        events.cancel()
         scope.cancel()
-        dispatcher.close()
+    }
+
+    companion object {
+        const val EVENT_BUFFER_SIZE = 256
     }
 }

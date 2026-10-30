@@ -64,6 +64,8 @@ class JSNeon: Language() {
 
     override val requireRelease: Boolean = false
 
+    override val defaultConcurrency: Int = 1
+
     override val configStructure: ConfigStructure = configs
 
     override val codeGenerator: CodeGenerator = ModuleCodeGenerator(DefaultJSCodeGenerator())

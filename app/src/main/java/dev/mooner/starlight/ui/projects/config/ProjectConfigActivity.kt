@@ -269,10 +269,11 @@ class ProjectConfigActivity: AppCompatActivity() {
                         if (changeThreadPoolSize) {
                             seekbar {
                                 id = "thread_pool_size"
-                                title = "Thread pool 크기"
+                                title = "동시 실행 수"
+                                description = "앱의 공유 스레드에서 이 프로젝트의 이벤트를 동시에 몇 개까지 실행할지 정합니다."
                                 min = 1
                                 max = 10
-                                defaultValue = 3
+                                defaultValue = project.getLanguage().defaultConcurrency
                                 icon = Icon.COMPRESS
                                 iconTintColor = color { "#57837B" }
                             }

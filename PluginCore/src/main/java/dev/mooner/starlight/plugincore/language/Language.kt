@@ -46,6 +46,12 @@ abstract class Language {
     abstract val requireRelease: Boolean
 
     /**
+     * How many events of a project may run at once unless the project sets its own limit. 1 suits an engine whose
+     * script runs on one thread at a time, where more calls would only wait for each other.
+     */
+    open val defaultConcurrency: Int = 3
+
+    /**
      * List of config objects inserted in project config.
      * Only category which has same ID with language is inserted.
      */
