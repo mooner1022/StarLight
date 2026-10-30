@@ -1,5 +1,7 @@
 package dev.mooner.starlight.plugincore.widget
 
+import dev.mooner.configdsl.options.CategoryConfigOption
+import dev.mooner.configdsl.options.ChoiceConfigOption
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.assertEquals
@@ -33,26 +35,30 @@ class WidgetSettingsTest {
     }
 
     @Test
-    fun formMapsChoiceIndexToOptionValue() {
+    fun formAcceptsOnlyKnownChoiceKeys() {
         val form = WidgetSettingsForm(block.evaluate(), emptyMap())
-        assertEquals(JsonPrimitive("Other"), form.toValue("project", JsonPrimitive(2)))
+        assertEquals(JsonPrimitive("Other"), form.toValue("project", JsonPrimitive("Other")))
         assertEquals(JsonPrimitive(true), form.toValue("warnings", JsonPrimitive(true)))
-        assertNull(form.toValue("project", JsonPrimitive(9)))
-        assertNull(form.toValue("unknown", JsonPrimitive(1)))
+        assertNull(form.toValue("project", JsonPrimitive("Missing")))
+        assertNull(form.toValue("unknown", JsonPrimitive("Other")))
     }
 
     @Test
-    fun formDataMapsStoredChoiceValueToIndex() {
+    fun formDataKeepsStoredChoiceKey() {
         val form = WidgetSettingsForm(block.evaluate(), mapOf("project" to JsonPrimitive("Other")))
         val entries = form.data.getValue(WidgetSettingsForm.CATEGORY_ID)
-        assertEquals(JsonPrimitive(2), entries["project"])
+        assertEquals(JsonPrimitive("Other"), entries["project"])
         assertFalse("warnings" in entries)
     }
 
     @Test
-    fun removedChoiceFallsBackToFirstOption() {
-        val form = WidgetSettingsForm(block.evaluate(), mapOf("project" to JsonPrimitive("Deleted")))
-        assertEquals(JsonPrimitive(0), form.data.getValue(WidgetSettingsForm.CATEGORY_ID)["project"])
+    fun unknownChoiceDefaultFallsBackToFirstOption() {
+        val other: WidgetSettingsBlock = {
+            choice("mode", "Mode", options = listOf("a" to "A", "b" to "B"), default = "gone")
+        }
+        val form = WidgetSettingsForm(other.evaluate(), emptyMap())
+        val category = form.structure.single() as CategoryConfigOption
+        assertEquals("a", (category.childOptions.single() as ChoiceConfigOption).default)
     }
 
     @Test

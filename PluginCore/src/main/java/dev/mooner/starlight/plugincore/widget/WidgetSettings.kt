@@ -3,13 +3,12 @@ package dev.mooner.starlight.plugincore.widget
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.configdsl.config
-import dev.mooner.configdsl.options.spinner
+import dev.mooner.configdsl.options.choice
 import dev.mooner.configdsl.options.toggle
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.intOrNull
 
 typealias WidgetSettingsBlock = WidgetSettingsBuilder.() -> Unit
 
@@ -97,12 +96,13 @@ class WidgetSettingsForm internal constructor(
                                 description = item.description
                                 defaultValue = item.default.booleanOrNull ?: false
                             }
-                            is ChoiceSettingItem -> spinner {
+                            is ChoiceSettingItem -> choice {
                                 id = item.id
                                 title = item.title
                                 description = item.description
-                                items = item.options.map { (_, label) -> label }
-                                defaultIndex = item.indexOf(item.default.content)
+                                for ((value, label) in item.options)
+                                    option(value, label)
+                                defaultKey = item.default.content.takeIf { item.hasOption(it) }
                             }
                         }
                     }
@@ -116,10 +116,7 @@ class WidgetSettingsForm internal constructor(
             val entries: MutableMap<String, JsonElement> = hashMapOf()
             for (item in items) {
                 val value = values[item.id] as? JsonPrimitive ?: continue
-                entries[item.id] = when (item) {
-                    is ToggleSettingItem -> value
-                    is ChoiceSettingItem -> JsonPrimitive(item.indexOf(value.content))
-                }
+                entries[item.id] = value
             }
             return hashMapOf(CATEGORY_ID to entries)
         }
@@ -128,13 +125,11 @@ class WidgetSettingsForm internal constructor(
         when (val item = items.find { it.id == id }) {
             null -> null
             is ToggleSettingItem -> formValue
-            is ChoiceSettingItem -> (formValue as? JsonPrimitive)?.intOrNull
-                ?.let(item.options::getOrNull)
-                ?.let { (value, _) -> JsonPrimitive(value) }
+            is ChoiceSettingItem -> formValue.takeIf { (it as? JsonPrimitive)?.contentOrNull?.let { key -> item.hasOption(key) } == true }
         }
 
-    private fun ChoiceSettingItem.indexOf(value: String): Int =
-        options.indexOfFirst { (option, _) -> option == value }.coerceAtLeast(0)
+    private fun ChoiceSettingItem.hasOption(value: String): Boolean =
+        options.any { (option, _) -> option == value }
 
     companion object {
         const val CATEGORY_ID = "widget"
