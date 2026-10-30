@@ -349,13 +349,14 @@ class ProjectConfigActivity: AppCompatActivity() {
                     button {
                         id = "interrupt_thread"
                         title = "프로젝트 스레드 강제 종료"
-                        description = "${project.activeJobs()}개의 작업이 실행중이에요."
+                        description = "${project.activeJobs()}개의 작업이 실행 중이고, ${project.queuedEvents()}개의 이벤트가 대기 중이에요."
                         setOnClickListener { view ->
                             val active = project.activeJobs()
+                            val queued = project.queuedEvents()
                             project.stopAllJobs()
                             Snackbar.make(
                                 view,
-                                "${active}개의 작업을 강제 종료하고 할당 해제했어요.",
+                                "${active}개의 작업을 강제 종료하고 대기 중이던 이벤트 ${queued}개를 비웠어요.",
                                 Snackbar.LENGTH_SHORT
                             ).show()
                         }

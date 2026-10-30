@@ -31,6 +31,7 @@ import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.hasFile
 import dev.mooner.starlight.plugincore.utils.require
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
@@ -251,6 +252,9 @@ class ProjectImpl private constructor(
         return JobLocker.withParent(current.name).activeJobs()
     }
 
+    override fun queuedEvents(): Int =
+        executor?.queuedEvents ?: 0
+
     override fun stopAllJobs() {
         val current = synchronized(this) {
             executor.also { executor = null }
@@ -408,7 +412,14 @@ internal class ProjectExecutor(
     @Volatile
     private var closed = false
 
+    private val queued = AtomicInteger()
+
+    /** Events in the buffer, not yet taken by a worker. */
+    val queuedEvents: Int
+        get() = queued.get()
+
     private val events = Channel<() -> Unit>(EVENT_BUFFER_SIZE, BufferOverflow.DROP_OLDEST) {
+        queued.decrementAndGet()
         if (!closed) onDropped()
     }
 
@@ -416,6 +427,7 @@ internal class ProjectExecutor(
         repeat(concurrency) {
             scope.launch {
                 for (event in events) {
+                    queued.decrementAndGet()
                     event()
                     yield()
                 }
@@ -424,7 +436,9 @@ internal class ProjectExecutor(
     }
 
     fun post(event: () -> Unit) {
-        events.trySend(event)
+        queued.incrementAndGet()
+        if (events.trySend(event).isFailure)
+            queued.decrementAndGet()
     }
 
     fun shutdown() {

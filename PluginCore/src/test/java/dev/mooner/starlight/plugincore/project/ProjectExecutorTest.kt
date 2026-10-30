@@ -75,9 +75,11 @@ class ProjectExecutorTest {
             }
         }
         assertEquals(extra, dropped.get())
+        assertEquals(ProjectExecutor.EVENT_BUFFER_SIZE, executor.queuedEvents)
         release.countDown()
         assertTrue(done.await(10, TimeUnit.SECONDS))
         assertEquals((extra until total).toList(), ran)
+        assertEquals(0, executor.queuedEvents)
         executor.shutdown()
     }
 
