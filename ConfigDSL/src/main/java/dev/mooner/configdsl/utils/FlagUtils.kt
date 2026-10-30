@@ -6,12 +6,8 @@
 
 package dev.mooner.configdsl.utils
 
-fun flagOf(vararg flags: Int): Int {
-    val result = 0x0
-    for (flag in flags)
-        result or flag
-    return result
-}
+fun flagOf(vararg flags: Int): Int =
+    flags.fold(0x0) { acc, flag -> acc or flag }
 
 infix fun Int.addFlag(flag: Int): Int = this or flag
 
