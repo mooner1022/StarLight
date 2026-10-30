@@ -130,6 +130,7 @@ data class ButtonConfigOption(
 class ButtonConfigBuilder: ConfigBuilderBase<ButtonConfigOption.ButtonViewHolder, Boolean>() {
 
     private var mOnClickListener: ButtonOnClickListener? = null
+    @Deprecated("Not rendered, use style instead")
     @ColorInt
     var backgroundColor: Int? = null
 
@@ -156,6 +157,7 @@ class ButtonConfigBuilder: ConfigBuilderBase<ButtonConfigOption.ButtonViewHolder
         mOnClickListener = { callback() }
     }
 
+    @Suppress("DEPRECATION")
     override fun build(): ButtonConfigOption {
         requiredField("title", title)
 
