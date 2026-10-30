@@ -12,11 +12,16 @@ import androidx.annotation.DrawableRes
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.size.Scale
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.serialization.json.JsonElement
 import java.io.File
 
 typealias ConfigStructure = List<RootConfigOption<*, *>>
+
+typealias OptionBinding = suspend ConfigOption<*, *>.() -> Unit
+
+class ValueRule(val id: String, val predicate: (JsonElement?) -> Boolean)
 
 fun ConfigStructure.findOption(rootId: String, id: String): ConfigOption<*, *>? =
     find { it.id == rootId }?.childOptions?.find { it.id == id }
@@ -162,6 +167,21 @@ abstract class ConfigOption<VH: BaseViewHolder, T: Any> {
         textOverride = OptionText(title, description)
         return requestViewUpdate()
     }
+
+    fun resetText(): Boolean {
+        textOverride = null
+        return requestViewUpdate()
+    }
+
+    internal val bindings: MutableList<OptionBinding> = arrayListOf()
+
+    internal var visibleRule: ValueRule? = null
+
+    @Volatile
+    internal var scope: CoroutineScope? = null
+
+    protected val optionScope: CoroutineScope?
+        get() = scope
 
     private var _eventFlow: MutableSharedFlow<EventData>? = null
 

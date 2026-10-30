@@ -123,7 +123,7 @@ class ConfigItemBuilder {
     }
 
     fun add(builder: ConfigBuilderBase<*, *>) {
-        objects += builder.build()
+        objects += builder.build().also(builder::applyExtras)
     }
 
     fun build(): List<ConfigOption<*, *>> {
