@@ -13,13 +13,13 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import coil.load
-import com.google.android.material.snackbar.Snackbar
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.*
+import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.configdsl.utils.PrimitiveTypedString
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
@@ -41,6 +41,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import kotlin.properties.Delegates.notNull
+import kotlin.time.Duration.Companion.seconds
 
 class ProjectConfigActivity: AppCompatActivity() {
 
@@ -93,7 +94,7 @@ class ProjectConfigActivity: AppCompatActivity() {
 
         fabProjectConfig.setOnClickListener { view ->
             if (configAdapter?.hasError == true) {
-                Snackbar.make(view, "올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
+                peek("올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", PeekType.ERROR)
                 fabProjectConfig.hide()
                 return@setOnClickListener
             }
@@ -182,17 +183,12 @@ class ProjectConfigActivity: AppCompatActivity() {
                 title = "일반"
                 textColor = getColor(R.color.main_bright)
                 items {
-                    button {
+                    info {
                         id = "folder_location"
                         title = "프로젝트 위치"
                         description = project.directory.path
-                        /*
-                        setOnClickListener { _ ->
-                            openFolderInExplorer(this@ProjectConfigActivity, project.directory)
-                        }
-                         */
+                        copyable = true
                         icon = Icon.FOLDER
-                        //backgroundColor = Color.parseColor("#B8DFD8")
                         iconTintColor = color { "#93B5C6" }
                     }
                     button {
@@ -335,13 +331,11 @@ class ProjectConfigActivity: AppCompatActivity() {
                         id = "reload_info"
                         title = "프로젝트 정보 다시 로드"
                         description = "프로젝트 정보를 파일에서 다시 불러옵니다. 이 옵션은 앱의 정상적인 작동을 방해할 수 있습니다."
-                        setOnClickListener { view ->
+                        style = ButtonStyle.DANGER
+                        confirm("파일에서 프로젝트 정보를 다시 불러올까요? 저장하지 않은 변경 사항은 사라질 수 있어요.")
+                        setOnClickListener { _ ->
                             project.loadInfo()
-                            Snackbar.make(
-                                view,
-                                "프로젝트 정보를 다시 불러왔어요.",
-                                Snackbar.LENGTH_SHORT
-                            ).show()
+                            peek("프로젝트 정보를 다시 불러왔어요.", PeekType.SUCCESS)
                         }
                         icon = Icon.REFRESH
                         iconTintColor = color { "#FF5C58" }
@@ -349,16 +343,16 @@ class ProjectConfigActivity: AppCompatActivity() {
                     button {
                         id = "interrupt_thread"
                         title = "프로젝트 스레드 강제 종료"
-                        description = "${project.activeJobs()}개의 작업이 실행 중이고, ${project.queuedEvents()}개의 이벤트가 대기 중이에요."
-                        setOnClickListener { view ->
+                        bindDescription(every = 1.seconds) {
+                            "${project.activeJobs()}개의 작업이 실행 중이고, ${project.queuedEvents()}개의 이벤트가 대기 중이에요."
+                        }
+                        style = ButtonStyle.DANGER
+                        confirm { "실행 중인 작업 ${project.activeJobs()}개를 강제 종료할까요?" }
+                        setOnClickListener { _ ->
                             val active = project.activeJobs()
                             val queued = project.queuedEvents()
                             project.stopAllJobs()
-                            Snackbar.make(
-                                view,
-                                "${active}개의 작업을 강제 종료하고 대기 중이던 이벤트 ${queued}개를 비웠어요.",
-                                Snackbar.LENGTH_SHORT
-                            ).show()
+                            peek("${active}개의 작업을 강제 종료하고 대기 중이던 이벤트 ${queued}개를 비웠어요.", PeekType.SUCCESS)
                         }
                         icon = Icon.LAYERS_CLEAR
                         //backgroundColor = Color.parseColor("#B8DFD8")
@@ -368,6 +362,8 @@ class ProjectConfigActivity: AppCompatActivity() {
                         id = "destroy_scope"
                         title = "프로젝트 스코프 폐기"
                         description = "프로젝트의 컴파일된 스코프를 폐기합니다. 이후 프로젝트를 사용하기 위해선 다시 컴파일 해야 합니다."
+                        style = ButtonStyle.DANGER
+                        confirm("스코프를 폐기하면 다시 컴파일하기 전까지 프로젝트가 동작하지 않아요. 계속할까요?")
                         setOnClickListener { _ ->
                             project.destroy(requestUpdate = isForeground())
                             finish()
@@ -379,6 +375,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                     button {
                         id = "delete_project"
                         title = "프로젝트 제거"
+                        style = ButtonStyle.DANGER
                         setOnClickListener { _ ->
                             showSheet {
                                 title = "프로젝트를 정말로 제거할까요?"
@@ -389,11 +386,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                                         project,
                                         removeFiles = true
                                     )
-                                    Snackbar.make(
-                                        binding.root,
-                                        "프로젝트를 제거했어요.",
-                                        Snackbar.LENGTH_SHORT
-                                    ).show()
+                                    peek("프로젝트를 제거했어요.", PeekType.SUCCESS)
                                     finish()
                                 }
                                 negative(R.string.close)
@@ -479,14 +472,10 @@ class ProjectConfigActivity: AppCompatActivity() {
                 if (name == null)
                     return@positive
                 project.rename(name!!, !updateMainScript)
-                Snackbar.make(
-                    binding.root,
-                    translate {
-                        Locale.ENGLISH { "Successfully renamed project." }
-                        Locale.KOREAN  { "프로젝트의 이름을 성공적으로 변경했어요." }
-                    },
-                    Snackbar.LENGTH_SHORT
-                ).show()
+                peek(translate {
+                    Locale.ENGLISH { "Successfully renamed project." }
+                    Locale.KOREAN  { "프로젝트의 이름을 성공적으로 변경했어요." }
+                }, PeekType.SUCCESS)
                 sheet.dismiss()
                 finish()
             }
