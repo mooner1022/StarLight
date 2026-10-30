@@ -18,6 +18,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
 
@@ -48,7 +49,8 @@ class ForegroundTask: Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("StarLight 실행중")
             .setSubText("당신만을 위한 봇들을 관리중이에요 :)")
-            .setSmallIcon(R.mipmap.ic_launcher_round)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setColor(ContextCompat.getColor(this, R.color.main_bright))
             .setContentIntent(pendingIntent)
             .setShowWhen(false)
             .build()

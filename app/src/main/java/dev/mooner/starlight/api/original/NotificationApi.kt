@@ -8,6 +8,7 @@ import android.os.Build
 import androidx.annotation.ColorInt
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import dev.mooner.starlight.R
 import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.plugincore.api.Api
@@ -47,7 +48,7 @@ class NotificationApi: Api<NotificationApi.Notification>() {
             val intent = Intent(context, NotificationEventService::class.java)
                 .setAction("$INTENT_ACTION$$id")
             val pendingIntent = PendingIntent.getService(context, 0, intent, 0 or PendingIntent.FLAG_IMMUTABLE)
-            NotificationCompat.Action(R.mipmap.ic_launcher, builder.onClickTitle, pendingIntent)
+            NotificationCompat.Action(R.drawable.ic_notification, builder.onClickTitle, pendingIntent)
         }
 
         private var mState: Int = STATE_DEFAULT
@@ -98,7 +99,8 @@ class NotificationApi: Api<NotificationApi.Notification>() {
             }.apply {
                 setContentTitle(builder.mTitle)
                 setSubText(builder.mText)
-                setSmallIcon(R.mipmap.ic_launcher)
+                setSmallIcon(R.drawable.ic_notification)
+                color = ContextCompat.getColor(this@buildNotification, R.color.main_bright)
                 if (builder.lightArgb != null)
                     setLights(builder.lightArgb!!, builder.lightOnMs, builder.lightOffMs)
                 addAction(clickAction)
