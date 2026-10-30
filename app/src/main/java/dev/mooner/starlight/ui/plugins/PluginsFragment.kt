@@ -31,10 +31,10 @@ import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentPluginsBinding
-import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.GlobalConfig.getDefaultCategory
+import dev.mooner.starlight.plugincore.plugin.ApiCompatibility
 import dev.mooner.starlight.plugincore.plugin.InstalledPlugin
 import dev.mooner.starlight.plugincore.plugin.PluginCategory
 import dev.mooner.starlight.plugincore.plugin.PluginChange
@@ -243,8 +243,7 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
                 else ->
                     getString(R.string.plugin_install_update, current.displayVersion(), info.displayVersion())
             })
-            if (info.apiVersion incompatibleWith Info.PLUGINCORE_VERSION)
-                append("\n⚠ ").append(getString(R.string.plugin_install_incompatible_api, info.apiVersion.toString(), Info.PLUGINCORE_VERSION.toString()))
+            requireContext().apiCompatibilityText(ApiCompatibility.of(info.apiVersion))?.let { append("\n⚠ ").append(it) }
             val known = knownPlugins().map(PluginInfo::id).toSet()
             val missing = info.dependency.filter { !it.isOptional && it.pluginId !in known }
             if (missing.isNotEmpty())

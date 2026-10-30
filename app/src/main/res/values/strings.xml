@@ -205,7 +205,8 @@
     <string name="plugin_category_devtools">Developer tools</string>
     <string name="plugin_category_other">Other</string>
     <string name="plugin_status_failed">Failed to load: %s</string>
-    <string name="plugin_status_incompatible_api">Built for PluginCore %1$s (current %2$s)</string>
+    <string name="plugin_status_requires_newer_app">Needs a newer app (PluginCore %1$s)</string>
+    <string name="plugin_status_outdated_api">Needs a plugin update (PluginCore %1$s)</string>
     <string name="plugin_status_missing_dependency">Requires %s</string>
     <string name="plugin_status_excluded_dependency">Required plugin %s is not loaded</string>
     <string name="plugin_status_incompatible_dependency">Requires %1$s %2$s (installed %3$s)</string>
@@ -221,7 +222,8 @@
     <string name="plugin_install_update">Updates %1$s → %2$s.</string>
     <string name="plugin_install_reinstall">Reinstalls the same version (%s).</string>
     <string name="plugin_install_downgrade">Downgrades %1$s → %2$s.</string>
-    <string name="plugin_install_incompatible_api">Built for PluginCore %1$s, so it may not load on %2$s.</string>
+    <string name="plugin_api_requires_newer_app">Requires PluginCore %1$s or newer, so it can\'t be loaded on this app (%2$s). Update the app first.</string>
+    <string name="plugin_api_outdated">Built for PluginCore %1$s, older than this app supports (%2$s or newer). Update the plugin.</string>
     <string name="plugin_install_missing_dependencies">Requires plugins that are not installed: %s</string>
     <string name="plugin_install_invalid">Not a valid plugin file: %s</string>
     <string name="plugin_install_failed">Could not install the plugin: %s</string>
@@ -261,7 +263,6 @@
     <string name="plugin_store_hint_pending">Installed. Restart the app to load it.</string>
     <string name="plugin_store_hint_downloading">Downloading %1$s of %2$s</string>
     <string name="plugin_store_hint_verifying">Checking the file hash</string>
-    <string name="plugin_store_incompatible_warning">Built for PluginCore %1$s, so it can\'t be loaded on %2$s.</string>
     <string name="plugin_store_stat_version">Version</string>
     <string name="plugin_store_stat_size">Size</string>
     <string name="plugin_store_stat_updated">Updated</string>
