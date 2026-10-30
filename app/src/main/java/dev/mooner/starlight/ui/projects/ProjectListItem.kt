@@ -24,7 +24,6 @@ import android.widget.TextView
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import coil.load
-import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.fastadapter.binding.AbstractBindingItem
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.utils.PrimitiveTypedString
@@ -292,13 +291,10 @@ class ProjectListItem(
 
     private fun Context.startDebugRoomActivity(view: View, project: Project) {
         if (!project.isCompiled) {
-            Snackbar.make(view,
-                translate {
-                    Locale.ENGLISH { "Project isn't compiled yet." }
-                    Locale.KOREAN  { "프로젝트 컴파일이 완료된 후 사용할 수 있어요." }
-                }, Snackbar.LENGTH_SHORT)
-                .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
-                .show()
+            view.context.peek(translate {
+                Locale.ENGLISH { "Project isn't compiled yet." }
+                Locale.KOREAN  { "프로젝트 컴파일이 완료된 후 사용할 수 있어요." }
+            })
             return
         }
         startActivityWithExtra(

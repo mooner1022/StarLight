@@ -20,11 +20,13 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.transform.RoundedCornersTransformation
-import com.google.android.material.snackbar.Snackbar
+import dev.mooner.configdsl.utils.PeekType
+import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
+import dev.mooner.starlight.utils.peek
 import java.io.File
 
 class DebugRoomChatAdapter(
@@ -144,9 +146,7 @@ class DebugRoomChatAdapter(
             val clip = ClipData.newPlainText("디버그룸 채팅", holder.message.text)
             clipboard.setPrimaryClip(clip)
 
-            Snackbar.make(it, "텍스트를 클립보드에 복사했어요.", Snackbar.LENGTH_SHORT)
-                .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
-                .show()
+            it.context.peek("텍스트를 클립보드에 복사했어요.", PeekType.SUCCESS, PeekAlert.Position.Top)
             true
         }
     }

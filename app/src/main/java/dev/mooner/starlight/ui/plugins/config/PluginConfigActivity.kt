@@ -8,13 +8,14 @@ package dev.mooner.starlight.ui.plugins.config
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.snackbar.Snackbar
 import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.starlight.databinding.ActivityPluginConfigBinding
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.data.FileConfig
 import dev.mooner.starlight.utils.bindFadeImage
+import dev.mooner.starlight.utils.peek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -60,13 +61,13 @@ class PluginConfigActivity: AppCompatActivity() {
 
         fabProjectConfig.setOnClickListener { view ->
             if (configAdapter?.hasError == true) {
-                Snackbar.make(view, "올바르지 않은 설정값이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
+                peek("올바르지 않은 설정값이 있습니다. 확인 후 다시 시도해주세요.", PeekType.ERROR)
                 fabProjectConfig.hide()
                 return@setOnClickListener
             }
             fileConfig.push()
             plugin.onConfigUpdated(fileConfig, updatedIDs)
-            Snackbar.make(view, "설정 저장 완료!", Snackbar.LENGTH_SHORT).show()
+            peek("설정 저장 완료!", PeekType.SUCCESS)
             fabProjectConfig.hide()
         }
 
