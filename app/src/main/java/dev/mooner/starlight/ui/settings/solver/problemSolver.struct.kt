@@ -9,7 +9,8 @@ package dev.mooner.starlight.ui.settings.solver
 import android.os.Build
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.config
-import dev.mooner.configdsl.options.button
+import dev.mooner.configdsl.options.OptionStatus
+import dev.mooner.configdsl.options.info
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.plugincore.Session
@@ -20,22 +21,18 @@ import dev.mooner.starlight.ui.settings.notifications.RuleData
 import dev.mooner.starlight.ui.settings.notifications.Rules
 
 internal fun getProblemSolverStruct() = config {
-    val colorPrimary = color { "#7ACA8A" }
-    val colorError   = color { "#FF6188" }
-    fun stateColor(state: Boolean): Int =
-        if (state) colorPrimary else colorError
     category {
         id = "state"
         title = "변수 / 상태"
         items {
             fun item(icon: Icon, title: String, stateBlock: () -> Boolean) {
-                button {
+                info {
                     this.icon = icon
                     this.id = "item_$title"
                     this.title = title
                     val state = stateBlock()
-                    this.iconTintColor = stateColor(state)
-                    this.description = if (state) "켜짐" else "❗ 값이 비활성화 되어 있습니다"
+                    status = if (state) OptionStatus.OK else OptionStatus.ERROR
+                    value = if (state) "켜짐" else "꺼짐"
                 }
             }
             item(Icon.POWER, "전역 전원") {
@@ -50,10 +47,13 @@ internal fun getProblemSolverStruct() = config {
                     ?.getBoolean("use_legacy_event", false)
                     ?: false
             }
-            button { 
+            info {
                 id = "kakaoTalkVer"
                 title = "카카오톡 버전"
-                description = ApplicationSession.kakaoTalkVersion?.toString() ?: "확인 실패(com.kakao.talk)"
+                val version = ApplicationSession.kakaoTalkVersion?.toString()
+                value = version ?: "확인 실패"
+                status = if (version == null) OptionStatus.WARNING else null
+                copyable = version != null
                 icon = Icon.MARK_CHAT_READ
                 iconTintColor = color { "#fae100" }
             }
@@ -72,7 +72,7 @@ internal fun getProblemSolverStruct() = config {
                         list
                 }
                 ?.mapIndexed { idx, ruleData ->
-                    button {
+                    info {
                         var hasError = false
                         id = "spec_$idx"
                         title = "$idx : ${ruleData.packageName}"
@@ -94,15 +94,16 @@ internal fun getProblemSolverStruct() = config {
                             append("파싱 스펙 : ${ruleData.parserSpecId}")
                         }
                         icon = if (hasError) Icon.ERROR else Icon.CHECK
-                        iconTintColor = stateColor(!hasError)
+                        status = if (hasError) OptionStatus.ERROR else OptionStatus.OK
+                        value = if (hasError) "확인 필요" else "정상"
                     }
                 }
-                ?: button {
+                ?: info {
                     id = "empty"
-                    title = "❗ 패키지 규칙이 존재하지 않아요."
+                    title = "패키지 규칙이 존재하지 않아요."
                     description = "패키지 규칙 없이는 알림이 분석되거나 이벤트가 발생하지 않아요. 올바른 규칙을 추가해주세요."
                     icon = Icon.ERROR
-                    iconTintColor = colorError
+                    status = OptionStatus.ERROR
                 }
         }
     }
