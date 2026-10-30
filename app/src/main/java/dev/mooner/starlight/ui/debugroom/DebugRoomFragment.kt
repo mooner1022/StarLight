@@ -26,12 +26,12 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.snackbar.Snackbar
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.*
+import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentDebugRoomBinding
@@ -53,7 +53,9 @@ import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.plugincore.utils.fireEvent
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
+import dev.mooner.starlight.utils.createSimplePeek
 import dev.mooner.starlight.utils.dp
+import dev.mooner.starlight.utils.peek
 import dev.mooner.starlight.utils.toBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -121,7 +123,9 @@ class DebugRoomFragment: Fragment() {
         true
     }
     private val onMarkAsRead: () -> Unit = {
-        Snackbar.make(binding.root, "읽음 처리 호출됨", Snackbar.LENGTH_SHORT).show()
+        activity?.runOnUiThread {
+            activity?.peek("읽음 처리 호출됨", position = PeekAlert.Position.Top)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -282,7 +286,7 @@ class DebugRoomFragment: Fragment() {
             chatLogId = -1L
         )
 
-        project.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::showErrorSnackbar)
+        project.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::showErrorPeek)
 
         val useLegacyEvent = GlobalConfig
             .category("notifications")
@@ -292,26 +296,41 @@ class DebugRoomFragment: Fragment() {
         if (useLegacyEvent) {
             val imageDB = ImageDB(selfProfileBitmap)
 
-            project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, replier, imageDB, onFailure = ::showErrorSnackbar)
+            project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, replier, imageDB, onFailure = ::showErrorPeek)
         }
         EventHandler.fireEventWithScope(ApplicationEvent.DebugRoom.MessageCreate(data), scope = project)
     }
 
-    @SuppressLint("CheckResult")
-    private fun showErrorSnackbar(e: Throwable) {
-        Snackbar.make(binding.root, e.toString(), Snackbar.LENGTH_LONG).apply {
-            setAction("자세히 보기") {
-                view.context.showSheet {
-                    title = project.info.name + " 에러 로그"
-                    icon = R.drawable.ic_round_error_outline_24
-                    message = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString()
-                    isMessageSelectable = true
-                    cancelOnTouchOutside = false
-                    lifecycleOwner = viewLifecycleOwner
-                    positive(R.string.close)
+    private fun showErrorPeek(e: Throwable) {
+        val activity = activity ?: return
+        activity.runOnUiThread {
+            if (activity.isFinishing || activity.isDestroyed)
+                return@runOnUiThread
+            activity.createSimplePeek(
+                title = project.info.name,
+                text = e.toString()
+            ) {
+                paddingDp = 12
+                iconRes = R.drawable.ic_round_error_outline_24
+                backgroundColor(res = R.color.code_error)
+                action("자세히 보기") {
+                    textColor(res = R.color.black)
+                    setOnActionListener { view ->
+                        view.context.showSheet {
+                            title = project.info.name + " 에러 로그"
+                            icon = R.drawable.ic_round_error_outline_24
+                            message = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString()
+                            isMessageSelectable = true
+                            cancelOnTouchOutside = false
+                            positive(R.string.close)
+                        }
+                    }
                 }
-            }
-        }.show()
+            }.apply {
+                setTitleColor(res = R.color.white)
+                setTextColor(res = R.color.white)
+            }.peek()
+        }
     }
 
     @SuppressLint("SetTextI18n")
@@ -574,6 +593,8 @@ class DebugRoomFragment: Fragment() {
                     button {
                         id = "clear_chat"
                         title = "대화 기록 초기화"
+                        style = ButtonStyle.DANGER
+                        confirm("이 디버그 룸의 대화 기록을 모두 지울까요?")
                         setOnClickListener { _ ->
                             dir.deleteRecursively()
                             dir.mkdirs()

@@ -3,7 +3,7 @@ package dev.mooner.starlight.ui.plugins.store
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import dev.mooner.starlight.plugincore.Info
+import dev.mooner.starlight.plugincore.plugin.ApiCompatibility
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.plugin.PluginChange
 import dev.mooner.starlight.plugincore.plugin.PluginDependency
@@ -195,7 +195,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
             task is Task.Downloading -> StoreInstallState.Downloading(task.progress)
             task == Task.Verifying   -> StoreInstallState.Verifying
             task == Task.Done        -> StoreInstallState.PendingRestart
-            plugin.latest.apiVersion incompatibleWith Info.PLUGINCORE_VERSION -> StoreInstallState.Incompatible
+            !ApiCompatibility.of(plugin.latest.apiVersion).isCompatible -> StoreInstallState.Incompatible
             installed == null        -> StoreInstallState.NotInstalled
             installed < plugin.latest.version -> StoreInstallState.UpdateAvailable(installed)
             else                     -> StoreInstallState.Installed

@@ -9,6 +9,7 @@ package dev.mooner.configdsl.adapters
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import dev.mooner.configdsl.*
+import dev.mooner.configdsl.options.CategoryConfigOption
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -18,10 +19,12 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 
 class ParentConfigAdapter(
-    private var configStructure  : ConfigStructure,
+    configStructure  : ConfigStructure,
     private val configData       : MutableDataMap,
     coroutineContext : CoroutineContext,
 ): RecyclerView.Adapter<BaseViewHolder>() {
+
+    private var configStructure: ConfigStructure = configStructure.filterDevMode()
 
     private val eventScope = CoroutineScope(coroutineContext + SupervisorJob())
 
@@ -54,9 +57,15 @@ class ParentConfigAdapter(
     }
 
     fun updateStruct(structure: ConfigStructure) {
-        configStructure = structure
-        register(structure)
+        configStructure = structure.filterDevMode()
+        register(configStructure)
     }
+
+    private fun ConfigStructure.filterDevMode(): ConfigStructure =
+        if (ConfigDSL.isDevMode())
+            this
+        else
+            filterNot { it is CategoryConfigOption && it.isDevModeOnly }
 
     fun updateData(data: MutableDataMap) {
         configData.clear()
@@ -84,7 +93,7 @@ class ParentConfigAdapter(
     }
 
     init {
-        register(configStructure)
+        register(this.configStructure)
 
         eventFlow
             .filterIsInstance<ConfigOption.RootUpdateData>()

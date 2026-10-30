@@ -39,6 +39,8 @@ abstract class WidgetController internal constructor() {
             block()
         } catch (e: Exception) {
             reportError(e)
+        } catch (e: LinkageError) {
+            reportError(e)
         }
     }
 }

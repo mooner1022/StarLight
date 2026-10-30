@@ -37,8 +37,9 @@ import dev.mooner.starlight.databinding.ItemStoreDependencyBinding
 import dev.mooner.starlight.databinding.ItemStoreInfoBinding
 import dev.mooner.starlight.databinding.ItemStoreReleaseBinding
 import dev.mooner.starlight.databinding.ItemStoreStatBinding
-import dev.mooner.starlight.plugincore.Info
+import dev.mooner.starlight.plugincore.plugin.ApiCompatibility
 import dev.mooner.starlight.plugincore.plugin.PluginDependency
+import dev.mooner.starlight.ui.plugins.apiCompatibilityText
 import dev.mooner.starlight.utils.restartApplication
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.launch
@@ -143,14 +144,9 @@ class StoreDetailFragment : Fragment() {
             pluginId.text = plugin.id
             stars.seed = plugin.id.hashCode()
 
-            val api = plugin.latest.apiVersion
-            if (api incompatibleWith Info.PLUGINCORE_VERSION) {
+            requireContext().apiCompatibilityText(ApiCompatibility.of(plugin.latest.apiVersion))?.let { text ->
                 warning.visibility = View.VISIBLE
-                warning.text = getString(
-                    R.string.plugin_store_incompatible_warning,
-                    "${api.major}.${api.minor}",
-                    Info.PLUGINCORE_VERSION.toString(),
-                )
+                warning.text = text
             }
         }
     }
@@ -272,7 +268,7 @@ class StoreDetailFragment : Fragment() {
                 date.text = relativeTime(release.releasedAtMillis)
                 markwon.setMarkdown(changelog, release.changelog)
                 meta.text = "API ${release.apiVersion.major}.${release.apiVersion.minor} · ${requireContext().formatSize(release.size)}"
-                val isCompatible = release.apiVersion compatibleWith Info.PLUGINCORE_VERSION
+                val isCompatible = ApiCompatibility.of(release.apiVersion).isCompatible
                 installVersion.visibility = if (i > 0 && isCompatible) View.VISIBLE else View.GONE
                 installVersion.setOnClickListener { store.requestInstall(plugin, release) }
                 if (i > 0)

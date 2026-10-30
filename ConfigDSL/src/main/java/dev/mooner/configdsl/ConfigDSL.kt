@@ -48,4 +48,11 @@ object ConfigDSL {
     fun registerIconTint(transform: (context: android.content.Context, color: Int) -> Int) {
         iconTint = transform
     }
+
+    var isDevMode: () -> Boolean = { false }
+        private set
+
+    fun registerDevModeProvider(provider: () -> Boolean) {
+        isDevMode = provider
+    }
 }

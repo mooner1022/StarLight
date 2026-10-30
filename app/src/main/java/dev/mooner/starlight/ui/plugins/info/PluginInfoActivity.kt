@@ -4,7 +4,9 @@ import android.content.Context
 import android.text.format.Formatter
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.config
-import dev.mooner.configdsl.options.button
+import dev.mooner.configdsl.options.OptionStatus
+import dev.mooner.configdsl.options.info
+import dev.mooner.configdsl.options.textList
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session.pluginManager
@@ -43,15 +45,16 @@ fun Context.startPluginInfoActivity(
             }
             textColor = defaultColor
             items {
-                button {
+                info {
                     id = "name"
                     title = info?.name ?: entry.file.name
-                    description = info?.let { "id: ${it.id}" }
+                    description = info?.id
+                    copyable = info != null
                     icon = Icon.LAYERS
                     iconTintColor = color { "#6455A1" }
                 }
                 if (info != null)
-                    button {
+                    info {
                         id = "version"
                         title = translate {
                             Locale.ENGLISH { "Version" }
@@ -59,9 +62,9 @@ fun Context.startPluginInfoActivity(
                         }
                         icon = Icon.BRANCH
                         iconTintColor = color { "#C073A0" }
-                        description = "v${info.version}"
+                        value = "v${info.version}"
                     }
-                button {
+                info {
                     id = "state"
                     title = translate {
                         Locale.ENGLISH { "Status" }
@@ -69,14 +72,23 @@ fun Context.startPluginInfoActivity(
                     }
                     icon = if (status.isProblem) Icon.ERROR else Icon.CHECK_CIRCLE
                     iconTintColor = getColor(status.color)
-                    description = when (val state = entry.state) {
-                        is PluginState.Loaded -> translate {
+                    val state = entry.state
+                    this.status = when {
+                        status.isProblem            -> OptionStatus.ERROR
+                        state is PluginState.Loaded -> OptionStatus.OK
+                        else                        -> null
+                    }
+                    value = if (state is PluginState.Loaded)
+                        translate {
                             Locale.ENGLISH { "Loaded" }
                             Locale.KOREAN  { "로드됨" }
                         }
-                        is PluginState.Failed -> state.error.toString()
-                        is PluginState.Invalid -> "${status.text}\n${state.error.message ?: state.error}"
-                        else -> status.text
+                    else
+                        status.text
+                    description = when (state) {
+                        is PluginState.Failed  -> state.error.toString()
+                        is PluginState.Invalid -> state.error.message ?: state.error.toString()
+                        else                   -> null
                     }
                 }
             }
@@ -90,7 +102,7 @@ fun Context.startPluginInfoActivity(
                 }
                 textColor = defaultColor
                 items {
-                    button {
+                    info {
                         id = "author"
                         title = translate {
                             Locale.ENGLISH { "Developer(s)" }
@@ -100,7 +112,7 @@ fun Context.startPluginInfoActivity(
                         iconTintColor = color { "#D47E97" }
                         description = info.authors.joinToString().ifBlank { none }
                     }
-                    button {
+                    info {
                         id = "desc"
                         title = translate {
                             Locale.ENGLISH { "Description" }
@@ -110,7 +122,7 @@ fun Context.startPluginInfoActivity(
                         icon = Icon.LIST_BULLETED
                         iconTintColor = color { "#F59193" }
                     }
-                    button {
+                    info {
                         id = "mainClass"
                         title = translate {
                             Locale.ENGLISH { "Main class" }
@@ -119,6 +131,7 @@ fun Context.startPluginInfoActivity(
                         icon = Icon.EXIT_TO_APP
                         iconTintColor = color { "#F9AE91" }
                         description = info.mainClass
+                        copyable = true
                     }
                 }
             }
@@ -130,17 +143,14 @@ fun Context.startPluginInfoActivity(
             }
             textColor = defaultColor
             items {
-                button {
+                info {
                     id = "name"
                     title = entry.file.name
-                    description = translate {
-                        Locale.ENGLISH { "Size: ${Formatter.formatShortFileSize(this@startPluginInfoActivity, entry.file.length())}" }
-                        Locale.KOREAN  { "크기: ${Formatter.formatShortFileSize(this@startPluginInfoActivity, entry.file.length())}" }
-                    }
+                    value = Formatter.formatShortFileSize(this@startPluginInfoActivity, entry.file.length())
                     icon = Icon.FOLDER
                     iconTintColor = color { "#7A69C7" }
                 }
-                button {
+                info {
                     id = "origin"
                     title = translate {
                         Locale.ENGLISH { "Source" }
@@ -149,29 +159,24 @@ fun Context.startPluginInfoActivity(
                     val repository = origin?.repository
                     icon = if (repository != null) Icon.CLOUD_DOWNLOAD else Icon.FOLDER
                     iconTintColor = color { "#E9B824" }
-                    description = buildString {
-                        if (repository != null) {
-                            append(translate {
-                                Locale.ENGLISH { "Plugin store · ${repository.name}" }
-                                Locale.KOREAN  { "플러그인 저장소 · ${repository.name}" }
-                            })
-                            append('\n').append(repository.url.removePrefix("https://"))
-                        } else
-                            append(translate {
-                                Locale.ENGLISH { "Local file" }
-                                Locale.KOREAN  { "로컬 파일" }
-                            })
+                    value = repository?.name ?: translate {
+                        Locale.ENGLISH { "Local file" }
+                        Locale.KOREAN  { "로컬 파일" }
+                    }
+                    description = buildList {
+                        if (repository != null)
+                            add(repository.url.removePrefix("https://"))
                         if (origin != null) {
                             val date = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(origin.installedAt))
-                            append('\n').append(translate {
+                            add(translate {
                                 Locale.ENGLISH { "Installed $date" }
                                 Locale.KOREAN  { "$date 설치" }
                             })
                         }
-                    }
+                    }.joinToString("\n").ifEmpty { null }
                 }
                 if (info != null)
-                    button {
+                    info {
                         id = "dataDir"
                         title = translate {
                             Locale.ENGLISH { "Data folder" }
@@ -180,6 +185,7 @@ fun Context.startPluginInfoActivity(
                         icon = Icon.ARCHIVE
                         iconTintColor = color { "#4568DC" }
                         description = entry.file.resolveSibling(PluginInstaller.dataDirNameOf(info)).path
+                        copyable = true
                     }
             }
         }
@@ -192,20 +198,21 @@ fun Context.startPluginInfoActivity(
                 }
                 textColor = defaultColor
                 items {
-                    button {
+                    info {
                         id = "pluginCoreVersion"
                         title = translate {
                             Locale.ENGLISH { "PluginCore Version" }
                             Locale.KOREAN  { "PluginCore 버전" }
                         }
+                        value = info.apiVersion.toString()
                         description = translate {
-                            Locale.ENGLISH { "${info.apiVersion} (app: ${Info.PLUGINCORE_VERSION})" }
-                            Locale.KOREAN  { "${info.apiVersion} (앱: ${Info.PLUGINCORE_VERSION})" }
+                            Locale.ENGLISH { "App: ${Info.PLUGINCORE_VERSION}" }
+                            Locale.KOREAN  { "앱: ${Info.PLUGINCORE_VERSION}" }
                         }
                         icon = Icon.BRANCH
                         iconTintColor = color { "#3A1C71" }
                     }
-                    button {
+                    textList {
                         id = "dependency"
                         title = translate {
                             Locale.ENGLISH { "Required Dependencies" }
@@ -213,9 +220,10 @@ fun Context.startPluginInfoActivity(
                         }
                         icon = Icon.CHECK
                         iconTintColor = color { "#D76D77" }
-                        description = info.dependency.filterNot(PluginDependency::isOptional).describe(none)
+                        lines = info.dependency.filterNot(PluginDependency::isOptional).describe()
+                        emptyText = none
                     }
-                    button {
+                    textList {
                         id = "softDependency"
                         title = translate {
                             Locale.ENGLISH { "Soft Dependencies" }
@@ -223,9 +231,10 @@ fun Context.startPluginInfoActivity(
                         }
                         icon = Icon.CHECK
                         iconTintColor = color { "#FFAF7B" }
-                        description = info.softDependency.describe(none)
+                        lines = info.softDependency.describe()
+                        emptyText = none
                     }
-                    button {
+                    info {
                         id = "usesNativeLibrary"
                         title = translate {
                             Locale.ENGLISH { "Uses native libraries" }
@@ -233,7 +242,7 @@ fun Context.startPluginInfoActivity(
                         }
                         icon = Icon.LINK
                         iconTintColor = color { "#d98366" }
-                        description = if (info.usesNativeLibrary)
+                        value = if (info.usesNativeLibrary)
                             translate {
                                 Locale.ENGLISH { "Yes" }
                                 Locale.KOREAN  { "예" }
@@ -258,11 +267,9 @@ fun Context.startPluginInfoActivity(
     )
 }
 
-private fun List<PluginDependency>.describe(none: String): String {
-    if (isEmpty())
-        return none
+private fun List<PluginDependency>.describe(): List<String> {
     val known = knownPlugins().associateBy { it.id }
-    return joinToString("\n") { dependency ->
+    return map { dependency ->
         val found = known[dependency.pluginId]?.let { "v${it.version}" } ?: translate {
             Locale.ENGLISH { "not installed" }
             Locale.KOREAN  { "설치 안 됨" }

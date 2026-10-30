@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.options.ButtonConfigOption
+import dev.mooner.configdsl.options.InfoConfigOption
 import dev.mooner.starlight.databinding.FragmentSettingsBinding
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.utils.onSaveConfigAdapter
@@ -69,13 +70,13 @@ class SettingsFragment : Fragment() {
 
     internal fun refreshStatus() {
         val context = context ?: return
-        val descriptions = mapOf(
-            OPTION_NOTIFICATION_ACCESS  to context.notificationAccessDescription(),
-            OPTION_BATTERY_OPTIMIZATION to context.batteryOptimizationDescription(),
-            OPTION_CLEAR_LOGS           to context.logFilesDescription(),
+        val states = mapOf(
+            OPTION_NOTIFICATION_ACCESS  to context.notificationAccessState(),
+            OPTION_BATTERY_OPTIMIZATION to context.batteryOptimizationState(),
         )
-        for ((id, description) in descriptions)
-            (structure.findOptionById(id) as? ButtonConfigOption)?.updateDescription(description)
+        for ((id, state) in states)
+            (structure.findOptionById(id) as? InfoConfigOption)?.update(state)
+        (structure.findOptionById(OPTION_CLEAR_LOGS) as? ButtonConfigOption)?.updateDescription(context.logFilesDescription())
     }
 
     override fun onDestroyView() {

@@ -31,6 +31,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.event.ApplicationEvent
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Info
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
@@ -60,6 +61,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         isStartupAborted = false // explicit reset
         ConfigDSL.registerDialogProvider(SheetDialogProvider)
+        ConfigDSL.registerDevModeProvider { GlobalConfig.category("dev").getBoolean("dev_mode", false) }
 
         mContext = applicationContext
 

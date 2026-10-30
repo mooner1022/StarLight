@@ -12,16 +12,18 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.ColorInt
+import androidx.core.view.isVisible
 import dev.mooner.configdsl.*
 import dev.mooner.configdsl.utils.hasFlag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -45,8 +47,7 @@ class CategoryConfigOption(
     override val dependency  : String? = null
 
     private val childEvents = MutableSharedFlow<EventData>(extraBufferCapacity = Channel.UNLIMITED)
-    private val eventScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var eventJob: Job? = null
+    private var bindScope: CoroutineScope? = null
 
     private val values: MutableMap<String, JsonElement> = hashMapOf()
     private val dependencyValues: MutableMap<String, Boolean> = hashMapOf()
@@ -71,8 +72,8 @@ class CategoryConfigOption(
         JsonObject(value)
 
     override fun onDraw(holder: CategoryViewHolder, data: MutableMap<String, JsonElement>) {
-        if (eventJob?.isActive != true)
-            eventJob = childEvents.onEach(::onChildEvent).launchIn(eventScope)
+        if (bindScope == null)
+            bindScope = startBindings()
         if (data !== boundData) {
             boundData = data
             values.clear()
@@ -98,16 +99,29 @@ class CategoryConfigOption(
         boundHolder = holder
         childOptions.forEachIndexed { index, option -> drawRow(option, holder.rows[index]) }
         applyDependencies(holder)
+        applyVisibility(holder)
     }
 
     override fun onDestroyed() {
-        eventJob?.cancel()
-        eventJob = null
+        bindScope?.cancel()
+        bindScope = null
         boundHolder = null
         boundData = null
-        for (option in childOptions)
+        for (option in childOptions) {
+            option.scope = null
             option.runCatching(ConfigOption<*, *>::onDestroyed)
+        }
     }
+
+    private fun startBindings(): CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).also { scope ->
+            childEvents.onEach(::onChildEvent).launchIn(scope)
+            for (option in childOptions) {
+                option.scope = scope
+                for (binding in option.bindings)
+                    scope.launch { option.binding() }
+            }
+        }
 
     private fun unbind(holder: CategoryViewHolder) {
         if (boundHolder === holder)
@@ -118,6 +132,7 @@ class CategoryConfigOption(
         when (event) {
             is ValueUpdateData -> {
                 values[event.provider] = event.jsonData
+                boundHolder?.let(::applyVisibility)
                 tryEmitData(RootUpdateData(
                     rootId   = id,
                     provider = event.provider,
@@ -167,6 +182,25 @@ class CategoryConfigOption(
         }
     }
 
+    private fun applyVisibility(holder: CategoryViewHolder) {
+        var hasVisibleAbove = false
+        childOptions.forEachIndexed { index, option ->
+            val rule = option.visibleRule
+            val visible = rule == null || rule.predicate(currentJson(rule.id))
+            holder.rows[index].itemView.isVisible = visible
+            holder.dividers[index]?.isVisible = visible && hasVisibleAbove
+            if (visible)
+                hasVisibleAbove = true
+        }
+    }
+
+    private fun currentJson(id: String): JsonElement? {
+        values[id]?.let { return it }
+        @Suppress("UNCHECKED_CAST")
+        val option = childOptions.find { it.id == id } as? ConfigOption<*, Any> ?: return null
+        return option.dataToJson(option.default)
+    }
+
     private fun dependencyValueOf(id: String): Boolean? =
         dependencyValues[id]
             ?: (values[id] as? JsonPrimitive)?.booleanOrNull
@@ -189,21 +223,25 @@ class CategoryConfigOption(
 
         internal var boundOption: CategoryConfigOption? = null
         internal val rows: MutableList<BaseViewHolder> = arrayListOf()
+        internal val dividers: MutableList<View?> = arrayListOf()
 
         internal fun inflateRows(options: List<ConfigOption<*, *>>) {
             container.removeAllViews()
             rows.clear()
+            dividers.clear()
             val dividerInset = container.resources.getDimensionPixelSize(R.dimen.configdsl_divider_inset)
             val dividerEndInset = container.resources.getDimensionPixelSize(R.dimen.card_radius)
             options.forEachIndexed { index, option ->
-                if (index > 0)
-                    container.addView(View(container.context).apply {
+                dividers += if (index > 0)
+                    View(container.context).apply {
                         setBackgroundResource(R.color.configdsl_divider)
                         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1).apply {
                             marginStart = dividerInset
                             marginEnd = dividerEndInset
                         }
-                    })
+                    }.also(container::addView)
+                else
+                    null
                 val row = option.onCreateViewHolder(container)
                 container.addView(row.itemView)
                 rows += row

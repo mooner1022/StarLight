@@ -8,6 +8,7 @@ package dev.mooner.configdsl.utils
 
 import android.content.Context
 import android.view.View
+import android.widget.Toast
 import androidx.lifecycle.LifecycleOwner
 import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
@@ -17,10 +18,14 @@ import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.input.getInputField
 import com.afollestad.materialdialogs.input.input
 import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
+import com.afollestad.materialdialogs.list.listItemsMultiChoice
+import com.afollestad.materialdialogs.list.listItemsSingleChoice
 import dev.mooner.configdsl.ConfigDSL
 import dev.mooner.configdsl.R
 
 typealias ConfirmCallback = (confirm: Boolean) -> Unit
+
+enum class PeekType { INFO, SUCCESS, ERROR }
 
 interface ConfigDialogProvider {
 
@@ -29,6 +34,18 @@ interface ConfigDialogProvider {
     fun form(context: Context, title: String, content: View, onConfirm: () -> Unit, onDismiss: () -> Unit)
 
     fun password(context: Context, title: String, validate: (String) -> String?, onConfirm: (String) -> Unit)
+
+    fun input(context: Context, title: String, hint: String, initial: String, onResult: (String?) -> Unit) =
+        MaterialDialogProvider.input(context, title, hint, initial, onResult)
+
+    fun select(context: Context, title: String, items: List<String>, selected: Int, onResult: (Int?) -> Unit) =
+        MaterialDialogProvider.select(context, title, items, selected, onResult)
+
+    fun multiSelect(context: Context, title: String, items: List<String>, selected: Set<Int>, onResult: (Set<Int>?) -> Unit) =
+        MaterialDialogProvider.multiSelect(context, title, items, selected, onResult)
+
+    fun peek(view: View, message: String, type: PeekType) =
+        Toast.makeText(view.context, message, Toast.LENGTH_SHORT).show()
 }
 
 internal object MaterialDialogProvider : ConfigDialogProvider {
@@ -75,6 +92,45 @@ internal object MaterialDialogProvider : ConfigDialogProvider {
                 }
                 negativeButton(R.string.cancel, click = MaterialDialog::dismiss)
             }
+    }
+
+    override fun input(context: Context, title: String, hint: String, initial: String, onResult: (String?) -> Unit) {
+        var result: String? = null
+        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT))
+            .input(hint = hint, prefill = initial) { _, text -> result = text.toString() }
+            .show {
+                setCommonAttrs()
+                title(text = title)
+                positiveButton(R.string.ok)
+                negativeButton(R.string.cancel)
+                onDismiss { onResult(result) }
+            }
+    }
+
+    override fun select(context: Context, title: String, items: List<String>, selected: Int, onResult: (Int?) -> Unit) {
+        var result: Int? = null
+        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            setCommonAttrs()
+            title(text = title)
+            listItemsSingleChoice(items = items, initialSelection = selected) { _, index, _ -> result = index }
+            positiveButton(R.string.ok)
+            negativeButton(R.string.cancel)
+            onDismiss { onResult(result) }
+        }
+    }
+
+    override fun multiSelect(context: Context, title: String, items: List<String>, selected: Set<Int>, onResult: (Set<Int>?) -> Unit) {
+        var result: Set<Int>? = null
+        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
+            setCommonAttrs()
+            title(text = title)
+            listItemsMultiChoice(items = items, initialSelection = selected.toIntArray(), allowEmptySelection = true) { _, indices, _ ->
+                result = indices.toSet()
+            }
+            positiveButton(R.string.ok)
+            negativeButton(R.string.cancel)
+            onDismiss { onResult(result) }
+        }
     }
 }
 

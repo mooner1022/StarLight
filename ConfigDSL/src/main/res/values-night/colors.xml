@@ -92,4 +92,7 @@
     <color name="orange_box_grey">#90a9b3</color>
     <color name="orange_box_dark_grey">#414d63</color>
     <color name="orange_box_white">#ffffff</color>
+    <color name="configdsl_status_ok">#6FD39A</color>
+    <color name="configdsl_status_warning">#F2B85B</color>
+    <color name="configdsl_status_error">#FF6B6F</color>
 </resources>

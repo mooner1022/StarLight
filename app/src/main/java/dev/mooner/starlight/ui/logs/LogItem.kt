@@ -13,13 +13,14 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.fastadapter.binding.AbstractBindingItem
+import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.starlight.ID_VIEW_ITEM_LOG
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.CardLogBinding
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogType
+import dev.mooner.starlight.utils.peek
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -71,7 +72,7 @@ class LogItem: AbstractBindingItem<CardLogBinding>() {
                 val clip = ClipData.newPlainText("로그", data.toString())
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 clipboard.setPrimaryClip(clip)
-                Snackbar.make(it, "로그를 클립보드에 복사했어요.", Snackbar.LENGTH_SHORT).show()
+                it.context.peek("로그를 클립보드에 복사했어요.", PeekType.SUCCESS)
                 true
             }
         }

@@ -200,7 +200,8 @@
     <string name="plugin_category_devtools">개발 도구</string>
     <string name="plugin_category_other">기타</string>
     <string name="plugin_status_failed">로드 실패: %s</string>
-    <string name="plugin_status_incompatible_api">PluginCore %1$s용 (현재 %2$s)</string>
+    <string name="plugin_status_requires_newer_app">앱 업데이트 필요 (PluginCore %1$s)</string>
+    <string name="plugin_status_outdated_api">플러그인 업데이트 필요 (PluginCore %1$s)</string>
     <string name="plugin_status_missing_dependency">필요한 플러그인 없음: %s</string>
     <string name="plugin_status_excluded_dependency">필요한 플러그인 %s이(가) 로드되지 않음</string>
     <string name="plugin_status_incompatible_dependency">%1$s %2$s 필요 (설치됨 %3$s)</string>
@@ -216,7 +217,8 @@
     <string name="plugin_install_update">%1$s → %2$s 버전으로 업데이트해요.</string>
     <string name="plugin_install_reinstall">같은 버전(%s)을 다시 설치해요.</string>
     <string name="plugin_install_downgrade">%1$s → %2$s 버전으로 낮춰요.</string>
-    <string name="plugin_install_incompatible_api">PluginCore %1$s용이라 현재 버전(%2$s)에서는 로드되지 않을 수 있어요.</string>
+    <string name="plugin_api_requires_newer_app">PluginCore %1$s 이상이 필요해서 현재 앱(%2$s)에서는 불러올 수 없어요. 앱을 먼저 업데이트해주세요.</string>
+    <string name="plugin_api_outdated">PluginCore %1$s용으로 만들어져 이 앱이 지원하는 범위(%2$s 이상)보다 오래됐어요. 플러그인을 업데이트해주세요.</string>
     <string name="plugin_install_missing_dependencies">설치되지 않은 플러그인이 필요해요: %s</string>
     <string name="plugin_install_invalid">올바른 플러그인 파일이 아니에요: %s</string>
     <string name="plugin_install_failed">플러그인을 설치하지 못했어요: %s</string>
@@ -256,7 +258,6 @@
     <string name="plugin_store_hint_pending">설치됐어요. 앱을 다시 시작하면 불러와요.</string>
     <string name="plugin_store_hint_downloading">%2$s 중 %1$s 받는 중</string>
     <string name="plugin_store_hint_verifying">파일 해시를 확인하고 있어요</string>
-    <string name="plugin_store_incompatible_warning">PluginCore %1$s용으로 만들어져 현재 버전(%2$s)에서는 불러올 수 없어요.</string>
     <string name="plugin_store_stat_version">버전</string>
     <string name="plugin_store_stat_size">크기</string>
     <string name="plugin_store_stat_updated">업데이트</string>

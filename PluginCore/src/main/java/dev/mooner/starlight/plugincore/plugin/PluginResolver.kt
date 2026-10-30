@@ -1,5 +1,6 @@
 package dev.mooner.starlight.plugincore.plugin
 
+import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.plugin.PluginDependency.Companion.VERSION_ANY
 import dev.mooner.starlight.plugincore.version.Version
 import java.util.PriorityQueue
@@ -14,15 +15,19 @@ internal object PluginResolver {
     fun resolve(
         infos: Map<String, PluginInfo>,
         coreVersion: Version,
-        disabled: Set<String> = emptySet()
+        disabled: Set<String> = emptySet(),
+        minimumApiVersion: Version = Info.MIN_PLUGIN_API_VERSION,
     ): Resolution {
         val excluded: MutableMap<String, PluginExclusion> = linkedMapOf()
 
         for ((id, info) in infos) {
-            if (id in disabled)
+            if (id in disabled) {
                 excluded[id] = PluginExclusion.Disabled
-            else if (info.apiVersion incompatibleWith coreVersion)
-                excluded[id] = PluginExclusion.IncompatibleApi(info.apiVersion)
+                continue
+            }
+            val compatibility = ApiCompatibility.of(info.apiVersion, coreVersion, minimumApiVersion)
+            if (!compatibility.isCompatible)
+                excluded[id] = PluginExclusion.IncompatibleApi(info.apiVersion, compatibility)
         }
 
         var updated = true

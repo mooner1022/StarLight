@@ -11,7 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.text.toSpannable
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.snackbar.Snackbar
+import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.CardLogBinding
 import dev.mooner.starlight.plugincore.logger.LogData
@@ -19,6 +19,7 @@ import dev.mooner.starlight.plugincore.logger.LogType
 import dev.mooner.starlight.plugincore.utils.TimeUtils
 import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.plugincore.utils.isNightMode
+import dev.mooner.starlight.utils.peek
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Pattern
@@ -191,7 +192,7 @@ class LogsRecyclerViewAdapter
                     val clip = ClipData.newPlainText("로그", data.toString())
                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     clipboard.setPrimaryClip(clip)
-                    Snackbar.make(it, "로그를 클립보드에 복사했어요.", Snackbar.LENGTH_SHORT).show()
+                    it.context.peek("로그를 클립보드에 복사했어요.", PeekType.SUCCESS)
                     true
                 }
             }

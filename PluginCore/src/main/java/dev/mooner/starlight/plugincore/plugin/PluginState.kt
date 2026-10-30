@@ -5,7 +5,7 @@ import java.io.File
 
 sealed interface PluginExclusion {
     data object Disabled: PluginExclusion
-    data class IncompatibleApi(val apiVersion: Version): PluginExclusion
+    data class IncompatibleApi(val apiVersion: Version, val reason: ApiCompatibility): PluginExclusion
     data class MissingDependency(val dependency: PluginDependency): PluginExclusion
     data class ExcludedDependency(val dependency: PluginDependency): PluginExclusion
     data class IncompatibleDependency(val dependency: PluginDependency, val found: Version): PluginExclusion

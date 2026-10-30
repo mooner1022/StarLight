@@ -10,12 +10,13 @@ import android.content.pm.PackageInfo
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.snackbar.Snackbar
 import com.mikepenz.aboutlibraries.LibsBuilder
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.button
+import dev.mooner.configdsl.options.info
+import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityAppInfoBinding
 import dev.mooner.starlight.plugincore.Info
@@ -23,6 +24,7 @@ import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.utils.bindFadeImage
 import dev.mooner.starlight.utils.getPackageInfo
 import dev.mooner.starlight.utils.openWebUrl
+import dev.mooner.starlight.utils.peek
 
 class AppInfoActivity : AppCompatActivity() {
 
@@ -61,17 +63,20 @@ class AppInfoActivity : AppCompatActivity() {
         category {
             id = "general"
             items {
-                button {
+                info {
                     id = "name"
                     title = "앱 버전"
-                    description = "v${versionName}(build ${versionCode})"
+                    value = "v$versionName"
+                    description = "build $versionCode"
+                    copyable = true
                     icon = Icon.STAR
                     iconTintColor = defaultColor
                 }
-                button {
+                info {
                     id = "version"
                     title = "PluginCore 버전"
-                    description = "v${Info.PLUGINCORE_VERSION}"
+                    value = "v${Info.PLUGINCORE_VERSION}"
+                    copyable = true
                     icon = Icon.LAYERS
                     iconTintColor = defaultColor
                 }
@@ -96,18 +101,18 @@ class AppInfoActivity : AppCompatActivity() {
                     iconTintColor = defaultColor
                     setOnClickListener { _ ->
                         if (isDevMode) {
-                            Snackbar.make(binding.root, "이미 개발자 모드가 활성화되었습니다.", Snackbar.LENGTH_SHORT).show()
+                            peek("이미 개발자 모드가 활성화되었습니다.")
                         } else {
                             devModeClicks++
                             when(devModeClicks) {
                                 in 4..7 -> {
-                                    Snackbar.make(binding.root, "개발자 모드 활성화까지 ${8 - devModeClicks} 남았습니다.", Snackbar.LENGTH_SHORT).show()
+                                    peek("개발자 모드 활성화까지 ${8 - devModeClicks} 남았습니다.")
                                 }
                                 8 -> {
                                     GlobalConfig.edit {
                                         category("dev")["dev_mode"] = true
                                     }
-                                    Snackbar.make(binding.root, "개발자 모드 활성화", Snackbar.LENGTH_SHORT).show()
+                                    peek("개발자 모드 활성화", PeekType.SUCCESS)
                                 }
                             }
                         }

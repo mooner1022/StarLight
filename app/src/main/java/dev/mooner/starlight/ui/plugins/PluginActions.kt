@@ -5,8 +5,8 @@ import android.text.format.Formatter
 import androidx.annotation.ColorRes
 import androidx.lifecycle.LifecycleOwner
 import dev.mooner.starlight.R
-import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session.pluginManager
+import dev.mooner.starlight.plugincore.plugin.ApiCompatibility
 import dev.mooner.starlight.plugincore.plugin.InstalledPlugin
 import dev.mooner.starlight.plugincore.plugin.PluginCategory
 import dev.mooner.starlight.plugincore.plugin.PluginChange
@@ -90,12 +90,28 @@ internal fun Context.pluginStatus(entry: InstalledPlugin?, change: PluginChange?
     }
 }
 
+internal fun Context.apiCompatibilityText(compatibility: ApiCompatibility): String? =
+    when (compatibility) {
+        ApiCompatibility.Compatible -> null
+        is ApiCompatibility.RequiresNewerApp ->
+            getString(R.string.plugin_api_requires_newer_app, compatibility.required.toString(), compatibility.current.toString())
+        is ApiCompatibility.Outdated ->
+            getString(R.string.plugin_api_outdated, compatibility.apiVersion.toString(), compatibility.minimum.toString())
+    }
+
 internal fun Context.exclusionText(exclusion: PluginExclusion): String =
     when (exclusion) {
         PluginExclusion.Disabled ->
             getString(R.string.plugin_status_disabled)
         is PluginExclusion.IncompatibleApi ->
-            getString(R.string.plugin_status_incompatible_api, exclusion.apiVersion.toString(), Info.PLUGINCORE_VERSION.toString())
+            when (val reason = exclusion.reason) {
+                is ApiCompatibility.RequiresNewerApp ->
+                    getString(R.string.plugin_status_requires_newer_app, reason.required.toString())
+                is ApiCompatibility.Outdated ->
+                    getString(R.string.plugin_status_outdated_api, reason.apiVersion.toString())
+                ApiCompatibility.Compatible ->
+                    getString(R.string.plugin_status_outdated_api, exclusion.apiVersion.toString())
+            }
         is PluginExclusion.MissingDependency ->
             getString(R.string.plugin_status_missing_dependency, exclusion.dependency.pluginId)
         is PluginExclusion.ExcludedDependency ->
