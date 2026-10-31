@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.annotation.ColorInt
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -92,11 +91,7 @@ class NotificationApi: Api<NotificationApi.Notification>() {
         }
 
         private fun Context.buildNotification(): NotificationCompat.Builder {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                NotificationCompat.Builder(this, CHANNEL_ID)
-            } else {
-                NotificationCompat.Builder(this)
-            }.apply {
+            return NotificationCompat.Builder(this, CHANNEL_ID).apply {
                 setContentTitle(builder.mTitle)
                 setSubText(builder.mText)
                 setSmallIcon(R.drawable.ic_notification)
