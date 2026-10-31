@@ -10,11 +10,11 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.annotation.DrawableRes
 import androidx.core.view.updatePadding
-import coil.dispose
-import coil.load
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil.dispose
+import coil.load
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ItemStoreCategoryHeaderBinding
 import dev.mooner.starlight.databinding.ItemStoreFeaturedBinding

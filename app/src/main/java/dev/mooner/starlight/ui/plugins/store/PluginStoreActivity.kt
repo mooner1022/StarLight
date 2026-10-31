@@ -17,10 +17,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import dev.mooner.peekalert.PeekAlert
-import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityPluginStoreBinding
 import dev.mooner.starlight.databinding.ItemStoreDependencyBinding
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.createFailurePeek
 import dev.mooner.starlight.utils.createSimplePeek
 import dev.mooner.starlight.utils.restartApplication

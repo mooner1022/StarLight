@@ -10,7 +10,6 @@ import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.version.Version
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 
 @Serializable
 data class PluginInfo(

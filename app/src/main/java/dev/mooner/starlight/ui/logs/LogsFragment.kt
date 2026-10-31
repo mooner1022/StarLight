@@ -8,7 +8,6 @@ package dev.mooner.starlight.ui.logs
 
 import android.animation.LayoutTransition
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater

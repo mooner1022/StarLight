@@ -11,7 +11,6 @@ import androidx.core.util.readText
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.logger.internal.Logger
-import kotlinx.serialization.decodeFromString
 import java.io.File
 import java.io.FileNotFoundException
 

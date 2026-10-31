@@ -37,7 +37,6 @@ import dev.mooner.starlight.plugincore.config.GlobalConfig.getDefaultCategory
 import dev.mooner.starlight.plugincore.plugin.ApiCompatibility
 import dev.mooner.starlight.plugincore.plugin.InstalledPlugin
 import dev.mooner.starlight.plugincore.plugin.PluginCategory
-import dev.mooner.starlight.plugincore.plugin.PluginChange
 import dev.mooner.starlight.plugincore.plugin.PluginInfo
 import dev.mooner.starlight.plugincore.plugin.PluginState
 import dev.mooner.starlight.ui.common.showSheet
