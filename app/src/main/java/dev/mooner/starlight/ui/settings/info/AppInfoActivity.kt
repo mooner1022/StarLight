@@ -7,9 +7,9 @@
 package dev.mooner.starlight.ui.settings.info
 
 import android.content.pm.PackageInfo
-import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.pm.PackageInfoCompat
 import com.mikepenz.aboutlibraries.LibsBuilder
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.adapters.ConfigAdapter
@@ -41,10 +41,7 @@ class AppInfoActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val pInfo: PackageInfo = getPackageInfo()
-        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-            pInfo.longVersionCode
-        else
-            pInfo.versionCode
+        val versionCode = PackageInfoCompat.getLongVersionCode(pInfo)
 
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.recyclerView)

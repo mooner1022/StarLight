@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.core.content.pm.PackageInfoCompat
 import com.jakewharton.processphoenix.ProcessPhoenix
 
 /*
@@ -56,9 +57,5 @@ fun Context.getPackageInfo(packageName: String): PackageInfo {
 
 fun Context.getAppVersionCode(): Long {
     val pInfo: PackageInfo = getPackageInfo()
-    val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-        pInfo.longVersionCode
-    else
-        pInfo.versionCode.toLong()
-    return versionCode
+    return PackageInfoCompat.getLongVersionCode(pInfo)
 }
