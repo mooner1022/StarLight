@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import java.io.File
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 private typealias ListenerCallback = (log: LogData) -> Unit
@@ -25,7 +26,7 @@ class ProjectLogger private constructor(
 ) {
 
     private val listenerId: AtomicInteger = AtomicInteger(0)
-    private val listeners: WeakHashMap<Int, ListenerCallback> = WeakHashMap(2)
+    private val listeners: MutableMap<Int, ListenerCallback> = ConcurrentHashMap()
 
     val logs: MutableList<LogData>
         get() = this._logs
