@@ -114,8 +114,7 @@ class PageConfigOption(
         if (id !in descCache)
             descCache[id] = childOptions
                 .filterIsInstance<CategoryConfigOption>()
-                .map { it.childOptions.map { item -> item.title } }
-                .flatten()
+                .flatMap { it.childOptions.map { item -> item.title } }
                 .joinToString(", ")
         return descCache[id]!!
     }

@@ -63,7 +63,7 @@ class DefaultParserSpec: MessageParserSpec {
                 ?.getParcelable("background", Bitmap::class.java)
         } else {
             extras.getBundle("android.wearable.EXTENSIONS")
-                ?.getParcelable("background") as Bitmap?
+                ?.getParcelable("background")
         }
 
         val readAction = actions[0]

@@ -20,7 +20,7 @@ class DotenvParser {
 
         @JvmStatic
         fun parseString(string: String): EnvMap {
-            val lines = string.split('\n');
+            val lines = string.split('\n')
             var cursor = 0
 
             var state: ParseState = ParseState.NONE
@@ -56,7 +56,6 @@ class DotenvParser {
                             entries[key] = EntryValue(buffer.joinToString("\n"), true)
                             state = ParseState.NONE
                         }
-                        else -> {}
                     }
                 } else {
                     if (line.isBlank() || line.trimStart()[0] == TOKEN_COMMENT) {

@@ -255,7 +255,7 @@ class LogsFragment : Fragment(), OnClickListener {
                     ?.let { v ->
                         try {
                             Pattern.compile(v)
-                        } catch (e: PatternSyntaxException) {
+                        } catch (_: PatternSyntaxException) {
                             binding.editTextMessage.apply {
                                 error = "유효하지 않은 정규식"
                                 requestFocus()

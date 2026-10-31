@@ -112,7 +112,7 @@ class LogItem: AbstractBindingItem<CardLogBinding>() {
 
     override fun hashCode(): Int {
         var result = super.hashCode()
-        result = 31 * result + (logData?.hashCode() ?: 0)
+        result = 31 * result + logData.hashCode()
         return result
     }
 

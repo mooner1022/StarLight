@@ -123,7 +123,7 @@ class StoreDetailFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.installStates.collect { states ->
                     states[plugin.id]?.let { bindInstallState(it, animate = true) }
-                    bindDependencyStates(states)
+                    bindDependencyStates()
                 }
             }
         }
@@ -320,10 +320,10 @@ class StoreDetailFragment : Fragment() {
                     root.setOnClickListener { store.openDetail(target.id, null) }
             }
         }
-        bindDependencyStates(viewModel.installStates.value)
+        bindDependencyStates()
     }
 
-    private fun bindDependencyStates(states: Map<String, StoreInstallState>) {
+    private fun bindDependencyStates() {
         for ((dependency, row) in dependencyRows) {
             val version = viewModel.installedVersionOf(dependency.pluginId)
             val (text, color) = when {

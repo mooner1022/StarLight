@@ -18,8 +18,8 @@ open class CubicBezierInterpolator(start: PointF, end: PointF) : Interpolator {
     protected var c: PointF = PointF()
 
     init {
-        require(!(start.x < 0 || start.x > 1)) { "startX value must be in the range [0, 1]" }
-        require(!(end.x < 0 || end.x > 1)) { "endX value must be in the range [0, 1]" }
+        require(start.x in 0f..1f) { "startX value must be in the range [0, 1]" }
+        require(end.x in 0f..1f) { "endX value must be in the range [0, 1]" }
         this.start = start
         this.end = end
     }

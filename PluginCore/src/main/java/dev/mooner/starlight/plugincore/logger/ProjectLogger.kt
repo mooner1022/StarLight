@@ -149,7 +149,6 @@ class ProjectLogger private constructor(
     companion object {
         private const val LOGS_MAX_SIZE = 50
 
-        @OptIn(ExperimentalCoroutinesApi::class)
         private val logFlushScope: CoroutineScope =
             CoroutineScope(Dispatchers.IO.limitedParallelism(1)) + SupervisorJob()
 

@@ -7,7 +7,6 @@ import android.content.res.Resources
 import android.util.DisplayMetrics
 import android.util.TypedValue
 import android.view.View
-import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
@@ -103,12 +102,12 @@ fun dp(value: Int): Int =
 fun dp(value: Float): Float =
     value.toPx
 
-inline fun View.applyLayoutParams(block: ViewGroup.LayoutParams.() -> Unit) {
-    applyLayoutParams<ViewGroup.LayoutParams>(block)
+inline fun View.applyLayoutParams(block: LayoutParams.() -> Unit) {
+    applyLayoutParams<LayoutParams>(block)
 }
 
 @JvmName("applyLayoutParamsTyped")
-inline fun <reified T : ViewGroup.LayoutParams> View.applyLayoutParams(
+inline fun <reified T : LayoutParams> View.applyLayoutParams(
     block: T.() -> Unit
 ) {
     val params = (layoutParams ?: T::class.primaryConstructor!!.call(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)) as T

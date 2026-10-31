@@ -23,6 +23,7 @@ import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.ColorUtils
 import dev.mooner.starlight.R
@@ -391,7 +392,7 @@ class StoreInstallButton @JvmOverloads constructor(
         background = shape
         foreground = TypedValue()
             .also { context.theme.resolveAttribute(android.R.attr.selectableItemBackground, it, true) }
-            .let { context.getDrawable(it.resourceId) }
+            .let { AppCompatResources.getDrawable(context, it.resourceId) }
         clipToOutline = true
         outlineProvider = object : ViewOutlineProvider() {
             override fun getOutline(view: View, outline: Outline) {

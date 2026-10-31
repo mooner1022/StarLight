@@ -122,7 +122,7 @@ class PluginStoreActivity : AppCompatActivity() {
     fun openUrl(url: String) {
         try {
             startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-        } catch (e: ActivityNotFoundException) {
+        } catch (_: ActivityNotFoundException) {
             showPeek(url)
         }
     }

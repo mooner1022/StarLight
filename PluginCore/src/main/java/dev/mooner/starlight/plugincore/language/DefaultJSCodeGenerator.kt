@@ -28,7 +28,7 @@ class DefaultJSCodeGenerator: CodeGenerator {
 
     override fun generateComment(isMultiLine: Boolean, isDocument: Boolean, content: String): String {
         return if (!isMultiLine)
-            "//${content}";
+            "//${content}"
         else {
             buildString {
                 append("/*")

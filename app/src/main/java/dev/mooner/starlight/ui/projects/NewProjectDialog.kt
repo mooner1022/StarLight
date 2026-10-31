@@ -8,7 +8,6 @@ package dev.mooner.starlight.ui.projects
 
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.transition.AutoTransition
 import android.transition.TransitionManager
 import android.transition.TransitionSet
@@ -19,6 +18,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.core.content.getSystemService
+import androidx.core.graphics.toColorInt
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -380,7 +380,7 @@ private fun ItemNewProjectLanguageBinding.setLanguageSelected(selected: Boolean)
     if (selected) {
         cardWrapper.strokeWidth = dp(2)
         cardWrapper.strokeColor = context.getColor(R.color.main_bright)
-        cardWrapper.setCardBackgroundColor(Color.parseColor(SELECTED_LANGUAGE_COLOR))
+        cardWrapper.setCardBackgroundColor(SELECTED_LANGUAGE_COLOR.toColorInt())
     } else {
         cardWrapper.strokeWidth = 0
         cardWrapper.setCardBackgroundColor(context.getColor(dev.mooner.configdsl.R.color.background_selection_card))

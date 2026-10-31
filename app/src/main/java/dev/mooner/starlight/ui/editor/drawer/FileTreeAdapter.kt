@@ -33,7 +33,7 @@ class FileTreeAdapter(
     val root: File,
     private val lockedFiles: Set<String>,
     val listener: OnFileSelectedListener
-): TreeAdapter<File>(activity, walkAndMap(root)) {
+): TreeAdapter<File>(walkAndMap(root)) {
 
     private val editor: DefaultEditorActivity?
         get() = activity as? DefaultEditorActivity

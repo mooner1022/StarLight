@@ -366,7 +366,7 @@ class IntroActivity : AppCompatActivity() {
             if (previous == granted)
                 continue
             row.isGranted = granted
-            row.binding.setGranted(granted, animate && previous == false && granted)
+            row.binding.setGranted(granted, animate && previous == false)
         }
         if (page != -1)
             updateButtons(animate)

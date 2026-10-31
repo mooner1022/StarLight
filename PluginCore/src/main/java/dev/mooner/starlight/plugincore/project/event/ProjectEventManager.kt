@@ -10,7 +10,7 @@ object ProjectEventManager {
 
             const val PATH_DELIMITER  = '.'
     private const val WILDCARD_ALL    = "*"
-    private val       ID_SANITY_REGEX = "(^[-_\\dA-Za-z]+\$)".toRegex()
+    private val       ID_SANITY_REGEX = "(^[-_\\dA-Za-z]+$)".toRegex()
 
     private val classCache: MutableMap<ProjectEventClass, String> = hashMapOf()
     private val events: MutableMap<String, ProjectEventNode> = hashMapOf()

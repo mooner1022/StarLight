@@ -1,10 +1,10 @@
 package dev.mooner.configdsl
 
-import android.graphics.Color
 import android.util.Log
 import android.view.View
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
+import androidx.core.graphics.toColorInt
 import dev.mooner.configdsl.options.CategoryConfigOption
 import java.io.File
 import kotlin.properties.Delegates.notNull
@@ -44,7 +44,7 @@ class ConfigBuilder {
     }
 
     fun color(color: String): Int = colorCache[color] ?: let {
-        val colorInt = Color.parseColor(color)
+        val colorInt = color.toColorInt()
         colorCache[color] = colorInt
         colorInt
     }

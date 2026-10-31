@@ -35,7 +35,7 @@ class ProjectManager(
     fun getProjectByName(name: String, ignoreCase: Boolean = false): Project? {
         return if (ignoreCase) {
             projects.keys
-                .find { it.lowercase() == name.lowercase() }
+                .find { it.equals(name, ignoreCase = true) }
                 ?.let(projects::get)
         } else {
             projects[name]

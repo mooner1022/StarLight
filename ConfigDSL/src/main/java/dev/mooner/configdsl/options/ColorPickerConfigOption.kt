@@ -81,9 +81,9 @@ data class ColorPickerConfigOption(
                         if (selected == null) {
                             Toast.makeText(context, R.string.configdsl_color_not_selected, Toast.LENGTH_SHORT).show()
                         } else {
-                            holder.icon.imageTintList = selected?.let(ColorStateList::valueOf)
-                            onColorSelectedListener?.invoke(holder.layout, selected!!)
-                            notifyUpdated(selected!!)
+                            holder.icon.imageTintList = ColorStateList.valueOf(selected)
+                            onColorSelectedListener?.invoke(holder.layout, selected)
+                            notifyUpdated(selected)
                         }
                     }
                     negativeButton(R.string.cancel)

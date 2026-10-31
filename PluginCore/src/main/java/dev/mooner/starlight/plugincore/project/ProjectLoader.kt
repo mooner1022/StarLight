@@ -69,12 +69,12 @@ class ProjectLoader(
     private fun getProjectInfo(dir: File): ProjectInfo {
         val raw = try {
             AtomicFile(File(dir, "project.json")).readText()
-        } catch (e: FileNotFoundException) {
+        } catch (_: FileNotFoundException) {
             throw IllegalStateException("Could not find project.json from ${dir.name}")
         }
         try {
             return json.decodeFromString(raw)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             throw IllegalArgumentException("Failed to parse project.json from ${dir.name}")
         }
     }

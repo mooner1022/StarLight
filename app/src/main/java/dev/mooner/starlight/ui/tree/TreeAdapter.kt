@@ -1,7 +1,6 @@
 package dev.mooner.starlight.ui.tree
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +13,6 @@ import dev.mooner.starlight.databinding.TreeNodeBinding
 import dev.mooner.starlight.utils.dp
 
 abstract class TreeAdapter <T> (
-    private val context: Context,
     private var fullNode: List<Node<T>>
 ): RecyclerView.Adapter<TreeAdapter<T>.TreeViewHolder>() {
 

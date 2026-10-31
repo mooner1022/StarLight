@@ -70,7 +70,7 @@ class PluginConfigActivity: AppCompatActivity() {
             lifecycleOwner(this@PluginConfigActivity)
         }.build()
 
-        fabProjectConfig.setOnClickListener { view ->
+        fabProjectConfig.setOnClickListener {
             if (configAdapter?.hasError == true) {
                 peek("올바르지 않은 설정값이 있습니다. 확인 후 다시 시도해주세요.", PeekType.ERROR)
                 fabProjectConfig.hide()

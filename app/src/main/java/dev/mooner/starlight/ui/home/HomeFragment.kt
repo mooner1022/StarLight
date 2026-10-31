@@ -237,7 +237,7 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
     private fun applySetting(widget: HomeWidget, id: String, value: JsonElement) {
         if (_binding == null || widgets[widget.card] !== widget)
             return
-        widget.settings = widget.settings + (id to value)
+        widget.settings += (id to value)
         widget.controller?.updateSettings(widget.settings)
         saveLayout()
     }

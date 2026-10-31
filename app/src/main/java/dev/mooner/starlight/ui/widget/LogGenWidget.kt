@@ -64,7 +64,7 @@ class LogGenWidget: Widget() {
                     setPadding(0, dp(10), 0, dp(30))
                 }
 
-                for (type in LogType.values().sortedBy(LogType::priority)) {
+                for (type in LogType.entries.sortedBy(LogType::priority)) {
                     Button(context).apply {
                         setOnClickListener {
                             onClick(it, type)
