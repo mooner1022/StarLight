@@ -21,6 +21,11 @@ interface ProjectLifecycle {
 
     fun unregisterObserver(observer: ProjectLifecycleObserver)
 
+    /**
+     * Waits until the project is in [state], then runs [block].
+     * The block is cancelled when the project leaves [state].
+     * Returns once the block finishes or is cancelled that way.
+     */
     suspend fun whileInState(state: State, block: LifecycleCallback)
 
     enum class State {

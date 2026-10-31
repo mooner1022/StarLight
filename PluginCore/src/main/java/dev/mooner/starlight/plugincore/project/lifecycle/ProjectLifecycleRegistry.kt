@@ -54,22 +54,8 @@ class ProjectLifecycleRegistry(
         }
     }
 
-    override suspend fun whileInState(state: ProjectLifecycle.State, block: LifecycleCallback) = coroutineScope {
-        if (flow.value == state) {
-            block(project)
-            flow.collect { nState ->
-                if (nState != state)
-                    cancel()
-            }
-        } else {
-            flow.collect { nState ->
-                if (nState == state)
-                    block(project)
-                else
-                    cancel()
-            }
-        }
-    }
+    override suspend fun whileInState(state: ProjectLifecycle.State, block: LifecycleCallback) =
+        flow.whileIn(state) { block(project) }
 
     fun setCurrentState(state: ProjectLifecycle.State) {
         if (this.state == state)
@@ -109,5 +95,18 @@ class ProjectLifecycleRegistry(
         ).also {
             registerObserver(it, it)
         }
+    }
+}
+
+internal suspend fun <T> StateFlow<T>.whileIn(state: T, block: suspend () -> Unit) {
+    first { it == state }
+    coroutineScope {
+        val work = launch { block() }
+        val watcher = launch {
+            first { it != state }
+            work.cancel()
+        }
+        work.join()
+        watcher.cancel()
     }
 }
