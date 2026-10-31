@@ -142,7 +142,6 @@ class TextListConfigBuilder: ConfigBuilderBase<TextListConfigOption.TextListView
     }
 }
 
-@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.textList(block: TextListConfigBuilder.() -> Unit) {
     add(TextListConfigBuilder().apply(block))
 }

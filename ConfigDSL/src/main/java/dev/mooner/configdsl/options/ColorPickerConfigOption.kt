@@ -156,7 +156,6 @@ class ColorPickerConfigBuilder: ConfigBuilderBase<ButtonConfigOption.ButtonViewH
     }
 }
 
-@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.colorPicker(block: ColorPickerConfigBuilder.() -> Unit) {
     add(ColorPickerConfigBuilder().apply(block))
 }

@@ -141,7 +141,6 @@ class InfoConfigBuilder: ConfigBuilderBase<InfoConfigOption.InfoViewHolder, Unit
     }
 }
 
-@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.info(block: InfoConfigBuilder.() -> Unit) {
     add(InfoConfigBuilder().apply(block))
 }

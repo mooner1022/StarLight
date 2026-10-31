@@ -109,7 +109,6 @@ class StringConfigBuilder: ConfigBuilderBase<StringConfigOption.StringViewHolder
     }
 }
 
-@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.string(block: StringConfigBuilder.() -> Unit) {
     add(StringConfigBuilder().apply(block))
 }

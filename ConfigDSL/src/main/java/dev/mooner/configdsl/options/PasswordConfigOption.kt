@@ -76,7 +76,6 @@ class PasswordConfigBuilder: ConfigBuilderBase<ButtonConfigOption.ButtonViewHold
     }
 }
 
-@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.password(block: PasswordConfigBuilder.() -> Unit) {
     add(PasswordConfigBuilder().apply(block))
 }

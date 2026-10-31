@@ -94,7 +94,6 @@ class MultiChoiceConfigBuilder: ConfigBuilderBase<MultiChoiceConfigOption.MultiC
     }
 }
 
-@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.multiChoice(block: MultiChoiceConfigBuilder.() -> Unit) {
     add(MultiChoiceConfigBuilder().apply(block))
 }

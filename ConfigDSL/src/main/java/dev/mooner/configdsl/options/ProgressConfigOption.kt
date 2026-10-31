@@ -109,7 +109,6 @@ class ProgressConfigBuilder: ConfigBuilderBase<ProgressConfigOption.ProgressView
     }
 }
 
-@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.progress(block: ProgressConfigBuilder.() -> Unit) {
     add(ProgressConfigBuilder().apply(block))
 }

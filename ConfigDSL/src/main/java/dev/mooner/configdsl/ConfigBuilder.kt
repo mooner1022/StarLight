@@ -22,7 +22,6 @@ annotation class ConfigBuilderDsl
 @DslMarker
 annotation class ConfigOptionBuilderDsl
 
-@ConfigBuilderDsl
 fun config(block: ConfigBuilder.() -> Unit): ConfigStructure {
     val builder = ConfigBuilder().apply(block)
     return builder.build(flush = true)
@@ -54,7 +53,6 @@ class ConfigBuilder {
         objects += option
     }
 
-    @ConfigBuilderDsl
     fun category(block: CategoryConfigBuilder.() -> Unit) {
         val category = CategoryConfigBuilder().apply(block)
         objects += category.build()
@@ -92,7 +90,6 @@ class ConfigBuilder {
 
         var items: List<ConfigOption<*, *>> = arrayListOf()
 
-        @ConfigBuilderDsl
         fun items(block: ConfigItemBuilder.() -> Unit) {
             val builder = ConfigItemBuilder().apply(block)
             items = builder.build()
