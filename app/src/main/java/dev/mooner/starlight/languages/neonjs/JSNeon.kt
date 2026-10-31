@@ -12,15 +12,7 @@ import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
-import dev.mooner.neonjs.ExecutionMode
-import dev.mooner.neonjs.HostAccess
-import dev.mooner.neonjs.NeonConsole
-import dev.mooner.neonjs.NeonContext
-import dev.mooner.neonjs.NeonEngine
-import dev.mooner.neonjs.NeonInterruptedException
-import dev.mooner.neonjs.NeonModuleLoader
-import dev.mooner.neonjs.NeonValue
-import dev.mooner.neonjs.SandboxPolicy
+import dev.mooner.neonjs.*
 import dev.mooner.neonjs.net.NetExtension
 import dev.mooner.neonjs.net.NetOptions
 import dev.mooner.starlight.core.GlobalApplication
@@ -38,12 +30,7 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -100,6 +87,8 @@ class JSNeon: Language() {
                 NetExtension(
                     NetOptions.builder()
                         .allowAllHosts()
+                        .allowAddresses("127.0.0.1/32")
+                        .allowInsecure(true)
                         .build()
                 )
             )
