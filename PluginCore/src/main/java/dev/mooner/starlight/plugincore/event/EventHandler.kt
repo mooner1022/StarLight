@@ -37,10 +37,14 @@ inline fun <reified T: Event> EventHandler.on(
     .buffer(Channel.UNLIMITED)
     .filterIsInstance<T>()
     .onEach { event ->
-        scope.launch(event.coroutineContext) {
+        scope.launch(event.coroutineContext.minusKey(Job)) {
             runCatching {
                 callback(event)
-            }.onFailure { LOG.error(it) { "Failed to handle event ${T::class.simpleName}" } }
+            }.onFailure {
+                if (it is CancellationException)
+                    throw it
+                LOG.error(it) { "Failed to handle event ${T::class.simpleName}" }
+            }
         }
     }
     .launchIn(scope)
