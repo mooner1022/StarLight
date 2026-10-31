@@ -105,7 +105,6 @@ class ChoiceConfigBuilder: ConfigBuilderBase<SpinnerConfigOption.SpinnerViewHold
     }
 }
 
-@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.choice(block: ChoiceConfigBuilder.() -> Unit) {
     add(ChoiceConfigBuilder().apply(block))
 }

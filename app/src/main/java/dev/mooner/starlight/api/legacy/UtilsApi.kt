@@ -43,7 +43,7 @@ class UtilsApi: Api<UtilsApi.Utils>() {
 
             /* NEW_API */
 
-            private val alphanumericPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+            private val alphanumericPool: List<Char> = listOf('a'..'z', 'A'..'Z', '0'..'9').flatten()
             @JvmStatic
             fun randomAlphanumeric(length: Int): String {
                 val arr: ArrayList<Char> = arrayListOf()

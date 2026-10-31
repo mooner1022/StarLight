@@ -41,7 +41,7 @@ fun Json.decodeLegacyData(string: String): MutableDataMap {
 fun Json.decodeConfigData(string: String): MutableDataMap {
     val data = try {
         decodeLegacyData(string)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         decodeFromString<MutableDataMap>(string)
     }
     return data.mapValuesTo(ConcurrentHashMap<String, MutableDataMapEntry>()) { (_, entry) ->
@@ -52,7 +52,7 @@ fun Json.decodeConfigData(string: String): MutableDataMap {
 internal fun AtomicFile.readConfigData(): MutableDataMap {
     val raw = try {
         readText()
-    } catch (e: FileNotFoundException) {
+    } catch (_: FileNotFoundException) {
         return ConcurrentHashMap()
     }
     if (raw.isBlank())

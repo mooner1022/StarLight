@@ -1,10 +1,10 @@
 package dev.mooner.configdsl
 
-import android.graphics.Color
 import android.util.Log
 import android.view.View
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
+import androidx.core.graphics.toColorInt
 import dev.mooner.configdsl.options.CategoryConfigOption
 import java.io.File
 import kotlin.properties.Delegates.notNull
@@ -22,7 +22,6 @@ annotation class ConfigBuilderDsl
 @DslMarker
 annotation class ConfigOptionBuilderDsl
 
-@ConfigBuilderDsl
 fun config(block: ConfigBuilder.() -> Unit): ConfigStructure {
     val builder = ConfigBuilder().apply(block)
     return builder.build(flush = true)
@@ -45,7 +44,7 @@ class ConfigBuilder {
     }
 
     fun color(color: String): Int = colorCache[color] ?: let {
-        val colorInt = Color.parseColor(color)
+        val colorInt = color.toColorInt()
         colorCache[color] = colorInt
         colorInt
     }
@@ -54,7 +53,6 @@ class ConfigBuilder {
         objects += option
     }
 
-    @ConfigBuilderDsl
     fun category(block: CategoryConfigBuilder.() -> Unit) {
         val category = CategoryConfigBuilder().apply(block)
         objects += category.build()
@@ -92,7 +90,6 @@ class ConfigBuilder {
 
         var items: List<ConfigOption<*, *>> = arrayListOf()
 
-        @ConfigBuilderDsl
         fun items(block: ConfigItemBuilder.() -> Unit) {
             val builder = ConfigItemBuilder().apply(block)
             items = builder.build()

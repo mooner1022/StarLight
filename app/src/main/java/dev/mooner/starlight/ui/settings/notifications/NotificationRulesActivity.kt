@@ -29,7 +29,6 @@ import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.utils.createSimplePeek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 
 internal typealias Rules = MutableList<RuleData>

@@ -160,7 +160,7 @@ class DebugRoomChatAdapter(
         }
     }
 
-    inner class ViewHolder(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
+    class ViewHolder(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
 
         lateinit var sender: TextView
         lateinit var message: TextView

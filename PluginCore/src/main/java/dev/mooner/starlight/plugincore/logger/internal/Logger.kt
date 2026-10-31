@@ -24,7 +24,6 @@ import kotlinx.coroutines.*
 
 internal object Logger {
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private val logPublishScope: CoroutineScope =
         CoroutineScope(Dispatchers.IO.limitedParallelism(1)) + SupervisorJob()
 

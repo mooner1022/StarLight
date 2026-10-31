@@ -114,8 +114,7 @@ class PageConfigOption(
         if (id !in descCache)
             descCache[id] = childOptions
                 .filterIsInstance<CategoryConfigOption>()
-                .map { it.childOptions.map { item -> item.title } }
-                .flatten()
+                .flatMap { it.childOptions.map { item -> item.title } }
                 .joinToString(", ")
         return descCache[id]!!
     }
@@ -153,7 +152,6 @@ class PageConfigBuilder(
         sharedData = PageConfigOption.SharedPageData(saved, onValueUpdated)
     }
 
-    @ConfigBuilderDsl
     fun structure(builder: ConfigBuilder.() -> Unit) {
         structure = ConfigBuilder()
             .apply(builder)
@@ -188,7 +186,6 @@ class SingleCategoryPageBuilder(
 
     var default: MutableDataMapEntry = hashMapOf()
 
-    @ConfigBuilderDsl
     fun items(builder: ConfigItemBuilder.() -> Unit) {
         structure = ConfigItemBuilder()
             .apply(builder)
@@ -218,24 +215,20 @@ class SingleCategoryPageBuilder(
     }
 }
 
-@ConfigBuilderDsl
 fun ConfigBuilder.page(block: PageConfigBuilder.() -> Unit) {
     val category = PageConfigBuilder(isRootOption = true).apply(block)
     add(category.build())
 }
 
-@ConfigBuilderDsl
 fun ConfigBuilder.singleCategoryPage(block: SingleCategoryPageBuilder.() -> Unit) {
     val category = SingleCategoryPageBuilder(isRootOption = true).apply(block)
     add(category.build())
 }
 
-@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.page(block: PageConfigBuilder.() -> Unit) {
     add(PageConfigBuilder(isRootOption = false).apply(block))
 }
 
-@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.singleCategoryPage(block: SingleCategoryPageBuilder.() -> Unit) {
     add(SingleCategoryPageBuilder(isRootOption = false).apply(block))
 }

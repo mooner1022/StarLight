@@ -26,7 +26,6 @@ object LogCollector {
     private val logCollectionScope: CoroutineScope =
         CoroutineScope(Dispatchers.Default)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private val logWriteScope: CoroutineScope =
         CoroutineScope(Dispatchers.IO.limitedParallelism(1)) + SupervisorJob()
 

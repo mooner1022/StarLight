@@ -87,7 +87,7 @@ class EventEmitterApi: Api<EventEmitterApi.EventEmitter>() {
                 return this
 
             if (listener == null)
-                listeners[eventName]!!.removeLast()
+                listeners[eventName]!!.removeLastOrNull()
             else
                 listeners[eventName]!!
                     .removeIf { it.callback == listener }

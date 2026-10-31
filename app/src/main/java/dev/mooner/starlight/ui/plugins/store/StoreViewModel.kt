@@ -3,8 +3,8 @@ package dev.mooner.starlight.ui.plugins.store
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import dev.mooner.starlight.plugincore.plugin.ApiCompatibility
 import dev.mooner.starlight.plugincore.Session.pluginManager
+import dev.mooner.starlight.plugincore.plugin.ApiCompatibility
 import dev.mooner.starlight.plugincore.plugin.PluginChange
 import dev.mooner.starlight.plugincore.plugin.PluginDependency
 import dev.mooner.starlight.plugincore.plugin.PluginRepository

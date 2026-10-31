@@ -14,22 +14,20 @@ import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 
 fun Context.createNotificationChannel(channelId: String, channelName: String, channelDescription: String? = null, importance: Int = NotificationManager.IMPORTANCE_DEFAULT) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val notificationChannel = NotificationChannel(
-            channelId,
-            channelName,
-            importance
-        )
-        //notificationChannel.enableLights(false)
-        //notificationChannel.enableVibration(false)
-        if (channelDescription != null)
-            notificationChannel.description = channelDescription
+    val notificationChannel = NotificationChannel(
+        channelId,
+        channelName,
+        importance
+    )
+    //notificationChannel.enableLights(false)
+    //notificationChannel.enableVibration(false)
+    if (channelDescription != null)
+        notificationChannel.description = channelDescription
 
-        val notificationManager = applicationContext.getSystemService(
-            Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(
-            notificationChannel)
-    }
+    val notificationManager = applicationContext.getSystemService(
+        Context.NOTIFICATION_SERVICE) as NotificationManager
+    notificationManager.createNotificationChannel(
+        notificationChannel)
 }
 
 class NotificationEventService: IntentService(NotificationEventService::class.java.simpleName) {

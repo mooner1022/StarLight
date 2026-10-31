@@ -14,6 +14,7 @@ import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.core.view.children
+import androidx.core.view.isNotEmpty
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
@@ -168,8 +169,8 @@ fun Context.showSheet(block: SheetBuilder.() -> Unit): Sheet {
         val container = if (builder.isContentScrollable) content else fixedContent
         builder.content?.invoke(inflater, container)
         builder.grid?.let { container.addGrid(inflater, it, sheet) }
-        content.isVisible = content.childCount > 0
-        fixedContent.isVisible = fixedContent.childCount > 0
+        content.isVisible = content.isNotEmpty()
+        fixedContent.isVisible = fixedContent.isNotEmpty()
 
         for ((text, checked) in builder.checkboxes)
             ItemSheetCheckboxBinding.inflate(inflater, checkboxes, true).root.apply {
@@ -267,7 +268,7 @@ private fun DialogSheetBinding.updateDivider() {
 private fun DialogSheetBinding.playEnterAnimation() {
     val offset = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, root.resources.displayMetrics)
     val targets = listOf(message) + content.children.toList() + listOf(note, checkboxes) + fixedContent.children.toList() + listOf(buttons)
-    targets.filter { it.visibility == View.VISIBLE }.forEachIndexed { i, view ->
+    targets.filter { it.isVisible }.forEachIndexed { i, view ->
         view.alpha = 0f
         view.translationY = offset
         view.animate()

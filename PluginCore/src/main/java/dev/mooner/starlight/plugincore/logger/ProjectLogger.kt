@@ -13,8 +13,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -151,7 +149,6 @@ class ProjectLogger private constructor(
     companion object {
         private const val LOGS_MAX_SIZE = 50
 
-        @OptIn(ExperimentalCoroutinesApi::class)
         private val logFlushScope: CoroutineScope =
             CoroutineScope(Dispatchers.IO.limitedParallelism(1)) + SupervisorJob()
 

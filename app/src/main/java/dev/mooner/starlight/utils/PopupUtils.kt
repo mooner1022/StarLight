@@ -73,7 +73,7 @@ private fun configureMenu(menu: Menu, builder: PopupBuilder.PopupMenuBuilder) {
                     if (config.icon != null)
                         it.setIcon(config.icon!!)
                     else
-                        it.setIcon(null)
+                        it.icon = null
                     it.icon?.setTintList(config.iconTintList)
 
                     it.isEnabled   = config.enabled

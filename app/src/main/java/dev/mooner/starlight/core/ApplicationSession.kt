@@ -9,6 +9,7 @@ package dev.mooner.starlight.core
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Build
+import androidx.core.content.pm.PackageInfoCompat
 import dev.mooner.starlight.CA_PLUGIN
 import dev.mooner.starlight.CF_SAFE_MODE
 import dev.mooner.starlight.R
@@ -225,10 +226,7 @@ object ApplicationSession {
     private fun setExceptionHandler(context: Context) =
         Thread.setDefaultUncaughtExceptionHandler { paramThread, paramThrowable ->
             val pInfo: PackageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-                pInfo.longVersionCode
-            else
-                pInfo.versionCode
+            val versionCode = PackageInfoCompat.getLongVersionCode(pInfo)
 
             val errMsg = """
             |*** 치명적인 오류가 발생했습니다. 앱을 종료하는 중... ***

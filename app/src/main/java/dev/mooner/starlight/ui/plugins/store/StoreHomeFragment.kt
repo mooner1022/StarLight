@@ -20,6 +20,7 @@ import android.view.inputmethod.InputMethodManager
 import androidx.core.content.getSystemService
 import androidx.core.view.children
 import androidx.core.view.doOnPreDraw
+import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -33,10 +34,10 @@ import com.google.android.material.carousel.CarouselSnapHelper
 import com.google.android.material.carousel.HeroCarouselStrategy
 import com.google.android.material.chip.Chip
 import com.google.android.material.transition.Hold
-import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentStoreHomeBinding
 import dev.mooner.starlight.databinding.ItemStoreInfoBinding
+import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.restartApplication
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -416,9 +417,9 @@ class StoreHomeFragment : Fragment() {
 
     private fun View.fadeIn() {
         animate().cancel()
-        if (visibility == View.VISIBLE && alpha == 1f)
+        if (isVisible && alpha == 1f)
             return
-        if (visibility != View.VISIBLE)
+        if (!isVisible)
             alpha = 0f
         visibility = View.VISIBLE
         animate().alpha(1f).setDuration(280).start()

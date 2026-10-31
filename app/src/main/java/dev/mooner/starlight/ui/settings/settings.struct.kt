@@ -10,13 +10,13 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
-import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
 import android.text.format.Formatter
 import android.view.View
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -297,7 +297,7 @@ internal fun SettingsFragment.getSettingsStruct() = config {
                 icon = Icon.FAVORITE
                 iconTintColor = color { "#FF90BC" }
                 setOnClickListener { _ ->
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://buymeacoffee.com/mooner"))
+                    val intent = Intent(Intent.ACTION_VIEW, "https://buymeacoffee.com/mooner".toUri())
                     startActivity(intent)
                 }
             }
@@ -371,7 +371,7 @@ private fun Context.openBatteryOptimizationSettings() {
     val intent = if (isIgnoring)
         Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
     else
-        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))
+        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, "package:$packageName".toUri())
     startActivity(intent)
 }
 

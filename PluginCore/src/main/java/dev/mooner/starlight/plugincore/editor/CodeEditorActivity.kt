@@ -49,7 +49,7 @@ abstract class CodeEditorActivity: AppCompatActivity() {
 
         return try {
             targetFile.readText(Charsets.UTF_8)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return null
         }
     }
@@ -65,7 +65,7 @@ abstract class CodeEditorActivity: AppCompatActivity() {
         return try {
             targetFile.writeText(code, Charsets.UTF_8)
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }

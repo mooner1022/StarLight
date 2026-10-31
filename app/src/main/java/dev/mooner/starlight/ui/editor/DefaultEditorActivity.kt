@@ -5,7 +5,6 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
-import android.os.Build
 import android.os.Bundle
 import android.view.*
 import android.webkit.ConsoleMessage
@@ -68,7 +67,6 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -76,7 +74,6 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import org.mozilla.javascript.RhinoException
 import java.io.File
-import java.util.*
 import kotlin.coroutines.resume
 import kotlin.properties.Delegates.notNull
 
@@ -341,10 +338,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         val iconColor = ColorStateList.valueOf(getTextColor(theme.isTextDark))
         for (idx in 0 until menu.size) {
             val item = menu[idx]
-            if (Build.VERSION.SDK_INT < 26)
-                item.icon?.setTintList(iconColor)
-            else
-                item.iconTintList = iconColor
+            item.iconTintList = iconColor
 
             if (item.itemId == R.id.menu_debug_room && getProject() == null)
                 item.isVisible = false
@@ -698,12 +692,8 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         binding.toolbarEditor.apply {
             setTitleTextColor(textColor)
             navigationIcon!!.colorFilter = PorterDuffColorFilter(textColor, PorterDuff.Mode.MULTIPLY)
-            for (idx in 0 until menu.size) {
-                if (Build.VERSION.SDK_INT < 26)
-                    menu[idx].icon?.setTintList(textColorStateList)
-                else
-                    menu[idx].iconTintList = textColorStateList
-            }
+            for (idx in 0 until menu.size)
+                menu[idx].iconTintList = textColorStateList
         }
         //binding.toolbarEditor.foregroundTintList = ColorStateList.valueOf(textColor)
         binding.rvOpenFiles.setBackgroundColor(color)

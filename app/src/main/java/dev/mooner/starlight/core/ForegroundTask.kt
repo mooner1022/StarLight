@@ -11,7 +11,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
@@ -73,20 +72,18 @@ class ForegroundTask: Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationChannel = NotificationChannel(
-                CHANNEL_ID,
-                "포그라운드 채널",
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-            //notificationChannel.enableLights(false)
-            //notificationChannel.enableVibration(false)
-            //notificationChannel.description = "StarLight 의 서비스를 실행하기 위한 알림이에요."
+        val notificationChannel = NotificationChannel(
+            CHANNEL_ID,
+            "포그라운드 채널",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        //notificationChannel.enableLights(false)
+        //notificationChannel.enableVibration(false)
+        //notificationChannel.description = "StarLight 의 서비스를 실행하기 위한 알림이에요."
 
-            val notificationManager = applicationContext.getSystemService(
-                Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(
-                notificationChannel)
-        }
+        val notificationManager = applicationContext.getSystemService(
+            NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(
+            notificationChannel)
     }
 }

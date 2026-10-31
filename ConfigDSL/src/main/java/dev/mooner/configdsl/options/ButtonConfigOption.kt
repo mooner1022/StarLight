@@ -177,7 +177,6 @@ class ButtonConfigBuilder: ConfigBuilderBase<ButtonConfigOption.ButtonViewHolder
     }
 }
 
-@ConfigOptionBuilderDsl
 fun ConfigItemBuilder.button(block: ButtonConfigBuilder.() -> Unit) {
     add(ButtonConfigBuilder().apply(block))
 }

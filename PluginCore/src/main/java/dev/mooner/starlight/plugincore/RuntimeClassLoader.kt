@@ -30,8 +30,4 @@ class RuntimeClassLoader(
             classes[name] = it
         }
     }
-
-    override fun loadClass(name: String?): Class<*> {
-        return super.loadClass(name)
-    }
 }

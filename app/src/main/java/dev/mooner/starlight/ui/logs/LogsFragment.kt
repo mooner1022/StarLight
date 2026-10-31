@@ -8,7 +8,6 @@ package dev.mooner.starlight.ui.logs
 
 import android.animation.LayoutTransition
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -256,7 +255,7 @@ class LogsFragment : Fragment(), OnClickListener {
                     ?.let { v ->
                         try {
                             Pattern.compile(v)
-                        } catch (e: PatternSyntaxException) {
+                        } catch (_: PatternSyntaxException) {
                             binding.editTextMessage.apply {
                                 error = "유효하지 않은 정규식"
                                 requestFocus()

@@ -1,11 +1,11 @@
 package dev.mooner.starlight.ui.common
 
 import android.content.Context
-import android.graphics.Color
 import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
+import androidx.core.graphics.toColorInt
 import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputLayout
@@ -144,7 +144,7 @@ private class OptionCards(
         if (selected) {
             strokeWidth = (2 * resources.displayMetrics.density).toInt()
             strokeColor = context.getColor(R.color.main_bright)
-            setCardBackgroundColor(Color.parseColor(SELECTED_OPTION_COLOR))
+            setCardBackgroundColor(SELECTED_OPTION_COLOR.toColorInt())
         } else {
             strokeWidth = 0
             setCardBackgroundColor(context.getColor(dev.mooner.configdsl.R.color.background_selection_card))

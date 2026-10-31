@@ -92,7 +92,7 @@ class ProjectConfigActivity: AppCompatActivity() {
             configData((project.config.getData() as MutableDataMap).injectEventIds(project.info.allowedEventIds))
         }.build()
 
-        fabProjectConfig.setOnClickListener { view ->
+        fabProjectConfig.setOnClickListener {
             if (configAdapter?.hasError == true) {
                 peek("올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", PeekType.ERROR)
                 fabProjectConfig.hide()
@@ -429,7 +429,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                                     Locale.KOREAN  { "변경될 이름 입력..." }
                                 }
                                 require = lambda@{ v ->
-                                    if (v.isBlank() || !"(^[-_\\dA-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+\$)".toRegex().matches(v)) {
+                                    if (v.isBlank() || !"(^[-_\\dA-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+$)".toRegex().matches(v)) {
                                         name = null
                                         return@lambda translate {
                                             Locale.ENGLISH { "Illegal name format" }

@@ -23,12 +23,10 @@ import dev.mooner.starlight.plugincore.chat.ChatRoom
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.chat.MessageParserSpec
-import dev.mooner.starlight.plugincore.version.Version
 import kotlin.reflect.full.declaredFunctions
 
 class AndroidRParserSpec: MessageParserSpec {
 
-    private val kakaoTalkLimitVersion = Version.fromString("9.7.0")
     private val createBitmap = Icon::class.declaredFunctions.find { it.name == "getBitmap" }!!
 
     override val id: String = "android_r"
@@ -89,7 +87,7 @@ class AndroidRParserSpec: MessageParserSpec {
                 ?.getParcelable("background", Bitmap::class.java)
         } else {
             extras.getBundle("android.wearable.EXTENSIONS")
-                ?.getParcelable("background") as Bitmap?
+                ?.getParcelable("background")
         }
 
         val readAction = sbn.notification.actions[0]

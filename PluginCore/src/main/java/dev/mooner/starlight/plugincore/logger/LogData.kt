@@ -2,7 +2,6 @@ package dev.mooner.starlight.plugincore.logger
 
 import dev.mooner.starlight.plugincore.utils.TimeUtils.Companion.formatMillis
 import kotlinx.serialization.EncodeDefault
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -17,7 +16,6 @@ data class LogData(
     val threadName: String = Thread.currentThread().name,
     @SerialName("m")
     val message: String,
-    @OptIn(ExperimentalSerializationApi::class)
     @EncodeDefault
     @SerialName("l")
     val millis: Long = System.currentTimeMillis(),
@@ -65,7 +63,7 @@ data class LogData(
 
     override fun hashCode(): Int {
         var result = type.hashCode()
-        result = 31 * result + (tag?.hashCode() ?: 0)
+        result = 31 * result + tag.hashCode()
         result = 31 * result + threadName.hashCode()
         result = 31 * result + message.hashCode()
         result = 31 * result + millis.hashCode()

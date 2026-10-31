@@ -31,16 +31,15 @@ import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.hasFile
 import dev.mooner.starlight.plugincore.utils.require
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
 
 class ProjectImpl private constructor(

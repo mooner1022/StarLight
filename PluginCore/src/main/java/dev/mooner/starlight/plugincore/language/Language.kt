@@ -140,7 +140,6 @@ abstract class Language {
      * Called when the value of config object defined above is updated.
      *
      * @param id id of config object
-     * @param view view which the config object is being drawn
      * @param data updated value
      */
     open fun onConfigChanged(id: String, data: Any) {}

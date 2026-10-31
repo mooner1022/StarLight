@@ -10,7 +10,6 @@ import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.os.Build
 import android.view.ViewGroup.LayoutParams
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -167,11 +166,7 @@ private fun PeekAlertBuilder.setCommonAttrs() {
 private fun Context.buildNotification(id: Int, block: NotificationApi.NotificationBuilder.() -> Unit): NotificationCompat.Builder {
     createNotificationChannel("LogNotifier", "로그 알림 채널")
     val builder = NotificationApi.NotificationBuilder(id).apply(block)
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        NotificationCompat.Builder(this, "LogNotifier")
-    } else {
-        NotificationCompat.Builder(this)
-    }.apply {
+    return NotificationCompat.Builder(this, "LogNotifier").apply {
         setContentTitle(builder.mTitle)
         setSubText(builder.mText)
         setSmallIcon(R.drawable.ic_notification)
@@ -183,14 +178,12 @@ private fun Context.buildNotification(id: Int, block: NotificationApi.Notificati
 }
 
 private fun Context.createNotificationChannel(channelId: String, channelName: String) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val notificationChannel = NotificationChannel(
-            channelId,
-            channelName,
-            NotificationManager.IMPORTANCE_DEFAULT
-        )
+    val notificationChannel = NotificationChannel(
+        channelId,
+        channelName,
+        NotificationManager.IMPORTANCE_DEFAULT
+    )
 
-        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
-            .createNotificationChannel(notificationChannel)
-    }
+    (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+        .createNotificationChannel(notificationChannel)
 }

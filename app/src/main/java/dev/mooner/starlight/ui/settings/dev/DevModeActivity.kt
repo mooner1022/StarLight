@@ -9,8 +9,8 @@ package dev.mooner.starlight.ui.settings.dev
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.res.Configuration
-import android.os.Build
 import androidx.core.content.edit
+import androidx.core.content.pm.PackageInfoCompat
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.OptionStatus
@@ -163,10 +163,7 @@ fun Context.startDevModeActivity() {
                         else -> "UNKNOWN"
                     }
                     val pInfo: PackageInfo = applicationContext.packageManager.getPackageInfo(applicationContext.packageName, 0)
-                    val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-                        pInfo.longVersionCode
-                    else
-                        pInfo.versionCode
+                    val versionCode = PackageInfoCompat.getLongVersionCode(pInfo)
                     debugInfo("globalPower", GlobalConfig.category("general").getBoolean("global_power").toString())
                     debugInfo("kakaoTalkVersion", ApplicationSession.kakaoTalkVersion.toString())
                     debugInfo("appVersion", "${pInfo.versionName}(build ${versionCode})")

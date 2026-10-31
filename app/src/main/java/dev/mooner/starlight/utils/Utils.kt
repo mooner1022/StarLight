@@ -16,6 +16,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.annotation.ColorRes
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
@@ -23,7 +24,7 @@ import java.net.URI
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-private val alphanumericPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+private val alphanumericPool: List<Char> = listOf('a'..'z', 'A'..'Z', '0'..'9').flatten()
 fun randomAlphanumeric(length: Int): String {
     val arr: ArrayList<Char> = arrayListOf()
     repeat(length) {
@@ -65,9 +66,9 @@ fun formatTime(millis: Long): String {
     val h = TimeUnit.MILLISECONDS.toHours(millis) % 24
     return if (millis >= day) {
         val d = TimeUnit.MILLISECONDS.toDays(millis)
-        String.format("%d | %02d : %02d : %02d", d, h, m, s)
+        String.format(Locale.ROOT, "%d | %02d : %02d : %02d", d, h, m, s)
     } else {
-        String.format("%02d : %02d : %02d", h, m, s)
+        String.format(Locale.ROOT, "%02d : %02d : %02d", h, m, s)
     }
 }
 
@@ -100,7 +101,7 @@ fun Context.getColorCompat(@ColorRes res: Int): Int = ContextCompat.getColor(thi
 val Context.nightModeFlags get() = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
 
 fun Context.openWebUrl(url: String) {
-    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+    val browserIntent = Intent(Intent.ACTION_VIEW, url.toUri())
     startActivity(browserIntent)
 }
 

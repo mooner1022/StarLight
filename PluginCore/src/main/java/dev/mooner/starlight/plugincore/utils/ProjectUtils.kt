@@ -19,7 +19,7 @@ inline fun <reified T: ProjectEvent> Project.fireEvent(vararg args: Any, noinlin
         ?: error("Unregistered event: ${T::class.qualifiedName}")
 
     if (!this.isEventCallAllowed(eventId))
-        return false;
+        return false
 
     val event = T::class.getInstance()
     val actualTypes = event.argTypes

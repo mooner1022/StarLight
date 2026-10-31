@@ -413,12 +413,6 @@ class PluginLoader {
         }
     }
 
-    private fun removeClass(name: String) {
-        if (name in classes) {
-            classes -= name
-        }
-    }
-
     internal fun purge() {
         classes.clear()
         loaders.clear()

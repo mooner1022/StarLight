@@ -71,8 +71,7 @@ class SchemeHandlerActivity : AppCompatActivity() {
         val listeners = if (isGlobal)
             Session.pluginManager
                 .plugins
-                .map(StarlightPlugin::getListeners)
-                .flatten()
+                .flatMap(StarlightPlugin::getListeners)
         else
             Session.pluginManager
                 .getPluginById(pluginId)

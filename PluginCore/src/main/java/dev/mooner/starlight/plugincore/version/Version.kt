@@ -37,7 +37,7 @@ data class Version(
                 repeat(3) { index ->
                     if (split[index].toIntOrNull() == null) return false
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 return false
             }
             return true

@@ -3,8 +3,8 @@ package dev.mooner.starlight.plugincore.utils
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.util.Base64
+import androidx.core.graphics.toColorInt
 import dev.mooner.configdsl.LazyMessage
 import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
@@ -34,7 +34,7 @@ fun color(color: () -> String): Int {
     val nColor = color()
     val nHash = nColor.hashCode()
     return colorCache[nHash]
-        ?: Color.parseColor(nColor)
+        ?: nColor.toColorInt()
             .also { colorCache[nHash] = it }
 }
 
