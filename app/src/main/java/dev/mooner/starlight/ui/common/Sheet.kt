@@ -2,6 +2,7 @@ package dev.mooner.starlight.ui.common
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.graphics.drawable.Drawable
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -138,6 +139,20 @@ class Sheet internal constructor(
 
     fun setNegativeText(text: CharSequence) {
         binding.negative.text = text
+    }
+
+    private val noteDrawables = binding.note.compoundDrawablesRelative
+
+    /** Shows [text] below the content and scrolls to it, or hides the note when it is empty. */
+    fun setNote(text: CharSequence?, isError: Boolean = false) {
+        with(binding.note) {
+            setTextOrHide(text)
+            setTextColor(context.getColor(if (isError) R.color.code_error else R.color.text_sub))
+            val (start, top, end, bottom) = if (isError) arrayOfNulls<Drawable>(4) else noteDrawables
+            setCompoundDrawablesRelativeWithIntrinsicBounds(start, top, end, bottom)
+        }
+        if (!text.isNullOrEmpty())
+            binding.scroll.post { binding.scroll.smoothScrollTo(0, binding.note.bottom) }
     }
 }
 

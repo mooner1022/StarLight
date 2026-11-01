@@ -22,7 +22,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.getSystemService
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.GenericItem
@@ -34,12 +36,19 @@ import dev.mooner.starlight.databinding.FragmentPluginsBinding
 import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.GlobalConfig.getDefaultCategory
+import dev.mooner.starlight.plugincore.event.EventHandler
+import dev.mooner.starlight.plugincore.event.Events
+import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.plugin.ApiCompatibility
 import dev.mooner.starlight.plugincore.plugin.InstalledPlugin
 import dev.mooner.starlight.plugincore.plugin.PluginCategory
 import dev.mooner.starlight.plugincore.plugin.PluginInfo
 import dev.mooner.starlight.plugincore.plugin.PluginState
+import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.ui.plugins.setup.PluginSetupPrompter
+import dev.mooner.starlight.ui.plugins.setup.pluginsNeedingSetup
+import dev.mooner.starlight.ui.plugins.setup.showPluginSetupSheet
 import dev.mooner.starlight.ui.plugins.store.PluginStoreActivity
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
@@ -126,6 +135,18 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
         return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // A plugin can find out at any time that it needs its setup again.
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                EventHandler.on<Events.Plugin.SetupRequested>(this) {
+                    withContext(Dispatchers.Main) { onPluginsChanged() }
+                }
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         if (_binding != null)
@@ -183,6 +204,10 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
                 createFailurePeek(e.message ?: e.toString(), PeekAlert.Position.Bottom).peekAboveBars()
             }
         )
+    }
+
+    override fun onSetup(item: PluginListItem, plugin: StarlightPlugin) {
+        requireContext().showPluginSetupSheet(plugin, viewLifecycleOwner) { onPluginsChanged() }
     }
 
     private fun onPluginFilePicked(uri: Uri) {
@@ -421,8 +446,20 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
                         requireContext().restartApplication()
                     }
                 }
-                else ->
-                    notice.visibility = View.GONE
+                else -> {
+                    val pending = pluginsNeedingSetup()
+                    if (pending.isEmpty()) {
+                        notice.visibility = View.GONE
+                        return@with
+                    }
+                    notice.visibility = View.VISIBLE
+                    noticeIcon.setImageResource(R.drawable.ic_round_construction_24)
+                    noticeText.text = resources.getQuantityString(R.plurals.plugin_notice_setup, pending.size, pending.size)
+                    noticeAction.setText(R.string.plugin_setup_start)
+                    noticeAction.setOnClickListener {
+                        PluginSetupPrompter.promptAll(requireContext(), viewLifecycleOwner, pending, onFinished = ::onPluginsChanged)
+                    }
+                }
             }
         }
     }

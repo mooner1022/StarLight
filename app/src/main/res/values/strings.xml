@@ -217,6 +217,21 @@
     <string name="plugin_status_removed">Removed · restart to apply</string>
     <string name="plugin_status_enable_pending">Turns on after restart</string>
     <string name="plugin_status_disable_pending">Turns off after restart</string>
+    <string name="plugin_status_setup_required">Needs setup</string>
+    <plurals name="plugin_notice_setup">
+        <item quantity="one">%d plugin needs its initial setup.</item>
+        <item quantity="other">%d plugins need their initial setup.</item>
+    </plurals>
+    <string name="plugin_setup_start">Set up</string>
+    <string name="plugin_setup_action">Setup</string>
+    <string name="plugin_setup_title">Set up %s</string>
+    <string name="plugin_setup_message">This plugin needs these values to work.</string>
+    <string name="plugin_setup_done">Done</string>
+    <string name="plugin_setup_later">Later</string>
+    <string name="plugin_setup_checking">Checking…</string>
+    <string name="plugin_setup_invalid">Some values aren\'t valid. Check them and try again.</string>
+    <string name="plugin_setup_error">The plugin failed while handling the setup: %s</string>
+    <string name="plugin_setup_completed">%s is set up.</string>
     <string name="plugin_install_title">Install plugin</string>
     <string name="plugin_install_new">This plugin will be newly installed.</string>
     <string name="plugin_install_update">Updates %1$s → %2$s.</string>

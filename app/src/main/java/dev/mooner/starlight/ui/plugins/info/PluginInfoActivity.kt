@@ -2,9 +2,11 @@ package dev.mooner.starlight.ui.plugins.info
 
 import android.content.Context
 import android.text.format.Formatter
+import androidx.lifecycle.LifecycleOwner
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.OptionStatus
+import dev.mooner.configdsl.options.button
 import dev.mooner.configdsl.options.info
 import dev.mooner.configdsl.options.textList
 import dev.mooner.starlight.R
@@ -19,6 +21,9 @@ import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.ui.plugins.knownPlugins
 import dev.mooner.starlight.ui.plugins.pluginInstaller
 import dev.mooner.starlight.ui.plugins.pluginStatus
+import dev.mooner.starlight.ui.plugins.setup.hasSetup
+import dev.mooner.starlight.ui.plugins.setup.showPluginSetupSheet
+import dev.mooner.starlight.utils.findActivity
 import dev.mooner.starlight.utils.startConfigActivity
 import java.text.DateFormat
 import java.util.Date
@@ -34,6 +39,9 @@ fun Context.startPluginInfoActivity(
     }
 
     val origin = info?.let { pluginInstaller().originOf(it.id) }
+
+    val setupPlugin = (entry.state as? PluginState.Loaded)?.plugin
+        ?.takeIf { pluginManager.changes[entry.key] == null && it.hasSetup() }
 
     val items = config {
         val defaultColor = getColor(R.color.main_bright)
@@ -91,6 +99,24 @@ fun Context.startPluginInfoActivity(
                         else                   -> null
                     }
                 }
+                if (setupPlugin != null)
+                    button {
+                        id = "setup"
+                        title = translate {
+                            Locale.ENGLISH { "Initial setup" }
+                            Locale.KOREAN  { "초기 설정" }
+                        }
+                        description = translate {
+                            Locale.ENGLISH { "Enter the values the plugin asked for when it was first loaded." }
+                            Locale.KOREAN  { "플러그인이 처음 로드될 때 요청한 값을 다시 입력해요." }
+                        }
+                        icon = Icon.EDIT
+                        iconTintColor = color { "#8A7FD8" }
+                        action {
+                            val owner = context.findActivity() as? LifecycleOwner ?: return@action
+                            context.showPluginSetupSheet(setupPlugin, owner)
+                        }
+                    }
             }
         }
         if (info != null)

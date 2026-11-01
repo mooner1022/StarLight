@@ -16,6 +16,8 @@ import dev.mooner.starlight.plugincore.plugin.PluginInstaller
 import dev.mooner.starlight.plugincore.plugin.PluginState
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.ui.plugins.setup.PluginSetupPrompter
+import dev.mooner.starlight.ui.plugins.setup.needsSetup
 import java.io.File
 
 internal data class PluginStatus(
@@ -64,12 +66,15 @@ internal fun Context.pluginStatus(entry: InstalledPlugin?, change: PluginChange?
         return PluginStatus(getString(R.string.plugin_status_disable_pending), R.color.main_bright)
     return when (state) {
         is PluginState.Loaded ->
-            PluginStatus(
-                listOf(version, info!!.authors.joinToString(), Formatter.formatShortFileSize(this, entry.file.length()))
-                    .filter(String::isNotBlank)
-                    .joinToString(" · "),
-                R.color.card_enabled
-            )
+            if (state.plugin.needsSetup())
+                PluginStatus("${getString(R.string.plugin_status_setup_required)} · $version", R.color.main_bright)
+            else
+                PluginStatus(
+                    listOf(version, info!!.authors.joinToString(), Formatter.formatShortFileSize(this, entry.file.length()))
+                        .filter(String::isNotBlank)
+                        .joinToString(" · "),
+                    R.color.card_enabled
+                )
         PluginState.Disabled ->
             if (pluginManager.isPluginEnabled(info!!.id))
                 PluginStatus(getString(R.string.plugin_status_enable_pending), R.color.main_bright)
@@ -190,7 +195,11 @@ internal fun LifecycleOwner.showRemovePluginDialog(
         positive(R.string.plugin_remove) { sheet ->
             val deleteData = canDeleteData && sheet.isChecked()
             runCatching { pluginManager.uninstall(context.pluginInstaller(), key, keepData = !deleteData) }
-                .onSuccess { onRemoved(name) }
+                .onSuccess {
+                    // A reinstall should ask for its setup again.
+                    info?.id?.let(PluginSetupPrompter::forgetPutOff)
+                    onRemoved(name)
+                }
                 .onFailure(onFailure)
         }
         negative(R.string.cancel)

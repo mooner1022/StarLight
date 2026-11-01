@@ -13,6 +13,8 @@ import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.config.data.ConfigData
 import dev.mooner.starlight.plugincore.config.data.FileConfig
 import dev.mooner.starlight.plugincore.config.data.MutableConfig
+import dev.mooner.starlight.plugincore.event.EventHandler
+import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
@@ -83,6 +85,53 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     override fun onConfigValueUpdated(id: String, data: Any) {}
 
+    /**
+     * Whether this plugin still needs the values asked for by [getSetupStructure].
+     *
+     * The app asks this on the main thread whenever it shows the plugin, including every time the
+     * plugin list is drawn, so it must be cheap: read a field, don't do I/O. Return `true` only when
+     * [getSetupStructure] has something to show. When this turns `true` while the plugin runs, such as
+     * when a saved token is rejected, call [requestSetup] so the app notices without waiting for a redraw.
+     */
+    override fun isSetupRequired(): Boolean = false
+
+    /**
+     * Why the setup is needed, shown at the top of the setup dialog in place of the generic message,
+     * e.g. that the saved token was rejected. `null` for the first setup. Same rules as [isSetupRequired].
+     */
+    override fun getSetupReason(): String? = null
+
+    /**
+     * Tells the app that this plugin needs its setup again. Make [isSetupRequired] return `true` first.
+     *
+     * The app updates the plugin list and, while it is open, shows the setup dialog unless the user put
+     * off the setup for the same [getSetupReason]. Safe to call from any thread.
+     */
+    protected fun requestSetup() {
+        EventHandler.fireEventWithScope(Events.Plugin.SetupRequested(this))
+    }
+
+    /**
+     * Items shown in the setup dialog, which the app opens on launch while [isSetupRequired] is `true`
+     * (unless the user put it off for the same [getSetupReason]) and from the plugin list or info
+     * screen at any time.
+     *
+     * This is separate from [getConfigStructure], and the app doesn't save what is entered here:
+     * the values only reach [onSetup].
+     */
+    override fun getSetupStructure(): ConfigStructure = emptyList()
+
+    /**
+     * Receives the values entered in the setup dialog when the user confirms it.
+     *
+     * Called on the main thread, so switch dispatchers for I/O or network checks. Items the user
+     * didn't touch are absent from [values], as in the plugin config, so read them with a default.
+     * The app doesn't save [values]: keep what you need yourself, or call [saveToConfig].
+     *
+     * @return `null` when setup is done, or a message to show while the dialog stays open.
+     */
+    override suspend fun onSetup(values: ConfigData): String? = null
+
     override fun isEnabled(): Boolean = isEnabled
 
     protected fun addListener(listener: EventListener) {
@@ -117,7 +166,22 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    protected fun getPluginConfig(): ConfigData {
+    protected fun getPluginConfig(): ConfigData =
+        getMutablePluginConfig()
+
+    /**
+     * Writes [values], such as those passed to [onSetup], into the plugin config shown by
+     * [getConfigStructure]. Entries already there are replaced and the rest are kept.
+     */
+    protected fun saveToConfig(values: ConfigData) {
+        getMutablePluginConfig().edit {
+            for ((categoryId, entries) in values.getData())
+                for ((key, value) in entries)
+                    category(categoryId).setRaw(key, value)
+        }
+    }
+
+    private fun getMutablePluginConfig(): MutableConfig {
         return configCache ?: let {
             val configPath = getExternalDataDirectory().resolve("config-plugin.json")
             FileConfig(configPath).also {

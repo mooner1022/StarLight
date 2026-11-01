@@ -32,6 +32,7 @@ import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.utils.hasFlag
 import dev.mooner.starlight.ui.ViewPagerAdapter
 import dev.mooner.starlight.ui.plugins.pluginsSubtitle
+import dev.mooner.starlight.ui.plugins.setup.PluginSetupPrompter
 import dev.mooner.starlight.ui.settings.update.AppUpdater
 import dev.mooner.starlight.ui.settings.update.UpdateCheckResult
 import dev.mooner.starlight.ui.settings.update.checkForUpdate
@@ -104,6 +105,11 @@ class MainActivity : AppCompatActivity() {
                             onPageChanged(currentTabId)
                     }
                 }
+                EventHandler.on<Events.Plugin.SetupRequested>(this) {
+                    withContext(Dispatchers.Main) {
+                        PluginSetupPrompter.promptRequested(this@MainActivity, this@MainActivity, plugin)
+                    }
+                }
             }
         }
 
@@ -116,6 +122,8 @@ class MainActivity : AppCompatActivity() {
             }
         } else if (savedInstanceState == null) {
             checkUpdateOnStart()
+            // Not over the changelog. The plugin list still offers the setup until it is done.
+            PluginSetupPrompter.promptOnLaunch(this, this)
         }
     }
 
