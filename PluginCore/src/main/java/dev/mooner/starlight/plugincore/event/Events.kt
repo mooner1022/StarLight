@@ -10,6 +10,7 @@ import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import dev.mooner.starlight.plugincore.logger.LogData
+import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.plugincore.project.ProjectID
 import kotlinx.coroutines.CoroutineScope
 import dev.mooner.starlight.plugincore.project.Project as SProject
@@ -81,6 +82,15 @@ sealed class Events {
     sealed class Config {
 
         class GlobalConfigUpdate(
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+    }
+
+    sealed class Plugin {
+
+        /** Fired by [StarlightPlugin.requestSetup] when a plugin needs its setup again. */
+        class SetupRequested(
+            val plugin: StarlightPlugin,
             val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
     }

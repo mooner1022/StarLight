@@ -14,6 +14,14 @@ internal sealed interface Plugin {
 
     fun onConfigValueUpdated(id: String, data: Any)
 
+    fun isSetupRequired(): Boolean
+
+    fun getSetupReason(): String?
+
+    fun getSetupStructure(): ConfigStructure
+
+    suspend fun onSetup(values: ConfigData): String?
+
     fun isEnabled(): Boolean
 
     fun getInternalDataDirectory(): File
