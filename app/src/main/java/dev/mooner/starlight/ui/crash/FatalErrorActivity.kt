@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ShareCompat
 import dev.mooner.starlight.databinding.ActivityFatalErrorBinding
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.utils.fitSystemBars
 import dev.mooner.starlight.utils.restartApplication
 import java.io.File
 
@@ -17,6 +18,7 @@ class FatalErrorActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityFatalErrorBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fitSystemBars(binding.root)
 
         val errMsg: String = intent.getStringExtra("errorMessage")?: error("Failed to retrieve error data")
 

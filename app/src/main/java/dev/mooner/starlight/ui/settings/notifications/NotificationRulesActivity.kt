@@ -27,6 +27,7 @@ import dev.mooner.starlight.plugincore.chat.ParserSpecManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.utils.createSimplePeek
+import dev.mooner.starlight.utils.fitSystemBars
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
@@ -49,6 +50,7 @@ class NotificationRulesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNotificationRulesBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fitSystemBars(binding.root)
 
         binding.leave.setOnClickListener { finish() }
 

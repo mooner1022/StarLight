@@ -1,6 +1,7 @@
 package dev.mooner.starlight.ui.editor
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.PorterDuff
@@ -10,10 +11,13 @@ import android.view.*
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.*
 import androidx.drawerlayout.widget.DrawerLayout
@@ -119,6 +123,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         super.onCreate(savedInstanceState)
         binding = ActivityDefaultEditorBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        onBackPressedDispatcher.addCallback(this) { handleBack() }
         setSupportActionBar(binding.toolbarEditor)
 
         bindLogNotifier { log ->
@@ -279,6 +284,16 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                 override fun onConsoleMessage(message: ConsoleMessage): Boolean {
                     if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR)
                         logger.verbose { "Editor console: ${message.message()} (${message.sourceId()}:${message.lineNumber()})" }
+                    return true
+                }
+            }
+            // The page has a JavaScript interface, so it stays on the bundled editor; other links open outside.
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                    val url = request.url
+                    if (url.scheme == "file" && url.path.orEmpty().startsWith(EDITOR_ASSET_PATH))
+                        return false
+                    runCatching { this@DefaultEditorActivity.startActivity(Intent(Intent.ACTION_VIEW, url)) }
                     return true
                 }
             }
@@ -1220,7 +1235,8 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     }
 
     @Deprecated("")
-    override fun onBackPressed() {
+    // Always handled: leaving the editor asks first.
+    private fun handleBack() {
         if (binding.root.isDrawerOpen(GravityCompat.END))
             binding.fragmentContainerDebugRoom!!
                 .getFragment<DebugRoomFragment>()
@@ -1237,6 +1253,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     companion object {
         const val EXTRA_SHOW_FILE_TREE = "showFileTree"
         const val ENTRY_POINT          = "file:///android_asset/editor/index.html"
+        private const val EDITOR_ASSET_PATH = "/android_asset/editor/"
 
         private const val HOT_KEYS = "↺↻⇒←→[]{}()<>;=.'\"+-*/\\:&|"
         private const val DEFAULT_FONT_SIZE = 15

@@ -35,6 +35,7 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.*
+import dev.mooner.starlight.utils.fitSystemBars
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -56,6 +57,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityProjectConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fitSystemBars(binding.root)
 
         bindLogNotifier()
 

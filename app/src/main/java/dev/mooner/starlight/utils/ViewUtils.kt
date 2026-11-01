@@ -131,6 +131,27 @@ fun ComponentActivity.applyEdgeToEdge(
     }
 }
 
+/**
+ * Keeps [rootView] clear of the system bars, display cutout and keyboard when the window draws behind
+ * them, which Android 15 and later force on apps that target them. Otherwise these insets don't reach
+ * the content, so nothing changes.
+ */
+fun ComponentActivity.fitSystemBars(rootView: View) {
+    val initial = Insets.of(rootView.paddingLeft, rootView.paddingTop, rootView.paddingRight, rootView.paddingBottom)
+    ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
+        val insets = windowInsets.getInsets(
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime()
+        )
+        view.updatePadding(
+            initial.left + insets.left,
+            initial.top + insets.top,
+            initial.right + insets.right,
+            initial.bottom + insets.bottom,
+        )
+        WindowInsetsCompat.CONSUMED
+    }
+}
+
 fun getScreenSizeDp(context: Context): Pair<Float, Float> {
     val displayMetrics: DisplayMetrics = context.resources.displayMetrics
     val dpHeight: Float = displayMetrics.heightPixels / displayMetrics.density

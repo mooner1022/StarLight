@@ -12,20 +12,20 @@ class PluginClassLoader(
     private val loader: PluginLoader,
     private val pluginInfo: PluginInfo,
     private val file: File,
-): PathClassLoader(dexFile.path, nativeLibPath, parent) {
+): PathClassLoader(dexFile.path, nativeLibPath, parent), PluginHostClassLoader {
 
     private val internalDir: File
 
     private var pluginInit: StarlightPlugin? = null
     private var pluginState: IllegalStateException? = null
     private val classes: MutableMap<String, Class<*>> = hashMapOf()
-    val plugin: StarlightPlugin
+    override val plugin: StarlightPlugin
 
     override fun findClass(name: String): Class<*> {
         return findClass(name, true)
     }
 
-    fun findClass(name: String, checkGlobal: Boolean): Class<*> {
+    override fun findClass(name: String, checkGlobal: Boolean): Class<*> {
         if (name.startsWith("dev.mooner.starlight.plugincore"))
             throw ClassNotFoundException(name)
         var result = classes[name]
@@ -45,7 +45,7 @@ class PluginClassLoader(
     }
 
     @Synchronized
-    fun initialize(plugin: StarlightPlugin) {
+    override fun initialize(plugin: StarlightPlugin) {
         require(plugin.javaClass.classLoader == this) {
             "Cannot initialize plugin outside of this class loader"
         }

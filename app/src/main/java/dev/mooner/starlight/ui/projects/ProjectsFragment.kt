@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.getSystemService
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -67,6 +68,11 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     private var isActiveFirst: Boolean =
         getDefaultCategory().getString(CONFIG_PROJECTS_ACTIVE_FIRST).toBoolean()
 
+    private val pickProjectArchive = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null)
+            viewLifecycleOwner.importProject(requireActivity(), uri)
+    }
+
     @SuppressLint("CheckResult")
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -87,6 +93,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             searchProject.setOnClickListener(this@ProjectsFragment)
             searchClose.setOnClickListener(this@ProjectsFragment)
             newProject.setOnClickListener(this@ProjectsFragment)
+            importProject.setOnClickListener(this@ProjectsFragment)
 
             searchInput.doAfterTextChanged { text ->
                 val query = text?.toString()?.trim().orEmpty()
@@ -127,6 +134,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             R.id.search_project -> setSearchVisible(binding.searchBar.visibility != View.VISIBLE)
             R.id.searchClose -> setSearchVisible(false)
             R.id.new_project -> showNewProjectDialog()
+            R.id.import_project -> pickProjectArchive.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
         }
     }
 

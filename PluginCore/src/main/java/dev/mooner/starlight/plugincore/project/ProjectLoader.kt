@@ -10,6 +10,8 @@ import android.util.AtomicFile
 import androidx.core.util.readText
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.projectManager
+import dev.mooner.starlight.plugincore.event.EventHandler
+import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.logger.internal.Logger
 import java.io.File
 import java.io.FileNotFoundException
@@ -65,6 +67,24 @@ class ProjectLoader(
         }
         return projects.values.toList()
     }
+
+    /**
+     * Loads one project folder that isn't loaded yet, such as an imported one, and announces it the way
+     * [ProjectManager.newProject] does.
+     */
+    fun loadProject(dir: File): Project {
+        val info = getProjectInfo(dir)
+        require(projectManager.getProjectByName(info.name) == null) { "A project named '${info.name}' already exists" }
+        require(projectManager.getProjectById(info.id.toString()) == null) { "A project with id ${info.id} already exists" }
+        val project = ProjectImpl.loadFrom(dir, info)
+        projects[info.name] = project
+        EventHandler.fireEventWithScope(Events.Project.Create(project))
+        return project
+    }
+
+    /** Reads a project folder's project.json. */
+    fun readProjectInfo(dir: File): ProjectInfo =
+        getProjectInfo(dir)
 
     private fun getProjectInfo(dir: File): ProjectInfo {
         val raw = try {

@@ -12,6 +12,7 @@ import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
 import dev.mooner.starlight.CA_PLUGIN
 import dev.mooner.starlight.CF_SAFE_MODE
+import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.api2.AppApi
 import dev.mooner.starlight.api.api2.BotManagerApi
@@ -103,7 +104,9 @@ object ApplicationSession {
             //addLanguage(GraalVMLang())
         }
 
-        if (!GlobalConfig.category(CA_PLUGIN).getBoolean(CF_SAFE_MODE, false)) {
+        if (!BuildConfig.DYNAMIC_PLUGINS) {
+            logger.info { "Plugins aren't available in this build" }
+        } else if (!GlobalConfig.category(CA_PLUGIN).getBoolean(CF_SAFE_MODE, false)) {
             Session.pluginLoader.loadPlugins(context)
                 .flowOn(Dispatchers.Default)
                 .catch { logger.error(it) }

@@ -59,8 +59,8 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     constructor() {
         val classLoader = this.javaClass.classLoader
-        if (classLoader !is PluginClassLoader) {
-            throw IllegalStateException("StarlightPlugin requires ${PluginClassLoader::class.java.name}")
+        if (classLoader !is PluginHostClassLoader) {
+            throw IllegalStateException("StarlightPlugin must be loaded by the plugin loader")
         }
         classLoader.initialize(this)
     }
@@ -71,7 +71,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
         file: File,
     ) {
         val classLoader = this.javaClass.classLoader
-        if (classLoader is PluginClassLoader) {
+        if (classLoader is PluginHostClassLoader) {
             throw IllegalStateException("Cannot use initialization constructor at runtime")
         }
         init(config, file, internalDir, classLoader!!)

@@ -22,6 +22,7 @@ import dev.mooner.starlight.databinding.ActivityAppInfoBinding
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.utils.bindFadeImage
+import dev.mooner.starlight.utils.fitSystemBars
 import dev.mooner.starlight.utils.getPackageInfo
 import dev.mooner.starlight.utils.openWebUrl
 import dev.mooner.starlight.utils.peek
@@ -39,6 +40,7 @@ class AppInfoActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityAppInfoBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fitSystemBars(binding.root)
 
         val pInfo: PackageInfo = getPackageInfo()
         val versionCode = PackageInfoCompat.getLongVersionCode(pInfo)

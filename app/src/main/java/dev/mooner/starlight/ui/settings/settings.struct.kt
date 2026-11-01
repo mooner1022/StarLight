@@ -32,6 +32,7 @@ import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
 import dev.mooner.starlight.CF_LOG_BUFFER_SIZE
 import dev.mooner.starlight.CF_LOG_RETENTION
+import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.R
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.config.GlobalConfig
@@ -272,15 +273,17 @@ internal fun SettingsFragment.getSettingsStruct() = config {
         title = "정보"
         textColor = requireContext().getColor(R.color.main_bright)
         items {
-            button {
-                id = "check_update"
-                title = "업데이트 확인"
-                icon = Icon.CLOUD_DOWNLOAD
-                iconTintColor = color { "#A7D0CD" }
-                setOnClickListener { _ ->
-                    requireActivity().startConfigActivity(CheckUpdateConfigActivity())
+            // Play builds update only through Google Play.
+            if (BuildConfig.SELF_UPDATE)
+                button {
+                    id = "check_update"
+                    title = "업데이트 확인"
+                    icon = Icon.CLOUD_DOWNLOAD
+                    iconTintColor = color { "#A7D0CD" }
+                    setOnClickListener { _ ->
+                        requireActivity().startConfigActivity(CheckUpdateConfigActivity())
+                    }
                 }
-            }
             button {
                 id = "app_info"
                 title = "앱 정보"

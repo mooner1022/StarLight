@@ -4,9 +4,22 @@ import android.os.Environment
 import java.io.File
 import java.io.IOException
 
+@Volatile
+private var starLightDirectory: File? = null
+
+/**
+ * Sets the folder StarLight keeps its files in, once, before anything reads it. Builds that keep
+ * their files on shared storage don't call it.
+ */
+fun setStarLightDirectory(directory: File) {
+    check(starLightDirectory == null) { "StarLight directory is already set" }
+    starLightDirectory = directory
+}
+
+/** The folder StarLight keeps its files in: /sdcard/StarLight unless [setStarLightDirectory] set another. */
 @Suppress("DEPRECATION")
-fun getStarLightDirectory() =
-    File(Environment.getExternalStorageDirectory(), "StarLight/")
+fun getStarLightDirectory(): File =
+    starLightDirectory ?: File(Environment.getExternalStorageDirectory(), "StarLight/")
 
 fun File.copyAsReadOnly(directory: File): File {
     val target = directory.resolve("${length()}-${lastModified()}.$extension")

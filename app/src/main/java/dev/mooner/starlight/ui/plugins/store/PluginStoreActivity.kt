@@ -23,6 +23,7 @@ import dev.mooner.starlight.databinding.ItemStoreDependencyBinding
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.createFailurePeek
 import dev.mooner.starlight.utils.createSimplePeek
+import dev.mooner.starlight.utils.fitSystemBars
 import dev.mooner.starlight.utils.restartApplication
 import kotlinx.coroutines.launch
 
@@ -38,6 +39,7 @@ class PluginStoreActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPluginStoreBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fitSystemBars(binding.root)
         window.statusBarColor = getColor(R.color.store_night)
 
         if (savedInstanceState == null)

@@ -86,6 +86,12 @@
 
     <string name="no_projects">There are no projects yet! (⊙_⊙;)</string>
     <string name="no_plugins">There are no plugins yet! (⊙_⊙;)</string>
+    <string name="project_import">Import project</string>
+    <string name="project_import_done">Imported %s.</string>
+    <string name="project_import_failed">Couldn\'t import the project: %s</string>
+    <string name="project_export_done">Exported %s.</string>
+    <string name="project_export_failed">Couldn\'t export the project: %s</string>
+    <string name="plugins_unavailable">Plugins aren\'t available in the Google Play version.</string>
     <string name="no_message_yet">There are no errors yet.</string>
 
     <string name="align_reversed">Descending</string>

@@ -7,16 +7,20 @@
 package dev.mooner.starlight.ui.projects.info
 
 import android.content.Context
+import androidx.activity.ComponentActivity
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.InfoState
 import dev.mooner.configdsl.options.OptionStatus
+import dev.mooner.configdsl.options.button
 import dev.mooner.configdsl.options.info
 import dev.mooner.configdsl.options.textList
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.ProjectImpl
 import dev.mooner.starlight.plugincore.utils.TimeUtils
+import dev.mooner.starlight.ui.projects.exportProject
+import dev.mooner.starlight.utils.findActivity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlin.time.Duration.Companion.seconds
@@ -146,6 +150,23 @@ fun Context.getProjectInfoItems(project: Project) = config {
                         delay(1.seconds)
                     }
                 })
+            }
+        }
+    }
+    category {
+        id = "file"
+        title = "파일"
+        textColor = defaultColor
+        items {
+            button {
+                id = "export"
+                title = "내보내기"
+                description = "프로젝트를 zip 파일로 저장해요. 프로젝트 목록의 가져오기로 다시 불러올 수 있어요."
+                icon = Icon.ARCHIVE
+                iconTintColor = color { "#4568DC" }
+                action {
+                    (context.findActivity() as? ComponentActivity)?.exportProject(project)
+                }
             }
         }
     }

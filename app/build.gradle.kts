@@ -35,6 +35,35 @@ android {
         buildConfig = true
     }
 
+    flavorDimensions += "distribution"
+    productFlavors {
+        // GitHub builds: dex plugins and the plugin store, /sdcard/StarLight, self-updates.
+        create("full") {
+            dimension = "distribution"
+            isDefault = true
+            buildConfigField("boolean", "DYNAMIC_PLUGINS", "true")
+            buildConfigField("boolean", "SELF_UPDATE", "true")
+            buildConfigField("boolean", "SHARED_STORAGE", "true")
+            buildConfigField("boolean", "RESTRICTED_SCRIPT_HOST_ACCESS", "false")
+            buildConfigField("boolean", "SCRIPT_JIT", "true")
+        }
+        // Google Play builds, kept within the Device and Network Abuse policy: no code is downloaded
+        // or loaded from outside the app, no self-updates, no all-files access, and scripts can't reach
+        // the Java APIs that would let them do so. Checked by verifyPlay<BuildType>Policy.
+        create("play") {
+            dimension = "distribution"
+            // Required by Google Play for new apps and updates since August 31, 2026.
+            targetSdk = 36
+            buildConfigField("boolean", "DYNAMIC_PLUGINS", "false")
+            buildConfigField("boolean", "SELF_UPDATE", "false")
+            buildConfigField("boolean", "SHARED_STORAGE", "false")
+            buildConfigField("boolean", "RESTRICTED_SCRIPT_HOST_ACCESS", "true")
+            // Script engines compile scripts to dex on the device. Play allows interpreters; set this to
+            // false to keep both engines interpreting if a review objects to the compiled tiers.
+            buildConfigField("boolean", "SCRIPT_JIT", "true")
+        }
+    }
+
     signingConfigs {
         val keystore = System.getenv("KEYSTORE_FILE")?.let(::file)
         if (keystore != null && keystore.isFile) {

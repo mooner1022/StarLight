@@ -221,11 +221,6 @@ class AppUpdater(private val activity: ComponentActivity) {
         }.flowOn(Dispatchers.IO)
     }
 
-    private fun requestInstall(uri: Uri) {
-        val intent = Intent(Intent.ACTION_VIEW)
-            .setDataAndType(uri, "application/vnd.android.package-archive")
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        activity.startActivity(intent)
-    }
+    private fun requestInstall(uri: Uri) =
+        activity.requestApkInstall(uri)
 }
