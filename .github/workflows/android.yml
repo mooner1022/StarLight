@@ -39,11 +39,14 @@ jobs:
         versionCode: 1000${{github.run_number}}
 
     - name: Build debug
-      run: ./gradlew assembleDebug
+      run: ./gradlew assembleFullDebug
+
+    - name: Check the Google Play build against Play policies
+      run: ./gradlew verifyPlayDebugPolicy
 
     - name: Extract artifact name
       run: |
-        name="$(find app/build/outputs/apk/debug/ -type f -name 'StarLight-*')"
+        name="$(find app/build/outputs/apk/full/debug/ -type f -name 'StarLight-*')"
         echo "ARTIFACT_NAME=${name##*/}" >> $GITHUB_ENV
 
     - name: Upload the Artifact
@@ -51,7 +54,7 @@ jobs:
       with:
         name: ${{ env.ARTIFACT_NAME }}
         path: |
-          app/build/outputs/apk/debug/${{ env.ARTIFACT_NAME }}
+          app/build/outputs/apk/full/debug/${{ env.ARTIFACT_NAME }}
 
   snapshot:
     name: Publish StarLight snapshot
@@ -100,7 +103,7 @@ jobs:
         echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> $GITHUB_ENV
 
     - name: Build release
-      run: ./gradlew assembleRelease
+      run: ./gradlew assembleFullRelease
       env:
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -117,7 +120,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        apk="$(find app/build/outputs/apk/release/ -type f -name 'StarLight-*.apk')"
+        apk="$(find app/build/outputs/apk/full/release/ -type f -name 'StarLight-*.apk')"
         name="${apk##*/}"
         version="${name#StarLight-}"
         version="${version%.apk}"
