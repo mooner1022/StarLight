@@ -126,6 +126,7 @@ dependencies {
     implementation(libs.recyclerview.animators)
     implementation(libs.imagepicker)
     debugImplementation(libs.leakcanary.android)
+    testImplementation(libs.junit)
     implementation(libs.jsoup)
     implementation(libs.flexbox)
     implementation(libs.chip.navigation.bar)
