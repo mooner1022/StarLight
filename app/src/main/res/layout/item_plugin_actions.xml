@@ -16,6 +16,13 @@
         app:drawableTopCompat="@drawable/ic_round_settings_24"/>
 
     <TextView
+        android:id="@+id/buttonPluginSetup"
+        style="@style/ProjectAction"
+        android:text="@string/plugin_setup_action"
+        android:visibility="gone"
+        app:drawableTopCompat="@drawable/ic_round_construction_24"/>
+
+    <TextView
         android:id="@+id/buttonPluginInfo"
         style="@style/ProjectAction"
         android:text="@string/project_info"

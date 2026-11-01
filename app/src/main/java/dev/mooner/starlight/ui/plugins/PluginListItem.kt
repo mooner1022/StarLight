@@ -22,8 +22,10 @@ import dev.mooner.starlight.plugincore.plugin.PluginCategory
 import dev.mooner.starlight.plugincore.plugin.PluginChange
 import dev.mooner.starlight.plugincore.plugin.PluginInfo
 import dev.mooner.starlight.plugincore.plugin.PluginState
+import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.ui.plugins.config.PluginConfigActivity
 import dev.mooner.starlight.ui.plugins.info.startPluginInfoActivity
+import dev.mooner.starlight.ui.plugins.setup.hasSetup
 
 class PluginListItem(
     private val key: String,
@@ -33,6 +35,7 @@ class PluginListItem(
     interface Callback {
         fun onToggle(item: PluginListItem, info: PluginInfo, enabled: Boolean)
         fun onRemove(item: PluginListItem, key: String)
+        fun onSetup(item: PluginListItem, plugin: StarlightPlugin)
     }
 
     override var identifier: Long
@@ -166,6 +169,11 @@ class PluginListItem(
         val loaded = (entry?.state as? PluginState.Loaded)?.plugin
         val hasConfig = loaded != null && runCatching { loaded.getConfigStructure().isNotEmpty() }.getOrDefault(false)
         buttonPluginConfig.setActionEnabled(hasConfig && change == null)
+        val setupPlugin = loaded?.takeIf { change == null && it.hasSetup() }
+        buttonPluginSetup.visibility = if (setupPlugin != null) View.VISIBLE else View.GONE
+        buttonPluginSetup.setOnClickListener {
+            callback.onSetup(this@PluginListItem, setupPlugin ?: return@setOnClickListener)
+        }
         buttonPluginInfo.setActionEnabled(entry != null)
         buttonPluginRemove.setActionEnabled(true)
 

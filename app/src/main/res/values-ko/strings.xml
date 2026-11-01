@@ -212,6 +212,20 @@
     <string name="plugin_status_removed">제거됨 · 재시작 후 적용</string>
     <string name="plugin_status_enable_pending">재시작 후 켜짐</string>
     <string name="plugin_status_disable_pending">재시작 후 꺼짐</string>
+    <string name="plugin_status_setup_required">설정 필요</string>
+    <plurals name="plugin_notice_setup">
+        <item quantity="other">초기 설정이 필요한 플러그인이 %d개 있어요.</item>
+    </plurals>
+    <string name="plugin_setup_start">설정하기</string>
+    <string name="plugin_setup_action">초기 설정</string>
+    <string name="plugin_setup_title">%s 초기 설정</string>
+    <string name="plugin_setup_message">플러그인이 동작하려면 아래 값이 필요해요.</string>
+    <string name="plugin_setup_done">완료</string>
+    <string name="plugin_setup_later">나중에</string>
+    <string name="plugin_setup_checking">확인 중…</string>
+    <string name="plugin_setup_invalid">올바르지 않은 값이 있어요. 확인 후 다시 시도해 주세요.</string>
+    <string name="plugin_setup_error">플러그인이 설정을 처리하다 오류가 났어요: %s</string>
+    <string name="plugin_setup_completed">%s 설정을 마쳤어요.</string>
     <string name="plugin_install_title">플러그인 설치</string>
     <string name="plugin_install_new">새로 설치해요.</string>
     <string name="plugin_install_update">%1$s → %2$s 버전으로 업데이트해요.</string>
