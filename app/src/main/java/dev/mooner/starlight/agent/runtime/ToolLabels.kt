@@ -3,6 +3,9 @@ package dev.mooner.starlight.agent.runtime
 import android.content.Context
 import androidx.annotation.DrawableRes
 import dev.mooner.starlight.R
+import dev.mooner.starlight.agent.provider.RequestContent
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 /** What the chat calls each tool, and its icon. */
 object ToolLabels {
@@ -41,4 +44,13 @@ object ToolLabels {
     @DrawableRes
     fun icon(name: String?): Int =
         LABELS[name]?.icon ?: R.drawable.ic_round_code_24
+
+    /** What a call works on, from its arguments: "hello-bot · main.js", “/안녕”, or "" if nothing says. */
+    fun target(arguments: String, withProject: Boolean = true): String {
+        val args = RequestContent.parseArguments(arguments) ?: return ""
+        fun string(name: String) = (args[name] as? JsonPrimitive)?.contentOrNull
+        val project = (string("project") ?: string("name")).takeIf { withProject }
+        val target = string("path") ?: string("message")?.let { "“$it”" } ?: string("query")?.let { "“$it”" }
+        return listOfNotNull(project, target).joinToString(" · ")
+    }
 }

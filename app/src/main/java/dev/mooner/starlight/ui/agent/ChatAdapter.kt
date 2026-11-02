@@ -59,8 +59,6 @@ import dev.mooner.starlight.utils.startActivityWithExtra
 import io.noties.markwon.Markwon
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.contentOrNull
 import java.io.File
 
 /** One line of the chat. */
@@ -318,7 +316,7 @@ class ChatAdapter(
         val result = row.result
         binding.icon.setImageResource(ToolLabels.icon(call.name))
         binding.label.text = ToolLabels.label(context, call.name)
-        binding.detail.text = result?.summary ?: argumentSummary(call)
+        binding.detail.text = result?.summary ?: ToolLabels.target(call.arguments)
         val (statusIcon, statusColor) = when {
             call.approval == Approval.DENIED -> R.drawable.ic_agent_close to R.color.agent_dusk
             result == null                   -> null to null
@@ -494,16 +492,6 @@ class ChatAdapter(
     }
 
     /** Null if [file] is somewhere the app's FileProvider doesn't share from. */
-    private fun argumentSummary(call: Part.ToolCall): String {
-        val args = RequestContent.parseArguments(call.arguments) ?: return ""
-        val project = args.string("project") ?: args.string("name")
-        val target = args.string("path") ?: args.string("message")?.let { "“$it”" } ?: args.string("query")?.let { "“$it”" }
-        return listOfNotNull(project, target).joinToString(" · ")
-    }
-
-    private fun JsonObject.string(name: String): String? =
-        (this[name] as? JsonPrimitive)?.contentOrNull
-
     private fun prettyArguments(arguments: String): String =
         runCatching { PRETTY.encodeToString(JsonObject.serializer(), AgentJson.parseToJsonElement(arguments) as JsonObject) }
             .getOrDefault(arguments)

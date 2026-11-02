@@ -263,15 +263,8 @@
                         android:paddingVertical="8dp"
                         android:textColor="@color/agent_text_muted"
                         android:textSize="12.5sp"
-                        tools:text="마지막 실행이 실시간 업데이트로 표시됐어요."/>
-
-                    <TextView
-                        android:id="@+id/liveUpdatesTest"
-                        style="@style/AgentCardAction"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginBottom="12dp"
-                        android:text="@string/agent_live_updates_test"
-                        app:drawableStartCompat="@drawable/ic_agent_sparkle"/>
+                        android:text="@string/agent_live_updates_blocked"
+                        android:visibility="gone"/>
                 </LinearLayout>
 
                 <View style="@style/AgentDivider"/>

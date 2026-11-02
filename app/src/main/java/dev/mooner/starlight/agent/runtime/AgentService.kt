@@ -1,6 +1,5 @@
 package dev.mooner.starlight.agent.runtime
 
-import android.app.NotificationManager
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -9,7 +8,6 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
@@ -20,7 +18,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -28,7 +25,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.sample
-import kotlinx.coroutines.launch
 
 /**
  * Keeps the process in the foreground while the agent runs, so that a run goes on after the user leaves the app.
@@ -66,33 +62,10 @@ class AgentService : Service() {
                     return@onEach
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                     ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                    val notification = progress(hub)
-                    NotificationManagerCompat.from(this).notify(AgentNotifier.PROGRESS_ID, notification)
-                    if (NotificationCompat.isRequestPromotedOngoing(notification))
-                        recordPromotion(hub)
+                    NotificationManagerCompat.from(this).notify(AgentNotifier.PROGRESS_ID, progress(hub))
                 }
             }
             .launchIn(scope)
-    }
-
-    /**
-     * Notes whether the system showed the notification as a Live Update, for the settings to tell the user; promotion
-     * depends on the Android version, the user's settings and the manufacturer, and the app can't know it beforehand.
-     */
-    private fun recordPromotion(hub: AgentHub) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA)
-            return
-        scope.launch {
-            // The system applies the flag once it has processed the post.
-            delay(PROMOTION_CHECK_DELAY_MILLIS)
-            val posted = getSystemService(NotificationManager::class.java)?.activeNotifications
-                ?.firstOrNull { it.id == AgentNotifier.PROGRESS_ID } ?: return@launch
-            if (!NotificationCompat.isRequestPromotedOngoing(posted.notification))
-                return@launch
-            val (promoted, detail) = AgentNotifier.promotionReport(this@AgentService, posted.notification)
-            hub.settings.lastLiveUpdatePromoted = promoted
-            hub.settings.lastLiveUpdateDetail = detail
-        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -120,7 +93,6 @@ class AgentService : Service() {
 
     companion object {
         private const val UPDATE_INTERVAL_MILLIS = 800L
-        private const val PROMOTION_CHECK_DELAY_MILLIS = 1_000L
         private const val WAKE_LOCK_TIMEOUT_MILLIS = 3 * 60 * 60 * 1000L
         private val LOG = LoggerFactory.logger("AgentService")
 

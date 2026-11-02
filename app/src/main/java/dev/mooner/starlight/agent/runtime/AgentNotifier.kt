@@ -8,13 +8,14 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
+import dev.mooner.starlight.agent.model.Conversation
+import dev.mooner.starlight.agent.model.Part
+import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.plainPreview
 import dev.mooner.starlight.ui.agent.AgentChatActivity
 
@@ -26,8 +27,6 @@ internal object AgentNotifier {
     const val CHANNEL_DONE = "agent_done"
 
     const val PROGRESS_ID = 0x5A1
-    const val TEST_ID = 0x5A5
-    const val TEST_MILLIS = 20_000L
 
     fun ensureChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
@@ -39,89 +38,86 @@ internal object AgentNotifier {
     }
 
     /**
-     * The ongoing notification of the runs going on. One run whose chat isn't open asks to be a Live Update, which
-     * Android 16 QPR2 and later show as a chip in the status bar and a card on the lock screen; elsewhere it stays an
-     * ordinary notification. A run waiting for the user says so in the chip and offers to allow or deny right there.
+     * The ongoing notification of the runs going on. One run says what it is doing and on what, how many tools it has
+     * used and how its last steps went; while its chat isn't open it asks to be a Live Update, which Android 16 QPR2
+     * and later show as a chip in the status bar and a card on the lock screen (Samsung only with "Live notifications
+     * for all apps" in the developer options); elsewhere it stays an ordinary notification.
      */
     fun progress(context: Context, hub: AgentHub): Notification {
         val runtime = hub.runtime
         val runs = runtime.live.value.values
-        val first = runs.firstOrNull()
-        val title = when {
-            first == null  -> context.getString(R.string.agent_notification_working)
-            runs.size == 1 -> hub.store.get(first.conversationId)?.title.orEmpty()
-            else           -> context.getString(R.string.agent_notification_many, runs.size)
-        }
+        val run = runs.singleOrNull()
         val builder = base(context, CHANNEL_PROGRESS)
-            .setContentTitle(title)
-            .setContentText(first?.let { phaseText(context, it) } ?: context.getString(R.string.agent_notification_working))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            // As in Google's Live Updates sample; below Android 16 this is the usual indeterminate bar.
-            .setStyle(NotificationCompat.ProgressStyle().setProgressIndeterminate(true))
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-        if (first == null)
+        if (run == null) {
+            val first = runs.firstOrNull()
+            builder.setContentTitle(if (first == null) context.getString(R.string.agent_notification_working)
+                    else context.getString(R.string.agent_notification_many, runs.size))
+                .setContentText(first?.let { phaseText(context, it) } ?: context.getString(R.string.agent_notification_working))
+                .setProgress(0, 0, true)
+            first?.let { builder.setContentIntent(openChat(context, it.conversationId)) }
+            if (runs.isNotEmpty())
+                builder.setDeleteIntent(dismissed(context, runs.map { it.conversationId }))
             return builder.build()
-        builder.setContentIntent(openChat(context, first.conversationId))
-            .setDeleteIntent(dismissed(context, runs.map { it.conversationId }))
-        val single = runs.size == 1
-        val approval = if (single && first.phase == LiveRun.Phase.APPROVAL) runtime.pendingApproval(first.conversationId) else null
-        if (approval != null) {
-            val (callId, description) = approval
-            builder.setContentText(description)
-                .setShortCriticalText(context.getString(R.string.agent_chip_approval))
-                .addAction(0, context.getString(R.string.agent_allow), action(context, AgentActionReceiver.ACTION_ALLOW, first.conversationId, callId))
-                .addAction(0, context.getString(R.string.agent_deny), action(context, AgentActionReceiver.ACTION_DENY, first.conversationId, callId))
-        } else {
-            builder.addAction(0, context.getString(R.string.agent_stop), action(context, AgentActionReceiver.ACTION_STOP, first.conversationId, null))
         }
+
+        val id = run.conversationId
+        val conversation = hub.store.get(id)
+        val steps = conversation?.let(::currentSteps).orEmpty()
+        val approval = if (run.phase == LiveRun.Phase.APPROVAL) runtime.pendingApproval(id) else null
+        // The title is the conversation's project when it has one; then the steps needn't repeat it.
+        val withProject = conversation?.project == null
+        val doing = when {
+            approval != null -> context.getString(R.string.agent_notification_approval_short, approval.second)
+            run.phase == LiveRun.Phase.RUNNING_TOOL -> {
+                val target = steps.lastOrNull { it.result == null }?.let { ToolLabels.target(it.call.arguments, withProject) }
+                listOfNotNull(phaseText(context, run), target?.takeIf(String::isNotBlank)).joinToString(" · ")
+            }
+            else -> phaseText(context, run)
+        }
+        val finished = steps.filter { it.result != null }.takeLast(RECENT_STEPS).map { step ->
+            val mark = if (step.result!!.isError) "✗" else "✓"
+            val target = ToolLabels.target(step.call.arguments, withProject)
+            "$mark " + listOf(ToolLabels.label(context, step.call.name), target).filter(String::isNotBlank).joinToString(" · ")
+        }
+        builder.setContentTitle(conversation?.project ?: conversation?.title ?: context.getString(R.string.agent_notification_working))
+            .setContentText(doing)
+            .setStyle(NotificationCompat.BigTextStyle().bigText((listOf(doing) + finished).joinToString("\n")))
+            .setContentIntent(openChat(context, id))
+            .setDeleteIntent(dismissed(context, listOf(id)))
+            .addAction(0, context.getString(R.string.agent_stop), action(context, AgentActionReceiver.ACTION_STOP, id, null))
+        if (steps.isNotEmpty())
+            builder.setSubText(context.resources.getQuantityString(R.plurals.agent_tools_used, steps.size, steps.size))
+        // Waiting on the user isn't progress; the approval notification, which alerts, has the buttons.
+        if (approval != null)
+            builder.setShortCriticalText(context.getString(R.string.agent_chip_approval))
+        else
+            builder.setProgress(0, 0, true)
         // The time the run has taken, which a Live Update's chip shows when there's nothing more pressing.
-        if (single)
-            runtime.startedAt(first.conversationId)?.let { builder.setWhen(it).setShowWhen(true).setUsesChronometer(true) }
-        builder.setRequestPromotedOngoing(
-            promotes(hub.settings.liveUpdates, runs, runtime.visibleConversation, runtime.dismissed.value))
+        runtime.startedAt(id)?.let { builder.setWhen(it).setShowWhen(true).setUsesChronometer(true) }
+        builder.setRequestPromotedOngoing(promotes(hub.settings.liveUpdates, runs, runtime.visibleConversation, runtime.dismissed.value))
         return builder.build()
     }
 
-    /** A run's progress notification as it looks away from its chat, for the settings to test Live Updates with. */
-    fun liveUpdateTest(context: Context): Notification =
-        base(context, CHANNEL_PROGRESS)
-            .setContentTitle(context.getString(R.string.agent_live_updates_test_title))
-            .setContentText(context.getString(R.string.agent_phase_thinking))
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setStyle(NotificationCompat.ProgressStyle().setProgressIndeterminate(true))
-            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-            .setWhen(System.currentTimeMillis())
-            .setShowWhen(true)
-            .setUsesChronometer(true)
-            .setTimeoutAfter(TEST_MILLIS)
-            .setRequestPromotedOngoing(true)
-            .build()
+    private class Step(val call: Part.ToolCall, val result: Part.ToolResult?)
 
-    /**
-     * What the system made of a posted notification that asked to be a Live Update, and one line saying why: the API
-     * level, whether the app may post Live Updates, whether the notification qualifies, its channel's importance and
-     * whether it was promoted. Each is a different place where promotion can fail.
-     */
-    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-    fun promotionReport(context: Context, posted: Notification): Pair<Boolean, String> {
-        val manager = context.getSystemService(NotificationManager::class.java)
-        val promoted = posted.flags and Notification.FLAG_PROMOTED_ONGOING != 0
-        val full = Build.VERSION.SDK_INT_FULL
-        fun mark(value: Boolean?) = when (value) {
-            true  -> "✓"
-            false -> "✗"
-            null  -> "?"
+    /** The tool calls since the user last wrote, with their results so far. */
+    private fun currentSteps(conversation: Conversation): List<Step> {
+        val messages = conversation.messages
+        // Messages the app sends on its own, such as asking for a reply the model left out, don't start a new run.
+        val start = messages.indexOfLast { message ->
+            message.role == Role.USER &&
+                message.parts.any { it !is Part.Context || it.label !in Part.Context.HIDDEN }
         }
-        val detail = listOf(
-            "API ${full / 100_000}.${full % 100_000}",
-            "allowed ${mark(runCatching { manager?.canPostPromotedNotifications() }.getOrNull())}",
-            "qualifies ${mark(runCatching { posted.hasPromotableCharacteristics() }.getOrNull())}",
-            "channel ${manager?.getNotificationChannel(posted.channelId)?.importance ?: "?"}",
-            "promoted ${mark(promoted)}",
-        ).joinToString(" · ")
-        return promoted to detail
+        val run = messages.drop(start + 1)
+        val results = run.filter { it.role == Role.TOOL }
+            .flatMap { it.parts.filterIsInstance<Part.ToolResult>() }
+            .associateBy { it.callId }
+        return run.filter { it.role == Role.ASSISTANT }
+            .flatMap { it.toolCalls }
+            .map { Step(it, results[it.id]) }
     }
 
     /** Whether the progress notification asks to be a Live Update: one run, its chat not open, not swiped away. */
@@ -134,9 +130,12 @@ internal object AgentNotifier {
     fun progressKey(hub: AgentHub): List<Any?> {
         val runtime = hub.runtime
         val runs = runtime.live.value.values
+        val single = runs.singleOrNull()
         return listOf(
             runs.map { listOf(it.conversationId, it.phase, it.tool, it.retry) },
-            runs.singleOrNull()?.let { runtime.pendingApproval(it.conversationId) },
+            single?.let { runtime.pendingApproval(it.conversationId) },
+            // Each step adds messages, and with them the step count and the recent steps shown.
+            single?.let { hub.store.get(it.conversationId)?.messages?.size },
             promotes(hub.settings.liveUpdates, runs, runtime.visibleConversation, runtime.dismissed.value),
         )
     }
@@ -246,6 +245,9 @@ internal object AgentNotifier {
             return
         NotificationManagerCompat.from(context).notify(id, notification)
     }
+
+    /** How many finished steps the expanded notification lists. */
+    private const val RECENT_STEPS = 3
 
     private fun approvalId(conversationId: String) = 0x5A2000 + (conversationId.hashCode() and 0xFFF)
 
