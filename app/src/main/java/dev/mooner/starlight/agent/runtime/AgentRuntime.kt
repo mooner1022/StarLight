@@ -29,6 +29,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -38,6 +39,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
@@ -129,8 +131,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         mDismissed.update { it + conversationIds }
     }
 
+    /** True from the start of a run until it has fully ended, stopping included: a stopped tool may still be finishing. */
     fun isRunning(conversationId: String): Boolean =
-        jobs[conversationId]?.isActive == true
+        jobs[conversationId]?.isCompleted == false
 
     fun newConversationId(): String =
         "c" + UUID.randomUUID().toString().replace("-", "").take(16)
@@ -220,17 +223,20 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         mDismissed.update { it - conversationId }
         setLive(conversationId) { LiveRun(conversationId, LiveRun.Phase.WAITING) }
         AgentService.start(hub.context)
-        val job = scope.launch {
+        // Registered before it starts, so that a run that ends at once still clears what it set.
+        val job = scope.launch(start = CoroutineStart.LAZY) {
             try {
                 run(conversationId)
             } finally {
-                jobs.remove(conversationId)
-                startedAt.remove(conversationId)
-                mDismissed.update { it - conversationId }
-                mLive.update { it - conversationId }
+                if (jobs.remove(conversationId, coroutineContext.job)) {
+                    startedAt.remove(conversationId)
+                    mDismissed.update { it - conversationId }
+                    mLive.update { it - conversationId }
+                }
             }
         }
         jobs[conversationId] = job
+        job.start()
     }
 
     private suspend fun run(id: String) {
@@ -240,10 +246,15 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         try {
             while (true) {
                 val conversation = hub.store.get(id) ?: return
+                // Calls left without a result, also after the app was killed halfway through a turn's tools.
+                val open = History.openCalls(conversation.messages)
+                if (open != null) {
+                    runTools(id, open.first, open.second)
+                    continue
+                }
                 // Notices are for the user; what counts is the last turn the model takes part in.
                 val last = conversation.messages.lastOrNull { message -> message.parts.any { it !is Part.Notice } } ?: return
                 when {
-                    last.role == Role.ASSISTANT && last.toolCalls.isNotEmpty() -> runTools(id, last)
                     last.role == Role.ASSISTANT -> break
                     else -> {
                         if (steps >= maxSteps) {
@@ -358,7 +369,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         val calls = message.toolCalls
         if (calls.isNotEmpty() && result.stopReason == StopReason.MAX_TOKENS) {
             // The arguments were cut off; running them would act on half a file.
-            appendResults(id, calls.map { call ->
+            addResults(id, message.id, calls.map { call ->
                 Part.ToolResult(call.id, call.name, "Your output hit the length limit before this call was complete, so it " +
                     "didn't run. Split the work: edit smaller parts of files instead of rewriting them whole.", isError = true)
             })
@@ -369,12 +380,10 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         return calls.isNotEmpty()
     }
 
-    private suspend fun runTools(id: String, message: ChatMessage) {
-        val results = mutableListOf<Part.ToolResult>()
-        for (call in message.toolCalls) {
-            results += runTool(id, message.id, call)
-        }
-        appendResults(id, results)
+    /** Runs [calls] of [turn], saving each result as it comes, so that a stop or a crash keeps what already ran. */
+    private suspend fun runTools(id: String, turn: ChatMessage, calls: List<Part.ToolCall>) {
+        for (call in calls)
+            addResults(id, turn.id, listOf(runTool(id, turn.id, call)))
     }
 
     private suspend fun runTool(id: String, messageId: String, call: Part.ToolCall): Part.ToolResult {
@@ -454,18 +463,18 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         }
     }
 
-    /** Gives every call of the last assistant turn that has no result one, so that the history stays valid. */
+    /** Gives the calls of the last assistant turn that have no result one, so that the history stays valid. */
     private fun answerOpenCalls(id: String, reason: String) {
-        val conversation = hub.store.get(id) ?: return
-        val last = conversation.messages.lastOrNull { message -> message.parts.any { it !is Part.Notice } } ?: return
-        if (last.role != Role.ASSISTANT || last.toolCalls.isEmpty())
-            return
-        appendResults(id, last.toolCalls.map { Part.ToolResult(it.id, it.name, reason, isError = true, summary = "Not run") })
+        val (turn, open) = hub.store.get(id)?.messages?.let(History::openCalls) ?: return
+        addResults(id, turn.id, open.map { Part.ToolResult(it.id, it.name, reason, isError = true, summary = "Not run") })
     }
 
-    private fun appendResults(id: String, results: List<Part.ToolResult>) {
+    private fun addResults(id: String, turnId: String, results: List<Part.ToolResult>) {
         val now = System.currentTimeMillis()
-        updateConversation(id) { it.copy(messages = it.messages + ChatMessage(newId("t"), Role.TOOL, results, now), updatedAt = now) }
+        updateConversation(id) {
+            val messages = History.addResults(it.messages, turnId, results) { ChatMessage(newId("t"), Role.TOOL, results, now) }
+            it.copy(messages = messages, updatedAt = now)
+        }
     }
 
     private fun appendNotice(id: String, kind: NoticeKind, text: String) {

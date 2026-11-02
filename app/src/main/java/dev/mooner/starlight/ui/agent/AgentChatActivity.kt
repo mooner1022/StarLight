@@ -283,6 +283,9 @@ class AgentChatActivity : AppCompatActivity() {
             startActivity(Intent(this, AgentSettingsActivity::class.java))
             return false
         }
+        // A stopped run can take a moment to end; the field keeps the message meanwhile.
+        if (hub.runtime.isRunning(conversationId))
+            return false
         hub.runtime.send(conversationId, text, attachments, composer.project, composer.approval)
         return true
     }
