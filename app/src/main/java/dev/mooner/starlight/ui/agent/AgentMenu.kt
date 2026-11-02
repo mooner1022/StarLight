@@ -2,8 +2,11 @@ package dev.mooner.starlight.ui.agent
 
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
+import android.text.TextPaint
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import androidx.annotation.DrawableRes
@@ -45,7 +48,7 @@ internal object AgentMenu {
                 val danger = holder.model.item.itemId in dangerous
                 val tint = if (danger) color(R.color.agent_popup_danger) else color(R.color.agent_on_night)
                 holder.titleView.typeface = font
-                holder.titleView.textSize = 14.5f
+                holder.titleView.textSize = TITLE_SIZE_SP
                 holder.titleView.setTextColor(tint)
                 holder.iconView.imageTintList =
                     ColorStateList.valueOf(if (danger) tint else color(R.color.agent_gold))
@@ -54,8 +57,7 @@ internal object AgentMenu {
                     Color.WHITE.toDrawable()))
             },
         )
-        // Wide enough for "Delete conversation".
-        val menu = CascadePopupMenu(context, anchor, Gravity.END, styler, AgentUi.dp(context, 240))
+        val menu = CascadePopupMenu(context, anchor, Gravity.END, styler, fittedWidth(anchor, items, font))
         items.forEachIndexed { order, item -> menu.menu.add(0, item.id, order, item.title).setIcon(item.icon) }
         menu.popup.elevation = AgentUi.dp(context, 12).toFloat()
         menu.setOnMenuItemClickListener { item ->
@@ -67,4 +69,19 @@ internal object AgentMenu {
         // card in a little afterwards.
         menu.popup.update(anchor, -AgentUi.dp(context, 8), 0, -1, -1)
     }
+
+    /** Just wide enough for the longest title, in whatever language the titles are in. */
+    private fun fittedWidth(anchor: View, items: List<Item>, font: Typeface?): Int {
+        val context = anchor.context
+        val paint = TextPaint().apply {
+            typeface = font
+            textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, TITLE_SIZE_SP, context.resources.displayMetrics)
+        }
+        val longest = items.maxOf { paint.measureText(context.getString(it.title)) }
+        return longest.toInt() + AgentUi.dp(context, ITEM_CHROME_DP)
+    }
+
+    private const val TITLE_SIZE_SP = 14.5f
+    /** An item's paddings and icon around its title. */
+    private const val ITEM_CHROME_DP = 66
 }

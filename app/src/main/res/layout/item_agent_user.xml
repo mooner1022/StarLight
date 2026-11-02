@@ -42,4 +42,18 @@
         android:textIsSelectable="true"
         android:textSize="15sp"
         tools:text="인사하는 봇 만들어 줘"/>
+
+    <!-- Under a message the user rewrote. -->
+    <TextView
+        android:id="@+id/edited"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:layout_marginEnd="6dp"
+        android:fontFamily="@font/wantedsans_regular"
+        android:text="@string/agent_message_edited"
+        android:textColor="@color/agent_text_faint"
+        android:textSize="11.5sp"
+        android:visibility="gone"
+        tools:visibility="visible"/>
 </LinearLayout>

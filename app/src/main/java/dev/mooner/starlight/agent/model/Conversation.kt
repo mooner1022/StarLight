@@ -1,5 +1,6 @@
 package dev.mooner.starlight.agent.model
 
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -73,6 +74,9 @@ data class ChatMessage(
     val raw: RawTurn? = null,
     val model: String? = null,
     val usage: TurnUsage? = null,
+    /** The user rewrote an earlier message into this one; the chat marks it. Left out of the file when false. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val edited: Boolean = false,
 ) {
     val text: String
         get() = parts.filterIsInstance<Part.Text>().joinToString("\n\n") { it.text }

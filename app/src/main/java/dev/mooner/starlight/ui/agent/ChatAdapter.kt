@@ -63,7 +63,13 @@ import java.io.File
 
 /** One line of the chat. */
 sealed class ChatRow(val key: String) {
-    data class User(val id: String, val text: String, val attachments: List<Part.Attachment>, val contexts: List<String>) : ChatRow(id)
+    data class User(
+        val id: String,
+        val text: String,
+        val attachments: List<Part.Attachment>,
+        val contexts: List<String>,
+        val edited: Boolean = false,
+    ) : ChatRow(id)
     data class Text(val id: String, val markdown: String) : ChatRow(id)
     data class Thinking(val id: String, val text: String) : ChatRow(id)
     data class Tool(val call: Part.ToolCall, val result: Part.ToolResult?, val running: Boolean) : ChatRow("tool:" + call.id)
@@ -110,7 +116,7 @@ internal object ChatRows {
                     if (text.isBlank() && attachments.isEmpty() && contexts.isEmpty())
                         return@forEachIndexed
                     closeRun(index)
-                    rows += ChatRow.User(id = message.id, text = text, attachments = attachments, contexts = contexts)
+                    rows += ChatRow.User(id = message.id, text = text, attachments = attachments, contexts = contexts, edited = message.edited)
                 }
                 Role.ASSISTANT -> {
                     message.usage?.let { runUsage += it }
@@ -190,6 +196,8 @@ interface ChatActions {
     fun onToggleGroup(id: String)
     /** Asks where to save [file], a copy of what [card] points at. */
     fun onSaveFile(card: Card, file: File)
+    /** The user chose to rewrite their message [messageId] and go on from there. */
+    fun onEdit(messageId: String)
 }
 
 class ChatAdapter(
@@ -294,11 +302,13 @@ class ChatAdapter(
                 binding.attachments.addView(chip.root)
             }
         }
-        binding.text.setOnLongClickListener { copy(row.text); true }
+        binding.text.setOnLongClickListener { showMessageMenu(it, row.text, row.id); true }
+        binding.attachments.setOnLongClickListener { showMessageMenu(it, row.text, row.id); true }
+        binding.edited.isVisible = row.edited
     }
 
     private fun bindText(binding: ItemAgentTextBinding, row: ChatRow.Text) {
-        renderer.render(binding.content, row.markdown) { copy(row.markdown) }
+        renderer.render(binding.content, row.markdown) { showMessageMenu(binding.content, row.markdown, null) }
     }
 
     private fun bindThinking(binding: ItemAgentThinkingBinding, row: ChatRow.Thinking) {
@@ -498,6 +508,25 @@ class ChatAdapter(
         runCatching { PRETTY.encodeToString(JsonObject.serializer(), AgentJson.parseToJsonElement(arguments) as JsonObject) }
             .getOrDefault(arguments)
 
+    /** A message's long-press menu: copying it, and for the user's own messages, rewriting it to go on from there. */
+    private fun showMessageMenu(anchor: View, text: String, userMessageId: String?) {
+        val items = buildList {
+            if (text.isNotBlank())
+                add(AgentMenu.Item(MENU_COPY, R.string.agent_message_copy, R.drawable.ic_agent_copy))
+            // Rewriting cuts the history, which a run going on still writes to.
+            if (userMessageId != null && !hub.runtime.isRunning(conversationId()))
+                add(AgentMenu.Item(MENU_EDIT, R.string.agent_message_edit, R.drawable.ic_agent_edit))
+        }
+        if (items.isEmpty())
+            return
+        AgentMenu.show(anchor, items) { id ->
+            when (id) {
+                MENU_COPY -> copy(text)
+                MENU_EDIT -> userMessageId?.let(actions::onEdit)
+            }
+        }
+    }
+
     private fun copy(text: String) {
         val clipboard = context.getSystemService(ClipboardManager::class.java) ?: return
         clipboard.setPrimaryClip(ClipData.newPlainText("StarLight AI", text))
@@ -520,6 +549,8 @@ class ChatAdapter(
         const val TYPE_FILE = 9
         const val TYPE_PROJECT = 10
         const val MAX_DETAIL = 6_000
+        const val MENU_COPY = 1
+        const val MENU_EDIT = 2
 
         val PRETTY = Json { prettyPrint = true }
 

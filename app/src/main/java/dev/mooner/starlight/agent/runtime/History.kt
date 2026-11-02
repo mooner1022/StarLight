@@ -49,6 +49,21 @@ internal object History {
         return messages.toMutableList().also { it[answer] = it[answer].copy(parts = it[answer].parts + results) }
     }
 
+    /** The project a conversation made of [messages] is about, from the project notes in the user's messages. */
+    fun projectAt(messages: List<ChatMessage>): String? {
+        var project: String? = null
+        for (message in messages) {
+            if (message.role != Role.USER)
+                continue
+            for (part in message.parts) {
+                if (part !is Part.Context || part.label in Part.Context.HIDDEN)
+                    continue
+                project = part.label.takeIf { it != Part.Context.NO_PROJECT }
+            }
+        }
+        return project
+    }
+
     private fun takesPart(message: ChatMessage): Boolean =
         message.parts.any { it !is Part.Notice }
 }

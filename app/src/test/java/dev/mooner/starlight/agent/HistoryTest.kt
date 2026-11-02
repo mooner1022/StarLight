@@ -9,7 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Finding the calls a run still has to make and keeping a turn's results together. */
+/** Finding the calls a run still has to make, keeping a turn's results together, and the project at a point. */
 class HistoryTest {
 
     private fun user(id: String, vararg parts: Part) = ChatMessage(id, Role.USER, parts.toList(), 0)
@@ -66,5 +66,18 @@ class HistoryTest {
     fun aTurnThatIsGoneGetsNoResults() {
         val messages = listOf(user("u1"))
         assertEquals(messages, History.addResults(messages, "a1", listOf(result("c1"))) { tool("t1", result("c1")) })
+    }
+
+    @Test
+    fun projectFollowsTheProjectNotesUpToThePoint() {
+        val opened = user("u1", Part.Context("hello-bot", "opened from"), Part.Context(Part.Context.INSTRUCTIONS, "be brief"), Part.Text("hi"))
+        val switched = user("u2", Part.Context("echo-bot", "switched to"), Part.Text("now this"))
+        val detached = user("u3", Part.Context(Part.Context.NO_PROJECT, "detached"), Part.Text("any"))
+        val nudge = user("u4", Part.Context(Part.Context.NUDGE, "reply"))
+        assertNull(History.projectAt(emptyList()))
+        assertEquals("hello-bot", History.projectAt(listOf(opened)))
+        assertEquals("echo-bot", History.projectAt(listOf(opened, assistant("a1", Part.Text("ok")), switched)))
+        assertNull(History.projectAt(listOf(opened, switched, detached)))
+        assertEquals("echo-bot", History.projectAt(listOf(opened, switched, nudge)))
     }
 }

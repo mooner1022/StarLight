@@ -75,6 +75,11 @@
     <string name="agent_usage_title">사용량</string>
     <string name="agent_usage_detail">입력(정가): %1$s\n캐시에서 읽음: %2$s\n캐시에 씀: %3$s\n출력: %4$s\n캐시 적중률: %5$s</string>
     <string name="agent_copied">복사했어요</string>
+    <string name="agent_message_copy">텍스트 복사</string>
+    <string name="agent_message_edit">해당 대화 수정</string>
+    <string name="agent_message_edited">수정됨</string>
+    <string name="agent_editing">메시지를 수정하고 있어요. 보내면 이 메시지 이후의 대화가 지워져요. 프로젝트에 이미 적용된 변경은 그대로예요.</string>
+    <string name="agent_edit_cancel">수정 취소</string>
     <string name="agent_notice_time_limit">백그라운드 작업의 하루 제한 시간이 다 되어 Android가 작업을 멈췄어요. 앱을 열고 계속하기를 누르면 이어서 해요.</string>
     <string name="agent_resume_time_limit">Android의 백그라운드 작업 제한으로 멈춘 작업이에요. 계속하기를 누르면 이어서 해요.</string>
 

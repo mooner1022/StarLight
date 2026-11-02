@@ -25,6 +25,7 @@ import dev.mooner.starlight.agent.model.NoticeKind
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
+import dev.mooner.starlight.agent.runtime.History
 import dev.mooner.starlight.agent.runtime.LiveRun
 import dev.mooner.starlight.databinding.ActivityAgentChatBinding
 import dev.mooner.starlight.ui.common.showSheet
@@ -103,6 +104,9 @@ class AgentChatActivity : AppCompatActivity() {
                     .setType(card.mimeType ?: "application/octet-stream")
                     .putExtra(Intent.EXTRA_TITLE, card.name))
             }
+
+            override fun onEdit(messageId: String) =
+                startEditing(messageId)
         })
         binding.messages.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
         binding.messages.adapter = adapter
@@ -309,8 +313,30 @@ class AgentChatActivity : AppCompatActivity() {
         // A stopped run can take a moment to end; the field keeps the message meanwhile.
         if (hub.runtime.isRunning(conversationId))
             return false
-        hub.runtime.send(conversationId, text, attachments, composer.project, composer.approval)
+        val editing = composer.editingMessage
+        if (editing != null && hub.store.get(conversationId)?.messages?.any { it.id == editing } == true)
+            hub.runtime.resend(conversationId, editing, text, attachments, composer.project, composer.approval)
+        else
+            hub.runtime.send(conversationId, text, attachments, composer.project, composer.approval)
         return true
+    }
+
+    /** Puts the user's message [messageId] in the composer, to be sent again in place of it and what followed. */
+    private fun startEditing(messageId: String) {
+        if (hub.runtime.isRunning(conversationId))
+            return
+        val messages = hub.store.get(conversationId)?.messages ?: return
+        val index = messages.indexOfFirst { it.id == messageId && it.role == Role.USER }
+        if (index < 0)
+            return
+        val message = messages[index]
+        composer.edit(
+            messageId = messageId,
+            text = message.parts.filterIsInstance<Part.Text>().joinToString("\n\n") { it.text },
+            attachments = message.parts.filterIsInstance<Part.Attachment>(),
+            project = History.projectAt(messages.take(index + 1)),
+        )
+        composer.focus(showKeyboard = true)
     }
 
     private fun showMenu() {

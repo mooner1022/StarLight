@@ -149,6 +149,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         attachments: List<Part.Attachment>,
         project: String? = null,
         approval: ApprovalPolicy? = null,
+        /** The message replaces one the user rewrote. */
+        edited: Boolean = false,
     ) {
         check(!isRunning(conversationId)) { "The conversation is still running" }
         val now = System.currentTimeMillis()
@@ -162,7 +164,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             if (text.isNotBlank())
                 add(Part.Text(text.trim()))
         }
-        val message = ChatMessage(newId("m"), Role.USER, parts, now)
+        val message = ChatMessage(newId("m"), Role.USER, parts, now, edited = edited)
         val conversation = existing ?: Conversation(
             id = conversationId,
             title = titleOf(text, attachments),
@@ -177,6 +179,40 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             approval = approval?.id ?: conversation.approval,
         ))
         start(conversationId)
+    }
+
+    /**
+     * Replaces the user's message [messageId], and everything after it, with a new message and runs the conversation
+     * from there. Only the conversation goes back; what the agent changed in projects meanwhile stays.
+     */
+    fun resend(
+        conversationId: String,
+        messageId: String,
+        text: String,
+        attachments: List<Part.Attachment>,
+        project: String? = null,
+        approval: ApprovalPolicy? = null,
+    ) {
+        check(!isRunning(conversationId)) { "The conversation is still running" }
+        val conversation = hub.store.get(conversationId) ?: return send(conversationId, text, attachments, project, approval)
+        val index = conversation.messages.indexOfFirst { it.id == messageId }
+        require(index >= 0 && conversation.messages[index].role == Role.USER) { "No user message $messageId" }
+        val kept = conversation.messages.take(index)
+        val firstMessage = kept.none { it.role == Role.USER }
+        hub.store.save(conversation.copy(
+            messages = kept,
+            project = History.projectAt(kept),
+            title = if (firstMessage) titleOf(text, attachments) else conversation.title,
+            state = RunState.IDLE,
+            error = null,
+            updatedAt = System.currentTimeMillis(),
+        ))
+        // Files only the removed messages had go with them.
+        val stillUsed = (kept.flatMap { it.parts } + attachments).filterIsInstance<Part.Attachment>().mapTo(HashSet()) { it.id }
+        conversation.messages.drop(index).flatMap { it.parts }.filterIsInstance<Part.Attachment>()
+            .filter { it.id !in stillUsed }
+            .forEach { hub.attachments.delete(conversationId, it.id) }
+        send(conversationId, text, attachments, project, approval, edited = true)
     }
 
     /** Sets when [conversationId] asks before running tools; null follows the settings. Applies to a run going on. */

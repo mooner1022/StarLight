@@ -112,6 +112,14 @@ class AttachmentStore(private val root: File) : AttachmentSource {
         dir.deleteRecursively()
     }
 
+    /** Deletes one attachment of [conversationId], with the pages rendered from it. */
+    fun delete(conversationId: String, attachmentId: String) {
+        val file = file(conversationId, attachmentId) ?: return
+        locations.remove(attachmentId)
+        pagesDir(file).deleteRecursively()
+        file.delete()
+    }
+
     override fun bytes(attachment: Part.Attachment): ByteArray =
         file(attachment)?.readBytes() ?: throw IOException("The attachment ${attachment.name} is missing")
 

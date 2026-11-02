@@ -3,6 +3,7 @@ package dev.mooner.starlight.ui.agent
 import android.content.Context
 import android.net.Uri
 import android.view.LayoutInflater
+import android.view.ViewTreeObserver
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -48,6 +49,12 @@ class Composer(
     private val hub = AgentHub.get(context)
     private val attachments = mutableListOf<Part.Attachment>()
     private var importing = 0
+    /** The project before an edit put the edited message's in place, restored when the edit is cancelled. */
+    private var projectBeforeEdit: String? = null
+
+    /** The user's message being rewritten: sending replaces it and everything after it. Null when writing anew. */
+    var editingMessage: String? = null
+        private set
 
     var isRunning: Boolean = false
         set(value) {
@@ -97,14 +104,35 @@ class Composer(
         binding.attach.setOnClickListener { showAddSheet() }
         binding.projectChip.setOnClickListener { activity()?.let { AddSheet.pickProject(it, this) } }
         binding.projectRemove.setOnClickListener { project = null }
+        binding.editCancel.setOnClickListener { cancelEdit() }
         updateSend()
     }
 
     fun focus(showKeyboard: Boolean = false) {
         binding.input.requestFocus()
         if (showKeyboard)
-            binding.input.context.getSystemService(InputMethodManager::class.java)
-                ?.showSoftInput(binding.input, InputMethodManager.SHOW_IMPLICIT)
+            showKeyboardWhenFocused()
+    }
+
+    /**
+     * Android ignores the request while another window has the focus, such as a menu or sheet that is still closing
+     * after the user picked from it; then it waits for the focus to come back.
+     */
+    private fun showKeyboardWhenFocused() {
+        val input = binding.input
+        fun show() = context.getSystemService(InputMethodManager::class.java)?.showSoftInput(input, 0)
+        if (input.hasWindowFocus()) {
+            show()
+            return
+        }
+        input.viewTreeObserver.addOnWindowFocusChangeListener(object : ViewTreeObserver.OnWindowFocusChangeListener {
+            override fun onWindowFocusChanged(hasFocus: Boolean) {
+                if (!hasFocus)
+                    return
+                input.viewTreeObserver.removeOnWindowFocusChangeListener(this)
+                show()
+            }
+        })
     }
 
     fun setHint(hint: CharSequence) {
@@ -116,7 +144,35 @@ class Composer(
         attachments.clear()
         binding.attachments.removeAllViews()
         binding.attachmentsScroll.isVisible = false
+        editingMessage = null
+        projectBeforeEdit = null
+        binding.editBar.isVisible = false
         updateSend()
+    }
+
+    /**
+     * Puts the user's message [messageId] in the field to rewrite, with its attachments and [project], the project it
+     * was sent with.
+     */
+    fun edit(messageId: String, text: String, attachments: List<Part.Attachment>, project: String?) {
+        val previous = if (editingMessage == null) this.project else projectBeforeEdit
+        clear()
+        projectBeforeEdit = previous
+        editingMessage = messageId
+        binding.editBar.isVisible = true
+        this.project = project
+        this.text = text
+        attachments.forEach(::addChip)
+        updateSend()
+    }
+
+    /** Leaves the edit with an empty field and the project as it was before. */
+    fun cancelEdit() {
+        if (editingMessage == null)
+            return
+        val previous = projectBeforeEdit
+        clear()
+        project = previous
     }
 
     /** Takes the result of either picker. */
