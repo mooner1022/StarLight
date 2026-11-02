@@ -26,6 +26,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import dev.mooner.configdsl.ConfigDSL
+import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.PREF_IS_INITIAL
 import dev.mooner.starlight.R
 import dev.mooner.starlight.event.ApplicationEvent
@@ -37,6 +38,7 @@ import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.utils.setStarLightDirectory
 import dev.mooner.starlight.ui.common.SheetDialogProvider
 import dev.mooner.starlight.ui.crash.FatalErrorActivity
 import dev.mooner.starlight.ui.splash.intro.IntroActivity
@@ -57,6 +59,9 @@ class GlobalApplication: Application(), LifecycleEventObserver {
 
     override fun onCreate() {
         super.onCreate()
+        // Play builds keep everything in the app-specific folder, which needs no storage permission.
+        if (!BuildConfig.SHARED_STORAGE)
+            setStarLightDirectory(getExternalFilesDir(null) ?: filesDir)
         //Logger.v(T, "Application onCreate() called")
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         isStartupAborted = false // explicit reset
@@ -74,7 +79,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         if (isInitial || !isPermissionsGrant)
             return
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+        if (BuildConfig.SHARED_STORAGE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
             Toast.makeText(this, "Android 12 이상 버전에서는 모든 파일 액세스 권한이 필요합니다.", Toast.LENGTH_LONG).show()
             Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

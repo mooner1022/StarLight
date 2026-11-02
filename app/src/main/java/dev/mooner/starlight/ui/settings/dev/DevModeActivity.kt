@@ -19,6 +19,7 @@ import dev.mooner.configdsl.options.info
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.textList
 import dev.mooner.configdsl.options.toggle
+import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.R
 import dev.mooner.starlight.WIDGET_DEF_STRING
 import dev.mooner.starlight.core.ApplicationSession
@@ -116,14 +117,16 @@ fun Context.startDevModeActivity() {
                         icon = Icon.ERROR
                         status = OptionStatus.WARNING
                     }
-                    toggle {
-                        id = "load_external_dex_libs"
-                        title = "외부 dex 라이브러리 로드"
-                        description = "/libs 디렉터리 내부의 .dex 라이브러리를 로드합니다."
-                        icon = Icon.CREATE_NEW_FOLDER
-                        iconTintColor = color { "#87AAAA" }
-                        defaultValue = false
-                    }
+                    // Play builds may not load dex from outside the app.
+                    if (BuildConfig.DYNAMIC_PLUGINS)
+                        toggle {
+                            id = "load_external_dex_libs"
+                            title = "외부 dex 라이브러리 로드"
+                            description = "/libs 디렉터리 내부의 .dex 라이브러리를 로드합니다."
+                            icon = Icon.CREATE_NEW_FOLDER
+                            iconTintColor = color { "#87AAAA" }
+                            defaultValue = false
+                        }
                     toggle {
                         id = "change_thread_pool_size"
                         title = "동시 실행 수 변경"

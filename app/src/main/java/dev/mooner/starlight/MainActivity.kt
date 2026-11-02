@@ -8,6 +8,7 @@ package dev.mooner.starlight
 
 import android.os.Bundle
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -58,6 +59,7 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        onBackPressedDispatcher.addCallback(this, backToHome)
         updater = AppUpdater(this)
         applyEdgeToEdge(binding.root) { _, _ ->
             window.navigationBarColor = ContextCompat.getColor(this, R.color.cardview)
@@ -128,7 +130,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkUpdateOnStart() {
-        if (isUpdateChecked || !isAutoUpdateCheckEnabled)
+        // Play builds update only through Google Play.
+        if (!BuildConfig.SELF_UPDATE || isUpdateChecked || !isAutoUpdateCheckEnabled)
             return
         isUpdateChecked = true
         lifecycleScope.launch {
@@ -145,11 +148,10 @@ class MainActivity : AppCompatActivity() {
             onPageChanged(currentTabId)
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        if (currentTabId == R.id.nav_home)
-            super.onBackPressed()
-        else
+    // Back on another tab returns home. On home it is left to the system, so predictive back can show
+    // the app closing.
+    private val backToHome = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() =
             setCurrentTab(R.id.nav_home)
     }
 
@@ -242,6 +244,7 @@ class MainActivity : AppCompatActivity() {
         binding.titleText.text  = title
         binding.statusText.text = status
         currentTabId = id
+        backToHome.isEnabled = id != R.id.nav_home
     }
 
     companion object {

@@ -140,12 +140,15 @@ class IntroActivity : AppCompatActivity() {
         val tour = listPage(R.string.intro_tour_eyebrow, R.string.intro_tour_title, R.string.intro_tour_subtitle)
         tour.pageContent.addRow(R.drawable.ic_round_insert_comment_24, R.string.intro_feature_reply_title, R.string.intro_feature_reply_desc)
         tour.pageContent.addRow(R.drawable.ic_round_code_24, R.string.intro_feature_project_title, R.string.intro_feature_project_desc)
-        tour.pageContent.addRow(R.drawable.ic_round_plugins_24, R.string.intro_feature_plugin_title, R.string.intro_feature_plugin_desc)
+        if (BuildConfig.DYNAMIC_PLUGINS)
+            tour.pageContent.addRow(R.drawable.ic_round_plugins_24, R.string.intro_feature_plugin_title, R.string.intro_feature_plugin_desc)
         tour.pageContent.addRow(R.drawable.ic_round_view_day_24, R.string.intro_feature_home_title, R.string.intro_feature_home_desc)
 
         val required = listPage(R.string.intro_required_eyebrow, R.string.intro_required_title, R.string.intro_required_subtitle)
-        required.pageContent.addPermission(R.drawable.ic_round_sd_storage_24, R.string.intro_perm_storage, R.string.intro_perm_storage_desc, isRequired = true,
-            check = { checkPermissions(REQUIRED_PERMISSIONS) }, request = ::requestStorage)
+        // Play builds keep their files in the app-specific folder, which needs no permission.
+        if (BuildConfig.SHARED_STORAGE)
+            required.pageContent.addPermission(R.drawable.ic_round_sd_storage_24, R.string.intro_perm_storage, R.string.intro_perm_storage_desc, isRequired = true,
+                check = { checkPermissions(REQUIRED_PERMISSIONS) }, request = ::requestStorage)
         required.pageContent.addPermission(ConfigR.drawable.ic_round_notifications_active_24, R.string.intro_perm_listener, R.string.intro_perm_listener_desc, isRequired = true,
             check = { packageName in NotificationManagerCompat.getEnabledListenerPackages(this) }, request = ::requestListener)
         required.pageContent.addPermission(ConfigR.drawable.ic_round_layers_24, R.string.intro_perm_overlay, R.string.intro_perm_overlay_desc, isRequired = true,
@@ -539,6 +542,10 @@ class IntroActivity : AppCompatActivity() {
         private const val PAGE_DONE     = 4
 
         val REQUIRED_PERMISSIONS = when {
+            !BuildConfig.SHARED_STORAGE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ->
+                arrayOf(INTERNET, FOREGROUND_SERVICE)
+            !BuildConfig.SHARED_STORAGE ->
+                arrayOf(INTERNET)
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
                 arrayOf(INTERNET, FOREGROUND_SERVICE, MANAGE_EXTERNAL_STORAGE)
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ->

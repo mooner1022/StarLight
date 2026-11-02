@@ -18,6 +18,7 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.warnTranslated
+import dev.mooner.starlight.utils.fitSystemBars
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.collect
@@ -35,6 +36,7 @@ class SchemeHandlerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySchemeHandlerBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fitSystemBars(binding.root)
 
         val action = intent.action
         val data = intent.data

@@ -46,7 +46,7 @@ jobs:
         fi
 
     - name: Build release
-      run: ./gradlew assembleRelease
+      run: ./gradlew assembleFullRelease bundlePlayRelease
       env:
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -54,7 +54,7 @@ jobs:
  
     - name: Extract artifact name
       run: |
-        name="$(find app/build/outputs/apk/release/ -type f -name 'StarLight-*')"
+        name="$(find app/build/outputs/apk/full/release/ -type f -name 'StarLight-*')"
         echo "ARTIFACT_NAME=${name##*/}" >> $GITHUB_ENV
  
     - name: Upload the Artifact
@@ -62,4 +62,11 @@ jobs:
       with:
         name: ${{ env.ARTIFACT_NAME }}
         path: |
-          app/build/outputs/apk/release/${{ env.ARTIFACT_NAME }}
+          app/build/outputs/apk/full/release/${{ env.ARTIFACT_NAME }}
+
+    - name: Upload the Google Play bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: StarLight-play-release
+        path: |
+          app/build/outputs/bundle/playRelease/*.aab

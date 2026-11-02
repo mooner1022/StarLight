@@ -18,6 +18,7 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.utils.bindFadeImage
+import dev.mooner.starlight.utils.fitSystemBars
 import dev.mooner.starlight.utils.peek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -36,6 +37,7 @@ class PluginConfigActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPluginConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fitSystemBars(binding.root)
 
         bindLogNotifier()
 

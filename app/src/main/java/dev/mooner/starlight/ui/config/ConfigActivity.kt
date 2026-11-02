@@ -13,6 +13,7 @@ import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.utils.*
+import dev.mooner.starlight.utils.fitSystemBars
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.filterIsInstance
@@ -40,6 +41,7 @@ class ConfigActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fitSystemBars(binding.root)
 
         bindLogNotifier()
 

@@ -10,6 +10,8 @@ import android.util.AtomicFile
 import androidx.core.util.readText
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.projectManager
+import dev.mooner.starlight.plugincore.event.EventHandler
+import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.logger.internal.Logger
 import java.io.File
 import java.io.FileNotFoundException
@@ -51,20 +53,43 @@ class ProjectLoader(
             }
             for (name in precompiledNames) {
                 val project = projects[name] ?: continue
-                val info    = project.info
-                if (info.isEnabled) {
-                    try {
-                        project.compile(true)
-                    } catch (e: Exception) {
-                        Logger.w(T, "Failed to pre-compile project ${info.name}: $e")
-                        info.isEnabled = false
-                        project.saveInfo()
-                    }
-                }
+                if (project.info.isEnabled)
+                    precompile(project)
             }
         }
         return projects.values.toList()
     }
+
+    /**
+     * Loads one project folder that isn't loaded yet, such as an imported one, and announces it the way
+     * [ProjectManager.newProject] does. An enabled project is compiled first, as [loadProjects] does.
+     */
+    fun loadProject(dir: File): Project {
+        val info = getProjectInfo(dir)
+        require(projectManager.getProjectByName(info.name) == null) { "A project named '${info.name}' already exists" }
+        require(projectManager.getProjectById(info.id.toString()) == null) { "A project with id ${info.id} already exists" }
+        val project = ProjectImpl.loadFrom(dir, info)
+        projects[info.name] = project
+        if (info.isEnabled)
+            precompile(project)
+        EventHandler.fireEventWithScope(Events.Project.Create(project))
+        return project
+    }
+
+    /** Compiles an enabled project so it runs right away, or disables it if that fails. */
+    private fun precompile(project: Project) {
+        try {
+            project.compile(true)
+        } catch (e: Exception) {
+            Logger.w(T, "Failed to pre-compile project ${project.info.name}: $e")
+            project.info.isEnabled = false
+            project.saveInfo()
+        }
+    }
+
+    /** Reads a project folder's project.json. */
+    fun readProjectInfo(dir: File): ProjectInfo =
+        getProjectInfo(dir)
 
     private fun getProjectInfo(dir: File): ProjectInfo {
         val raw = try {

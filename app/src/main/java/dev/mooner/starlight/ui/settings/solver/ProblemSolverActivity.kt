@@ -9,6 +9,7 @@ package dev.mooner.starlight.ui.settings.solver
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import dev.mooner.starlight.databinding.ActivityProblemSolverBinding
+import dev.mooner.starlight.utils.fitSystemBars
 
 class ProblemSolverActivity : AppCompatActivity() {
 
@@ -18,6 +19,7 @@ class ProblemSolverActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityProblemSolverBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fitSystemBars(binding.root)
 
 
     }

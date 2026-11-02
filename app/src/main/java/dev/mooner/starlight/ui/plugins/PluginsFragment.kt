@@ -31,6 +31,7 @@ import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.MainActivity
+import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentPluginsBinding
 import dev.mooner.starlight.plugincore.Session.pluginManager
@@ -109,6 +110,11 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
             searchPlugin.setOnClickListener(this@PluginsFragment)
             searchClose.setOnClickListener(this@PluginsFragment)
             installPlugin.setOnClickListener(this@PluginsFragment)
+            // Play builds load no plugin code, so there is nothing to install.
+            if (!BuildConfig.DYNAMIC_PLUGINS) {
+                pluginStore.visibility = View.GONE
+                installPlugin.visibility = View.GONE
+            }
 
             searchInput.doAfterTextChanged { text ->
                 val query = text?.toString()?.trim().orEmpty()
@@ -416,7 +422,7 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
                 else -> {
                     visibility = View.VISIBLE
                     setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_box_empty, 0, 0)
-                    text = getString(R.string.no_plugins)
+                    text = getString(if (BuildConfig.DYNAMIC_PLUGINS) R.string.no_plugins else R.string.plugins_unavailable)
                 }
             }
         }

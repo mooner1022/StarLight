@@ -17,6 +17,18 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    // Matches the app's flavors. Only full can load plugin and library dex; build plugins against full.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("full") {
+            dimension = "distribution"
+            isDefault = true
+        }
+        create("play") {
+            dimension = "distribution"
+        }
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false

@@ -9,6 +9,8 @@ import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.seekbar
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
+import dev.mooner.starlight.BuildConfig
+import dev.mooner.starlight.languages.ScriptHostPolicy
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
@@ -51,7 +53,7 @@ class JSRhino: Language() {
 
     internal fun enterContext(): Context {
         val config = getLanguageConfig()
-        val optLevel = if (config.getBoolean(CONF_OPTIMIZE_CODE, false))
+        val optLevel = if (BuildConfig.SCRIPT_JIT && config.getBoolean(CONF_OPTIMIZE_CODE, false))
             config.getInt(CONF_OPTIMIZATION_LEVEL, DEF_OPTIMIZATION_LEVEL)
         else
             -1
@@ -76,6 +78,13 @@ class JSRhino: Language() {
             override fun createAndroidContextFactory(cacheDirectory: File?): AndroidContextFactory {
                 val classLoader = RuntimeClassLoader(currentThread.contextClassLoader)
                 return object : AndroidContextFactory(cacheDirectory, classLoader) {
+
+                    // Every context, including those that run callbacks on other threads, comes from here.
+                    override fun makeContext(): Context =
+                        super.makeContext().also { cx ->
+                            if (ScriptHostPolicy.isEnabled)
+                                PrimitiveWrapFactory.restrictContext(cx)
+                        }
 
                     override fun hasFeature(cx: Context?, featureIndex: Int): Boolean {
                         return when(featureIndex) {
@@ -170,12 +179,17 @@ class JSRhino: Language() {
         val langVersionIndex  = options["langVersion"]?.toIntOrNull() ?: 9
 
         return createAndroidHelper().enterContext().apply {
-            this.optimizationLevel = optimizationLevel
+            this.optimizationLevel = if (BuildConfig.SCRIPT_JIT) optimizationLevel else -1
             languageVersion = indexToVersion(langVersionIndex)
             wrapFactory = PrimitiveWrapFactory()
         }.use { context ->
             val scope = if (!allowJavaAccess) {
-                context.setClassShutter { false }
+                // Restricted builds set their class shutter when the context is made, and Rhino refuses to
+                // replace it. The safe standard objects below leave out Java packages either way.
+                try {
+                    context.setClassShutter { false }
+                } catch (_: SecurityException) {
+                }
                 context.initSafeStandardObjects()
             } else
                 context.initStandardObjects(ImporterTopLevel(context))

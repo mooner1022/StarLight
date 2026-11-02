@@ -7,7 +7,6 @@
 package dev.mooner.starlight.plugincore.plugin
 
 import android.content.Context
-import dalvik.system.PathClassLoader
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
@@ -30,12 +29,17 @@ private val logger = LoggerFactory.logger {  }
 
 class PluginLoader {
     private val classes: MutableMap<String, Class<*>> = hashMapOf()
-    private val loaders: MutableMap<String, PluginClassLoader> = LinkedHashMap()
+    private val loaders: MutableMap<String, PluginHostClassLoader> = LinkedHashMap()
 
     private val defDirectory = File(getStarLightDirectory(), "plugins/")
 
     fun loadPlugins(context: Context, dir: File = defDirectory): Flow<Any> =
         flow {
+            if (!PluginCodeLoader.isSupported) {
+                logger.info { "Plugins aren't loaded in this build" }
+                emit(Session.pluginManager.plugins)
+                return@flow
+            }
             val entries: MutableMap<File, InstalledPlugin> = linkedMapOf()
             val candidates = scan(dir, entries)
 
@@ -202,7 +206,7 @@ class PluginLoader {
                 Locale.KOREAN  { "${info.fullName} 플러그인 로드중" }
             }
         }
-        val loader: PluginClassLoader
+        val loader: PluginHostClassLoader
         try {
             val nativeLibDir =
                 if (info.usesNativeLibrary)
@@ -212,10 +216,10 @@ class PluginLoader {
             val dexFile = file.copyAsReadOnly(context.codeCacheDir.resolve("plugins/${info.id}"))
 
             val parentLoader: ClassLoader = info.customClassLoader
-                ?.let { retrieveCustomClassLoader(it, dexFile.path) }
+                ?.let { PluginCodeLoader.createCustomClassLoader(it, dexFile.path, javaClass.classLoader!!) }
                 ?: javaClass.classLoader!!
 
-            loader = PluginClassLoader(context, parentLoader, dexFile, nativeLibDir?.path, this, info, file)
+            loader = PluginCodeLoader.createClassLoader(context, parentLoader, dexFile, nativeLibDir?.path, this, info, file)
             logger.info {
                 translate {
                     Locale.ENGLISH { "Loaded plugin ${info.fullName} (${file.name})" }
@@ -235,19 +239,6 @@ class PluginLoader {
             Session.pluginManager.addPlugin(plugin)
         }
         return plugin
-    }
-
-    private fun retrieveCustomClassLoader(name: String, dexPath: String): ClassLoader {
-        val tempClassLoader = PathClassLoader(dexPath, javaClass.classLoader!!)
-        val clazz = Class.forName(name, false, tempClassLoader)
-        val primaryConstructor = clazz.constructors.find { cn ->
-            cn.parameterTypes.size == 1 && ClassLoader::class.java.isAssignableFrom(cn.parameterTypes[0])
-        } ?: clazz.getConstructor()
-
-        return if (primaryConstructor.parameterTypes.isNotEmpty())
-            primaryConstructor.newInstance(javaClass.classLoader!!) as ClassLoader
-        else
-            primaryConstructor.newInstance() as ClassLoader
     }
 
     private fun loadNativeLibrary(info: PluginInfo, file: File, parentDir: File, force: Boolean = false): File {

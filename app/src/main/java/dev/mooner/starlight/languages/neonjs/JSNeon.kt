@@ -15,7 +15,9 @@ import dev.mooner.configdsl.options.toggle
 import dev.mooner.neonjs.*
 import dev.mooner.neonjs.net.NetExtension
 import dev.mooner.neonjs.net.NetOptions
+import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.core.GlobalApplication
+import dev.mooner.starlight.languages.ScriptHostPolicy
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
@@ -66,7 +68,7 @@ class JSNeon: Language() {
     ): Any {
         val langConf = getLanguageConfig()
 
-        val isOptimized = langConf.getBoolean(CONF_OPTIMIZE_CODE, false)
+        val isOptimized = BuildConfig.SCRIPT_JIT && langConf.getBoolean(CONF_OPTIMIZE_CODE, false)
         val execMode = if (isOptimized)
             langConf.getInt(CONF_OPTIMIZATION_LEVEL, DEF_OPTIMIZATION_LEVEL)
                 .let(ExecutionMode.entries::get)
@@ -174,7 +176,7 @@ class JSNeon: Language() {
         val optimizationLevel = options["optimizationLevel"]?.toIntOrNull() ?: 0
 
         val engine = NeonEngine.builder()
-            .optimizationLevel(optimizationLevel)
+            .let { if (BuildConfig.SCRIPT_JIT) it.optimizationLevel(optimizationLevel) else it.executionMode(ExecutionMode.INTERPRETER) }
             .sandbox(
                 SandboxPolicy.builder()
                     .exposeJavaGlobal(allowJavaAccess)
@@ -380,10 +382,7 @@ class JSNeon: Language() {
             "Java",
         )
 
-        private val hostAccess: HostAccess = HostAccess.builder(HostAccess.Level.ALL)
-            .defaultDenyList(false)
-            .allowLookup { true }
-            .build()
+        private val hostAccess: HostAccess = buildHostAccess(ScriptHostPolicy.isEnabled)
 
         private val configs = config {
             category {
