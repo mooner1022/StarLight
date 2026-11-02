@@ -12,18 +12,24 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.res.ColorStateList
+import android.text.format.Formatter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.transform.RoundedCornersTransformation
 import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
+import dev.mooner.starlight.agent.model.Card
+import dev.mooner.starlight.agent.model.CardKind
 import dev.mooner.starlight.plugincore.config.GlobalConfig
+import dev.mooner.starlight.ui.agent.FilePreview
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 import dev.mooner.starlight.utils.peek
@@ -40,6 +46,10 @@ class DebugRoomChatAdapter(
         const val CHAT_BOT = 1
         const val CHAT_SELF_LONG = 2
         const val CHAT_BOT_LONG = 3
+        /** A file the bot sent; [DebugRoomMessage.fileName] is its copy under `chats/`. */
+        const val CHAT_BOT_MEDIA = 4
+
+        private val BOT_TYPES = arrayOf(CHAT_BOT, CHAT_BOT_LONG, CHAT_BOT_MEDIA)
     }
 
     private val context = parent as Context
@@ -61,6 +71,9 @@ class DebugRoomChatAdapter(
             CHAT_BOT_LONG -> {
                 view = LayoutInflater.from(context).inflate(R.layout.chat_other_long, parent, false)
             }
+            CHAT_BOT_MEDIA -> {
+                view = LayoutInflater.from(context).inflate(R.layout.chat_other_media, parent, false)
+            }
         }
         return ViewHolder(view!!, viewType)
     }
@@ -76,7 +89,7 @@ class DebugRoomChatAdapter(
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val messageData = chatList[position]
-        val isSentAgain: Boolean = chatList.size != 1 && position != 0 && chatList[position - 1].viewType in arrayOf(CHAT_BOT, CHAT_BOT_LONG)
+        val isSentAgain: Boolean = chatList.size != 1 && position != 0 && chatList[position - 1].viewType in BOT_TYPES
 
         when (messageData.viewType) {
             CHAT_SELF -> {
@@ -93,7 +106,7 @@ class DebugRoomChatAdapter(
                 val chatColor = GlobalConfig.category("d_user").getInt("chat_color")
                 holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
             }
-            CHAT_BOT, CHAT_BOT_LONG -> {
+            CHAT_BOT, CHAT_BOT_LONG, CHAT_BOT_MEDIA -> {
                 val chatColor = GlobalConfig.category("d_bot").getInt("chat_color")
 
                 if (isSentAgain) {
@@ -128,15 +141,23 @@ class DebugRoomChatAdapter(
                     }
                 }
 
-                if (messageData.viewType == CHAT_BOT) {
-                    holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
-                    holder.message.text = messageData.message
-                } else {
-                    holder.backgroundLayout.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
-                    holder.message.text = messageData.message + "..."
-                    val fullMessage = dir.resolve("chats").resolve(messageData.fileName!!).readText()
-                    holder.showAllButton.setOnClickListener {
-                        showFullMessageDialog(fullMessage)
+                when (messageData.viewType) {
+                    CHAT_BOT_MEDIA -> {
+                        bindMedia(holder, messageData)
+                        holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
+                        return
+                    }
+                    CHAT_BOT -> {
+                        holder.message.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
+                        holder.message.text = messageData.message
+                    }
+                    else -> {
+                        holder.backgroundLayout.backgroundTintList = chatColor?.let(ColorStateList::valueOf)
+                        holder.message.text = messageData.message + "..."
+                        val fullMessage = dir.resolve("chats").resolve(messageData.fileName!!).readText()
+                        holder.showAllButton.setOnClickListener {
+                            showFullMessageDialog(fullMessage)
+                        }
                     }
                 }
             }
@@ -160,6 +181,41 @@ class DebugRoomChatAdapter(
         }
     }
 
+    /**
+     * An image is shown as it is, any other file as its name and size. Tapped, images, Markdown and text open in a
+     * preview sheet as in the AI tab; other files in another app.
+     */
+    private fun bindMedia(holder: ViewHolder, messageData: DebugRoomMessage) {
+        val file = messageData.fileName?.let { dir.resolve("chats").resolve(it) }?.takeIf(File::isFile)
+        val isImage = file != null && messageData.mimeType?.startsWith("image/") == true
+        holder.image.isVisible = isImage
+        holder.message.isVisible = !isImage
+        if (isImage) {
+            holder.image.load(file) {
+                transformations(RoundedCornersTransformation(context.resources.getDimension(R.dimen.debugroom_profile_corner_radius)))
+            }
+            holder.image.contentDescription = messageData.message
+        } else {
+            holder.message.text = if (file == null)
+                "${messageData.message} · 파일이 없어요"
+            else
+                "${messageData.message} · ${Formatter.formatShortFileSize(context, file.length())}"
+        }
+        val open = View.OnClickListener { if (file != null) preview(file, messageData) }
+        holder.image.setOnClickListener(open)
+        holder.message.setOnClickListener(open)
+        holder.message.setOnLongClickListener(null)
+    }
+
+    private fun preview(file: File, messageData: DebugRoomMessage) {
+        val card = Card(CardKind.FILE, name = messageData.message, size = file.length(), mimeType = messageData.mimeType)
+        val activity = context as? AppCompatActivity
+        if (activity != null)
+            FilePreview.open(activity, card, file)
+        else
+            FilePreview.openWith(context, card, file)
+    }
+
     class ViewHolder(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
 
         lateinit var sender: TextView
@@ -167,6 +223,7 @@ class DebugRoomChatAdapter(
         lateinit var profileImage: ImageView
         lateinit var showAllButton: Button
         lateinit var backgroundLayout: LinearLayout
+        lateinit var image: ImageView
 
         init {
             when (viewType) {
@@ -190,6 +247,12 @@ class DebugRoomChatAdapter(
                     profileImage = itemView.findViewById(R.id.profile)
                     showAllButton = itemView.findViewById(R.id.buttonShowAll)
                     backgroundLayout = itemView.findViewById(R.id.linearLayout)
+                }
+                CHAT_BOT_MEDIA -> {
+                    sender = itemView.findViewById(R.id.sender)
+                    message = itemView.findViewById(R.id.message)
+                    profileImage = itemView.findViewById(R.id.profile)
+                    image = itemView.findViewById(R.id.image)
                 }
             }
         }

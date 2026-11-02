@@ -3,9 +3,11 @@ package dev.mooner.starlight.agent.tools
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.core.graphics.createBitmap
+import dev.mooner.starlight.agent.store.AttachmentStore
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
+import dev.mooner.starlight.plugincore.chat.MediaFile
 import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.project.Project
@@ -27,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 internal object DebugMessenger {
 
-    /** Something the bot did in reply to message [messageId], [trigger]: sent [text], or failed with [error]. */
+    /** Something the bot did in reply to message [messageId], [trigger]: sent [text] or [files], or failed with [error]. */
     class Event(
         val messageId: Int,
         val trigger: String,
@@ -35,11 +37,22 @@ internal object DebugMessenger {
         val millis: Long,
         val text: String? = null,
         val error: Throwable? = null,
+        val files: List<SentFile> = emptyList(),
     ) {
         /** How long after the message this came. */
         val seconds: Double
             get() = (millis - sentMillis) / 1000.0
+
+        /** Whether the bot answered: text or files, not an error. */
+        val isReply: Boolean
+            get() = text != null || files.isNotEmpty()
     }
+
+    /** A file the bot sent, as `MediaSharer.send` or `room.sendMedia` prepared it; [image] is the id view_image takes. */
+    class SentFile(val name: String, val mimeType: String, val bytes: Long, val image: String? = null)
+
+    /** An image for view_image: one a bot sent, scaled down as attachments are and kept a while, or a project's. */
+    class KeptImage(val name: String, val mimeType: String, val bytes: ByteArray)
 
     /**
      * How long a look waits. Without [expect] and with [untilQuiet], it ends once the bot has been quiet for a moment
@@ -71,6 +84,31 @@ internal object DebugMessenger {
     private val inboxes = ConcurrentHashMap<String, Inbox>()
     private val lastMessageId = AtomicInteger()
 
+    /** The latest images bots sent, by id; older ones make room. */
+    private val images = object : LinkedHashMap<String, KeptImage>() {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, KeptImage>?): Boolean =
+            size > MAX_KEPT_IMAGES
+    }
+    private val lastImageId = AtomicInteger()
+
+    /** An image a bot sent, by the id its reply gave it, or null once it made room for newer ones. */
+    fun image(id: String): KeptImage? =
+        synchronized(images) { images[id] }
+
+    /** Keeps a copy of [media] for view_image if it is an image the models take; the sender deletes its file after. */
+    private fun keep(media: MediaFile): String? {
+        if (media.mimeType !in AttachmentStore.IMAGE_TYPES || media.file.length() > AttachmentStore.MAX_FILE_BYTES)
+            return null
+        val (mimeType, bytes) = runCatching { AttachmentStore.shrinkImage(media.mimeType, media.file.readBytes()) }
+            .getOrNull() ?: return null
+        // GIFs aren't scaled; one too large for the models isn't kept.
+        if (bytes.size > MAX_IMAGE_BYTES)
+            return null
+        val id = "img_${lastImageId.incrementAndGet()}"
+        synchronized(images) { images[id] = KeptImage(media.name, mimeType, bytes) }
+        return id
+    }
+
     private fun inbox(project: Project): Inbox =
         inboxes.getOrPut(project.info.name, ::Inbox)
 
@@ -87,8 +125,8 @@ internal object DebugMessenger {
         val earlier = drain(inbox.events)
         val id = lastMessageId.incrementAndGet()
         val sentMillis = System.currentTimeMillis()
-        fun deliver(text: String? = null, error: Throwable? = null) {
-            inbox.events.trySend(Event(id, options.text, sentMillis, System.currentTimeMillis(), text, error))
+        fun deliver(text: String? = null, error: Throwable? = null, files: List<SentFile> = emptyList()) {
+            inbox.events.trySend(Event(id, options.text, sentMillis, System.currentTimeMillis(), text, error, files))
         }
 
         val roomConfig = GlobalConfig.category("d_room")
@@ -106,6 +144,9 @@ internal object DebugMessenger {
                 isGroupChat = options.isGroupChat ?: roomConfig.getBoolean("is_group_chat", false),
                 onSend = { deliver(text = it) },
                 onMarkAsRead = {},
+                onSendMedia = { media ->
+                    deliver(files = media.map { SentFile(it.name, it.mimeType, it.file.length(), image = keep(it)) })
+                },
             ),
             packageName = roomConfig.getString("package", PACKAGE_KAKAO_TALK),
             hasMention = false,
@@ -151,7 +192,7 @@ internal object DebugMessenger {
         while (true) {
             if (taken.any { it.error != null && ours(it) })
                 break
-            if (wait.expect != null && taken.count { it.text != null && ours(it) } >= wait.expect)
+            if (wait.expect != null && taken.count { it.isReply && ours(it) } >= wait.expect)
                 break
             val remaining = deadline - System.currentTimeMillis()
             if (remaining <= 0)
@@ -186,6 +227,9 @@ internal object DebugMessenger {
     const val MAX_WAIT_SECONDS = 60
     private const val QUIET_MILLIS = 1_000L
     private const val MAX_KEPT = 50
+    const val MAX_KEPT_IMAGES = 16
+    /** The most an image can be for every provider to take it (Anthropic's limit). */
+    const val MAX_IMAGE_BYTES = 5 * 1024 * 1024
     /** Late replies older than this are from tests long past. */
     private const val KEEP_MILLIS = 10 * 60_000L
     private const val PACKAGE_KAKAO_TALK = "com.kakao.talk"

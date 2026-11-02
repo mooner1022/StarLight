@@ -132,15 +132,36 @@ class ChatCompletionsClient(
                     put("content", userContent(message, request.attachments))
                 }
                 Role.ASSISTANT -> list += assistantMessage(message)
-                Role.TOOL      -> for (result in message.parts.filterIsInstance<Part.ToolResult>())
-                    list += buildJsonObject {
-                        put("role", "tool")
-                        put("tool_call_id", result.callId)
-                        put("content", result.output)
-                    }
+                Role.TOOL      -> {
+                    val results = message.parts.filterIsInstance<Part.ToolResult>()
+                    for (result in results)
+                        list += buildJsonObject {
+                            put("role", "tool")
+                            put("tool_call_id", result.callId)
+                            put("content", result.output)
+                        }
+                    toolImages(results, request.attachments)?.let { list += it }
+                }
             }
         }
         return list
+    }
+
+    /** The images tools showed, as a user message after the tool messages, which can only hold text. */
+    private fun toolImages(results: List<Part.ToolResult>, source: AttachmentSource): JsonObject? {
+        val shown = results.filter { it.images.isNotEmpty() }
+        if (shown.isEmpty())
+            return null
+        return buildJsonObject {
+            put("role", "user")
+            putJsonArray("content") {
+                for (result in shown) {
+                    for (image in result.images)
+                        add(imagePart(image.mimeType, source.bytes(image)))
+                    add(textPart(RequestContent.toolImagesLabel(result), cache = false))
+                }
+            }
+        }
     }
 
     private fun userContent(message: ChatMessage, source: AttachmentSource): JsonArray = buildJsonArray {

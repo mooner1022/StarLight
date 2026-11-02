@@ -67,6 +67,7 @@ export function onMessage(event) {
 | `isGroupChat()` | 단체방이면 `true`예요. |
 | `isDebugRoom()` | 디버그 룸에서 온 메시지면 `true`예요. |
 | `send(message)` | 이 방에 메시지를 보내요. 성공하면 `true`예요. |
+| `sendMedia(files, options?)` | 이 방에 이미지·동영상·파일을 보내요. 디버그 룸에서도 돼요. 상대 경로는 받지 않으니, 프로젝트 안의 파일은 `MediaSharer.send(event, files)`로 보내세요. [파일 보내기](/docs/app/reference/script-api#파일-보내기-mediasharer-roomsendmedia)를 보세요. |
 | `markAsRead()` | 이 방의 메시지를 읽음으로 표시해요. |
 
 ### event.sender

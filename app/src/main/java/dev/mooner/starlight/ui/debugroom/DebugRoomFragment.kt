@@ -44,6 +44,7 @@ import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
+import dev.mooner.starlight.plugincore.chat.MediaFile
 import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.EventHandler
@@ -121,6 +122,11 @@ class DebugRoomFragment: Fragment() {
     private val replier = Replier { _, msg, _ ->
         onSend(msg)
         true
+    }
+    private val onSendMedia: (media: List<MediaFile>) -> Unit = { media ->
+        // The files are only there until this returns, so each is copied before it is shown.
+        for (file in media)
+            addMedia(botName, file)
     }
     private val onMarkAsRead: () -> Unit = {
         activity?.runOnUiThread {
@@ -279,7 +285,8 @@ class DebugRoomFragment: Fragment() {
                 name = roomName,
                 isGroupChat = isGroupChat,
                 onSend = onSend,
-                onMarkAsRead = onMarkAsRead
+                onMarkAsRead = onMarkAsRead,
+                onSendMedia = onSendMedia,
             ),
             packageName = sentPackage,
             hasMention = hasMention,
@@ -335,7 +342,7 @@ class DebugRoomFragment: Fragment() {
 
     @SuppressLint("SetTextI18n")
     private fun addMessage(sender: String, msg: String, viewType: Int, clearInput: Boolean) {
-        chatList += if (msg.length >= 500) {
+        val message = if (msg.length >= 500) {
             val fileName = UUID.randomUUID().toString() + ".chat"
             File(dir, "chats").apply {
                 mkdirs()
@@ -354,7 +361,33 @@ class DebugRoomFragment: Fragment() {
                 viewType = viewType
             )
         }
-        requireActivity().runOnUiThread {
+        appendMessage(message, clearInput)
+    }
+
+    /** Keeps a copy of [media] under `chats/media/` and shows it as the bot's message. */
+    private fun addMedia(sender: String, media: MediaFile) {
+        val extension = media.name.substringAfterLast('.', "").takeIf { it.isNotEmpty() }?.let { ".$it" }.orEmpty()
+        val stored = "media/" + UUID.randomUUID().toString() + extension
+        val copy = File(dir, "chats").resolve(stored)
+        copy.parentFile?.mkdirs()
+        media.file.copyTo(copy, overwrite = true)
+        appendMessage(
+            DebugRoomMessage(
+                sender = sender,
+                message = media.name,
+                fileName = stored,
+                viewType = DebugRoomChatAdapter.CHAT_BOT_MEDIA,
+                mimeType = media.mimeType,
+            ),
+            clearInput = false,
+        )
+    }
+
+    private fun appendMessage(message: DebugRoomMessage, clearInput: Boolean) {
+        chatList += message
+        // Replies can come after the screen closed, from a timer or a send that finished late.
+        activity?.runOnUiThread {
+            val binding = _binding ?: return@runOnUiThread
             userChatAdapter?.notifyItemInserted(chatList.size)
             if (clearInput)
                 binding.messageInput.setText("")

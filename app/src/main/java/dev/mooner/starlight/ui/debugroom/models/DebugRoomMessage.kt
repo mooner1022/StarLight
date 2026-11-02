@@ -14,5 +14,8 @@ data class DebugRoomMessage(
     @SerialName("v")
     var viewType: Int,
     @SerialName("t")
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    /** The type of a file the bot sent, kept under `chats/` as [fileName]. */
+    @SerialName("mt")
+    val mimeType: String? = null,
 )

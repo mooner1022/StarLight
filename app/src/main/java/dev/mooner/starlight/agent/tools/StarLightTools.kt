@@ -2,6 +2,7 @@ package dev.mooner.starlight.agent.tools
 
 import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.CardKind
+import dev.mooner.starlight.agent.store.AttachmentStore
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.ApiObject
@@ -484,7 +485,9 @@ class StarLightTools(private val docs: DocsLibrary) {
         tool(
             "send_debug_message",
             "Sends a chat message to a project from its debug room, as if a user sent it, and returns what the bot " +
-                "replied (with how many seconds each reply took), any error, and the logs written meanwhile. The " +
+                "replied, text or files sent with MediaSharer.send or room.sendMedia (name, type and size; images " +
+                "have an image id for view_image), " +
+                "with how many seconds each reply took, any error, and the logs written meanwhile. The " +
                 "project must be compiled and receive $MESSAGE_EVENT; it may be off. How long it waits: by default " +
                 "until the bot has been quiet for a second after replying, or ${DebugMessenger.DEFAULT_WAIT_SECONDS} seconds without " +
                 "a reply. For a bot that answers later or in several messages (timers, network requests, await), set " +
@@ -534,6 +537,31 @@ class StarLightTools(private val docs: DocsLibrary) {
             val (events, since) = DebugMessenger.read(project, wait)
             val logs = synchronized(project.logger.logs) { project.logger.logs.filter { it.millis >= since } }
             debugReplies(events, wait, logs, earlier = emptyList(), withTrigger = true)
+        },
+        tool(
+            "view_image",
+            "Shows you an image: one a bot sent to the debug room, by the image id in the files of " +
+                "send_debug_message or read_debug_replies, or an image file of a project. Use it to check what a bot " +
+                "that sends images sent. The latest ${DebugMessenger.MAX_KEPT_IMAGES} images bots sent are kept.",
+            ToolRisk.READ,
+            params = {
+                string("image", "Image id from a debug room reply, such as img_1.", optional = true)
+                string("project", "Name (or id) of the project, for an image file.", optional = true)
+                string("path", "Path of the image file, relative to the project directory.", optional = true)
+            },
+            describe = { "View ${it.stringArg("path") ?: "an image from the debug room"}" },
+        ) { args ->
+            val id = args.stringArg("image")
+            val image = when {
+                id != null -> DebugMessenger.image(id)
+                    ?: throw ToolException("No image $id: only the latest ${DebugMessenger.MAX_KEPT_IMAGES} images " +
+                        "bots sent are kept. Send the message again for a new one.")
+                args.stringArg("project") != null -> projectImage(findProject(args), args.requireString("path"))
+                else -> throw ToolException("Give image, or project and path")
+            }
+            val attachment = addAttachment(image.name, image.mimeType, image.bytes)
+            ToolOutput("${image.name} (${attachment.mimeType}) is shown after this result.", summary = image.name,
+                images = listOf(attachment))
         },
         tool(
             "save_attachment",
@@ -606,6 +634,20 @@ class StarLightTools(private val docs: DocsLibrary) {
             ?: throw ToolException("No project named '$key'. Use list_projects to see the projects.")
     }
 
+    /** The image file at [path] in [project], for view_image. */
+    private fun projectImage(project: Project, path: String): DebugMessenger.KeptImage {
+        val file = ProjectFiles(project.directory).resolve(path)
+        if (!file.isFile)
+            throw ToolException("No file $path in ${project.info.name}")
+        val mimeType = mimeTypeOf(file.name).takeIf { it in AttachmentStore.IMAGE_TYPES }
+            ?: throw ToolException("$path isn't a PNG, JPEG, WebP or GIF image")
+        // Other images are scaled down when added; a GIF is sent as it is.
+        val limit = if (mimeType == "image/gif") DebugMessenger.MAX_IMAGE_BYTES.toLong() else AttachmentStore.MAX_FILE_BYTES
+        if (file.length() > limit)
+            throw ToolException("$path is too large to view (${file.length() / 1024} KB)")
+        return DebugMessenger.KeptImage(file.name, mimeType, file.readBytes())
+    }
+
     private fun allowedEvents(project: Project): Set<String> =
         ProjectEventManager.filterAllowedEvents(project.info.allowedEventIds)
 
@@ -626,12 +668,22 @@ class StarLightTools(private val docs: DocsLibrary) {
         earlier: List<DebugMessenger.Event>,
         withTrigger: Boolean,
     ): ToolOutput {
-        val replies = events.filter { it.text != null }
+        val replies = events.filter { it.isReply }
         val error = events.firstNotNullOfOrNull { it.error }
         fun JsonArrayBuilder.reply(event: DebugMessenger.Event, trigger: Boolean) = addJsonObject {
             if (trigger)
                 put("for", event.trigger)
-            put("text", event.text)
+            event.text?.let { put("text", it) }
+            if (event.files.isNotEmpty())
+                putJsonArray("files") {
+                    for (file in event.files)
+                        addJsonObject {
+                            put("name", file.name)
+                            put("type", file.mimeType)
+                            put("bytes", file.bytes)
+                            file.image?.let { put("image", it) }
+                        }
+                }
             put("seconds", (event.seconds * 10).roundToLong() / 10.0)
         }
         val seconds = wait.maxMillis / 1000
@@ -647,8 +699,8 @@ class StarLightTools(private val docs: DocsLibrary) {
                     put("note", "Got ${replies.size} of the $expected replies expected within ${seconds}s. Later ones " +
                         "are kept: read_debug_replies gets them.")
             }
-            if (earlier.any { it.text != null })
-                putJsonArray("earlierReplies") { earlier.filter { it.text != null }.forEach { reply(it, trigger = true) } }
+            if (earlier.any { it.isReply })
+                putJsonArray("earlierReplies") { earlier.filter { it.isReply }.forEach { reply(it, trigger = true) } }
             if (logs.isNotEmpty())
                 put("logs", formatLogs(logs, logs.size))
         }
@@ -656,7 +708,8 @@ class StarLightTools(private val docs: DocsLibrary) {
             json.toString(),
             isError = error != null,
             // The first reply, and how many more came.
-            summary = replies.firstOrNull()?.text?.take(80)?.let { if (replies.size > 1) "$it (+${replies.size - 1})" else it }
+            summary = replies.firstOrNull()?.let { it.text ?: it.files.joinToString { file -> "📎 ${file.name}" } }?.take(80)
+                ?.let { if (replies.size > 1) "$it (+${replies.size - 1})" else it }
                 ?: error?.let(ScriptErrors::message) ?: "No reply",
         )
     }

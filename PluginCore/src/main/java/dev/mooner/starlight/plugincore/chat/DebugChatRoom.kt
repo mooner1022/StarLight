@@ -6,7 +6,9 @@ data class DebugChatRoom(
     override val isGroupChat: Boolean,
     override val isDebugRoom: Boolean = true,
     val onSend: (message: String) -> Unit,
-    val onMarkAsRead: () -> Unit
+    val onMarkAsRead: () -> Unit,
+    /** Shows files the project sent; the files are only kept until the call returns, so copy what should stay. */
+    val onSendMedia: ((media: List<MediaFile>) -> Unit)? = null,
 ): ChatRoom {
     override fun send(message: String): Boolean {
         onSend(message)
