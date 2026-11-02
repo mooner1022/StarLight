@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="agent_bg">#0A0C17</color>
+    <color name="agent_surface">#141831</color>
+    <color name="agent_surface_alt">#1A1F3C</color>
+    <color name="agent_border">#14FFFFFF</color>
+    <color name="agent_text">#ECE9E3</color>
+    <color name="agent_text_muted">#A2A6BA</color>
+    <color name="agent_text_faint">#6F7491</color>
+    <color name="agent_accent">#DFC199</color>
+    <color name="agent_accent_soft">#1FDFC199</color>
+    <color name="agent_user_bubble">#2A2A45</color>
+    <color name="agent_code_bg">#0E1121</color>
+
+    <color name="agent_meteor">#7FD6F7</color>
+    <color name="agent_meteor_soft">#247FD6F7</color>
+    <color name="agent_dusk">#F6B17A</color>
+    <color name="agent_dusk_soft">#24F6B17A</color>
+    <color name="agent_ok">#7ACA8A</color>
+    <color name="agent_error">#FF6188</color>
+    <color name="agent_error_soft">#24FF6188</color>
+</resources>

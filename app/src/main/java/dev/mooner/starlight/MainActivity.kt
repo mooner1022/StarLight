@@ -31,6 +31,7 @@ import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.utils.hasFlag
 import dev.mooner.starlight.ui.ViewPagerAdapter
+import dev.mooner.starlight.ui.agent.agentSubtitle
 import dev.mooner.starlight.ui.plugins.pluginsSubtitle
 import dev.mooner.starlight.ui.plugins.setup.PluginSetupPrompter
 import dev.mooner.starlight.ui.settings.update.AppUpdater
@@ -157,9 +158,10 @@ class MainActivity : AppCompatActivity() {
         val index = when(id) {
             R.id.nav_home     -> 0
             R.id.nav_projects -> 1
-            R.id.nav_plugins  -> 2
-            R.id.nav_logs     -> 3
-            R.id.nav_settings -> 4
+            R.id.nav_agent    -> 2
+            R.id.nav_plugins  -> 3
+            R.id.nav_logs     -> 4
+            R.id.nav_settings -> 5
             else              -> 0
         }
         binding.apply {
@@ -176,9 +178,10 @@ class MainActivity : AppCompatActivity() {
                 val id = when(position) {
                     0 -> R.id.nav_home
                     1 -> R.id.nav_projects
-                    2 -> R.id.nav_plugins
-                    3 -> R.id.nav_logs
-                    4 -> R.id.nav_settings
+                    2 -> R.id.nav_agent
+                    3 -> R.id.nav_plugins
+                    4 -> R.id.nav_logs
+                    5 -> R.id.nav_settings
                     else -> R.id.nav_home
                 }
                 binding.bottomMenu.setItemSelected(id, true)
@@ -190,9 +193,10 @@ class MainActivity : AppCompatActivity() {
         val index = when(id) {
             R.id.nav_home     -> 0
             R.id.nav_projects -> 1
-            R.id.nav_plugins  -> 2
-            R.id.nav_logs     -> 3
-            R.id.nav_settings -> 4
+            R.id.nav_agent    -> 2
+            R.id.nav_plugins  -> 3
+            R.id.nav_logs     -> 4
+            R.id.nav_settings -> 5
             else              -> 0
         }
         binding.viewPager.setCurrentItem(index, true)
@@ -223,6 +227,10 @@ class MainActivity : AppCompatActivity() {
                     getText(R.string.title_projects) to
                             getString(R.string.subtitle_projects)
                                 .format(Session.projectManager.getEnabledProjects().size)
+
+                R.id.nav_agent ->
+                    getText(R.string.agent_title) to
+                            agentSubtitle()
 
                 R.id.nav_plugins ->
                     getText(R.string.title_plugins) to

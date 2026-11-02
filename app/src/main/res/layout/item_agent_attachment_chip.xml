@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="40dp"
+    android:layout_marginEnd="6dp"
+    android:background="@drawable/bg_agent_chip_outline"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="4dp"
+    android:paddingEnd="2dp">
+
+    <ImageView
+        android:id="@+id/thumb"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@drawable/bg_agent_code"
+        android:importantForAccessibility="no"
+        android:padding="7dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_agent_attach"
+        app:tint="@color/agent_text_muted"/>
+
+    <TextView
+        android:id="@+id/name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:ellipsize="middle"
+        android:fontFamily="@font/wantedsans_medium"
+        android:maxWidth="140dp"
+        android:maxLines="1"
+        android:textColor="@color/agent_text"
+        android:textSize="12.5sp"
+        tools:text="screenshot.png"/>
+
+    <ImageButton
+        android:id="@+id/remove"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/agent_remove_attachment"
+        android:padding="8dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_agent_close"
+        app:tint="@color/agent_text_faint"/>
+</LinearLayout>

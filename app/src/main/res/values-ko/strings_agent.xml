@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="agent_tab">AI</string>
+    <string name="agent_title">StarLight AI</string>
+    <string name="agent_subtitle_ready">%1$s · %2$s</string>
+    <string name="agent_subtitle_setup">AI를 연결하고 시작해 보세요</string>
+    <string name="agent_subtitle_running">%d개 작업 중</string>
+
+    <string name="agent_hero_title">무엇을 만들어 볼까요?</string>
+    <string name="agent_hero_body">봇 만들기부터 오류 수정, 테스트까지 여기서 맡겨 보세요. 앱을 닫아도 계속 일해요.</string>
+    <string name="agent_setup_title">AI 연결하기</string>
+    <string name="agent_setup_body">ChatGPT로 로그인하거나 Anthropic, OpenAI, Google 등의 API 키를 쓸 수 있어요.</string>
+    <string name="agent_setup_action">연결하기</string>
+    <string name="agent_composer_hint">에이전트에게 부탁해 보세요…</string>
+    <string name="agent_composer_hint_followup">답장하기…</string>
+    <string name="agent_attach">첨부</string>
+    <string name="agent_attach_image">사진</string>
+    <string name="agent_attach_file">파일</string>
+    <string name="agent_send">보내기</string>
+    <string name="agent_stop">멈추기</string>
+    <string name="agent_remove_attachment">빼기</string>
+    <string name="agent_attach_failed">%1$s 파일을 첨부하지 못했어요: %2$s</string>
+
+    <string name="agent_suggest_new_bot">새 봇 만들기</string>
+    <string name="agent_suggest_new_bot_prompt">이런 봇을 만들어 줘: </string>
+    <string name="agent_suggest_fix">오류 고치기</string>
+    <string name="agent_suggest_fix_prompt">내 프로젝트들의 최근 로그를 보고 오류를 찾아 고쳐 줘.</string>
+    <string name="agent_suggest_explain">프로젝트 설명</string>
+    <string name="agent_suggest_explain_prompt">내 프로젝트들이 각각 무슨 일을 하는지 짧게 설명해 줘.</string>
+    <string name="agent_suggest_test">봇 테스트</string>
+    <string name="agent_suggest_test_prompt">디버그 룸에서 내 봇을 테스트하고 안 되는 부분을 알려 줘: </string>
+
+    <string name="agent_section_running">지금 하고 있는 일</string>
+    <string name="agent_section_recent">대화</string>
+    <string name="agent_no_conversations">아직 대화가 없어요. 위에서 부탁해 보세요 ✦</string>
+    <string name="agent_settings">AI 설정</string>
+    <string name="agent_delete_conversation">대화 삭제</string>
+    <string name="agent_delete_conversation_message">“%s” 대화를 삭제할까요? 첨부 파일도 함께 지워져요.</string>
+    <string name="agent_delete">삭제</string>
+    <string name="agent_cancel">취소</string>
+    <string name="agent_new_chat">새 대화</string>
+    <string name="agent_just_now">방금</string>
+
+    <string name="agent_state_running">작업 중</string>
+    <string name="agent_state_approval">확인 필요</string>
+    <string name="agent_state_interrupted">중단됨</string>
+    <string name="agent_state_error">실패</string>
+
+    <string name="agent_phase_waiting">모델의 응답을 기다리는 중…</string>
+    <string name="agent_phase_thinking">생각하는 중…</string>
+    <string name="agent_phase_writing">답을 쓰는 중…</string>
+    <string name="agent_phase_tool">%s…</string>
+    <string name="agent_phase_approval">확인을 기다리는 중</string>
+    <string name="agent_phase_retrying">서버가 바빠 다시 시도하는 중 (%d)…</string>
+
+    <string name="agent_thinking">생각 과정</string>
+    <string name="agent_tool_arguments">입력</string>
+    <string name="agent_tool_output">결과</string>
+    <string name="agent_approval_title">진행할까요?</string>
+    <string name="agent_allow">허용</string>
+    <string name="agent_deny">거부</string>
+    <string name="agent_allow_always">이 대화에서 항상 허용</string>
+    <string name="agent_continue">계속하기</string>
+    <string name="agent_resume_interrupted">작업 도중에 앱이 종료됐어요.</string>
+    <string name="agent_resume_paused">멈춘 작업을 이어서 할 수 있어요.</string>
+    <string name="agent_resume_error">마지막 요청이 실패했어요.</string>
+    <string name="agent_usage">입력 %1$s · 캐시 %2$s · 출력 %3$s</string>
+    <string name="agent_usage_title">사용량</string>
+    <string name="agent_usage_detail">입력(정가): %1$s\n캐시에서 읽음: %2$s\n캐시에 씀: %3$s\n출력: %4$s\n캐시 적중률: %5$s</string>
+    <string name="agent_copied">복사했어요</string>
+
+    <string name="agent_notice_stopped">멈췄어요.</string>
+    <string name="agent_notice_paused">%d단계를 진행해서 잠시 멈췄어요. 계속하려면 계속하기를 눌러 주세요.</string>
+    <string name="agent_notice_length">답이 길이 제한에 걸려 잘렸어요.</string>
+    <string name="agent_notice_refusal">모델이 이 요청을 거절했어요.</string>
+    <string name="agent_notice_refusal_reason">모델이 이 요청을 거절했어요 (%s).</string>
+    <string name="agent_error_setup">먼저 AI 설정에서 AI를 연결해 주세요.</string>
+    <string name="agent_error_model">먼저 %s의 모델을 골라 주세요.</string>
+    <string name="agent_error_auth">인증에 실패했어요 (HTTP %1$d): %2$s</string>
+    <string name="agent_error_limit">요청 한도나 사용량 한도에 도달했어요: %s</string>
+    <string name="agent_error_http">HTTP %1$d: %2$s</string>
+    <string name="agent_error_network">네트워크에 연결되어 있지 않아요.</string>
+    <string name="agent_error_timeout">제공자가 제시간에 응답하지 않았어요.</string>
+
+    <string name="agent_providers">AI 제공자</string>
+    <string name="agent_providers_body">고른 제공자로 에이전트가 동작해요. 키는 이 기기에 암호화해서 보관해요.</string>
+    <string name="agent_provider_connected">연결됨</string>
+    <string name="agent_provider_not_connected">연결 안 됨</string>
+    <string name="agent_provider_in_use">사용 중</string>
+    <string name="agent_api_key">API 키</string>
+    <string name="agent_api_key_optional">API 키 (선택)</string>
+    <string name="agent_base_url">서버 주소</string>
+    <string name="agent_base_url_hint">https://example.com/v1</string>
+    <string name="agent_get_key">키 발급받기</string>
+    <string name="agent_save_and_check">저장하고 확인</string>
+    <string name="agent_checking">확인하는 중…</string>
+    <string name="agent_check_ok">연결됐어요: 모델 %d개</string>
+    <string name="agent_check_failed">연결하지 못했어요: %s</string>
+    <string name="agent_disconnect">연결 해제</string>
+    <string name="agent_model">모델</string>
+    <string name="agent_model_custom_hint">모델 ID를 직접 입력</string>
+    <string name="agent_refresh_models">목록 새로고침</string>
+    <string name="agent_effort">추론 강도</string>
+    <string name="agent_effort_default">기본</string>
+    <string name="agent_effort_low">낮게</string>
+    <string name="agent_effort_medium">보통</string>
+    <string name="agent_effort_high">높게</string>
+    <string name="agent_effort_xhigh">더 높게</string>
+    <string name="agent_effort_max">최대</string>
+    <string name="agent_done">완료</string>
+
+    <string name="agent_chatgpt_continue">ChatGPT로 계속하기</string>
+    <string name="agent_chatgpt_body">OpenAI가 오픈소스 앱에 제공하는 로그인으로 ChatGPT 플랜을 사용해요. 요청은 플랜 한도에 포함돼요.</string>
+    <string name="agent_chatgpt_signed_in">%s 계정으로 로그인됨</string>
+    <string name="agent_chatgpt_signed_in_plain">로그인됨</string>
+    <string name="agent_chatgpt_waiting">브라우저에서 로그인을 마친 뒤 앱으로 돌아와 주세요.</string>
+    <string name="agent_chatgpt_manage_usage">사용량 관리</string>
+    <string name="agent_chatgpt_sign_out">로그아웃</string>
+    <string name="agent_chatgpt_plan_title">ChatGPT 플랜을 사용하고 있어요</string>
+    <string name="agent_chatgpt_plan_body">StarLight는 ChatGPT 계정으로 OpenAI에 요청을 보내요. 요청은 플랜 한도를 사용하며, chatgpt.com에서 확인하고 관리할 수 있어요.</string>
+    <string name="agent_chatgpt_ok">확인</string>
+    <string name="agent_chatgpt_failed">로그인하지 못했어요: %s</string>
+    <string name="agent_chatgpt_page_done">StarLight에 로그인했어요. 앱으로 돌아가세요.</string>
+    <string name="agent_chatgpt_page_failed">로그인하지 못했어요: %s</string>
+    <string name="agent_chatgpt_page_back">StarLight로 돌아가기</string>
+
+    <string name="agent_behavior">동작</string>
+    <string name="agent_approval">먼저 물어볼 작업</string>
+    <string name="agent_approval_auto">묻지 않음</string>
+    <string name="agent_approval_auto_desc">에이전트가 수정, 삭제, 켜고 끄기를 스스로 해요.</string>
+    <string name="agent_approval_destructive">삭제·켜고 끄기</string>
+    <string name="agent_approval_destructive_desc">무언가를 지우거나 프로젝트를 켜고 끄기 전에 물어봐요.</string>
+    <string name="agent_approval_writes">모든 변경</string>
+    <string name="agent_approval_writes_desc">컴파일과 테스트를 포함해 프로젝트를 바꾸는 모든 작업 전에 물어봐요.</string>
+    <string name="agent_max_steps">한 번에 진행할 단계</string>
+    <string name="agent_max_steps_desc">모델 요청이 이만큼 쌓이면 잠시 멈추고 계속할지 물어봐요.</string>
+    <string name="agent_instructions">나만의 지침</string>
+    <string name="agent_instructions_hint">예: 주석은 한국어로 써 줘. 명령어는 “!”로 시작해.</string>
+    <string name="agent_notify_finish">끝나면 알림</string>
+    <string name="agent_notify_finish_desc">다른 화면에 있을 때 작업이 끝나면 알려 줘요.</string>
+    <string name="agent_privacy">보낸 메시지와 첨부 파일, 에이전트가 읽은 프로젝트 파일은 고른 AI 제공자에게 전송돼요.</string>
+
+    <string name="agent_channel_progress">AI 에이전트 작업</string>
+    <string name="agent_channel_attention">AI 에이전트 확인 요청</string>
+    <string name="agent_channel_done">AI 에이전트 결과</string>
+    <string name="agent_notification_working">AI 에이전트가 일하는 중</string>
+    <string name="agent_notification_many">AI 작업 %d개 진행 중</string>
+    <string name="agent_notification_approval">AI 에이전트가 확인을 기다려요</string>
+    <string name="agent_notification_done">작업을 마쳤어요.</string>
+    <string name="agent_notification_failed">실패: %s</string>
+
+    <string name="agent_project_action">AI</string>
+    <string name="agent_project_prompt_hint">%s에서 무엇을 할까요?</string>
+
+    <string name="agent_widget">AI 에이전트</string>
+    <string name="agent_widget_idle">에이전트에게 부탁하기</string>
+    <string name="agent_widget_running">%d개 작업 중</string>
+
+    <string name="agent_tool_list_projects">프로젝트 목록 확인</string>
+    <string name="agent_tool_list_languages">언어 확인</string>
+    <string name="agent_tool_list_files">파일 목록 확인</string>
+    <string name="agent_tool_read_file">파일 읽기</string>
+    <string name="agent_tool_search_files">검색</string>
+    <string name="agent_tool_list_events">이벤트 확인</string>
+    <string name="agent_tool_list_apis">스크립트 API 확인</string>
+    <string name="agent_tool_project_logs">프로젝트 로그 확인</string>
+    <string name="agent_tool_app_logs">앱 로그 확인</string>
+    <string name="agent_tool_read_docs">문서 확인</string>
+    <string name="agent_tool_write_file">파일 쓰기</string>
+    <string name="agent_tool_edit_file">파일 수정</string>
+    <string name="agent_tool_rename_file">파일 이름 변경</string>
+    <string name="agent_tool_delete_file">파일 삭제</string>
+    <string name="agent_tool_compile">컴파일</string>
+    <string name="agent_tool_set_events">이벤트 변경</string>
+    <string name="agent_tool_create_project">프로젝트 생성</string>
+    <string name="agent_tool_set_enabled">프로젝트 켜기/끄기</string>
+    <string name="agent_tool_delete_project">프로젝트 삭제</string>
+    <string name="agent_tool_debug_message">디버그 룸 테스트</string>
+    <string name="agent_tool_save_attachment">첨부 파일 저장</string>
+</resources>

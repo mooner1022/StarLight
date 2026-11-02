@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="agent_tab">AI</string>
+    <string name="agent_title">StarLight AI</string>
+    <string name="agent_subtitle_ready">%1$s · %2$s</string>
+    <string name="agent_subtitle_setup">Connect an AI to get started</string>
+    <string name="agent_subtitle_running">Running: %d</string>
+
+    <string name="agent_hero_title">What shall we build?</string>
+    <string name="agent_hero_body">Make bots, fix errors and test them, all from here. Leave the app and it keeps working.</string>
+    <string name="agent_setup_title">Connect an AI</string>
+    <string name="agent_setup_body">Sign in with ChatGPT, or use an API key from Anthropic, OpenAI, Google and more.</string>
+    <string name="agent_setup_action">Connect</string>
+    <string name="agent_composer_hint">Ask the agent anything…</string>
+    <string name="agent_composer_hint_followup">Reply…</string>
+    <string name="agent_attach">Attach</string>
+    <string name="agent_attach_image">Photo</string>
+    <string name="agent_attach_file">File</string>
+    <string name="agent_send">Send</string>
+    <string name="agent_stop">Stop</string>
+    <string name="agent_remove_attachment">Remove</string>
+    <string name="agent_attach_failed">Couldn\'t attach %1$s: %2$s</string>
+
+    <string name="agent_suggest_new_bot">New bot</string>
+    <string name="agent_suggest_new_bot_prompt">Make me a chatbot that </string>
+    <string name="agent_suggest_fix">Fix errors</string>
+    <string name="agent_suggest_fix_prompt">Look at my projects\' latest logs and fix the errors you find.</string>
+    <string name="agent_suggest_explain">Explain a project</string>
+    <string name="agent_suggest_explain_prompt">Explain what my projects do, briefly.</string>
+    <string name="agent_suggest_test">Test a bot</string>
+    <string name="agent_suggest_test_prompt">Test my bot in the debug room and tell me what doesn\'t work: </string>
+
+    <string name="agent_section_running">Working now</string>
+    <string name="agent_section_recent">Conversations</string>
+    <string name="agent_no_conversations">No conversations yet. Ask for something above ✦</string>
+    <string name="agent_settings">AI settings</string>
+    <string name="agent_delete_conversation">Delete conversation</string>
+    <string name="agent_delete_conversation_message">Delete “%s”? Its attachments go with it.</string>
+    <string name="agent_delete">Delete</string>
+    <string name="agent_cancel">Cancel</string>
+    <string name="agent_new_chat">New conversation</string>
+    <string name="agent_just_now">just now</string>
+
+    <string name="agent_state_running">Working</string>
+    <string name="agent_state_approval">Needs your OK</string>
+    <string name="agent_state_interrupted">Interrupted</string>
+    <string name="agent_state_error">Failed</string>
+
+    <string name="agent_phase_waiting">Waiting for the model…</string>
+    <string name="agent_phase_thinking">Thinking…</string>
+    <string name="agent_phase_writing">Writing…</string>
+    <string name="agent_phase_tool">%s…</string>
+    <string name="agent_phase_approval">Waiting for your OK</string>
+    <string name="agent_phase_retrying">Busy; retrying (%d)…</string>
+
+    <string name="agent_thinking">Reasoning</string>
+    <string name="agent_tool_arguments">Input</string>
+    <string name="agent_tool_output">Output</string>
+    <string name="agent_approval_title">Allow this?</string>
+    <string name="agent_allow">Allow</string>
+    <string name="agent_deny">Deny</string>
+    <string name="agent_allow_always">Always in this chat</string>
+    <string name="agent_continue">Continue</string>
+    <string name="agent_resume_interrupted">The app was closed during this run.</string>
+    <string name="agent_resume_paused">You can pick up where the run stopped.</string>
+    <string name="agent_resume_error">The last request failed.</string>
+    <string name="agent_usage">In %1$s · cached %2$s · out %3$s</string>
+    <string name="agent_usage_title">Usage</string>
+    <string name="agent_usage_detail">Input (full price): %1$s\nRead from cache: %2$s\nWritten to cache: %3$s\nOutput: %4$s\nCache hit rate: %5$s</string>
+    <string name="agent_copied">Copied</string>
+
+    <string name="agent_notice_stopped">Stopped.</string>
+    <string name="agent_notice_paused">Paused after %d steps. Continue to let the agent go on.</string>
+    <string name="agent_notice_length">The reply hit the length limit.</string>
+    <string name="agent_notice_refusal">The model declined this request.</string>
+    <string name="agent_notice_refusal_reason">The model declined this request (%s).</string>
+    <string name="agent_error_setup">Connect an AI in the agent settings first.</string>
+    <string name="agent_error_model">Choose a model for %s first.</string>
+    <string name="agent_error_auth">Authentication failed (HTTP %1$d): %2$s</string>
+    <string name="agent_error_limit">Rate or usage limit reached: %s</string>
+    <string name="agent_error_http">HTTP %1$d: %2$s</string>
+    <string name="agent_error_network">No network connection.</string>
+    <string name="agent_error_timeout">The provider didn\'t answer in time.</string>
+
+    <string name="agent_providers">AI providers</string>
+    <string name="agent_providers_body">The agent uses the provider you pick. Keys stay encrypted on this device.</string>
+    <string name="agent_provider_connected">Connected</string>
+    <string name="agent_provider_not_connected">Not connected</string>
+    <string name="agent_provider_in_use">In use</string>
+    <string name="agent_api_key">API key</string>
+    <string name="agent_api_key_optional">API key (optional)</string>
+    <string name="agent_base_url">Server URL</string>
+    <string name="agent_base_url_hint">https://example.com/v1</string>
+    <string name="agent_get_key">Get a key</string>
+    <string name="agent_save_and_check">Save and check</string>
+    <string name="agent_checking">Checking…</string>
+    <string name="agent_check_ok">Connected · models: %d</string>
+    <string name="agent_check_failed">Couldn\'t connect: %s</string>
+    <string name="agent_disconnect">Disconnect</string>
+    <string name="agent_model">Model</string>
+    <string name="agent_model_custom_hint">Enter a model id</string>
+    <string name="agent_refresh_models">Refresh the list</string>
+    <string name="agent_effort">Reasoning effort</string>
+    <string name="agent_effort_default">Default</string>
+    <string name="agent_effort_low">Low</string>
+    <string name="agent_effort_medium">Medium</string>
+    <string name="agent_effort_high">High</string>
+    <string name="agent_effort_xhigh">Higher</string>
+    <string name="agent_effort_max">Max</string>
+    <string name="agent_done">Done</string>
+
+    <string name="agent_chatgpt_continue">Continue with ChatGPT</string>
+    <string name="agent_chatgpt_body">Uses your ChatGPT plan through OpenAI\'s sign-in for open-source apps. Requests count toward your plan\'s limits.</string>
+    <string name="agent_chatgpt_signed_in">Signed in as %s</string>
+    <string name="agent_chatgpt_signed_in_plain">Signed in</string>
+    <string name="agent_chatgpt_waiting">Finish signing in with your browser, then come back.</string>
+    <string name="agent_chatgpt_manage_usage">Manage usage</string>
+    <string name="agent_chatgpt_sign_out">Sign out</string>
+    <string name="agent_chatgpt_plan_title">You\'re using your ChatGPT plan</string>
+    <string name="agent_chatgpt_plan_body">StarLight sends your requests to OpenAI with your ChatGPT account. They use your plan\'s limits, which you can check and manage at chatgpt.com.</string>
+    <string name="agent_chatgpt_ok">Got it</string>
+    <string name="agent_chatgpt_failed">Sign-in failed: %s</string>
+    <string name="agent_chatgpt_page_done">Signed in to StarLight. You can go back to the app.</string>
+    <string name="agent_chatgpt_page_failed">Sign-in failed: %s</string>
+    <string name="agent_chatgpt_page_back">Back to StarLight</string>
+
+    <string name="agent_behavior">Behavior</string>
+    <string name="agent_approval">Ask before</string>
+    <string name="agent_approval_auto">Never ask</string>
+    <string name="agent_approval_auto_desc">The agent changes, deletes and turns projects on and off on its own.</string>
+    <string name="agent_approval_destructive">Deleting or switching</string>
+    <string name="agent_approval_destructive_desc">Asks before deleting anything and before turning projects on or off.</string>
+    <string name="agent_approval_writes">Every change</string>
+    <string name="agent_approval_writes_desc">Asks before anything that changes a project, compiling and tests included.</string>
+    <string name="agent_max_steps">Steps per run</string>
+    <string name="agent_max_steps_desc">The agent pauses after this many model requests and asks to continue.</string>
+    <string name="agent_instructions">Your instructions</string>
+    <string name="agent_instructions_hint">e.g. Write comments in Korean. Prefix commands with “!”.</string>
+    <string name="agent_notify_finish">Notify when done</string>
+    <string name="agent_notify_finish_desc">When a run ends while you\'re elsewhere.</string>
+    <string name="agent_privacy">Your messages, attachments and the project files the agent reads are sent to the provider you choose.</string>
+
+    <string name="agent_channel_progress">AI agent at work</string>
+    <string name="agent_channel_attention">AI agent asks</string>
+    <string name="agent_channel_done">AI agent results</string>
+    <string name="agent_notification_working">The AI agent is working</string>
+    <string name="agent_notification_many">AI runs in progress: %d</string>
+    <string name="agent_notification_approval">The AI agent needs your OK</string>
+    <string name="agent_notification_done">Done.</string>
+    <string name="agent_notification_failed">Failed: %s</string>
+
+    <string name="agent_project_action">AI</string>
+    <string name="agent_project_prompt_hint">What should the agent do with %s?</string>
+
+    <string name="agent_widget">AI agent</string>
+    <string name="agent_widget_idle">Ask the agent</string>
+    <string name="agent_widget_running">At work: %d</string>
+
+    <string name="agent_tool_list_projects">Looked at the projects</string>
+    <string name="agent_tool_list_languages">Checked the languages</string>
+    <string name="agent_tool_list_files">Listed files</string>
+    <string name="agent_tool_read_file">Read a file</string>
+    <string name="agent_tool_search_files">Searched</string>
+    <string name="agent_tool_list_events">Checked events</string>
+    <string name="agent_tool_list_apis">Checked script APIs</string>
+    <string name="agent_tool_project_logs">Read project logs</string>
+    <string name="agent_tool_app_logs">Read app logs</string>
+    <string name="agent_tool_read_docs">Read the docs</string>
+    <string name="agent_tool_write_file">Wrote a file</string>
+    <string name="agent_tool_edit_file">Edited a file</string>
+    <string name="agent_tool_rename_file">Renamed a file</string>
+    <string name="agent_tool_delete_file">Delete a file</string>
+    <string name="agent_tool_compile">Compiled</string>
+    <string name="agent_tool_set_events">Changed events</string>
+    <string name="agent_tool_create_project">Created a project</string>
+    <string name="agent_tool_set_enabled">Turn a project on/off</string>
+    <string name="agent_tool_delete_project">Delete a project</string>
+    <string name="agent_tool_debug_message">Tested in the debug room</string>
+    <string name="agent_tool_save_attachment">Saved an attachment</string>
+</resources>

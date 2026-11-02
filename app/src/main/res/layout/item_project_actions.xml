@@ -37,6 +37,12 @@
                 app:drawableTopCompat="@drawable/ic_round_insert_comment_24"/>
 
             <TextView
+                android:id="@+id/buttonAgent"
+                style="@style/ProjectAction"
+                android:text="@string/agent_project_action"
+                app:drawableTopCompat="@drawable/ic_agent_sparkle"/>
+
+            <TextView
                 android:id="@+id/buttonProjectConfig"
                 style="@style/ProjectAction"
                 android:text="@string/project_settings"

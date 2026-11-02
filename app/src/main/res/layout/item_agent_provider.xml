@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_agent_row"
+    android:gravity="center_vertical"
+    android:minHeight="64dp"
+    android:orientation="horizontal"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="10dp">
+
+    <TextView
+        android:id="@+id/badge"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:background="@drawable/bg_agent_chip"
+        android:fontFamily="@font/wantedsans_bold"
+        android:gravity="center"
+        android:textColor="@color/agent_accent"
+        android:textSize="16sp"
+        tools:text="A"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/wantedsans_bold"
+            android:textColor="@color/agent_text"
+            android:textSize="15.5sp"
+            tools:text="Anthropic"/>
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/wantedsans_regular"
+            android:maxLines="1"
+            android:textColor="@color/agent_text_muted"
+            android:textSize="12.5sp"
+            tools:text="연결됨 · Claude Opus 5.5"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/inUse"
+        android:layout_width="wrap_content"
+        android:layout_height="26dp"
+        android:background="@drawable/bg_agent_button_gold"
+        android:fontFamily="@font/wantedsans_bold"
+        android:gravity="center"
+        android:paddingHorizontal="10dp"
+        android:text="@string/agent_provider_in_use"
+        android:textColor="@color/agent_on_gold"
+        android:textSize="11.5sp"
+        android:visibility="gone"
+        tools:visibility="visible"/>
+
+    <ImageView
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="6dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_round_keyboard_arrow_right_24"
+        app:tint="@color/agent_text_faint"/>
+</LinearLayout>

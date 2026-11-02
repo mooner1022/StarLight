@@ -40,6 +40,7 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.ui.agent.AgentChatActivity
 import dev.mooner.starlight.ui.debugroom.DebugRoomActivity
 import dev.mooner.starlight.ui.editor.DefaultEditorActivity
 import dev.mooner.starlight.ui.projects.config.ProjectButtonData
@@ -140,7 +141,7 @@ class ProjectListItem(
     }
 
     private fun ItemProjectActionsBinding.bind(project: Project) {
-        for (button in arrayOf(buttonEditCode, buttonRecompile, buttonDebugRoom, buttonProjectConfig, buttonProjectInfo, buttonProjectPin))
+        for (button in arrayOf(buttonEditCode, buttonRecompile, buttonDebugRoom, buttonAgent, buttonProjectConfig, buttonProjectInfo, buttonProjectPin))
             button.setOnClickListener(onClickListener)
         updatePinButton(project)
 
@@ -178,6 +179,8 @@ class ProjectListItem(
                 compileProject(view, project)
             R.id.buttonDebugRoom ->
                 context.startDebugRoomActivity(view, project)
+            R.id.buttonAgent ->
+                context.startActivity(AgentChatActivity.intent(context, null, project = project.info.name))
             R.id.buttonProjectConfig ->
                 context.startProjectConfigActivity(project)
             R.id.buttonProjectInfo ->

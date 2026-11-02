@@ -40,6 +40,7 @@ import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.stats.LogStats
 import dev.mooner.starlight.stats.MessageStats
 import dev.mooner.starlight.stats.ScriptWidgetEntries
+import dev.mooner.starlight.ui.agent.AgentWidget
 import dev.mooner.starlight.ui.widget.*
 import dev.mooner.starlight.utils.getKakaoTalkVersion
 import kotlinx.coroutines.Dispatchers
@@ -163,6 +164,7 @@ object ApplicationSession {
             addWidget(pContext, JobsWidget)
             addWidget(pContext, MessageActivityWidget)
             addWidget(pContext, ScriptWidget)
+            addWidget(pContext, AgentWidget)
             if (GlobalConfig.category("dev").getBoolean("dev_mode", false)) {
                 addWidget(pContext, DummyWidgetSlim::class.java)
                 addWidget(pContext, LogGenWidget::class.java)

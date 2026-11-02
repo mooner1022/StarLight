@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The night sky of the docs site: a deep navy gradient with a cool glow above and dusk below. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:centerColor="@color/agent_night_mid"
+                android:endColor="@color/agent_night_bottom"
+                android:startColor="@color/agent_night_top"/>
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:centerX="0.85"
+                android:centerY="0"
+                android:endColor="#007077A1"
+                android:gradientRadius="320dp"
+                android:startColor="#597077A1"
+                android:type="radial"/>
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:centerX="0"
+                android:centerY="1.1"
+                android:endColor="#00F6B17A"
+                android:gradientRadius="260dp"
+                android:startColor="#29F6B17A"
+                android:type="radial"/>
+        </shape>
+    </item>
+</layer-list>
