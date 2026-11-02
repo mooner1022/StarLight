@@ -23,6 +23,7 @@ import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.NoticeKind
 import dev.mooner.starlight.agent.model.Part
+import dev.mooner.starlight.agent.model.Plan
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
 import dev.mooner.starlight.agent.runtime.History
@@ -46,6 +47,11 @@ class AgentChatActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAgentChatBinding
     private lateinit var composer: Composer
     private lateinit var adapter: ChatAdapter
+    private lateinit var planBoard: PlanBoard
+    /** The conversation [plan] was read from, and whether it was running; it is read again only when they change. */
+    private var planSource: Conversation? = null
+    private var planRunning = false
+    private var plan: Plan? = null
     private val hub by lazy { AgentHub.get(this) }
 
     private lateinit var conversationId: String
@@ -79,6 +85,8 @@ class AgentChatActivity : AppCompatActivity() {
             ?: hub.runtime.newConversationId()
         openedFor = intent.getStringExtra(EXTRA_PROJECT)
         pendingSave = savedInstanceState?.getString(KEY_PENDING_SAVE)
+        planBoard = PlanBoard(binding.plan)
+        planBoard.collapsed = savedInstanceState?.getBoolean(KEY_PLAN_COLLAPSED) == true
 
         setUpWindow()
         binding.stars.density = 0.35f
@@ -150,6 +158,8 @@ class AgentChatActivity : AppCompatActivity() {
             openedFor = intent.getStringExtra(EXTRA_PROJECT)
             sessionLoaded = false
             expandedGroups.clear()
+            planBoard.reset()
+            planSource = null
             composer.clear()
             render(hub.store.get(conversationId), hub.runtime.live.value[conversationId])
         }
@@ -160,6 +170,7 @@ class AgentChatActivity : AppCompatActivity() {
         super.onSaveInstanceState(outState)
         outState.putString(EXTRA_CONVERSATION, conversationId)
         outState.putString(KEY_PENDING_SAVE, pendingSave)
+        outState.putBoolean(KEY_PLAN_COLLAPSED, planBoard.collapsed)
         if (sessionLoaded) {
             outState.putBoolean(KEY_SESSION, true)
             outState.putString(KEY_PROJECT, composer.project)
@@ -194,6 +205,7 @@ class AgentChatActivity : AppCompatActivity() {
             binding.headerContent.updatePadding(top = bars.top, left = bars.left, right = bars.right)
             binding.bottomArea.updatePadding(bottom = maxOf(bars.bottom, ime.bottom) + AgentUi.dp(this, 10),
                 left = bars.left + AgentUi.dp(this, 12), right = bars.right + AgentUi.dp(this, 12))
+            planBoard.imeShown = insets.isVisible(WindowInsetsCompat.Type.ime())
             insets
         }
     }
@@ -238,6 +250,12 @@ class AgentChatActivity : AppCompatActivity() {
                 binding.messages.scrollToPosition(rows.size - 1)
         }
         updateResumeBar(conversation, running)
+        if (conversation !== planSource || running != planRunning) {
+            planSource = conversation
+            planRunning = running
+            plan = conversation?.let { Plan.shown(it.messages, running) }
+        }
+        planBoard.show(plan, running)
     }
 
     /** Fills the composer with the conversation's project and approval, once. */
@@ -390,6 +408,7 @@ class AgentChatActivity : AppCompatActivity() {
         private const val KEY_PROJECT = "session_project"
         private const val KEY_APPROVAL = "session_approval"
         private const val KEY_PENDING_SAVE = "pending_save"
+        private const val KEY_PLAN_COLLAPSED = "plan_collapsed"
         private const val LIVE_INTERVAL_MILLIS = 90L
         private const val MAX_PICK = 5
         private const val MENU_USAGE = 1

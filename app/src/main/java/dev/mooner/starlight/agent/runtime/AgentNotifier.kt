@@ -15,6 +15,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.Part
+import dev.mooner.starlight.agent.model.Plan
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.plainPreview
 import dev.mooner.starlight.ui.agent.AgentChatActivity
@@ -77,24 +78,31 @@ internal object AgentNotifier {
             }
             else -> phaseText(context, run)
         }
-        val finished = steps.filter { it.result != null }.takeLast(RECENT_STEPS).map { step ->
-            val mark = if (step.result!!.isError) "✗" else "✓"
-            val target = ToolLabels.target(step.call.arguments, withProject)
-            "$mark " + listOf(ToolLabels.label(context, step.call.name), target).filter(String::isNotBlank).joinToString(" · ")
-        }
+        // With a plan, its steps say more than the latest tool calls do.
+        val plan = conversation?.let { Plan.shown(it.messages, running = true) }
+        val lines = plan?.steps?.map { step -> "${PLAN_MARKS.getValue(step.status)} ${step.text}" }
+            ?: steps.filter { it.result != null }.takeLast(RECENT_STEPS).map { step ->
+                val mark = if (step.result!!.isError) "✗" else "✓"
+                val target = ToolLabels.target(step.call.arguments, withProject)
+                "$mark " + listOf(ToolLabels.label(context, step.call.name), target).filter(String::isNotBlank).joinToString(" · ")
+            }
         builder.setContentTitle(conversation?.project ?: conversation?.title ?: context.getString(R.string.agent_notification_working))
             .setContentText(doing)
-            .setStyle(NotificationCompat.BigTextStyle().bigText((listOf(doing) + finished).joinToString("\n")))
+            .setStyle(NotificationCompat.BigTextStyle().bigText((listOf(doing) + lines).joinToString("\n")))
             .setContentIntent(openChat(context, id))
             .setDeleteIntent(dismissed(context, listOf(id)))
             .addAction(0, context.getString(R.string.agent_stop), action(context, AgentActionReceiver.ACTION_STOP, id, null))
-        if (steps.isNotEmpty())
+        if (plan != null)
+            builder.setSubText(context.getString(R.string.agent_plan_progress, plan.done, plan.steps.size))
+        else if (steps.isNotEmpty())
             builder.setSubText(context.resources.getQuantityString(R.plurals.agent_tools_used, steps.size, steps.size))
         // Waiting on the user isn't progress; the approval notification, which alerts, has the buttons.
-        if (approval != null)
-            builder.setShortCriticalText(context.getString(R.string.agent_chip_approval))
-        else
-            builder.setProgress(0, 0, true)
+        when {
+            approval != null -> builder.setShortCriticalText(context.getString(R.string.agent_chip_approval))
+            plan != null     -> builder.setProgress(plan.steps.size, plan.done, false)
+                .setShortCriticalText(context.getString(R.string.agent_plan_count, plan.done, plan.steps.size))
+            else             -> builder.setProgress(0, 0, true)
+        }
         // The time the run has taken, which a Live Update's chip shows when there's nothing more pressing.
         runtime.startedAt(id)?.let { builder.setWhen(it).setShowWhen(true).setUsesChronometer(true) }
         builder.setRequestPromotedOngoing(promotes(hub.settings.liveUpdates, runs, runtime.visibleConversation, runtime.dismissed.value))
@@ -134,8 +142,9 @@ internal object AgentNotifier {
         return listOf(
             runs.map { listOf(it.conversationId, it.phase, it.tool, it.retry) },
             single?.let { runtime.pendingApproval(it.conversationId) },
-            // Each step adds messages, and with them the step count and the recent steps shown.
-            single?.let { hub.store.get(it.conversationId)?.messages?.size },
+            // Each step adds a part, and with it the step count, the recent steps and the plan shown. Results of one turn
+            // share a message, so messages alone don't count them.
+            single?.let { hub.store.get(it.conversationId)?.messages?.sumOf { message -> message.parts.size } },
             promotes(hub.settings.liveUpdates, runs, runtime.visibleConversation, runtime.dismissed.value),
         )
     }
@@ -248,6 +257,9 @@ internal object AgentNotifier {
 
     /** How many finished steps the expanded notification lists. */
     private const val RECENT_STEPS = 3
+
+    /** How the expanded notification marks the steps of a plan. */
+    private val PLAN_MARKS = mapOf(Plan.Status.COMPLETED to "✓", Plan.Status.IN_PROGRESS to "▶", Plan.Status.PENDING to "○")
 
     private fun approvalId(conversationId: String) = 0x5A2000 + (conversationId.hashCode() and 0xFFF)
 

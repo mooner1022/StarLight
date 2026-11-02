@@ -2,6 +2,7 @@ package dev.mooner.starlight.agent.tools
 
 import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.CardKind
+import dev.mooner.starlight.agent.model.Plan
 import dev.mooner.starlight.agent.store.AttachmentStore
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Session
@@ -286,6 +287,31 @@ class StarLightTools(private val docs: DocsLibrary) {
                 name = project.info.name, project = project.info.name, caption = args.stringArg("caption"),
             )
             ToolOutput("The user now sees a card for ${project.info.name}.", summary = project.info.name, card = card)
+        },
+        tool(
+            Plan.TOOL,
+            "Shows the user your plan for work of several steps as a checklist above the chat, and keeps it current. " +
+                "Send the whole plan each time, in order, each step pending, in_progress or completed: one step " +
+                "in_progress while you work on it, marked completed as soon as it is done. Send an empty plan to " +
+                "clear it.",
+            ToolRisk.READ,
+            params = {
+                objectArray("plan", "The steps, in order, at most ${Plan.MAX_STEPS}.") {
+                    string("step", "What the step does, in a few words, in the user's language.")
+                    string("status", "Where the step stands.", enum = Plan.Status.ids)
+                }
+            },
+            describe = { "Update the plan" },
+        ) { args ->
+            val plan = try {
+                Plan.parse(args)
+            } catch (e: IllegalArgumentException) {
+                throw ToolException(e.message ?: "Invalid plan")
+            }
+            if (plan.steps.isEmpty())
+                ToolOutput("Cleared the plan.", summary = "-")
+            else
+                ToolOutput("The user sees the plan: ${plan.done} of ${plan.steps.size} steps completed.", summary = plan.summary)
         },
     )
 

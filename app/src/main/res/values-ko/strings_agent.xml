@@ -213,6 +213,14 @@
     <string name="agent_tool_save_attachment">첨부 파일 저장</string>
     <string name="agent_tool_send_file">파일 전달</string>
     <string name="agent_tool_show_project">프로젝트 안내</string>
+    <string name="agent_tool_update_plan">계획 업데이트</string>
+
+    <string name="agent_plan_title">계획</string>
+    <string name="agent_plan_progress">%2$d단계 중 %1$d단계 완료</string>
+    <string name="agent_plan_toggle">계획 펼치기/접기</string>
+    <string name="agent_plan_step_done">완료: %s</string>
+    <string name="agent_plan_step_doing">진행 중: %s</string>
+    <string name="agent_plan_step_todo">할 일: %s</string>
     <string name="agent_card_open">열기</string>
     <string name="agent_card_share">공유</string>
     <string name="agent_card_save">저장</string>

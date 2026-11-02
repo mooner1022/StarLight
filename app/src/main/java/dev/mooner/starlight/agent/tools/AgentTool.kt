@@ -78,8 +78,12 @@ class ParamsBuilder {
     fun project() =
         string("project", "Name (or id) of the project.")
 
-    fun string(name: String, description: String, optional: Boolean = false) =
-        add(name, "string", description, optional)
+    /** A string, one of [enum] when it is given. */
+    fun string(name: String, description: String, optional: Boolean = false, enum: List<String>? = null) =
+        add(name, "string", description, optional) {
+            if (enum != null)
+                putJsonArray("enum") { enum.forEach { add(JsonPrimitive(it)) } }
+        }
 
     fun integer(name: String, description: String, optional: Boolean = false) =
         add(name, "integer", description, optional)
@@ -89,6 +93,10 @@ class ParamsBuilder {
 
     fun stringArray(name: String, description: String, optional: Boolean = false) =
         add(name, "array", description, optional) { putJsonObject("items") { put("type", "string") } }
+
+    /** An array of objects, each with the properties [item] declares. */
+    fun objectArray(name: String, description: String, optional: Boolean = false, item: ParamsBuilder.() -> Unit) =
+        add(name, "array", description, optional) { put("items", ParamsBuilder().apply(item).build()) }
 
     private fun add(name: String, type: String, description: String, optional: Boolean, extra: JsonObjectBuilder.() -> Unit = {}) {
         properties += name to {
