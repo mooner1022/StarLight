@@ -191,6 +191,7 @@
     <string name="agent_tool_set_enabled">프로젝트 켜기/끄기</string>
     <string name="agent_tool_delete_project">프로젝트 삭제</string>
     <string name="agent_tool_debug_message">디버그 룸 테스트</string>
+    <string name="agent_tool_debug_replies">디버그 룸 답장 확인</string>
     <string name="agent_tool_save_attachment">첨부 파일 저장</string>
     <string name="agent_tool_send_file">파일 전달</string>
     <string name="agent_tool_show_project">프로젝트 안내</string>

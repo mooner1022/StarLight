@@ -33,6 +33,7 @@ object ToolLabels {
         "set_project_enabled" to Label(R.string.agent_tool_set_enabled, R.drawable.ic_round_power_settings_new_24),
         "delete_project" to Label(R.string.agent_tool_delete_project, R.drawable.ic_agent_delete),
         "send_debug_message" to Label(R.string.agent_tool_debug_message, R.drawable.ic_round_insert_comment_24),
+        "read_debug_replies" to Label(R.string.agent_tool_debug_replies, R.drawable.ic_round_insert_comment_24),
         "save_attachment" to Label(R.string.agent_tool_save_attachment, R.drawable.ic_agent_folder),
         "send_file" to Label(R.string.agent_tool_send_file, R.drawable.ic_agent_attach),
         "show_project" to Label(R.string.agent_tool_show_project, R.drawable.ic_round_projects_24),

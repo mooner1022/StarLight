@@ -11,6 +11,7 @@ import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.project.event.getInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonArrayBuilder
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonObject
@@ -482,8 +483,13 @@ class StarLightTools(private val docs: DocsLibrary) {
         tool(
             "send_debug_message",
             "Sends a chat message to a project from its debug room, as if a user sent it, and returns what the bot " +
-                "replied, any error, and the logs written meanwhile. The project must be compiled and receive " +
-                "$MESSAGE_EVENT; it may be off.",
+                "replied (with how many seconds each reply took), any error, and the logs written meanwhile. The " +
+                "project must be compiled and receive $MESSAGE_EVENT; it may be off. How long it waits: by default " +
+                "until the bot has been quiet for a second after replying, or ${DebugMessenger.DEFAULT_WAIT_SECONDS} seconds without " +
+                "a reply. For a bot that answers later or in several messages (timers, network requests, await), set " +
+                "expectReplies to return as soon as that many replies came, or waitSeconds to collect for that long. " +
+                "Replies that come after it returns are kept for read_debug_replies; ones left from earlier messages " +
+                "come back here as earlierReplies.",
             ToolRisk.WRITE,
             params = {
                 project()
@@ -491,33 +497,42 @@ class StarLightTools(private val docs: DocsLibrary) {
                 string("sender", "Name of the sender (default: the debug room's).", optional = true)
                 string("room", "Name of the chat room (default: the debug room's).", optional = true)
                 boolean("isGroupChat", "Whether the room is a group chat.", optional = true)
-                integer("waitSeconds", "How long to wait for replies (default $DEFAULT_WAIT_SECONDS, at most $MAX_WAIT_SECONDS).", optional = true)
+                waitParams()
             },
             describe = { "Send \"${it.stringArg("message")}\" to ${it.stringArg("project")}" },
         ) { args ->
             val project = findProject(args)
             val startMillis = System.currentTimeMillis()
-            val reply = DebugMessenger.send(project, DebugMessenger.Options(
+            val wait = waitOf(args)
+            val sent = DebugMessenger.send(project, DebugMessenger.Options(
                 text = args.requireString("message"),
                 sender = args.stringArg("sender"),
                 room = args.stringArg("room"),
                 isGroupChat = args.booleanArg("isGroupChat"),
-                waitMillis = (args.intArg("waitSeconds") ?: DEFAULT_WAIT_SECONDS).coerceIn(1, MAX_WAIT_SECONDS) * 1000L,
-            ))
+            ), wait)
             val logs = synchronized(project.logger.logs) { project.logger.logs.filter { it.millis >= startMillis } }
-            val json = buildJsonObject {
-                putJsonArray("replies") { reply.replies.forEach { add(it) } }
-                reply.error?.let { put("error", ScriptErrors.message(it)) }
-                if (reply.replies.isEmpty() && reply.error == null)
-                    put("note", "No reply in time")
-                if (logs.isNotEmpty())
-                    put("logs", formatLogs(logs, logs.size))
-            }
-            ToolOutput(
-                json.toString(),
-                isError = reply.error != null,
-                summary = reply.replies.firstOrNull()?.take(80) ?: reply.error?.let(ScriptErrors::message) ?: "No reply",
-            )
+            debugReplies(sent.events, wait, logs, earlier = sent.earlier, withTrigger = false)
+        },
+        tool(
+            "read_debug_replies",
+            "Returns what a project's bot sent to the debug room since you last looked, such as replies that came " +
+                "after send_debug_message returned (timers, network requests, await), each with the message it " +
+                "answered and how many seconds after it, plus the logs written since. Waits like send_debug_message: " +
+                "by default until the bot has been quiet for a second after replying, or ${DebugMessenger.DEFAULT_WAIT_SECONDS} " +
+                "seconds without a reply; expectReplies and waitSeconds work the same way, and waitSeconds 0 returns " +
+                "what is there at once.",
+            ToolRisk.READ,
+            params = {
+                project()
+                waitParams()
+            },
+            describe = { "Check the debug room replies of ${it.stringArg("project")}" },
+        ) { args ->
+            val project = findProject(args)
+            val wait = waitOf(args)
+            val (events, since) = DebugMessenger.read(project, wait)
+            val logs = synchronized(project.logger.logs) { project.logger.logs.filter { it.millis >= since } }
+            debugReplies(events, wait, logs, earlier = emptyList(), withTrigger = true)
         },
         tool(
             "save_attachment",
@@ -585,6 +600,58 @@ class StarLightTools(private val docs: DocsLibrary) {
     private fun allowedEvents(project: Project): Set<String> =
         ProjectEventManager.filterAllowedEvents(project.info.allowedEventIds)
 
+    private fun ParamsBuilder.waitParams() {
+        integer("waitSeconds", "Collect replies for this many seconds, at most ${DebugMessenger.MAX_WAIT_SECONDS}. With " +
+            "expectReplies, the longest to wait instead (default ${DebugMessenger.EXPECT_WAIT_SECONDS}).", optional = true)
+        integer("expectReplies", "Return as soon as the bot has sent this many replies.", optional = true)
+    }
+
+    private fun waitOf(args: JsonObject): DebugMessenger.Wait =
+        DebugMessenger.Wait.of(args.intArg("waitSeconds"), args.intArg("expectReplies"))
+
+    /** The result of a look at the debug room: replies, the first error, a note when something is missing, and logs. */
+    private fun debugReplies(
+        events: List<DebugMessenger.Event>,
+        wait: DebugMessenger.Wait,
+        logs: List<LogData>,
+        earlier: List<DebugMessenger.Event>,
+        withTrigger: Boolean,
+    ): ToolOutput {
+        val replies = events.filter { it.text != null }
+        val error = events.firstNotNullOfOrNull { it.error }
+        fun JsonArrayBuilder.reply(event: DebugMessenger.Event, trigger: Boolean) = addJsonObject {
+            if (trigger)
+                put("for", event.trigger)
+            put("text", event.text)
+            put("seconds", Math.round(event.seconds * 10) / 10.0)
+        }
+        val seconds = wait.maxMillis / 1000
+        val json = buildJsonObject {
+            putJsonArray("replies") { replies.forEach { reply(it, withTrigger) } }
+            error?.let { put("error", ScriptErrors.message(it)) }
+            val expected = wait.expect
+            when {
+                error != null -> Unit
+                replies.isEmpty() ->
+                    put("note", "No reply within ${seconds}s. A reply that comes later is kept: read_debug_replies gets it.")
+                expected != null && replies.size < expected ->
+                    put("note", "Got ${replies.size} of the $expected replies expected within ${seconds}s. Later ones " +
+                        "are kept: read_debug_replies gets them.")
+            }
+            if (earlier.any { it.text != null })
+                putJsonArray("earlierReplies") { earlier.filter { it.text != null }.forEach { reply(it, trigger = true) } }
+            if (logs.isNotEmpty())
+                put("logs", formatLogs(logs, logs.size))
+        }
+        return ToolOutput(
+            json.toString(),
+            isError = error != null,
+            // The first reply, and how many more came.
+            summary = replies.firstOrNull()?.text?.take(80)?.let { if (replies.size > 1) "$it (+${replies.size - 1})" else it }
+                ?: error?.let(ScriptErrors::message) ?: "No reply",
+        )
+    }
+
     private fun formatLogs(logs: List<LogData>, limit: Int): String =
         logs.takeLast(limit.coerceIn(1, MAX_LOG_LIMIT))
             .joinToString("\n") { "${TIME_FORMAT.get()!!.format(Date(it.millis))} ${it.type} [${it.tag.orEmpty()}] ${it.message}" }
@@ -615,8 +682,6 @@ class StarLightTools(private val docs: DocsLibrary) {
         const val MAX_SEARCH_HITS = 200
         const val DEFAULT_LOG_LIMIT = 50
         const val MAX_LOG_LIMIT = 300
-        const val DEFAULT_WAIT_SECONDS = 5
-        const val MAX_WAIT_SECONDS = 60
 
         val FILE_NAME_REGEX = Regex("^[^/\\\\:*?\"<>|]{1,100}$")
 
