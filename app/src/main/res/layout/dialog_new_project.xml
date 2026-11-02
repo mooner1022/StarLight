@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/contentRoot"
     android:layout_width="match_parent"
@@ -83,6 +84,26 @@
             android:textColor="@color/text_sub"
             android:textSize="12sp"
             tools:text="@string/project_main_file"/>
+
+        <!-- Projects exported to a zip come back in through here. -->
+        <TextView
+            android:id="@+id/importFromFile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="?attr/selectableItemBackground"
+            android:drawablePadding="6dp"
+            android:fontFamily="@font/nanumsquare_neo_regular"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="8dp"
+            android:text="@string/project_import_from_file"
+            android:textColor="@color/icon_teal"
+            android:textSize="14sp"
+            android:visibility="gone"
+            app:drawableStartCompat="@drawable/ic_round_download_24"
+            app:drawableTint="@color/icon_teal"
+            tools:visibility="visible"/>
     </LinearLayout>
 
     <LinearLayout

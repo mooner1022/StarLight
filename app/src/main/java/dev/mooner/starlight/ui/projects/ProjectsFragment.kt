@@ -93,7 +93,6 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             searchProject.setOnClickListener(this@ProjectsFragment)
             searchClose.setOnClickListener(this@ProjectsFragment)
             newProject.setOnClickListener(this@ProjectsFragment)
-            importProject.setOnClickListener(this@ProjectsFragment)
 
             searchInput.doAfterTextChanged { text ->
                 val query = text?.toString()?.trim().orEmpty()
@@ -133,8 +132,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             R.id.align_project -> showProjectAlignDialog()
             R.id.search_project -> setSearchVisible(binding.searchBar.visibility != View.VISIBLE)
             R.id.searchClose -> setSearchVisible(false)
-            R.id.new_project -> showNewProjectDialog()
-            R.id.import_project -> pickProjectArchive.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
+            R.id.new_project -> showNewProjectDialog(onImport = {
+                pickProjectArchive.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
+            })
         }
     }
 
