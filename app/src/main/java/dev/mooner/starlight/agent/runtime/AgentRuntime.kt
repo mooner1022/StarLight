@@ -203,6 +203,12 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         jobs[conversationId]?.cancel(StopException())
     }
 
+    /** Stops every run because Android ended the service that keeps them going; each can be continued later. */
+    fun stopAllForTimeLimit() {
+        for (job in jobs.values)
+            job.cancel(StopException(byTimeLimit = true))
+    }
+
     /** Answers a tool call that waits for the user; [always] allows that tool for the rest of the conversation. */
     fun resolveApproval(conversationId: String, callId: String, allow: Boolean, always: Boolean = false) {
         if (allow && always) {
@@ -287,11 +293,18 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             updateConversation(id) { it.copy(state = RunState.IDLE) }
             AgentNotifier.finished(hub, id)
         } catch (e: CancellationException) {
+            val byTimeLimit = (e as? StopException)?.byTimeLimit == true
             withContext(NonCancellable) {
-                answerOpenCalls(id, "The user stopped the run before this ran.")
-                appendNotice(id, NoticeKind.STOPPED, string(R.string.agent_notice_stopped))
-                updateConversation(id) { it.copy(state = RunState.IDLE) }
+                answerOpenCalls(id, if (byTimeLimit) "Android stopped the run before this ran." else "The user stopped the run before this ran.")
+                if (byTimeLimit)
+                    appendNotice(id, NoticeKind.TIME_LIMIT, string(R.string.agent_notice_time_limit))
+                else
+                    appendNotice(id, NoticeKind.STOPPED, string(R.string.agent_notice_stopped))
+                // A run Android stopped shows as cut short, like one the app was closed during.
+                updateConversation(id) { it.copy(state = if (byTimeLimit) RunState.INTERRUPTED else RunState.IDLE) }
             }
+            if (byTimeLimit)
+                AgentNotifier.failed(hub, id, string(R.string.agent_notice_time_limit))
             if (e !is StopException)
                 throw e
         } catch (e: Throwable) {
@@ -573,7 +586,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     private fun string(id: Int, vararg args: Any): String =
         hub.context.getString(id, *args)
 
-    private class StopException : CancellationException("Stopped by the user")
+    /** Ends a run on purpose: the user stopped it, or Android ended the service that kept it going. */
+    private class StopException(val byTimeLimit: Boolean = false) :
+        CancellationException(if (byTimeLimit) "Stopped by Android's time limit" else "Stopped by the user")
 
     private companion object {
         const val MAX_OUTPUT_TOKENS = 64_000

@@ -283,6 +283,7 @@ class AgentChatActivity : AppCompatActivity() {
         // The notices after the last turn say how the run ended.
         val notices = messages.drop(lastTurn + 1).flatMap { it.parts }.filterIsInstance<Part.Notice>().map { it.kind }
         return when {
+            NoticeKind.TIME_LIMIT in notices           -> getString(R.string.agent_resume_time_limit)
             // The error itself is in the chat right above.
             conversation.state == RunState.ERROR       -> getString(R.string.agent_resume_error)
             conversation.state == RunState.INTERRUPTED -> getString(R.string.agent_resume_interrupted)

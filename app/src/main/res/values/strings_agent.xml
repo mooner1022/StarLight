@@ -77,6 +77,8 @@
     <string name="agent_usage_title">Usage</string>
     <string name="agent_usage_detail">Input (full price): %1$s\nRead from cache: %2$s\nWritten to cache: %3$s\nOutput: %4$s\nCache hit rate: %5$s</string>
     <string name="agent_copied">Copied</string>
+    <string name="agent_notice_time_limit">Android stopped this run at its daily limit for background work. Open the app and continue to pick it up again.</string>
+    <string name="agent_resume_time_limit">Android stopped this run at its daily limit for background work. Continue to pick it up again.</string>
 
     <string name="agent_notice_stopped">Stopped.</string>
     <string name="agent_notice_paused">Paused after %d steps. Continue to let the agent go on.</string>

@@ -75,6 +75,8 @@
     <string name="agent_usage_title">사용량</string>
     <string name="agent_usage_detail">입력(정가): %1$s\n캐시에서 읽음: %2$s\n캐시에 씀: %3$s\n출력: %4$s\n캐시 적중률: %5$s</string>
     <string name="agent_copied">복사했어요</string>
+    <string name="agent_notice_time_limit">백그라운드 작업의 하루 제한 시간이 다 되어 Android가 작업을 멈췄어요. 앱을 열고 계속하기를 누르면 이어서 해요.</string>
+    <string name="agent_resume_time_limit">Android의 백그라운드 작업 제한으로 멈춘 작업이에요. 계속하기를 누르면 이어서 해요.</string>
 
     <string name="agent_notice_stopped">멈췄어요.</string>
     <string name="agent_notice_paused">%d단계를 진행해서 잠시 멈췄어요. 계속하려면 계속하기를 눌러 주세요.</string>

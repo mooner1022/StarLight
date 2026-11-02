@@ -41,7 +41,8 @@ class AgentService : Service() {
         super.onCreate()
         val hub = AgentHub.get(this)
         AgentNotifier.ensureChannels(this)
-        startInForeground(hub)
+        if (!startInForeground(hub))
+            return
         wakeLock = getSystemService(PowerManager::class.java)
             ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "StarLight:agent")
             ?.apply { acquire(WAKE_LOCK_TIMEOUT_MILLIS) }
@@ -70,10 +71,18 @@ class AgentService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Every start has to show the notification again, or Android stops the app.
-        startInForeground(AgentHub.get(this))
-        if (AgentHub.get(this).runtime.live.value.isEmpty())
+        if (startInForeground(AgentHub.get(this)) && AgentHub.get(this).runtime.live.value.isEmpty())
             stopSelf()
         return START_NOT_STICKY
+    }
+
+    /**
+     * Android 15 ends a data sync service after six hours in a day, and the app if the service doesn't stop at once.
+     * The runs stop with a notice and can be continued once the user is back.
+     */
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        stopSelf()
+        AgentHub.get(this).runtime.stopAllForTimeLimit()
     }
 
     override fun onDestroy() {
@@ -83,9 +92,17 @@ class AgentService : Service() {
         super.onDestroy()
     }
 
-    private fun startInForeground(hub: AgentHub) {
+    /** False when Android refuses, as after the day's time for data sync is used up; the service then stops. */
+    private fun startInForeground(hub: AgentHub): Boolean {
         val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0
-        ServiceCompat.startForeground(this, AgentNotifier.PROGRESS_ID, progress(hub), type)
+        return try {
+            ServiceCompat.startForeground(this, AgentNotifier.PROGRESS_ID, progress(hub), type)
+            true
+        } catch (e: Exception) {
+            LOG.warn { "Couldn't keep the agent in the foreground: $e" }
+            stopSelf()
+            false
+        }
     }
 
     private fun progress(hub: AgentHub) =

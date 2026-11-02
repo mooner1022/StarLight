@@ -209,6 +209,8 @@ enum class NoticeKind {
     @SerialName("paused") PAUSED,
     /** The model ended its turn without a reply, even when asked for one. */
     @SerialName("no_reply") NO_REPLY,
+    /** Android ended the service that kept the run going, after its daily limit for background work. */
+    @SerialName("time_limit") TIME_LIMIT,
 }
 
 /** Tokens of one turn, or the sum over a conversation. */
