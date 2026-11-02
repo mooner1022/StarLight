@@ -19,7 +19,7 @@ import dev.mooner.starlight.databinding.ViewAgentPlanBinding
  * The plan the agent is working through, above the composer: what is done, being done and left, changing as the agent
  * calls update_plan. It shows while steps are left or the run goes on, and folds to one line on a tap.
  */
-internal class PlanBoard(private val binding: ViewAgentPlanBinding) {
+internal class PlanBoard(private val binding: ViewAgentPlanBinding, onGo: () -> Unit) {
 
     private val context: Context
         get() = binding.root.context
@@ -59,12 +59,17 @@ internal class PlanBoard(private val binding: ViewAgentPlanBinding) {
             }
         }
         binding.planScroll.maxHeight = AgentUi.dp(context, MAX_LIST_DP)
+        binding.planGo.setOnClickListener { onGo() }
     }
 
-    /** Shows [plan], the conversation's latest, while it has steps left or [running]. */
-    fun show(plan: Plan?, running: Boolean) {
+    /**
+     * Shows [plan], the conversation's latest, while it has steps left or [running]. In plan mode, [canGo] offers to
+     * carry it out.
+     */
+    fun show(plan: Plan?, running: Boolean, canGo: Boolean = false) {
         val visible = plan != null && (running || !plan.isFinished)
         binding.root.isVisible = visible
+        binding.planGo.isVisible = visible && canGo && !running
         if (plan == null || plan == shown)
             return
         val animate = shown != null && visible

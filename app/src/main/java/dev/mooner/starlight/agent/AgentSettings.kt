@@ -18,7 +18,12 @@ enum class ApprovalPolicy(val id: String) {
     /** Asks before deleting, and before turning projects on or off. */
     ASK_DESTRUCTIVE("destructive"),
     /** Asks before anything that changes a project. */
-    ASK_WRITES("writes");
+    ASK_WRITES("writes"),
+    /**
+     * Only looks and plans: tools that change something are refused until the user approves the plan. Set per
+     * conversation; an older StarLight reads it as [ASK_DESTRUCTIVE].
+     */
+    PLAN("plan");
 
     companion object {
         fun of(id: String?): ApprovalPolicy =

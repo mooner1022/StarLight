@@ -87,7 +87,7 @@ class AgentChatActivity : AppCompatActivity() {
             ?: hub.runtime.newConversationId()
         openedFor = intent.getStringExtra(EXTRA_PROJECT)
         pendingSave = savedInstanceState?.getString(KEY_PENDING_SAVE)
-        planBoard = PlanBoard(binding.plan)
+        planBoard = PlanBoard(binding.plan, onGo = ::carryOutPlan)
         planBoard.collapsed = savedInstanceState?.getBoolean(KEY_PLAN_COLLAPSED) == true
 
         setUpWindow()
@@ -120,6 +120,10 @@ class AgentChatActivity : AppCompatActivity() {
 
             override fun onRewind(messageId: String) =
                 confirmRewind(messageId)
+
+            override fun onAnswer(callId: String, answers: List<String>?) {
+                hub.runtime.answer(conversationId, callId, answers)
+            }
         })
         binding.messages.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
         binding.messages.adapter = adapter
@@ -255,12 +259,14 @@ class AgentChatActivity : AppCompatActivity() {
                 binding.messages.scrollToPosition(rows.size - 1)
         }
         updateResumeBar(conversation, running)
+        // While the agent waits on a decision, the question takes the place of the field.
+        binding.composer.root.isVisible = hub.runtime.pendingQuestion(conversationId) == null
         if (conversation !== planSource || running != planRunning) {
             planSource = conversation
             planRunning = running
             plan = conversation?.let { Plan.shown(it.messages, running) }
         }
-        planBoard.show(plan, running)
+        planBoard.show(plan, running, canGo = conversation?.approval?.let(ApprovalPolicy::of) == ApprovalPolicy.PLAN)
     }
 
     /** Fills the composer with the conversation's project and approval, once. */
@@ -333,9 +339,13 @@ class AgentChatActivity : AppCompatActivity() {
             startActivity(Intent(this, AgentSettingsActivity::class.java))
             return false
         }
-        // A stopped run can take a moment to end; the field keeps the message meanwhile.
-        if (hub.runtime.isRunning(conversationId))
-            return false
+        // During a run the message joins it; a run that is just ending keeps it in the field to send again.
+        if (hub.runtime.isRunning(conversationId)) {
+            if (!hub.runtime.queue(conversationId, text, attachments))
+                return false
+            render(shownConversation, shownRun)
+            return true
+        }
         val editing = composer.editingMessage
         if (editing != null && hub.store.get(conversationId)?.messages?.any { it.id == editing } == true) {
             val changes = hub.runtime.rewindable(conversationId, editing)
@@ -349,6 +359,14 @@ class AgentChatActivity : AppCompatActivity() {
             hub.runtime.send(conversationId, text, attachments, composer.project, composer.approval)
         }
         return true
+    }
+
+    /** The user approved the plan made in plan mode: the agent carries it out. */
+    private fun carryOutPlan() {
+        if (hub.runtime.isRunning(conversationId))
+            return
+        composer.approval = null
+        hub.runtime.carryOutPlan(conversationId, getString(R.string.agent_plan_go_message), composer.project)
     }
 
     /** Rewriting a message the agent changed things after: asks whether to put them back too. */

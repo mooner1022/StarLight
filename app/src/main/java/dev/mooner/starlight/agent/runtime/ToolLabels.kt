@@ -40,6 +40,7 @@ object ToolLabels {
         "send_file" to Label(R.string.agent_tool_send_file, R.drawable.ic_agent_attach),
         "show_project" to Label(R.string.agent_tool_show_project, R.drawable.ic_round_projects_24),
         Plan.TOOL to Label(R.string.agent_tool_update_plan, R.drawable.ic_agent_check),
+        "ask_user" to Label(R.string.agent_tool_ask_user, R.drawable.ic_round_insert_comment_24),
     )
 
     fun label(context: Context, name: String?): String =

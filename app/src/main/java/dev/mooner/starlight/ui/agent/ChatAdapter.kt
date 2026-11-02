@@ -3,10 +3,12 @@ package dev.mooner.starlight.ui.agent
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.text.TextWatcher
 import android.text.format.Formatter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -14,13 +16,16 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.toColorInt
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import coil.load
 import coil.transform.RoundedCornersTransformation
+import com.google.android.material.card.MaterialCardView
 import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.model.AgentJson
@@ -31,10 +36,12 @@ import dev.mooner.starlight.agent.model.CardKind
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.NoticeKind
 import dev.mooner.starlight.agent.model.Part
+import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.TurnUsage
 import dev.mooner.starlight.agent.provider.RequestContent
 import dev.mooner.starlight.agent.runtime.AgentNotifier
+import dev.mooner.starlight.agent.runtime.AgentRuntime
 import dev.mooner.starlight.agent.runtime.LiveRun
 import dev.mooner.starlight.agent.runtime.ToolLabels
 import dev.mooner.starlight.databinding.ItemAgentApprovalBinding
@@ -43,6 +50,9 @@ import dev.mooner.starlight.databinding.ItemAgentFileCardBinding
 import dev.mooner.starlight.databinding.ItemAgentLiveBinding
 import dev.mooner.starlight.databinding.ItemAgentNoticeBinding
 import dev.mooner.starlight.databinding.ItemAgentProjectCardBinding
+import dev.mooner.starlight.databinding.ItemAgentQuestionBinding
+import dev.mooner.starlight.databinding.ItemAgentQuestionOptionBinding
+import dev.mooner.starlight.databinding.ItemAgentQueuedBinding
 import dev.mooner.starlight.databinding.ItemAgentTextBinding
 import dev.mooner.starlight.databinding.ItemAgentThinkingBinding
 import dev.mooner.starlight.databinding.ItemAgentToolBinding
@@ -81,6 +91,10 @@ sealed class ChatRow(val key: String) {
     data class ApprovalRequest(val call: Part.ToolCall, val description: String, val preview: String? = null) :
         ChatRow("approval:" + call.id)
     data class Notice(val id: String, val kind: NoticeKind, val text: String) : ChatRow(id)
+    /** A question the agent waits on, with options to tap. */
+    data class Question(val question: AgentRuntime.Question) : ChatRow("question:" + question.callId)
+    /** A message the user sent during a run, waiting for the agent to read it. */
+    data class Queued(val index: Int, val text: String) : ChatRow("queued:$index")
     data class Usage(val id: String, val usage: TurnUsage) : ChatRow(id)
     data class Live(val run: LiveRun) : ChatRow("live")
 }
@@ -93,6 +107,7 @@ internal object ChatRows {
         val rows = mutableListOf<ChatRow>()
         // Only the call the run waits on can be answered; one saved as pending before the app was killed can't.
         val awaited = hub.runtime.pendingApproval(conversation.id)?.first
+        val question = hub.runtime.pendingQuestion(conversation.id)
         val results = conversation.messages
             .filter { it.role == Role.TOOL }
             .flatMap { it.parts.filterIsInstance<Part.ToolResult>() }
@@ -140,6 +155,8 @@ internal object ChatRows {
                                         run += ChatRow.Tool(part, result, running)
                                     }
                                 }
+                                if (result == null && question?.callId == part.id)
+                                    run += ChatRow.Question(question)
                                 if (part.approval == Approval.PENDING && result == null && part.id == awaited) {
                                     val args = RequestContent.parseArguments(part.arguments)
                                     val description = args?.let { hub.tools.find(part.name)?.describe?.invoke(it) } ?: part.name
@@ -159,6 +176,9 @@ internal object ChatRows {
             rows += ChatRow.Live(live)
         } else
             closeRun(conversation.messages.size)
+        hub.runtime.queued(conversation.id).forEachIndexed { index, queued ->
+            rows += ChatRow.Queued(index, queued.text.ifBlank { queued.attachments.joinToString { it.name } })
+        }
         return rows
     }
 
@@ -202,6 +222,8 @@ interface ChatActions {
     fun onEdit(messageId: String)
     /** The user chose to put back what the agent changed from their message [messageId] on. */
     fun onRewind(messageId: String)
+    /** The user answered the questions of the call [callId], one answer each, or skipped them (null). */
+    fun onAnswer(callId: String, answers: List<String>?)
 }
 
 class ChatAdapter(
@@ -229,6 +251,8 @@ class ChatAdapter(
         is ChatRow.Notice          -> TYPE_NOTICE
         is ChatRow.Usage           -> TYPE_USAGE
         is ChatRow.Live            -> TYPE_LIVE
+        is ChatRow.Question        -> TYPE_QUESTION
+        is ChatRow.Queued          -> TYPE_QUEUED
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
@@ -246,6 +270,8 @@ class ChatAdapter(
                 FilePreview.shrinkIcons(context, it.edit, it.debug, it.settings)
             }
             TYPE_APPROVAL -> ItemAgentApprovalBinding.inflate(inflater, parent, false)
+            TYPE_QUESTION -> ItemAgentQuestionBinding.inflate(inflater, parent, false)
+            TYPE_QUEUED -> ItemAgentQueuedBinding.inflate(inflater, parent, false)
             TYPE_NOTICE   -> ItemAgentNoticeBinding.inflate(inflater, parent, false)
             TYPE_USAGE    -> ItemAgentUsageBinding.inflate(inflater, parent, false)
             else          -> ItemAgentLiveBinding.inflate(inflater, parent, false)
@@ -266,6 +292,8 @@ class ChatAdapter(
             is ChatRow.Notice          -> bindNotice(holder.binding as ItemAgentNoticeBinding, row)
             is ChatRow.Usage           -> (holder.binding as ItemAgentUsageBinding).text.text = AgentUi.usageLine(context, row.usage)
             is ChatRow.Live            -> bindLive(holder.binding as ItemAgentLiveBinding, row)
+            is ChatRow.Question        -> bindQuestion(holder.binding as ItemAgentQuestionBinding, row.question)
+            is ChatRow.Queued          -> (holder.binding as ItemAgentQueuedBinding).text.text = row.text
         }
     }
 
@@ -491,6 +519,129 @@ class ChatAdapter(
         binding.always.setOnClickListener { actions.onApproval(row.call.id, allow = true, always = true) }
     }
 
+    /** Where the user is in answering a question: the step on screen, and what each step has picked or written. */
+    private class QuestionState(size: Int) {
+        var step = 0
+        val picked = Array(size) { linkedSetOf<Int>() }
+        val writing = BooleanArray(size)
+        val written = Array(size) { "" }
+
+        fun answer(item: Questions.Item, index: Int): String? {
+            val chosen = picked[index].sorted().map { item.options[it].label }
+            val own = written[index].trim().takeIf { writing[index] && it.isNotEmpty() }
+            return (chosen + listOfNotNull(own)).joinToString(", ").takeIf(String::isNotEmpty)
+        }
+    }
+
+    private val questionStates = HashMap<String, QuestionState>()
+
+    private fun bindQuestion(binding: ItemAgentQuestionBinding, question: AgentRuntime.Question) {
+        val items = question.questions.items
+        val state = questionStates.getOrPut(question.callId) { QuestionState(items.size) }
+        val index = state.step.coerceIn(0, items.lastIndex)
+        val item = items[index]
+        val last = index == items.lastIndex
+        fun refresh() = notifyItemChanged(currentList.indexOfFirst { it is ChatRow.Question && it.question.callId == question.callId })
+        fun advance() {
+            if (last) {
+                val answers = items.indices.map { state.answer(items[it], it).orEmpty() }
+                questionStates.remove(question.callId)
+                actions.onAnswer(question.callId, answers)
+            } else {
+                state.step = index + 1
+                refresh()
+            }
+        }
+
+        binding.step.text = listOfNotNull(
+            if (items.size > 1) "${index + 1}/${items.size}" else null,
+            item.header,
+        ).joinToString(" · ")
+        binding.step.isVisible = binding.step.text.isNotEmpty()
+        binding.question.text = item.question
+        binding.multipleHint.isVisible = item.multiple
+
+        // The options, then "write my own", as selection cards.
+        binding.options.removeAllViews()
+        val inflater = LayoutInflater.from(context)
+        item.options.forEachIndexed { option, choice ->
+            val card = ItemAgentQuestionOptionBinding.inflate(inflater, binding.options, true)
+            card.label.text = choice.label
+            card.description.isVisible = choice.description != null
+            card.description.text = choice.description
+            card.root.highlight(option in state.picked[index])
+            card.root.setOnClickListener {
+                if (item.multiple) {
+                    if (!state.picked[index].remove(option))
+                        state.picked[index] += option
+                    refresh()
+                } else {
+                    state.picked[index].clear()
+                    state.picked[index] += option
+                    state.writing[index] = false
+                    advance()
+                }
+            }
+        }
+        val own = ItemAgentQuestionOptionBinding.inflate(inflater, binding.options, true)
+        own.label.setText(R.string.agent_question_custom)
+        own.root.highlight(state.writing[index])
+        own.root.setOnClickListener {
+            state.writing[index] = !state.writing[index]
+            // Writing one's own answer replaces the pick of a single choice.
+            if (state.writing[index] && !item.multiple)
+                state.picked[index].clear()
+            refresh()
+        }
+
+        (binding.custom.tag as? TextWatcher)?.let(binding.custom::removeTextChangedListener)
+        binding.custom.isVisible = state.writing[index]
+        binding.custom.setText(state.written[index])
+        fun updateNext() {
+            val ready = state.answer(item, index) != null
+            binding.next.isEnabled = ready
+            binding.next.alpha = if (ready) 1f else 0.4f
+        }
+        val watcher = binding.custom.doAfterTextChanged {
+            state.written[index] = it?.toString().orEmpty()
+            updateNext()
+        }
+        binding.custom.tag = watcher
+        if (state.writing[index] && binding.custom.text.isEmpty())
+            binding.custom.post {
+                binding.custom.requestFocus()
+                context.getSystemService(InputMethodManager::class.java)?.showSoftInput(binding.custom, 0)
+            }
+
+        // A single choice moves on by itself; several, or one's own words, need the button.
+        binding.back.isVisible = index > 0
+        binding.next.isVisible = item.multiple || state.writing[index] || index < state.picked.lastIndex && state.picked[index].isNotEmpty()
+        binding.next.setText(if (last) R.string.agent_question_send else R.string.agent_question_next)
+        binding.footer.isVisible = binding.back.isVisible || binding.next.isVisible
+        updateNext()
+        binding.back.setOnClickListener {
+            state.step = index - 1
+            refresh()
+        }
+        binding.next.setOnClickListener { if (state.answer(item, index) != null) advance() }
+        binding.skip.setOnClickListener {
+            questionStates.remove(question.callId)
+            actions.onAnswer(question.callId, null)
+        }
+    }
+
+    /** The selection look of the app's option sheets: a gold outline and tint when picked. */
+    private fun MaterialCardView.highlight(selected: Boolean) {
+        if (selected) {
+            strokeWidth = AgentUi.dp(context, 2)
+            strokeColor = context.getColor(R.color.main_bright)
+            setCardBackgroundColor(SELECTED_OPTION_COLOR.toColorInt())
+        } else {
+            strokeWidth = 0
+            setCardBackgroundColor(context.getColor(dev.mooner.configdsl.R.color.background_selection_card))
+        }
+    }
+
     private fun bindNotice(binding: ItemAgentNoticeBinding, row: ChatRow.Notice) {
         val isError = row.kind == NoticeKind.ERROR || row.kind == NoticeKind.REFUSAL
         binding.text.text = row.text
@@ -574,12 +725,16 @@ class ChatAdapter(
         const val TYPE_GROUP = 8
         const val TYPE_FILE = 9
         const val TYPE_PROJECT = 10
+        const val TYPE_QUESTION = 11
+        const val TYPE_QUEUED = 12
         const val MAX_DETAIL = 6_000
         const val MENU_COPY = 1
         const val MENU_EDIT = 2
         const val MENU_REWIND = 3
         /** Lines of a diff an approval card shows before it is tapped open. */
         const val PREVIEW_LINES = 14
+        /** The tint of a picked option, as the app's option sheets have it. */
+        const val SELECTED_OPTION_COLOR = "#50AD977A"
 
         val PRETTY = Json { prettyPrint = true }
 

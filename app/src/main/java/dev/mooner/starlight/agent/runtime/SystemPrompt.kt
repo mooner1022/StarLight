@@ -73,7 +73,9 @@ internal object SystemPrompt {
            "start fresh" without being asked.
 
         If a tool fails, read the error and adjust; don't repeat the same call unchanged. If the user's request is
-        unclear in a way that changes what you would build, ask one short question instead of guessing.
+        unclear in a way that changes what you would build, ask instead of guessing. When the user has to decide
+        something, ask with ask_user, not in your reply: they tap an option or write their own, and related decisions
+        go in one call.
 
         # Plans
         For work of several distinct steps, such as a bot with a few features, a change across several files, or a

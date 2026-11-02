@@ -231,6 +231,22 @@
     <string name="agent_edit_rewind_yes">되돌리고 보내기</string>
     <string name="agent_edit_rewind_no">그대로 보내기</string>
 
+    <string name="agent_notification_question">에이전트의 질문</string>
+    <string name="agent_phase_question">답을 기다리는 중</string>
+    <string name="agent_tool_ask_user">질문</string>
+    <string name="agent_question_send">답하기</string>
+    <string name="agent_question_next">다음</string>
+    <string name="agent_question_back">이전</string>
+    <string name="agent_question_skip">건너뛰기</string>
+    <string name="agent_question_custom">직접 입력</string>
+    <string name="agent_question_custom_hint">답을 입력하세요</string>
+    <string name="agent_question_multiple">여러 개를 고를 수 있어요.</string>
+    <string name="agent_queued">에이전트가 이어서 읽을 메시지</string>
+    <string name="agent_approval_plan">계획 먼저</string>
+    <string name="agent_approval_plan_desc">둘러보고 계획만 세워요. 계획을 승인하기 전에는 아무것도 바꾸지 않아요.</string>
+    <string name="agent_plan_go">계획대로 진행</string>
+    <string name="agent_plan_go_message">계획대로 진행해 줘.</string>
+
     <string name="agent_plan_title">계획</string>
     <string name="agent_plan_progress">%2$d단계 중 %1$d단계 완료</string>
     <string name="agent_plan_toggle">계획 펼치기/접기</string>

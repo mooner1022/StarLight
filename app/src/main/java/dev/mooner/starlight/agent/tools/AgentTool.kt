@@ -2,6 +2,7 @@ package dev.mooner.starlight.agent.tools
 
 import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.Part
+import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.provider.ToolSpec
 import dev.mooner.starlight.agent.store.CheckpointStore
 import kotlinx.serialization.json.JsonArray
@@ -60,6 +61,9 @@ interface ToolContext {
 
     /** Keeps what a tool is about to change, so the user can rewind the turn; call it before changing anything. */
     val checkpoint: CheckpointStore.Recorder
+
+    /** Asks the user [questions] and waits: an answer per question, in order, or null if the user skipped them. */
+    suspend fun ask(questions: Questions): List<String>?
 }
 
 class AgentTool(

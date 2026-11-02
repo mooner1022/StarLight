@@ -92,7 +92,8 @@ class Composer(
     init {
         binding.input.doAfterTextChanged { updateSend() }
         binding.send.setOnClickListener {
-            if (isRunning) {
+            // While a run goes on, a written message joins it; an empty field stops it.
+            if (isRunning && !canSend()) {
                 onStop()
                 return@setOnClickListener
             }
@@ -243,8 +244,9 @@ class Composer(
         importing == 0 && (text.isNotBlank() || attachments.isNotEmpty())
 
     private fun updateSend() {
-        binding.send.setImageResource(if (isRunning) R.drawable.ic_agent_stop else R.drawable.ic_agent_send)
-        binding.send.contentDescription = context.getString(if (isRunning) R.string.agent_stop else R.string.agent_send)
+        val stops = isRunning && !canSend()
+        binding.send.setImageResource(if (stops) R.drawable.ic_agent_stop else R.drawable.ic_agent_send)
+        binding.send.contentDescription = context.getString(if (stops) R.string.agent_stop else R.string.agent_send)
         val enabled = isRunning || canSend()
         binding.send.isEnabled = enabled
         binding.send.alpha = if (enabled) 1f else 0.4f

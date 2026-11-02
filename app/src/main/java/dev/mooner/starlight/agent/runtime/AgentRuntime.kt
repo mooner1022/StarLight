@@ -10,6 +10,7 @@ import dev.mooner.starlight.agent.model.ChatMessage
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.NoticeKind
 import dev.mooner.starlight.agent.model.Part
+import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
 import dev.mooner.starlight.agent.net.HttpStatusException
@@ -70,6 +71,8 @@ data class LiveRun(
         CALLING_TOOL,
         RUNNING_TOOL,
         APPROVAL,
+        /** Waiting for the user to answer ask_user. */
+        QUESTION,
         RETRYING,
     }
 }
@@ -90,6 +93,18 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     /** Tools the user allowed for the rest of a conversation, by conversation. */
     private val alwaysAllowed = ConcurrentHashMap<String, MutableSet<String>>()
     private val rewinder = Rewinder(hub)
+
+    /** What the agent asked with the ask_user call [callId], waiting for the user. */
+    data class Question(val callId: String, val questions: Questions)
+
+    /** Each question's answer, in order, or null when the user skipped it. */
+    private val questions = ConcurrentHashMap<String, Pair<Question, CompletableDeferred<List<String>?>>>()
+
+    /** A message the user sent while a run was going on; it joins before the model is asked again. */
+    class Queued(val text: String, val attachments: List<Part.Attachment>)
+
+    /** The messages waiting for each run going on; a run's list is there only while it still takes them. */
+    private val queues = ConcurrentHashMap<String, MutableList<Queued>>()
 
     private val mLive = MutableStateFlow<Map<String, LiveRun>>(emptyMap())
     val live: StateFlow<Map<String, LiveRun>> = mLive.asStateFlow()
@@ -113,6 +128,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     fun chatShown(conversationId: String) {
         mVisible.value = conversationId
         AgentNotifier.cancelApproval(hub, conversationId)
+        AgentNotifier.cancelQuestion(hub, conversationId)
     }
 
     /** The chat went away; a question it was showing moves to a notification. */
@@ -121,11 +137,43 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         pendingApprovals[conversationId]?.let { (callId, description) ->
             AgentNotifier.approvalNeeded(hub, conversationId, callId, description)
         }
+        questions[conversationId]?.let { (question, _) -> AgentNotifier.questionAsked(hub, conversationId, question) }
     }
 
     /** The call [conversationId] waits on the user for, and what it would do. */
     fun pendingApproval(conversationId: String): Pair<String, String>? =
         pendingApprovals[conversationId]
+
+    /** The question the agent is waiting for the user to answer, if any. */
+    fun pendingQuestion(conversationId: String): Question? =
+        questions[conversationId]?.first
+
+    /**
+     * Answers the questions of the call [callId], one answer per question, or skips them with null; false if the
+     * agent isn't waiting on them any more.
+     */
+    fun answer(conversationId: String, callId: String, answers: List<String>?): Boolean {
+        val (question, deferred) = questions[conversationId] ?: return false
+        return question.callId == callId && deferred.complete(answers)
+    }
+
+    /** The messages waiting to join the run going on. */
+    fun queued(conversationId: String): List<Queued> =
+        queues[conversationId]?.let { synchronized(it) { it.toList() } }.orEmpty()
+
+    /**
+     * Adds [text] to the run going on, to be read before the model is asked again. False when no run takes messages,
+     * so that the caller sends it the usual way.
+     */
+    fun queue(conversationId: String, text: String, attachments: List<Part.Attachment>): Boolean {
+        val list = queues[conversationId] ?: return false
+        synchronized(list) {
+            if (queues[conversationId] !== list)
+                return false
+            list += Queued(text, attachments)
+        }
+        return true
+    }
 
     /** What the call [callId] waiting for approval would change, as a diff, if its tool can tell. */
     fun approvalPreview(conversationId: String, callId: String): String? =
@@ -170,6 +218,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 add(switchPart(project))
             // Told along with the message, not shown: what changed since the agent last looked.
             existing?.pendingNote?.let { add(Part.Context(Part.Context.INSTRUCTIONS, it)) }
+            if ((approval ?: existing?.approval?.let(ApprovalPolicy::of)) == ApprovalPolicy.PLAN)
+                add(Part.Context(Part.Context.INSTRUCTIONS, PLAN_MODE_NOTE))
             addAll(attachments)
             if (text.isNotBlank())
                 add(Part.Text(text.trim()))
@@ -313,6 +363,13 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         }
     }
 
+    /** Leaves plan mode and asks the agent, with [text], to carry the plan out; the settings decide what it asks. */
+    fun carryOutPlan(conversationId: String, text: String, project: String?) {
+        check(!isRunning(conversationId)) { "The conversation is still running" }
+        updateConversation(conversationId) { it.copy(approval = null) }
+        send(conversationId, text, emptyList(), project, approval = null)
+    }
+
     fun approvalOf(conversationId: String): ApprovalPolicy =
         hub.store.get(conversationId)?.approval?.let(ApprovalPolicy::of) ?: hub.settings.approvalPolicy
 
@@ -356,11 +413,14 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         mDismissed.update { it - conversationId }
         setLive(conversationId) { LiveRun(conversationId, LiveRun.Phase.WAITING) }
         AgentService.start(hub.context)
+        queues[conversationId] = mutableListOf()
         // Registered before it starts, so that a run that ends at once still clears what it set.
         val job = scope.launch(start = CoroutineStart.LAZY) {
             try {
                 run(conversationId)
             } finally {
+                // Messages still waiting when the run ended otherwise, such as stopped, stay in the conversation.
+                withContext(NonCancellable) { flushQueued(conversationId, closing = true) }
                 if (jobs.remove(conversationId, coroutineContext.job)) {
                     startedAt.remove(conversationId)
                     mDismissed.update { it - conversationId }
@@ -385,10 +445,14 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                     runTools(id, open.first, open.second)
                     continue
                 }
+                // Messages the user sent meanwhile join before the model is asked again.
+                if (flushQueued(id, closing = false))
+                    continue
                 // Notices are for the user; what counts is the last turn the model takes part in.
                 val last = conversation.messages.lastOrNull { message -> message.parts.any { it !is Part.Notice } } ?: return
                 when {
-                    last.role == Role.ASSISTANT -> break
+                    // Done, unless the user wrote more in the meantime.
+                    last.role == Role.ASSISTANT -> if (!flushQueued(id, closing = true)) break
                     else -> {
                         if (steps >= maxSteps) {
                             appendNotice(id, NoticeKind.PAUSED, string(R.string.agent_notice_paused, maxSteps))
@@ -532,6 +596,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         val args: JsonObject = RequestContent.parseArguments(call.arguments)
             ?: return Part.ToolResult(call.id, call.name, RequestContent.invalidJsonResult(call.arguments), isError = true,
                 summary = "Invalid arguments")
+        if (tool.risk != ToolRisk.READ && approvalOf(id) == ApprovalPolicy.PLAN)
+            return Part.ToolResult(call.id, call.name, PLAN_MODE_REFUSAL, isError = true, summary = "Plan mode")
         if (needsApproval(id, tool.risk, tool.name)) {
             val description = runCatching { tool.describe(args) }.getOrDefault(tool.name)
             val preview = tool.preview?.let { preview -> withContext(Dispatchers.IO) { runCatching { preview(args) }.getOrNull() } }
@@ -553,6 +619,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             override fun outbox(): File = hub.attachments.outbox(id)
             override fun addAttachment(name: String, mimeType: String, bytes: ByteArray): Part.Attachment =
                 hub.attachments.add(id, name, mimeType, bytes)
+            override suspend fun ask(questions: Questions): List<String>? =
+                askUser(id, Question(call.id, questions))
             // A turn's changes are kept under the user's message that started it.
             override val checkpoint by lazy {
                 val turn = hub.store.get(id)?.messages?.lastOrNull { it.isUserTurn }?.id ?: messageId
@@ -581,6 +649,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             ApprovalPolicy.AUTO            -> false
             ApprovalPolicy.ASK_DESTRUCTIVE -> risk == ToolRisk.DESTRUCTIVE
             ApprovalPolicy.ASK_WRITES      -> risk != ToolRisk.READ
+            // Tools that change something were refused already.
+            ApprovalPolicy.PLAN            -> false
         }
     }
 
@@ -602,6 +672,53 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             AgentNotifier.cancelApproval(hub, id)
             updateConversation(id) { it.copy(state = RunState.RUNNING) }
         }
+    }
+
+    /** Waits for the user to answer [question], shown in the chat and as a notification. */
+    private suspend fun askUser(id: String, question: Question): List<String>? {
+        val deferred = CompletableDeferred<List<String>?>()
+        questions[id] = question to deferred
+        updateConversation(id) { it.copy(state = RunState.WAITING_APPROVAL) }
+        setLive(id) { LiveRun(id, LiveRun.Phase.QUESTION, tool = ASK_TOOL) }
+        AgentNotifier.questionAsked(hub, id, question)
+        try {
+            return deferred.await()
+        } finally {
+            questions.remove(id)
+            AgentNotifier.cancelQuestion(hub, id)
+            updateConversation(id) { it.copy(state = RunState.RUNNING) }
+        }
+    }
+
+    /**
+     * Adds the messages queued for the run of [id] to the conversation; false if there were none. [closing] stops the
+     * run from taking more when there are none, in the same step, so that none come in after the run's last look.
+     */
+    private fun flushQueued(id: String, closing: Boolean): Boolean {
+        val list = queues[id] ?: return false
+        val taken = synchronized(list) {
+            if (list.isEmpty()) {
+                if (closing)
+                    queues.remove(id, list)
+                return false
+            }
+            list.toList().also { list.clear() }
+        }
+        val now = System.currentTimeMillis()
+        updateConversation(id) { conversation ->
+            val plan = conversation.approval?.let(ApprovalPolicy::of) == ApprovalPolicy.PLAN
+            val messages = taken.map { queued ->
+                ChatMessage(newId("m"), Role.USER, buildList {
+                    if (plan)
+                        add(Part.Context(Part.Context.INSTRUCTIONS, PLAN_MODE_NOTE))
+                    addAll(queued.attachments)
+                    if (queued.text.isNotBlank())
+                        add(Part.Text(queued.text.trim()))
+                }, now)
+            }
+            conversation.copy(messages = conversation.messages + messages, updatedAt = now)
+        }
+        return true
     }
 
     /** Records the approval on the call, for the chat; the model never sees it, so the history it reads stays the same. */
@@ -736,6 +853,12 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         const val MAX_RETRY_WAIT_MILLIS = 60_000L
         const val MAX_TOOL_OUTPUT = 50_000
         const val TITLE_LENGTH = 48
+        const val ASK_TOOL = "ask_user"
+        const val PLAN_MODE_NOTE = "Plan mode is on: look around with the tools that read, and plan, but change " +
+            "nothing yet. Lay the plan out with update_plan and explain it briefly; the user approves it to let you " +
+            "carry it out."
+        const val PLAN_MODE_REFUSAL = "Plan mode is on, so tools that change something don't run. Finish the plan " +
+            "with update_plan and explain it; the user approves it to let you carry it out."
         /** How much of the user's message a note about rewinding quotes, and how many changes it lists. */
         const val NOTE_QUOTE_CHARS = 60
         const val NOTE_ITEMS = 20

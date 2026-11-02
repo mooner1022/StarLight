@@ -96,4 +96,19 @@
             android:paddingHorizontal="14dp"
             android:paddingBottom="10dp"/>
     </dev.mooner.starlight.ui.agent.PlanStepsScroll>
+
+    <TextView
+        android:id="@+id/planGo"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginHorizontal="14dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_agent_button_gold"
+        android:fontFamily="@font/wantedsans_bold"
+        android:gravity="center"
+        android:text="@string/agent_plan_go"
+        android:textColor="@color/agent_on_gold"
+        android:textSize="13.5sp"
+        android:visibility="gone"
+        tools:visibility="visible"/>
 </LinearLayout>

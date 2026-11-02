@@ -105,6 +105,7 @@ internal object AddSheet {
             Triple(ApprovalPolicy.ASK_DESTRUCTIVE, activity.getString(R.string.agent_approval_destructive),
                 activity.getString(R.string.agent_approval_destructive_desc)),
             Triple(ApprovalPolicy.ASK_WRITES, activity.getString(R.string.agent_approval_writes), activity.getString(R.string.agent_approval_writes_desc)),
+            Triple(ApprovalPolicy.PLAN, activity.getString(R.string.agent_approval_plan), activity.getString(R.string.agent_approval_plan_desc)),
         )
         lateinit var sheet: Sheet
         sheet = activity.showSheet {
@@ -130,5 +131,6 @@ internal object AddSheet {
         ApprovalPolicy.AUTO            -> R.string.agent_approval_auto
         ApprovalPolicy.ASK_DESTRUCTIVE -> R.string.agent_approval_destructive
         ApprovalPolicy.ASK_WRITES      -> R.string.agent_approval_writes
+        ApprovalPolicy.PLAN            -> R.string.agent_approval_plan
     })
 }

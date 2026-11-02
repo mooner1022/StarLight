@@ -169,6 +169,32 @@ internal object AgentNotifier {
     fun cancelApproval(hub: AgentHub, conversationId: String) =
         NotificationManagerCompat.from(hub.context).cancel(approvalId(conversationId))
 
+    /** The agent asked the user something; the first options can be picked from the notification. */
+    fun questionAsked(hub: AgentHub, conversationId: String, question: AgentRuntime.Question) {
+        val context = hub.context
+        if (hub.runtime.visibleConversation == conversationId)
+            return
+        val first = question.questions.items.first()
+        val builder = base(context, CHANNEL_ATTENTION)
+            .setContentTitle(context.getString(R.string.agent_notification_question))
+            .setContentText(first.question)
+            .setSubText(hub.store.get(conversationId)?.title.orEmpty())
+            .setStyle(NotificationCompat.BigTextStyle().bigText(question.questions.items.joinToString("\n") { it.question }))
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(openChat(context, conversationId))
+        // One pick answers one question; several questions, or several picks, need the chat.
+        if (question.questions.items.size == 1 && !first.multiple)
+            first.options.take(NOTIFICATION_OPTIONS).forEach { option ->
+                builder.addAction(0, option.label, answerAction(context, conversationId, question.callId, option.label))
+            }
+        notify(context, questionId(conversationId), builder.build())
+    }
+
+    fun cancelQuestion(hub: AgentHub, conversationId: String) =
+        NotificationManagerCompat.from(hub.context).cancel(questionId(conversationId))
+
     fun finished(hub: AgentHub, conversationId: String) {
         val context = hub.context
         if (!hub.settings.notifyOnFinish || hub.runtime.visibleConversation == conversationId)
@@ -206,6 +232,7 @@ internal object AgentNotifier {
         LiveRun.Phase.CALLING_TOOL,
         LiveRun.Phase.RUNNING_TOOL -> context.getString(R.string.agent_phase_tool, ToolLabels.label(context, run.tool))
         LiveRun.Phase.APPROVAL     -> context.getString(R.string.agent_phase_approval)
+        LiveRun.Phase.QUESTION     -> context.getString(R.string.agent_phase_question)
         LiveRun.Phase.RETRYING     -> context.getString(R.string.agent_phase_retrying, run.retry)
     }
 
@@ -235,6 +262,18 @@ internal object AgentNotifier {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
+    private fun answerAction(context: Context, conversationId: String, callId: String, answer: String): PendingIntent =
+        PendingIntent.getBroadcast(
+            context,
+            (AgentActionReceiver.ACTION_ANSWER + conversationId + callId + answer).hashCode(),
+            Intent(context, AgentActionReceiver::class.java)
+                .setAction(AgentActionReceiver.ACTION_ANSWER)
+                .putExtra(AgentActionReceiver.EXTRA_CONVERSATION, conversationId)
+                .putExtra(AgentActionReceiver.EXTRA_CALL, callId)
+                .putExtra(AgentActionReceiver.EXTRA_ANSWER, answer),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+
     private fun dismissed(context: Context, conversationIds: List<String>): PendingIntent =
         PendingIntent.getBroadcast(
             context,
@@ -259,6 +298,11 @@ internal object AgentNotifier {
     private val PLAN_MARKS = mapOf(Plan.Status.COMPLETED to "✓", Plan.Status.IN_PROGRESS to "▶", Plan.Status.PENDING to "○")
 
     private fun approvalId(conversationId: String) = 0x5A2000 + (conversationId.hashCode() and 0xFFF)
+
+    private fun questionId(conversationId: String) = 0x5A5000 + (conversationId.hashCode() and 0xFFF)
+
+    /** How many options a question's notification offers as buttons. */
+    private const val NOTIFICATION_OPTIONS = 3
 
     private fun doneId(conversationId: String) = 0x5A3000 + (conversationId.hashCode() and 0xFFF)
 }

@@ -3,6 +3,7 @@ package dev.mooner.starlight.agent.tools
 import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.CardKind
 import dev.mooner.starlight.agent.model.Plan
+import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.store.AttachmentStore
 import dev.mooner.starlight.agent.store.CheckpointStore
 import dev.mooner.starlight.logging.LogCollector
@@ -289,6 +290,36 @@ class StarLightTools(private val docs: DocsLibrary) {
                 name = project.info.name, project = project.info.name, caption = args.stringArg("caption"),
             )
             ToolOutput("The user now sees a card for ${project.info.name}.", summary = project.info.name, card = card)
+        },
+        tool(
+            "ask_user",
+            "Asks the user to decide something and waits for the answers. Use it, rather than asking in your reply, " +
+                "whenever the next step depends on a choice the user has to make: the chat shows each question as " +
+                "options to tap, one after another, and the user can always write their own answer instead. Ask " +
+                "1 to ${Questions.MAX_QUESTIONS} related questions in one call, each with 2 to ${Questions.MAX_OPTIONS} " +
+                "options; set multiple where several options can apply together.",
+            ToolRisk.READ,
+            params = {
+                objectArray("questions", "The questions, asked in this order.") {
+                    string("question", "The question, in the user's language.")
+                    string("header", "A label of one or two words for the question, such as \"Prefix\".", optional = true)
+                    objectArray("options", "2 to ${Questions.MAX_OPTIONS} choices. Don't add an 'other' choice; the " +
+                        "user can always write their own.") {
+                        string("label", "The choice, in a few words.")
+                        string("description", "What picking it means, in one short line.", optional = true)
+                    }
+                    boolean("multiple", "Whether several of the choices can be picked together.", optional = true)
+                }
+            },
+            describe = { "Ask the user" },
+        ) { args ->
+            val questions = try {
+                Questions.parse(args)
+            } catch (e: IllegalArgumentException) {
+                throw ToolException(e.message ?: "Invalid questions")
+            }
+            val answers = ask(questions)?.map(String::trim)
+            ToolOutput(Questions.result(questions, answers), summary = answers?.joinToString(" · ") ?: "-")
         },
         tool(
             Plan.TOOL,
