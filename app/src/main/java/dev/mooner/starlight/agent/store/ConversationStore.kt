@@ -7,13 +7,15 @@ import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
 import dev.mooner.starlight.agent.model.plainPreview
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import java.io.File
-import java.util.concurrent.ConcurrentHashMap
+
+private val LOG = LoggerFactory.logger("AgentStore")
 
 /** What the conversation list shows, kept in an index so that the list doesn't read every conversation. */
 @Serializable
@@ -29,32 +31,34 @@ data class ConversationSummary(
 )
 
 /**
- * Conversations as JSON files in the app's private storage, one per conversation, written atomically. Open
- * conversations stay in memory; [summaries] is what lists observe.
+ * Conversations as JSON files in the app's private storage, one per conversation, written atomically. The ones
+ * used last stay in memory; [summaries] is what lists observe.
  */
 class ConversationStore(root: File) {
 
     private val conversationsDir = File(root, "conversations").apply { mkdirs() }
     private val indexFile = AtomicFile(File(root, "index.json"))
-    private val cache = ConcurrentHashMap<String, Conversation>()
+    /** Every change is written before it is cached, so a conversation dropped from here is read back as it was. */
+    private val cache = object : LinkedHashMap<String, Conversation>(MAX_CACHED, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Conversation>?) = size > MAX_CACHED
+    }
     private val lock = Any()
 
     private val mSummaries = MutableStateFlow(loadIndex())
     /** Newest first. */
     val summaries: StateFlow<List<ConversationSummary>> = mSummaries.asStateFlow()
 
-    private val mChanges = MutableStateFlow<Map<String, Conversation>>(emptyMap())
-    /** Conversations as they change, for open chat screens. */
-    val changes: StateFlow<Map<String, Conversation>> = mChanges.asStateFlow()
+    private val mChanges = MutableStateFlow(0L)
+    /** Goes up with every change to any conversation; open chat screens read theirs again with [get]. */
+    val changes: StateFlow<Long> = mChanges.asStateFlow()
 
     fun get(id: String): Conversation? =
-        cache[id] ?: synchronized(lock) {
-            cache[id] ?: read(id)?.also { cache[id] = it }
+        cached(id) ?: synchronized(lock) {
+            cached(id) ?: read(id)?.also(::remember)
         }
 
     fun save(conversation: Conversation) {
         synchronized(lock) {
-            cache[conversation.id] = conversation
             val file = AtomicFile(fileOf(conversation.id))
             val out = file.startWrite()
             try {
@@ -64,11 +68,15 @@ class ConversationStore(root: File) {
                 file.failWrite(out)
                 throw e
             }
+            remember(conversation)
             val summary = summaryOf(conversation)
-            mSummaries.update { list -> (listOf(summary) + list.filter { it.id != conversation.id }).sortedByDescending { it.updatedAt } }
-            writeIndex()
+            // Many changes, such as an approval or the run state, leave what the list shows as it was.
+            if (mSummaries.value.firstOrNull { it.id == conversation.id } != summary) {
+                mSummaries.update { list -> (listOf(summary) + list.filter { it.id != conversation.id }).sortedByDescending { it.updatedAt } }
+                writeIndex()
+            }
         }
-        mChanges.update { it + (conversation.id to conversation) }
+        mChanges.update { it + 1 }
     }
 
     /** Applies [block] to the stored conversation and saves the result. */
@@ -83,12 +91,12 @@ class ConversationStore(root: File) {
 
     fun delete(id: String) {
         synchronized(lock) {
-            cache.remove(id)
+            synchronized(cache) { cache.remove(id) }
             fileOf(id).delete()
             mSummaries.update { list -> list.filter { it.id != id } }
             writeIndex()
         }
-        mChanges.update { it - id }
+        mChanges.update { it + 1 }
     }
 
     /** Marks runs the process didn't finish, after the app was killed in the middle of one. */
@@ -97,6 +105,13 @@ class ConversationStore(root: File) {
             val conversation = get(summary.id) ?: continue
             save(conversation.copy(state = RunState.INTERRUPTED))
         }
+    }
+
+    private fun cached(id: String): Conversation? =
+        synchronized(cache) { cache[id] }
+
+    private fun remember(conversation: Conversation) {
+        synchronized(cache) { cache[conversation.id] = conversation }
     }
 
     private fun read(id: String): Conversation? {
@@ -128,7 +143,9 @@ class ConversationStore(root: File) {
         try {
             out.write(AgentJson.encodeToString(mSummaries.value).toByteArray())
             indexFile.finishWrite(out)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            // The list still has it; the index is rebuilt from the files if it is lost.
+            LOG.warn { "Couldn't write the conversation index: $e" }
             indexFile.failWrite(out)
         }
     }
@@ -154,6 +171,8 @@ class ConversationStore(root: File) {
 
     private companion object {
         const val PREVIEW_LENGTH = 140
+        /** Conversations kept in memory; a run reads its own on every step, the rest come back from disk. */
+        const val MAX_CACHED = 8
         val ID_REGEX = Regex("^[A-Za-z0-9_-]+$")
     }
 }

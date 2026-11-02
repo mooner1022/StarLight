@@ -181,9 +181,12 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
 
     /** Sets when [conversationId] asks before running tools; null follows the settings. Applies to a run going on. */
     fun setApproval(conversationId: String, approval: ApprovalPolicy?) {
-        if (hub.store.get(conversationId)?.approval == approval?.id)
-            return
-        updateConversation(conversationId) { it.copy(approval = approval?.id) }
+        // Called from the screen as the user picks; the write goes off the main thread.
+        scope.launch(Dispatchers.IO) {
+            if (hub.store.get(conversationId)?.approval == approval?.id)
+                return@launch
+            updateConversation(conversationId) { it.copy(approval = approval?.id) }
+        }
     }
 
     fun approvalOf(conversationId: String): ApprovalPolicy =

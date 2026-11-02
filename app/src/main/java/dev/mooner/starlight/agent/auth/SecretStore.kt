@@ -5,6 +5,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.core.content.edit
 import java.security.KeyStore
+import java.util.concurrent.ConcurrentHashMap
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -20,7 +21,20 @@ class SecretStore(context: Context) {
 
     private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun get(name: String): String? {
+    /**
+     * What [get] returned for each name. Decrypting goes through the Keystore service, and screens ask whether
+     * providers are set up as they draw; only this store writes the values, so the cache can't go stale.
+     */
+    private val cache = ConcurrentHashMap<String, Entry>()
+    @Volatile
+    private var secretKey: SecretKey? = null
+
+    private class Entry(val value: String?)
+
+    fun get(name: String): String? =
+        cache.getOrPut(name) { Entry(decrypt(name)) }.value
+
+    private fun decrypt(name: String): String? {
         val stored = prefs.getString(name, null) ?: return null
         return runCatching {
             val bytes = java.util.Base64.getDecoder().decode(stored)
@@ -34,18 +48,23 @@ class SecretStore(context: Context) {
     fun put(name: String, value: String?) {
         if (value.isNullOrEmpty()) {
             prefs.edit { remove(name) }
+            cache[name] = Entry(null)
             return
         }
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, key())
         val encrypted = cipher.iv + cipher.doFinal(value.toByteArray())
         prefs.edit { putString(name, java.util.Base64.getEncoder().encodeToString(encrypted)) }
+        cache[name] = Entry(value)
     }
 
     fun has(name: String): Boolean =
         get(name) != null
 
-    private fun key(): SecretKey {
+    private fun key(): SecretKey =
+        secretKey ?: synchronized(this) { secretKey ?: loadKey().also { secretKey = it } }
+
+    private fun loadKey(): SecretKey {
         val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
         (keyStore.getEntry(KEY_ALIAS, null) as? KeyStore.SecretKeyEntry)?.let { return it.secretKey }
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE)

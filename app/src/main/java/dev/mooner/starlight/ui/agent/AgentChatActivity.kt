@@ -31,6 +31,7 @@ import dev.mooner.starlight.ui.common.showSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
@@ -197,7 +198,8 @@ class AgentChatActivity : AppCompatActivity() {
     private fun observe() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                val conversations = hub.store.changes.map { it[conversationId] ?: hub.store.get(conversationId) }
+                // Any conversation changing bumps the store's count; the same object back means this one didn't.
+                val conversations = hub.store.changes.map { hub.store.get(conversationId) }.distinctUntilChanged { a, b -> a === b }
                 val live = hub.runtime.live.map { it[conversationId] }.sample(LIVE_INTERVAL_MILLIS)
                 combine(conversations, live) { conversation, run -> conversation to run }
                     .collect { (conversation, run) -> render(conversation, run) }

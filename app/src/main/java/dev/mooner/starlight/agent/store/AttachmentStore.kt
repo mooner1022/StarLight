@@ -21,12 +21,16 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Files the user attaches, copied into the app's storage right away: the picker's permission to read a content URI
  * ends with the screen, but a run may need the file much later. Images are scaled down to what models look at.
  */
 class AttachmentStore(private val root: File) : AttachmentSource {
+
+    /** Where each attachment is, so that requests, which name only the attachment, don't search every folder. */
+    private val locations = ConcurrentHashMap<String, File>()
 
     fun dir(conversationId: String): File =
         File(root, conversationId).apply { mkdirs() }
@@ -35,8 +39,13 @@ class AttachmentStore(private val root: File) : AttachmentSource {
     fun outbox(conversationId: String): File =
         File(dir(conversationId), OUTBOX).apply { mkdirs() }
 
-    fun file(attachment: Part.Attachment): File? =
-        root.listFiles().orEmpty().firstNotNullOfOrNull { dir -> File(dir, attachment.id).takeIf(File::isFile) }
+    fun file(attachment: Part.Attachment): File? {
+        locations[attachment.id]?.takeIf(File::isFile)?.let { return it }
+        val found = root.listFiles().orEmpty().firstNotNullOfOrNull { dir -> File(dir, attachment.id).takeIf(File::isFile) }
+            ?: return null
+        locations[attachment.id] = found
+        return found
+    }
 
     /** The file a card points at: in its project, or in the conversation's outbox. */
     fun cardFile(conversationId: String, card: Card): File? {
@@ -81,7 +90,9 @@ class AttachmentStore(private val root: File) : AttachmentSource {
         val id = "att_" + UUID.randomUUID().toString().replace("-", "").take(12)
         val kind = kindOf(name, mimeType, bytes)
         val (storedMime, storedBytes) = if (kind == AttachmentKind.IMAGE) shrinkImage(mimeType, bytes) else mimeType to bytes
-        File(dir(conversationId), id).writeBytes(storedBytes)
+        val file = File(dir(conversationId), id)
+        file.writeBytes(storedBytes)
+        locations[id] = file
         return Part.Attachment(
             id = id,
             name = name,
@@ -96,7 +107,9 @@ class AttachmentStore(private val root: File) : AttachmentSource {
     }
 
     fun deleteAll(conversationId: String) {
-        File(root, conversationId).deleteRecursively()
+        val dir = File(root, conversationId)
+        locations.values.removeAll { it.parentFile == dir }
+        dir.deleteRecursively()
     }
 
     override fun bytes(attachment: Part.Attachment): ByteArray =
@@ -104,6 +117,31 @@ class AttachmentStore(private val root: File) : AttachmentSource {
 
     override fun pdfPages(attachment: Part.Attachment): List<ByteArray> {
         val file = file(attachment) ?: throw IOException("The attachment ${attachment.name} is missing")
+        // Every request sends the whole history, so the pages are rendered once and kept beside the PDF.
+        val cache = pagesDir(file)
+        readPages(cache)?.let { return it }
+        val pages = renderPages(file)
+        runCatching { writePages(cache, pages) }
+        return pages
+    }
+
+    private fun pagesDir(file: File): File =
+        File(file.parentFile, file.name + PAGES_SUFFIX)
+
+    private fun readPages(dir: File): List<ByteArray>? {
+        val count = File(dir, PAGE_COUNT_FILE).takeIf(File::isFile)?.readText()?.toIntOrNull() ?: return null
+        return (0 until count).map { index -> File(dir, "$index.jpg").takeIf(File::isFile)?.readBytes() ?: return null }
+    }
+
+    private fun writePages(dir: File, pages: List<ByteArray>) {
+        dir.deleteRecursively()
+        dir.mkdirs()
+        pages.forEachIndexed { index, bytes -> File(dir, "$index.jpg").writeBytes(bytes) }
+        // Written last, so that a half-written folder reads as missing.
+        File(dir, PAGE_COUNT_FILE).writeText(pages.size.toString())
+    }
+
+    private fun renderPages(file: File): List<ByteArray> {
         return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
             PdfRenderer(descriptor).use { renderer ->
                 (0 until minOf(renderer.pageCount, MAX_PDF_PAGES)).map { index ->
@@ -183,5 +221,7 @@ class AttachmentStore(private val root: File) : AttachmentSource {
         val TEXT_EXTENSIONS = setOf("js", "mjs", "ts", "json", "txt", "md", "csv", "xml", "html", "css", "kt", "java", "py", "log", "yml", "yaml")
         val ID_REGEX = Regex("^att_[a-f0-9]+$")
         const val OUTBOX = "out"
+        const val PAGES_SUFFIX = ".pages"
+        const val PAGE_COUNT_FILE = "count"
     }
 }
