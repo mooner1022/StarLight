@@ -1,6 +1,6 @@
 ---
 title: 스크립트 API
-description: 모든 프로젝트에서 쓸 수 있는 StarLight 기본 전역 API(Api, Log, DataBase, FileStream, Device 등)를 정리했어요.
+description: 모든 프로젝트에서 쓸 수 있는 StarLight 기본 전역 API(Api, 파일 보내기 MediaSharer·room.sendMedia, Log, DataBase, FileStream, Device 등)를 정리했어요.
 order: 2
 ---
 
@@ -67,7 +67,7 @@ export async function onMessage(msg) {
 ```
 
 > [!TIP]
-> `send_debug_message`의 답장에는 봇이 보낸 파일이 `files`(이름, 형식, 크기)로 들어와요.
+> `send_debug_message`의 답장에는 봇이 보낸 파일이 `files`(이름, 형식, 크기)로 들어와요. 이미지에는 `image` ID가 붙어서, `view_image`에 넘기면 그 이미지를 직접 볼 수 있어요.
 
 전송 설정(다운로드 제한 시간, 최대 파일 크기, 전송 후 동작, 캐시)은 앱의 **설정 > 미디어 전송**에 있어요.
 

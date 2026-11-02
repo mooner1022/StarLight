@@ -83,6 +83,16 @@ data class ChatMessage(
 
     val toolCalls: List<Part.ToolCall>
         get() = parts.filterIsInstance<Part.ToolCall>()
+
+    /** The files this message refers to: the user's attachments and the images tools showed. */
+    val attachments: List<Part.Attachment>
+        get() = parts.flatMap { part ->
+            when (part) {
+                is Part.Attachment -> listOf(part)
+                is Part.ToolResult -> part.images
+                else -> emptyList()
+            }
+        }
 }
 
 /**
@@ -158,6 +168,9 @@ sealed class Part {
         val summary: String? = null,
         /** Something the tool hands to the user, shown as a card under the call. */
         val card: Card? = null,
+        /** Images the tool showed the model, kept as attachments of the conversation. Left out of the file when empty. */
+        @EncodeDefault(EncodeDefault.Mode.NEVER)
+        val images: List<Attachment> = emptyList(),
     ) : Part()
 
     /** Something the app tells the user that the model never sees, such as a stopped run. */

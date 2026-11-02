@@ -208,8 +208,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             updatedAt = System.currentTimeMillis(),
         ))
         // Files only the removed messages had go with them.
-        val stillUsed = (kept.flatMap { it.parts } + attachments).filterIsInstance<Part.Attachment>().mapTo(HashSet()) { it.id }
-        conversation.messages.drop(index).flatMap { it.parts }.filterIsInstance<Part.Attachment>()
+        val stillUsed = (kept.flatMap { it.attachments } + attachments).mapTo(HashSet()) { it.id }
+        conversation.messages.drop(index).flatMap { it.attachments }
             .filter { it.id !in stillUsed }
             .forEach { hub.attachments.delete(conversationId, it.id) }
         send(conversationId, text, attachments, project, approval, edited = true)
@@ -456,6 +456,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             override val conversationId: String = id
             override fun attachmentFile(attachmentId: String): File? = hub.attachments.file(id, attachmentId)
             override fun outbox(): File = hub.attachments.outbox(id)
+            override fun addAttachment(name: String, mimeType: String, bytes: ByteArray): Part.Attachment =
+                hub.attachments.add(id, name, mimeType, bytes)
         }
         val output = try {
             tool.run(context, args)
@@ -468,7 +470,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             LOG.warn { "Tool ${tool.name} failed: $e" }
             ToolOutput.error("${tool.name} failed: ${e.message ?: e}")
         }
-        return Part.ToolResult(call.id, call.name, cap(output.text), output.isError, output.summary, output.card)
+        return Part.ToolResult(call.id, call.name, cap(output.text), output.isError, output.summary, output.card, output.images)
     }
 
     private fun needsApproval(id: String, risk: ToolRisk, name: String): Boolean {

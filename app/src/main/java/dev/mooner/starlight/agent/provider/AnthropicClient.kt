@@ -23,6 +23,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 
 /**
@@ -121,7 +122,7 @@ class AnthropicClient(
             when (message.role) {
                 Role.USER      -> add("user", userBlocks(message, request.attachments))
                 Role.ASSISTANT -> add("assistant", assistantBlocks(message))
-                Role.TOOL      -> add("user", toolResultBlocks(message))
+                Role.TOOL      -> add("user", toolResultBlocks(message, request.attachments))
             }
         }
         return buildJsonArray {
@@ -141,14 +142,7 @@ class AnthropicClient(
                 is Part.Attachment -> when (part.kind) {
                     AttachmentKind.IMAGE -> {
                         texts += RequestContent.attachmentLabel(part)
-                        media += buildJsonObject {
-                            put("type", "image")
-                            putJsonObject("source") {
-                                put("type", "base64")
-                                put("media_type", part.mimeType)
-                                put("data", RequestContent.base64(source.bytes(part)))
-                            }
-                        }
+                        media += imageBlock(part, source)
                     }
                     AttachmentKind.PDF -> {
                         texts += RequestContent.attachmentLabel(part)
@@ -200,12 +194,32 @@ class AnthropicClient(
         }
     }
 
-    private fun toolResultBlocks(message: ChatMessage): List<JsonElement> =
+    private fun imageBlock(image: Part.Attachment, source: AttachmentSource): JsonObject = buildJsonObject {
+        put("type", "image")
+        putJsonObject("source") {
+            put("type", "base64")
+            put("media_type", image.mimeType)
+            put("data", RequestContent.base64(source.bytes(image)))
+        }
+    }
+
+    private fun toolResultBlocks(message: ChatMessage, source: AttachmentSource): List<JsonElement> =
         message.parts.filterIsInstance<Part.ToolResult>().map { result ->
             buildJsonObject {
                 put("type", "tool_result")
                 put("tool_use_id", toolUseId(result.callId))
-                put("content", result.output)
+                if (result.images.isEmpty())
+                    put("content", result.output)
+                else
+                    // A tool result can hold images; like the user's, they go before the text.
+                    putJsonArray("content") {
+                        for (image in result.images)
+                            add(imageBlock(image, source))
+                        addJsonObject {
+                            put("type", "text")
+                            put("text", (listOf(result.output) + result.images.map(RequestContent::attachmentLabel)).joinToString("\n"))
+                        }
+                    }
                 if (result.isError)
                     put("is_error", true)
             }

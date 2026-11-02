@@ -201,6 +201,7 @@
     <string name="agent_tool_delete_project">Delete a project</string>
     <string name="agent_tool_debug_message">Tested in the debug room</string>
     <string name="agent_tool_debug_replies">Checked debug room replies</string>
+    <string name="agent_tool_view_image">Looked at an image</string>
     <string name="agent_tool_save_attachment">Saved an attachment</string>
     <string name="agent_tool_send_file">Sent a file</string>
     <string name="agent_tool_show_project">Showed a project</string>

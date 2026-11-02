@@ -1,6 +1,7 @@
 package dev.mooner.starlight.agent.tools
 
 import dev.mooner.starlight.agent.model.Card
+import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.provider.ToolSpec
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -30,6 +31,8 @@ class ToolOutput(
     val summary: String? = null,
     /** Something to put in front of the user, such as a file or project card. */
     val card: Card? = null,
+    /** Images for the model to see with the result, added with [ToolContext.addAttachment]. */
+    val images: List<Part.Attachment> = emptyList(),
 ) {
     companion object {
         fun error(message: String) = ToolOutput(message, isError = true, summary = message)
@@ -48,6 +51,9 @@ interface ToolContext {
 
     /** Where files the agent makes for the user, outside any project, are kept. */
     fun outbox(): File
+
+    /** Adds a file to this conversation's attachments, as an attached one is kept; large images are scaled down. */
+    fun addAttachment(name: String, mimeType: String, bytes: ByteArray): Part.Attachment
 }
 
 class AgentTool(

@@ -29,6 +29,9 @@ internal object SystemPrompt {
         - onMessage(event) is called for each received chat message. event.message is the text, event.sender.name the
           sender, event.room.name the room, event.room.send(text) replies to that room, event.room.isGroupChat() and
           event.room.isDebugRoom() are methods (call them with parentheses).
+        - To send images or other files, use MediaSharer.send(event, files), which takes paths relative to the project,
+          or event.room.sendMedia(files), which doesn't. Both work in the debug room too, and view_image shows you an
+          image the bot sent there. read_docs app/reference/script-api has the details.
         - Other events exist (message deletion, notifications, compile, plugins); list_events lists them, and a project
           only receives the events allowed for it.
         - An unhandled error in an event function is logged and, by default, turns the project off.
