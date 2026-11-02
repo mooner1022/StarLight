@@ -83,6 +83,8 @@ internal object ChatRows {
     /** [expandedGroups] holds the [ChatRow.ToolGroup] ids the user opened; groups start collapsed. */
     fun build(hub: AgentHub, conversation: Conversation, live: LiveRun?, expandedGroups: Set<String> = emptySet()): List<ChatRow> {
         val rows = mutableListOf<ChatRow>()
+        // Only the call the run waits on can be answered; one saved as pending before the app was killed can't.
+        val awaited = hub.runtime.pendingApproval(conversation.id)?.first
         val results = conversation.messages
             .filter { it.role == Role.TOOL }
             .flatMap { it.parts.filterIsInstance<Part.ToolResult>() }
@@ -130,7 +132,7 @@ internal object ChatRows {
                                         run += ChatRow.Tool(part, result, running)
                                     }
                                 }
-                                if (part.approval == Approval.PENDING && result == null) {
+                                if (part.approval == Approval.PENDING && result == null && part.id == awaited) {
                                     val args = RequestContent.parseArguments(part.arguments)
                                     val description = args?.let { hub.tools.find(part.name)?.describe?.invoke(it) } ?: part.name
                                     run += ChatRow.ApprovalRequest(part, description)
@@ -323,7 +325,8 @@ class ChatAdapter(
             result.isError                   -> R.drawable.ic_agent_close to R.color.agent_error
             else                             -> R.drawable.ic_agent_check to R.color.agent_ok
         }
-        binding.progress.isVisible = result == null && call.approval != Approval.PENDING && call.approval != Approval.DENIED
+        // Only the call running now spins; calls still to run, or cut off by a stop or a crash, show no status.
+        binding.progress.isVisible = row.running
         binding.status.isVisible = statusIcon != null
         if (statusIcon != null && statusColor != null) {
             binding.status.setImageResource(statusIcon)

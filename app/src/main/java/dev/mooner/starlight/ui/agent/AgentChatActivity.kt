@@ -131,6 +131,26 @@ class AgentChatActivity : AppCompatActivity() {
             composer.focus()
     }
 
+    /**
+     * This screen is single-top, so a notification for another conversation, tapped while it is on top, arrives here
+     * instead of opening a screen of its own. It then switches to that conversation.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val target = intent.getStringExtra(EXTRA_CONVERSATION) ?: hub.runtime.newConversationId()
+        if (target != conversationId) {
+            // onPause already hid the old conversation; onResume shows this one.
+            conversationId = target
+            openedFor = intent.getStringExtra(EXTRA_PROJECT)
+            sessionLoaded = false
+            expandedGroups.clear()
+            composer.clear()
+            render(hub.store.get(conversationId), hub.runtime.live.value[conversationId])
+        }
+        intent.getStringExtra(EXTRA_TEXT)?.let { composer.text = it }
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(EXTRA_CONVERSATION, conversationId)
