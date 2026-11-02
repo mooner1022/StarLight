@@ -64,6 +64,35 @@ class ScriptHostPolicyTest {
             "typeof java.lang.System.loadLibrary === 'function' && typeof java.lang.System.load === 'function'",
             "const S = Java.type('java.lang.System'); typeof S.loadLibrary === 'function' && typeof S.load === 'function'",
         ),
+        // Rhino and NeonJS can both look up a method by its signature as well as by its name.
+        "System.load by signature" to Snippet(
+            "typeof java.lang.System['load(java.lang.String)'] === 'function' && " +
+                "typeof java.lang.System['loadLibrary(java.lang.String)'] === 'function'",
+            "const S = Java.type('java.lang.System'); typeof S['load(java.lang.String)'] === 'function' && " +
+                "typeof S['loadLibrary(java.lang.String)'] === 'function'",
+        ),
+        "Class.forName by signature" to Snippet(
+            "java.lang.Class['forName(java.lang.String)']('java.lang.String').getName()",
+            "Java.isType(Java.type('java.lang.Class')['forName(java.lang.String)']('java.lang.String'))",
+        ),
+        "getClassLoader() by signature" to Snippet(
+            "new java.util.ArrayList().getClass()['getClassLoader()']() !== undefined",
+            null,
+        ),
+        // Rhino turns getters into properties and reaches static methods through instances.
+        "classLoader property" to Snippet(
+            // ArrayList comes from the boot class loader, which is null; JUnit's classes come from the app's.
+            "new org.junit.runner.Result().getClass().classLoader.loadClass('java.lang.String').getName()",
+            null,
+        ),
+        "forName through an instance" to Snippet(
+            "new java.util.ArrayList().getClass().forName('java.lang.String').getName()",
+            null,
+        ),
+        "Os.execve" to Snippet(
+            "typeof Packages.android.system.Os.execve === 'function' && typeof Packages.android.system.Os.execv === 'function'",
+            "const O = Java.type('android.system.Os'); typeof O.execve === 'function' && typeof O.execv === 'function'",
+        ),
     )
 
     private val allowed = mapOf(
@@ -97,6 +126,7 @@ class ScriptHostPolicyTest {
             "java.lang.Runtime", "java.lang.ProcessBuilder", "android.content.pm.PackageInstaller",
             "android.content.pm.PackageInstaller\$Session", "org.mozilla.javascript.Context",
             "com.faendir.rhino_android.AndroidContextFactory", "dev.mooner.neonjs.NeonEngine", "com.android.dx.dex.DexOptions",
+            "android.system.Os", "libcore.io.Libcore",
         ))
             assertTrue(name, ScriptHostPolicy.isClassNameDenied(name))
         for (name in listOf("java.lang.System", "java.lang.Thread", "java.lang.Class", "java.util.ArrayList", "android.webkit.WebView"))

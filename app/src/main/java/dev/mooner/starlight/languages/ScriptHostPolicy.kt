@@ -28,6 +28,7 @@ object ScriptHostPolicy {
         "com.sun.",
         "jdk.internal.",
         "com.android.dx.",             // turns class files into dex
+        "libcore.",                    // libcore.io.Libcore.os: the hidden twin of android.system.Os
         "org.mozilla.javascript.",     // Rhino: contexts without these checks, class generation
         "com.faendir.rhino_android.",
         "dev.mooner.neonjs.",          // NeonJS: engines without these checks, class generation
@@ -40,6 +41,8 @@ object ScriptHostPolicy {
         "java.lang.ProcessBuilder",
         "java.lang.ProcessHandle",
         "java.lang.SecurityManager",
+        // Raw system calls: execv/execve replace the app's process with any file, such as a downloaded one.
+        "android.system.Os",
         "android.content.pm.PackageInstaller",
         "android.content.pm.PackageInstaller\$Session",
         "android.content.pm.PackageInstaller\$SessionParams",

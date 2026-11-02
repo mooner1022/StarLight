@@ -50,7 +50,7 @@ class PrimitiveWrapFactory(
             if (isDenied(name)) Scriptable.NOT_FOUND else super.get(name, start)
 
         private fun isDenied(name: String): Boolean =
-            ScriptHostPolicy.isMemberDenied(javaObject.javaClass, name)
+            isMemberDenied(javaObject.javaClass, name)
     }
 
     private class FilteredJavaClass(scope: Scriptable?, javaClass: Class<*>) : NativeJavaClass(scope, javaClass) {
@@ -62,10 +62,17 @@ class PrimitiveWrapFactory(
             if (isDenied(name)) Scriptable.NOT_FOUND else super.get(name, start)
 
         private fun isDenied(name: String): Boolean =
-            ScriptHostPolicy.isMemberDenied(classObject, name)
+            isMemberDenied(classObject, name)
     }
 
     companion object {
+
+        /**
+         * Rhino also finds methods by signature, as in `System["load(java.lang.String)"]`, so only the
+         * name before the signature is checked.
+         */
+        private fun isMemberDenied(cls: Class<*>, name: String): Boolean =
+            ScriptHostPolicy.isMemberDenied(cls, name.substringBefore('('))
 
         private val shutter = ClassShutter { name -> !ScriptHostPolicy.isClassNameDenied(name) }
 
