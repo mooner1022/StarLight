@@ -134,6 +134,10 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
+        <include
+            android:id="@+id/plan"
+            layout="@layout/view_agent_plan"/>
+
         <LinearLayout
             android:id="@+id/resumeBar"
             android:layout_width="match_parent"

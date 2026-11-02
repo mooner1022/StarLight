@@ -3,6 +3,7 @@ package dev.mooner.starlight.agent.runtime
 import android.content.Context
 import androidx.annotation.DrawableRes
 import dev.mooner.starlight.R
+import dev.mooner.starlight.agent.model.Plan
 import dev.mooner.starlight.agent.provider.RequestContent
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -38,6 +39,9 @@ object ToolLabels {
         "save_attachment" to Label(R.string.agent_tool_save_attachment, R.drawable.ic_agent_folder),
         "send_file" to Label(R.string.agent_tool_send_file, R.drawable.ic_agent_attach),
         "show_project" to Label(R.string.agent_tool_show_project, R.drawable.ic_round_projects_24),
+        Plan.TOOL to Label(R.string.agent_tool_update_plan, R.drawable.ic_agent_check),
+        "ask_user" to Label(R.string.agent_tool_ask_user, R.drawable.ic_round_insert_comment_24),
+        "web_fetch" to Label(R.string.agent_tool_web_fetch, R.drawable.ic_round_search_24),
     )
 
     fun label(context: Context, name: String?): String =

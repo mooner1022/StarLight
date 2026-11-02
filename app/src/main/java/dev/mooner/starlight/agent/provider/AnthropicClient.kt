@@ -81,7 +81,7 @@ class AnthropicClient(
                 put("cache_control", EPHEMERAL)
             }
         })
-        if (request.tools.isNotEmpty())
+        if (request.tools.isNotEmpty() || request.webSearch)
             put("tools", buildJsonArray {
                 for (tool in request.tools.sortedBy(ToolSpec::name))
                     addJsonObject {
@@ -90,6 +90,13 @@ class AnthropicClient(
                         put("input_schema", tool.parameters)
                         // Lets file bodies stream as they are written; arguments are checked before a tool runs.
                         put("eager_input_streaming", true)
+                    }
+                // Anthropic runs the searches itself; their calls and results come back as blocks of the turn.
+                if (request.webSearch)
+                    addJsonObject {
+                        put("type", WEB_SEARCH_TOOL)
+                        put("name", "web_search")
+                        put("max_uses", MAX_SEARCHES)
                     }
             })
         put("messages", messages(request))
@@ -336,12 +343,16 @@ class AnthropicClient(
                             json["input"] = RequestContent.parseArguments(arguments) ?: JsonObject(emptyMap())
                             parts += Part.ToolCall(json.string("id").orEmpty(), json.string("name").orEmpty(), arguments.ifBlank { "{}" })
                         }
+                        // A search Anthropic ran: kept for the turn's replay, with the query it streamed.
+                        "server_tool_use" -> RequestContent.parseArguments(block.arguments.toString())
+                            ?.takeIf { block.arguments.isNotEmpty() }?.let { json["input"] = it }
                     }
                     add(JsonObject(json))
                 }
             }
             val reason = when (stopReason) {
-                "end_turn", "stop_sequence", "pause_turn" -> StopReason.END
+                "end_turn", "stop_sequence"               -> StopReason.END
+                "pause_turn"                              -> StopReason.PAUSE
                 "tool_use"                                -> StopReason.TOOL_USE
                 "max_tokens", "model_context_window_exceeded" -> StopReason.MAX_TOKENS
                 "refusal"                                 -> StopReason.REFUSAL
@@ -355,6 +366,8 @@ class AnthropicClient(
         const val DEFAULT_BASE_URL = "https://api.anthropic.com"
         const val API_VERSION = "2026-10-21"
         private const val FALLBACK_BETA = "server-side-fallback-2026-07-01"
+        private const val WEB_SEARCH_TOOL = "web_search_20250305"
+        private const val MAX_SEARCHES = 5
 
         private val EPHEMERAL = buildJsonObject { put("type", "ephemeral") }
 

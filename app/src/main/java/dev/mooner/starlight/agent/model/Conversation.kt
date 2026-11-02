@@ -36,6 +36,8 @@ data class Conversation(
     val state: RunState = RunState.IDLE,
     val error: String? = null,
     val usage: TurnUsage = TurnUsage(),
+    /** Something the agent should know with the user's next message, such as files the user rewound meanwhile. */
+    val pendingNote: String? = null,
 ) {
     companion object {
         const val VERSION = 1
@@ -77,12 +79,18 @@ data class ChatMessage(
     /** The user rewrote an earlier message into this one; the chat marks it. Left out of the file when false. */
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     val edited: Boolean = false,
+    /** This message summarizes the conversation before it; see [Compaction]. */
+    val compaction: Compaction? = null,
 ) {
     val text: String
         get() = parts.filterIsInstance<Part.Text>().joinToString("\n\n") { it.text }
 
     val toolCalls: List<Part.ToolCall>
         get() = parts.filterIsInstance<Part.ToolCall>()
+
+    /** A message the user wrote, as opposed to one the app sends on its own; each starts a run of the agent. */
+    val isUserTurn: Boolean
+        get() = role == Role.USER && parts.any { it !is Part.Context || it.label !in Part.Context.HIDDEN }
 
     /** The files this message refers to: the user's attachments and the images tools showed. */
     val attachments: List<Part.Attachment>
@@ -171,6 +179,8 @@ sealed class Part {
         /** Images the tool showed the model, kept as attachments of the conversation. Left out of the file when empty. */
         @EncodeDefault(EncodeDefault.Mode.NEVER)
         val images: List<Attachment> = emptyList(),
+        /** What the tool changed in a file, as unified-diff text, for the chat; the model doesn't get it. */
+        val diff: String? = null,
     ) : Part()
 
     /** Something the app tells the user that the model never sees, such as a stopped run. */

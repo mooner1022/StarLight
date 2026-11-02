@@ -115,6 +115,14 @@ class ChatCompletionsClient(
             })
             put("tool_choice", "auto")
         }
+        // OpenRouter searches the web for any model with its web plugin.
+        if (request.webSearch && flavor == Flavor.OPENROUTER)
+            putJsonArray("plugins") {
+                addJsonObject {
+                    put("id", "web")
+                    put("max_results", OPENROUTER_SEARCH_RESULTS)
+                }
+            }
         if (request.effort != null) {
             when (flavor) {
                 Flavor.OPENROUTER -> putJsonObject("reasoning") { put("effort", request.effort) }
@@ -371,3 +379,6 @@ class ChatCompletionsClient(
         }
     }
 }
+
+/** How many results OpenRouter's web plugin adds to a request. */
+private const val OPENROUTER_SEARCH_RESULTS = 5

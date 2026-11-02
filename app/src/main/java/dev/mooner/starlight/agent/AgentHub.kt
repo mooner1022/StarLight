@@ -12,6 +12,7 @@ import dev.mooner.starlight.agent.provider.ResponsesClient
 import dev.mooner.starlight.agent.runtime.AgentRuntime
 import dev.mooner.starlight.agent.store.AgentStorage
 import dev.mooner.starlight.agent.store.AttachmentStore
+import dev.mooner.starlight.agent.store.CheckpointStore
 import dev.mooner.starlight.agent.store.ConversationStore
 import dev.mooner.starlight.agent.tools.DocsLibrary
 import dev.mooner.starlight.agent.tools.StarLightTools
@@ -26,6 +27,8 @@ class AgentHub private constructor(val context: Context) {
     val dataDir: File = AgentStorage.root(context)
     val store = ConversationStore(dataDir).apply { markInterrupted() }
     val attachments = AttachmentStore(File(dataDir, AgentStorage.ATTACHMENTS))
+    /** What the agent's tools changed in each turn, kept beside the attachments, for rewinding. */
+    val checkpoints = CheckpointStore(File(dataDir, AgentStorage.ATTACHMENTS))
     val docs = DocsLibrary(context.assets)
     val tools = StarLightTools(docs)
     val runtime = AgentRuntime(this)

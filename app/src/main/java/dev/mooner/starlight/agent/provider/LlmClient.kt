@@ -45,6 +45,8 @@ class LlmRequest(
     val effort: String?,
     val maxOutputTokens: Int,
     val attachments: AttachmentSource,
+    /** Lets the model search the web with its provider's own search, where the provider has one. */
+    val webSearch: Boolean = false,
 )
 
 /** What a request streams while the model writes. Called on a background thread. */
@@ -57,6 +59,8 @@ interface StreamSink {
 
 enum class StopReason {
     END,
+    /** The provider paused a long turn, such as one with its own web searches; sent back as it is, the turn goes on. */
+    PAUSE,
     TOOL_USE,
     MAX_TOKENS,
     /** The model or a safety classifier declined. */

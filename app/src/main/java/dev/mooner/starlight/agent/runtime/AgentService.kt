@@ -139,6 +139,7 @@ class AgentActionReceiver : BroadcastReceiver() {
         when (intent.action) {
             ACTION_ALLOW -> call?.let { runtime.resolveApproval(conversation, it, allow = true) }
             ACTION_DENY  -> call?.let { runtime.resolveApproval(conversation, it, allow = false) }
+            ACTION_ANSWER -> call?.let { id -> intent.getStringExtra(EXTRA_ANSWER)?.let { runtime.answer(conversation, id, listOf(it)) } }
             ACTION_STOP  -> runtime.stop(conversation)
         }
     }
@@ -147,6 +148,9 @@ class AgentActionReceiver : BroadcastReceiver() {
         const val ACTION_ALLOW = "dev.mooner.starlight.agent.ALLOW"
         const val ACTION_DENY = "dev.mooner.starlight.agent.DENY"
         const val ACTION_STOP = "dev.mooner.starlight.agent.STOP"
+        /** An option of the agent's question, picked from its notification. */
+        const val ACTION_ANSWER = "dev.mooner.starlight.agent.ANSWER"
+        const val EXTRA_ANSWER = "answer"
         /** The user swiped the progress notification away. */
         const val ACTION_DISMISSED = "dev.mooner.starlight.agent.DISMISSED"
         const val EXTRA_CONVERSATIONS = "conversations"

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="3dp">
+
+    <ImageView
+        android:id="@+id/mark"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginTop="1dp"
+        android:importantForAccessibility="no"
+        tools:src="@drawable/ic_agent_step_doing"
+        tools:tint="@color/agent_gold"/>
+
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="9dp"
+        android:layout_weight="1"
+        android:fontFamily="@font/wantedsans_medium"
+        android:lineSpacingExtra="1dp"
+        android:textColor="@color/agent_text"
+        android:textSize="13sp"
+        tools:text="명령어 모듈 작성"/>
+</LinearLayout>

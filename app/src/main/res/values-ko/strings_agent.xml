@@ -210,9 +210,63 @@
     <string name="agent_tool_debug_message">디버그 룸 테스트</string>
     <string name="agent_tool_debug_replies">디버그 룸 답장 확인</string>
     <string name="agent_tool_view_image">이미지 확인</string>
+    <string name="agent_tool_diff">변경 내용</string>
     <string name="agent_tool_save_attachment">첨부 파일 저장</string>
     <string name="agent_tool_send_file">파일 전달</string>
     <string name="agent_tool_show_project">프로젝트 안내</string>
+    <string name="agent_tool_update_plan">계획 업데이트</string>
+
+    <string name="agent_message_rewind">여기로 되돌리기</string>
+    <string name="agent_rewind_title">이 메시지 전으로 되돌리기</string>
+    <string name="agent_rewind_message">이 메시지부터 에이전트가 바꾼 %d곳을 그 전으로 되돌려요.</string>
+    <string name="agent_rewind_more">외 %d곳</string>
+    <string name="agent_rewind_note">에이전트의 도구가 바꾼 것만 되돌려요. 봇이 실행 중에 쓴 파일은 그대로예요. 실행 중인 프로젝트는 다시 컴파일해요.</string>
+    <string name="agent_rewind_files">파일만</string>
+    <string name="agent_rewind_both">파일과 대화</string>
+    <string name="agent_rewind_done">%d곳을 되돌렸어요.</string>
+    <string name="agent_rewind_partly">%1$d곳을 되돌렸어요. 되돌리지 못한 것: %2$s</string>
+    <string name="agent_rewind_failed">되돌리지 못했어요: %s</string>
+    <string name="agent_edit_rewind_title">이후 변경도 되돌릴까요?</string>
+    <string name="agent_edit_rewind_message">이 메시지 이후 에이전트가 %d곳을 바꿨어요. 메시지를 고치면서 그 변경도 되돌릴까요?</string>
+    <string name="agent_edit_rewind_yes">되돌리고 보내기</string>
+    <string name="agent_edit_rewind_no">그대로 보내기</string>
+
+    <string name="agent_notification_question">에이전트의 질문</string>
+    <string name="agent_phase_question">답을 기다리는 중</string>
+    <string name="agent_tool_ask_user">질문</string>
+    <string name="agent_question_send">답하기</string>
+    <string name="agent_question_next">다음</string>
+    <string name="agent_question_back">이전</string>
+    <string name="agent_question_skip">건너뛰기</string>
+    <string name="agent_question_custom">직접 입력</string>
+    <string name="agent_question_custom_hint">답을 입력하세요</string>
+    <string name="agent_question_multiple">여러 개를 고를 수 있어요.</string>
+    <string name="agent_queued">에이전트가 이어서 읽을 메시지</string>
+    <string name="agent_approval_plan">계획 먼저</string>
+    <string name="agent_approval_plan_desc">둘러보고 계획만 세워요. 계획을 승인하기 전에는 아무것도 바꾸지 않아요.</string>
+    <string name="agent_plan_go">계획대로 진행</string>
+    <string name="agent_plan_go_message">계획대로 진행해 줘.</string>
+
+    <string name="agent_phase_compacting">대화를 요약하는 중…</string>
+    <string name="agent_compacted">대화를 이어가려고 이전 메시지 %d개를 요약했어요</string>
+    <string name="agent_compact">대화 요약하기</string>
+    <string name="agent_compacting">요약하는 중…</string>
+    <string name="agent_compact_nothing">아직 요약할 만큼 대화가 길지 않아요.</string>
+    <string name="agent_compact_failed">요약하지 못했어요: %s</string>
+    <string name="agent_context_title">컨텍스트</string>
+    <string name="agent_context_meter">컨텍스트 %d%% 사용 중</string>
+    <string name="agent_context_detail">이 대화가 모델이 한 번에 읽을 수 있는 양의 %1$d%%를 쓰고 있어요(%2$s / %3$s 토큰). %4$d%%를 넘으면 이전 대화를 요약해서 이어가요.</string>
+
+    <string name="agent_tool_web_fetch">웹 페이지 읽기</string>
+    <string name="agent_web_search">웹 검색</string>
+    <string name="agent_web_search_desc">Anthropic과 OpenRouter 모델이 필요할 때 웹을 검색해요. 검색 비용은 제공자가 따로 받아요.</string>
+
+    <string name="agent_plan_title">계획</string>
+    <string name="agent_plan_progress">%2$d단계 중 %1$d단계 완료</string>
+    <string name="agent_plan_toggle">계획 펼치기/접기</string>
+    <string name="agent_plan_step_done">완료: %s</string>
+    <string name="agent_plan_step_doing">진행 중: %s</string>
+    <string name="agent_plan_step_todo">할 일: %s</string>
     <string name="agent_card_open">열기</string>
     <string name="agent_card_share">공유</string>
     <string name="agent_card_save">저장</string>

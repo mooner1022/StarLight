@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="6dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_agent_approval"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/step"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/wantedsans_bold"
+                android:textColor="@color/agent_accent"
+                android:textSize="12sp"
+                tools:text="1/3 · 접두사"/>
+
+            <TextView
+                android:id="@+id/skip"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackground"
+                android:fontFamily="@font/wantedsans_medium"
+                android:gravity="center"
+                android:paddingHorizontal="8dp"
+                android:text="@string/agent_question_skip"
+                android:textColor="@color/agent_text_faint"
+                android:textSize="12.5sp"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/question"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/wantedsans_bold"
+            android:textColor="@color/agent_text"
+            android:textSize="15sp"
+            tools:text="명령어 접두사를 무엇으로 할까요?"/>
+
+        <TextView
+            android:id="@+id/multipleHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/wantedsans_medium"
+            android:text="@string/agent_question_multiple"
+            android:textColor="@color/agent_text_muted"
+            android:textSize="12.5sp"
+            android:visibility="gone"/>
+
+        <LinearLayout
+            android:id="@+id/options"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"/>
+
+        <EditText
+            android:id="@+id/custom"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_agent_code"
+            android:fontFamily="@font/wantedsans_medium"
+            android:hint="@string/agent_question_custom_hint"
+            android:importantForAutofill="no"
+            android:inputType="textMultiLine|textCapSentences"
+            android:maxLines="5"
+            android:minHeight="48dp"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp"
+            android:textColor="@color/agent_text"
+            android:textColorHint="@color/agent_text_faint"
+            android:textSize="15sp"
+            android:visibility="gone"
+            tools:visibility="visible"/>
+
+        <LinearLayout
+            android:id="@+id/footer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/back"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_agent_button_plain"
+                android:fontFamily="@font/wantedsans_bold"
+                android:gravity="center"
+                android:paddingHorizontal="16dp"
+                android:text="@string/agent_question_back"
+                android:textColor="@color/agent_text"
+                android:textSize="13sp"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"/>
+
+            <TextView
+                android:id="@+id/next"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_agent_button_gold"
+                android:fontFamily="@font/wantedsans_bold"
+                android:gravity="center"
+                android:paddingHorizontal="18dp"
+                android:text="@string/agent_question_next"
+                android:textColor="@color/agent_on_gold"
+                android:textSize="13sp"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

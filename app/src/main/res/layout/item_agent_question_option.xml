@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One choice of the agent's question, in the look of the app's selection sheets (item_sheet_option). -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:minHeight="52dp"
+    app:cardBackgroundColor="@color/background_selection_card"
+    app:cardCornerRadius="10dp"
+    app:cardElevation="@dimen/card_elevation"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp">
+
+        <TextView
+            android:id="@+id/label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/wantedsans_medium"
+            android:textColor="@color/text"
+            android:textSize="15.5sp"
+            tools:text="! 로 시작"/>
+
+        <TextView
+            android:id="@+id/description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/wantedsans_medium"
+            android:textColor="@color/agent_text_muted"
+            android:textSize="12.5sp"
+            android:visibility="gone"
+            tools:text="카카오톡 봇에서 가장 흔한 방식이에요."
+            tools:visibility="visible"/>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

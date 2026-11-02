@@ -227,6 +227,11 @@ class AgentSettingsActivity : AppCompatActivity() {
             hub.settings.notifyOnFinish = binding.notify.isChecked
         }
 
+        binding.webSearch.isChecked = hub.settings.webSearch
+        binding.webSearchRow.setOnClickListener {
+            binding.webSearch.isChecked = !binding.webSearch.isChecked
+            hub.settings.webSearch = binding.webSearch.isChecked
+        }
         binding.liveUpdatesGroup.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
         binding.liveUpdates.isChecked = hub.settings.liveUpdates
         binding.liveUpdatesRow.setOnClickListener {

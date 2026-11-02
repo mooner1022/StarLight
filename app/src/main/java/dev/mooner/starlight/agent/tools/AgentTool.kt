@@ -2,7 +2,9 @@ package dev.mooner.starlight.agent.tools
 
 import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.Part
+import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.provider.ToolSpec
+import dev.mooner.starlight.agent.store.CheckpointStore
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
@@ -22,6 +24,11 @@ enum class ToolRisk {
     WRITE,
     /** Deletes something, or changes what runs on real chats. */
     DESTRUCTIVE,
+    /**
+     * Reaches outside the phone, such as reading a web page: it changes nothing, but what it fetches can carry
+     * instructions, and an address can carry the user's data away. Asked about unless the user lets it run.
+     */
+    NETWORK,
 }
 
 /** What a tool call returns to the model, and the line the chat shows for it. */
@@ -33,6 +40,8 @@ class ToolOutput(
     val card: Card? = null,
     /** Images for the model to see with the result, added with [ToolContext.addAttachment]. */
     val images: List<Part.Attachment> = emptyList(),
+    /** What the call changed in a file, for the chat to show; see [TextDiff]. */
+    val diff: String? = null,
 ) {
     companion object {
         fun error(message: String) = ToolOutput(message, isError = true, summary = message)
@@ -54,6 +63,12 @@ interface ToolContext {
 
     /** Adds a file to this conversation's attachments, as an attached one is kept; large images are scaled down. */
     fun addAttachment(name: String, mimeType: String, bytes: ByteArray): Part.Attachment
+
+    /** Keeps what a tool is about to change, so the user can rewind the turn; call it before changing anything. */
+    val checkpoint: CheckpointStore.Recorder
+
+    /** Asks the user [questions] and waits: an answer per question, in order, or null if the user skipped them. */
+    suspend fun ask(questions: Questions): List<String>?
 }
 
 class AgentTool(
@@ -63,6 +78,8 @@ class AgentTool(
     val parameters: JsonObject,
     /** What the approval prompt says the call will do. */
     val describe: (JsonObject) -> String,
+    /** What the call would change in a file, as a diff the approval prompt shows; null when it can't tell. */
+    val preview: ((JsonObject) -> String?)? = null,
     val run: suspend ToolContext.(JsonObject) -> ToolOutput,
 ) {
     val spec: ToolSpec
@@ -78,8 +95,12 @@ class ParamsBuilder {
     fun project() =
         string("project", "Name (or id) of the project.")
 
-    fun string(name: String, description: String, optional: Boolean = false) =
-        add(name, "string", description, optional)
+    /** A string, one of [enum] when it is given. */
+    fun string(name: String, description: String, optional: Boolean = false, enum: List<String>? = null) =
+        add(name, "string", description, optional) {
+            if (enum != null)
+                putJsonArray("enum") { enum.forEach { add(JsonPrimitive(it)) } }
+        }
 
     fun integer(name: String, description: String, optional: Boolean = false) =
         add(name, "integer", description, optional)
@@ -89,6 +110,10 @@ class ParamsBuilder {
 
     fun stringArray(name: String, description: String, optional: Boolean = false) =
         add(name, "array", description, optional) { putJsonObject("items") { put("type", "string") } }
+
+    /** An array of objects, each with the properties [item] declares. */
+    fun objectArray(name: String, description: String, optional: Boolean = false, item: ParamsBuilder.() -> Unit) =
+        add(name, "array", description, optional) { put("items", ParamsBuilder().apply(item).build()) }
 
     private fun add(name: String, type: String, description: String, optional: Boolean, extra: JsonObjectBuilder.() -> Unit = {}) {
         properties += name to {

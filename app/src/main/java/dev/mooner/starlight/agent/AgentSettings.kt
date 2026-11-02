@@ -18,7 +18,12 @@ enum class ApprovalPolicy(val id: String) {
     /** Asks before deleting, and before turning projects on or off. */
     ASK_DESTRUCTIVE("destructive"),
     /** Asks before anything that changes a project. */
-    ASK_WRITES("writes");
+    ASK_WRITES("writes"),
+    /**
+     * Only looks and plans: tools that change something are refused until the user approves the plan. Set per
+     * conversation; an older StarLight reads it as [ASK_DESTRUCTIVE].
+     */
+    PLAN("plan");
 
     companion object {
         fun of(id: String?): ApprovalPolicy =
@@ -138,6 +143,14 @@ class AgentSettings internal constructor(context: Context) {
         }
 
     /** Whether a run's progress may show as a Live Update (Android 16 QPR2 and later) while its chat isn't open. */
+    /** Whether the model may use its provider's own web search (Anthropic and OpenRouter); it costs extra. */
+    var webSearch: Boolean
+        get() = prefs.getBoolean(KEY_WEB_SEARCH, false)
+        set(value) {
+            prefs.edit { putBoolean(KEY_WEB_SEARCH, value) }
+            changed()
+        }
+
     var liveUpdates: Boolean
         get() = prefs.getBoolean(KEY_LIVE_UPDATES, true)
         set(value) {
@@ -186,6 +199,7 @@ class AgentSettings internal constructor(context: Context) {
         const val KEY_INSTRUCTIONS = "instructions"
         const val KEY_NOTIFY = "notify_on_finish"
         const val KEY_LIVE_UPDATES = "live_updates"
+        const val KEY_WEB_SEARCH = "web_search"
         const val DEFAULT_MAX_STEPS = 60
     }
 }
