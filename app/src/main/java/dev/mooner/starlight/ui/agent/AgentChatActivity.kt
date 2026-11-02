@@ -16,6 +16,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.ApprovalPolicy
@@ -139,6 +140,7 @@ class AgentChatActivity : AppCompatActivity() {
             onSend = ::send,
             onStop = { hub.runtime.stop(conversationId) },
             onSessionChanged = ::onSessionChanged,
+            onContext = ::showContext,
         )
         intent.getStringExtra(EXTRA_TEXT)?.let { composer.text = it }
         if (savedInstanceState?.getBoolean(KEY_SESSION) == true) {
@@ -259,7 +261,7 @@ class AgentChatActivity : AppCompatActivity() {
                 binding.messages.scrollToPosition(rows.size - 1)
         }
         updateResumeBar(conversation, running)
-        updateSubtitle()
+        composer.contextUse = conversation?.let(hub.runtime::contextUse)
         // While the agent waits on a decision, the question takes the place of the field.
         binding.composer.root.isVisible = hub.runtime.pendingQuestion(conversationId) == null
         if (conversation !== planSource || running != planRunning) {
@@ -332,10 +334,7 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     private fun updateSubtitle() {
-        val model = AgentUi.modelSummary(this, hub) ?: getString(R.string.agent_subtitle_setup)
-        // How full the model's window is, once it is worth knowing.
-        val use = shownConversation?.let(hub.runtime::contextUse)?.takeIf { it >= CONTEXT_SHOWN_FROM }
-        binding.subtitle.text = if (use == null) model else getString(R.string.agent_context_use, model, (use * 100).toInt().coerceAtMost(100))
+        binding.subtitle.text = AgentUi.modelSummary(this, hub) ?: getString(R.string.agent_subtitle_setup)
     }
 
     private fun send(text: String, attachments: List<Part.Attachment>): Boolean {
@@ -477,6 +476,32 @@ class AgentChatActivity : AppCompatActivity() {
         }
     }
 
+    /** What the context gauge stands for: how much of the window the conversation takes, and when it is summarized. */
+    private fun showContext() {
+        val conversation = hub.store.get(conversationId) ?: return
+        val (used, window) = hub.runtime.contextUsage(conversation) ?: return
+        val percent = (used * 100 / window).toInt().coerceIn(0, 100)
+        val bar = LinearProgressIndicator(this).apply {
+            max = 100
+            progress = percent
+            trackThickness = AgentUi.dp(this@AgentChatActivity, 6)
+            trackCornerRadius = AgentUi.dp(this@AgentChatActivity, 3)
+            setIndicatorColor(getColor(if (percent >= (hub.runtime.compactAt * 100).toInt()) R.color.agent_dusk else R.color.agent_gold))
+            trackColor = getColor(R.color.agent_surface_alt)
+            setPadding(0, AgentUi.dp(this@AgentChatActivity, 8), 0, AgentUi.dp(this@AgentChatActivity, 4))
+        }
+        showSheet {
+            title = getString(R.string.agent_context_title)
+            icon = R.drawable.ic_agent_usage
+            message = getString(R.string.agent_context_detail, percent, AgentUi.tokens(used), AgentUi.tokens(window.toLong()),
+                (hub.runtime.compactAt * 100).toInt())
+            content(bar, scrollable = false)
+            neutral(getString(R.string.agent_done))
+            if (!hub.runtime.isRunning(conversationId))
+                positive(R.string.agent_compact) { compact() }
+        }
+    }
+
     /** Summarizes the conversation on the user's asking, so later requests are shorter. */
     private fun compact() {
         if (hub.runtime.isRunning(conversationId) || hub.store.get(conversationId) == null)
@@ -534,8 +559,6 @@ class AgentChatActivity : AppCompatActivity() {
         private const val MENU_SETTINGS = 2
         private const val MENU_DELETE = 3
         private const val MENU_COMPACT = 4
-        /** The share of the model's window from which the header shows how full it is. */
-        private const val CONTEXT_SHOWN_FROM = 0.3f
 
         /** Opens [conversationId], or a new conversation when it is null. */
         fun intent(context: Context, conversationId: String?, project: String? = null, text: String? = null): Intent =

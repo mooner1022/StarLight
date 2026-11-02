@@ -327,15 +327,23 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
      * What part of the model's context window the conversation's last request filled, or null when the window isn't
      * known or nothing was asked since the last summary.
      */
-    fun contextUse(conversation: Conversation): Float? {
+    fun contextUse(conversation: Conversation): Float? =
+        contextUsage(conversation)?.let { (used, window) -> used.toFloat() / window }
+
+    /** The tokens the conversation's last request took, and the model's window, when both are known. */
+    fun contextUsage(conversation: Conversation): Pair<Long, Int>? {
         val kind = hub.settings.activeProvider() ?: return null
         val model = hub.settings.model(kind) ?: return null
         val window = hub.settings.cachedModels(kind).firstOrNull { it.id == model }?.contextWindow?.takeIf { it > 0 } ?: return null
         val since = conversation.messages.indexOfLast { it.compaction != null }
         val used = conversation.messages.drop(since + 1).lastOrNull { it.role == Role.ASSISTANT && it.usage != null }
             ?.usage?.totalInput ?: return null
-        return used.toFloat() / window
+        return used to window
     }
+
+    /** The share of the window at which a conversation is summarized, for the screen to say. */
+    val compactAt: Float
+        get() = COMPACT_AT
 
     /** Summarizes the conversation so far, so the next request starts from the summary; false if there was too little. */
     suspend fun compactNow(conversationId: String): Boolean {

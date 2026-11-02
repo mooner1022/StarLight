@@ -253,7 +253,9 @@
     <string name="agent_compacting">요약하는 중…</string>
     <string name="agent_compact_nothing">아직 요약할 만큼 대화가 길지 않아요.</string>
     <string name="agent_compact_failed">요약하지 못했어요: %s</string>
-    <string name="agent_context_use">%1$s · 컨텍스트 %2$d%%</string>
+    <string name="agent_context_title">컨텍스트</string>
+    <string name="agent_context_meter">컨텍스트 %d%% 사용 중</string>
+    <string name="agent_context_detail">이 대화가 모델이 한 번에 읽을 수 있는 양의 %1$d%%를 쓰고 있어요(%2$s / %3$s 토큰). %4$d%%를 넘으면 이전 대화를 요약해서 이어가요.</string>
 
     <string name="agent_tool_web_fetch">웹 페이지 읽기</string>
     <string name="agent_web_search">웹 검색</string>

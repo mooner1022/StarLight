@@ -155,6 +155,30 @@
             android:textColorHint="@color/agent_text_faint"
             android:textSize="15sp"/>
 
+        <!-- How full the model's context window is; shown once it is known, opens the details on a tap. -->
+        <FrameLayout
+            android:id="@+id/contextMeter"
+            android:layout_width="36dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="2dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/contextRing"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:max="100"
+                app:indicatorColor="@color/agent_text_muted"
+                app:indicatorSize="22dp"
+                app:trackColor="@color/agent_surface_alt"
+                app:trackThickness="3dp"
+                tools:progress="72"/>
+        </FrameLayout>
+
         <ImageButton
             android:id="@+id/send"
             android:layout_width="40dp"

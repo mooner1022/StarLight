@@ -255,7 +255,9 @@
     <string name="agent_compacting">Summarizing…</string>
     <string name="agent_compact_nothing">There\'s too little to summarize yet.</string>
     <string name="agent_compact_failed">Couldn\'t summarize: %s</string>
-    <string name="agent_context_use">%1$s · context %2$d%%</string>
+    <string name="agent_context_title">Context</string>
+    <string name="agent_context_meter">Context %d%% used</string>
+    <string name="agent_context_detail">This conversation takes up %1$d%% of what the model can read at once (%2$s of %3$s tokens). Past %4$d%%, the earlier part is summarized so the conversation can go on.</string>
 
     <string name="agent_tool_web_fetch">Read a web page</string>
     <string name="agent_web_search">Web search</string>

@@ -43,7 +43,29 @@ class Composer(
     private val onStop: () -> Unit,
     /** The user changed [project] or [approval] in the add sheet. */
     private val onSessionChanged: () -> Unit = {},
+    /** The user tapped the context gauge. */
+    private val onContext: () -> Unit = {},
 ) {
+
+    /**
+     * How full the model's context window is, from 0 to 1, or null when it isn't known: a ring by the send button,
+     * gold from [WARN_AT] and orange from [FULL_AT], when the conversation is summarized.
+     */
+    var contextUse: Float? = null
+        set(value) {
+            field = value
+            binding.contextMeter.isVisible = value != null
+            if (value == null)
+                return
+            val percent = (value * 100).toInt().coerceIn(0, 100)
+            binding.contextRing.setProgressCompat(maxOf(percent, MIN_SHOWN), false)
+            binding.contextRing.setIndicatorColor(context.getColor(when {
+                value >= FULL_AT -> R.color.agent_dusk
+                value >= WARN_AT -> R.color.agent_gold
+                else             -> R.color.agent_text_muted
+            }))
+            binding.contextMeter.contentDescription = context.getString(R.string.agent_context_meter, percent)
+        }
 
     private val context: Context = binding.root.context
     private val hub = AgentHub.get(context)
@@ -90,6 +112,7 @@ class Composer(
         }
 
     init {
+        binding.contextMeter.setOnClickListener { onContext() }
         binding.input.doAfterTextChanged { updateSend() }
         binding.send.setOnClickListener {
             // While a run goes on, a written message joins it; an empty field stops it.
@@ -252,3 +275,9 @@ class Composer(
         binding.send.alpha = if (enabled) 1f else 0.4f
     }
 }
+
+/** The share from which the context gauge turns gold, and the one at which a conversation is summarized. */
+private const val WARN_AT = 0.6f
+private const val FULL_AT = 0.8f
+/** The least the ring shows, so that a conversation just begun still has a visible mark. */
+private const val MIN_SHOWN = 3
