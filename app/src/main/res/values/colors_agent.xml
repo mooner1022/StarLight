@@ -33,4 +33,18 @@
     <color name="agent_ok">#3E9A5C</color>
     <color name="agent_error">#D9455F</color>
     <color name="agent_error_soft">#14D9455F</color>
+
+    <!-- Each provider's own color, darkened or lightened where the brand's would vanish on our surfaces. -->
+    <color name="agent_brand_anthropic">#D97757</color>
+    <color name="agent_brand_chatgpt">#10A37F</color>
+    <color name="agent_brand_openai">#202123</color>
+    <color name="agent_brand_gemini">#3186FF</color>
+    <color name="agent_brand_openrouter">#7A9900</color>
+    <color name="agent_brand_custom">@color/agent_text_faint</color>
+
+    <!-- Menus drop from the night header, so they share its charcoal in both themes. -->
+    <color name="agent_popup">@color/store_night_light</color>
+    <color name="agent_popup_border">#1FFFF7E8</color>
+    <color name="agent_popup_ripple">#1FFFF7E8</color>
+    <color name="agent_popup_danger">#FF7A93</color>
 </resources>

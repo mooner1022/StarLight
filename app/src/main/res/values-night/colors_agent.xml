@@ -15,4 +15,9 @@
     <color name="agent_ok">#7ACA8A</color>
     <color name="agent_error">#FF6188</color>
     <color name="agent_error_soft">#24FF6188</color>
+
+    <color name="agent_brand_openai">#ECECF1</color>
+    <color name="agent_brand_openrouter">#C8FF00</color>
+    <color name="agent_popup">#2A2530</color>
+    <color name="agent_popup_border">#29FFF7E8</color>
 </resources>

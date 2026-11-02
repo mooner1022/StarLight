@@ -2,12 +2,17 @@ package dev.mooner.starlight.ui.agent
 
 import android.app.NotificationManager
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -25,6 +30,7 @@ import dev.mooner.starlight.databinding.ActivityAgentSettingsBinding
 import dev.mooner.starlight.databinding.ItemAgentOptionBinding
 import dev.mooner.starlight.databinding.ItemAgentProviderBinding
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /** Providers to connect, and how the agent behaves. */
 class AgentSettingsActivity : AppCompatActivity() {
@@ -73,11 +79,17 @@ class AgentSettingsActivity : AppCompatActivity() {
         val active = hub.settings.activeProvider()
         for (kind in ProviderKind.entries) {
             val row = ItemAgentProviderBinding.inflate(LayoutInflater.from(this), binding.providers, true)
-            row.badge.text = kind.displayName.first().toString()
-            row.name.text = kind.displayName
             val configured = hub.settings.isConfigured(kind)
+            styleProvider(row, kind, configured)
+            row.name.text = kind.displayName
+            row.method.setText(ProviderBrand.method(kind))
+            // A sign-in is what sets ChatGPT apart from an OpenAI key, so it gets the filled chip.
+            if (!kind.usesApiKey)
+                row.method.setBackgroundResource(R.drawable.bg_agent_chip)
+            row.description.setText(ProviderBrand.description(kind))
+            row.statusRow.isVisible = configured
             row.status.text = when {
-                !configured -> getString(R.string.agent_provider_not_connected)
+                !configured -> null
                 kind == ProviderKind.CHATGPT && hub.chatGpt.email != null ->
                     getString(R.string.agent_chatgpt_signed_in, hub.chatGpt.email)
                 else -> {
@@ -88,6 +100,33 @@ class AgentSettingsActivity : AppCompatActivity() {
             row.inUse.isVisible = configured && kind == active
             row.root.setOnClickListener { ProviderSheet.show(this, kind) }
         }
+    }
+
+    /**
+     * The provider's logo, and its color around the row: full strength once it's connected, faded until then. A
+     * connected one also gets a line saying so, led by a green dot.
+     */
+    private fun styleProvider(row: ItemAgentProviderBinding, kind: ProviderKind, configured: Boolean) {
+        val brand = ProviderBrand.color(this, kind)
+        val density = resources.displayMetrics.density
+        row.logo.setImageResource(ProviderBrand.logo(kind))
+        row.logo.background = ProviderBrand.badge(this, kind)
+        val card = GradientDrawable().apply {
+            cornerRadius = 20 * density
+            setColor(ContextCompat.getColor(this@AgentSettingsActivity, R.color.agent_surface))
+            setStroke(((if (configured) 1.5f else 1f) * density).roundToInt(),
+                if (configured) brand else ColorUtils.setAlphaComponent(brand, 0x70))
+        }
+        row.root.background = RippleDrawable(ColorStateList.valueOf(ColorUtils.setAlphaComponent(brand, 0x29)), card, null)
+
+        val dot = if (configured) GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(ContextCompat.getColor(this@AgentSettingsActivity, R.color.agent_ok))
+            val size = (7 * density).roundToInt()
+            setSize(size, size)
+            setBounds(0, 0, size, size)
+        } else null
+        row.status.setCompoundDrawablesRelative(dot, null, null, null)
     }
 
     private fun setUpBehavior() {

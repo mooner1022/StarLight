@@ -8,6 +8,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.model.TurnUsage
 import dev.mooner.starlight.agent.provider.ProviderKind
+import dev.mooner.starlight.agent.runtime.LiveRun
 import io.noties.markwon.AbstractMarkwonPlugin
 import io.noties.markwon.Markwon
 import io.noties.markwon.core.MarkwonTheme
@@ -79,11 +80,21 @@ internal object AgentUi {
         (value * context.resources.displayMetrics.density).toInt()
 }
 
-/** The AI tab's subtitle in the main screen's header. */
+/**
+ * The AI tab's subtitle in the main screen's header: what the agent is up to. The model isn't named here, since
+ * the model chip right below already shows it.
+ */
 internal fun Context.agentSubtitle(): String {
     val hub = AgentHub.get(this)
-    val running = hub.runtime.live.value.size
-    if (running > 0)
-        return getString(R.string.agent_subtitle_running, running)
-    return AgentUi.modelSummary(this, hub) ?: getString(R.string.agent_subtitle_setup)
+    if (hub.settings.activeProvider() == null)
+        return getString(R.string.agent_subtitle_setup)
+    val live = hub.runtime.live.value
+    val waiting = live.values.count { it.phase == LiveRun.Phase.APPROVAL }
+    val conversations = hub.store.summaries.value.size
+    return when {
+        waiting > 0        -> getString(R.string.agent_subtitle_approval, live.size, waiting)
+        live.isNotEmpty()  -> resources.getQuantityString(R.plurals.agent_subtitle_running, live.size, live.size)
+        conversations == 0 -> getString(R.string.agent_subtitle_ready_empty)
+        else               -> resources.getQuantityString(R.plurals.agent_subtitle_conversations, conversations, conversations)
+    }
 }

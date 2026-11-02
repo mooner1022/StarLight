@@ -4,7 +4,16 @@
     <string name="agent_title">StarLight AI</string>
     <string name="agent_subtitle_ready">%1$s · %2$s</string>
     <string name="agent_subtitle_setup">Connect an AI to get started</string>
-    <string name="agent_subtitle_running">Running: %d</string>
+    <string name="agent_subtitle_ready_empty">Your agent is ready.</string>
+    <plurals name="agent_subtitle_conversations">
+        <item quantity="one">%d conversation.</item>
+        <item quantity="other">%d conversations.</item>
+    </plurals>
+    <plurals name="agent_subtitle_running">
+        <item quantity="one">%d task running.</item>
+        <item quantity="other">%d tasks running.</item>
+    </plurals>
+    <string name="agent_subtitle_approval">Running: %1$d · Waiting for your OK: %2$d</string>
 
     <string name="agent_hero_title">What shall we build?</string>
     <string name="agent_hero_body">Make bots, fix errors and test them, all from here. Leave the app and it keeps working.</string>
@@ -86,7 +95,14 @@
     <string name="agent_providers">AI providers</string>
     <string name="agent_providers_body">The agent uses the provider you pick. Keys stay encrypted on this device.</string>
     <string name="agent_provider_connected">Connected</string>
-    <string name="agent_provider_not_connected">Not connected</string>
+    <string name="agent_provider_method_sign_in">Sign-in</string>
+    <string name="agent_provider_method_url">Server URL</string>
+    <string name="agent_provider_desc_anthropic">Claude models with an API key, paid for as you use them.</string>
+    <string name="agent_provider_desc_chatgpt">Sign in with your ChatGPT account and use your plan\'s limits. No key needed.</string>
+    <string name="agent_provider_desc_openai">An OpenAI API key, paid for as you use it, apart from any ChatGPT plan.</string>
+    <string name="agent_provider_desc_gemini">Gemini models with an API key from Google AI Studio.</string>
+    <string name="agent_provider_desc_openrouter">One API key for models from many companies.</string>
+    <string name="agent_provider_desc_custom">Any server that speaks the OpenAI API, like Ollama, by its address.</string>
     <string name="agent_provider_in_use">In use</string>
     <string name="agent_api_key">API key</string>
     <string name="agent_api_key_optional">API key (optional)</string>

@@ -13,16 +13,14 @@
     android:paddingHorizontal="14dp"
     android:paddingVertical="10dp">
 
-    <TextView
-        android:id="@+id/badge"
-        android:layout_width="38dp"
-        android:layout_height="38dp"
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:background="@drawable/bg_agent_chip"
-        android:fontFamily="@font/wantedsans_bold"
-        android:gravity="center"
-        android:textColor="@color/agent_accent"
-        android:textSize="16sp"
-        tools:text="A"/>
+        android:importantForAccessibility="no"
+        android:padding="9dp"
+        tools:src="@drawable/ic_brand_anthropic"/>
 
     <LinearLayout
         android:layout_width="0dp"
@@ -31,41 +29,95 @@
         android:layout_weight="1"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/name"
+        <!-- When the two don't fit, the weight makes the name give way rather than the chip. -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/wantedsans_bold"
-            android:textColor="@color/agent_text"
-            android:textSize="15.5sp"
-            tools:text="Anthropic"/>
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:fontFamily="@font/wantedsans_bold"
+                tools:ignore="InefficientWeight"
+                android:textColor="@color/agent_text"
+                android:textSize="15.5sp"
+                tools:text="ChatGPT"/>
+
+            <!-- How it connects: a sign-in, an API key or a server address. -->
+            <TextView
+                android:id="@+id/method"
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:layout_marginStart="7dp"
+                android:background="@drawable/bg_agent_chip_outline"
+                android:fontFamily="@font/wantedsans_bold"
+                android:gravity="center"
+                android:maxLines="1"
+                android:paddingHorizontal="8dp"
+                android:textColor="@color/agent_accent"
+                android:textSize="11sp"
+                tools:text="계정 로그인"/>
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/status"
+            android:id="@+id/description"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="1dp"
-            android:ellipsize="end"
+            android:layout_marginTop="2dp"
             android:fontFamily="@font/wantedsans_regular"
-            android:maxLines="1"
+            android:lineSpacingExtra="1dp"
             android:textColor="@color/agent_text_muted"
             android:textSize="12.5sp"
-            tools:text="연결됨 · Claude Opus 5.5"/>
-    </LinearLayout>
+            tools:text="ChatGPT 계정으로 로그인해 플랜 한도 안에서 써요."/>
 
-    <TextView
-        android:id="@+id/inUse"
-        android:layout_width="wrap_content"
-        android:layout_height="26dp"
-        android:background="@drawable/bg_agent_button_gold"
-        android:fontFamily="@font/wantedsans_bold"
-        android:gravity="center"
-        android:paddingHorizontal="10dp"
-        android:text="@string/agent_provider_in_use"
-        android:textColor="@color/agent_on_gold"
-        android:textSize="11.5sp"
-        android:visibility="gone"
-        tools:visibility="visible"/>
+        <!-- Only for a connected provider: its account or model, and whether the agent uses it. -->
+        <LinearLayout
+            android:id="@+id/statusRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:drawablePadding="6dp"
+                tools:ignore="InefficientWeight"
+                android:ellipsize="end"
+                android:fontFamily="@font/wantedsans_medium"
+                android:maxLines="1"
+                android:textColor="@color/agent_text"
+                android:textSize="12.5sp"
+                tools:text="연결됨 · GPT-5.5"/>
+
+            <TextView
+                android:id="@+id/inUse"
+                android:layout_width="wrap_content"
+                android:layout_height="22dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_agent_button_gold"
+                android:fontFamily="@font/wantedsans_bold"
+                android:gravity="center"
+                android:maxLines="1"
+                android:paddingHorizontal="9dp"
+                android:text="@string/agent_provider_in_use"
+                android:textColor="@color/agent_on_gold"
+                android:textSize="11sp"
+                android:visibility="gone"
+                tools:visibility="visible"/>
+        </LinearLayout>
+    </LinearLayout>
 
     <ImageView
         android:layout_width="22dp"

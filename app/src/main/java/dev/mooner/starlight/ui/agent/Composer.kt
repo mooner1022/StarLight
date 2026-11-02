@@ -3,6 +3,7 @@ package dev.mooner.starlight.ui.agent
 import android.content.Context
 import android.net.Uri
 import android.view.LayoutInflater
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
@@ -99,8 +100,11 @@ class Composer(
         updateSend()
     }
 
-    fun focus() {
+    fun focus(showKeyboard: Boolean = false) {
         binding.input.requestFocus()
+        if (showKeyboard)
+            binding.input.context.getSystemService(InputMethodManager::class.java)
+                ?.showSoftInput(binding.input, InputMethodManager.SHOW_IMPLICIT)
     }
 
     fun setHint(hint: CharSequence) {

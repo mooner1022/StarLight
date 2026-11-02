@@ -80,7 +80,13 @@ internal object ProviderSheet {
 
         sheet = host.showSheet {
             title = kind.displayName
-            icon = R.drawable.ic_agent_key
+            iconLoader = {
+                val padding = AgentUi.dp(host, 8)
+                setPadding(padding, padding, padding, padding)
+                // The frame clips to its own shape, so fill all of it.
+                setBackgroundColor(ProviderBrand.wash(host, kind))
+                setImageResource(ProviderBrand.logo(kind))
+            }
             message = if (isChatGpt) host.getString(R.string.agent_chatgpt_body) else null
             lifecycleOwner = host
             content(binding.root)

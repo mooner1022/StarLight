@@ -187,12 +187,10 @@ class AgentFragment : Fragment() {
                 setPadding(AgentUi.dp(context, 14), 0, AgentUi.dp(context, 14), 0)
                 layoutParams = ViewGroup.MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                     .apply { marginEnd = AgentUi.dp(context, 8) }
+                // Only fills the box: sending is the user's call, since every request costs them.
                 setOnClickListener {
                     composer?.text = getString(prompt)
-                    composer?.focus()
-                    // Prompts that end with a space are for the user to finish; the others can go right away.
-                    if (!getString(prompt).endsWith(' ') && start(getString(prompt), emptyList()))
-                        composer?.clear()
+                    composer?.focus(showKeyboard = true)
                 }
             })
     }

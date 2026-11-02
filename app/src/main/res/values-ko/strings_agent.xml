@@ -4,7 +4,14 @@
     <string name="agent_title">StarLight AI</string>
     <string name="agent_subtitle_ready">%1$s · %2$s</string>
     <string name="agent_subtitle_setup">AI를 연결하고 시작해 보세요</string>
-    <string name="agent_subtitle_running">%d개 작업 중</string>
+    <string name="agent_subtitle_ready_empty">에이전트가 준비됐어요.</string>
+    <plurals name="agent_subtitle_conversations">
+        <item quantity="other">%d개의 대화가 있어요.</item>
+    </plurals>
+    <plurals name="agent_subtitle_running">
+        <item quantity="other">%d개의 작업을 진행하고 있어요.</item>
+    </plurals>
+    <string name="agent_subtitle_approval">%1$d개 작업 중 · %2$d개 확인 필요</string>
 
     <string name="agent_hero_title">무엇을 만들어 볼까요?</string>
     <string name="agent_hero_body">봇 만들기부터 오류 수정, 테스트까지 여기서 맡겨 보세요. 앱을 닫아도 계속 일해요.</string>
@@ -86,7 +93,14 @@
     <string name="agent_providers">AI 제공자</string>
     <string name="agent_providers_body">고른 제공자로 에이전트가 동작해요. 키는 이 기기에 암호화해서 보관해요.</string>
     <string name="agent_provider_connected">연결됨</string>
-    <string name="agent_provider_not_connected">연결 안 됨</string>
+    <string name="agent_provider_method_sign_in">계정 로그인</string>
+    <string name="agent_provider_method_url">서버 주소</string>
+    <string name="agent_provider_desc_anthropic">Claude 모델을 API 키로 써요. 쓴 만큼 결제돼요.</string>
+    <string name="agent_provider_desc_chatgpt">ChatGPT 계정으로 로그인해 플랜 한도 안에서 써요. 키는 필요 없어요.</string>
+    <string name="agent_provider_desc_openai">OpenAI API 키로 써요. ChatGPT 플랜과 별개로 쓴 만큼 결제돼요.</string>
+    <string name="agent_provider_desc_gemini">Google AI Studio에서 받은 API 키로 Gemini 모델을 써요.</string>
+    <string name="agent_provider_desc_openrouter">API 키 하나로 여러 회사의 모델을 골라 써요.</string>
+    <string name="agent_provider_desc_custom">Ollama처럼 OpenAI 방식을 따르는 서버에 주소로 연결해요.</string>
     <string name="agent_provider_in_use">사용 중</string>
     <string name="agent_api_key">API 키</string>
     <string name="agent_api_key_optional">API 키 (선택)</string>

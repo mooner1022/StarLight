@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -289,19 +288,18 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     private fun showMenu() {
-        PopupMenu(this, binding.menu).apply {
-            menu.add(0, MENU_USAGE, 0, R.string.agent_usage_title)
-            menu.add(0, MENU_SETTINGS, 1, R.string.agent_settings)
-            menu.add(0, MENU_DELETE, 2, R.string.agent_delete_conversation)
-            setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    MENU_USAGE    -> showUsage()
-                    MENU_SETTINGS -> startActivity(Intent(this@AgentChatActivity, AgentSettingsActivity::class.java))
-                    MENU_DELETE   -> confirmDelete()
-                }
-                true
+        val items = listOf(
+            AgentMenu.Item(MENU_USAGE, R.string.agent_usage_title, R.drawable.ic_agent_usage),
+            AgentMenu.Item(MENU_SETTINGS, R.string.agent_settings, R.drawable.ic_round_settings_24),
+            AgentMenu.Item(MENU_DELETE, R.string.agent_delete_conversation, R.drawable.ic_agent_delete, danger = true),
+        )
+        AgentMenu.show(binding.menu, items) { id ->
+            when (id) {
+                MENU_USAGE    -> showUsage()
+                MENU_SETTINGS -> startActivity(Intent(this, AgentSettingsActivity::class.java))
+                MENU_DELETE   -> confirmDelete()
             }
-        }.show()
+        }
     }
 
     private fun showUsage() {
