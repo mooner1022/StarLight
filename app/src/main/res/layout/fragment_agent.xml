@@ -26,32 +26,39 @@
             app:cardCornerRadius="24dp"
             app:cardElevation="0dp">
 
-            <FrameLayout
+            <!-- The stars fill whatever height the content gives, so they don't size the card themselves. -->
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_agent_night">
 
                 <dev.mooner.starlight.ui.plugins.store.StarFieldView
                     android:id="@+id/stars"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
 
                 <ImageView
-                    android:layout_width="120dp"
-                    android:layout_height="120dp"
-                    android:layout_gravity="end|top"
-                    android:layout_marginTop="-24dp"
-                    android:layout_marginEnd="-28dp"
-                    android:alpha="0.55"
+                    android:layout_width="104dp"
+                    android:layout_height="104dp"
+                    android:layout_marginTop="-22dp"
+                    android:layout_marginEnd="-26dp"
+                    android:alpha="0.35"
                     android:importantForAccessibility="no"
                     android:rotation="12"
-                    android:src="@drawable/ic_logo_transparent"/>
+                    android:src="@drawable/ic_logo_transparent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="18dp">
+                    android:padding="18dp"
+                    app:layout_constraintTop_toTopOf="parent">
 
                     <ImageView
                         android:layout_width="26dp"
@@ -120,7 +127,7 @@
                         android:textSize="15sp"
                         android:visibility="gone"/>
                 </LinearLayout>
-            </FrameLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.cardview.widget.CardView>
 
         <HorizontalScrollView

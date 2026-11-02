@@ -51,7 +51,7 @@
     <string name="agent_phase_writing">Writing…</string>
     <string name="agent_phase_tool">%s…</string>
     <string name="agent_phase_approval">Waiting for your OK</string>
-    <string name="agent_phase_retrying">Busy; retrying (%d)…</string>
+    <string name="agent_phase_retrying">Retrying (%d)…</string>
 
     <string name="agent_thinking">Reasoning</string>
     <string name="agent_tool_arguments">Input</string>
@@ -80,6 +80,7 @@
     <string name="agent_error_limit">Rate or usage limit reached: %s</string>
     <string name="agent_error_http">HTTP %1$d: %2$s</string>
     <string name="agent_error_network">No network connection.</string>
+    <string name="agent_error_connection">Couldn\'t reach the provider: %s</string>
     <string name="agent_error_timeout">The provider didn\'t answer in time.</string>
 
     <string name="agent_providers">AI providers</string>

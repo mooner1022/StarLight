@@ -94,6 +94,24 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     /** The conversation shown on screen, which needs no notification when it finishes. */
     @Volatile
     var visibleConversation: String? = null
+        private set
+
+    /** Approvals waiting for the user, by conversation: the call and what it would do. */
+    private val pendingApprovals = ConcurrentHashMap<String, Pair<String, String>>()
+
+    fun chatShown(conversationId: String) {
+        visibleConversation = conversationId
+        AgentNotifier.cancelApproval(hub, conversationId)
+    }
+
+    /** The chat went away; a question it was showing moves to a notification. */
+    fun chatHidden(conversationId: String) {
+        if (visibleConversation == conversationId)
+            visibleConversation = null
+        pendingApprovals[conversationId]?.let { (callId, description) ->
+            AgentNotifier.approvalNeeded(hub, conversationId, callId, description)
+        }
+    }
 
     fun isRunning(conversationId: String): Boolean =
         jobs[conversationId]?.isActive == true
@@ -334,6 +352,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     private suspend fun askApproval(id: String, messageId: String, call: Part.ToolCall, description: String): Boolean {
         val deferred = CompletableDeferred<Boolean>()
         approvals[approvalKey(id, call.id)] = deferred
+        pendingApprovals[id] = call.id to description
         setApproval(id, messageId, call.id, Approval.PENDING)
         updateConversation(id) { it.copy(state = RunState.WAITING_APPROVAL) }
         setLive(id) { LiveRun(id, LiveRun.Phase.APPROVAL, tool = call.name) }
@@ -344,6 +363,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             return allowed
         } finally {
             approvals.remove(approvalKey(id, call.id))
+            pendingApprovals.remove(id)
             AgentNotifier.cancelApproval(hub, id)
             updateConversation(id) { it.copy(state = RunState.RUNNING) }
         }
@@ -454,6 +474,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         is StreamErrorException    -> e.message ?: "The provider reported an error."
         is java.net.UnknownHostException -> string(R.string.agent_error_network)
         is java.net.SocketTimeoutException -> string(R.string.agent_error_timeout)
+        // Connection failures carry the HTTP stack's own wording; say what happened, keep it as detail.
+        is IOException -> string(R.string.agent_error_connection, e.message ?: e.javaClass.simpleName)
         else -> e.message ?: e.toString()
     }
 

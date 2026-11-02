@@ -92,13 +92,12 @@ class AgentChatActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        hub.runtime.visibleConversation = conversationId
+        hub.runtime.chatShown(conversationId)
         updateSubtitle()
     }
 
     override fun onPause() {
-        if (hub.runtime.visibleConversation == conversationId)
-            hub.runtime.visibleConversation = null
+        hub.runtime.chatHidden(conversationId)
         super.onPause()
     }
 
@@ -163,7 +162,8 @@ class AgentChatActivity : AppCompatActivity() {
         binding.resumeBar.isVisible = show
         if (show)
             binding.resumeText.text = when (conversation!!.state) {
-                RunState.ERROR       -> conversation.error ?: getString(R.string.agent_resume_error)
+                // The error itself is in the chat right above.
+                RunState.ERROR       -> getString(R.string.agent_resume_error)
                 RunState.INTERRUPTED -> getString(R.string.agent_resume_interrupted)
                 else                 -> getString(R.string.agent_resume_paused)
             }

@@ -6,6 +6,7 @@ import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
+import dev.mooner.starlight.agent.model.plainPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -145,7 +146,7 @@ class ConversationStore(private val root: File) {
             updatedAt = conversation.updatedAt,
             state = conversation.state,
             project = conversation.project,
-            preview = preview.replace('\n', ' ').take(PREVIEW_LENGTH),
+            preview = preview.plainPreview().take(PREVIEW_LENGTH),
             provider = conversation.provider,
             model = conversation.model,
         )

@@ -51,7 +51,7 @@
     <string name="agent_phase_writing">답을 쓰는 중…</string>
     <string name="agent_phase_tool">%s…</string>
     <string name="agent_phase_approval">확인을 기다리는 중</string>
-    <string name="agent_phase_retrying">서버가 바빠 다시 시도하는 중 (%d)…</string>
+    <string name="agent_phase_retrying">다시 시도하는 중 (%d)…</string>
 
     <string name="agent_thinking">생각 과정</string>
     <string name="agent_tool_arguments">입력</string>
@@ -80,6 +80,7 @@
     <string name="agent_error_limit">요청 한도나 사용량 한도에 도달했어요: %s</string>
     <string name="agent_error_http">HTTP %1$d: %2$s</string>
     <string name="agent_error_network">네트워크에 연결되어 있지 않아요.</string>
+    <string name="agent_error_connection">제공자에 연결하지 못했어요: %s</string>
     <string name="agent_error_timeout">제공자가 제시간에 응답하지 않았어요.</string>
 
     <string name="agent_providers">AI 제공자</string>

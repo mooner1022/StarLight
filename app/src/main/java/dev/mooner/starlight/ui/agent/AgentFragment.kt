@@ -91,7 +91,19 @@ class AgentFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        refreshHeader()
+    }
+
+    /** The main screen sets its header when the tab changes; keep it current while this tab shows. */
+    private fun refreshHeader() {
+        if (isResumed)
+            (activity as? dev.mooner.starlight.MainActivity)?.onPageChanged(R.id.nav_agent)
+    }
+
     private fun render(summaries: List<ConversationSummary>, live: Map<String, LiveRun>) {
+        refreshHeader()
         val summary = AgentUi.modelSummary(requireContext(), hub)
         val ready = summary != null
         binding.model.isVisible = ready

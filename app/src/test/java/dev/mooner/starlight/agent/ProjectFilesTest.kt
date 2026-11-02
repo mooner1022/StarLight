@@ -1,5 +1,6 @@
 package dev.mooner.starlight.agent
 
+import dev.mooner.starlight.agent.model.plainPreview
 import dev.mooner.starlight.agent.tools.ProjectFiles
 import dev.mooner.starlight.agent.tools.ToolException
 import org.junit.Assert.assertEquals
@@ -63,5 +64,13 @@ class ProjectFilesTest {
         val files = files()
         val hits = files.search("onmessage", isRegex = false, ignoreCase = true, limit = 10)
         assertEquals(listOf("main.js:1: export function onMessage(event) {"), hits)
+    }
+}
+
+class PreviewTest {
+    @org.junit.Test
+    fun previewsDropMarkdown() {
+        val text = "**agent_test** 봇을 만들었어요\n\n- `/안녕`에 답해요\n\n```js\ncode()\n```\n# Done"
+        org.junit.Assert.assertEquals("agent_test 봇을 만들었어요 /안녕에 답해요 Done", text.plainPreview())
     }
 }

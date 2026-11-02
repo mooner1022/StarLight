@@ -191,3 +191,12 @@ data class TurnUsage(
     operator fun plus(other: TurnUsage): TurnUsage =
         TurnUsage(input + other.input, cacheRead + other.cacheRead, cacheWrite + other.cacheWrite, output + other.output)
 }
+
+/** Markdown as one line of plain text, for previews and notifications. */
+fun String.plainPreview(): String =
+    replace(Regex("```[\\s\\S]*?```"), " ")
+        // Underscores stay: they are part of names like agent_test far more often than emphasis.
+        .replace(Regex("\\*+|`+"), "")
+        .replace(Regex("^\\s*(#+|>|[-+])\\s+", RegexOption.MULTILINE), "")
+        .replace(Regex("\\s+"), " ")
+        .trim()
