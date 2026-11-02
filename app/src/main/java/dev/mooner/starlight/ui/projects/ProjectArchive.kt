@@ -61,10 +61,16 @@ internal object ProjectArchive {
 
             val target = baseDir.resolve("projects").resolve(name)
             require(!target.exists()) { "A folder named '$name' already exists" }
-            if (!root.renameTo(target)) {
-                root.copyRecursively(target)
+            try {
+                if (!root.renameTo(target)) {
+                    root.copyRecursively(target)
+                }
+                return Session.projectLoader.loadProject(target)
+            } catch (e: Throwable) {
+                // Left in place, the folder would load on the next start although the import failed.
+                target.deleteRecursively()
+                throw e
             }
-            return Session.projectLoader.loadProject(target)
         } finally {
             staging.deleteRecursively()
         }
