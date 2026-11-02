@@ -25,6 +25,7 @@ import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import java.util.UUID
 
 /**
  * OpenAI-compatible Chat Completions, for Gemini, OpenRouter and endpoints the user enters.
@@ -305,9 +306,11 @@ class ChatCompletionsClient(
                 parts += Part.Thinking(thinking.toString())
             if (text.isNotEmpty())
                 parts += Part.Text(text.toString())
-            val callsWithIds = calls.values.mapIndexed { i, call ->
+            // Some servers stream calls without ids. Made-up ids must be unique across the conversation, since
+            // results, rows and other providers find calls by id.
+            val callsWithIds = calls.values.map { call ->
                 if (call.id.isEmpty())
-                    call.id = "call_$i"
+                    call.id = "call_" + UUID.randomUUID().toString().replace("-", "").take(24)
                 call
             }
             for (call in callsWithIds)

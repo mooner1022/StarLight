@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.auth.ChatGptAuth
+import dev.mooner.starlight.agent.provider.LlmClient
 import dev.mooner.starlight.agent.provider.ProviderKind
 import dev.mooner.starlight.databinding.SheetAgentProviderBinding
 import dev.mooner.starlight.ui.common.Sheet
@@ -110,24 +111,28 @@ internal object ProviderSheet {
     private fun <T> save(host: T, hub: AgentHub, kind: ProviderKind, binding: SheetAgentProviderBinding, sheet: Sheet)
         where T : Context, T : LifecycleOwner {
         val key = binding.apiKey.text.toString().trim()
-        if (kind == ProviderKind.CUSTOM) {
-            val url = binding.baseUrl.text.toString().trim()
+        val custom = kind == ProviderKind.CUSTOM
+        val url = binding.baseUrl.text.toString().trim().trimEnd('/')
+        if (custom) {
             if (url.isEmpty()) {
                 sheet.setNote(host.getString(R.string.agent_base_url_hint), isError = true)
                 return
             }
-            hub.settings.setBaseUrl(kind, url)
         } else if (key.isEmpty()) {
             sheet.setNote(host.getString(R.string.agent_api_key), isError = true)
             return
         }
-        hub.settings.setApiKey(kind, key.ifEmpty { null })
         sheet.setPositiveEnabled(false)
         sheet.setNote(host.getString(R.string.agent_checking))
+        // Checked before it is saved: a key that doesn't work must not leave the provider looking connected.
+        val client = hub.client(kind, key.ifEmpty { null }, if (custom) url else hub.settings.baseUrl(kind))
         host.lifecycleScope.launch {
-            val ok = refreshModels(host, hub, kind, sheet)
+            val ok = refreshModels(host, hub, kind, sheet, client)
             sheet.setPositiveEnabled(true)
             if (ok) {
+                if (custom)
+                    hub.settings.setBaseUrl(kind, url)
+                hub.settings.setApiKey(kind, key.ifEmpty { null })
                 hub.settings.provider = kind
                 sheet.dismiss()
             }
@@ -135,8 +140,14 @@ internal object ProviderSheet {
     }
 
     /** Loads the account's models; also how a key is checked. */
-    private suspend fun refreshModels(context: Context, hub: AgentHub, kind: ProviderKind, sheet: Sheet): Boolean =
-        runCatching { hub.client(kind).listModels() }
+    private suspend fun refreshModels(
+        context: Context,
+        hub: AgentHub,
+        kind: ProviderKind,
+        sheet: Sheet,
+        client: LlmClient = hub.client(kind),
+    ): Boolean =
+        runCatching { client.listModels() }
             .onSuccess { models ->
                 if (models.isNotEmpty()) {
                     hub.settings.setCachedModels(kind, models)

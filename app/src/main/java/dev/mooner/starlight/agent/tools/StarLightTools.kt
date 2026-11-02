@@ -329,7 +329,7 @@ class StarLightTools(private val docs: DocsLibrary) {
         },
         tool(
             "rename_file",
-            "Renames or moves a file within a project. The main script can't be renamed this way.",
+            "Renames or moves a file within a project. The main script and project.json can't be renamed this way.",
             ToolRisk.WRITE,
             params = {
                 project()
@@ -346,8 +346,8 @@ class StarLightTools(private val docs: DocsLibrary) {
             val target = files.resolve(to)
             if (!source.isFile)
                 throw ToolException("No such file: $from")
-            if (files.relative(source) == project.info.mainScript)
-                throw ToolException("$from is the main script; renaming it would break the project")
+            if (isProjectFile(project, files.relative(source)))
+                throw ToolException("$from belongs to the project itself; renaming it would break the project")
             if (target.exists())
                 throw ToolException("$to already exists")
             target.parentFile?.mkdirs()
@@ -371,7 +371,7 @@ class StarLightTools(private val docs: DocsLibrary) {
             val file = files.resolve(path)
             if (!file.isFile)
                 throw ToolException("No such file: $path")
-            if (files.relative(file) == project.info.mainScript || files.relative(file) == "project.json")
+            if (isProjectFile(project, files.relative(file)))
                 throw ToolException("$path belongs to the project itself and can't be deleted")
             if (!file.delete())
                 throw ToolException("Could not delete $path")
@@ -581,6 +581,14 @@ class StarLightTools(private val docs: DocsLibrary) {
         ToolOutput("Failed to compile ${project.info.name}: $message$location$logText", isError = true, summary = message.take(120))
     }
 
+    /**
+     * Whether [relative] is project.json or the main script, which hold the project together. Compared without case,
+     * as shared storage doesn't tell `Main.js` from `main.js`.
+     */
+    private fun isProjectFile(project: Project, relative: String): Boolean =
+        relative.equals(project.info.mainScript.removePrefix("./"), ignoreCase = true) ||
+            relative.equals(PROJECT_INFO_FILE, ignoreCase = true)
+
     private fun sourcePath(project: Project, source: String): String {
         val file = File(source)
         if (!file.isAbsolute)
@@ -678,6 +686,7 @@ class StarLightTools(private val docs: DocsLibrary) {
     private companion object {
         const val ALL_EVENTS = "*"
         const val MESSAGE_EVENT = "starlight.message.create"
+        const val PROJECT_INFO_FILE = "project.json"
         const val MAX_LISTED_FILES = 500
         const val MAX_READ_LINES = 2000
         const val MAX_SEARCH_HITS = 200

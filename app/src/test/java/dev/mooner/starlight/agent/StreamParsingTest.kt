@@ -10,6 +10,7 @@ import dev.mooner.starlight.agent.provider.StopReason
 import dev.mooner.starlight.agent.provider.StreamErrorException
 import dev.mooner.starlight.agent.provider.StreamSink
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
@@ -133,5 +134,21 @@ class StreamParsingTest {
         assertEquals(36, result.usage.input)
         val rawCall = result.raw!!.items.single().jsonObject["tool_calls"]!!.toString()
         assertTrue(rawCall.contains("thought_signature"))
+    }
+
+    @Test
+    fun chatCompletionsCallsWithoutIdsGetUniqueOnes() {
+        val client = ChatCompletionsClient("key", "https://example.com/v1")
+        fun turn() = client.parse(events(
+            """{"choices":[{"delta":{"tool_calls":[{"index":0,"type":"function","function":{"name":"read_file","arguments":"{}"}}]}}]}""",
+            """{"choices":[{"delta":{"tool_calls":[{"index":1,"type":"function","function":{"name":"list_projects","arguments":"{}"}}]},"finish_reason":"tool_calls"}]}""",
+            "[DONE]",
+        ))
+        val first = turn()
+        val ids = (first.parts + turn().parts).filterIsInstance<Part.ToolCall>().map { it.id }
+        assertEquals(4, ids.toSet().size)
+        // The replayed turn names the calls the same way as the parts their results point at.
+        val rawIds = first.raw!!.items.single().jsonObject["tool_calls"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.content }
+        assertEquals(first.parts.filterIsInstance<Part.ToolCall>().map { it.id }, rawIds)
     }
 }

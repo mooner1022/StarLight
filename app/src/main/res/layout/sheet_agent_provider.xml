@@ -23,6 +23,7 @@
             style="@style/AgentField"
             android:layout_marginBottom="14dp"
             android:hint="@string/agent_base_url_hint"
+            android:importantForAutofill="no"
             android:inputType="textUri"/>
 
         <LinearLayout
@@ -58,6 +59,7 @@
             android:id="@+id/apiKey"
             style="@style/AgentField"
             android:fontFamily="@font/jbmono_nl_regular"
+            android:importantForAutofill="no"
             android:inputType="textPassword"/>
     </LinearLayout>
 

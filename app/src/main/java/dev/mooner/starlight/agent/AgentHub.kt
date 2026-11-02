@@ -28,16 +28,19 @@ class AgentHub private constructor(val context: Context) {
     val runtime = AgentRuntime(this)
 
     /** A client for [kind] with the credentials saved for it. */
-    fun client(kind: ProviderKind): LlmClient {
-        val baseUrl = settings.baseUrl(kind)
-        fun key() = settings.apiKey(kind) ?: throw SignInRequiredException("Enter an API key for ${kind.displayName} first.")
+    fun client(kind: ProviderKind): LlmClient =
+        client(kind, settings.apiKey(kind), settings.baseUrl(kind))
+
+    /** A client for [kind] with [apiKey] and [baseUrl], such as ones the user is still checking. */
+    fun client(kind: ProviderKind, apiKey: String?, baseUrl: String): LlmClient {
+        fun key() = apiKey ?: throw SignInRequiredException("Enter an API key for ${kind.displayName} first.")
         return when (kind) {
             ProviderKind.ANTHROPIC  -> AnthropicClient(key(), baseUrl)
             ProviderKind.CHATGPT    -> ResponsesClient({ force -> chatGpt.accessToken(force) }, baseUrl, chatGpt = true)
             ProviderKind.OPENAI     -> ResponsesClient({ key() }, baseUrl)
             ProviderKind.GEMINI     -> ChatCompletionsClient(key(), baseUrl, ChatCompletionsClient.Flavor.GEMINI)
             ProviderKind.OPENROUTER -> ChatCompletionsClient(key(), baseUrl, ChatCompletionsClient.Flavor.OPENROUTER)
-            ProviderKind.CUSTOM     -> ChatCompletionsClient(settings.apiKey(kind), baseUrl)
+            ProviderKind.CUSTOM     -> ChatCompletionsClient(apiKey, baseUrl)
         }
     }
 
