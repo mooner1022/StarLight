@@ -79,6 +79,8 @@ data class ChatMessage(
     /** The user rewrote an earlier message into this one; the chat marks it. Left out of the file when false. */
     @EncodeDefault(EncodeDefault.Mode.NEVER)
     val edited: Boolean = false,
+    /** This message summarizes the conversation before it; see [Compaction]. */
+    val compaction: Compaction? = null,
 ) {
     val text: String
         get() = parts.filterIsInstance<Part.Text>().joinToString("\n\n") { it.text }

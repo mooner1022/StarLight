@@ -2,6 +2,7 @@ package dev.mooner.starlight.agent.provider
 
 import dev.mooner.starlight.agent.model.AgentJson
 import dev.mooner.starlight.agent.model.ChatMessage
+import dev.mooner.starlight.agent.model.Compaction
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.model.Role
 import kotlinx.serialization.json.JsonObject
@@ -55,9 +56,9 @@ internal object RequestContent {
     fun invalidJsonResult(arguments: String): String =
         buildJsonObject { put("INVALID_JSON", JsonPrimitive(arguments)) }.toString()
 
-    /** Messages the model sees, without app-only notices and empty turns. */
+    /** Messages the model sees: from the last summary on, without app-only notices and empty turns. */
     fun visibleMessages(messages: List<ChatMessage>): List<ChatMessage> =
-        messages.mapNotNull { message ->
+        Compaction.view(messages).mapNotNull { message ->
             val parts = message.parts.filter { it !is Part.Notice }
             when {
                 parts.isEmpty() && message.raw == null -> null

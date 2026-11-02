@@ -247,6 +247,14 @@
     <string name="agent_plan_go">계획대로 진행</string>
     <string name="agent_plan_go_message">계획대로 진행해 줘.</string>
 
+    <string name="agent_phase_compacting">대화를 요약하는 중…</string>
+    <string name="agent_compacted">대화를 이어가려고 이전 메시지 %d개를 요약했어요</string>
+    <string name="agent_compact">대화 요약하기</string>
+    <string name="agent_compacting">요약하는 중…</string>
+    <string name="agent_compact_nothing">아직 요약할 만큼 대화가 길지 않아요.</string>
+    <string name="agent_compact_failed">요약하지 못했어요: %s</string>
+    <string name="agent_context_use">%1$s · 컨텍스트 %2$d%%</string>
+
     <string name="agent_plan_title">계획</string>
     <string name="agent_plan_progress">%2$d단계 중 %1$d단계 완료</string>
     <string name="agent_plan_toggle">계획 펼치기/접기</string>

@@ -259,6 +259,7 @@ class AgentChatActivity : AppCompatActivity() {
                 binding.messages.scrollToPosition(rows.size - 1)
         }
         updateResumeBar(conversation, running)
+        updateSubtitle()
         // While the agent waits on a decision, the question takes the place of the field.
         binding.composer.root.isVisible = hub.runtime.pendingQuestion(conversationId) == null
         if (conversation !== planSource || running != planRunning) {
@@ -309,7 +310,7 @@ class AgentChatActivity : AppCompatActivity() {
     /** Why the conversation stopped before the model answered, or null when continuing has nothing to offer. */
     private fun resumeReason(conversation: Conversation): String? {
         val messages = conversation.messages
-        val lastTurn = messages.indexOfLast { message -> message.parts.any { it !is Part.Notice } }
+        val lastTurn = messages.indexOfLast { message -> message.compaction == null && message.parts.any { it !is Part.Notice } }
         val last = messages.getOrNull(lastTurn) ?: return null
         if (last.role == Role.ASSISTANT && last.toolCalls.isEmpty())
             return null
@@ -331,7 +332,10 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     private fun updateSubtitle() {
-        binding.subtitle.text = AgentUi.modelSummary(this, hub) ?: getString(R.string.agent_subtitle_setup)
+        val model = AgentUi.modelSummary(this, hub) ?: getString(R.string.agent_subtitle_setup)
+        // How full the model's window is, once it is worth knowing.
+        val use = shownConversation?.let(hub.runtime::contextUse)?.takeIf { it >= CONTEXT_SHOWN_FROM }
+        binding.subtitle.text = if (use == null) model else getString(R.string.agent_context_use, model, (use * 100).toInt().coerceAtMost(100))
     }
 
     private fun send(text: String, attachments: List<Part.Attachment>): Boolean {
@@ -459,15 +463,29 @@ class AgentChatActivity : AppCompatActivity() {
     private fun showMenu() {
         val items = listOf(
             AgentMenu.Item(MENU_USAGE, R.string.agent_usage_title, R.drawable.ic_agent_usage),
+            AgentMenu.Item(MENU_COMPACT, R.string.agent_compact, R.drawable.ic_round_article_24),
             AgentMenu.Item(MENU_SETTINGS, R.string.agent_settings, R.drawable.ic_round_settings_24),
             AgentMenu.Item(MENU_DELETE, R.string.agent_delete_conversation, R.drawable.ic_agent_delete, danger = true),
         )
         AgentMenu.show(binding.menu, items) { id ->
             when (id) {
                 MENU_USAGE    -> showUsage()
+                MENU_COMPACT  -> compact()
                 MENU_SETTINGS -> startActivity(Intent(this, AgentSettingsActivity::class.java))
                 MENU_DELETE   -> confirmDelete()
             }
+        }
+    }
+
+    /** Summarizes the conversation on the user's asking, so later requests are shorter. */
+    private fun compact() {
+        if (hub.runtime.isRunning(conversationId) || hub.store.get(conversationId) == null)
+            return
+        Toast.makeText(this, R.string.agent_compacting, Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            runCatching { hub.runtime.compactNow(conversationId) }
+                .onSuccess { done -> if (!done) Toast.makeText(this@AgentChatActivity, R.string.agent_compact_nothing, Toast.LENGTH_SHORT).show() }
+                .onFailure { e -> toastLong(getString(R.string.agent_compact_failed, hub.runtime.describe(e))) }
         }
     }
 
@@ -515,6 +533,9 @@ class AgentChatActivity : AppCompatActivity() {
         private const val MENU_USAGE = 1
         private const val MENU_SETTINGS = 2
         private const val MENU_DELETE = 3
+        private const val MENU_COMPACT = 4
+        /** The share of the model's window from which the header shows how full it is. */
+        private const val CONTEXT_SHOWN_FROM = 0.3f
 
         /** Opens [conversationId], or a new conversation when it is null. */
         fun intent(context: Context, conversationId: String?, project: String? = null, text: String? = null): Intent =

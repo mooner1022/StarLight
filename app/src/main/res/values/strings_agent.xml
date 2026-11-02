@@ -249,6 +249,14 @@
     <string name="agent_plan_go">Go with this plan</string>
     <string name="agent_plan_go_message">Go ahead with the plan.</string>
 
+    <string name="agent_phase_compacting">Summarizing the conversation…</string>
+    <string name="agent_compacted">Summarized the %d messages before this to keep the conversation going</string>
+    <string name="agent_compact">Summarize the conversation</string>
+    <string name="agent_compacting">Summarizing…</string>
+    <string name="agent_compact_nothing">There\'s too little to summarize yet.</string>
+    <string name="agent_compact_failed">Couldn\'t summarize: %s</string>
+    <string name="agent_context_use">%1$s · context %2$d%%</string>
+
     <string name="agent_plan_title">Plan</string>
     <string name="agent_plan_count" translatable="false">%1$d/%2$d</string>
     <string name="agent_plan_progress">%1$d of %2$d done</string>

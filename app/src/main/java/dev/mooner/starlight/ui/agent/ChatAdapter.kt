@@ -129,6 +129,11 @@ internal object ChatRows {
                     val attachments = message.parts.filterIsInstance<Part.Attachment>()
                     val contexts = message.parts.filterIsInstance<Part.Context>().map { it.label }
                         .filter { it !in Part.Context.HIDDEN }
+                    message.compaction?.let { compaction ->
+                        rows += ChatRow.Notice("compaction:" + message.id, NoticeKind.INFO,
+                            hub.context.getString(R.string.agent_compacted, compaction.covers))
+                        return@forEachIndexed
+                    }
                     // What the app asks the model on its own, such as the reply it left out, stays in the same run.
                     if (text.isBlank() && attachments.isEmpty() && contexts.isEmpty())
                         return@forEachIndexed

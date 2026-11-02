@@ -233,6 +233,7 @@ internal object AgentNotifier {
         LiveRun.Phase.RUNNING_TOOL -> context.getString(R.string.agent_phase_tool, ToolLabels.label(context, run.tool))
         LiveRun.Phase.APPROVAL     -> context.getString(R.string.agent_phase_approval)
         LiveRun.Phase.QUESTION     -> context.getString(R.string.agent_phase_question)
+        LiveRun.Phase.COMPACTING   -> context.getString(R.string.agent_phase_compacting)
         LiveRun.Phase.RETRYING     -> context.getString(R.string.agent_phase_retrying, run.retry)
     }
 

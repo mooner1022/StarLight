@@ -7,6 +7,7 @@ import dev.mooner.starlight.agent.auth.SignInRequiredException
 import dev.mooner.starlight.agent.model.AgentJson
 import dev.mooner.starlight.agent.model.Approval
 import dev.mooner.starlight.agent.model.ChatMessage
+import dev.mooner.starlight.agent.model.Compaction
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.NoticeKind
 import dev.mooner.starlight.agent.model.Part
@@ -26,6 +27,7 @@ import dev.mooner.starlight.agent.tools.ToolContext
 import dev.mooner.starlight.agent.tools.ToolException
 import dev.mooner.starlight.agent.tools.ToolOutput
 import dev.mooner.starlight.agent.tools.ToolRisk
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -73,6 +75,8 @@ data class LiveRun(
         APPROVAL,
         /** Waiting for the user to answer ask_user. */
         QUESTION,
+        /** Summarizing the conversation, which grew too long for the model. */
+        COMPACTING,
         RETRYING,
     }
 }
@@ -215,7 +219,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             if (existing == null || existing.messages.none { it.role == Role.USER })
                 addAll(contextParts(project))
             else if (project != existing.project)
-                add(switchPart(project))
+                addAll(switchPart(project))
             // Told along with the message, not shown: what changed since the agent last looked.
             existing?.pendingNote?.let { add(Part.Context(Part.Context.INSTRUCTIONS, it)) }
             if ((approval ?: existing?.approval?.let(ApprovalPolicy::of)) == ApprovalPolicy.PLAN)
@@ -317,6 +321,82 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 "edit them."))
         }
         return result
+    }
+
+    /**
+     * What part of the model's context window the conversation's last request filled, or null when the window isn't
+     * known or nothing was asked since the last summary.
+     */
+    fun contextUse(conversation: Conversation): Float? {
+        val kind = hub.settings.activeProvider() ?: return null
+        val model = hub.settings.model(kind) ?: return null
+        val window = hub.settings.cachedModels(kind).firstOrNull { it.id == model }?.contextWindow?.takeIf { it > 0 } ?: return null
+        val since = conversation.messages.indexOfLast { it.compaction != null }
+        val used = conversation.messages.drop(since + 1).lastOrNull { it.role == Role.ASSISTANT && it.usage != null }
+            ?.usage?.totalInput ?: return null
+        return used.toFloat() / window
+    }
+
+    /** Summarizes the conversation so far, so the next request starts from the summary; false if there was too little. */
+    suspend fun compactNow(conversationId: String): Boolean {
+        check(!isRunning(conversationId)) { "The conversation is still running" }
+        val conversation = hub.store.get(conversationId) ?: return false
+        return withContext(Dispatchers.IO) { compact(conversationId, conversation.messages.size) }
+    }
+
+    /**
+     * Asks the model to summarize the conversation before its message at [keepFrom], and adds the summary, which
+     * requests then send in place of it. False when there is too little to summarize or no summary came.
+     */
+    private suspend fun compact(id: String, keepFrom: Int): Boolean {
+        val conversation = hub.store.get(id) ?: return false
+        val messages = conversation.messages
+        val covered = messages.take(keepFrom)
+        if (covered.size - (covered.indexOfLast { it.compaction != null } + 1) < MIN_COMPACTED_MESSAGES)
+            return false
+        val kind = hub.settings.activeProvider() ?: return false
+        val model = hub.settings.model(kind) ?: return false
+        setLive(id) { (it ?: LiveRun(id, LiveRun.Phase.COMPACTING)).copy(phase = LiveRun.Phase.COMPACTING) }
+        val now = System.currentTimeMillis()
+        // The same system prompt and tools, so the cached prefix serves this request too.
+        val request = LlmRequest(
+            conversationId = id,
+            model = model,
+            system = SystemPrompt.TEXT,
+            tools = hub.tools.all.map { it.spec },
+            messages = covered + ChatMessage(newId("m"), Role.USER, listOf(Part.Text(SUMMARY_PROMPT)), now),
+            effort = hub.settings.effort(kind),
+            maxOutputTokens = MAX_OUTPUT_TOKENS,
+            attachments = hub.attachments,
+        )
+        val result = hub.client(kind).complete(request, object : StreamSink {})
+        val summary = result.parts.filterIsInstance<Part.Text>().joinToString("\n") { it.text }.trim()
+        updateConversation(id) { it.copy(usage = it.usage + result.usage) }
+        if (summary.isEmpty())
+            return false
+        val marker = ChatMessage(
+            newId("m"), Role.USER,
+            listOf(Part.Context(Part.Context.INSTRUCTIONS, "A summary of the conversation before this point, written " +
+                "when it grew too long; the messages it covers are no longer shown to you:\n$summary")),
+            System.currentTimeMillis(),
+            compaction = Compaction(keepFrom = messages.getOrNull(keepFrom)?.id, covers = keepFrom),
+        )
+        updateConversation(id) { it.copy(messages = it.messages + marker) }
+        return true
+    }
+
+    /** Whether the last request filled most of the model's window, so the next one should start from a summary. */
+    private fun nearLimit(conversation: Conversation): Boolean =
+        (contextUse(conversation) ?: 0f) >= COMPACT_AT
+
+    /** Whether the provider refused the request for being longer than the model's window. */
+    private fun isContextOverflow(e: Exception): Boolean {
+        val text = when (e) {
+            is HttpStatusException  -> if (e.code == 400 || e.code == 413) e.body else return false
+            is StreamErrorException -> e.message.orEmpty()
+            else                    -> return false
+        }.lowercase()
+        return OVERFLOW_HINTS.any { it in text }
     }
 
     /** The user's messages from [messageId] on, whose turns rewinding to before it undoes. */
@@ -436,6 +516,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         updateConversation(id) { it.copy(state = RunState.RUNNING, error = null) }
         var steps = 0
         val maxSteps = hub.settings.maxSteps
+        // One summary per run: if the model still can't fit the conversation, the error shows.
+        var compacted = false
         try {
             while (true) {
                 val conversation = hub.store.get(id) ?: return
@@ -459,8 +541,22 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                             updateConversation(id) { it.copy(state = RunState.IDLE) }
                             return
                         }
+                        // The run going on stays as it is; what came before it is summarized.
+                        val runStart = conversation.messages.indexOfLast { it.isUserTurn }.coerceAtLeast(0)
+                        if (!compacted && nearLimit(conversation)) {
+                            compacted = true
+                            if (runCatching { compact(id, runStart) }.onFailure { LOG.warn { "Couldn't compact: $it" } }.getOrDefault(false))
+                                continue
+                        }
                         steps++
-                        val result = callModel(id)
+                        val result = try {
+                            callModel(id)
+                        } catch (e: Exception) {
+                            if (e is CancellationException || compacted || !isContextOverflow(e) || !compact(id, runStart))
+                                throw e
+                            compacted = true
+                            continue
+                        }
                         if (isSilent(result)) {
                             // An empty end of turn, typically right after tool results: the model takes its work as
                             // done, and the same history gets the same empty answer however often it is resent. The
@@ -781,19 +877,34 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         mLive.update { map -> map + (id to block(map[id])) }
     }
 
-    private fun switchPart(project: String?): Part.Context =
+    private fun switchPart(project: String?): List<Part.Context> =
         if (project != null)
-            Part.Context(project, "The user switched this conversation to the StarLight project \"$project\"; " +
-                "unless they say otherwise, their requests from here on are about it.")
-        else
+            listOfNotNull(
+                Part.Context(project, "The user switched this conversation to the StarLight project \"$project\"; " +
+                    "unless they say otherwise, their requests from here on are about it."),
+                projectNotes(project),
+            )
+        else listOf(
             Part.Context(Part.Context.NO_PROJECT, "The user detached this conversation from any project; don't assume one " +
-                "from here on.")
+                "from here on."))
+
+    /** The project's AGENTS.md, the notes the agent keeps about it, as context the user doesn't see. */
+    private fun projectNotes(project: String): Part.Context? {
+        val file = Session.projectManager.getProjectByName(project)?.directory?.resolve(NOTES_FILE)?.takeIf { it.isFile }
+            ?: return null
+        val text = runCatching { file.readText() }.getOrNull()?.trim()?.takeIf(String::isNotEmpty) ?: return null
+        val notes = if (text.length > MAX_NOTES_CHARS) text.take(MAX_NOTES_CHARS) + "\n... (cut; read_file has the rest)" else text
+        return Part.Context(Part.Context.INSTRUCTIONS, "Notes on the project \"$project\" from its $NOTES_FILE, which you " +
+            "keep:\n$notes")
+    }
 
     private fun contextParts(project: String?): List<Part> {
         val parts = mutableListOf<Part>()
-        if (project != null)
+        if (project != null) {
             parts += Part.Context(project, "This conversation was opened from the StarLight project \"$project\"; " +
                 "unless the user says otherwise, their requests are about it.")
+            projectNotes(project)?.let { parts += it }
+        }
         hub.settings.customInstructions.takeIf(String::isNotBlank)?.let {
             parts += Part.Context(Part.Context.INSTRUCTIONS, "The user's standing instructions for you:\n$it")
         }
@@ -854,6 +965,21 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         const val MAX_TOOL_OUTPUT = 50_000
         const val TITLE_LENGTH = 48
         const val ASK_TOOL = "ask_user"
+        /** The notes the agent keeps in a project's folder, the file Claude Code and Codex read too. */
+        const val NOTES_FILE = "AGENTS.md"
+        const val MAX_NOTES_CHARS = 8_000
+        /** The share of the model's window after which the conversation is summarized before the next request. */
+        const val COMPACT_AT = 0.8f
+        /** Fewer messages than this aren't worth a summary. */
+        const val MIN_COMPACTED_MESSAGES = 4
+        val OVERFLOW_HINTS = listOf("context_length_exceeded", "maximum context length", "context length", "prompt is too long",
+            "context window", "too many tokens", "input is too long", "exceeds the context", "request too large")
+        const val SUMMARY_PROMPT = "The conversation is getting too long for you, so it will be replaced with your " +
+            "summary of it. Write that summary now, as notes for yourself, so you can carry on without the earlier " +
+            "messages: what the user wants and decided, the projects and files involved and their current state, what " +
+            "you changed, what works and what doesn't yet, open problems and next steps, and anything the user asked " +
+            "you to remember. Quote the user's own words where they matter. Leave out tool output you can read again. " +
+            "Don't call any tool; reply with the summary only."
         const val PLAN_MODE_NOTE = "Plan mode is on: look around with the tools that read, and plan, but change " +
             "nothing yet. Lay the plan out with update_plan and explain it briefly; the user approves it to let you " +
             "carry it out."
