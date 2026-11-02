@@ -11,12 +11,13 @@ import android.content.res.ColorStateList
 import android.transition.AutoTransition
 import android.transition.TransitionManager
 import android.transition.TransitionSet
-import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.LinearLayout
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.addCallback
 import androidx.core.content.getSystemService
 import androidx.core.graphics.toColorInt
 import androidx.core.view.isVisible
@@ -96,6 +97,7 @@ internal fun Fragment.showNewProjectDialog() {
     }
 
     lateinit var sheet: Sheet
+    var backCallback: OnBackPressedCallback? = null
 
     val nameInput = binding.newProjectInput
     binding.contentRoot.apply {
@@ -184,6 +186,7 @@ internal fun Fragment.showNewProjectDialog() {
                 duration = STEP_ANIM_DURATION
             })
         step = target
+        backCallback?.isEnabled = target != Step.NAME
 
         val language = selectedLanguage
         val (title, description) = when (target) {
@@ -345,13 +348,10 @@ internal fun Fragment.showNewProjectDialog() {
             configAdapter = null
         }
     }
-    sheet.dialog.setOnKeyListener { _, keyCode, keyEvent ->
-        if (keyCode != KeyEvent.KEYCODE_BACK || step == Step.NAME)
-            return@setOnKeyListener false
-        if (keyEvent.action == KeyEvent.ACTION_UP)
-            goBack()
-        true
-    }
+    // Back goes to the previous step. KEYCODE_BACK doesn't arrive with predictive back (targetSdk 36), so
+    // this goes through the dispatcher. It is enabled past the first step only, after the sheet registered
+    // its own back callback, so it comes first; on the first step the sheet closes as usual.
+    backCallback = sheet.dialog.onBackPressedDispatcher.addCallback(enabled = false) { goBack() }
 
     updateNameHelper()
     updateButtons()
