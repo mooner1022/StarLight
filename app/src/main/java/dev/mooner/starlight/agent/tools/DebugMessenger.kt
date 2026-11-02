@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 internal object DebugMessenger {
 
-    /** Something the bot did in reply to message [messageId], [trigger]: sent [text], or failed with [error]. */
+    /** Something the bot did in reply to message [messageId], [trigger]: sent [text] or [files], or failed with [error]. */
     class Event(
         val messageId: Int,
         val trigger: String,
@@ -35,11 +35,19 @@ internal object DebugMessenger {
         val millis: Long,
         val text: String? = null,
         val error: Throwable? = null,
+        val files: List<SentFile> = emptyList(),
     ) {
         /** How long after the message this came. */
         val seconds: Double
             get() = (millis - sentMillis) / 1000.0
+
+        /** Whether the bot answered: text or files, not an error. */
+        val isReply: Boolean
+            get() = text != null || files.isNotEmpty()
     }
+
+    /** A file the bot sent, as `MediaSharer.send` or `room.sendMedia` prepared it. */
+    class SentFile(val name: String, val mimeType: String, val bytes: Long)
 
     /**
      * How long a look waits. Without [expect] and with [untilQuiet], it ends once the bot has been quiet for a moment
@@ -87,8 +95,8 @@ internal object DebugMessenger {
         val earlier = drain(inbox.events)
         val id = lastMessageId.incrementAndGet()
         val sentMillis = System.currentTimeMillis()
-        fun deliver(text: String? = null, error: Throwable? = null) {
-            inbox.events.trySend(Event(id, options.text, sentMillis, System.currentTimeMillis(), text, error))
+        fun deliver(text: String? = null, error: Throwable? = null, files: List<SentFile> = emptyList()) {
+            inbox.events.trySend(Event(id, options.text, sentMillis, System.currentTimeMillis(), text, error, files))
         }
 
         val roomConfig = GlobalConfig.category("d_room")
@@ -106,6 +114,7 @@ internal object DebugMessenger {
                 isGroupChat = options.isGroupChat ?: roomConfig.getBoolean("is_group_chat", false),
                 onSend = { deliver(text = it) },
                 onMarkAsRead = {},
+                onSendMedia = { media -> deliver(files = media.map { SentFile(it.name, it.mimeType, it.file.length()) }) },
             ),
             packageName = roomConfig.getString("package", PACKAGE_KAKAO_TALK),
             hasMention = false,
@@ -151,7 +160,7 @@ internal object DebugMessenger {
         while (true) {
             if (taken.any { it.error != null && ours(it) })
                 break
-            if (wait.expect != null && taken.count { it.text != null && ours(it) } >= wait.expect)
+            if (wait.expect != null && taken.count { it.isReply && ours(it) } >= wait.expect)
                 break
             val remaining = deadline - System.currentTimeMillis()
             if (remaining <= 0)

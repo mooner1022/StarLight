@@ -484,7 +484,8 @@ class StarLightTools(private val docs: DocsLibrary) {
         tool(
             "send_debug_message",
             "Sends a chat message to a project from its debug room, as if a user sent it, and returns what the bot " +
-                "replied (with how many seconds each reply took), any error, and the logs written meanwhile. The " +
+                "replied, text or files sent with MediaSharer.send or room.sendMedia (name, type and size), " +
+                "with how many seconds each reply took, any error, and the logs written meanwhile. The " +
                 "project must be compiled and receive $MESSAGE_EVENT; it may be off. How long it waits: by default " +
                 "until the bot has been quiet for a second after replying, or ${DebugMessenger.DEFAULT_WAIT_SECONDS} seconds without " +
                 "a reply. For a bot that answers later or in several messages (timers, network requests, await), set " +
@@ -626,12 +627,21 @@ class StarLightTools(private val docs: DocsLibrary) {
         earlier: List<DebugMessenger.Event>,
         withTrigger: Boolean,
     ): ToolOutput {
-        val replies = events.filter { it.text != null }
+        val replies = events.filter { it.isReply }
         val error = events.firstNotNullOfOrNull { it.error }
         fun JsonArrayBuilder.reply(event: DebugMessenger.Event, trigger: Boolean) = addJsonObject {
             if (trigger)
                 put("for", event.trigger)
-            put("text", event.text)
+            event.text?.let { put("text", it) }
+            if (event.files.isNotEmpty())
+                putJsonArray("files") {
+                    for (file in event.files)
+                        addJsonObject {
+                            put("name", file.name)
+                            put("type", file.mimeType)
+                            put("bytes", file.bytes)
+                        }
+                }
             put("seconds", (event.seconds * 10).roundToLong() / 10.0)
         }
         val seconds = wait.maxMillis / 1000
@@ -647,8 +657,8 @@ class StarLightTools(private val docs: DocsLibrary) {
                     put("note", "Got ${replies.size} of the $expected replies expected within ${seconds}s. Later ones " +
                         "are kept: read_debug_replies gets them.")
             }
-            if (earlier.any { it.text != null })
-                putJsonArray("earlierReplies") { earlier.filter { it.text != null }.forEach { reply(it, trigger = true) } }
+            if (earlier.any { it.isReply })
+                putJsonArray("earlierReplies") { earlier.filter { it.isReply }.forEach { reply(it, trigger = true) } }
             if (logs.isNotEmpty())
                 put("logs", formatLogs(logs, logs.size))
         }
@@ -656,7 +666,8 @@ class StarLightTools(private val docs: DocsLibrary) {
             json.toString(),
             isError = error != null,
             // The first reply, and how many more came.
-            summary = replies.firstOrNull()?.text?.take(80)?.let { if (replies.size > 1) "$it (+${replies.size - 1})" else it }
+            summary = replies.firstOrNull()?.let { it.text ?: it.files.joinToString { file -> "📎 ${file.name}" } }?.take(80)
+                ?.let { if (replies.size > 1) "$it (+${replies.size - 1})" else it }
                 ?: error?.let(ScriptErrors::message) ?: "No reply",
         )
     }

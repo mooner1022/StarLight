@@ -42,6 +42,18 @@ class DebugWaitTest {
     }
 
     @Test
+    fun filesTheBotSentCountAsReplies() = runBlocking {
+        val channel = Channel<DebugMessenger.Event>(Channel.UNLIMITED)
+        val image = DebugMessenger.SentFile("cat.png", "image/png", 1234L)
+        channel.send(DebugMessenger.Event(1, "!cat", 0L, System.currentTimeMillis(), files = listOf(image)))
+        channel.send(reply("there you go"))
+        val taken = DebugMessenger.collect(channel, DebugMessenger.Wait(3_000L, expect = 2), quietMillis = 50L)
+        assertEquals(2, taken.size)
+        assertTrue(taken.all { it.isReply })
+        assertEquals("cat.png", taken.first().files.single().name)
+    }
+
+    @Test
     fun byDefaultStopsOnceTheBotIsQuiet() = runBlocking {
         val channel = Channel<DebugMessenger.Event>(Channel.UNLIMITED)
         val bot = bot(channel, 0L to "working on it", 20L to "still here", 400L to "done")
