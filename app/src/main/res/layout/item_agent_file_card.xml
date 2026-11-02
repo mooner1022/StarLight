@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A file the agent handed to the user. -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="5dp">
+
+    <LinearLayout
+        android:id="@+id/card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_agent_card"
+        android:orientation="vertical"
+        android:paddingBottom="12dp">
+
+        <LinearLayout
+            android:id="@+id/main"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:baselineAligned="false"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="8dp">
+
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_agent_tile">
+
+                <ImageView
+                    android:id="@+id/icon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:layout_marginBottom="6dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_round_article_24"
+                    app:tint="@color/agent_accent"/>
+
+                <TextView
+                    android:id="@+id/extension"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="4dp"
+                    android:fontFamily="@font/jbmono_nl_regular"
+                    android:maxLines="1"
+                    android:textColor="@color/agent_accent"
+                    android:textSize="8.5sp"
+                    tools:text="JS"/>
+
+                <ImageView
+                    android:id="@+id/thumb"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:importantForAccessibility="no"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone"/>
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="middle"
+                    android:fontFamily="@font/wantedsans_bold"
+                    android:maxLines="1"
+                    android:textColor="@color/agent_text"
+                    android:textSize="14.5sp"
+                    tools:text="weather-bot.zip"/>
+
+                <TextView
+                    android:id="@+id/meta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/jbmono_nl_regular"
+                    android:maxLines="1"
+                    android:textColor="@color/agent_text_faint"
+                    android:textSize="11.5sp"
+                    tools:text="hello-bot · lib/util.js · 2.1 kB"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:fontFamily="@font/wantedsans_regular"
+            android:lineSpacingExtra="2dp"
+            android:paddingHorizontal="14dp"
+            android:textColor="@color/agent_text_muted"
+            android:textSize="13sp"
+            android:visibility="gone"
+            tools:text="메시지 형식을 정리한 설정 파일이에요."
+            tools:visibility="visible"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp">
+
+            <TextView
+                android:id="@+id/open"
+                style="@style/AgentCardAction"
+                android:text="@string/agent_card_open"
+                app:drawableStartCompat="@drawable/ic_agent_open"/>
+
+            <TextView
+                android:id="@+id/share"
+                style="@style/AgentCardAction"
+                android:text="@string/agent_card_share"
+                app:drawableStartCompat="@drawable/ic_round_ios_share_24"/>
+
+            <TextView
+                android:id="@+id/save"
+                style="@style/AgentCardAction"
+                android:text="@string/agent_card_save"
+                app:drawableStartCompat="@drawable/ic_agent_download"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="4dp">
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/providers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:selectionRequired="true"
+            app:singleLine="true"
+            app:singleSelection="true"/>
+    </HorizontalScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/wantedsans_bold"
+            android:text="@string/agent_model"
+            android:textColor="@color/agent_text"
+            android:textSize="14sp"/>
+
+        <TextView
+            android:id="@+id/refresh"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackground"
+            android:fontFamily="@font/wantedsans_medium"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:text="@string/agent_refresh_models"
+            android:textColor="@color/agent_accent"
+            android:textSize="13sp"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/models"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="vertical"/>
+
+    <TextView
+        android:id="@+id/modelStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:fontFamily="@font/wantedsans_regular"
+        android:textColor="@color/agent_text_faint"
+        android:textSize="12sp"
+        android:visibility="gone"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_agent_chip_outline"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="4dp">
+
+        <EditText
+            android:id="@+id/customModel"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@null"
+            android:fontFamily="@font/jbmono_nl_regular"
+            android:hint="@string/agent_model_custom_hint"
+            android:importantForAutofill="no"
+            android:inputType="text|textNoSuggestions"
+            android:maxLines="1"
+            android:textColor="@color/agent_text"
+            android:textColorHint="@color/agent_text_faint"
+            android:textSize="13sp"/>
+
+        <ImageButton
+            android:id="@+id/applyModel"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_agent_send"
+            android:contentDescription="@string/agent_done"
+            android:src="@drawable/ic_agent_check"
+            app:tint="@color/agent_on_gold"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/effortLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/wantedsans_bold"
+        android:text="@string/agent_effort"
+        android:textColor="@color/agent_text"
+        android:textSize="14sp"/>
+
+    <HorizontalScrollView
+        android:id="@+id/effortScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/efforts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:selectionRequired="true"
+            app:singleLine="true"
+            app:singleSelection="true"/>
+    </HorizontalScrollView>
+</LinearLayout>

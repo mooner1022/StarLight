@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_agent_row"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="12dp">
+
+    <FrameLayout
+        android:layout_width="36dp"
+        android:layout_height="36dp">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_agent_chip"/>
+
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_agent_sparkle"
+            app:tint="@color/agent_accent"/>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/wantedsans_bold"
+            android:maxLines="1"
+            android:textColor="@color/agent_text"
+            android:textSize="15sp"
+            tools:text="인사하는 봇 만들기"/>
+
+        <TextView
+            android:id="@+id/preview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/wantedsans_regular"
+            android:maxLines="1"
+            android:textColor="@color/agent_text_muted"
+            android:textSize="13sp"
+            tools:text="hello-bot을 만들고 디버그 룸에서 시험했어요."/>
+
+        <TextView
+            android:id="@+id/meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/wantedsans_medium"
+            android:maxLines="1"
+            android:textColor="@color/agent_text_faint"
+            android:textSize="11.5sp"
+            tools:text="3분 전 · hello-bot"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/state"
+        android:layout_width="wrap_content"
+        android:layout_height="24dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_agent_notice"
+        android:fontFamily="@font/wantedsans_bold"
+        android:gravity="center"
+        android:paddingHorizontal="9dp"
+        android:textColor="@color/agent_text_muted"
+        android:textSize="11sp"
+        android:visibility="gone"
+        tools:text="작업 중"
+        tools:visibility="visible"/>
+</LinearLayout>

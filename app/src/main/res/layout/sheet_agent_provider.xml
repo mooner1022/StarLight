@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="4dp">
+
+    <LinearLayout
+        android:id="@+id/keyGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/baseUrlLabel"
+            style="@style/AgentRowTitle"
+            android:text="@string/agent_base_url"/>
+
+        <EditText
+            android:id="@+id/baseUrl"
+            style="@style/AgentField"
+            android:layout_marginBottom="14dp"
+            android:hint="@string/agent_base_url_hint"
+            android:importantForAutofill="no"
+            android:inputType="textUri"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/keyLabel"
+                style="@style/AgentRowTitle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="@string/agent_api_key"/>
+
+            <TextView
+                android:id="@+id/getKey"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackground"
+                android:drawablePadding="4dp"
+                android:fontFamily="@font/wantedsans_medium"
+                android:gravity="center"
+                android:paddingHorizontal="6dp"
+                android:text="@string/agent_get_key"
+                android:textColor="@color/agent_accent"
+                android:textSize="13sp"
+                app:drawableEndCompat="@drawable/ic_agent_open"
+                app:drawableTint="@color/agent_accent"/>
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/apiKey"
+            style="@style/AgentField"
+            android:fontFamily="@font/jbmono_nl_regular"
+            android:importantForAutofill="no"
+            android:inputType="textPassword"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/chatGptGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/chatGptStatus"
+            style="@style/AgentRowTitle"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:id="@+id/chatGptSignIn"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_agent_button_gold"
+            android:fontFamily="@font/wantedsans_bold"
+            android:gravity="center"
+            android:text="@string/agent_chatgpt_continue"
+            android:textColor="@color/agent_on_gold"
+            android:textSize="15sp"/>
+
+        <TextView
+            android:id="@+id/manageUsage"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginTop="6dp"
+            android:background="?attr/selectableItemBackground"
+            android:drawablePadding="4dp"
+            android:fontFamily="@font/wantedsans_medium"
+            android:gravity="center"
+            android:paddingHorizontal="4dp"
+            android:text="@string/agent_chatgpt_manage_usage"
+            android:textColor="@color/agent_accent"
+            android:textSize="13.5sp"
+            app:drawableEndCompat="@drawable/ic_agent_open"
+            app:drawableTint="@color/agent_accent"/>
+    </LinearLayout>
+</LinearLayout>

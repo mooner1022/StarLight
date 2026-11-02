@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_agent_row"
+    android:gravity="center_vertical"
+    android:minHeight="64dp"
+    android:orientation="horizontal"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="10dp">
+
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_agent_chip"
+        android:importantForAccessibility="no"
+        android:padding="9dp"
+        tools:src="@drawable/ic_brand_anthropic"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- When the two don't fit, the weight makes the name give way rather than the chip. -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:fontFamily="@font/wantedsans_bold"
+                tools:ignore="InefficientWeight"
+                android:textColor="@color/agent_text"
+                android:textSize="15.5sp"
+                tools:text="ChatGPT"/>
+
+            <!-- How it connects: a sign-in, an API key or a server address. -->
+            <TextView
+                android:id="@+id/method"
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:layout_marginStart="7dp"
+                android:background="@drawable/bg_agent_chip_outline"
+                android:fontFamily="@font/wantedsans_bold"
+                android:gravity="center"
+                android:maxLines="1"
+                android:paddingHorizontal="8dp"
+                android:textColor="@color/agent_accent"
+                android:textSize="11sp"
+                tools:text="계정 로그인"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/wantedsans_regular"
+            android:lineSpacingExtra="1dp"
+            android:textColor="@color/agent_text_muted"
+            android:textSize="12.5sp"
+            tools:text="ChatGPT 계정으로 로그인해 플랜 한도 안에서 써요."/>
+
+        <!-- Only for a connected provider: its account or model, and whether the agent uses it. -->
+        <LinearLayout
+            android:id="@+id/statusRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:drawablePadding="6dp"
+                tools:ignore="InefficientWeight"
+                android:ellipsize="end"
+                android:fontFamily="@font/wantedsans_medium"
+                android:maxLines="1"
+                android:textColor="@color/agent_text"
+                android:textSize="12.5sp"
+                tools:text="연결됨 · GPT-5.5"/>
+
+            <TextView
+                android:id="@+id/inUse"
+                android:layout_width="wrap_content"
+                android:layout_height="22dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_agent_button_gold"
+                android:fontFamily="@font/wantedsans_bold"
+                android:gravity="center"
+                android:maxLines="1"
+                android:paddingHorizontal="9dp"
+                android:text="@string/agent_provider_in_use"
+                android:textColor="@color/agent_on_gold"
+                android:textSize="11sp"
+                android:visibility="gone"
+                tools:visibility="visible"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <ImageView
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="6dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_round_keyboard_arrow_right_24"
+        app:tint="@color/agent_text_faint"/>
+</LinearLayout>

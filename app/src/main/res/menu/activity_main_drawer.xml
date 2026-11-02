@@ -15,6 +15,11 @@
             android:icon="@drawable/ic_round_projects_24"
             android:title="@string/menu_projects" />
         <item
+            android:id="@+id/nav_agent"
+            android:enabled="true"
+            android:icon="@drawable/ic_agent_sparkle"
+            android:title="@string/agent_tab" />
+        <item
             android:id="@+id/nav_plugins"
             android:enabled="true"
             android:icon="@drawable/ic_round_plugins_24"

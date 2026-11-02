@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="2dp">
+
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="wrap_content"
+        android:layout_height="34dp"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="4dp">
+
+        <ImageView
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_agent_thinking"
+            app:tint="@color/agent_text_faint"/>
+
+        <TextView
+            android:id="@+id/label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:fontFamily="@font/wantedsans_medium"
+            android:text="@string/agent_thinking"
+            android:textColor="@color/agent_text_faint"
+            android:textSize="13sp"/>
+
+        <ImageView
+            android:id="@+id/chevron"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_round_keyboard_arrow_down_24"
+            app:tint="@color/agent_text_faint"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="4dp"
+        android:fontFamily="@font/wantedsans_regular"
+        android:lineSpacingExtra="2dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="4dp"
+        android:textColor="@color/agent_text_muted"
+        android:textIsSelectable="true"
+        android:textSize="13sp"
+        android:visibility="gone"
+        tools:text="사용자가 인사 봇을 원한다. 먼저 프로젝트 목록을 확인하자."
+        tools:visibility="visible"/>
+</LinearLayout>
