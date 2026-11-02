@@ -43,8 +43,11 @@ internal object FilePreview {
         }
     }
 
-    /** Shows [file] in a sheet when the app can, otherwise offers the apps that can open it. */
-    fun open(activity: AppCompatActivity, card: Card, file: File, onSave: () -> Unit) {
+    /**
+     * Shows [file] in a sheet when the app can, otherwise offers the apps that can open it. Without [onSave], the
+     * sheet has no save button; sharing still saves it elsewhere.
+     */
+    fun open(activity: AppCompatActivity, card: Card, file: File, onSave: (() -> Unit)? = null) {
         val kind = kindOf(card)
         if (kind == null)
             openWith(activity, card, file)
@@ -52,7 +55,7 @@ internal object FilePreview {
             show(activity, card, file, kind, onSave)
     }
 
-    private fun show(activity: AppCompatActivity, card: Card, file: File, kind: Kind, onSave: () -> Unit) {
+    private fun show(activity: AppCompatActivity, card: Card, file: File, kind: Kind, onSave: (() -> Unit)?) {
         val binding = SheetAgentFilePreviewBinding.inflate(LayoutInflater.from(activity))
         val dialog = SlideBottomSheetDialog(activity)
         dialog.setContentView(binding.root)
@@ -63,7 +66,8 @@ internal object FilePreview {
         shrinkIcons(activity, binding.share, binding.save, binding.openWith)
         binding.close.setOnClickListener { dialog.dismiss() }
         binding.share.setOnClickListener { share(activity, card, file) }
-        binding.save.setOnClickListener { onSave() }
+        binding.save.isVisible = onSave != null
+        binding.save.setOnClickListener { onSave?.invoke() }
         binding.openWith.setOnClickListener { openWith(activity, card, file) }
 
         when (kind) {
