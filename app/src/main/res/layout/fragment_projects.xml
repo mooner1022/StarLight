@@ -59,16 +59,6 @@
             android:src="@drawable/ic_round_search_24"
             app:tint="@color/icon_teal"/>
 
-        <ImageButton
-            android:id="@+id/import_project"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="8dp"
-            android:background="@drawable/bg_project_header_button"
-            android:contentDescription="@string/project_import"
-            android:src="@drawable/ic_round_download_24"
-            app:tint="@color/icon_teal"/>
-
         <com.google.android.material.chip.Chip
             android:id="@+id/new_project"
             android:layout_width="wrap_content"

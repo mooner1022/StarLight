@@ -73,8 +73,9 @@ private class EventOption(
     var isSelected: Boolean,
 )
 
+/** [onImport] adds a link on the first step that closes the dialog and imports a project zip instead. */
 @SuppressLint("CheckResult")
-internal fun Fragment.showNewProjectDialog() {
+internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
     val context = requireContext()
     val binding = DialogNewProjectBinding.inflate(layoutInflater)
     val languages = Session.languageManager.getLanguages().sortedBy(Language::name)
@@ -352,6 +353,12 @@ internal fun Fragment.showNewProjectDialog() {
     // this goes through the dispatcher. It is enabled past the first step only, after the sheet registered
     // its own back callback, so it comes first; on the first step the sheet closes as usual.
     backCallback = sheet.dialog.onBackPressedDispatcher.addCallback(enabled = false) { goBack() }
+
+    binding.importFromFile.isVisible = onImport != null
+    binding.importFromFile.setOnClickListener {
+        sheet.dismiss()
+        onImport?.invoke()
+    }
 
     updateNameHelper()
     updateButtons()

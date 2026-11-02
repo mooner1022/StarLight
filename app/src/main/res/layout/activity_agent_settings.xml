@@ -296,6 +296,63 @@
             </LinearLayout>
 
             <TextView
+                style="@style/AgentSectionTitle"
+                android:layout_marginTop="26dp"
+                android:text="@string/agent_history"/>
+
+            <!-- Says where conversations are kept, which depends on the build. -->
+            <TextView
+                android:id="@+id/historyBody"
+                style="@style/AgentSectionBody"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_agent_surface"
+                android:orientation="vertical"
+                android:paddingVertical="6dp">
+
+                <LinearLayout
+                    android:id="@+id/exportHistory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp">
+
+                    <TextView
+                        style="@style/AgentRowTitle"
+                        android:text="@string/agent_history_export"/>
+
+                    <TextView
+                        style="@style/AgentRowBody"
+                        android:text="@string/agent_history_export_desc"/>
+                </LinearLayout>
+
+                <View style="@style/AgentDivider"/>
+
+                <LinearLayout
+                    android:id="@+id/importHistory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp">
+
+                    <TextView
+                        style="@style/AgentRowTitle"
+                        android:text="@string/agent_history_import"/>
+
+                    <TextView
+                        style="@style/AgentRowBody"
+                        android:text="@string/agent_history_import_desc"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
                 style="@style/AgentSectionBody"
                 android:layout_marginTop="18dp"
                 android:text="@string/agent_privacy"/>

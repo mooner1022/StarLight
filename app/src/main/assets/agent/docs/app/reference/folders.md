@@ -14,6 +14,7 @@ StarLight/
 │  ├─ <ID>.slp
 │  └─ <이름>(<ID>)/          플러그인 데이터 (config-plugin.json)
 ├─ modules/                  여러 프로젝트가 함께 쓰는 모듈 (직접 만들어요)
+├─ agent/                    AI 탭의 대화와 첨부 파일
 ├─ logs/
 │  └─ <날짜>/<시각>.log      앱 실행마다 하나씩
 ├─ config-general.json       앱 설정
@@ -25,6 +26,7 @@ StarLight/
 | `projects/` | 프로젝트마다 폴더가 하나씩 있어요. 아래에서 설명해요. |
 | `plugins/` | 플러그인 파일과 플러그인별 데이터 폴더예요. [플러그인 설치와 관리](/docs/app/guides/plugins)를 보세요. |
 | `modules/` | 앱이 만들지 않으니 직접 만들어요. **설정 → 프로젝트, 플러그인 → 전역 모듈 로드**를 켜야 쓰여요. |
+| `agent/` | AI 탭의 대화(`conversations/`)와 첨부·생성 파일(`attachments/`)이에요. 앱을 다시 설치해도 남아요. API 키는 여기 없어요. 다른 기기나 빌드로 옮기려면 **AI 설정 → 대화 내보내기**를 써요. |
 | `logs/` | 앱 로그 파일이에요. 보관 기간은 **설정 → 로그**에서 정해요. |
 | `config-general.json` | 설정 탭의 값과 홈 위젯 배치예요. |
 | `notification_rules_v2.json` | **패키지 규칙 설정**에서 만든 규칙이에요. |
