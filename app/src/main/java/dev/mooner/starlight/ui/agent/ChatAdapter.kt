@@ -102,14 +102,15 @@ internal object ChatRows {
         conversation.messages.forEachIndexed { index, message ->
             when (message.role) {
                 Role.USER -> {
+                    val text = message.parts.filterIsInstance<Part.Text>().joinToString("\n\n") { it.text }
+                    val attachments = message.parts.filterIsInstance<Part.Attachment>()
+                    val contexts = message.parts.filterIsInstance<Part.Context>().map { it.label }
+                        .filter { it !in Part.Context.HIDDEN }
+                    // What the app asks the model on its own, such as the reply it left out, stays in the same run.
+                    if (text.isBlank() && attachments.isEmpty() && contexts.isEmpty())
+                        return@forEachIndexed
                     closeRun(index)
-                    rows += ChatRow.User(
-                        id = message.id,
-                        text = message.parts.filterIsInstance<Part.Text>().joinToString("\n\n") { it.text },
-                        attachments = message.parts.filterIsInstance<Part.Attachment>(),
-                        contexts = message.parts.filterIsInstance<Part.Context>().map { it.label }
-                            .filter { it != Part.Context.INSTRUCTIONS },
-                    )
+                    rows += ChatRow.User(id = message.id, text = text, attachments = attachments, contexts = contexts)
                 }
                 Role.ASSISTANT -> {
                     message.usage?.let { runUsage += it }

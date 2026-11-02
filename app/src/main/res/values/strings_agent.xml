@@ -59,8 +59,11 @@
     <string name="agent_allow_always">Always in this chat</string>
     <string name="agent_continue">Continue</string>
     <string name="agent_resume_interrupted">The app was closed during this run.</string>
-    <string name="agent_resume_paused">You can pick up where the run stopped.</string>
     <string name="agent_resume_error">The last request failed.</string>
+    <string name="agent_resume_stopped">You stopped this run. Continue to pick it up again.</string>
+    <string name="agent_resume_step_limit">Paused at the step limit. Continue to let the agent go on.</string>
+    <string name="agent_resume_no_reply">The agent stopped without replying. Continue to ask it for its reply.</string>
+    <string name="agent_notice_no_reply">The agent finished without a reply. Send a message if you want it to go on.</string>
     <string name="agent_usage">In %1$s · cached %2$s · out %3$s</string>
     <string name="agent_usage_title">Usage</string>
     <string name="agent_usage_detail">Input (full price): %1$s\nRead from cache: %2$s\nWritten to cache: %3$s\nOutput: %4$s\nCache hit rate: %5$s</string>

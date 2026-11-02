@@ -113,6 +113,11 @@ sealed class Part {
             const val INSTRUCTIONS = "instructions"
             /** The conversation was detached from its project. */
             const val NO_PROJECT = "no_project"
+            /** Asks the model for the reply it left out; not shown. */
+            const val NUDGE = "nudge"
+
+            /** Labels the chat doesn't show as chips. */
+            val HIDDEN = setOf(INSTRUCTIONS, NUDGE)
         }
     }
 
@@ -203,6 +208,10 @@ enum class NoticeKind {
     @SerialName("stopped") STOPPED,
     @SerialName("error") ERROR,
     @SerialName("refusal") REFUSAL,
+    /** The run reached the step limit. */
+    @SerialName("paused") PAUSED,
+    /** The model ended its turn without a reply, even when asked for one. */
+    @SerialName("no_reply") NO_REPLY,
 }
 
 /** Tokens of one turn, or the sum over a conversation. */

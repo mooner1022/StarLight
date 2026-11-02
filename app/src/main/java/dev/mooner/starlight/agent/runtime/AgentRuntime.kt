@@ -227,12 +227,24 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                     last.role == Role.ASSISTANT -> break
                     else -> {
                         if (steps >= maxSteps) {
-                            appendNotice(id, NoticeKind.INFO, string(R.string.agent_notice_paused, maxSteps))
+                            appendNotice(id, NoticeKind.PAUSED, string(R.string.agent_notice_paused, maxSteps))
                             updateConversation(id) { it.copy(state = RunState.IDLE) }
                             return
                         }
                         steps++
                         val result = callModel(id)
+                        if (isSilent(result)) {
+                            // An empty end of turn, typically right after tool results: the model takes its work as
+                            // done, and the same history gets the same empty answer however often it is resent. The
+                            // turn is dropped and the model asked for its reply in a new user message, once in a row.
+                            updateConversation(id) { it.copy(usage = it.usage + result.usage) }
+                            if (isNudge(last)) {
+                                appendNotice(id, NoticeKind.NO_REPLY, string(R.string.agent_notice_no_reply))
+                                break
+                            }
+                            appendNudge(id)
+                            continue
+                        }
                         if (!handleResult(id, result))
                             break
                     }
@@ -295,6 +307,20 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 delay(wait.coerceAtMost(MAX_RETRY_WAIT_MILLIS))
             }
         }
+    }
+
+    /** A turn with nothing for the user and nothing to run, such as an empty end_turn. */
+    private fun isSilent(result: LlmResult): Boolean =
+        result.stopReason != StopReason.REFUSAL && result.stopReason != StopReason.MAX_TOKENS &&
+            result.parts.none { it is Part.ToolCall || (it is Part.Text && it.text.isNotBlank()) }
+
+    private fun isNudge(message: ChatMessage): Boolean =
+        message.role == Role.USER && message.parts.all { it is Part.Context && it.label == Part.Context.NUDGE }
+
+    private fun appendNudge(id: String) {
+        val now = System.currentTimeMillis()
+        val nudge = ChatMessage(newId("m"), Role.USER, listOf(Part.Context(Part.Context.NUDGE, NUDGE_TEXT)), now)
+        updateConversation(id) { it.copy(messages = it.messages + nudge, updatedAt = now) }
     }
 
     /** Saves the model's turn; false when the run ends with it. */
@@ -524,6 +550,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         const val MAX_RETRY_WAIT_MILLIS = 60_000L
         const val MAX_TOOL_OUTPUT = 50_000
         const val TITLE_LENGTH = 48
+        const val NUDGE_TEXT = "Your last turn ended without a reply, so the user saw nothing from you. Continue: " +
+            "finish anything that is left, then reply to the user."
 
         /** ChatGPT plan errors that retrying can't fix. */
         val NON_RETRYABLE_CODES = listOf("subscription_sharing_", "chatpass_v2_", "usage_not_included", "insufficient_quota")

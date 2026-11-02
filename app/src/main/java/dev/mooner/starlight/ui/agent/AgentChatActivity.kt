@@ -22,6 +22,7 @@ import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.ApprovalPolicy
 import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.Conversation
+import dev.mooner.starlight.agent.model.NoticeKind
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
@@ -245,17 +246,33 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     private fun updateResumeBar(conversation: Conversation?, running: Boolean) {
-        val last = conversation?.messages?.lastOrNull { message -> message.parts.any { it !is Part.Notice } }
-        val unanswered = last != null && (last.role != Role.ASSISTANT || last.toolCalls.isNotEmpty())
-        val show = conversation != null && !running && unanswered
-        binding.resumeBar.isVisible = show
-        if (show)
-            binding.resumeText.text = when (conversation!!.state) {
-                // The error itself is in the chat right above.
-                RunState.ERROR       -> getString(R.string.agent_resume_error)
-                RunState.INTERRUPTED -> getString(R.string.agent_resume_interrupted)
-                else                 -> getString(R.string.agent_resume_paused)
-            }
+        val reason = if (conversation == null || running) null else resumeReason(conversation)
+        binding.resumeBar.isVisible = reason != null
+        if (reason != null)
+            binding.resumeText.text = reason
+    }
+
+    /** Why the conversation stopped before the model answered, or null when continuing has nothing to offer. */
+    private fun resumeReason(conversation: Conversation): String? {
+        val messages = conversation.messages
+        val lastTurn = messages.indexOfLast { message -> message.parts.any { it !is Part.Notice } }
+        val last = messages.getOrNull(lastTurn) ?: return null
+        if (last.role == Role.ASSISTANT && last.toolCalls.isEmpty())
+            return null
+        // The notices after the last turn say how the run ended.
+        val notices = messages.drop(lastTurn + 1).flatMap { it.parts }.filterIsInstance<Part.Notice>().map { it.kind }
+        return when {
+            // The error itself is in the chat right above.
+            conversation.state == RunState.ERROR       -> getString(R.string.agent_resume_error)
+            conversation.state == RunState.INTERRUPTED -> getString(R.string.agent_resume_interrupted)
+            // Asking again would end the same way; the notice says so, and the user can write instead.
+            NoticeKind.NO_REPLY in notices || NoticeKind.REFUSAL in notices -> null
+            NoticeKind.STOPPED in notices              -> getString(R.string.agent_resume_stopped)
+            // Before the step limit had its own kind, its notice was an INFO one.
+            NoticeKind.PAUSED in notices || NoticeKind.INFO in notices -> getString(R.string.agent_resume_step_limit)
+            // Ended on tool results with nothing said, as older versions did when the model gave an empty answer.
+            else                                       -> getString(R.string.agent_resume_no_reply)
+        }
     }
 
     private fun updateSubtitle() {
