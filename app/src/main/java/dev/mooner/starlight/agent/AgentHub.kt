@@ -10,6 +10,7 @@ import dev.mooner.starlight.agent.provider.LlmClient
 import dev.mooner.starlight.agent.provider.ProviderKind
 import dev.mooner.starlight.agent.provider.ResponsesClient
 import dev.mooner.starlight.agent.runtime.AgentRuntime
+import dev.mooner.starlight.agent.store.AgentStorage
 import dev.mooner.starlight.agent.store.AttachmentStore
 import dev.mooner.starlight.agent.store.ConversationStore
 import dev.mooner.starlight.agent.tools.DocsLibrary
@@ -21,8 +22,10 @@ class AgentHub private constructor(val context: Context) {
 
     val settings = AgentSettings(context)
     val chatGpt = ChatGptAuth(settings)
-    val store = ConversationStore(File(context.filesDir, "agent")).apply { markInterrupted() }
-    val attachments = AttachmentStore(File(context.filesDir, "agent/attachments"))
+    /** In the StarLight folder, so conversations outlive a reinstall where that folder is shared storage. */
+    val dataDir: File = AgentStorage.root(context)
+    val store = ConversationStore(dataDir).apply { markInterrupted() }
+    val attachments = AttachmentStore(File(dataDir, AgentStorage.ATTACHMENTS))
     val docs = DocsLibrary(context.assets)
     val tools = StarLightTools(docs)
     val runtime = AgentRuntime(this)

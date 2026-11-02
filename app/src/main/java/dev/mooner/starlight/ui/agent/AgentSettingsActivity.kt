@@ -10,6 +10,8 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.widget.SeekBar
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
@@ -22,14 +24,23 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.ApprovalPolicy
 import dev.mooner.starlight.agent.provider.ProviderKind
+import dev.mooner.starlight.agent.store.AgentStorage
+import dev.mooner.starlight.agent.store.ConversationArchive
 import dev.mooner.starlight.databinding.ActivityAgentSettingsBinding
 import dev.mooner.starlight.databinding.ItemAgentOptionBinding
 import dev.mooner.starlight.databinding.ItemAgentProviderBinding
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /** Providers to connect, and how the agent behaves. */
@@ -37,6 +48,27 @@ class AgentSettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAgentSettingsBinding
     private val hub by lazy { AgentHub.get(this) }
+
+    private val exportHistory = registerForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if (uri != null)
+            runHistory({ getString(R.string.agent_history_exported, it) }) {
+                contentResolver.openOutputStream(uri)!!.use { ConversationArchive.export(hub.dataDir, it) }
+            }
+    }
+    private val importHistory = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null)
+            runHistory({ getString(R.string.agent_history_imported, it.imported, it.skipped) }) {
+                contentResolver.openInputStream(uri)!!.use { input ->
+                    ConversationArchive.import(
+                        input = input,
+                        staging = File(hub.dataDir, IMPORT_STAGING),
+                        attachmentsDir = File(hub.dataDir, AgentStorage.ATTACHMENTS),
+                        exists = { id -> hub.store.get(id) != null },
+                        add = hub.store::save,
+                    )
+                }
+            }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +96,7 @@ class AgentSettingsActivity : AppCompatActivity() {
         binding.back.setOnClickListener { finish() }
 
         setUpBehavior()
+        setUpHistory()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 hub.settings.version.collect {
@@ -71,6 +104,30 @@ class AgentSettingsActivity : AppCompatActivity() {
                     renderLiveUpdates()
                 }
             }
+        }
+    }
+
+    private fun setUpHistory() {
+        // Only the shared StarLight folder outlives a reinstall; the app's own folders go with the app.
+        val kept = BuildConfig.SHARED_STORAGE && !hub.dataDir.startsWith(filesDir)
+        binding.historyBody.setText(if (kept) R.string.agent_history_shared else R.string.agent_history_private)
+        binding.exportHistory.setOnClickListener {
+            exportHistory.launch("starlight-ai-" + SimpleDateFormat("yyMMdd", Locale.ROOT).format(Date()) + ".zip")
+        }
+        binding.importHistory.setOnClickListener {
+            importHistory.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
+        }
+    }
+
+    /** Runs [work] off the main thread and says how it went with [done]'s text or the error. */
+    private fun <T> runHistory(done: (T) -> String, work: () -> T) {
+        lifecycleScope.launch {
+            runCatching { withContext(Dispatchers.IO) { work() } }
+                .onSuccess { Toast.makeText(this@AgentSettingsActivity, done(it), Toast.LENGTH_SHORT).show() }
+                .onFailure { e ->
+                    Toast.makeText(this@AgentSettingsActivity, getString(R.string.agent_history_failed, e.message ?: e.toString()),
+                        Toast.LENGTH_LONG).show()
+                }
         }
     }
 
@@ -210,6 +267,8 @@ class AgentSettingsActivity : AppCompatActivity() {
         approvalRenderer?.invoke(policy)
 
     private companion object {
+        /** Where an imported zip is unpacked before its conversations are added. */
+        const val IMPORT_STAGING = ".import"
         const val STEP_UNIT = 10
     }
 }

@@ -161,6 +161,16 @@
     <string name="agent_notify_finish">끝나면 알림</string>
     <string name="agent_notify_finish_desc">다른 화면에 있을 때 작업이 끝나면 알려 줘요.</string>
     <string name="agent_privacy">보낸 메시지와 첨부 파일, 에이전트가 읽은 프로젝트 파일은 고른 AI 제공자에게 전송돼요.</string>
+    <string name="agent_history">대화 기록</string>
+    <string name="agent_history_shared">대화는 StarLight 폴더의 agent 폴더에 저장돼 앱을 다시 설치해도 남아요. API 키는 함께 저장되지 않아요.</string>
+    <string name="agent_history_private">앱을 지우면 대화도 지워져요. 다시 설치하거나 다른 StarLight 빌드로 옮기기 전에 내보내 두세요.</string>
+    <string name="agent_history_export">대화 내보내기</string>
+    <string name="agent_history_export_desc">모든 대화와 파일을 zip 파일로 저장해요. API 키와 설정은 들어가지 않아요.</string>
+    <string name="agent_history_import">대화 가져오기</string>
+    <string name="agent_history_import_desc">내보낸 zip 파일의 대화를 더해요. 이미 있는 대화는 건너뛰어요.</string>
+    <string name="agent_history_exported">대화 %d개를 내보냈어요</string>
+    <string name="agent_history_imported">대화 %1$d개를 가져왔어요 (건너뜀 %2$d개)</string>
+    <string name="agent_history_failed">처리하지 못했어요: %s</string>
 
     <string name="agent_channel_progress">AI 에이전트 작업</string>
     <string name="agent_channel_attention">AI 에이전트 확인 요청</string>

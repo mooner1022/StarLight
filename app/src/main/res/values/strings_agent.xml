@@ -163,6 +163,16 @@
     <string name="agent_notify_finish">Notify when done</string>
     <string name="agent_notify_finish_desc">When a run ends while you\'re elsewhere.</string>
     <string name="agent_privacy">Your messages, attachments and the project files the agent reads are sent to the provider you choose.</string>
+    <string name="agent_history">Conversation history</string>
+    <string name="agent_history_shared">Conversations are kept in the agent folder of the StarLight folder, so they stay when the app is reinstalled. API keys aren\'t kept there.</string>
+    <string name="agent_history_private">Uninstalling the app deletes conversations. Export them before reinstalling or moving to another StarLight build.</string>
+    <string name="agent_history_export">Export conversations</string>
+    <string name="agent_history_export_desc">Saves every conversation and its files to a zip file. API keys and settings aren\'t included.</string>
+    <string name="agent_history_import">Import conversations</string>
+    <string name="agent_history_import_desc">Adds the conversations of an exported zip file. Ones already here are skipped.</string>
+    <string name="agent_history_exported">Exported %d conversations</string>
+    <string name="agent_history_imported">Imported %1$d conversations (%2$d skipped)</string>
+    <string name="agent_history_failed">Couldn\'t do it: %s</string>
 
     <string name="agent_channel_progress">AI agent at work</string>
     <string name="agent_channel_attention">AI agent asks</string>
