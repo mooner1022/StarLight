@@ -20,6 +20,7 @@ import dev.mooner.starlight.agent.provider.StopReason
 import dev.mooner.starlight.agent.provider.StreamErrorException
 import dev.mooner.starlight.agent.provider.StreamSink
 import dev.mooner.starlight.agent.provider.string
+import dev.mooner.starlight.agent.store.Rewind
 import dev.mooner.starlight.agent.tools.ToolContext
 import dev.mooner.starlight.agent.tools.ToolException
 import dev.mooner.starlight.agent.tools.ToolOutput
@@ -88,6 +89,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     private val approvals = ConcurrentHashMap<String, CompletableDeferred<Boolean>>()
     /** Tools the user allowed for the rest of a conversation, by conversation. */
     private val alwaysAllowed = ConcurrentHashMap<String, MutableSet<String>>()
+    private val rewinder = Rewinder(hub)
 
     private val mLive = MutableStateFlow<Map<String, LiveRun>>(emptyMap())
     val live: StateFlow<Map<String, LiveRun>> = mLive.asStateFlow()
@@ -100,6 +102,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
 
     /** Approvals waiting for the user, by conversation: the call and what it would do. */
     private val pendingApprovals = ConcurrentHashMap<String, Pair<String, String>>()
+    /** The diff a call waiting for approval would make, by [approvalKey], for the approval card. */
+    private val approvalPreviews = ConcurrentHashMap<String, String>()
     /** When each run going on started. */
     private val startedAt = ConcurrentHashMap<String, Long>()
     private val mDismissed = MutableStateFlow<Set<String>>(emptySet())
@@ -122,6 +126,10 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     /** The call [conversationId] waits on the user for, and what it would do. */
     fun pendingApproval(conversationId: String): Pair<String, String>? =
         pendingApprovals[conversationId]
+
+    /** What the call [callId] waiting for approval would change, as a diff, if its tool can tell. */
+    fun approvalPreview(conversationId: String, callId: String): String? =
+        approvalPreviews[approvalKey(conversationId, callId)]
 
     fun startedAt(conversationId: String): Long? =
         startedAt[conversationId]
@@ -160,6 +168,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 addAll(contextParts(project))
             else if (project != existing.project)
                 add(switchPart(project))
+            // Told along with the message, not shown: what changed since the agent last looked.
+            existing?.pendingNote?.let { add(Part.Context(Part.Context.INSTRUCTIONS, it)) }
             addAll(attachments)
             if (text.isNotBlank())
                 add(Part.Text(text.trim()))
@@ -177,13 +187,15 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             error = null,
             project = project,
             approval = approval?.id ?: conversation.approval,
+            pendingNote = null,
         ))
         start(conversationId)
     }
 
     /**
      * Replaces the user's message [messageId], and everything after it, with a new message and runs the conversation
-     * from there. Only the conversation goes back; what the agent changed in projects meanwhile stays.
+     * from there. Only the conversation goes back; what the agent changed in projects meanwhile stays, and the agent
+     * is told so. [rewindAndResend] puts that back first.
      */
     fun resend(
         conversationId: String,
@@ -197,23 +209,99 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         val conversation = hub.store.get(conversationId) ?: return send(conversationId, text, attachments, project, approval)
         val index = conversation.messages.indexOfFirst { it.id == messageId }
         require(index >= 0 && conversation.messages[index].role == Role.USER) { "No user message $messageId" }
+        val firstMessage = conversation.messages.take(index).none { it.role == Role.USER }
+        val stays = rewindable(conversation, messageId)
+        cut(
+            conversation, index,
+            title = if (firstMessage) titleOf(text, attachments) else conversation.title,
+            keep = attachments,
+            note = stays.takeIf { it.isNotEmpty() }?.let {
+                "The user rewrote an earlier message, which took your later turns out of this conversation, but what " +
+                    "you changed in them stays: ${listed(it)}."
+            },
+        )
+        send(conversationId, text, attachments, project, approval, edited = true)
+    }
+
+    /** Like [resend], after putting back what the agent changed from [messageId] on. */
+    suspend fun rewindAndResend(
+        conversationId: String,
+        messageId: String,
+        text: String,
+        attachments: List<Part.Attachment>,
+        project: String? = null,
+        approval: ApprovalPolicy? = null,
+    ): Rewind.Result {
+        check(!isRunning(conversationId)) { "The conversation is still running" }
+        val conversation = hub.store.get(conversationId) ?: return NOTHING_REWOUND
+        val result = rewinder.rewind(conversationId, turnsFrom(conversation, messageId))
+        withContext(Dispatchers.Main) { resend(conversationId, messageId, text, attachments, project, approval) }
+        return result
+    }
+
+    /** What the agent changed from the user's message [messageId] on, which rewinding to before it puts back. */
+    fun rewindable(conversationId: String, messageId: String): List<String> =
+        hub.store.get(conversationId)?.let { rewindable(it, messageId) }.orEmpty()
+
+    private fun rewindable(conversation: Conversation, messageId: String): List<String> =
+        hub.checkpoints.changes(conversation.id, turnsFrom(conversation, messageId)).map { Rewind.describe(it.entry) }
+
+    /**
+     * Puts back what the agent changed in projects from the user's message [messageId] on. With [conversationToo] the
+     * conversation goes back to before that message as well; otherwise it stays, and the agent is told what changed.
+     */
+    suspend fun rewind(conversationId: String, messageId: String, conversationToo: Boolean): Rewind.Result {
+        check(!isRunning(conversationId)) { "The conversation is still running" }
+        val conversation = hub.store.get(conversationId) ?: return NOTHING_REWOUND
+        val index = conversation.messages.indexOfFirst { it.id == messageId }
+        require(index >= 0) { "No message $messageId" }
+        val result = rewinder.rewind(conversationId, turnsFrom(conversation, messageId))
+        val current = hub.store.get(conversationId) ?: return result
+        if (conversationToo) {
+            // The message goes back to the composer, attachments and all.
+            cut(current, index, title = current.title, keep = current.messages[index].attachments, note = null)
+        } else if (result.restored.isNotEmpty()) {
+            val asked = current.messages[index].text.lineSequence().firstOrNull().orEmpty().take(NOTE_QUOTE_CHARS)
+            hub.store.save(current.copy(pendingNote = "The user rewound what you changed from their message \"$asked\" " +
+                "on. These are back as they were before it: ${listed(result.restored)}. Read files again before you " +
+                "edit them."))
+        }
+        return result
+    }
+
+    /** The user's messages from [messageId] on, whose turns rewinding to before it undoes. */
+    private fun turnsFrom(conversation: Conversation, messageId: String): List<String> {
+        val index = conversation.messages.indexOfFirst { it.id == messageId }
+        if (index < 0)
+            return emptyList()
+        return conversation.messages.drop(index).filter { it.isUserTurn }.map { it.id }
+    }
+
+    /**
+     * Cuts [conversation] back to before its message at [index]. Attachments only the removed part had go with it,
+     * apart from [keep], and so do the checkpoints of its turns: what they changed is put back or stays.
+     */
+    private fun cut(conversation: Conversation, index: Int, title: String, keep: List<Part.Attachment>, note: String?) {
         val kept = conversation.messages.take(index)
-        val firstMessage = kept.none { it.role == Role.USER }
+        val removed = conversation.messages.drop(index)
         hub.store.save(conversation.copy(
             messages = kept,
             project = History.projectAt(kept),
-            title = if (firstMessage) titleOf(text, attachments) else conversation.title,
+            title = title,
             state = RunState.IDLE,
             error = null,
             updatedAt = System.currentTimeMillis(),
+            pendingNote = note,
         ))
-        // Files only the removed messages had go with them.
-        val stillUsed = (kept.flatMap { it.attachments } + attachments).mapTo(HashSet()) { it.id }
-        conversation.messages.drop(index).flatMap { it.attachments }
+        val stillUsed = (kept.flatMap { it.attachments } + keep).mapTo(HashSet()) { it.id }
+        removed.flatMap { it.attachments }
             .filter { it.id !in stillUsed }
-            .forEach { hub.attachments.delete(conversationId, it.id) }
-        send(conversationId, text, attachments, project, approval, edited = true)
+            .forEach { hub.attachments.delete(conversation.id, it.id) }
+        hub.checkpoints.discard(conversation.id, removed.filter { it.isUserTurn }.map { it.id })
     }
+
+    private fun listed(items: List<String>): String =
+        items.take(NOTE_ITEMS).joinToString() + if (items.size > NOTE_ITEMS) " and ${items.size - NOTE_ITEMS} more" else ""
 
     /** Sets when [conversationId] asks before running tools; null follows the settings. Applies to a run going on. */
     fun setApproval(conversationId: String, approval: ApprovalPolicy?) {
@@ -446,7 +534,14 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 summary = "Invalid arguments")
         if (needsApproval(id, tool.risk, tool.name)) {
             val description = runCatching { tool.describe(args) }.getOrDefault(tool.name)
-            val allowed = askApproval(id, messageId, call, description)
+            val preview = tool.preview?.let { preview -> withContext(Dispatchers.IO) { runCatching { preview(args) }.getOrNull() } }
+            val key = approvalKey(id, call.id)
+            preview?.let { approvalPreviews[key] = it }
+            val allowed = try {
+                askApproval(id, messageId, call, description)
+            } finally {
+                approvalPreviews.remove(key)
+            }
             if (!allowed)
                 return Part.ToolResult(call.id, call.name, "The user denied this action. Don't retry it unless the user asks.",
                     isError = true, summary = "Denied")
@@ -458,6 +553,11 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             override fun outbox(): File = hub.attachments.outbox(id)
             override fun addAttachment(name: String, mimeType: String, bytes: ByteArray): Part.Attachment =
                 hub.attachments.add(id, name, mimeType, bytes)
+            // A turn's changes are kept under the user's message that started it.
+            override val checkpoint by lazy {
+                val turn = hub.store.get(id)?.messages?.lastOrNull { it.isUserTurn }?.id ?: messageId
+                hub.checkpoints.recorder(id, turn)
+            }
         }
         val output = try {
             tool.run(context, args)
@@ -470,7 +570,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             LOG.warn { "Tool ${tool.name} failed: $e" }
             ToolOutput.error("${tool.name} failed: ${e.message ?: e}")
         }
-        return Part.ToolResult(call.id, call.name, cap(output.text), output.isError, output.summary, output.card, output.images)
+        return Part.ToolResult(call.id, call.name, cap(output.text), output.isError, output.summary, output.card, output.images,
+            output.diff)
     }
 
     private fun needsApproval(id: String, risk: ToolRisk, name: String): Boolean {
@@ -635,11 +736,16 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         const val MAX_RETRY_WAIT_MILLIS = 60_000L
         const val MAX_TOOL_OUTPUT = 50_000
         const val TITLE_LENGTH = 48
+        /** How much of the user's message a note about rewinding quotes, and how many changes it lists. */
+        const val NOTE_QUOTE_CHARS = 60
+        const val NOTE_ITEMS = 20
         const val NUDGE_TEXT = "Your last turn ended without a reply, so the user saw nothing from you. Continue: " +
             "finish anything that is left, then reply to the user."
 
         /** ChatGPT plan errors that retrying can't fix. */
         val NON_RETRYABLE_CODES = listOf("subscription_sharing_", "chatpass_v2_", "usage_not_included", "insufficient_quota")
+
+        val NOTHING_REWOUND = Rewind.Result(emptyList(), emptyList(), emptySet(), emptyMap())
 
         fun approvalKey(conversationId: String, callId: String) = "$conversationId/$callId"
 

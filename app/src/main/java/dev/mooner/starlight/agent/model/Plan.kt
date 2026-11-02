@@ -77,9 +77,7 @@ data class Plan(val steps: List<Step>) {
             if (!plan.isFinished)
                 return plan
             // The run going on began with the user's last message; messages the app sends on its own don't count.
-            val runStart = messages.indexOfLast { message ->
-                message.role == Role.USER && message.parts.any { it !is Part.Context || it.label !in Part.Context.HIDDEN }
-            }
+            val runStart = messages.indexOfLast { it.isUserTurn }
             return plan.takeIf { running && at > runStart }
         }
 

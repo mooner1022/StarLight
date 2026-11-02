@@ -4,6 +4,7 @@ import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.CardKind
 import dev.mooner.starlight.agent.model.Plan
 import dev.mooner.starlight.agent.store.AttachmentStore
+import dev.mooner.starlight.agent.store.CheckpointStore
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.ApiObject
@@ -11,6 +12,7 @@ import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.project.event.getInstance
+import dev.mooner.starlight.utils.zip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArrayBuilder
@@ -328,12 +330,18 @@ class StarLightTools(private val docs: DocsLibrary) {
                 expectedHash()
             },
             describe = { "Write ${it.stringArg("path")} in ${it.stringArg("project")}" },
+            preview = { args -> changeIn(args) { args.requireString("content") } },
         ) { args ->
             val project = findProject(args)
             val path = args.requireString("path")
             val content = args.requireString("content")
-            val file = ProjectFiles(project.directory).write(path, content, args.stringArg("expectedHash"))
-            ToolOutput("Wrote ${content.lines().size} lines to $path [hash ${ProjectFiles.sha256(file.readBytes())}]", summary = path)
+            val files = ProjectFiles(project.directory)
+            val target = files.resolve(path)
+            val before = textOf(target)
+            keep(project, files, target)
+            val file = files.write(path, content, args.stringArg("expectedHash"))
+            ToolOutput("Wrote ${content.lines().size} lines to $path [hash ${ProjectFiles.sha256(file.readBytes())}]", summary = path,
+                diff = before?.let { TextDiff.unified(it, content) })
         },
         tool(
             "edit_file",
@@ -348,11 +356,17 @@ class StarLightTools(private val docs: DocsLibrary) {
                 expectedHash()
             },
             describe = { "Edit ${it.stringArg("path")} in ${it.stringArg("project")}" },
+            preview = { args -> changeIn(args) { before -> replaceOnce(before, args.requireString("old"), args.requireString("new")) } },
         ) { args ->
             val project = findProject(args)
             val path = args.requireString("path")
-            val file = ProjectFiles(project.directory).edit(path, args.requireString("old"), args.requireString("new"), args.stringArg("expectedHash"))
-            ToolOutput("Edited $path [hash ${ProjectFiles.sha256(file.readBytes())}]", summary = path)
+            val files = ProjectFiles(project.directory)
+            val target = files.resolve(path)
+            val before = textOf(target)
+            keep(project, files, target)
+            val file = files.edit(path, args.requireString("old"), args.requireString("new"), args.stringArg("expectedHash"))
+            ToolOutput("Edited $path [hash ${ProjectFiles.sha256(file.readBytes())}]", summary = path,
+                diff = before?.let { TextDiff.unified(it, file.readText()) })
         },
         tool(
             "rename_file",
@@ -377,6 +391,8 @@ class StarLightTools(private val docs: DocsLibrary) {
                 throw ToolException("$from belongs to the project itself; renaming it would break the project")
             if (target.exists())
                 throw ToolException("$to already exists")
+            keep(project, files, source)
+            keep(project, files, target)
             target.parentFile?.mkdirs()
             if (!source.renameTo(target))
                 throw ToolException("Could not rename $from to $to")
@@ -391,6 +407,7 @@ class StarLightTools(private val docs: DocsLibrary) {
                 string("path", "File path relative to the project directory.")
             },
             describe = { "Delete ${it.stringArg("path")} from ${it.stringArg("project")}" },
+            preview = { args -> changeIn(args) { "" } },
         ) { args ->
             val project = findProject(args)
             val files = ProjectFiles(project.directory)
@@ -400,9 +417,11 @@ class StarLightTools(private val docs: DocsLibrary) {
                 throw ToolException("No such file: $path")
             if (isProjectFile(project, files.relative(file)))
                 throw ToolException("$path belongs to the project itself and can't be deleted")
+            val before = textOf(file)
+            keep(project, files, file)
             if (!file.delete())
                 throw ToolException("Could not delete $path")
-            ToolOutput("Deleted $path", summary = path)
+            ToolOutput("Deleted $path", summary = path, diff = before?.let { TextDiff.unified(it, "") })
         },
         tool(
             "compile_project",
@@ -436,6 +455,7 @@ class StarLightTools(private val docs: DocsLibrary) {
                 throw ToolException("Unknown events: ${unknown.joinToString()}. See list_events.")
             // Allowed ids may be wildcards such as starlight.*; they are stored expanded so that one can be removed.
             val events = allowedEvents(project) + allow - disallow
+            keepInfo(project)
             Session.projectManager.updateProjectInfo(project.info.name, true) {
                 allowedEventIds.clear()
                 allowedEventIds.addAll(events)
@@ -466,6 +486,7 @@ class StarLightTools(private val docs: DocsLibrary) {
             val events = args.stringSet("events").ifEmpty { setOf(MESSAGE_EVENT) }.associateWith { id ->
                 (ProjectEventManager.findFirst(id) ?: throw ToolException("No event '$id'. See list_events.")).getInstance()
             }
+            checkpoint.project(name)
             manager.newProject(events = events) {
                 this.name = name
                 mainScript = "$name.${language.fileExtension}"
@@ -487,6 +508,7 @@ class StarLightTools(private val docs: DocsLibrary) {
         ) { args ->
             val project = findProject(args)
             val enabled = args.booleanArg("enabled") ?: throw ToolException("Missing argument: enabled (a boolean)")
+            keepInfo(project)
             if (!project.setEnabled(enabled)) {
                 if (!project.isCompiled && !enabled)
                     return@tool ToolOutput("${project.info.name} is off", summary = project.info.name)
@@ -499,12 +521,15 @@ class StarLightTools(private val docs: DocsLibrary) {
         },
         tool(
             "delete_project",
-            "Deletes a project and all of its files. This can't be undone; do it only when the user asked for it.",
+            "Deletes a project and all of its files. Do it only when the user asked for it.",
             ToolRisk.DESTRUCTIVE,
             params = { project() },
             describe = { "Delete the project ${it.stringArg("project")} and its files" },
         ) { args ->
             val project = findProject(args)
+            val directory = project.directory
+            val bytes = directory.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+            checkpoint.project(project.info.name, bytes) { output -> zip(directory, output) }
             Session.projectManager.removeProject(project, removeFiles = true)
             ToolOutput("Deleted ${project.info.name}", summary = project.info.name)
         },
@@ -604,9 +629,11 @@ class StarLightTools(private val docs: DocsLibrary) {
             val source = attachmentFile(args.requireString("attachment"))
                 ?: throw ToolException("No attachment ${args.stringArg("attachment")} in this conversation")
             val path = args.requireString("path")
-            val target = ProjectFiles(project.directory).resolve(path)
+            val files = ProjectFiles(project.directory)
+            val target = files.resolve(path)
             if (target.isDirectory)
                 throw ToolException("Is a directory: $path")
+            keep(project, files, target)
             target.parentFile?.mkdirs()
             source.copyTo(target, overwrite = true)
             ToolOutput("Saved ${target.length()} bytes to $path", summary = path)
@@ -659,6 +686,36 @@ class StarLightTools(private val docs: DocsLibrary) {
             ?: projects.firstOrNull { it.info.name.equals(key, ignoreCase = true) }
             ?: throw ToolException("No project named '$key'. Use list_projects to see the projects.")
     }
+
+    /** The text of [file], empty if there is none, or null for a binary file, which a diff can't show. */
+    private fun textOf(file: File): String? = when {
+        !file.isFile                  -> ""
+        ProjectFiles.isBinary(file)   -> null
+        else                          -> file.readText()
+    }
+
+    /** The diff a call on the file at the arguments' path would make, turning its text into what [after] returns. */
+    private fun changeIn(args: JsonObject, after: (before: String) -> String?): String? {
+        val file = ProjectFiles(findProject(args).directory).resolve(args.requireString("path"))
+        val before = textOf(file) ?: return null
+        return TextDiff.unified(before, after(before) ?: return null)
+    }
+
+    /** [text] with its one occurrence of [old] replaced, as edit_file does; null if it doesn't occur exactly once. */
+    private fun replaceOnce(text: String, old: String, new: String): String? {
+        val first = text.indexOf(old)
+        if (old.isEmpty() || first < 0 || text.indexOf(old, first + 1) >= 0)
+            return null
+        return text.substring(0, first) + new + text.substring(first + old.length)
+    }
+
+    /** Keeps [file] of [project] as it is before a tool changes it, so the user can rewind the turn. */
+    private fun ToolContext.keep(project: Project, files: ProjectFiles, file: File) =
+        checkpoint.file(project.info.name, project.directory, files.relative(file))
+
+    /** Keeps the events and switch of [project] before a tool changes them. */
+    private fun ToolContext.keepInfo(project: Project) =
+        checkpoint.info(project.info.name, CheckpointStore.SavedInfo(project.info.allowedEventIds.toList(), project.info.isEnabled))
 
     /** The image file at [path] in [project], for view_image. */
     private fun projectImage(project: Project, path: String): DebugMessenger.KeptImage {
@@ -751,9 +808,10 @@ class StarLightTools(private val docs: DocsLibrary) {
         risk: ToolRisk,
         params: ParamsBuilder.() -> Unit = {},
         describe: (JsonObject) -> String,
+        preview: ((JsonObject) -> String?)? = null,
         run: suspend ToolContext.(JsonObject) -> ToolOutput,
     ): AgentTool =
-        AgentTool(name, description, risk, ParamsBuilder().apply(params).build(), describe) { args ->
+        AgentTool(name, description, risk, ParamsBuilder().apply(params).build(), describe, preview) { args ->
             // File work blocks, and compiling waits for the script engine.
             withContext(Dispatchers.IO) { run(args) }
         }

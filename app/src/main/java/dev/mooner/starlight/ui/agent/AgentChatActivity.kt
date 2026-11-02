@@ -20,6 +20,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.ApprovalPolicy
 import dev.mooner.starlight.agent.model.Card
+import dev.mooner.starlight.agent.model.ChatMessage
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.NoticeKind
 import dev.mooner.starlight.agent.model.Part
@@ -28,6 +29,7 @@ import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
 import dev.mooner.starlight.agent.runtime.History
 import dev.mooner.starlight.agent.runtime.LiveRun
+import dev.mooner.starlight.agent.store.Rewind
 import dev.mooner.starlight.databinding.ActivityAgentChatBinding
 import dev.mooner.starlight.ui.common.showSheet
 import kotlinx.coroutines.Dispatchers
@@ -115,6 +117,9 @@ class AgentChatActivity : AppCompatActivity() {
 
             override fun onEdit(messageId: String) =
                 startEditing(messageId)
+
+            override fun onRewind(messageId: String) =
+                confirmRewind(messageId)
         })
         binding.messages.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
         binding.messages.adapter = adapter
@@ -332,12 +337,88 @@ class AgentChatActivity : AppCompatActivity() {
         if (hub.runtime.isRunning(conversationId))
             return false
         val editing = composer.editingMessage
-        if (editing != null && hub.store.get(conversationId)?.messages?.any { it.id == editing } == true)
+        if (editing != null && hub.store.get(conversationId)?.messages?.any { it.id == editing } == true) {
+            val changes = hub.runtime.rewindable(conversationId, editing)
+            if (changes.isNotEmpty()) {
+                // The field keeps the message until the user picks.
+                confirmEditRewind(editing, text, attachments, changes.size)
+                return false
+            }
             hub.runtime.resend(conversationId, editing, text, attachments, composer.project, composer.approval)
-        else
+        } else {
             hub.runtime.send(conversationId, text, attachments, composer.project, composer.approval)
+        }
         return true
     }
+
+    /** Rewriting a message the agent changed things after: asks whether to put them back too. */
+    private fun confirmEditRewind(messageId: String, text: String, attachments: List<Part.Attachment>, changes: Int) {
+        val project = composer.project
+        val approval = composer.approval
+        showSheet {
+            title = getString(R.string.agent_edit_rewind_title)
+            icon = R.drawable.ic_agent_rewind
+            message = getString(R.string.agent_edit_rewind_message, changes)
+            note = getString(R.string.agent_rewind_note)
+            neutral(getString(R.string.agent_cancel))
+            negative(R.string.agent_edit_rewind_no) {
+                composer.clear()
+                hub.runtime.resend(conversationId, messageId, text, attachments, project, approval)
+            }
+            positive(R.string.agent_edit_rewind_yes) {
+                composer.clear()
+                lifecycleScope.launch {
+                    runCatching { hub.runtime.rewindAndResend(conversationId, messageId, text, attachments, project, approval) }
+                        .onSuccess(::reportRewind)
+                        .onFailure { e -> toastLong(getString(R.string.agent_rewind_failed, e.message ?: e.toString())) }
+                }
+            }
+        }
+    }
+
+    /** Asks how far to go back to before the user's message [messageId]: the files only, or the conversation too. */
+    private fun confirmRewind(messageId: String) {
+        if (hub.runtime.isRunning(conversationId))
+            return
+        val changes = hub.runtime.rewindable(conversationId, messageId)
+        val message = hub.store.get(conversationId)?.messages?.firstOrNull { it.id == messageId }
+        if (changes.isEmpty() || message == null)
+            return
+        val listed = changes.take(REWIND_LISTED).joinToString("\n") { "· $it" } +
+            if (changes.size > REWIND_LISTED) "\n" + getString(R.string.agent_rewind_more, changes.size - REWIND_LISTED) else ""
+        showSheet {
+            title = getString(R.string.agent_rewind_title)
+            icon = R.drawable.ic_agent_rewind
+            this.message = getString(R.string.agent_rewind_message, changes.size) + "\n\n" + listed
+            note = getString(R.string.agent_rewind_note)
+            neutral(getString(R.string.agent_cancel))
+            negative(R.string.agent_rewind_files) { rewind(message, conversationToo = false) }
+            positive(R.string.agent_rewind_both) { rewind(message, conversationToo = true) }
+        }
+    }
+
+    private fun rewind(message: ChatMessage, conversationToo: Boolean) {
+        lifecycleScope.launch {
+            runCatching { hub.runtime.rewind(conversationId, message.id, conversationToo) }
+                .onSuccess { result ->
+                    // The conversation went back to before the message; it waits in the field to be sent again.
+                    if (conversationToo)
+                        composer.fill(message.text, message.parts.filterIsInstance<Part.Attachment>())
+                    reportRewind(result)
+                }
+                .onFailure { e -> toastLong(getString(R.string.agent_rewind_failed, e.message ?: e.toString())) }
+        }
+    }
+
+    private fun reportRewind(result: Rewind.Result) {
+        if (result.failed.isEmpty())
+            Toast.makeText(this, getString(R.string.agent_rewind_done, result.restored.size), Toast.LENGTH_SHORT).show()
+        else
+            toastLong(getString(R.string.agent_rewind_partly, result.restored.size, result.failed.joinToString()))
+    }
+
+    private fun toastLong(text: String) =
+        Toast.makeText(this, text, Toast.LENGTH_LONG).show()
 
     /** Puts the user's message [messageId] in the composer, to be sent again in place of it and what followed. */
     private fun startEditing(messageId: String) {
@@ -411,6 +492,8 @@ class AgentChatActivity : AppCompatActivity() {
         private const val KEY_PLAN_COLLAPSED = "plan_collapsed"
         private const val LIVE_INTERVAL_MILLIS = 90L
         private const val MAX_PICK = 5
+        /** How many changes the rewind sheet lists by name. */
+        private const val REWIND_LISTED = 8
         private const val MENU_USAGE = 1
         private const val MENU_SETTINGS = 2
         private const val MENU_DELETE = 3

@@ -115,10 +115,7 @@ internal object AgentNotifier {
     private fun currentSteps(conversation: Conversation): List<Step> {
         val messages = conversation.messages
         // Messages the app sends on its own, such as asking for a reply the model left out, don't start a new run.
-        val start = messages.indexOfLast { message ->
-            message.role == Role.USER &&
-                message.parts.any { it !is Part.Context || it.label !in Part.Context.HIDDEN }
-        }
+        val start = messages.indexOfLast { it.isUserTurn }
         val run = messages.drop(start + 1)
         val results = run.filter { it.role == Role.TOOL }
             .flatMap { it.parts.filterIsInstance<Part.ToolResult>() }

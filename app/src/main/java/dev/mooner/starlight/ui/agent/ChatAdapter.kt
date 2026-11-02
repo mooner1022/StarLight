@@ -77,7 +77,9 @@ sealed class ChatRow(val key: String) {
     data class ToolGroup(val id: String, val count: Int, val expanded: Boolean) : ChatRow(id)
     data class FileCard(val callId: String, val card: Card) : ChatRow("card:$callId")
     data class ProjectCard(val callId: String, val card: Card) : ChatRow("card:$callId")
-    data class ApprovalRequest(val call: Part.ToolCall, val description: String) : ChatRow("approval:" + call.id)
+    /** A call waiting for the user, with what it would change in a file if its tool can tell. */
+    data class ApprovalRequest(val call: Part.ToolCall, val description: String, val preview: String? = null) :
+        ChatRow("approval:" + call.id)
     data class Notice(val id: String, val kind: NoticeKind, val text: String) : ChatRow(id)
     data class Usage(val id: String, val usage: TurnUsage) : ChatRow(id)
     data class Live(val run: LiveRun) : ChatRow("live")
@@ -141,7 +143,7 @@ internal object ChatRows {
                                 if (part.approval == Approval.PENDING && result == null && part.id == awaited) {
                                     val args = RequestContent.parseArguments(part.arguments)
                                     val description = args?.let { hub.tools.find(part.name)?.describe?.invoke(it) } ?: part.name
-                                    run += ChatRow.ApprovalRequest(part, description)
+                                    run += ChatRow.ApprovalRequest(part, description, hub.runtime.approvalPreview(conversation.id, part.id))
                                 }
                             }
                             is Part.Notice   -> run += ChatRow.Notice(id, part.kind, part.text)
@@ -198,6 +200,8 @@ interface ChatActions {
     fun onSaveFile(card: Card, file: File)
     /** The user chose to rewrite their message [messageId] and go on from there. */
     fun onEdit(messageId: String)
+    /** The user chose to put back what the agent changed from their message [messageId] on. */
+    fun onRewind(messageId: String)
 }
 
 class ChatAdapter(
@@ -345,6 +349,14 @@ class ChatAdapter(
         val isExpanded = row.key in expanded
         binding.details.isVisible = isExpanded
         if (isExpanded) {
+            // What the call changed says more than its arguments, which hold the whole file for a write.
+            val diff = result?.diff
+            binding.diffLabel.isVisible = diff != null
+            binding.diffScroll.isVisible = diff != null
+            binding.argumentsLabel.isVisible = diff == null
+            binding.arguments.isVisible = diff == null
+            if (diff != null)
+                binding.diff.text = DiffText.render(context, diff)
             binding.arguments.text = prettyArguments(call.arguments).take(MAX_DETAIL)
             binding.outputLabel.isVisible = result != null
             binding.output.isVisible = result != null
@@ -464,6 +476,16 @@ class ChatAdapter(
     private fun bindApproval(binding: ItemAgentApprovalBinding, row: ChatRow.ApprovalRequest) {
         binding.icon.setImageResource(ToolLabels.icon(row.call.name))
         binding.description.text = row.description
+        val preview = row.preview
+        binding.previewScroll.isVisible = preview != null
+        if (preview != null) {
+            binding.preview.text = DiffText.render(context, preview)
+            binding.preview.maxLines = PREVIEW_LINES
+            // A long change opens in full on a tap.
+            binding.preview.setOnClickListener {
+                binding.preview.maxLines = if (binding.preview.maxLines == PREVIEW_LINES) Int.MAX_VALUE else PREVIEW_LINES
+            }
+        }
         binding.allow.setOnClickListener { actions.onApproval(row.call.id, allow = true, always = false) }
         binding.deny.setOnClickListener { actions.onApproval(row.call.id, allow = false, always = false) }
         binding.always.setOnClickListener { actions.onApproval(row.call.id, allow = true, always = true) }
@@ -514,8 +536,11 @@ class ChatAdapter(
             if (text.isNotBlank())
                 add(AgentMenu.Item(MENU_COPY, R.string.agent_message_copy, R.drawable.ic_agent_copy))
             // Rewriting cuts the history, which a run going on still writes to.
-            if (userMessageId != null && !hub.runtime.isRunning(conversationId()))
+            if (userMessageId != null && !hub.runtime.isRunning(conversationId())) {
                 add(AgentMenu.Item(MENU_EDIT, R.string.agent_message_edit, R.drawable.ic_agent_edit))
+                if (hub.runtime.rewindable(conversationId(), userMessageId).isNotEmpty())
+                    add(AgentMenu.Item(MENU_REWIND, R.string.agent_message_rewind, R.drawable.ic_agent_rewind))
+            }
         }
         if (items.isEmpty())
             return
@@ -523,6 +548,7 @@ class ChatAdapter(
             when (id) {
                 MENU_COPY -> copy(text)
                 MENU_EDIT -> userMessageId?.let(actions::onEdit)
+                MENU_REWIND -> userMessageId?.let(actions::onRewind)
             }
         }
     }
@@ -551,6 +577,9 @@ class ChatAdapter(
         const val MAX_DETAIL = 6_000
         const val MENU_COPY = 1
         const val MENU_EDIT = 2
+        const val MENU_REWIND = 3
+        /** Lines of a diff an approval card shows before it is tapped open. */
+        const val PREVIEW_LINES = 14
 
         val PRETTY = Json { prettyPrint = true }
 

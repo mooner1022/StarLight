@@ -166,6 +166,14 @@ class Composer(
         updateSend()
     }
 
+    /** Puts a message back in the field as a new one, such as one the user rewound the conversation to before. */
+    fun fill(text: String, attachments: List<Part.Attachment>) {
+        clear()
+        this.text = text
+        attachments.forEach(::addChip)
+        updateSend()
+    }
+
     /** Leaves the edit with an empty field and the project as it was before. */
     fun cancelEdit() {
         if (editingMessage == null)

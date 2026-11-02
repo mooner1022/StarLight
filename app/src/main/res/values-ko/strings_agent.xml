@@ -210,10 +210,26 @@
     <string name="agent_tool_debug_message">디버그 룸 테스트</string>
     <string name="agent_tool_debug_replies">디버그 룸 답장 확인</string>
     <string name="agent_tool_view_image">이미지 확인</string>
+    <string name="agent_tool_diff">변경 내용</string>
     <string name="agent_tool_save_attachment">첨부 파일 저장</string>
     <string name="agent_tool_send_file">파일 전달</string>
     <string name="agent_tool_show_project">프로젝트 안내</string>
     <string name="agent_tool_update_plan">계획 업데이트</string>
+
+    <string name="agent_message_rewind">여기로 되돌리기</string>
+    <string name="agent_rewind_title">이 메시지 전으로 되돌리기</string>
+    <string name="agent_rewind_message">이 메시지부터 에이전트가 바꾼 %d곳을 그 전으로 되돌려요.</string>
+    <string name="agent_rewind_more">외 %d곳</string>
+    <string name="agent_rewind_note">에이전트의 도구가 바꾼 것만 되돌려요. 봇이 실행 중에 쓴 파일은 그대로예요. 실행 중인 프로젝트는 다시 컴파일해요.</string>
+    <string name="agent_rewind_files">파일만</string>
+    <string name="agent_rewind_both">파일과 대화</string>
+    <string name="agent_rewind_done">%d곳을 되돌렸어요.</string>
+    <string name="agent_rewind_partly">%1$d곳을 되돌렸어요. 되돌리지 못한 것: %2$s</string>
+    <string name="agent_rewind_failed">되돌리지 못했어요: %s</string>
+    <string name="agent_edit_rewind_title">이후 변경도 되돌릴까요?</string>
+    <string name="agent_edit_rewind_message">이 메시지 이후 에이전트가 %d곳을 바꿨어요. 메시지를 고치면서 그 변경도 되돌릴까요?</string>
+    <string name="agent_edit_rewind_yes">되돌리고 보내기</string>
+    <string name="agent_edit_rewind_no">그대로 보내기</string>
 
     <string name="agent_plan_title">계획</string>
     <string name="agent_plan_progress">%2$d단계 중 %1$d단계 완료</string>

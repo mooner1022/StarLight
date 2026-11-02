@@ -3,6 +3,7 @@ package dev.mooner.starlight.agent.tools
 import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.provider.ToolSpec
+import dev.mooner.starlight.agent.store.CheckpointStore
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
@@ -33,6 +34,8 @@ class ToolOutput(
     val card: Card? = null,
     /** Images for the model to see with the result, added with [ToolContext.addAttachment]. */
     val images: List<Part.Attachment> = emptyList(),
+    /** What the call changed in a file, for the chat to show; see [TextDiff]. */
+    val diff: String? = null,
 ) {
     companion object {
         fun error(message: String) = ToolOutput(message, isError = true, summary = message)
@@ -54,6 +57,9 @@ interface ToolContext {
 
     /** Adds a file to this conversation's attachments, as an attached one is kept; large images are scaled down. */
     fun addAttachment(name: String, mimeType: String, bytes: ByteArray): Part.Attachment
+
+    /** Keeps what a tool is about to change, so the user can rewind the turn; call it before changing anything. */
+    val checkpoint: CheckpointStore.Recorder
 }
 
 class AgentTool(
@@ -63,6 +69,8 @@ class AgentTool(
     val parameters: JsonObject,
     /** What the approval prompt says the call will do. */
     val describe: (JsonObject) -> String,
+    /** What the call would change in a file, as a diff the approval prompt shows; null when it can't tell. */
+    val preview: ((JsonObject) -> String?)? = null,
     val run: suspend ToolContext.(JsonObject) -> ToolOutput,
 ) {
     val spec: ToolSpec

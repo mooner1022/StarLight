@@ -212,10 +212,26 @@
     <string name="agent_tool_debug_message">Tested in the debug room</string>
     <string name="agent_tool_debug_replies">Checked debug room replies</string>
     <string name="agent_tool_view_image">Looked at an image</string>
+    <string name="agent_tool_diff">Changes</string>
     <string name="agent_tool_save_attachment">Saved an attachment</string>
     <string name="agent_tool_send_file">Sent a file</string>
     <string name="agent_tool_show_project">Showed a project</string>
     <string name="agent_tool_update_plan">Updated the plan</string>
+
+    <string name="agent_message_rewind">Rewind to here</string>
+    <string name="agent_rewind_title">Rewind to before this message</string>
+    <string name="agent_rewind_message">What the agent changed from this message on goes back to how it was (%d):</string>
+    <string name="agent_rewind_more">and %d more</string>
+    <string name="agent_rewind_note">Only what the agent\'s tools changed goes back; files a bot writes while it runs stay. Projects that run are compiled again.</string>
+    <string name="agent_rewind_files">Files only</string>
+    <string name="agent_rewind_both">Files and chat</string>
+    <string name="agent_rewind_done">Rewound %d changes.</string>
+    <string name="agent_rewind_partly">Rewound %1$d changes. Couldn\'t rewind: %2$s</string>
+    <string name="agent_rewind_failed">Couldn\'t rewind: %s</string>
+    <string name="agent_edit_rewind_title">Undo what came after too?</string>
+    <string name="agent_edit_rewind_message">After this message the agent changed %d things. Put them back as you rewrite it?</string>
+    <string name="agent_edit_rewind_yes">Undo and send</string>
+    <string name="agent_edit_rewind_no">Keep and send</string>
 
     <string name="agent_plan_title">Plan</string>
     <string name="agent_plan_count" translatable="false">%1$d/%2$d</string>
