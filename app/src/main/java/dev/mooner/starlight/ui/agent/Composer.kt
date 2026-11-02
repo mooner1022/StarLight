@@ -3,12 +3,11 @@ package dev.mooner.starlight.ui.agent
 import android.content.Context
 import android.net.Uri
 import android.view.LayoutInflater
-import android.view.View
-import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.LifecycleCoroutineScope
@@ -16,6 +15,7 @@ import coil.load
 import coil.transform.RoundedCornersTransformation
 import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
+import dev.mooner.starlight.agent.ApprovalPolicy
 import dev.mooner.starlight.agent.model.AttachmentKind
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.databinding.ItemAgentAttachmentChipBinding
@@ -34,9 +34,13 @@ class Composer(
     private val conversationId: () -> String,
     private val pickImages: ActivityResultLauncher<PickVisualMediaRequest>,
     private val pickFiles: ActivityResultLauncher<Array<String>>,
+    /** Hosts the add sheet; null while the screen is going away. */
+    private val activity: () -> AppCompatActivity?,
     /** Returns whether the message was sent; if not, it stays in the field. */
     private val onSend: (text: String, attachments: List<Part.Attachment>) -> Boolean,
     private val onStop: () -> Unit,
+    /** The user changed [project] or [approval] in the add sheet. */
+    private val onSessionChanged: () -> Unit = {},
 ) {
 
     private val context: Context = binding.root.context
@@ -48,6 +52,26 @@ class Composer(
         set(value) {
             field = value
             updateSend()
+        }
+
+    /** The project the conversation is about, shown as a chip above the field. */
+    var project: String? = null
+        set(value) {
+            val changed = field != value
+            field = value
+            binding.projectChip.isVisible = value != null
+            binding.projectName.text = value
+            if (changed)
+                onSessionChanged()
+        }
+
+    /** When the agent asks before running tools in this conversation; null follows the settings. */
+    var approval: ApprovalPolicy? = null
+        set(value) {
+            val changed = field != value
+            field = value
+            if (changed)
+                onSessionChanged()
         }
 
     var text: String
@@ -69,7 +93,9 @@ class Composer(
             if (onSend(text, attachments.toList()))
                 clear()
         }
-        binding.attach.setOnClickListener { view -> showAttachMenu(view) }
+        binding.attach.setOnClickListener { showAddSheet() }
+        binding.projectChip.setOnClickListener { activity()?.let { AddSheet.pickProject(it, this) } }
+        binding.projectRemove.setOnClickListener { project = null }
         updateSend()
     }
 
@@ -135,18 +161,14 @@ class Composer(
         }
     }
 
-    private fun showAttachMenu(anchor: View) {
-        PopupMenu(context, anchor).apply {
-            menu.add(0, MENU_IMAGE, 0, R.string.agent_attach_image)
-            menu.add(0, MENU_FILE, 1, R.string.agent_attach_file)
-            setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    MENU_IMAGE -> pickImages.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    MENU_FILE  -> pickFiles.launch(arrayOf("*/*"))
-                }
-                true
-            }
-        }.show()
+    private fun showAddSheet() {
+        val host = activity() ?: return
+        AddSheet.show(
+            activity = host,
+            composer = this,
+            onPhotos = { pickImages.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+            onFiles = { pickFiles.launch(arrayOf("*/*")) },
+        )
     }
 
     private fun canSend(): Boolean =
@@ -158,11 +180,5 @@ class Composer(
         val enabled = isRunning || canSend()
         binding.send.isEnabled = enabled
         binding.send.alpha = if (enabled) 1f else 0.4f
-        binding.attach.isEnabled = !isRunning
-    }
-
-    private companion object {
-        const val MENU_IMAGE = 1
-        const val MENU_FILE = 2
     }
 }

@@ -60,4 +60,32 @@
         <item name="android:textColorHint">@color/agent_text_faint</item>
         <item name="android:textSize">14sp</item>
     </style>
+
+    <!-- The small pill buttons under a file or project card. -->
+    <style name="AgentCardAction">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">34dp</item>
+        <item name="android:layout_marginEnd">6dp</item>
+        <item name="android:background">@drawable/bg_agent_card_action</item>
+        <item name="android:drawablePadding">5dp</item>
+        <item name="android:fontFamily">@font/wantedsans_medium</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">11dp</item>
+        <item name="android:paddingEnd">13dp</item>
+        <item name="android:textColor">@color/agent_text</item>
+        <item name="android:textSize">12.5sp</item>
+        <item name="drawableTint">@color/agent_accent</item>
+    </style>
+
+    <!-- A row of the add sheet: a label on the left, its value and a chevron on the right. -->
+    <style name="AgentSheetRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:minHeight">54dp</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">10dp</item>
+    </style>
 </resources>

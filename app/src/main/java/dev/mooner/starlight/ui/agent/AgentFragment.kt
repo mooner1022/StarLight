@@ -55,6 +55,7 @@ class AgentFragment : Fragment() {
             conversationId = { draftId ?: hub.runtime.newConversationId().also { draftId = it } },
             pickImages = pickImages,
             pickFiles = pickFiles,
+            activity = { activity as? androidx.appcompat.app.AppCompatActivity },
             onSend = ::start,
             onStop = {},
         )
@@ -203,7 +204,10 @@ class AgentFragment : Fragment() {
         }
         val id = draftId ?: hub.runtime.newConversationId()
         draftId = null
-        hub.runtime.send(id, text, attachments)
+        hub.runtime.send(id, text, attachments, composer?.project, composer?.approval)
+        // The next chat started here begins without them again.
+        composer?.project = null
+        composer?.approval = null
         startActivity(AgentChatActivity.intent(requireContext(), id))
         return true
     }

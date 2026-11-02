@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 /** Picks the provider, model and reasoning effort the agent uses next. */
 internal object ModelSheet {
 
-    fun <T> show(host: T) where T : Context, T : LifecycleOwner {
+    fun <T> show(host: T, onDismiss: () -> Unit = {}) where T : Context, T : LifecycleOwner {
         val hub = AgentHub.get(host)
         val providers = hub.settings.configuredProviders()
         if (providers.isEmpty()) {
@@ -107,6 +107,7 @@ internal object ModelSheet {
             lifecycleOwner = host
             content(binding.root)
             positive(R.string.agent_done)
+            this.onDismiss(onDismiss)
         }
     }
 

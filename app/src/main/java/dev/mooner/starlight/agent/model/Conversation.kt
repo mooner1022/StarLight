@@ -27,8 +27,10 @@ data class Conversation(
     /** [dev.mooner.starlight.agent.provider.ProviderKind.id] the conversation last ran on. */
     val provider: String? = null,
     val model: String? = null,
-    /** The project the conversation was started from, if any. */
+    /** The project the conversation is about, if any. */
     val project: String? = null,
+    /** [dev.mooner.starlight.agent.ApprovalPolicy.id] for this conversation, or null to follow the settings. */
+    val approval: String? = null,
     val messages: List<ChatMessage> = emptyList(),
     val state: RunState = RunState.IDLE,
     val error: String? = null,
@@ -105,7 +107,14 @@ sealed class Part {
      */
     @Serializable
     @SerialName("context")
-    data class Context(val label: String, val text: String) : Part()
+    data class Context(val label: String, val text: String) : Part() {
+        companion object {
+            /** The user's standing instructions; not shown as a chip. */
+            const val INSTRUCTIONS = "instructions"
+            /** The conversation was detached from its project. */
+            const val NO_PROJECT = "no_project"
+        }
+    }
 
     /** A summary of the model's reasoning, only shown. */
     @Serializable
@@ -141,12 +150,34 @@ sealed class Part {
         val isError: Boolean = false,
         /** One line for the chat, such as "Compiled hello-bot". */
         val summary: String? = null,
+        /** Something the tool hands to the user, shown as a card under the call. */
+        val card: Card? = null,
     ) : Part()
 
     /** Something the app tells the user that the model never sees, such as a stopped run. */
     @Serializable
     @SerialName("notice")
     data class Notice(val kind: NoticeKind, val text: String) : Part()
+}
+
+/** A file or a project the agent puts in front of the user, with buttons to act on it. */
+@Serializable
+data class Card(
+    val kind: CardKind,
+    val name: String,
+    /** The project the file or card belongs to; files without one are in the conversation's outbox. */
+    val project: String? = null,
+    /** File path relative to the project directory or the outbox. */
+    val path: String? = null,
+    val size: Long = 0,
+    val mimeType: String? = null,
+    val caption: String? = null,
+)
+
+@Serializable
+enum class CardKind {
+    @SerialName("file") FILE,
+    @SerialName("project") PROJECT,
 }
 
 @Serializable

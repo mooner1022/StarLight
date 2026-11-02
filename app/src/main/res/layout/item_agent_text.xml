@@ -1,15 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView
+<!-- A reply: prose as text views and tables as their own scrolling views, filled by MarkdownRenderer. -->
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/text"
+    android:id="@+id/content"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:fontFamily="@font/wantedsans_regular"
-    android:lineSpacingExtra="4dp"
+    android:orientation="vertical"
     android:paddingHorizontal="18dp"
-    android:paddingVertical="6dp"
-    android:textColor="@color/agent_text"
-    android:textColorLink="@color/agent_accent"
-    android:textSize="15sp"
-    tools:text="hello-bot 프로젝트를 만들고 컴파일까지 마쳤어요."/>
+    android:paddingVertical="6dp"/>

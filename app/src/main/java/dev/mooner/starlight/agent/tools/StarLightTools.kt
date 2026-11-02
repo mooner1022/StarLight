@@ -1,5 +1,7 @@
 package dev.mooner.starlight.agent.tools
 
+import dev.mooner.starlight.agent.model.Card
+import dev.mooner.starlight.agent.model.CardKind
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.ApiObject
@@ -16,6 +18,7 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -27,7 +30,7 @@ import java.util.Locale
  */
 class StarLightTools(private val docs: DocsLibrary) {
 
-    val all: List<AgentTool> by lazy { (readTools + writeTools).sortedBy(AgentTool::name) }
+    val all: List<AgentTool> by lazy { (readTools + handOffTools + writeTools).sortedBy(AgentTool::name) }
 
     fun find(name: String): AgentTool? =
         all.firstOrNull { it.name == name }
@@ -217,6 +220,69 @@ class StarLightTools(private val docs: DocsLibrary) {
                 ToolOutput(docs.pages.joinToString("\n") { "${it.path}: ${it.title} - ${it.description}" }, summary = "Docs index")
             else
                 ToolOutput(docs.page(path), summary = path)
+        },
+    )
+
+    /** Tools that put something in front of the user rather than change a project. */
+    private val handOffTools: List<AgentTool> get() = listOf(
+        tool(
+            "send_file",
+            "Gives the user a file as a card they can open, share or save to their device: either a file of a " +
+                "project (project and path), or a new file you write for them (name and content), such as an " +
+                "export, a report or code they asked to download. Prefer this to pasting long content into a reply.",
+            ToolRisk.READ,
+            params = {
+                string("project", "Name (or id) of the project the file is in.", optional = true)
+                string("path", "Path of the project file, relative to the project directory.", optional = true)
+                string("name", "File name for a new file, such as report.csv.", optional = true)
+                string("content", "Text content of the new file.", optional = true)
+                string("caption", "One line telling the user what the file is.", optional = true)
+            },
+            describe = { "Send ${it.stringArg("path") ?: it.stringArg("name")} to the user" },
+        ) { args ->
+            val caption = args.stringArg("caption")
+            val content = args.stringArg("content")
+            val card = if (content != null) {
+                val name = args.stringArg("name")?.trim()?.takeIf { FILE_NAME_REGEX.matches(it) && it != "." && it != ".." }
+                    ?: throw ToolException("A new file needs a plain file name, such as report.csv")
+                // Each card keeps its own copy, so sending a file again with the same name doesn't change an earlier one.
+                val file = uniqueFile(outbox(), name)
+                file.writeText(content)
+                Card(
+                    kind = CardKind.FILE,
+                    name = name, path = file.name, size = file.length(), mimeType = mimeTypeOf(name), caption = caption,
+                )
+            } else {
+                val project = findProject(args)
+                val files = ProjectFiles(project.directory)
+                val file = files.resolve(args.requireString("path"))
+                if (!file.isFile)
+                    throw ToolException("No such file: ${args.stringArg("path")}")
+                Card(
+                    kind = CardKind.FILE,
+                    name = file.name, project = project.info.name, path = files.relative(file),
+                    size = file.length(), mimeType = mimeTypeOf(file.name), caption = caption,
+                )
+            }
+            ToolOutput("The user now sees ${card.name} as a file card.", summary = card.name, card = card)
+        },
+        tool(
+            "show_project",
+            "Shows the user a card for a project with buttons that open its editor, debug room and settings. Use it " +
+                "when you finish creating or changing a project, so the user can go straight to it.",
+            ToolRisk.READ,
+            params = {
+                project()
+                string("caption", "One line telling the user what to look at.", optional = true)
+            },
+            describe = { "Show ${it.stringArg("project")}" },
+        ) { args ->
+            val project = findProject(args)
+            val card = Card(
+                kind = CardKind.PROJECT,
+                name = project.info.name, project = project.info.name, caption = args.stringArg("caption"),
+            )
+            ToolOutput("The user now sees a card for ${project.info.name}.", summary = project.info.name, card = card)
         },
     )
 
@@ -551,6 +617,25 @@ class StarLightTools(private val docs: DocsLibrary) {
         const val MAX_LOG_LIMIT = 300
         const val DEFAULT_WAIT_SECONDS = 5
         const val MAX_WAIT_SECONDS = 60
+
+        val FILE_NAME_REGEX = Regex("^[^/\\\\:*?\"<>|]{1,100}$")
+
+        /** [name] in [dir], or "name (2).ext" and so on when that is taken. */
+        fun uniqueFile(dir: File, name: String): File {
+            val dot = name.lastIndexOf('.').takeIf { it > 0 } ?: name.length
+            val base = name.substring(0, dot)
+            val extension = name.substring(dot)
+            val numbered = generateSequence(2) { it + 1 }.map { n -> File(dir, "$base ($n)$extension") }
+            return (sequenceOf(File(dir, name)) + numbered).first { !it.exists() }
+        }
+
+        fun mimeTypeOf(name: String): String =
+            android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(name.substringAfterLast('.', "").lowercase())
+                ?: when (name.substringAfterLast('.', "").lowercase()) {
+                    "js", "mjs", "ts", "kt", "py", "md", "log", "csv" -> "text/plain"
+                    "json" -> "application/json"
+                    else -> "application/octet-stream"
+                }
 
         // The rule of StarLight's new project dialog.
         val PROJECT_NAME_REGEX = Regex("^[-_\\dA-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+$")

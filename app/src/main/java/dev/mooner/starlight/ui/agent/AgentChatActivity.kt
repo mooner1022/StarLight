@@ -2,8 +2,10 @@ package dev.mooner.starlight.ui.agent
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.PopupMenu
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -17,17 +19,24 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
+import dev.mooner.starlight.agent.ApprovalPolicy
+import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
+import dev.mooner.starlight.agent.runtime.LiveRun
 import dev.mooner.starlight.databinding.ActivityAgentChatBinding
 import dev.mooner.starlight.ui.common.showSheet
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.IOException
 
 /** One conversation with the agent. Runs go on when this screen closes; it only shows them. */
 class AgentChatActivity : AppCompatActivity() {
@@ -38,10 +47,26 @@ class AgentChatActivity : AppCompatActivity() {
     private val hub by lazy { AgentHub.get(this) }
 
     private lateinit var conversationId: String
-    private var project: String? = null
+    /** The project this screen was opened for, used until the conversation has one of its own. */
+    private var openedFor: String? = null
+    /** Whether the composer holds the conversation's project and approval yet. */
+    private var sessionLoaded = false
+    /** Tool groups the user opened; the others stay collapsed. */
+    private val expandedGroups = hashSetOf<String>()
+    private var shownConversation: Conversation? = null
+    private var shownRun: LiveRun? = null
+    /** The file waiting for the user to pick where to save it. */
+    private var pendingSave: String? = null
 
     private val pickImages = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(MAX_PICK)) { composer.onPicked(it) }
     private val pickFiles = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { composer.onPicked(it) }
+    private val saveFile = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val source = pendingSave?.let(::File)
+        pendingSave = null
+        val target = result.data?.data
+        if (result.resultCode == RESULT_OK && target != null && source != null)
+            copyOut(source, target)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +75,8 @@ class AgentChatActivity : AppCompatActivity() {
         conversationId = savedInstanceState?.getString(EXTRA_CONVERSATION)
             ?: intent.getStringExtra(EXTRA_CONVERSATION)
             ?: hub.runtime.newConversationId()
-        project = intent.getStringExtra(EXTRA_PROJECT)
+        openedFor = intent.getStringExtra(EXTRA_PROJECT)
+        pendingSave = savedInstanceState?.getString(KEY_PENDING_SAVE)
 
         setUpWindow()
         binding.stars.density = 0.35f
@@ -59,9 +85,24 @@ class AgentChatActivity : AppCompatActivity() {
         binding.titleArea.setOnClickListener { ModelSheet.show(this) }
         binding.menu.setOnClickListener { showMenu() }
 
-        adapter = ChatAdapter(this, AgentUi.markdown(this)) { callId, allow, always ->
-            hub.runtime.resolveApproval(conversationId, callId, allow, always)
-        }
+        adapter = ChatAdapter(this, AgentUi.markdown(this), { conversationId }, object : ChatActions {
+            override fun onApproval(callId: String, allow: Boolean, always: Boolean) =
+                hub.runtime.resolveApproval(conversationId, callId, allow, always)
+
+            override fun onToggleGroup(id: String) {
+                if (!expandedGroups.add(id))
+                    expandedGroups.remove(id)
+                render(shownConversation, shownRun, follow = false)
+            }
+
+            override fun onSaveFile(card: Card, file: File) {
+                pendingSave = file.path
+                saveFile.launch(Intent(Intent.ACTION_CREATE_DOCUMENT)
+                    .addCategory(Intent.CATEGORY_OPENABLE)
+                    .setType(card.mimeType ?: "application/octet-stream")
+                    .putExtra(Intent.EXTRA_TITLE, card.name))
+            }
+        })
         binding.messages.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
         binding.messages.adapter = adapter
         binding.messages.itemAnimator = null
@@ -72,12 +113,17 @@ class AgentChatActivity : AppCompatActivity() {
             conversationId = { conversationId },
             pickImages = pickImages,
             pickFiles = pickFiles,
+            activity = { this },
             onSend = ::send,
             onStop = { hub.runtime.stop(conversationId) },
+            onSessionChanged = ::onSessionChanged,
         )
         intent.getStringExtra(EXTRA_TEXT)?.let { composer.text = it }
-        if (project != null && hub.store.get(conversationId) == null)
-            composer.setHint(getString(R.string.agent_project_prompt_hint, project))
+        if (savedInstanceState?.getBoolean(KEY_SESSION) == true) {
+            composer.project = savedInstanceState.getString(KEY_PROJECT)
+            composer.approval = savedInstanceState.getString(KEY_APPROVAL)?.let(ApprovalPolicy::of)
+            sessionLoaded = true
+        }
         binding.resumeButton.setOnClickListener { hub.runtime.resume(conversationId) }
 
         observe()
@@ -88,6 +134,12 @@ class AgentChatActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(EXTRA_CONVERSATION, conversationId)
+        outState.putString(KEY_PENDING_SAVE, pendingSave)
+        if (sessionLoaded) {
+            outState.putBoolean(KEY_SESSION, true)
+            outState.putString(KEY_PROJECT, composer.project)
+            outState.putString(KEY_APPROVAL, composer.approval?.id)
+        }
     }
 
     override fun onResume() {
@@ -138,21 +190,58 @@ class AgentChatActivity : AppCompatActivity() {
         }
     }
 
-    private fun render(conversation: Conversation?, run: dev.mooner.starlight.agent.runtime.LiveRun?) {
+    /** [follow] keeps the newest row in view as the chat grows; opening or closing a group doesn't. */
+    private fun render(conversation: Conversation?, run: LiveRun?, follow: Boolean = true) {
+        shownConversation = conversation
+        shownRun = run
+        loadSession(conversation)
         binding.title.text = conversation?.title ?: getString(R.string.agent_new_chat)
         val running = hub.runtime.isRunning(conversationId)
         composer.isRunning = running
-        composer.setHint(getString(if (conversation == null) R.string.agent_composer_hint else R.string.agent_composer_hint_followup))
-        if (conversation == null && project != null)
-            composer.setHint(getString(R.string.agent_project_prompt_hint, project))
-        val rows = conversation?.let { ChatRows.build(hub, it, run) }.orEmpty()
+        val project = composer.project
+        composer.setHint(when {
+            conversation == null && project != null -> getString(R.string.agent_project_prompt_hint, project)
+            conversation == null                    -> getString(R.string.agent_composer_hint)
+            else                                    -> getString(R.string.agent_composer_hint_followup)
+        })
+        val rows = conversation?.let { ChatRows.build(hub, it, run, expandedGroups) }.orEmpty()
         val atBottom = !binding.messages.canScrollVertically(1)
         val grew = rows.size > adapter.itemCount
         adapter.submitList(rows) {
-            if (rows.isNotEmpty() && (atBottom || grew))
+            if (follow && rows.isNotEmpty() && (atBottom || grew))
                 binding.messages.scrollToPosition(rows.size - 1)
         }
         updateResumeBar(conversation, running)
+    }
+
+    /** Fills the composer with the conversation's project and approval, once. */
+    private fun loadSession(conversation: Conversation?) {
+        if (sessionLoaded)
+            return
+        composer.project = conversation?.project ?: openedFor.takeIf { conversation == null }
+        composer.approval = conversation?.approval?.let(ApprovalPolicy::of)
+        sessionLoaded = true
+    }
+
+    /** Approval applies right away, to a run going on too; a project change goes with the next message. */
+    private fun onSessionChanged() {
+        if (sessionLoaded)
+            hub.runtime.setApproval(conversationId, composer.approval)
+    }
+
+    private fun copyOut(source: File, target: Uri) {
+        lifecycleScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    contentResolver.openOutputStream(target)?.use { out -> source.inputStream().use { it.copyTo(out) } }
+                        ?: throw IOException("No output stream")
+                }
+            }.onSuccess {
+                Toast.makeText(this@AgentChatActivity, getString(R.string.agent_card_saved, source.name), Toast.LENGTH_SHORT).show()
+            }.onFailure { e ->
+                Toast.makeText(this@AgentChatActivity, getString(R.string.agent_card_save_failed, e.message ?: e.toString()), Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun updateResumeBar(conversation: Conversation?, running: Boolean) {
@@ -178,7 +267,7 @@ class AgentChatActivity : AppCompatActivity() {
             startActivity(Intent(this, AgentSettingsActivity::class.java))
             return false
         }
-        hub.runtime.send(conversationId, text, attachments, project)
+        hub.runtime.send(conversationId, text, attachments, composer.project, composer.approval)
         return true
     }
 
@@ -230,6 +319,10 @@ class AgentChatActivity : AppCompatActivity() {
         private const val EXTRA_CONVERSATION = "conversation"
         private const val EXTRA_PROJECT = "project"
         private const val EXTRA_TEXT = "text"
+        private const val KEY_SESSION = "session"
+        private const val KEY_PROJECT = "session_project"
+        private const val KEY_APPROVAL = "session_approval"
+        private const val KEY_PENDING_SAVE = "pending_save"
         private const val LIVE_INTERVAL_MILLIS = 90L
         private const val MAX_PICK = 5
         private const val MENU_USAGE = 1

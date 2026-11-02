@@ -24,16 +24,13 @@
         tools:text="프로젝트 목록을 먼저 확인해야겠다…"
         tools:visibility="visible"/>
 
-    <TextView
-        android:id="@+id/text"
+    <LinearLayout
+        android:id="@+id/content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fontFamily="@font/wantedsans_regular"
-        android:lineSpacingExtra="4dp"
+        android:orientation="vertical"
         android:paddingHorizontal="18dp"
         android:paddingVertical="4dp"
-        android:textColor="@color/agent_text"
-        android:textSize="15sp"
         android:visibility="gone"/>
 
     <LinearLayout

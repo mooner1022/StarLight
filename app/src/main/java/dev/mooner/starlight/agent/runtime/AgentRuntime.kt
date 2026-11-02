@@ -121,15 +121,24 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
 
     /**
      * Adds the user's message to [conversationId], creating the conversation if it doesn't exist, and runs it.
-     * [project] is only used by a new conversation, which then starts with that project's context.
+     * [project] is the project the conversation is about: a new conversation starts with its context, and a
+     * different one later tells the model about the switch in this message, since history is never rewritten.
      */
-    fun send(conversationId: String, text: String, attachments: List<Part.Attachment>, project: String? = null) {
+    fun send(
+        conversationId: String,
+        text: String,
+        attachments: List<Part.Attachment>,
+        project: String? = null,
+        approval: ApprovalPolicy? = null,
+    ) {
         check(!isRunning(conversationId)) { "The conversation is still running" }
         val now = System.currentTimeMillis()
         val existing = hub.store.get(conversationId)
         val parts = buildList {
             if (existing == null || existing.messages.none { it.role == Role.USER })
-                addAll(contextParts(project ?: existing?.project))
+                addAll(contextParts(project))
+            else if (project != existing.project)
+                add(switchPart(project))
             addAll(attachments)
             if (text.isNotBlank())
                 add(Part.Text(text.trim()))
@@ -140,11 +149,26 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             title = titleOf(text, attachments),
             createdAt = now,
             updatedAt = now,
-            project = project,
         )
-        hub.store.save(conversation.copy(messages = conversation.messages + message, updatedAt = now, error = null))
+        hub.store.save(conversation.copy(
+            messages = conversation.messages + message,
+            updatedAt = now,
+            error = null,
+            project = project,
+            approval = approval?.id ?: conversation.approval,
+        ))
         start(conversationId)
     }
+
+    /** Sets when [conversationId] asks before running tools; null follows the settings. Applies to a run going on. */
+    fun setApproval(conversationId: String, approval: ApprovalPolicy?) {
+        if (hub.store.get(conversationId)?.approval == approval?.id)
+            return
+        updateConversation(conversationId) { it.copy(approval = approval?.id) }
+    }
+
+    fun approvalOf(conversationId: String): ApprovalPolicy =
+        hub.store.get(conversationId)?.approval?.let(ApprovalPolicy::of) ?: hub.settings.approvalPolicy
 
     /** Continues a run that stopped: after a step limit, an error or the app being closed. */
     fun resume(conversationId: String) {
@@ -324,6 +348,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         val context = object : ToolContext {
             override val conversationId: String = id
             override fun attachmentFile(attachmentId: String): File? = hub.attachments.file(id, attachmentId)
+            override fun outbox(): File = hub.attachments.outbox(id)
         }
         val output = try {
             tool.run(context, args)
@@ -336,13 +361,13 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             LOG.warn { "Tool ${tool.name} failed: $e" }
             ToolOutput.error("${tool.name} failed: ${e.message ?: e}")
         }
-        return Part.ToolResult(call.id, call.name, cap(output.text), output.isError, output.summary)
+        return Part.ToolResult(call.id, call.name, cap(output.text), output.isError, output.summary, output.card)
     }
 
     private fun needsApproval(id: String, risk: ToolRisk, name: String): Boolean {
         if (alwaysAllowed[id]?.contains(name) == true)
             return false
-        return when (hub.settings.approvalPolicy) {
+        return when (approvalOf(id)) {
             ApprovalPolicy.AUTO            -> false
             ApprovalPolicy.ASK_DESTRUCTIVE -> risk == ToolRisk.DESTRUCTIVE
             ApprovalPolicy.ASK_WRITES      -> risk != ToolRisk.READ
@@ -429,13 +454,21 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         mLive.update { map -> map + (id to block(map[id])) }
     }
 
+    private fun switchPart(project: String?): Part.Context =
+        if (project != null)
+            Part.Context(project, "The user switched this conversation to the StarLight project \"$project\"; " +
+                "unless they say otherwise, their requests from here on are about it.")
+        else
+            Part.Context(Part.Context.NO_PROJECT, "The user detached this conversation from any project; don't assume one " +
+                "from here on.")
+
     private fun contextParts(project: String?): List<Part> {
         val parts = mutableListOf<Part>()
         if (project != null)
             parts += Part.Context(project, "This conversation was opened from the StarLight project \"$project\"; " +
                 "unless the user says otherwise, their requests are about it.")
         hub.settings.customInstructions.takeIf(String::isNotBlank)?.let {
-            parts += Part.Context("instructions", "The user's standing instructions for you:\n$it")
+            parts += Part.Context(Part.Context.INSTRUCTIONS, "The user's standing instructions for you:\n$it")
         }
         return parts
     }

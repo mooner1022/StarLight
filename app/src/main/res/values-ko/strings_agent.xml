@@ -13,9 +13,6 @@
     <string name="agent_setup_action">연결하기</string>
     <string name="agent_composer_hint">에이전트에게 부탁해 보세요…</string>
     <string name="agent_composer_hint_followup">답장하기…</string>
-    <string name="agent_attach">첨부</string>
-    <string name="agent_attach_image">사진</string>
-    <string name="agent_attach_file">파일</string>
     <string name="agent_send">보내기</string>
     <string name="agent_stop">멈추기</string>
     <string name="agent_remove_attachment">빼기</string>
@@ -178,4 +175,37 @@
     <string name="agent_tool_delete_project">프로젝트 삭제</string>
     <string name="agent_tool_debug_message">디버그 룸 테스트</string>
     <string name="agent_tool_save_attachment">첨부 파일 저장</string>
+    <string name="agent_tool_send_file">파일 전달</string>
+    <string name="agent_tool_show_project">프로젝트 안내</string>
+    <string name="agent_card_open">열기</string>
+    <string name="agent_card_share">공유</string>
+    <string name="agent_card_save">저장</string>
+    <string name="agent_card_saved">%s 파일을 저장했어요</string>
+    <string name="agent_card_save_failed">파일을 저장하지 못했어요: %s</string>
+    <string name="agent_card_missing">파일이 더 이상 없어요.</string>
+    <string name="agent_card_no_app">이 파일을 열 수 있는 앱이 없어요.</string>
+    <string name="agent_card_edit">편집</string>
+    <string name="agent_card_debug">디버그 룸</string>
+    <string name="agent_card_settings">설정</string>
+    <string name="agent_card_project_missing">이 프로젝트는 더 이상 없어요.</string>
+    <string name="agent_card_not_compiled">프로젝트를 컴파일한 뒤 디버그 룸을 열 수 있어요.</string>
+    <string name="agent_add_title">대화에 추가</string>
+    <string name="agent_add_photos">사진</string>
+    <string name="agent_add_files">파일</string>
+    <string name="agent_add_project">프로젝트</string>
+    <string name="agent_add_none">없음</string>
+    <string name="agent_add_close">닫기</string>
+    <string name="agent_add_project_title">이 대화의 프로젝트</string>
+    <string name="agent_add_project_none_desc">특정 프로젝트 없이 대화해요.</string>
+    <string name="agent_add_approval_title">이 대화에서 먼저 물어볼 작업</string>
+    <string name="agent_add_approval_default">설정을 따름</string>
+    <string name="agent_add_approval_default_desc">현재: %s</string>
+    <string name="agent_add_project_remove">프로젝트 해제</string>
+    <string name="agent_context_no_project">프로젝트 해제됨</string>
+    <string name="agent_preview_open_with">다른 앱</string>
+    <string name="agent_preview_truncated">파일이 커서 앞부분 %s만 보여요.</string>
+    <string name="agent_preview_failed">파일을 읽지 못했어요: %s</string>
+    <plurals name="agent_tools_used">
+        <item quantity="other">도구 %d개 사용</item>
+    </plurals>
 </resources>

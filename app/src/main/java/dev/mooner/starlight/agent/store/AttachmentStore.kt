@@ -11,8 +11,10 @@ import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import dev.mooner.starlight.agent.model.AttachmentKind
+import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.provider.AttachmentSource
+import dev.mooner.starlight.plugincore.Session
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
@@ -27,8 +29,21 @@ class AttachmentStore(private val root: File) : AttachmentSource {
     fun dir(conversationId: String): File =
         File(root, conversationId).apply { mkdirs() }
 
+    /** Files the agent made for the user in [conversationId], as opposed to ones the user attached. */
+    fun outbox(conversationId: String): File =
+        File(dir(conversationId), OUTBOX).apply { mkdirs() }
+
     fun file(attachment: Part.Attachment): File? =
         root.listFiles().orEmpty().firstNotNullOfOrNull { dir -> File(dir, attachment.id).takeIf(File::isFile) }
+
+    /** The file a card points at: in its project, or in the conversation's outbox. */
+    fun cardFile(conversationId: String, card: Card): File? {
+        val path = card.path ?: return null
+        val base = card.project
+            ?.let { name -> Session.projectManager.getProjectByName(name)?.directory }
+            ?: outbox(conversationId)
+        return File(base, path).takeIf(File::isFile)
+    }
 
     fun file(conversationId: String, attachmentId: String): File? {
         if (!attachmentId.matches(ID_REGEX))
@@ -165,5 +180,6 @@ class AttachmentStore(private val root: File) : AttachmentSource {
         val TEXT_TYPES = setOf("application/json", "application/javascript", "application/xml", "application/x-javascript")
         val TEXT_EXTENSIONS = setOf("js", "mjs", "ts", "json", "txt", "md", "csv", "xml", "html", "css", "kt", "java", "py", "log", "yml", "yaml")
         val ID_REGEX = Regex("^att_[a-f0-9]+$")
+        const val OUTBOX = "out"
     }
 }
