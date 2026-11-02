@@ -37,7 +37,8 @@
         android:lineSpacingExtra="3dp"
         android:paddingHorizontal="14dp"
         android:paddingVertical="10dp"
-        android:textColor="@color/agent_text"
+        android:textColor="@color/agent_on_user_bubble"
+        android:textColorHighlight="#66DFC199"
         android:textIsSelectable="true"
         android:textSize="15sp"
         tools:text="인사하는 봇 만들어 줘"/>

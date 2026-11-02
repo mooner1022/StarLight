@@ -4,7 +4,7 @@
         <shape android:shape="rectangle">
             <solid android:color="@color/agent_surface"/>
             <corners android:radius="100dp"/>
-            <stroke android:width="1dp" android:color="@color/agent_border"/>
+            <stroke android:width="1dp" android:color="@color/agent_stroke"/>
         </shape>
     </item>
 </ripple>

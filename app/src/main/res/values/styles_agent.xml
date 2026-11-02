@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Section titles carry a small gold star, a motif from the plugin store. -->
     <style name="AgentSectionTitle">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
+        <item name="android:drawablePadding">8dp</item>
         <item name="android:fontFamily">@font/wantedsans_bold</item>
+        <item name="android:gravity">center_vertical</item>
         <item name="android:textColor">@color/agent_text</item>
         <item name="android:textSize">17sp</item>
+        <item name="drawableStartCompat">@drawable/ic_store_sparkle_small</item>
     </style>
 
     <style name="AgentSectionBody">

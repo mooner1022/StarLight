@@ -1,34 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The AI agent's palette, after starlight.mooner.dev: night navy, gold, meteor blue and dusk orange. -->
+<!-- The AI agent's palette, after the plugin store: neutral surfaces, a warm night band, gold accents, meteor blue
+     for tool work and dusk orange for approvals. -->
 <resources>
-    <color name="agent_gold">#DFC199</color>
-    <color name="agent_on_gold">#1E1709</color>
+    <color name="agent_gold">@color/store_gold</color>
+    <color name="agent_on_gold">@color/store_on_gold</color>
 
     <!-- The night band behind headers stays dark in both themes. -->
-    <color name="agent_night_top">#0B0E1D</color>
-    <color name="agent_night_mid">#151A33</color>
-    <color name="agent_night_bottom">#1D2142</color>
-    <color name="agent_on_night">#F1EEE8</color>
-    <color name="agent_on_night_muted">#B3B7CB</color>
-    <color name="agent_night_field">#1FFFFFFF</color>
+    <color name="agent_night_top">@color/store_night</color>
+    <color name="agent_night_mid">#241F25</color>
+    <color name="agent_night_bottom">@color/store_night_light</color>
+    <color name="agent_on_night">@color/store_star</color>
+    <color name="agent_on_night_muted">#CFC6BA</color>
+    <color name="agent_night_field">#1FFFF7E8</color>
 
-    <color name="agent_bg">#F7F4EE</color>
-    <color name="agent_surface">#FFFFFF</color>
-    <color name="agent_surface_alt">#EFEAE1</color>
-    <color name="agent_border">#171C1F2E</color>
-    <color name="agent_text">#1C1F2E</color>
-    <color name="agent_text_muted">#555A6E</color>
-    <color name="agent_text_faint">#858A9C</color>
-    <color name="agent_accent">#7A5C30</color>
-    <color name="agent_accent_soft">#24B48C50</color>
-    <color name="agent_user_bubble">#F1E6D3</color>
-    <color name="agent_code_bg">#F1EDE5</color>
+    <color name="agent_bg">@color/background</color>
+    <color name="agent_surface">@color/cardview</color>
+    <color name="agent_surface_alt">#EEEEF2</color>
+    <color name="agent_border">#0F1C1C24</color>
+    <color name="agent_stroke">@color/store_chip_stroke</color>
+    <color name="agent_text">#36363C</color>
+    <color name="agent_text_muted">#6E6E76</color>
+    <color name="agent_text_faint">@color/text_sub</color>
+    <color name="agent_accent">#8F7552</color>
+    <color name="agent_accent_soft">@color/store_gold_soft</color>
+    <color name="agent_user_bubble">@color/store_night_light</color>
+    <color name="agent_on_user_bubble">@color/store_star</color>
+    <color name="agent_code_bg">#F0F0F3</color>
 
     <color name="agent_meteor">#2E8DB5</color>
     <color name="agent_meteor_soft">#1F2E8DB5</color>
-    <color name="agent_dusk">#C46A2B</color>
-    <color name="agent_dusk_soft">#24F6B17A</color>
+    <color name="agent_dusk">#D9823F</color>
     <color name="agent_ok">#3E9A5C</color>
     <color name="agent_error">#D9455F</color>
-    <color name="agent_error_soft">#1FD9455F</color>
+    <color name="agent_error_soft">#14D9455F</color>
 </resources>
