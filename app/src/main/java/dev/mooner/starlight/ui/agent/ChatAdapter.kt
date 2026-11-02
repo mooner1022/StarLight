@@ -130,6 +130,8 @@ internal object ChatRows {
                     val contexts = message.parts.filterIsInstance<Part.Context>().map { it.label }
                         .filter { it !in Part.Context.HIDDEN }
                     message.compaction?.let { compaction ->
+                        // After what came before it, the turn it may have been written in included.
+                        closeRun(index)
                         rows += ChatRow.Notice("compaction:" + message.id, NoticeKind.INFO,
                             hub.context.getString(R.string.agent_compacted, compaction.covers))
                         return@forEachIndexed

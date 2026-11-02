@@ -255,6 +255,10 @@
     <string name="agent_compact_failed">요약하지 못했어요: %s</string>
     <string name="agent_context_use">%1$s · 컨텍스트 %2$d%%</string>
 
+    <string name="agent_tool_web_fetch">웹 페이지 읽기</string>
+    <string name="agent_web_search">웹 검색</string>
+    <string name="agent_web_search_desc">Anthropic과 OpenRouter 모델이 필요할 때 웹을 검색해요. 검색 비용은 제공자가 따로 받아요.</string>
+
     <string name="agent_plan_title">계획</string>
     <string name="agent_plan_progress">%2$d단계 중 %1$d단계 완료</string>
     <string name="agent_plan_toggle">계획 펼치기/접기</string>

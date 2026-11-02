@@ -66,6 +66,23 @@ class StreamParsingTest {
     }
 
     @Test
+    fun anthropicSearchKeepsItsQueryAndAPauseGoesOn() {
+        val result = AnthropicClient("key").parse(events(
+            """{"type":"message_start","message":{"model":"claude-opus-5-5","usage":{"input_tokens":10,"output_tokens":1}}}""",
+            """{"type":"content_block_start","index":0,"content_block":{"type":"server_tool_use","id":"srvtoolu_1","name":"web_search","input":{}}}""",
+            """{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"query\":\"jsoup\"}"}}""",
+            """{"type":"content_block_start","index":1,"content_block":{"type":"web_search_tool_result","tool_use_id":"srvtoolu_1","content":[]}}""",
+            """{"type":"message_delta","delta":{"stop_reason":"pause_turn"},"usage":{"output_tokens":20}}""",
+        ), object : StreamSink {})
+        assertEquals(StopReason.PAUSE, result.stopReason)
+        // Searches Anthropic ran aren't calls for the app, but the turn keeps them, query and all, to be sent back.
+        assertTrue(result.parts.none { it is Part.ToolCall })
+        val blocks = result.raw!!.items.map { it.jsonObject }
+        assertEquals("jsoup", blocks[0]["input"]!!.jsonObject["query"]!!.jsonPrimitive.content)
+        assertEquals("web_search_tool_result", blocks[1]["type"]!!.jsonPrimitive.content)
+    }
+
+    @Test
     fun anthropicOverloadErrorIsRetryable() {
         try {
             AnthropicClient("key").parse(events("""{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"""))

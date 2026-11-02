@@ -43,7 +43,12 @@ class ProviderRequestTest {
 
     private val image = Part.Attachment("att_1", "shot.png", "image/png", 3, AttachmentKind.IMAGE)
 
-    private fun request(messages: List<ChatMessage>, model: String = "claude-opus-5-5", effort: String? = null) = LlmRequest(
+    private fun request(
+        messages: List<ChatMessage>,
+        model: String = "claude-opus-5-5",
+        effort: String? = null,
+        webSearch: Boolean = false,
+    ) = LlmRequest(
         conversationId = "c1",
         model = model,
         system = "SYSTEM",
@@ -52,6 +57,7 @@ class ProviderRequestTest {
         effort = effort,
         maxOutputTokens = 64_000,
         attachments = attachments,
+        webSearch = webSearch,
     )
 
     private fun user(vararg parts: Part) = ChatMessage("u" + parts.size, Role.USER, parts.toList(), 0)
@@ -235,5 +241,24 @@ class ProviderRequestTest {
         assertFalse(plain.contains("images"))
         val decoded = AgentJson.decodeFromString(Part.serializer(), AgentJson.encodeToString(Part.serializer(), viewResult.parts.single()))
         assertEquals(listOf(viewed), (decoded as Part.ToolResult).images)
+    }
+
+    @Test
+    fun webSearchAddsTheProvidersOwnSearch() {
+        val anthropic = AnthropicClient("key").buildBody(request(listOf(user(Part.Text("hi"))), webSearch = true))
+        val search = anthropic["tools"]!!.jsonArray.last().jsonObject
+        assertEquals("web_search", search["name"]!!.jsonPrimitive.content)
+        assertTrue(search["type"]!!.jsonPrimitive.content.startsWith("web_search_"))
+        // Off, nothing is added.
+        val plain = AnthropicClient("key").buildBody(request(listOf(user(Part.Text("hi")))))
+        assertTrue(plain["tools"]!!.jsonArray.none { it.jsonObject["name"]!!.jsonPrimitive.content == "web_search" })
+
+        val openRouter = ChatCompletionsClient("key", "https://openrouter.ai/api/v1", ChatCompletionsClient.Flavor.OPENROUTER)
+            .buildBody(request(listOf(user(Part.Text("hi"))), model = "openai/gpt-6.1", webSearch = true))
+        assertEquals("web", openRouter["plugins"]!!.jsonArray.single().jsonObject["id"]!!.jsonPrimitive.content)
+        // Other servers have no search of their own.
+        val local = ChatCompletionsClient(null, "http://localhost:1234/v1")
+            .buildBody(request(listOf(user(Part.Text("hi"))), model = "local", webSearch = true))
+        assertNull(local["plugins"])
     }
 }

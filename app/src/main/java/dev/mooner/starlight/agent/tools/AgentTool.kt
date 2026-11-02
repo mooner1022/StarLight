@@ -24,6 +24,11 @@ enum class ToolRisk {
     WRITE,
     /** Deletes something, or changes what runs on real chats. */
     DESTRUCTIVE,
+    /**
+     * Reaches outside the phone, such as reading a web page: it changes nothing, but what it fetches can carry
+     * instructions, and an address can carry the user's data away. Asked about unless the user lets it run.
+     */
+    NETWORK,
 }
 
 /** What a tool call returns to the model, and the line the chat shows for it. */

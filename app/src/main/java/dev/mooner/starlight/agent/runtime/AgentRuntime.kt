@@ -341,7 +341,13 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     suspend fun compactNow(conversationId: String): Boolean {
         check(!isRunning(conversationId)) { "The conversation is still running" }
         val conversation = hub.store.get(conversationId) ?: return false
-        return withContext(Dispatchers.IO) { compact(conversationId, conversation.messages.size) }
+        return try {
+            withContext(Dispatchers.IO) { compact(conversationId, conversation.messages.size) }
+        } finally {
+            // No run follows to take the summary's live state away.
+            if (!isRunning(conversationId))
+                mLive.update { it - conversationId }
+        }
     }
 
     /**
@@ -518,6 +524,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         val maxSteps = hub.settings.maxSteps
         // One summary per run: if the model still can't fit the conversation, the error shows.
         var compacted = false
+        // The last turn was paused by the provider and is to be sent back so that it goes on.
+        var paused = false
         try {
             while (true) {
                 val conversation = hub.store.get(id) ?: return
@@ -533,8 +541,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 // Notices are for the user; what counts is the last turn the model takes part in.
                 val last = conversation.messages.lastOrNull { message -> message.parts.any { it !is Part.Notice } } ?: return
                 when {
-                    // Done, unless the user wrote more in the meantime.
-                    last.role == Role.ASSISTANT -> if (!flushQueued(id, closing = true)) break
+                    // Done, unless the user wrote more in the meantime, or the turn was only paused.
+                    last.role == Role.ASSISTANT && !paused -> if (!flushQueued(id, closing = true)) break
                     else -> {
                         if (steps >= maxSteps) {
                             appendNotice(id, NoticeKind.PAUSED, string(R.string.agent_notice_paused, maxSteps))
@@ -555,6 +563,12 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                             if (e is CancellationException || compacted || !isContextOverflow(e) || !compact(id, runStart))
                                 throw e
                             compacted = true
+                            continue
+                        }
+                        paused = result.stopReason == StopReason.PAUSE
+                        if (paused) {
+                            // Kept as it came; the next request carries it back for the provider to go on.
+                            handleResult(id, result)
                             continue
                         }
                         if (isSilent(result)) {
@@ -620,6 +634,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 effort = hub.settings.effort(kind),
                 maxOutputTokens = MAX_OUTPUT_TOKENS,
                 attachments = hub.attachments,
+                webSearch = hub.settings.webSearch,
             )
             setLive(id) { LiveRun(id, LiveRun.Phase.WAITING, retry = attempt) }
             try {
@@ -692,7 +707,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         val args: JsonObject = RequestContent.parseArguments(call.arguments)
             ?: return Part.ToolResult(call.id, call.name, RequestContent.invalidJsonResult(call.arguments), isError = true,
                 summary = "Invalid arguments")
-        if (tool.risk != ToolRisk.READ && approvalOf(id) == ApprovalPolicy.PLAN)
+        if (tool.risk != ToolRisk.READ && tool.risk != ToolRisk.NETWORK && approvalOf(id) == ApprovalPolicy.PLAN)
             return Part.ToolResult(call.id, call.name, PLAN_MODE_REFUSAL, isError = true, summary = "Plan mode")
         if (needsApproval(id, tool.risk, tool.name)) {
             val description = runCatching { tool.describe(args) }.getOrDefault(tool.name)
@@ -743,10 +758,10 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             return false
         return when (approvalOf(id)) {
             ApprovalPolicy.AUTO            -> false
-            ApprovalPolicy.ASK_DESTRUCTIVE -> risk == ToolRisk.DESTRUCTIVE
+            ApprovalPolicy.ASK_DESTRUCTIVE -> risk == ToolRisk.DESTRUCTIVE || risk == ToolRisk.NETWORK
             ApprovalPolicy.ASK_WRITES      -> risk != ToolRisk.READ
-            // Tools that change something were refused already.
-            ApprovalPolicy.PLAN            -> false
+            // Tools that change something were refused already; reading the web still asks.
+            ApprovalPolicy.PLAN            -> risk == ToolRisk.NETWORK
         }
     }
 
