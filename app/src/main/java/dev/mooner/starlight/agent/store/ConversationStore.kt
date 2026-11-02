@@ -32,7 +32,7 @@ data class ConversationSummary(
  * Conversations as JSON files in the app's private storage, one per conversation, written atomically. Open
  * conversations stay in memory; [summaries] is what lists observe.
  */
-class ConversationStore(private val root: File) {
+class ConversationStore(root: File) {
 
     private val conversationsDir = File(root, "conversations").apply { mkdirs() }
     private val indexFile = AtomicFile(File(root, "index.json"))
@@ -128,7 +128,7 @@ class ConversationStore(private val root: File) {
         try {
             out.write(AgentJson.encodeToString(mSummaries.value).toByteArray())
             indexFile.finishWrite(out)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             indexFile.failWrite(out)
         }
     }

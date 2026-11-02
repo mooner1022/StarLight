@@ -25,10 +25,10 @@ class DocsLibrary(private val assets: AssetManager) {
             throw ToolException("No documentation page: $path")
         val text = try {
             read("$ROOT/$clean.md")
-        } catch (e: java.io.IOException) {
+        } catch (_: java.io.IOException) {
             try {
                 read("$ROOT/$clean/index.md")
-            } catch (e: java.io.IOException) {
+            } catch (_: java.io.IOException) {
                 throw ToolException("No documentation page: $path. Call read_docs without a path to list the pages.")
             }
         }

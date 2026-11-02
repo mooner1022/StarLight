@@ -168,7 +168,7 @@ internal object AgentNotifier {
         if (!hub.settings.notifyOnFinish || hub.runtime.visibleConversation == conversationId)
             return
         val conversation = hub.store.get(conversationId) ?: return
-        val reply = conversation.messages.lastOrNull { it.text.isNotBlank() && it.role == dev.mooner.starlight.agent.model.Role.ASSISTANT }
+        val reply = conversation.messages.lastOrNull { it.text.isNotBlank() && it.role == Role.ASSISTANT }
             ?.text?.plainPreview()
         notify(context, doneId(conversationId), base(context, CHANNEL_DONE)
             .setContentTitle(conversation.title)

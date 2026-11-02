@@ -2,9 +2,9 @@ package dev.mooner.starlight.ui.agent
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.text.Html
 import android.view.LayoutInflater
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -194,7 +194,7 @@ internal object ProviderSheet {
     }
 
     private fun open(context: Context, url: String) {
-        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
     /** Opens [AgentReturnActivity], which brings StarLight back from the browser. */

@@ -15,7 +15,6 @@ import dev.mooner.starlight.agent.model.RunState
 import dev.mooner.starlight.agent.net.HttpStatusException
 import dev.mooner.starlight.agent.provider.LlmRequest
 import dev.mooner.starlight.agent.provider.LlmResult
-import dev.mooner.starlight.agent.provider.ProviderKind
 import dev.mooner.starlight.agent.provider.RequestContent
 import dev.mooner.starlight.agent.provider.StopReason
 import dev.mooner.starlight.agent.provider.StreamErrorException

@@ -10,6 +10,8 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
 import dev.mooner.starlight.agent.model.AttachmentKind
 import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.Part
@@ -107,7 +109,7 @@ class AttachmentStore(private val root: File) : AttachmentSource {
                 (0 until minOf(renderer.pageCount, MAX_PDF_PAGES)).map { index ->
                     renderer.openPage(index).use { page ->
                         val scale = MAX_IMAGE_EDGE.toFloat() / maxOf(page.width, page.height)
-                        val bitmap = Bitmap.createBitmap((page.width * scale).toInt(), (page.height * scale).toInt(), Bitmap.Config.ARGB_8888)
+                        val bitmap = createBitmap((page.width * scale).toInt(), (page.height * scale).toInt())
                         Canvas(bitmap).drawColor(Color.WHITE)
                         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                         ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }.toByteArray()
@@ -154,7 +156,7 @@ class AttachmentStore(private val root: File) : AttachmentSource {
             ?: return mimeType to bytes
         val scale = minOf(1f, MAX_IMAGE_EDGE.toFloat() / maxOf(decoded.width, decoded.height))
         val scaled = if (scale < 1f)
-            Bitmap.createScaledBitmap(decoded, (decoded.width * scale).toInt(), (decoded.height * scale).toInt(), true)
+            decoded.scale((decoded.width * scale).toInt(), (decoded.height * scale).toInt())
         else
             decoded
         val png = scaled.hasAlpha()

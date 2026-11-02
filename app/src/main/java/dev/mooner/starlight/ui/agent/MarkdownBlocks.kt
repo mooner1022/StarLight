@@ -26,7 +26,7 @@ internal object MarkdownBlocks {
         data class Table(val header: List<String>, val aligns: List<Int>, val rows: List<List<String>>) : Block()
     }
 
-    private val DELIMITER = Regex("^\\s*\\|?\\s*:?-{1,}:?\\s*(\\|\\s*:?-{1,}:?\\s*)*\\|?\\s*$")
+    private val DELIMITER = Regex("^\\s*\\|?\\s*:?-+:?\\s*(\\|\\s*:?-+:?\\s*)*\\|?\\s*$")
     private val FENCE = Regex("^\\s*(```|~~~)")
 
     fun split(markdown: String): List<Block> {

@@ -36,9 +36,6 @@ data class Conversation(
     val error: String? = null,
     val usage: TurnUsage = TurnUsage(),
 ) {
-    val lastMessage: ChatMessage?
-        get() = messages.lastOrNull()
-
     companion object {
         const val VERSION = 1
     }

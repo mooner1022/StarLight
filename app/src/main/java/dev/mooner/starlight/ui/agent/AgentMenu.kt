@@ -42,7 +42,7 @@ internal object AgentMenu {
                 list.clipToPadding = false
             },
             menuItem = { holder ->
-                val danger = holder.item.itemId in dangerous
+                val danger = holder.model.item.itemId in dangerous
                 val tint = if (danger) color(R.color.agent_popup_danger) else color(R.color.agent_on_night)
                 holder.titleView.typeface = font
                 holder.titleView.textSize = 14.5f

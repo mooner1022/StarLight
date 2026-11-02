@@ -68,9 +68,9 @@ class ProjectFilesTest {
 }
 
 class PreviewTest {
-    @org.junit.Test
+    @Test
     fun previewsDropMarkdown() {
         val text = "**agent_test** 봇을 만들었어요\n\n- `/안녕`에 답해요\n\n```js\ncode()\n```\n# Done"
-        org.junit.Assert.assertEquals("agent_test 봇을 만들었어요 /안녕에 답해요 Done", text.plainPreview())
+        assertEquals("agent_test 봇을 만들었어요 /안녕에 답해요 Done", text.plainPreview())
     }
 }

@@ -451,9 +451,9 @@ class ChatAdapter(
     private fun bindApproval(binding: ItemAgentApprovalBinding, row: ChatRow.ApprovalRequest) {
         binding.icon.setImageResource(ToolLabels.icon(row.call.name))
         binding.description.text = row.description
-        binding.allow.setOnClickListener { actions.onApproval(row.call.id, true, false) }
-        binding.deny.setOnClickListener { actions.onApproval(row.call.id, false, false) }
-        binding.always.setOnClickListener { actions.onApproval(row.call.id, true, true) }
+        binding.allow.setOnClickListener { actions.onApproval(row.call.id, allow = true, always = false) }
+        binding.deny.setOnClickListener { actions.onApproval(row.call.id, allow = false, always = false) }
+        binding.always.setOnClickListener { actions.onApproval(row.call.id, allow = true, always = true) }
     }
 
     private fun bindNotice(binding: ItemAgentNoticeBinding, row: ChatRow.Notice) {
@@ -491,7 +491,6 @@ class ChatAdapter(
             block(file)
     }
 
-    /** Null if [file] is somewhere the app's FileProvider doesn't share from. */
     private fun prettyArguments(arguments: String): String =
         runCatching { PRETTY.encodeToString(JsonObject.serializer(), AgentJson.parseToJsonElement(arguments) as JsonObject) }
             .getOrDefault(arguments)

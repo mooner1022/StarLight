@@ -3,7 +3,6 @@ package dev.mooner.starlight.agent.provider
 /** The services the agent can talk to. */
 enum class ProviderKind(
     val id: String,
-    val protocol: Protocol,
     val displayName: String,
     val defaultBaseUrl: String,
     /** Where the user gets a key, or null when there is no key to enter. */
@@ -14,7 +13,6 @@ enum class ProviderKind(
 ) {
     ANTHROPIC(
         id = "anthropic",
-        protocol = Protocol.ANTHROPIC,
         displayName = "Anthropic",
         defaultBaseUrl = AnthropicClient.DEFAULT_BASE_URL,
         keyUrl = "https://platform.claude.com/settings/keys",
@@ -23,7 +21,6 @@ enum class ProviderKind(
     ),
     CHATGPT(
         id = "chatgpt",
-        protocol = Protocol.RESPONSES,
         displayName = "ChatGPT",
         defaultBaseUrl = ResponsesClient.DEFAULT_BASE_URL,
         keyUrl = null,
@@ -32,7 +29,6 @@ enum class ProviderKind(
     ),
     OPENAI(
         id = "openai",
-        protocol = Protocol.RESPONSES,
         displayName = "OpenAI",
         defaultBaseUrl = ResponsesClient.DEFAULT_BASE_URL,
         keyUrl = "https://platform.openai.com/api-keys",
@@ -41,7 +37,6 @@ enum class ProviderKind(
     ),
     GEMINI(
         id = "gemini",
-        protocol = Protocol.CHAT_COMPLETIONS,
         displayName = "Google Gemini",
         defaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta/openai",
         keyUrl = "https://aistudio.google.com/apikey",
@@ -50,7 +45,6 @@ enum class ProviderKind(
     ),
     OPENROUTER(
         id = "openrouter",
-        protocol = Protocol.CHAT_COMPLETIONS,
         displayName = "OpenRouter",
         defaultBaseUrl = "https://openrouter.ai/api/v1",
         keyUrl = "https://openrouter.ai/settings/keys",
@@ -59,7 +53,6 @@ enum class ProviderKind(
     ),
     CUSTOM(
         id = "custom",
-        protocol = Protocol.CHAT_COMPLETIONS,
         displayName = "OpenAI-compatible",
         defaultBaseUrl = "",
         keyUrl = null,

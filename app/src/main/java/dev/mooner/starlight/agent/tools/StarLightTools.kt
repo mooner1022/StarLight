@@ -23,6 +23,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToLong
 
 /**
  * The agent's tools for StarLight projects. They follow the built-in tools of the StarLight MCP server plugin
@@ -581,7 +582,7 @@ class StarLightTools(private val docs: DocsLibrary) {
     }
 
     private fun sourcePath(project: Project, source: String): String {
-        val file = java.io.File(source)
+        val file = File(source)
         if (!file.isAbsolute)
             return source.removePrefix("./")
         return runCatching { ProjectFiles(project.directory).relative(file.canonicalFile) }.getOrDefault(source)
@@ -623,7 +624,7 @@ class StarLightTools(private val docs: DocsLibrary) {
             if (trigger)
                 put("for", event.trigger)
             put("text", event.text)
-            put("seconds", Math.round(event.seconds * 10) / 10.0)
+            put("seconds", (event.seconds * 10).roundToLong() / 10.0)
         }
         val seconds = wait.maxMillis / 1000
         val json = buildJsonObject {

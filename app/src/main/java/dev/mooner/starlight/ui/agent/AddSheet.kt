@@ -98,7 +98,7 @@ internal object AddSheet {
 
     private fun pickApproval(activity: AppCompatActivity, composer: Composer, onPicked: () -> Unit) {
         val hub = AgentHub.get(activity)
-        val options = listOf<Triple<ApprovalPolicy?, String, String>>(
+        val options = listOf(
             Triple(null, activity.getString(R.string.agent_add_approval_default),
                 activity.getString(R.string.agent_add_approval_default_desc, approvalLabel(activity, hub.settings.approvalPolicy))),
             Triple(ApprovalPolicy.AUTO, activity.getString(R.string.agent_approval_auto), activity.getString(R.string.agent_approval_auto_desc)),

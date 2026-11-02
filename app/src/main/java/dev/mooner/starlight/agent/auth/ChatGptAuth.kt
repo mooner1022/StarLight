@@ -121,7 +121,7 @@ class ChatGptAuth internal constructor(private val settings: AgentSettings) {
             while (true) {
                 val socket = try {
                     server.accept()
-                } catch (e: SocketTimeoutException) {
+                } catch (_: SocketTimeoutException) {
                     throw SignInRequiredException("Sign-in timed out.")
                 }
                 socket.use {

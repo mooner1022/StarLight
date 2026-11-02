@@ -3,6 +3,7 @@ package dev.mooner.starlight.agent.net
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -11,7 +12,6 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import kotlin.coroutines.coroutineContext
 
 /** An HTTP error response. */
 class HttpStatusException(
@@ -42,9 +42,6 @@ object Http {
     suspend fun get(url: String, headers: Map<String, String>): String =
         request("GET", url, headers, body = null) { it.readText() }
 
-    suspend fun postJson(url: String, headers: Map<String, String>, body: String): String =
-        request("POST", url, headers + ("Content-Type" to "application/json"), body.toByteArray()) { it.readText() }
-
     suspend fun postForm(url: String, headers: Map<String, String>, form: Map<String, String>): String {
         val body = form.entries.joinToString("&") { (k, v) -> "${encode(k)}=${encode(v)}" }
         return request("POST", url, headers + ("Content-Type" to "application/x-www-form-urlencoded"), body.toByteArray()) { it.readText() }
@@ -64,7 +61,7 @@ object Http {
         val data = StringBuilder()
         var hasData = false
         while (true) {
-            coroutineContext.ensureActive()
+            currentCoroutineContext().ensureActive()
             val line = reader.readLine() ?: break
             when {
                 line.isEmpty() -> {

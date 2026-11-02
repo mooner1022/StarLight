@@ -1,7 +1,6 @@
 package dev.mooner.starlight.agent.provider
 
 import dev.mooner.starlight.agent.model.AgentJson
-import dev.mooner.starlight.agent.model.AttachmentKind
 import dev.mooner.starlight.agent.model.ChatMessage
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.model.Role
@@ -59,7 +58,4 @@ internal object RequestContent {
                 else -> message.copy(parts = parts)
             }
         }
-
-    fun isImage(attachment: Part.Attachment): Boolean =
-        attachment.kind == AttachmentKind.IMAGE
 }
