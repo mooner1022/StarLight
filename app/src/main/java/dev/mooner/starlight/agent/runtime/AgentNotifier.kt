@@ -34,11 +34,18 @@ internal object AgentNotifier {
         ))
     }
 
-    fun progress(context: Context, runs: Collection<LiveRun>, titleOf: (String) -> String): Notification {
+    /**
+     * The ongoing notification of the runs going on. One run whose chat isn't open asks to be a Live Update, which
+     * Android 16 QPR2 and later show as a chip in the status bar and a card on the lock screen; elsewhere it stays an
+     * ordinary notification. A run waiting for the user says so in the chip and offers to allow or deny right there.
+     */
+    fun progress(context: Context, hub: AgentHub): Notification {
+        val runtime = hub.runtime
+        val runs = runtime.live.value.values
         val first = runs.firstOrNull()
         val title = when {
             first == null  -> context.getString(R.string.agent_notification_working)
-            runs.size == 1 -> titleOf(first.conversationId)
+            runs.size == 1 -> hub.store.get(first.conversationId)?.title.orEmpty()
             else           -> context.getString(R.string.agent_notification_many, runs.size)
         }
         val builder = base(context, CHANNEL_PROGRESS)
@@ -48,11 +55,44 @@ internal object AgentNotifier {
             .setOnlyAlertOnce(true)
             .setProgress(0, 0, true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-        if (first != null) {
-            builder.setContentIntent(openChat(context, first.conversationId))
+        if (first == null)
+            return builder.build()
+        builder.setContentIntent(openChat(context, first.conversationId))
+            .setDeleteIntent(dismissed(context, runs.map { it.conversationId }))
+        val single = runs.size == 1
+        val approval = if (single && first.phase == LiveRun.Phase.APPROVAL) runtime.pendingApproval(first.conversationId) else null
+        if (approval != null) {
+            val (callId, description) = approval
+            builder.setContentText(description)
+                .setShortCriticalText(context.getString(R.string.agent_chip_approval))
+                .addAction(0, context.getString(R.string.agent_allow), action(context, AgentActionReceiver.ACTION_ALLOW, first.conversationId, callId))
+                .addAction(0, context.getString(R.string.agent_deny), action(context, AgentActionReceiver.ACTION_DENY, first.conversationId, callId))
+        } else {
             builder.addAction(0, context.getString(R.string.agent_stop), action(context, AgentActionReceiver.ACTION_STOP, first.conversationId, null))
         }
+        // The time the run has taken, which a Live Update's chip shows when there's nothing more pressing.
+        if (single)
+            runtime.startedAt(first.conversationId)?.let { builder.setWhen(it).setShowWhen(true).setUsesChronometer(true) }
+        builder.setRequestPromotedOngoing(
+            promotes(hub.settings.liveUpdates, runs, runtime.visibleConversation, runtime.dismissed.value))
         return builder.build()
+    }
+
+    /** Whether the progress notification asks to be a Live Update: one run, its chat not open, not swiped away. */
+    internal fun promotes(enabled: Boolean, runs: Collection<LiveRun>, visible: String?, dismissed: Set<String>): Boolean {
+        val run = runs.singleOrNull() ?: return false
+        return enabled && run.conversationId != visible && run.conversationId !in dismissed
+    }
+
+    /** What the progress notification shows; it is posted again only when this changes, not on every streamed word. */
+    fun progressKey(hub: AgentHub): List<Any?> {
+        val runtime = hub.runtime
+        val runs = runtime.live.value.values
+        return listOf(
+            runs.map { listOf(it.conversationId, it.phase, it.tool, it.retry) },
+            runs.singleOrNull()?.let { runtime.pendingApproval(it.conversationId) },
+            promotes(hub.settings.liveUpdates, runs, runtime.visibleConversation, runtime.dismissed.value),
+        )
     }
 
     fun approvalNeeded(hub: AgentHub, conversationId: String, callId: String, description: String) {
@@ -141,6 +181,16 @@ internal object AgentNotifier {
                 .setAction(action)
                 .putExtra(AgentActionReceiver.EXTRA_CONVERSATION, conversationId)
                 .putExtra(AgentActionReceiver.EXTRA_CALL, callId),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+
+    private fun dismissed(context: Context, conversationIds: List<String>): PendingIntent =
+        PendingIntent.getBroadcast(
+            context,
+            0x5A4,
+            Intent(context, AgentActionReceiver::class.java)
+                .setAction(AgentActionReceiver.ACTION_DISMISSED)
+                .putExtra(AgentActionReceiver.EXTRA_CONVERSATIONS, conversationIds.toTypedArray()),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 

@@ -91,26 +91,43 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     private val mLive = MutableStateFlow<Map<String, LiveRun>>(emptyMap())
     val live: StateFlow<Map<String, LiveRun>> = mLive.asStateFlow()
 
+    private val mVisible = MutableStateFlow<String?>(null)
     /** The conversation shown on screen, which needs no notification when it finishes. */
-    @Volatile
-    var visibleConversation: String? = null
-        private set
+    val visible: StateFlow<String?> = mVisible.asStateFlow()
+    val visibleConversation: String?
+        get() = mVisible.value
 
     /** Approvals waiting for the user, by conversation: the call and what it would do. */
     private val pendingApprovals = ConcurrentHashMap<String, Pair<String, String>>()
+    /** When each run going on started. */
+    private val startedAt = ConcurrentHashMap<String, Long>()
+    private val mDismissed = MutableStateFlow<Set<String>>(emptySet())
+    /** Runs whose progress notification the user swiped away; they aren't shown as a Live Update again. */
+    val dismissed: StateFlow<Set<String>> = mDismissed.asStateFlow()
 
     fun chatShown(conversationId: String) {
-        visibleConversation = conversationId
+        mVisible.value = conversationId
         AgentNotifier.cancelApproval(hub, conversationId)
     }
 
     /** The chat went away; a question it was showing moves to a notification. */
     fun chatHidden(conversationId: String) {
-        if (visibleConversation == conversationId)
-            visibleConversation = null
+        mVisible.compareAndSet(conversationId, null)
         pendingApprovals[conversationId]?.let { (callId, description) ->
             AgentNotifier.approvalNeeded(hub, conversationId, callId, description)
         }
+    }
+
+    /** The call [conversationId] waits on the user for, and what it would do. */
+    fun pendingApproval(conversationId: String): Pair<String, String>? =
+        pendingApprovals[conversationId]
+
+    fun startedAt(conversationId: String): Long? =
+        startedAt[conversationId]
+
+    /** The user swiped the progress notification away while these runs went on. */
+    fun progressDismissed(conversationIds: Collection<String>) {
+        mDismissed.update { it + conversationIds }
     }
 
     fun isRunning(conversationId: String): Boolean =
@@ -200,6 +217,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     }
 
     private fun start(conversationId: String) {
+        startedAt[conversationId] = System.currentTimeMillis()
+        mDismissed.update { it - conversationId }
         setLive(conversationId) { LiveRun(conversationId, LiveRun.Phase.WAITING) }
         AgentService.start(hub.context)
         val job = scope.launch {
@@ -207,6 +226,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 run(conversationId)
             } finally {
                 jobs.remove(conversationId)
+                startedAt.remove(conversationId)
+                mDismissed.update { it - conversationId }
                 mLive.update { it - conversationId }
             }
         }

@@ -208,6 +208,13 @@
     <string name="agent_preview_open_with">Open with</string>
     <string name="agent_preview_truncated">The file is large, so only its first %s is shown.</string>
     <string name="agent_preview_failed">Couldn\'t read the file: %s</string>
+    <string name="agent_chip_approval">Approve</string>
+    <string name="agent_live_updates">Show progress as a Live Update</string>
+    <string name="agent_live_updates_desc">While you\'re away from the chat, a run shows in the status bar and on the lock screen, with a button to answer when it needs you.</string>
+    <string name="agent_live_updates_blocked">Live Updates are off for StarLight in system settings. Tap to turn them on.</string>
+    <string name="agent_live_updates_shown">The last run showed as a Live Update.</string>
+    <string name="agent_live_updates_not_shown">The last run showed as an ordinary notification. This device may not support Live Updates, or its maker may need them turned on.</string>
+    <string name="agent_live_updates_untried">Runs you start from now on will show as a Live Update where this device supports it.</string>
     <plurals name="agent_tools_used">
         <item quantity="one">Used %d tool</item>
         <item quantity="other">Used %d tools</item>

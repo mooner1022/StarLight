@@ -1,5 +1,7 @@
 package dev.mooner.starlight.agent.runtime
 
+import android.app.Notification
+import android.app.NotificationManager
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -8,6 +10,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
@@ -18,9 +21,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.launch
 
 /**
  * Keeps the process in the foreground while the agent runs, so that a run goes on after the user leaves the app.
@@ -43,18 +52,46 @@ class AgentService : Service() {
             ?.apply { acquire(WAKE_LOCK_TIMEOUT_MILLIS) }
 
         @OptIn(FlowPreview::class)
-        hub.runtime.live
+        combine(hub.runtime.live, hub.runtime.visible, hub.runtime.dismissed, hub.settings.version) { runs, _, _, _ -> runs }
             .sample(UPDATE_INTERVAL_MILLIS)
             .onEach { runs ->
-                if (runs.isEmpty()) {
+                if (runs.isEmpty())
                     stopSelf()
+            }
+            .filter { it.isNotEmpty() }
+            .map { AgentNotifier.progressKey(hub) }
+            .distinctUntilChanged()
+            .onEach {
+                // Once swiped away, the runs go on without it; approvals and the end still notify on their own.
+                if (hub.runtime.live.value.keys.all { id -> id in hub.runtime.dismissed.value })
                     return@onEach
-                }
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                    ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED)
-                    NotificationManagerCompat.from(this).notify(AgentNotifier.PROGRESS_ID, progress(hub))
+                    ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    val notification = progress(hub)
+                    NotificationManagerCompat.from(this).notify(AgentNotifier.PROGRESS_ID, notification)
+                    if (NotificationCompat.isRequestPromotedOngoing(notification))
+                        recordPromotion(hub)
+                }
             }
             .launchIn(scope)
+    }
+
+    /**
+     * Notes whether the system showed the notification as a Live Update, for the settings to tell the user; promotion
+     * depends on the Android version, the user's settings and the manufacturer, and the app can't know it beforehand.
+     */
+    private fun recordPromotion(hub: AgentHub) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA)
+            return
+        scope.launch {
+            // The system applies the flag once it has processed the post.
+            delay(PROMOTION_CHECK_DELAY_MILLIS)
+            val posted = getSystemService(NotificationManager::class.java)?.activeNotifications
+                ?.firstOrNull { it.id == AgentNotifier.PROGRESS_ID } ?: return@launch
+            if (!NotificationCompat.isRequestPromotedOngoing(posted.notification))
+                return@launch
+            hub.settings.lastLiveUpdatePromoted = posted.notification.flags and Notification.FLAG_PROMOTED_ONGOING != 0
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -78,10 +115,11 @@ class AgentService : Service() {
     }
 
     private fun progress(hub: AgentHub) =
-        AgentNotifier.progress(this, hub.runtime.live.value.values) { id -> hub.store.get(id)?.title.orEmpty() }
+        AgentNotifier.progress(this, hub)
 
     companion object {
         private const val UPDATE_INTERVAL_MILLIS = 800L
+        private const val PROMOTION_CHECK_DELAY_MILLIS = 1_000L
         private const val WAKE_LOCK_TIMEOUT_MILLIS = 3 * 60 * 60 * 1000L
         private val LOG = LoggerFactory.logger("AgentService")
 
@@ -102,6 +140,10 @@ class AgentActionReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val runtime = AgentHub.get(context).runtime
+        if (intent.action == ACTION_DISMISSED) {
+            intent.getStringArrayExtra(EXTRA_CONVERSATIONS)?.let { runtime.progressDismissed(it.toList()) }
+            return
+        }
         val conversation = intent.getStringExtra(EXTRA_CONVERSATION) ?: return
         val call = intent.getStringExtra(EXTRA_CALL)
         when (intent.action) {
@@ -115,6 +157,9 @@ class AgentActionReceiver : BroadcastReceiver() {
         const val ACTION_ALLOW = "dev.mooner.starlight.agent.ALLOW"
         const val ACTION_DENY = "dev.mooner.starlight.agent.DENY"
         const val ACTION_STOP = "dev.mooner.starlight.agent.STOP"
+        /** The user swiped the progress notification away. */
+        const val ACTION_DISMISSED = "dev.mooner.starlight.agent.DISMISSED"
+        const val EXTRA_CONVERSATIONS = "conversations"
         const val EXTRA_CONVERSATION = "conversation"
         const val EXTRA_CALL = "call"
     }

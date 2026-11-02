@@ -2,6 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -202,6 +203,67 @@
                         android:thumb="@drawable/switch_thumb"
                         app:track="@drawable/switch_track_selector"
                         app:useMaterialThemeColors="false"/>
+                </LinearLayout>
+
+                <!-- Live Updates exist from Android 16 on; the code hides this group elsewhere. -->
+                <LinearLayout
+                    android:id="@+id/liveUpdatesGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <View style="@style/AgentDivider"/>
+
+                    <LinearLayout
+                        android:id="@+id/liveUpdatesRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="12dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AgentRowTitle"
+                                android:text="@string/agent_live_updates"/>
+
+                            <TextView
+                                style="@style/AgentRowBody"
+                                android:text="@string/agent_live_updates_desc"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/liveUpdates"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:clickable="false"
+                            android:thumb="@drawable/switch_thumb"
+                            app:track="@drawable/switch_track_selector"
+                            app:useMaterialThemeColors="false"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/liveUpdatesStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginBottom="10dp"
+                        android:background="@drawable/bg_agent_notice"
+                        android:fontFamily="@font/wantedsans_regular"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="8dp"
+                        android:textColor="@color/agent_text_muted"
+                        android:textSize="12.5sp"
+                        tools:text="마지막 실행이 실시간 업데이트로 표시됐어요."/>
                 </LinearLayout>
 
                 <View style="@style/AgentDivider"/>

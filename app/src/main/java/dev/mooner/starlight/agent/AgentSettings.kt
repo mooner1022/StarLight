@@ -137,6 +137,24 @@ class AgentSettings internal constructor(context: Context) {
             changed()
         }
 
+    /** Whether a run's progress may show as a Live Update (Android 16 QPR2 and later) while its chat isn't open. */
+    var liveUpdates: Boolean
+        get() = prefs.getBoolean(KEY_LIVE_UPDATES, true)
+        set(value) {
+            prefs.edit { putBoolean(KEY_LIVE_UPDATES, value) }
+            changed()
+        }
+
+    /** Whether the system showed the last progress notification that asked for it as a Live Update; null if none did. */
+    var lastLiveUpdatePromoted: Boolean?
+        get() = if (prefs.contains(KEY_LIVE_UPDATE_RESULT)) prefs.getBoolean(KEY_LIVE_UPDATE_RESULT, false) else null
+        set(value) {
+            if (value == lastLiveUpdatePromoted)
+                return
+            prefs.edit { if (value == null) remove(KEY_LIVE_UPDATE_RESULT) else putBoolean(KEY_LIVE_UPDATE_RESULT, value) }
+            changed()
+        }
+
     /** OpenAI asks apps to say once that requests use the user's ChatGPT plan. */
     var chatGptPlanNoticeShown: Boolean
         get() = prefs.getBoolean("chatgpt.plan_notice", false)
@@ -177,6 +195,8 @@ class AgentSettings internal constructor(context: Context) {
         const val KEY_MAX_STEPS = "max_steps"
         const val KEY_INSTRUCTIONS = "instructions"
         const val KEY_NOTIFY = "notify_on_finish"
+        const val KEY_LIVE_UPDATES = "live_updates"
+        const val KEY_LIVE_UPDATE_RESULT = "live_update_promoted"
         const val DEFAULT_MAX_STEPS = 60
     }
 }

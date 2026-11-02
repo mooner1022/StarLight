@@ -1,6 +1,10 @@
 package dev.mooner.starlight.ui.agent
 
+import android.app.NotificationManager
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
@@ -56,7 +60,10 @@ class AgentSettingsActivity : AppCompatActivity() {
         setUpBehavior()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                hub.settings.version.collect { renderProviders() }
+                hub.settings.version.collect {
+                    renderProviders()
+                    renderLiveUpdates()
+                }
             }
         }
     }
@@ -124,8 +131,50 @@ class AgentSettingsActivity : AppCompatActivity() {
             hub.settings.notifyOnFinish = binding.notify.isChecked
         }
 
+        binding.liveUpdatesGroup.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+        binding.liveUpdates.isChecked = hub.settings.liveUpdates
+        binding.liveUpdatesRow.setOnClickListener {
+            binding.liveUpdates.isChecked = !binding.liveUpdates.isChecked
+            hub.settings.liveUpdates = binding.liveUpdates.isChecked
+            renderLiveUpdates()
+        }
+
         binding.instructions.setText(hub.settings.customInstructions)
         binding.instructions.doAfterTextChanged { hub.settings.customInstructions = it?.toString().orEmpty() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // The user may come back from the system's setting for it.
+        renderLiveUpdates()
+    }
+
+    /** Whether the system lets the app show Live Updates, and whether the last run's progress showed as one. */
+    private fun renderLiveUpdates() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA)
+            return
+        val allowed = getSystemService(NotificationManager::class.java)?.canPostPromotedNotifications() != false
+        val status = binding.liveUpdatesStatus
+        status.isVisible = hub.settings.liveUpdates
+        status.setOnClickListener(null)
+        status.isClickable = false
+        status.text = when {
+            !allowed -> getString(R.string.agent_live_updates_blocked)
+            else     -> when (hub.settings.lastLiveUpdatePromoted) {
+                true  -> getString(R.string.agent_live_updates_shown)
+                false -> getString(R.string.agent_live_updates_not_shown)
+                null  -> getString(R.string.agent_live_updates_untried)
+            }
+        }
+        if (!allowed)
+            status.setOnClickListener {
+                runCatching {
+                    startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
+                }.onFailure {
+                    startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
+                }
+            }
     }
 
     private var approvalRenderer: ((ApprovalPolicy) -> Unit)? = null
