@@ -1,6 +1,13 @@
 package dev.mooner.starlight.ui.agent
 
+import android.Manifest
 import android.app.NotificationManager
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import dev.mooner.starlight.agent.runtime.AgentNotifier
+import kotlinx.coroutines.delay
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -138,6 +145,8 @@ class AgentSettingsActivity : AppCompatActivity() {
             hub.settings.liveUpdates = binding.liveUpdates.isChecked
             renderLiveUpdates()
         }
+        FilePreview.shrinkIcons(this, binding.liveUpdatesTest)
+        binding.liveUpdatesTest.setOnClickListener { testLiveUpdate() }
 
         binding.instructions.setText(hub.settings.customInstructions)
         binding.instructions.doAfterTextChanged { hub.settings.customInstructions = it?.toString().orEmpty() }
@@ -158,7 +167,7 @@ class AgentSettingsActivity : AppCompatActivity() {
         status.isVisible = hub.settings.liveUpdates
         status.setOnClickListener(null)
         status.isClickable = false
-        status.text = when {
+        val result = when {
             !allowed -> getString(R.string.agent_live_updates_blocked)
             else     -> when (hub.settings.lastLiveUpdatePromoted) {
                 true  -> getString(R.string.agent_live_updates_shown)
@@ -166,6 +175,12 @@ class AgentSettingsActivity : AppCompatActivity() {
                 null  -> getString(R.string.agent_live_updates_untried)
             }
         }
+        // The detail line says where promotion failed, if it did; before any attempt, at least the Android version.
+        status.text = listOf(
+            result,
+            hub.settings.lastLiveUpdateDetail ?: getString(R.string.agent_live_updates_version, androidVersion()),
+        ).joinToString("\n\n")
+        binding.liveUpdatesTest.isVisible = hub.settings.liveUpdates
         if (!allowed)
             status.setOnClickListener {
                 runCatching {
@@ -177,6 +192,41 @@ class AgentSettingsActivity : AppCompatActivity() {
             }
     }
 
+    /**
+     * Posts a sample of a run's progress notification, then reads back what the system did with it. The sample
+     * stays for a while so the user can see where it shows (status bar chip, lock screen, Now Bar).
+     */
+    private fun testLiveUpdate() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA)
+            return
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, R.string.agent_live_updates_test_no_permission, Toast.LENGTH_LONG).show()
+            return
+        }
+        NotificationManagerCompat.from(this).notify(AgentNotifier.TEST_ID, AgentNotifier.liveUpdateTest(this))
+        Toast.makeText(this, R.string.agent_live_updates_test_posted, Toast.LENGTH_LONG).show()
+        lifecycleScope.launch {
+            // The system applies the flag once it has processed the post.
+            delay(TEST_CHECK_DELAY_MILLIS)
+            val posted = getSystemService(NotificationManager::class.java)?.activeNotifications
+                ?.firstOrNull { it.id == AgentNotifier.TEST_ID }?.notification ?: return@launch
+            val (promoted, detail) = AgentNotifier.promotionReport(this@AgentSettingsActivity, posted)
+            hub.settings.lastLiveUpdatePromoted = promoted
+            hub.settings.lastLiveUpdateDetail = detail
+            renderLiveUpdates()
+        }
+    }
+
+    /** "16 (API 36.1)"; Live Updates need 36.1, which the major version alone doesn't tell. */
+    private fun androidVersion(): String {
+        val api = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            val full = Build.VERSION.SDK_INT_FULL
+            "${full / 100_000}.${full % 100_000}"
+        } else
+            Build.VERSION.SDK_INT.toString()
+        return "${Build.VERSION.RELEASE} (API $api)"
+    }
+
     private var approvalRenderer: ((ApprovalPolicy) -> Unit)? = null
 
     private fun renderApproval(policy: ApprovalPolicy) =
@@ -184,5 +234,6 @@ class AgentSettingsActivity : AppCompatActivity() {
 
     private companion object {
         const val STEP_UNIT = 10
+        const val TEST_CHECK_DELAY_MILLIS = 1_200L
     }
 }

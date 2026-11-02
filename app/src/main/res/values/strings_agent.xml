@@ -215,6 +215,11 @@
     <string name="agent_live_updates_shown">The last run showed as a Live Update.</string>
     <string name="agent_live_updates_not_shown">The last run showed as an ordinary notification. This device may not support Live Updates, or its maker may need them turned on.</string>
     <string name="agent_live_updates_untried">Runs you start from now on will show as a Live Update where this device supports it.</string>
+    <string name="agent_live_updates_version">This device: Android %s. Live Updates need API 36.1 or later.</string>
+    <string name="agent_live_updates_test">Try a Live Update</string>
+    <string name="agent_live_updates_test_title">Live Update test</string>
+    <string name="agent_live_updates_test_posted">Posted a test for 20 seconds. Check the status bar and the lock screen.</string>
+    <string name="agent_live_updates_test_no_permission">Allow StarLight\'s notifications first.</string>
     <plurals name="agent_tools_used">
         <item quantity="one">Used %d tool</item>
         <item quantity="other">Used %d tools</item>

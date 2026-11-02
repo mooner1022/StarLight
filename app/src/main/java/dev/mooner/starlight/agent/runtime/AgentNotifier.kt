@@ -8,6 +8,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -24,6 +26,8 @@ internal object AgentNotifier {
     const val CHANNEL_DONE = "agent_done"
 
     const val PROGRESS_ID = 0x5A1
+    const val TEST_ID = 0x5A5
+    const val TEST_MILLIS = 20_000L
 
     fun ensureChannels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
@@ -53,7 +57,8 @@ internal object AgentNotifier {
             .setContentText(first?.let { phaseText(context, it) } ?: context.getString(R.string.agent_notification_working))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setProgress(0, 0, true)
+            // As in Google's Live Updates sample; below Android 16 this is the usual indeterminate bar.
+            .setStyle(NotificationCompat.ProgressStyle().setProgressIndeterminate(true))
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
         if (first == null)
             return builder.build()
@@ -76,6 +81,47 @@ internal object AgentNotifier {
         builder.setRequestPromotedOngoing(
             promotes(hub.settings.liveUpdates, runs, runtime.visibleConversation, runtime.dismissed.value))
         return builder.build()
+    }
+
+    /** A run's progress notification as it looks away from its chat, for the settings to test Live Updates with. */
+    fun liveUpdateTest(context: Context): Notification =
+        base(context, CHANNEL_PROGRESS)
+            .setContentTitle(context.getString(R.string.agent_live_updates_test_title))
+            .setContentText(context.getString(R.string.agent_phase_thinking))
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setStyle(NotificationCompat.ProgressStyle().setProgressIndeterminate(true))
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setWhen(System.currentTimeMillis())
+            .setShowWhen(true)
+            .setUsesChronometer(true)
+            .setTimeoutAfter(TEST_MILLIS)
+            .setRequestPromotedOngoing(true)
+            .build()
+
+    /**
+     * What the system made of a posted notification that asked to be a Live Update, and one line saying why: the API
+     * level, whether the app may post Live Updates, whether the notification qualifies, its channel's importance and
+     * whether it was promoted. Each is a different place where promotion can fail.
+     */
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    fun promotionReport(context: Context, posted: Notification): Pair<Boolean, String> {
+        val manager = context.getSystemService(NotificationManager::class.java)
+        val promoted = posted.flags and Notification.FLAG_PROMOTED_ONGOING != 0
+        val full = Build.VERSION.SDK_INT_FULL
+        fun mark(value: Boolean?) = when (value) {
+            true  -> "✓"
+            false -> "✗"
+            null  -> "?"
+        }
+        val detail = listOf(
+            "API ${full / 100_000}.${full % 100_000}",
+            "allowed ${mark(runCatching { manager?.canPostPromotedNotifications() }.getOrNull())}",
+            "qualifies ${mark(runCatching { posted.hasPromotableCharacteristics() }.getOrNull())}",
+            "channel ${manager?.getNotificationChannel(posted.channelId)?.importance ?: "?"}",
+            "promoted ${mark(promoted)}",
+        ).joinToString(" · ")
+        return promoted to detail
     }
 
     /** Whether the progress notification asks to be a Live Update: one run, its chat not open, not swiped away. */

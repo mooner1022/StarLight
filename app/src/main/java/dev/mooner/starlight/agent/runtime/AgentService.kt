@@ -1,6 +1,5 @@
 package dev.mooner.starlight.agent.runtime
 
-import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
 import android.content.BroadcastReceiver
@@ -90,7 +89,9 @@ class AgentService : Service() {
                 ?.firstOrNull { it.id == AgentNotifier.PROGRESS_ID } ?: return@launch
             if (!NotificationCompat.isRequestPromotedOngoing(posted.notification))
                 return@launch
-            hub.settings.lastLiveUpdatePromoted = posted.notification.flags and Notification.FLAG_PROMOTED_ONGOING != 0
+            val (promoted, detail) = AgentNotifier.promotionReport(this@AgentService, posted.notification)
+            hub.settings.lastLiveUpdatePromoted = promoted
+            hub.settings.lastLiveUpdateDetail = detail
         }
     }
 

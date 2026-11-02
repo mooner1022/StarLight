@@ -215,6 +215,11 @@
     <string name="agent_live_updates_shown">마지막 작업이 실시간 업데이트로 표시됐어요.</string>
     <string name="agent_live_updates_not_shown">마지막 작업은 일반 알림으로 표시됐어요. 이 기기가 실시간 업데이트를 지원하지 않거나 제조사 설정에서 켜야 할 수 있어요.</string>
     <string name="agent_live_updates_untried">이제부터 시작하는 작업은 이 기기가 지원하면 실시간 업데이트로 표시돼요.</string>
+    <string name="agent_live_updates_version">이 기기: Android %s. 실시간 업데이트는 API 36.1 이상에서 동작해요.</string>
+    <string name="agent_live_updates_test">실시간 업데이트 시험하기</string>
+    <string name="agent_live_updates_test_title">실시간 업데이트 시험</string>
+    <string name="agent_live_updates_test_posted">20초 동안 시험 알림을 띄웠어요. 상단 칩과 잠금화면을 확인해 보세요.</string>
+    <string name="agent_live_updates_test_no_permission">먼저 StarLight의 알림을 허용해 주세요.</string>
     <plurals name="agent_tools_used">
         <item quantity="other">도구 %d개 사용</item>
     </plurals>
