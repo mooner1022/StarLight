@@ -30,9 +30,9 @@ import dev.mooner.configdsl.options.button
 import dev.mooner.configdsl.options.info
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
+import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.CF_LOG_BUFFER_SIZE
 import dev.mooner.starlight.CF_LOG_RETENTION
-import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.R
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.config.GlobalConfig
@@ -230,6 +230,7 @@ internal fun SettingsFragment.getSettingsStruct() = config {
             }
         }
     }
+    mediaPage(requireContext())
     singleCategoryPage {
         id = "logs"
         title = "로그"

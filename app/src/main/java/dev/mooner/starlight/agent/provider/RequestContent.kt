@@ -40,6 +40,13 @@ internal object RequestContent {
     fun attachmentLabel(attachment: Part.Attachment): String =
         "<attachment id=\"${attachment.id}\" name=\"${attachment.name}\" type=\"${attachment.mimeType}\"/>"
 
+    /**
+     * Names the images a tool showed. Where tool results can't carry images (Chat Completions, and Responses on some
+     * servers), they follow the results in a user message that starts with this.
+     */
+    fun toolImagesLabel(result: Part.ToolResult): String =
+        "Images shown by ${result.name} (call ${result.callId}):\n" + result.images.joinToString("\n", transform = ::attachmentLabel)
+
     /** Tool call arguments as a JSON object, or null if the model wrote something that isn't one. */
     fun parseArguments(arguments: String): JsonObject? =
         runCatching { AgentJson.parseToJsonElement(arguments.ifBlank { "{}" }).jsonObject }.getOrNull()

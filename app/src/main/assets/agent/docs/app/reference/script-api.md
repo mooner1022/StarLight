@@ -1,6 +1,6 @@
 ---
 title: 스크립트 API
-description: 모든 프로젝트에서 쓸 수 있는 StarLight 기본 전역 API(Api, Log, DataBase, FileStream, Device 등)를 정리했어요.
+description: 모든 프로젝트에서 쓸 수 있는 StarLight 기본 전역 API(Api, 파일 보내기 MediaSharer·room.sendMedia, Log, DataBase, FileStream, Device 등)를 정리했어요.
 order: 2
 ---
 
@@ -28,6 +28,48 @@ StarLight는 프로젝트를 컴파일할 때 아래 전역 API를 스크립트�
 | `Api.makeNoti(title, content, id?)` | 기기 알림을 띄워요. |
 | `Api.UIThread(fn, callback?)` | `fn`을 메인 스레드에서 실행해요. `callback(error, result)`로 결과를 받아요. |
 | `Api.getContext()` | 앱의 Android `Context`예요. |
+
+## 파일 보내기: MediaSharer, room.sendMedia
+
+이미지·동영상·파일을 채팅방에 보내요. 카카오톡 방에는 카카오톡의 공유 화면을 열어 보내고, **디버그룸에서는 채팅에 그 파일이 바로 보여요.** 그래서 파일을 보내는 봇도 디버그룸에서 시험할 수 있어요.
+
+| API | 설명 |
+|---|---|
+| `MediaSharer.send(room, files, options?)` | `room`은 `msg`, `msg.room`, 카카오톡 채널 ID(문자열 또는 BigInt), 메시지를 받은 적 있는 방 이름이에요. 상대 경로는 **프로젝트 폴더** 기준이에요. |
+| `msg.room.sendMedia(files, options?)` | 그 방에 보내요. 어느 프로젝트가 불렀는지 모르므로 **상대 경로는 받지 않아요.** 절대 경로·URL 등을 쓰거나 `MediaSharer.send`를 쓰세요. |
+| `MediaSharer.leave(to?, delay?)` | 보낸 뒤 카카오톡에서 나가요. `"home"`(기본), `"starlight"`, 패키지 이름. 채팅방이 열려 있는 동안에는 카카오톡이 알림을 보내지 않아요. |
+| `MediaSharer.getRooms()`, `MediaSharer.findRoom(name)` | 메시지를 받은 카카오톡 방 목록과 이름으로 찾은 방이에요(`id`, `name`, `isGroupChat`, `lastSeen`, `userId`). |
+| `MediaSharer.clearCache(target?)` | 캐시를 비워요. URL이나 캐시 키를 주면 그것만 지워요. |
+| `MediaSharer.hasOverlayPermission()` | '다른 앱 위에 표시' 권한이 있는지 알려 줘요. 없으면 StarLight가 화면에 떠 있을 때만 보낼 수 있어요. |
+
+`files`는 경로(`/sdcard/...`, `file://...`), `http(s)` URL, data URL, Base64 문자열(`base64:...`), Java `byte[]`, NeonJS의 `Uint8Array`·`ArrayBuffer`, `Bitmap`(예: `msg.image`) 중 하나이거나 이들의 배열이에요. 형식은 내용으로 판별해요.
+
+`options`는 `{ fileName, timeout, cache, headers, leave }`예요. 모르는 키는 오타로 보고 거부해요.
+
+보내기는 **바로 반환**하고 결과는 나중에 알려 줘요. NeonJS에서는 Promise라 `await`할 수 있고, Rhino에서는 `CompletableFuture`라 `.join()`으로 기다려요. 실패해도 예외 없이 `ok: false`로 끝나요.
+
+| 결과 | 설명 |
+|---|---|
+| `ok` | 방이 파일을 받았는지 |
+| `sent`, `failed` | 보낸 파일 수, 준비하지 못해 뺀 파일 수 |
+| `error` | 하나도 못 보냈을 때 그 이유 |
+| `errors` | 뺀 파일마다 `파일: 이유` |
+| `room`, `via` | 방 이름과 ID, 다른 경로로 보냈을 때 그 방법(`"user 95"`, `"chooser"`) |
+
+```javascript title="NeonJS"
+export async function onMessage(msg) {
+    if (msg.message === "!고양이") {
+        const r = await MediaSharer.send(msg, "https://example.com/cat.jpg", { leave: "home" });
+        if (!r.ok)
+            msg.room.send("전송 실패: " + r.error);
+    }
+}
+```
+
+> [!TIP]
+> `send_debug_message`의 답장에는 봇이 보낸 파일이 `files`(이름, 형식, 크기)로 들어와요. 이미지에는 `image` ID가 붙어서, `view_image`에 넘기면 그 이미지를 직접 볼 수 있어요.
+
+전송 설정(다운로드 제한 시간, 최대 파일 크기, 전송 후 동작, 캐시)은 앱의 **설정 > 미디어 전송**에 있어요.
 
 ## 로그: Log
 

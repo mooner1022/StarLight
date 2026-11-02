@@ -20,12 +20,17 @@ internal object ProjectArchive {
 
     private const val INFO_FILE_NAME = "project.json"
     private val SKIPPED_FILES = setOf("logs.json")
+    /** The debug room's chats and the files bots sent there, which can be large and are only for testing. */
+    private val SKIPPED_DIRS = setOf("debugroom")
 
-    /** Writes the project's folder, without its logs, to [output] as a zip. */
-    fun export(project: Project, output: OutputStream) {
-        val root = project.directory
+    /** Writes the project's folder, without its logs and debug room, to [output] as a zip. */
+    fun export(project: Project, output: OutputStream) =
+        export(project.directory, output)
+
+    internal fun export(root: File, output: OutputStream) {
         ZipOutputStream(output.buffered()).use { zip ->
             root.walkTopDown()
+                .onEnter { dir -> dir == root || dir.relativeTo(root).invariantSeparatorsPath !in SKIPPED_DIRS }
                 .filter { it.isFile && it.relativeTo(root).invariantSeparatorsPath !in SKIPPED_FILES }
                 .forEach { file ->
                     zip.putNextEntry(ZipEntry(file.relativeTo(root).invariantSeparatorsPath))

@@ -1,5 +1,6 @@
 package dev.mooner.starlight.agent
 
+import dev.mooner.starlight.agent.model.AgentJson
 import dev.mooner.starlight.agent.model.AttachmentKind
 import dev.mooner.starlight.agent.model.ChatMessage
 import dev.mooner.starlight.agent.model.Part
@@ -13,6 +14,7 @@ import dev.mooner.starlight.agent.provider.Protocol
 import dev.mooner.starlight.agent.provider.ResponsesClient
 import dev.mooner.starlight.agent.provider.ToolSpec
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -60,6 +62,14 @@ class ProviderRequestTest {
         0,
     )
     private val toolResults = ChatMessage("t1", Role.TOOL, listOf(Part.ToolResult("call:1", "list_projects", "[]")), 0)
+
+    private val viewTurn = ChatMessage("a2", Role.ASSISTANT, listOf(Part.ToolCall("call:2", "view_image", "{\"image\":\"img_1\"}")), 0)
+    private val viewed = Part.Attachment("att_3", "cat.jpg", "image/jpeg", 3, AttachmentKind.IMAGE)
+    private val viewResult = ChatMessage("t2", Role.TOOL,
+        listOf(Part.ToolResult("call:2", "view_image", "cat.jpg is shown", images = listOf(viewed))), 0)
+
+    private val JsonElement.type: String
+        get() = jsonObject["type"]!!.jsonPrimitive.content
 
     @Test
     fun anthropicCachesSystemAndConversation() {
@@ -179,5 +189,51 @@ class ProviderRequestTest {
         assertEquals("image_url", userContent.first().jsonObject["type"]!!.jsonPrimitive.content)
         assertEquals("tool", messages.last().jsonObject["role"]!!.jsonPrimitive.content)
         assertEquals(JsonObject::class, messages[2].jsonObject::class)
+    }
+
+    @Test
+    fun anthropicPutsImagesAToolShowedInItsResult() {
+        val messages = AnthropicClient("key").buildBody(request(listOf(user(Part.Text("hi")), viewTurn, viewResult)))["messages"]!!.jsonArray
+        assertEquals(3, messages.size)
+        val result = messages.last().jsonObject["content"]!!.jsonArray.single()
+        assertEquals("tool_result", result.type)
+        val content = result.jsonObject["content"]!!.jsonArray
+        assertEquals(listOf("image", "text"), content.map { it.type })
+        assertEquals("AQID", content[0].jsonObject["source"]!!.jsonObject["data"]!!.jsonPrimitive.content)
+        assertTrue(content[1].jsonObject["text"]!!.jsonPrimitive.content.contains("att_3"))
+    }
+
+    @Test
+    fun responsesShowsImagesAToolShowedInAUserMessageAfterTheOutputs() {
+        val input = ResponsesClient({ "key" }).buildBody(request(listOf(user(Part.Text("hi")), viewTurn, viewResult)))["input"]!!.jsonArray
+        assertEquals(listOf("message", "function_call", "function_call_output", "message"), input.map { it.type })
+        assertEquals("cat.jpg is shown", input[2].jsonObject["output"]!!.jsonPrimitive.content)
+        val shown = input.last().jsonObject
+        assertEquals("user", shown["role"]!!.jsonPrimitive.content)
+        val content = shown["content"]!!.jsonArray
+        assertEquals(listOf("input_image", "input_text"), content.map { it.type })
+        assertEquals("data:image/jpeg;base64,AQID", content[0].jsonObject["image_url"]!!.jsonPrimitive.content)
+        assertTrue(content[1].jsonObject["text"]!!.jsonPrimitive.content.contains("call:2"))
+    }
+
+    @Test
+    fun chatCompletionsShowsImagesAToolShowedInAUserMessageAfterTheToolMessages() {
+        val messages = ChatCompletionsClient(null, "http://localhost:1234/v1")
+            .buildBody(request(listOf(user(Part.Text("hi")), viewTurn, viewResult), model = "local"))["messages"]!!.jsonArray
+        assertEquals(listOf("system", "user", "assistant", "tool", "user"), messages.map { it.jsonObject["role"]!!.jsonPrimitive.content })
+        // Tool messages stay text, which is all they can hold.
+        assertEquals("cat.jpg is shown", messages[3].jsonObject["content"]!!.jsonPrimitive.content)
+        assertEquals(listOf("image_url", "text"), messages.last().jsonObject["content"]!!.jsonArray.map { it.type })
+    }
+
+    @Test
+    fun imagesAToolShowedAreKeptWithTheConversation() {
+        // Counted as the message's files, so that editing an earlier message deletes them with it.
+        assertEquals(listOf("att_3"), viewResult.attachments.map { it.id })
+        assertEquals(listOf("att_1"), user(image, Part.Text("hi")).attachments.map { it.id })
+        val plain = AgentJson.encodeToString(Part.serializer(), Part.ToolResult("call:1", "list_projects", "[]"))
+        assertFalse(plain.contains("images"))
+        val decoded = AgentJson.decodeFromString(Part.serializer(), AgentJson.encodeToString(Part.serializer(), viewResult.parts.single()))
+        assertEquals(listOf(viewed), (decoded as Part.ToolResult).images)
     }
 }

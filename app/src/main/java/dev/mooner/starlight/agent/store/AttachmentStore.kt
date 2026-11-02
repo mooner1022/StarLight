@@ -184,40 +184,10 @@ class AttachmentStore(private val root: File) : AttachmentSource {
         }
     }
 
-    /** Fits an image within [MAX_IMAGE_EDGE] pixels; JPEG unless it has transparency. GIFs are kept as they are. */
-    private fun shrinkImage(mimeType: String, bytes: ByteArray): Pair<String, ByteArray> {
-        if (mimeType == "image/gif")
-            return mimeType to bytes
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-        val longEdge = maxOf(bounds.outWidth, bounds.outHeight)
-        if (longEdge <= 0)
-            return mimeType to bytes
-        if (longEdge <= MAX_IMAGE_EDGE && bytes.size <= SMALL_IMAGE_BYTES)
-            return mimeType to bytes
-        var sample = 1
-        while (longEdge / (sample * 2) >= MAX_IMAGE_EDGE)
-            sample *= 2
-        val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
-            ?: return mimeType to bytes
-        val scale = minOf(1f, MAX_IMAGE_EDGE.toFloat() / maxOf(decoded.width, decoded.height))
-        val scaled = if (scale < 1f)
-            decoded.scale((decoded.width * scale).toInt(), (decoded.height * scale).toInt())
-        else
-            decoded
-        val png = scaled.hasAlpha()
-        val out = ByteArrayOutputStream()
-        scaled.compress(if (png) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)
-        if (scaled !== decoded)
-            decoded.recycle()
-        scaled.recycle()
-        return (if (png) "image/png" else "image/jpeg") to out.toByteArray()
-    }
-
     private fun isUtf8(bytes: ByteArray): Boolean =
         runCatching { Charsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(bytes)) }.isSuccess
 
-    private companion object {
+    internal companion object {
         const val MAX_FILE_BYTES = 20L * 1024 * 1024
         const val MAX_IMAGE_EDGE = 1568
         const val SMALL_IMAGE_BYTES = 500 * 1024
@@ -231,5 +201,35 @@ class AttachmentStore(private val root: File) : AttachmentSource {
         const val OUTBOX = "out"
         const val PAGES_SUFFIX = ".pages"
         const val PAGE_COUNT_FILE = "count"
+
+        /** Fits an image within [MAX_IMAGE_EDGE] pixels; JPEG unless it has transparency. GIFs are kept as they are. */
+        fun shrinkImage(mimeType: String, bytes: ByteArray): Pair<String, ByteArray> {
+            if (mimeType == "image/gif")
+                return mimeType to bytes
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+            val longEdge = maxOf(bounds.outWidth, bounds.outHeight)
+            if (longEdge <= 0)
+                return mimeType to bytes
+            if (longEdge <= MAX_IMAGE_EDGE && bytes.size <= SMALL_IMAGE_BYTES)
+                return mimeType to bytes
+            var sample = 1
+            while (longEdge / (sample * 2) >= MAX_IMAGE_EDGE)
+                sample *= 2
+            val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
+                ?: return mimeType to bytes
+            val scale = minOf(1f, MAX_IMAGE_EDGE.toFloat() / maxOf(decoded.width, decoded.height))
+            val scaled = if (scale < 1f)
+                decoded.scale((decoded.width * scale).toInt(), (decoded.height * scale).toInt())
+            else
+                decoded
+            val png = scaled.hasAlpha()
+            val out = ByteArrayOutputStream()
+            scaled.compress(if (png) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)
+            if (scaled !== decoded)
+                decoded.recycle()
+            scaled.recycle()
+            return (if (png) "image/png" else "image/jpeg") to out.toByteArray()
+        }
     }
 }

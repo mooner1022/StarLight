@@ -143,12 +143,40 @@ class ResponsesClient(
                     put("content", userContent(message, request.attachments))
                 }
                 Role.ASSISTANT -> assistantItems(message).forEach { add(it) }
-                Role.TOOL -> for (result in message.parts.filterIsInstance<Part.ToolResult>())
+                Role.TOOL -> {
+                    val results = message.parts.filterIsInstance<Part.ToolResult>()
+                    for (result in results)
+                        addJsonObject {
+                            put("type", "function_call_output")
+                            put("call_id", result.callId)
+                            put("output", result.output)
+                        }
+                    toolImages(results, request.attachments)?.let { add(it) }
+                }
+            }
+        }
+    }
+
+    /** The images tools showed, as a user message after their outputs, which not every server lets carry images. */
+    private fun toolImages(results: List<Part.ToolResult>, source: AttachmentSource): JsonObject? {
+        val shown = results.filter { it.images.isNotEmpty() }
+        if (shown.isEmpty())
+            return null
+        return buildJsonObject {
+            put("type", "message")
+            put("role", "user")
+            putJsonArray("content") {
+                for (result in shown) {
+                    for (image in result.images)
+                        addJsonObject {
+                            put("type", "input_image")
+                            put("image_url", RequestContent.dataUrl(image.mimeType, source.bytes(image)))
+                        }
                     addJsonObject {
-                        put("type", "function_call_output")
-                        put("call_id", result.callId)
-                        put("output", result.output)
+                        put("type", "input_text")
+                        put("text", RequestContent.toolImagesLabel(result))
                     }
+                }
             }
         }
     }

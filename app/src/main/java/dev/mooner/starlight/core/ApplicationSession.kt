@@ -10,9 +10,9 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
+import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.CA_PLUGIN
 import dev.mooner.starlight.CF_SAFE_MODE
-import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.api2.AppApi
 import dev.mooner.starlight.api.api2.BotManagerApi
@@ -26,6 +26,8 @@ import dev.mooner.starlight.languages.rhino.JSRhino
 import dev.mooner.starlight.listener.event.*
 import dev.mooner.starlight.listener.specs.AndroidRParserSpec
 import dev.mooner.starlight.listener.specs.DefaultParserSpec
+import dev.mooner.starlight.media.MediaSharing
+import dev.mooner.starlight.media.api.MediaSharerApi
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ParserSpecManager
@@ -104,6 +106,11 @@ object ApplicationSession {
             addLanguage(pContext, JSNeon())
             //addLanguage(GraalVMLang())
         }
+
+        // Before plugins load: the built-in MediaSharer takes the name, and an installed Media Sharer plugin's Api is
+        // then skipped as a duplicate.
+        MediaSharing.init(context)
+        Session.apiManager.addApi(MediaSharerApi())
 
         if (!BuildConfig.DYNAMIC_PLUGINS) {
             logger.info { "Plugins aren't available in this build" }
