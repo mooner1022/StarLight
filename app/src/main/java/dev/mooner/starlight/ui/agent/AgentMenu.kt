@@ -16,10 +16,11 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toDrawable
 import dev.mooner.starlight.R
 import me.saket.cascade.CascadePopupMenu
+import kotlin.math.ceil
 
 /**
- * The agent screens' drop-down menu: a rounded charcoal card like the night header it drops from, so it stands
- * out from the page in both themes.
+ * The agent screens' drop-down menu: a rounded card that stands out from the page, white with a shadow in the light
+ * theme and the night header's charcoal in the dark.
  */
 internal object AgentMenu {
 
@@ -46,13 +47,15 @@ internal object AgentMenu {
             },
             menuItem = { holder ->
                 val danger = holder.model.item.itemId in dangerous
-                val tint = if (danger) color(R.color.agent_popup_danger) else color(R.color.agent_on_night)
+                val tint = if (danger) color(R.color.agent_popup_danger) else color(R.color.agent_popup_text)
                 holder.titleView.typeface = font
                 holder.titleView.textSize = TITLE_SIZE_SP
+                // The theme spaces popup titles out a little; without it they are as wide as [fittedWidth] measures.
+                holder.titleView.letterSpacing = 0f
                 holder.titleView.setTextColor(tint)
                 holder.iconView.imageTintList =
-                    ColorStateList.valueOf(if (danger) tint else color(R.color.agent_gold))
-                // The theme's ripple is dark and would vanish on charcoal.
+                    ColorStateList.valueOf(if (danger) tint else color(R.color.agent_popup_icon))
+                // The theme's ripple would vanish on charcoal; each theme has its own.
                 holder.setBackground(RippleDrawable(ColorStateList.valueOf(color(R.color.agent_popup_ripple)), null,
                     Color.WHITE.toDrawable()))
             },
@@ -78,7 +81,7 @@ internal object AgentMenu {
             textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, TITLE_SIZE_SP, context.resources.displayMetrics)
         }
         val longest = items.maxOf { paint.measureText(context.getString(it.title)) }
-        return longest.toInt() + AgentUi.dp(context, ITEM_CHROME_DP)
+        return ceil(longest).toInt() + AgentUi.dp(context, ITEM_CHROME_DP)
     }
 
     private const val TITLE_SIZE_SP = 14.5f
