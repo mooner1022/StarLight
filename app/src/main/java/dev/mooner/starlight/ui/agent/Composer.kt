@@ -1,5 +1,6 @@
 package dev.mooner.starlight.ui.agent
 
+import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.view.LayoutInflater
@@ -10,6 +11,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ContentInfoCompat
+import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.LifecycleCoroutineScope
@@ -71,6 +74,11 @@ class Composer(
     private val hub = AgentHub.get(context)
     private val attachments = mutableListOf<Part.Attachment>()
     private var importing = 0
+    /**
+     * Content the keyboard sent, held until it is copied: the keyboard grants reading it for as long as its
+     * InputContentInfo lives, and letting go of it may end the grant halfway through the copy.
+     */
+    private val receiving = mutableListOf<ContentInfoCompat>()
     /** The project before an edit put the edited message's in place, restored when the edit is cancelled. */
     private var projectBeforeEdit: String? = null
 
@@ -114,6 +122,7 @@ class Composer(
     init {
         binding.contextMeter.setOnClickListener { onContext() }
         binding.input.doAfterTextChanged { updateSend() }
+        ViewCompat.setOnReceiveContentListener(binding.input, RECEIVED_TYPES) { _, payload -> receive(payload) }
         binding.send.setOnClickListener {
             // While a run goes on, a written message joins it; an empty field stops it.
             if (isRunning && !canSend()) {
@@ -208,22 +217,44 @@ class Composer(
     }
 
     /** Takes the result of either picker. */
-    fun onPicked(uris: List<Uri>) {
+    fun onPicked(uris: List<Uri>) = attach(uris)
+
+    /**
+     * Attaches the files in [payload], which the user pasted, dropped or put in from the keyboard, such as the image
+     * it suggests after one was copied. Text, links included, is left for the field to take as usual.
+     */
+    private fun receive(payload: ContentInfoCompat): ContentInfoCompat? {
+        val split = payload.partition { item -> item.uri?.scheme == ContentResolver.SCHEME_CONTENT && item.text.isNullOrEmpty() }
+        val files = split.first ?: return payload
+        val clip = files.clip
+        // A clip states one set of types for all its items; what a keyboard sends has exactly one.
+        val type = clip.description.takeIf { it.mimeTypeCount == 1 }?.getMimeType(0)?.takeUnless { '*' in it }
+        attach(List(clip.itemCount) { clip.getItemAt(it).uri }, type, files)
+        return split.second
+    }
+
+    /** Copies [uris] into the conversation's folder and shows them; [held] is kept until then, see [receiving]. */
+    private fun attach(uris: List<Uri>, typeHint: String? = null, held: ContentInfoCompat? = null) {
         if (uris.isEmpty())
             return
         val id = conversationId()
         importing += uris.size
         updateSend()
+        held?.let(receiving::add)
         scope.launch {
-            for (uri in uris) {
-                val attachment = runCatching {
-                    withContext(Dispatchers.IO) { hub.attachments.import(context.contentResolver, uri, id) }
+            try {
+                for (uri in uris) {
+                    val attachment = runCatching {
+                        withContext(Dispatchers.IO) { hub.attachments.import(context.contentResolver, uri, id, typeHint) }
+                    }
+                    attachment.onSuccess(::addChip).onFailure { e ->
+                        Toast.makeText(context, context.getString(R.string.agent_attach_failed, uri.lastPathSegment.orEmpty(), e.message ?: e.toString()), Toast.LENGTH_LONG).show()
+                    }
+                    importing--
+                    updateSend()
                 }
-                attachment.onSuccess(::addChip).onFailure { e ->
-                    Toast.makeText(context, context.getString(R.string.agent_attach_failed, uri.lastPathSegment.orEmpty(), e.message ?: e.toString()), Toast.LENGTH_LONG).show()
-                }
-                importing--
-                updateSend()
+            } finally {
+                held?.let(receiving::remove)
             }
         }
     }
@@ -275,6 +306,12 @@ class Composer(
         binding.send.alpha = if (enabled) 1f else 0.4f
     }
 }
+
+/**
+ * What the field tells the keyboard it takes besides text, so that keyboards offer images, such as Samsung Keyboard's
+ * suggestion of one copied recently, and their GIFs and stickers. Pasted and dropped files are taken whatever their type.
+ */
+private val RECEIVED_TYPES = arrayOf("image/*")
 
 /** The share from which the context gauge turns gold, and the one at which a conversation is summarized. */
 private const val WARN_AT = 0.6f

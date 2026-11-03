@@ -632,8 +632,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                     // Done, unless the user wrote more in the meantime, or the turn was only paused.
                     last.role == Role.ASSISTANT && !paused -> if (!flushQueued(id, closing = true)) break
                     else -> {
-                        // The agent put its plan right after its reply; there is nothing more to ask.
-                        if (planNudge != null && Plan.endsOnUpdate(conversation.messages))
+                        // The agent put its plan right after its reply, as the app asked; there is nothing more to ask,
+                        // unless the user wrote after the request.
+                        if (planNudge != null && Plan.endsOnUpdate(conversation.messages, request = planNudge))
                             break
                         if (steps >= maxSteps) {
                             appendNotice(id, NoticeKind.PAUSED, string(R.string.agent_notice_paused, maxSteps))
@@ -668,8 +669,11 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                             // turn is dropped and the model asked for its reply in a new user message, once in a row.
                             updateConversation(id) { it.copy(usage = it.usage + result.usage) }
                             if (last.id == planNudge) {
-                                // The plan stands as it is, and the reply before the question stays the last word.
+                                // The plan stands as it is, and the reply before the question stays the last word,
+                                // unless the user wrote meanwhile.
                                 updateConversation(id) { it.copy(messages = it.messages.filter { message -> message.id != planNudge }) }
+                                if (flushQueued(id, closing = true))
+                                    continue
                                 break
                             }
                             if (isNudge(last)) {
@@ -685,6 +689,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                                 if (planNudge != null)
                                     continue
                             }
+                            // Messages the user sent while the reply came are answered in this run, as during its tools.
+                            if (flushQueued(id, closing = true))
+                                continue
                             break
                         }
                     }

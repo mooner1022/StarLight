@@ -44,8 +44,10 @@ import dev.mooner.starlight.stats.LogStats
 import dev.mooner.starlight.stats.MessageStats
 import dev.mooner.starlight.stats.ScriptWidgetEntries
 import dev.mooner.starlight.ui.agent.AgentWidget
+import dev.mooner.starlight.ui.debugroom.DebugRoomFragment
 import dev.mooner.starlight.ui.widget.*
 import dev.mooner.starlight.utils.getKakaoTalkVersion
+import dev.mooner.starlight.utils.hideFromGallery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import java.io.File
@@ -198,6 +200,9 @@ object ApplicationSession {
 
         emit(context.getString(R.string.step_projects))
         Session.projectLoader.loadProjects()
+        // Debug rooms kept the bots' files where the gallery listed them, before their folders were hidden from it.
+        for (project in Session.projectManager.getProjects())
+            project.directory.resolve(DebugRoomFragment.DIR_NAME).takeIf(File::isDirectory)?.hideFromGallery(context)
 
         setNetworkHandler(context)
 

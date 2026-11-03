@@ -159,6 +159,12 @@ class PlanTest {
         // A notice after it changes nothing.
         val notice = ChatMessage("n1", Role.ASSISTANT, listOf(Part.Notice(dev.mooner.starlight.agent.model.NoticeKind.INFO, "x")), 0)
         assertTrue(Plan.endsOnUpdate(base + update(args("A" to "completed")) + notice))
+        // A message the user sent after the app asked, such as one queued while the reply came, is still to be answered.
+        val ask = ChatMessage("ask", Role.USER, listOf(Part.Context(Part.Context.INSTRUCTIONS, "put it right")), 0)
+        assertTrue(Plan.endsOnUpdate(base + ask + update(args("A" to "completed")), request = ask.id))
+        assertFalse(Plan.endsOnUpdate(base + ask + user("also add !news") + update(args("A" to "completed")), request = ask.id))
+        // A request taken out again leaves nothing to end on.
+        assertFalse(Plan.endsOnUpdate(base + user("also add !news") + update(args("A" to "completed")), request = ask.id))
     }
 
     @Test

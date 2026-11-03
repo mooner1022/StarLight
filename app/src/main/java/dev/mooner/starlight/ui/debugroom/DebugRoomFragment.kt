@@ -56,6 +56,7 @@ import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 import dev.mooner.starlight.utils.createSimplePeek
 import dev.mooner.starlight.utils.dp
+import dev.mooner.starlight.utils.hideFromGallery
 import dev.mooner.starlight.utils.peek
 import dev.mooner.starlight.utils.toBitmap
 import kotlinx.coroutines.CoroutineScope
@@ -85,7 +86,7 @@ class DebugRoomFragment: Fragment() {
     private lateinit var chatList: MutableList<DebugRoomMessage>
     private var userChatAdapter: DebugRoomChatAdapter? = null
     val dir: File by lazy {
-        val directory = project.directory.resolve("debugroom")
+        val directory = project.directory.resolve(DIR_NAME)
         if (!directory.exists()) directory.mkdirs()
         directory
     }
@@ -364,10 +365,14 @@ class DebugRoomFragment: Fragment() {
         appendMessage(message, clearInput)
     }
 
-    /** Keeps a copy of [media] under `chats/media/` and shows it as the bot's message. */
+    /**
+     * Keeps a copy of [media] under `chats/media/` and shows it as the bot's message. The room's folder is in the
+     * shared StarLight folder, so it is kept out of the gallery; clearing the chat deletes it, so this checks each time.
+     */
     private fun addMedia(sender: String, media: MediaFile) {
         val extension = media.name.substringAfterLast('.', "").takeIf { it.isNotEmpty() }?.let { ".$it" }.orEmpty()
         val stored = "media/" + UUID.randomUUID().toString() + extension
+        dir.hideFromGallery(context)
         val copy = File(dir, "chats").resolve(stored)
         copy.parentFile?.mkdirs()
         media.file.copyTo(copy, overwrite = true)
@@ -680,6 +685,9 @@ class DebugRoomFragment: Fragment() {
 
     companion object {
         private val mentionRegex = "<@(.*?)>".toRegex()
+
+        /** The folder in a project's folder that holds its debug room: the chat, long messages and the bot's files. */
+        const val DIR_NAME = "debugroom"
 
         @JvmStatic
         fun newInstance(projectName: String, showLeave: Boolean, fixedPadding: Boolean = false) =
