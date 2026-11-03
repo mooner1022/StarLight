@@ -62,12 +62,19 @@ class AttachmentStore(private val root: File) : AttachmentSource {
         return File(File(root, conversationId), attachmentId).takeIf(File::isFile)
     }
 
-    /** Copies the content at [uri] into [conversationId]'s attachments. */
-    fun import(resolver: ContentResolver, uri: Uri, conversationId: String): Part.Attachment {
-        val name = displayName(resolver, uri) ?: uri.lastPathSegment?.substringAfterLast('/') ?: "file"
-        val mimeType = resolver.getType(uri)
-            ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(name.substringAfterLast('.', "").lowercase())
-            ?: "application/octet-stream"
+    /**
+     * Copies the content at [uri] into [conversationId]'s attachments. [typeHint] is its type for when the provider
+     * doesn't say, as the clip a keyboard or the clipboard holds it in does.
+     */
+    fun import(resolver: ContentResolver, uri: Uri, conversationId: String, typeHint: String? = null): Part.Attachment {
+        val found = displayName(resolver, uri) ?: uri.lastPathSegment?.substringAfterLast('/') ?: "file"
+        val mimeType = resolver.getType(uri)?.takeUnless { it == OCTET_STREAM }
+            ?: typeHint
+            ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(found.substringAfterLast('.', "").lowercase())
+            ?: OCTET_STREAM
+        // What keyboards send is often named without an extension, such as "inputContent".
+        val name = if ('.' in found) found
+            else MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)?.let { "$found.$it" } ?: found
         val bytes = resolver.openInputStream(uri)?.use { input ->
             val out = ByteArrayOutputStream()
             val buffer = ByteArray(64 * 1024)
@@ -189,6 +196,8 @@ class AttachmentStore(private val root: File) : AttachmentSource {
 
     internal companion object {
         const val MAX_FILE_BYTES = 20L * 1024 * 1024
+        /** The type of content of no known type; a provider saying it tells nothing that the clip or name couldn't. */
+        const val OCTET_STREAM = "application/octet-stream"
         const val MAX_IMAGE_EDGE = 1568
         const val SMALL_IMAGE_BYTES = 500 * 1024
         const val JPEG_QUALITY = 85
