@@ -128,9 +128,12 @@ data class Plan(val steps: List<Step>) {
         /**
          * Whether [messages] end on the results of a turn that only updated the plan, every update taken, as a run ends
          * after the agent puts its plan right following its reply. Nothing is left to continue then; an update that was
-         * refused leaves the agent to see why and try again.
+         * refused leaves the agent to see why and try again. With [request], the id of the message the app asked with,
+         * a message the user wrote after it, such as one sent while the reply came, is still to be answered.
          */
-        fun endsOnUpdate(messages: List<ChatMessage>): Boolean {
+        fun endsOnUpdate(messages: List<ChatMessage>, request: String? = null): Boolean {
+            if (request != null && messages.indexOfFirst { it.id == request } < messages.indexOfLast { it.isUserTurn })
+                return false
             val turns = messages.filter { message -> message.parts.any { it !is Part.Notice } }
             val last = turns.lastOrNull()?.takeIf { it.role == Role.TOOL } ?: return false
             val turn = turns.lastOrNull { it.role == Role.ASSISTANT } ?: return false
