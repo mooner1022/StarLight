@@ -3,7 +3,7 @@
 compileSdk = "37"
 minSdk = "26"
 targetSdk = "33"
-versionCode = "9"
+versionCode = "10"
 versionName = "1.0.0"
 buildTools = "35.0.0"
 androidGradlePlugin = "8.13.2"
