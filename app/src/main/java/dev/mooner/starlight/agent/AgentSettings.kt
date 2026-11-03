@@ -142,7 +142,6 @@ class AgentSettings internal constructor(context: Context) {
             changed()
         }
 
-    /** Whether a run's progress may show as a Live Update (Android 16 QPR2 and later) while its chat isn't open. */
     /** Whether the model may use its provider's own web search (Anthropic and OpenRouter); it costs extra. */
     var webSearch: Boolean
         get() = prefs.getBoolean(KEY_WEB_SEARCH, false)
@@ -151,6 +150,15 @@ class AgentSettings internal constructor(context: Context) {
             changed()
         }
 
+    /** Whether the model names each conversation after its first answer, with a short request of its own. */
+    var autoTitles: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_TITLES, true)
+        set(value) {
+            prefs.edit { putBoolean(KEY_AUTO_TITLES, value) }
+            changed()
+        }
+
+    /** Whether a run's progress may show as a Live Update (Android 16 QPR2 and later) while its chat isn't open. */
     var liveUpdates: Boolean
         get() = prefs.getBoolean(KEY_LIVE_UPDATES, true)
         set(value) {
@@ -200,6 +208,7 @@ class AgentSettings internal constructor(context: Context) {
         const val KEY_NOTIFY = "notify_on_finish"
         const val KEY_LIVE_UPDATES = "live_updates"
         const val KEY_WEB_SEARCH = "web_search"
+        const val KEY_AUTO_TITLES = "auto_titles"
         const val DEFAULT_MAX_STEPS = 60
     }
 }

@@ -232,6 +232,11 @@ class AgentSettingsActivity : AppCompatActivity() {
             binding.webSearch.isChecked = !binding.webSearch.isChecked
             hub.settings.webSearch = binding.webSearch.isChecked
         }
+        binding.autoTitles.isChecked = hub.settings.autoTitles
+        binding.autoTitlesRow.setOnClickListener {
+            binding.autoTitles.isChecked = !binding.autoTitles.isChecked
+            hub.settings.autoTitles = binding.autoTitles.isChecked
+        }
         binding.liveUpdatesGroup.isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
         binding.liveUpdates.isChecked = hub.settings.liveUpdates
         binding.liveUpdatesRow.setOnClickListener {

@@ -151,8 +151,21 @@ class AgentFragment : Fragment() {
             row.icon.imageTintList = ContextCompat.getColorStateList(context, R.color.agent_meteor)
         row.root.setOnClickListener { startActivity(AgentChatActivity.intent(context, item.id)) }
         row.root.setOnLongClickListener {
-            confirmDelete(item)
+            showRowMenu(row.root, item)
             true
+        }
+    }
+
+    private fun showRowMenu(anchor: View, item: ConversationSummary) {
+        val items = listOf(
+            AgentMenu.Item(MENU_RENAME, R.string.agent_rename, R.drawable.ic_agent_edit),
+            AgentMenu.Item(MENU_DELETE, R.string.agent_delete_conversation, R.drawable.ic_agent_delete, danger = true),
+        )
+        AgentMenu.show(anchor, items) { id ->
+            when (id) {
+                MENU_RENAME -> RenameSheet.show(requireContext(), viewLifecycleOwner, item.id)
+                MENU_DELETE -> confirmDelete(item)
+            }
         }
     }
 
@@ -221,5 +234,7 @@ class AgentFragment : Fragment() {
     private companion object {
         const val KEY_DRAFT = "draft"
         const val MAX_LISTED = 40
+        const val MENU_RENAME = 1
+        const val MENU_DELETE = 2
     }
 }

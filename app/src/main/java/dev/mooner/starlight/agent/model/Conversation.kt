@@ -38,10 +38,22 @@ data class Conversation(
     val usage: TurnUsage = TurnUsage(),
     /** Something the agent should know with the user's next message, such as files the user rewound meanwhile. */
     val pendingNote: String? = null,
+    /** Who set [title]; the model only names a conversation whose title is still its first line. Left out when so. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val titleSource: TitleSource = TitleSource.FIRST_LINE,
 ) {
     companion object {
         const val VERSION = 1
     }
+}
+
+@Serializable
+enum class TitleSource {
+    /** The first line of the user's first message, until the model names the conversation. */
+    @SerialName("first_line") FIRST_LINE,
+    @SerialName("model") MODEL,
+    /** The user renamed it; nothing renames it again. */
+    @SerialName("user") USER,
 }
 
 @Serializable
