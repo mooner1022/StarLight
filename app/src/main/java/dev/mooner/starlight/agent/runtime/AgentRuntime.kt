@@ -11,6 +11,7 @@ import dev.mooner.starlight.agent.model.Compaction
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.NoticeKind
 import dev.mooner.starlight.agent.model.Part
+import dev.mooner.starlight.agent.model.Plan
 import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
@@ -611,6 +612,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         var compacted = false
         // The last turn was paused by the provider and is to be sent back so that it goes on.
         var paused = false
+        // The message asking the agent, once per run, to put its plan right after its reply.
+        var planNudge: String? = null
         try {
             while (true) {
                 val conversation = hub.store.get(id) ?: return
@@ -629,6 +632,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                     // Done, unless the user wrote more in the meantime, or the turn was only paused.
                     last.role == Role.ASSISTANT && !paused -> if (!flushQueued(id, closing = true)) break
                     else -> {
+                        // The agent put its plan right after its reply; there is nothing more to ask.
+                        if (planNudge != null && Plan.endsOnUpdate(conversation.messages))
+                            break
                         if (steps >= maxSteps) {
                             appendNotice(id, NoticeKind.PAUSED, string(R.string.agent_notice_paused, maxSteps))
                             updateConversation(id) { it.copy(state = RunState.IDLE) }
@@ -661,6 +667,11 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                             // done, and the same history gets the same empty answer however often it is resent. The
                             // turn is dropped and the model asked for its reply in a new user message, once in a row.
                             updateConversation(id) { it.copy(usage = it.usage + result.usage) }
+                            if (last.id == planNudge) {
+                                // The plan stands as it is, and the reply before the question stays the last word.
+                                updateConversation(id) { it.copy(messages = it.messages.filter { message -> message.id != planNudge }) }
+                                break
+                            }
                             if (isNudge(last)) {
                                 appendNotice(id, NoticeKind.NO_REPLY, string(R.string.agent_notice_no_reply))
                                 break
@@ -668,8 +679,14 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                             appendNudge(id)
                             continue
                         }
-                        if (!handleResult(id, result))
+                        if (!handleResult(id, result)) {
+                            if (planNudge == null && result.stopReason == StopReason.END && steps < maxSteps) {
+                                planNudge = askToSettlePlan(id)
+                                if (planNudge != null)
+                                    continue
+                            }
                             break
+                        }
                     }
                 }
             }
@@ -783,8 +800,27 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
 
     /** Runs [calls] of [turn], saving each result as it comes, so that a stop or a crash keeps what already ran. */
     private suspend fun runTools(id: String, turn: ChatMessage, calls: List<Part.ToolCall>) {
-        for (call in calls)
-            addResults(id, turn.id, listOf(runTool(id, turn.id, call)))
+        calls.forEachIndexed { index, call ->
+            var result = runTool(id, turn.id, call)
+            // The batch's last result reminds the agent of a plan it let fall behind; plan mode has no work to track.
+            if (index == calls.lastIndex && approvalOf(id) != ApprovalPolicy.PLAN)
+                hub.store.get(id)?.messages?.let { Plan.reminder(it, turn) }?.let { result = result.copy(reminder = it) }
+            addResults(id, turn.id, listOf(result))
+        }
+    }
+
+    /**
+     * After the agent's final reply, asks it once to put its plan right if it worked on but left steps open; the id of
+     * the message that asks, or null when the plan needs nothing. Plan mode leaves its plan open for the user on purpose.
+     */
+    private fun askToSettlePlan(id: String): String? {
+        if (approvalOf(id) == ApprovalPolicy.PLAN)
+            return null
+        val text = hub.store.get(id)?.messages?.let(Plan::leftOpen) ?: return null
+        val now = System.currentTimeMillis()
+        val ask = ChatMessage(newId("m"), Role.USER, listOf(Part.Context(Part.Context.INSTRUCTIONS, text)), now)
+        updateConversation(id) { it.copy(messages = it.messages + ask, updatedAt = now) }
+        return ask.id
     }
 
     private suspend fun runTool(id: String, messageId: String, call: Part.ToolCall): Part.ToolResult {

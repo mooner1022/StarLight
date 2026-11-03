@@ -48,6 +48,10 @@ internal object RequestContent {
     fun toolImagesLabel(result: Part.ToolResult): String =
         "Images shown by ${result.name} (call ${result.callId}):\n" + result.images.joinToString("\n", transform = ::attachmentLabel)
 
+    /** What the model reads of a tool's result: its output, and the app's reminder after it, if any. */
+    fun toolOutput(result: Part.ToolResult): String =
+        if (result.reminder.isNullOrBlank()) result.output else result.output + "\n\n" + result.reminder
+
     /** Tool call arguments as a JSON object, or null if the model wrote something that isn't one. */
     fun parseArguments(arguments: String): JsonObject? =
         runCatching { AgentJson.parseToJsonElement(arguments.ifBlank { "{}" }).jsonObject }.getOrNull()

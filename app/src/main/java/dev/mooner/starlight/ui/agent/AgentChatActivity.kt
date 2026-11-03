@@ -332,6 +332,8 @@ class AgentChatActivity : AppCompatActivity() {
             NoticeKind.STOPPED in notices              -> getString(R.string.agent_resume_stopped)
             // Before the step limit had its own kind, its notice was an INFO one.
             NoticeKind.PAUSED in notices || NoticeKind.INFO in notices -> getString(R.string.agent_resume_step_limit)
+            // The agent put its plan right after its reply, as the app asked; that ends a run.
+            notices.isEmpty() && Plan.endsOnUpdate(messages) -> null
             // Ended on tool results with nothing said, as older versions did when the model gave an empty answer.
             else                                       -> getString(R.string.agent_resume_no_reply)
         }

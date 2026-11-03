@@ -193,6 +193,8 @@ sealed class Part {
         val images: List<Attachment> = emptyList(),
         /** What the tool changed in a file, as unified-diff text, for the chat; the model doesn't get it. */
         val diff: String? = null,
+        /** What the app tells the model along with the output, such as that its plan is out of date; the chat doesn't show it. */
+        val reminder: String? = null,
     ) : Part()
 
     /** Something the app tells the user that the model never sees, such as a stopped run. */
