@@ -3,6 +3,7 @@ package dev.mooner.starlight.agent.store
 import android.content.Context
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.utils.hideFromGallery
 import java.io.File
 
 private val LOG = LoggerFactory.logger("AgentStorage")
@@ -30,6 +31,8 @@ internal object AgentStorage {
         runCatching { migrate(private, shared) }
             .onSuccess { moved -> if (moved > 0) LOG.info { "Moved $moved conversations to ${shared.path}" } }
             .onFailure { LOG.error { "Couldn't move conversations to ${shared.path}: $it" } }
+        // The user's pictures and the agent's files are copies for the conversation, not photos for the gallery.
+        File(shared, ATTACHMENTS).hideFromGallery(context)
         return shared
     }
 

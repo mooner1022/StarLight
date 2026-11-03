@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.media.MediaScannerConnection
 import android.os.Build
 import android.provider.Settings
 import android.view.LayoutInflater
@@ -38,6 +39,23 @@ fun getLanguageByExtension(ext: String): DefaultEditorActivity.Language? =
 
 fun String.toFile(): File =
     File(this)
+
+/**
+ * Keeps the media in this folder and below out of the gallery, the photo picker and the share sheets that list
+ * photos, for files the app keeps for itself in the shared StarLight folder: puts a `.nomedia` file in it, making the
+ * folder if need be. The first time, the media scanner looks at the folder again, so that what it listed before
+ * drops out. The files stay where they are for the app and for file managers.
+ */
+fun File.hideFromGallery(context: Context?) {
+    val marker = File(this, NO_MEDIA_FILE)
+    if (marker.exists() || !(isDirectory || mkdirs()))
+        return
+    if (runCatching { marker.createNewFile() }.getOrDefault(false) && context != null)
+        // The marker for older media scanners, which hide a folder when they come across it; the folder for newer ones.
+        MediaScannerConnection.scanFile(context.applicationContext, arrayOf(marker.path, path), null, null)
+}
+
+private const val NO_MEDIA_FILE = ".nomedia"
 
 private val FILE_NAME_REGEX = "(^[-_.A-Za-z0-9/]+$)".toRegex()
 
