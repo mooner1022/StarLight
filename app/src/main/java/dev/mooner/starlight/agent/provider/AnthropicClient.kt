@@ -216,7 +216,7 @@ class AnthropicClient(
                 put("type", "tool_result")
                 put("tool_use_id", toolUseId(result.callId))
                 if (result.images.isEmpty())
-                    put("content", result.output)
+                    put("content", RequestContent.toolOutput(result))
                 else
                     // A tool result can hold images; like the user's, they go before the text.
                     putJsonArray("content") {
@@ -224,7 +224,7 @@ class AnthropicClient(
                             add(imageBlock(image, source))
                         addJsonObject {
                             put("type", "text")
-                            put("text", (listOf(result.output) + result.images.map(RequestContent::attachmentLabel)).joinToString("\n"))
+                            put("text", (listOf(RequestContent.toolOutput(result)) + result.images.map(RequestContent::attachmentLabel)).joinToString("\n"))
                         }
                     }
                 if (result.isError)

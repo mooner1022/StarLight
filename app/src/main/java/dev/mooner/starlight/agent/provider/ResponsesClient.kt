@@ -149,7 +149,7 @@ class ResponsesClient(
                         addJsonObject {
                             put("type", "function_call_output")
                             put("call_id", result.callId)
-                            put("output", result.output)
+                            put("output", RequestContent.toolOutput(result))
                         }
                     toolImages(results, request.attachments)?.let { add(it) }
                 }

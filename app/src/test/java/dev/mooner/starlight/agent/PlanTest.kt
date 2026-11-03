@@ -95,6 +95,80 @@ class PlanTest {
         assertEquals("2/2", Plan.shown(nudged, running = true)?.summary)
     }
 
+    private fun user(text: String) = ChatMessage("u${++nextId}", Role.USER, listOf(Part.Text(text)), 0)
+    private fun reply(text: String) = ChatMessage("r${++nextId}", Role.ASSISTANT, listOf(Part.Text(text)), 0)
+
+    /** A turn calling read_file [calls] times, and the results, the last with [reminder]. */
+    private fun work(calls: Int, reminder: String? = null): List<ChatMessage> {
+        val ids = List(calls) { "call_${++nextId}" }
+        return listOf(
+            ChatMessage("a${ids.first()}", Role.ASSISTANT, ids.map { Part.ToolCall(it, "read_file", "{}") }, 0),
+            ChatMessage("t${ids.first()}", Role.TOOL, ids.mapIndexed { index, id ->
+                Part.ToolResult(id, "read_file", "ok", reminder = reminder.takeIf { index == ids.lastIndex })
+            }, 0),
+        )
+    }
+
+    /** The reminder for the results of the last turn of [messages]. */
+    private fun reminder(messages: List<ChatMessage>): String? =
+        Plan.reminder(messages, messages.last { it.role == Role.ASSISTANT })
+
+    private val open = args("Read the bot" to "completed", "Add !weather" to "in_progress", "Test it" to "pending")
+
+    @Test
+    fun aPlanLeftBehindIsRemindedOfEverySoManyCalls() {
+        val start = listOf(user("add !weather")) + update(open)
+        assertNull(reminder(start + work(Plan.REMIND_AFTER_CALLS - 1)))
+        val due = reminder(start + work(Plan.REMIND_AFTER_CALLS))!!
+        assertTrue("[x] Read the bot" in due && "[>] Add !weather (in progress)" in due && "[ ] Test it" in due)
+        // Once reminded, the next one waits for as many calls again.
+        val reminded = start + work(Plan.REMIND_AFTER_CALLS, reminder = due)
+        assertNull(reminder(reminded + work(Plan.REMIND_AFTER_CALLS - 1)))
+        assertTrue(reminder(reminded + work(Plan.REMIND_AFTER_CALLS)) != null)
+        // An update starts over, and a turn that updates the plan isn't reminded of it.
+        assertNull(reminder(reminded + update(open) + work(2)))
+        val updating = ChatMessage("aboth", Role.ASSISTANT, listOf(Part.ToolCall("c1", "read_file", "{}"), Part.ToolCall("c2", Plan.TOOL, open)), 0)
+        assertNull(Plan.reminder(start + work(Plan.REMIND_AFTER_CALLS) + updating, updating))
+        // A finished plan needs no reminder.
+        assertNull(reminder(listOf(user("go")) + update(args("A" to "completed")) + work(10)))
+    }
+
+    @Test
+    fun aReplyAfterWorkWithStepsLeftAsksToPutThePlanRight() {
+        val worked = listOf(user("add !weather")) + update(open) + work(3) + reply("Done!")
+        val ask = Plan.leftOpen(worked)!!
+        assertTrue("[>] Add !weather (in progress)" in ask)
+        // Updated after the work: what is left is left on purpose.
+        assertNull(Plan.leftOpen(listOf(user("add !weather")) + update(open) + work(3) + update(open) + reply("Your turn")))
+        // A later run that does no work, such as thanks, isn't asked again.
+        assertNull(Plan.leftOpen(worked + update(open) + user("thanks") + reply("You're welcome")))
+        assertNull(Plan.leftOpen(listOf(user("hi")) + update(open) + work(3) + reply("ok") + user("thanks") + reply("welcome")))
+        // A later run that works on is.
+        assertTrue(Plan.leftOpen(worked + user("go on") + work(1) + reply("More done")) != null)
+        assertNull(Plan.leftOpen(listOf(user("go")) + update(args("A" to "completed")) + work(2) + reply("Done")))
+    }
+
+    @Test
+    fun aRunCanEndOnAPlanUpdate() {
+        val base = listOf(user("go")) + update(open) + work(2) + reply("Done")
+        assertTrue(Plan.endsOnUpdate(base + user("put it right") + update(args("A" to "completed"))))
+        assertFalse(Plan.endsOnUpdate(base))
+        assertFalse(Plan.endsOnUpdate(base + work(1)))
+        // A refused update is for the agent to correct.
+        assertFalse(Plan.endsOnUpdate(base + update(args("A" to "done"), error = true)))
+        // A notice after it changes nothing.
+        val notice = ChatMessage("n1", Role.ASSISTANT, listOf(Part.Notice(dev.mooner.starlight.agent.model.NoticeKind.INFO, "x")), 0)
+        assertTrue(Plan.endsOnUpdate(base + update(args("A" to "completed")) + notice))
+    }
+
+    @Test
+    fun aReminderGoesToTheModelButNotIntoTheOutput() {
+        val result = Part.ToolResult("c1", "read_file", "file text", reminder = "update your plan")
+        assertEquals("file text\n\nupdate your plan", dev.mooner.starlight.agent.provider.RequestContent.toolOutput(result))
+        assertEquals("file text", dev.mooner.starlight.agent.provider.RequestContent.toolOutput(result.copy(reminder = null)))
+        assertFalse("reminder" in AgentJson.encodeToString(Part.ToolResult.serializer(), result.copy(reminder = null)))
+    }
+
     @Test
     fun schemaDescribesStepObjectsWithAllowedStatuses() {
         val schema = ParamsBuilder().apply {

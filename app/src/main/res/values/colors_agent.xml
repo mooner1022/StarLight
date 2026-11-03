@@ -42,9 +42,11 @@
     <color name="agent_brand_openrouter">#7A9900</color>
     <color name="agent_brand_custom">@color/agent_text_faint</color>
 
-    <!-- Menus drop from the night header, so they share its charcoal in both themes. -->
-    <color name="agent_popup">@color/store_night_light</color>
-    <color name="agent_popup_border">#1FFFF7E8</color>
-    <color name="agent_popup_ripple">#1FFFF7E8</color>
-    <color name="agent_popup_danger">#FF7A93</color>
+    <!-- Menus: a white card with a hairline and a shadow in the light theme, the night band's charcoal in the dark. -->
+    <color name="agent_popup">@color/agent_surface</color>
+    <color name="agent_popup_border">#1A1C1C24</color>
+    <color name="agent_popup_ripple">#141C1C24</color>
+    <color name="agent_popup_text">@color/agent_text</color>
+    <color name="agent_popup_icon">@color/agent_accent</color>
+    <color name="agent_popup_danger">@color/agent_error</color>
 </resources>

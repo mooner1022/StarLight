@@ -146,7 +146,7 @@ class ChatCompletionsClient(
                         list += buildJsonObject {
                             put("role", "tool")
                             put("tool_call_id", result.callId)
-                            put("content", result.output)
+                            put("content", RequestContent.toolOutput(result))
                         }
                     toolImages(results, request.attachments)?.let { list += it }
                 }

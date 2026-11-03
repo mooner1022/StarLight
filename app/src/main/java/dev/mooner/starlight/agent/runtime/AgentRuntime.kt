@@ -11,12 +11,15 @@ import dev.mooner.starlight.agent.model.Compaction
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.NoticeKind
 import dev.mooner.starlight.agent.model.Part
+import dev.mooner.starlight.agent.model.Plan
 import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
+import dev.mooner.starlight.agent.model.TitleSource
 import dev.mooner.starlight.agent.net.HttpStatusException
 import dev.mooner.starlight.agent.provider.LlmRequest
 import dev.mooner.starlight.agent.provider.LlmResult
+import dev.mooner.starlight.agent.provider.ProviderKind
 import dev.mooner.starlight.agent.provider.RequestContent
 import dev.mooner.starlight.agent.provider.StopReason
 import dev.mooner.starlight.agent.provider.StreamErrorException
@@ -46,6 +49,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import java.io.File
@@ -97,6 +101,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     /** Tools the user allowed for the rest of a conversation, by conversation. */
     private val alwaysAllowed = ConcurrentHashMap<String, MutableSet<String>>()
     private val rewinder = Rewinder(hub)
+    /** Conversations the model is naming right now, so that one isn't asked twice. */
+    private val naming = ConcurrentHashMap.newKeySet<String>()
 
     /** What the agent asked with the ask_user call [callId], waiting for the user. */
     data class Question(val callId: String, val questions: Questions)
@@ -229,9 +235,10 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 add(Part.Text(text.trim()))
         }
         val message = ChatMessage(newId("m"), Role.USER, parts, now, edited = edited)
-        val conversation = existing ?: Conversation(
+        // A first message rewritten, or rewound to and sent again, starts the title over.
+        val conversation = existing?.let { Titles.beforeMessage(it, text, attachments) } ?: Conversation(
             id = conversationId,
-            title = titleOf(text, attachments),
+            title = Titles.placeholder(text, attachments),
             createdAt = now,
             updatedAt = now,
         )
@@ -263,11 +270,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         val conversation = hub.store.get(conversationId) ?: return send(conversationId, text, attachments, project, approval)
         val index = conversation.messages.indexOfFirst { it.id == messageId }
         require(index >= 0 && conversation.messages[index].role == Role.USER) { "No user message $messageId" }
-        val firstMessage = conversation.messages.take(index).none { it.role == Role.USER }
         val stays = rewindable(conversation, messageId)
         cut(
             conversation, index,
-            title = if (firstMessage) titleOf(text, attachments) else conversation.title,
             keep = attachments,
             note = stays.takeIf { it.isNotEmpty() }?.let {
                 "The user rewrote an earlier message, which took your later turns out of this conversation, but what " +
@@ -313,7 +318,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         val current = hub.store.get(conversationId) ?: return result
         if (conversationToo) {
             // The message goes back to the composer, attachments and all.
-            cut(current, index, title = current.title, keep = current.messages[index].attachments, note = null)
+            cut(current, index, keep = current.messages[index].attachments, note = null)
         } else if (result.restored.isNotEmpty()) {
             val asked = current.messages[index].text.lineSequence().firstOrNull().orEmpty().take(NOTE_QUOTE_CHARS)
             hub.store.save(current.copy(pendingNote = "The user rewound what you changed from their message \"$asked\" " +
@@ -425,13 +430,12 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
      * Cuts [conversation] back to before its message at [index]. Attachments only the removed part had go with it,
      * apart from [keep], and so do the checkpoints of its turns: what they changed is put back or stays.
      */
-    private fun cut(conversation: Conversation, index: Int, title: String, keep: List<Part.Attachment>, note: String?) {
+    private fun cut(conversation: Conversation, index: Int, keep: List<Part.Attachment>, note: String?) {
         val kept = conversation.messages.take(index)
         val removed = conversation.messages.drop(index)
         hub.store.save(conversation.copy(
             messages = kept,
             project = History.projectAt(kept),
-            title = title,
             state = RunState.IDLE,
             error = null,
             updatedAt = System.currentTimeMillis(),
@@ -446,6 +450,80 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
 
     private fun listed(items: List<String>): String =
         items.take(NOTE_ITEMS).joinToString() + if (items.size > NOTE_ITEMS) " and ${items.size - NOTE_ITEMS} more" else ""
+
+    /** Names [conversationId] as the user asked; the model doesn't rename it after this. */
+    fun rename(conversationId: String, title: String) {
+        // Called from the screen; the write goes off the main thread. The list keeps its order: nothing new was said.
+        scope.launch(Dispatchers.IO) {
+            updateConversation(conversationId) { Titles.renamed(it, title) ?: it }
+        }
+    }
+
+    /** A title for [conversationId] from what it holds now, for the user to take or not; null when the model gave none. */
+    suspend fun suggestTitle(conversationId: String): String? {
+        val conversation = hub.store.get(conversationId) ?: return null
+        return withContext(Dispatchers.IO) { requestTitle(conversation) }
+    }
+
+    /**
+     * Has the model name [id] once a run of it ended with an answer, while its title is still the first line of the
+     * user's first message. Off in the settings, it keeps that line. A failure keeps it too, and the next run tries again.
+     */
+    private fun nameIfUnnamed(id: String) {
+        if (!hub.settings.autoTitles)
+            return
+        val conversation = hub.store.get(id) ?: return
+        if (conversation.titleSource != TitleSource.FIRST_LINE || !Titles.canName(conversation) || !naming.add(id))
+            return
+        scope.launch(Dispatchers.IO) {
+            try {
+                val title = withTimeoutOrNull(TITLE_TIMEOUT_MILLIS) { requestTitle(conversation) } ?: return@launch
+                if (hub.store.get(id) == null)
+                    return@launch
+                // The user may have named it meanwhile.
+                updateConversation(id) { Titles.named(it, title) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                LOG.info { "Couldn't name conversation $id: $e" }
+            } finally {
+                naming.remove(id)
+            }
+        }
+    }
+
+    /**
+     * Asks the model for a title of [conversation]: a short request of its own, with an excerpt of the conversation
+     * instead of the agent's prompt, tools and history, at the lowest effort. Its tokens count towards the conversation.
+     */
+    private suspend fun requestTitle(conversation: Conversation): String? {
+        val kind = hub.settings.activeProvider() ?: throw SignInRequiredException(string(R.string.agent_error_setup))
+        val model = hub.settings.model(kind) ?: throw SignInRequiredException(string(R.string.agent_error_model, kind.displayName))
+        val request = LlmRequest(
+            // Kept apart from the conversation's own prompt cache.
+            conversationId = conversation.id + "-title",
+            model = model,
+            system = Titles.SYSTEM,
+            tools = emptyList(),
+            messages = listOf(ChatMessage(newId("m"), Role.USER, listOf(Part.Text(Titles.excerpt(conversation))), System.currentTimeMillis())),
+            effort = titleEffort(kind),
+            maxOutputTokens = TITLE_OUTPUT_TOKENS,
+            attachments = hub.attachments,
+        )
+        val result = hub.client(kind).complete(request, object : StreamSink {})
+        if (hub.store.get(conversation.id) != null)
+            updateConversation(conversation.id) { it.copy(usage = it.usage + result.usage) }
+        return Titles.clean(result.parts.filterIsInstance<Part.Text>().joinToString("\n") { it.text })
+    }
+
+    /**
+     * The lowest effort, where the request is sure to take one: Anthropic and the Responses API check the model first.
+     * Chat Completions servers get one only if the user picked an effort, which shows their model takes it.
+     */
+    private fun titleEffort(kind: ProviderKind): String? = when (kind) {
+        ProviderKind.ANTHROPIC, ProviderKind.CHATGPT, ProviderKind.OPENAI -> kind.effortLevels.firstOrNull()
+        else -> hub.settings.effort(kind)?.let { kind.effortLevels.firstOrNull() }
+    }
 
     /** Sets when [conversationId] asks before running tools; null follows the settings. Applies to a run going on. */
     fun setApproval(conversationId: String, approval: ApprovalPolicy?) {
@@ -534,6 +612,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         var compacted = false
         // The last turn was paused by the provider and is to be sent back so that it goes on.
         var paused = false
+        // The message asking the agent, once per run, to put its plan right after its reply.
+        var planNudge: String? = null
         try {
             while (true) {
                 val conversation = hub.store.get(id) ?: return
@@ -552,6 +632,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                     // Done, unless the user wrote more in the meantime, or the turn was only paused.
                     last.role == Role.ASSISTANT && !paused -> if (!flushQueued(id, closing = true)) break
                     else -> {
+                        // The agent put its plan right after its reply; there is nothing more to ask.
+                        if (planNudge != null && Plan.endsOnUpdate(conversation.messages))
+                            break
                         if (steps >= maxSteps) {
                             appendNotice(id, NoticeKind.PAUSED, string(R.string.agent_notice_paused, maxSteps))
                             updateConversation(id) { it.copy(state = RunState.IDLE) }
@@ -584,6 +667,11 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                             // done, and the same history gets the same empty answer however often it is resent. The
                             // turn is dropped and the model asked for its reply in a new user message, once in a row.
                             updateConversation(id) { it.copy(usage = it.usage + result.usage) }
+                            if (last.id == planNudge) {
+                                // The plan stands as it is, and the reply before the question stays the last word.
+                                updateConversation(id) { it.copy(messages = it.messages.filter { message -> message.id != planNudge }) }
+                                break
+                            }
                             if (isNudge(last)) {
                                 appendNotice(id, NoticeKind.NO_REPLY, string(R.string.agent_notice_no_reply))
                                 break
@@ -591,13 +679,20 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                             appendNudge(id)
                             continue
                         }
-                        if (!handleResult(id, result))
+                        if (!handleResult(id, result)) {
+                            if (planNudge == null && result.stopReason == StopReason.END && steps < maxSteps) {
+                                planNudge = askToSettlePlan(id)
+                                if (planNudge != null)
+                                    continue
+                            }
                             break
+                        }
                     }
                 }
             }
             updateConversation(id) { it.copy(state = RunState.IDLE) }
             AgentNotifier.finished(hub, id)
+            nameIfUnnamed(id)
         } catch (e: CancellationException) {
             val byTimeLimit = (e as? StopException)?.byTimeLimit == true
             withContext(NonCancellable) {
@@ -705,8 +800,27 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
 
     /** Runs [calls] of [turn], saving each result as it comes, so that a stop or a crash keeps what already ran. */
     private suspend fun runTools(id: String, turn: ChatMessage, calls: List<Part.ToolCall>) {
-        for (call in calls)
-            addResults(id, turn.id, listOf(runTool(id, turn.id, call)))
+        calls.forEachIndexed { index, call ->
+            var result = runTool(id, turn.id, call)
+            // The batch's last result reminds the agent of a plan it let fall behind; plan mode has no work to track.
+            if (index == calls.lastIndex && approvalOf(id) != ApprovalPolicy.PLAN)
+                hub.store.get(id)?.messages?.let { Plan.reminder(it, turn) }?.let { result = result.copy(reminder = it) }
+            addResults(id, turn.id, listOf(result))
+        }
+    }
+
+    /**
+     * After the agent's final reply, asks it once to put its plan right if it worked on but left steps open; the id of
+     * the message that asks, or null when the plan needs nothing. Plan mode leaves its plan open for the user on purpose.
+     */
+    private fun askToSettlePlan(id: String): String? {
+        if (approvalOf(id) == ApprovalPolicy.PLAN)
+            return null
+        val text = hub.store.get(id)?.messages?.let(Plan::leftOpen) ?: return null
+        val now = System.currentTimeMillis()
+        val ask = ChatMessage(newId("m"), Role.USER, listOf(Part.Context(Part.Context.INSTRUCTIONS, text)), now)
+        updateConversation(id) { it.copy(messages = it.messages + ask, updatedAt = now) }
+        return ask.id
     }
 
     private suspend fun runTool(id: String, messageId: String, call: Part.ToolCall): Part.ToolResult {
@@ -934,13 +1048,6 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         return parts
     }
 
-    private fun titleOf(text: String, attachments: List<Part.Attachment>): String {
-        val line = text.lineSequence().map(String::trim).firstOrNull(String::isNotEmpty)
-            ?: attachments.firstOrNull()?.name
-            ?: "New conversation"
-        return if (line.length > TITLE_LENGTH) line.take(TITLE_LENGTH - 1) + "…" else line
-    }
-
     private fun isRetryable(e: Exception): Boolean = when (e) {
         is SignInRequiredException -> false
         is HttpStatusException     -> e.isRetryable && NON_RETRYABLE_CODES.none { it in e.body }
@@ -986,7 +1093,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         const val RETRY_BASE_MILLIS = 2_000L
         const val MAX_RETRY_WAIT_MILLIS = 60_000L
         const val MAX_TOOL_OUTPUT = 50_000
-        const val TITLE_LENGTH = 48
+        /** A title is a few words, but reasoning models think before them, and that counts as output. */
+        const val TITLE_OUTPUT_TOKENS = 2_048
+        const val TITLE_TIMEOUT_MILLIS = 60_000L
         const val ASK_TOOL = "ask_user"
         /** The notes the agent keeps in a project's folder, the file Claude Code and Codex read too. */
         const val NOTES_FILE = "AGENTS.md"

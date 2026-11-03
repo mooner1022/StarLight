@@ -303,4 +303,17 @@
     <plurals name="agent_tools_used">
         <item quantity="other">도구 %d개 사용</item>
     </plurals>
+
+    <!-- 대화 제목 -->
+    <string name="agent_rename">이름 바꾸기</string>
+    <string name="agent_rename_title">대화 이름 바꾸기</string>
+    <string name="agent_rename_hint">대화 이름</string>
+    <string name="agent_rename_note">직접 지은 이름은 그대로 둬요. AI는 이름을 바꾸지 않은 대화에만 이름을 지어요.</string>
+    <string name="agent_rename_suggest">대화 내용으로 추천받기</string>
+    <string name="agent_rename_suggesting">이름을 짓고 있어요…</string>
+    <string name="agent_rename_suggest_none">모델이 이름을 주지 않았어요. 다시 시도해 주세요.</string>
+    <string name="agent_rename_suggest_failed">이름을 받지 못했어요: %1$s</string>
+    <string name="agent_save">저장</string>
+    <string name="agent_auto_titles">대화 이름 자동으로 짓기</string>
+    <string name="agent_auto_titles_desc">첫 답변이 끝나면 짧은 요청을 한 번 보내 모델이 이름을 지어요. 끄면 첫 메시지의 첫 줄이 이름이 돼요.</string>
 </resources>

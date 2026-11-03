@@ -96,6 +96,10 @@ class AgentChatActivity : AppCompatActivity() {
         binding.stars.brightness = 0.8f
         binding.back.setOnClickListener { finish() }
         binding.titleArea.setOnClickListener { ModelSheet.show(this) }
+        binding.titleArea.setOnLongClickListener {
+            rename()
+            true
+        }
         binding.menu.setOnClickListener { showMenu() }
 
         adapter = ChatAdapter(this, AgentUi.markdown(this), { conversationId }, object : ChatActions {
@@ -328,6 +332,8 @@ class AgentChatActivity : AppCompatActivity() {
             NoticeKind.STOPPED in notices              -> getString(R.string.agent_resume_stopped)
             // Before the step limit had its own kind, its notice was an INFO one.
             NoticeKind.PAUSED in notices || NoticeKind.INFO in notices -> getString(R.string.agent_resume_step_limit)
+            // The agent put its plan right after its reply, as the app asked; that ends a run.
+            notices.isEmpty() && Plan.endsOnUpdate(messages) -> null
             // Ended on tool results with nothing said, as older versions did when the model gave an empty answer.
             else                                       -> getString(R.string.agent_resume_no_reply)
         }
@@ -460,7 +466,8 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     private fun showMenu() {
-        val items = listOf(
+        val items = listOfNotNull(
+            AgentMenu.Item(MENU_RENAME, R.string.agent_rename, R.drawable.ic_agent_edit).takeIf { hub.store.get(conversationId) != null },
             AgentMenu.Item(MENU_USAGE, R.string.agent_usage_title, R.drawable.ic_agent_usage),
             AgentMenu.Item(MENU_COMPACT, R.string.agent_compact, R.drawable.ic_round_article_24),
             AgentMenu.Item(MENU_SETTINGS, R.string.agent_settings, R.drawable.ic_round_settings_24),
@@ -468,12 +475,19 @@ class AgentChatActivity : AppCompatActivity() {
         )
         AgentMenu.show(binding.menu, items) { id ->
             when (id) {
+                MENU_RENAME   -> rename()
                 MENU_USAGE    -> showUsage()
                 MENU_COMPACT  -> compact()
                 MENU_SETTINGS -> startActivity(Intent(this, AgentSettingsActivity::class.java))
                 MENU_DELETE   -> confirmDelete()
             }
         }
+    }
+
+    /** A conversation that has started can be renamed; a new one is named by its first message. */
+    private fun rename() {
+        if (hub.store.get(conversationId) != null)
+            RenameSheet.show(this, this, conversationId)
     }
 
     /** What the context gauge stands for: how much of the window the conversation takes, and when it is summarized. */
@@ -559,6 +573,7 @@ class AgentChatActivity : AppCompatActivity() {
         private const val MENU_SETTINGS = 2
         private const val MENU_DELETE = 3
         private const val MENU_COMPACT = 4
+        private const val MENU_RENAME = 5
 
         /** Opens [conversationId], or a new conversation when it is null. */
         fun intent(context: Context, conversationId: String?, project: String? = null, text: String? = null): Intent =

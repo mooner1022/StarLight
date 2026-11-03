@@ -20,4 +20,8 @@
     <color name="agent_brand_openrouter">#C8FF00</color>
     <color name="agent_popup">#2A2530</color>
     <color name="agent_popup_border">#29FFF7E8</color>
+    <color name="agent_popup_ripple">#1FFFF7E8</color>
+    <color name="agent_popup_text">@color/agent_on_night</color>
+    <color name="agent_popup_icon">@color/agent_gold</color>
+    <color name="agent_popup_danger">#FF7A93</color>
 </resources>

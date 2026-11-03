@@ -307,4 +307,17 @@
         <item quantity="one">Used %d tool</item>
         <item quantity="other">Used %d tools</item>
     </plurals>
+
+    <!-- Conversation titles -->
+    <string name="agent_rename">Rename</string>
+    <string name="agent_rename_title">Rename conversation</string>
+    <string name="agent_rename_hint">Conversation name</string>
+    <string name="agent_rename_note">A name you give stays: the agent only names conversations you haven\'t.</string>
+    <string name="agent_rename_suggest">Suggest from the conversation</string>
+    <string name="agent_rename_suggesting">Thinking of a name…</string>
+    <string name="agent_rename_suggest_none">The model gave no name. Try again.</string>
+    <string name="agent_rename_suggest_failed">Couldn\'t get a name: %1$s</string>
+    <string name="agent_save">Save</string>
+    <string name="agent_auto_titles">Name conversations</string>
+    <string name="agent_auto_titles_desc">After the first answer, one short request asks the model for a name. Off, the first line of your message stays.</string>
 </resources>

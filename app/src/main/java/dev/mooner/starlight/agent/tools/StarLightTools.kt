@@ -325,8 +325,8 @@ class StarLightTools(private val docs: DocsLibrary) {
             Plan.TOOL,
             "Shows the user your plan for work of several steps as a checklist above the chat, and keeps it current. " +
                 "Send the whole plan each time, in order, each step pending, in_progress or completed: one step " +
-                "in_progress while you work on it, marked completed as soon as it is done. Send an empty plan to " +
-                "clear it.",
+                "in_progress while you work on it, marked completed as soon as it is done. Send it along with your " +
+                "next tool call rather than on its own, and before your final reply. Send an empty plan to clear it.",
             ToolRisk.READ,
             params = {
                 objectArray("plan", "The steps, in order, at most ${Plan.MAX_STEPS}.") {
@@ -343,8 +343,11 @@ class StarLightTools(private val docs: DocsLibrary) {
             }
             if (plan.steps.isEmpty())
                 ToolOutput("Cleared the plan.", summary = "-")
+            else if (plan.isFinished)
+                ToolOutput("The user sees the plan: all ${plan.steps.size} steps completed.", summary = plan.summary)
             else
-                ToolOutput("The user sees the plan: ${plan.done} of ${plan.steps.size} steps completed.", summary = plan.summary)
+                ToolOutput("The user sees the plan: ${plan.done} of ${plan.steps.size} steps completed. Mark each step " +
+                    "completed as soon as it is done, along with your next tool call.", summary = plan.summary)
         },
     )
 
