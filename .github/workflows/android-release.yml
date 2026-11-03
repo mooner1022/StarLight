@@ -34,7 +34,7 @@ jobs:
       uses: chkfung/android-version-actions@v1.2.2
       with:
         gradlePath: app/build.gradle.kts
-        versionCode: 1000${{github.event.inputs.build_version}}
+        versionCode: ${{github.event.inputs.build_version}}
  
     - name: Decode keystore
       env:
