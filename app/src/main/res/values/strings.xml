@@ -384,4 +384,17 @@
     <string name="safe_start_title">Running in safe mode</string>
     <string name="safe_start_text">Plugins weren\'t loaded and enabled projects weren\'t started. Turn off the project or plugin that crashed, then restart.</string>
     <string name="safe_start_restart">Restart</string>
+    <string name="api_level_group_starlight">StarLight original</string>
+    <string name="api_level_group_msgbot">MessengerBot compatible</string>
+    <string name="api_level_original">StarLight original</string>
+    <string name="api_level_original_description">Event functions such as onMessage, and StarLight\'s own objects.</string>
+    <string name="api_level_legacy">MessengerBot legacy</string>
+    <string name="api_level_legacy_description">The response function and legacy objects such as Api and Utils.</string>
+    <string name="api_level_api2">MessengerBot API2</string>
+    <string name="api_level_api2_description">Listeners registered through BotManager. NeonJS is recommended.</string>
+    <string name="api_levels_title">API levels</string>
+    <string name="api_levels_description">Applies when the project is compiled again.</string>
+    <string name="api_levels_clash_warning">With Rhino, choosing both StarLight original and MessengerBot API2 makes a top-level onMessage function run as StarLight\'s event too, so it can be called twice for one message.</string>
+    <string name="new_project_step_api">API levels</string>
+    <string name="new_project_step_api_description">Choose the APIs this project uses. You can choose more than one.</string>
 </resources>

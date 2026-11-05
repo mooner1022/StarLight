@@ -14,6 +14,7 @@ import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.CA_PLUGIN
 import dev.mooner.starlight.CF_SAFE_MODE
 import dev.mooner.starlight.R
+import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.api.api2.AppApi
 import dev.mooner.starlight.api.api2.BotManagerApi
 import dev.mooner.starlight.api.api2.BroadcastApi
@@ -199,8 +200,13 @@ object ApplicationSession {
             }
         }
 
+        // After the APIs and events, whose names the levels list; before the projects, whose events the levels gate.
+        ApiLevels.register(context)
+
         emit(context.getString(R.string.step_projects))
         Session.projectLoader.loadProjects(force = false, precompile = !GlobalApplication.isSafeStart)
+        for (project in Session.projectManager.getProjects())
+            ApiLevels.migrate(project)
         // Debug rooms kept the bots' files where the gallery listed them, before their folders were hidden from it.
         for (project in Session.projectManager.getProjects())
             project.directory.resolve(DebugRoomFragment.DIR_NAME).takeIf(File::isDirectory)?.hideFromGallery(context)

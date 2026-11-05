@@ -6,6 +6,7 @@ import dev.mooner.starlight.agent.model.Plan
 import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.store.AttachmentStore
 import dev.mooner.starlight.agent.store.CheckpointStore
+import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.ApiObject
@@ -59,6 +60,7 @@ class StarLightTools(private val docs: DocsLibrary) {
                         put("mainScript", project.info.mainScript)
                         put("enabled", project.info.isEnabled)
                         put("compiled", project.isCompiled)
+                        project.info.apiLevels?.let { levels -> putJsonArray("apiLevels") { levels.forEach(::add) } }
                     }
             }
             ToolOutput(json.toString(), summary = "${projects.size} projects")
@@ -170,7 +172,9 @@ class StarLightTools(private val docs: DocsLibrary) {
         },
         tool(
             "list_apis",
-            "Lists the global APIs StarLight gives scripts (from the app and its plugins), with their functions and values.",
+            "Lists the global APIs StarLight gives scripts (from the app and its plugins), with their functions and values. " +
+                "levels names the API levels that include an API: a project gets it only if one of its levels does. An " +
+                "API with no levels, such as a plugin's, is in every project. list_projects shows each project's levels.",
             ToolRisk.READ,
             describe = { "List script APIs" },
         ) { _ ->
@@ -178,6 +182,9 @@ class StarLightTools(private val docs: DocsLibrary) {
                 for (api in Session.apiManager.getApis())
                     addJsonObject {
                         put("name", api.name)
+                        putJsonArray("levels") {
+                            Session.apiLevelManager.getLevels().filter { api.name in it.apis }.forEach { add(it.id) }
+                        }
                         putJsonArray("functions") {
                             api.objects.filterIsInstance<ApiObject.Function>().forEach { function ->
                                 add("${function.name}(${function.args.joinToString { it.simpleName }}): ${function.returns.simpleName}")
@@ -505,6 +512,8 @@ class StarLightTools(private val docs: DocsLibrary) {
                 string("name", "Project name: letters, digits, Hangul, '-' and '_'.")
                 string("language", "Language id from list_languages; js_neon (NeonJS) unless the user asks otherwise.")
                 stringArray("events", "Event ids it receives (default: $MESSAGE_EVENT).", optional = true)
+                stringArray("api_levels", "API level ids whose objects and events the scripts get, from list_apis " +
+                    "(default: StarLight's own, $DEFAULT_API_LEVEL).", optional = true)
             },
             describe = { "Create the project ${it.stringArg("name")}" },
         ) { args ->
@@ -520,11 +529,16 @@ class StarLightTools(private val docs: DocsLibrary) {
             val events = args.stringSet("events").ifEmpty { setOf(MESSAGE_EVENT) }.associateWith { id ->
                 (ProjectEventManager.findFirst(id) ?: throw ToolException("No event '$id'. See list_events.")).getInstance()
             }
+            val levels = args.stringSet("api_levels").ifEmpty { Session.apiLevelManager.defaultLevelIds }
+            levels.firstOrNull { Session.apiLevelManager.getLevel(it) == null }?.let { id ->
+                throw ToolException("No API level '$id'. See list_apis.")
+            }
             checkpoint.project(name)
             manager.newProject(events = events) {
                 this.name = name
                 mainScript = "$name.${language.fileExtension}"
                 this.languageId = language.id
+                apiLevels = levels
             }
             val project = manager.getProjectByName(name) ?: throw ToolException("Project $name was not created")
             ToolOutput("Created $name with main script ${project.info.mainScript}", summary = name)
@@ -895,6 +909,7 @@ class StarLightTools(private val docs: DocsLibrary) {
     private companion object {
         const val ALL_EVENTS = "*"
         const val MESSAGE_EVENT = "starlight.message.create"
+        private const val DEFAULT_API_LEVEL = ApiLevels.ORIGINAL
         const val PROJECT_INFO_FILE = "project.json"
         const val MAX_LISTED_FILES = 500
         /** How much of a web page one web_fetch returns. */

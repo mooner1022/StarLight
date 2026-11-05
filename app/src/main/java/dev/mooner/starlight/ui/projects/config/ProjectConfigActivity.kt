@@ -23,13 +23,16 @@ import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.configdsl.utils.PrimitiveTypedString
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
+import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.databinding.ActivityProjectConfigBinding
 import dev.mooner.starlight.databinding.CardSimpleListItemBinding
 import dev.mooner.starlight.logging.bindLogNotifier
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.config.*
 import dev.mooner.starlight.plugincore.config.data.*
+import dev.mooner.starlight.plugincore.api.ApiLevel
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
@@ -91,7 +94,9 @@ class ProjectConfigActivity: AppCompatActivity() {
                 getStruct(project)
             }
             @Suppress("UNCHECKED_CAST")
-            configData((project.config.getData() as MutableDataMap).injectEventIds(project.info.allowedEventIds))
+            configData((project.config.getData() as MutableDataMap)
+                .injectEventIds(project.info.allowedEventIds)
+                .injectApiLevels(project.info.apiLevels))
         }.build()
 
         fabProjectConfig.setOnClickListener {
@@ -103,6 +108,12 @@ class ProjectConfigActivity: AppCompatActivity() {
 
             project.config.edit {
                 for ((catId, data) in changedData) {
+                    // project.json holds the levels, as it does the allowed events.
+                    if (catId == API_CATEGORY && API_LEVELS in data) {
+                        project.info.apiLevels = data[API_LEVELS]!!.jsonArray.mapTo(linkedSetOf()) { it.jsonPrimitive.content }
+                        project.saveInfo()
+                        data -= API_LEVELS
+                    }
                     if (catId == "events" && "allowed_events" in data) {
                         project.info.allowedEventIds.clear()
                         data["allowed_events"]!!
@@ -125,6 +136,8 @@ class ProjectConfigActivity: AppCompatActivity() {
                 project.getLanguage().onConfigUpdated(filtered)
 
             createSuccessPeek("설정 저장 완료!", PeekAlert.Position.Bottom).peek()
+            if (ApiLevels.hasListenerNameClash(project.info.apiLevels, project.info.languageId))
+                peek(getString(R.string.api_levels_clash_warning), PeekType.INFO)
             fabProjectConfig.hide()
         }
 
@@ -141,6 +154,12 @@ class ProjectConfigActivity: AppCompatActivity() {
         super.onDestroy()
         configAdapter?.destroy()
         configAdapter = null
+    }
+
+    private fun MutableDataMap.injectApiLevels(levelIds: Set<String>?): MutableDataMap {
+        val ids = levelIds ?: Session.apiLevelManager.getLevels().map(ApiLevel::id)
+        getOrPut(API_CATEGORY) { mutableMapOf() }[API_LEVELS] = JsonArray(ids.map(::JsonPrimitive))
+        return this
     }
 
     private fun MutableDataMap.injectEventIds(ids: Set<String>): MutableDataMap {
@@ -209,6 +228,22 @@ class ProjectConfigActivity: AppCompatActivity() {
                         defaultValue = true
                         icon = Icon.ERROR
                         iconTintColor = color { "#FF5C58" }
+                    }
+                }
+            }
+            category {
+                id = API_CATEGORY
+                title = getString(R.string.api_levels_title)
+                textColor = getColor(R.color.main_bright)
+                items {
+                    multiChoice {
+                        id = API_LEVELS
+                        title = getString(R.string.api_levels_title)
+                        description = getString(R.string.api_levels_description)
+                        icon = Icon.LAYERS
+                        iconTintColor = color { "#B8A4C9" }
+                        for (level in Session.apiLevelManager.getLevels())
+                            option(level.id, level.name)
                     }
                 }
             }
@@ -499,3 +534,6 @@ internal data class ProjectButtonData(
     @SerialName("button_icon")
     val icon: Int? = null,
 )
+
+private const val API_CATEGORY = "api"
+private const val API_LEVELS = "levels"

@@ -5,7 +5,6 @@ import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
-import androidx.core.graphics.toColorInt
 import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputLayout
@@ -138,18 +137,5 @@ private class OptionCards(
     }
 
     private fun refresh() =
-        cards.forEachIndexed { index, card -> card.setSelectionHighlight(isSelected(index)) }
-
-    private fun MaterialCardView.setSelectionHighlight(selected: Boolean) {
-        if (selected) {
-            strokeWidth = (2 * resources.displayMetrics.density).toInt()
-            strokeColor = context.getColor(R.color.main_bright)
-            setCardBackgroundColor(SELECTED_OPTION_COLOR.toColorInt())
-        } else {
-            strokeWidth = 0
-            setCardBackgroundColor(context.getColor(dev.mooner.configdsl.R.color.background_selection_card))
-        }
-    }
+        cards.forEachIndexed { index, card -> card.setOptionSelected(isSelected(index)) }
 }
-
-private const val SELECTED_OPTION_COLOR = "#50AD977A"

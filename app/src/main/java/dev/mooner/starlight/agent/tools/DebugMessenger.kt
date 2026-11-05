@@ -118,7 +118,7 @@ internal object DebugMessenger {
         val eventId = ProjectEventManager.validateAndGetEventID(ProjectOnMessageEvent::class)
             ?: throw ToolException("StarLight's message event isn't registered")
         if (!project.isEventCallAllowed(eventId))
-            throw ToolException("${project.info.name} doesn't receive messages: allow the event $eventId with set_project_events")
+            throw ToolException("${project.info.name} doesn't receive messages: its allowed events or API levels leave out $eventId")
 
         val inbox = inbox(project)
         // Whatever came in since the last look answers an earlier message, not this one.

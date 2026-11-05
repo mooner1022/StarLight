@@ -58,6 +58,9 @@ class JSNeon: Language() {
 
     override val codeGenerator: CodeGenerator = ModuleCodeGenerator(DefaultJSCodeGenerator())
 
+    // The engine's own Java global stands in for StarLight's.
+    override val nativeGlobals: Set<String> = setOf("Java")
+
     private val eventLoops: MutableMap<NeonContext, EventLoop> = ConcurrentHashMap()
 
     override fun compile(
@@ -100,7 +103,7 @@ class JSNeon: Language() {
         val context = engine.newContext()
         return try {
             withClassLoader(classLoader) {
-                for (api in apis.filter { it.isExposed }) {
+                for (api in apis) {
                     when (api.instanceType) {
                         InstanceType.CLASS ->
                             context.exposeClass(api.name, api.instanceClass)
@@ -189,7 +192,7 @@ class JSNeon: Language() {
         return engine.newContext().use { context ->
             if (allowJavaAccess && allowApiAccess) {
                 for (api in Session.apiManager.getApis()) {
-                    if (api.instanceType == InstanceType.OBJECT || !api.isExposed)
+                    if (api.instanceType == InstanceType.OBJECT || api.name in nativeGlobals)
                         continue
                     context.exposeClass(api.name, api.instanceClass)
                 }
@@ -205,9 +208,6 @@ class JSNeon: Language() {
             }
         }
     }
-
-    private val Api<*>.isExposed: Boolean
-        get() = name !in EXCLUDED_API_NAMES
 
     private fun createConsole(project: Project) = NeonConsole { level, message ->
         when (level) {
@@ -378,9 +378,6 @@ class JSNeon: Language() {
         private const val CONF_EXT_MODULE_SANDBOX = "load_ext_module_sandbox"
         private const val DEF_OPTIMIZATION_LEVEL = 2 // Adaptive
 
-        private val EXCLUDED_API_NAMES = setOf(
-            "Java",
-        )
 
         private val hostAccess: HostAccess = buildHostAccess(ScriptHostPolicy.isEnabled)
 
