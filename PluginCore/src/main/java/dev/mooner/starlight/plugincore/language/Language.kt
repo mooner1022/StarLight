@@ -91,7 +91,7 @@ abstract class Language {
         val emitted: MutableSet<String> = hashSetOf()
         val body = buildString {
             for (event in events) {
-                val generated = codeGenerator.generateFunction(event.functionName, event.argTypes, null)
+                val generated = event.generateCode(codeGenerator)
                 append("\n")
                 if (event.functionComment != null)
                     append(codeGenerator.generateComment(

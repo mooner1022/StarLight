@@ -101,7 +101,18 @@ class ProjectImpl private constructor(
         reloadAllowedEventIDs()
     }
 
-    override fun callFunction(name: String, args: Array<out Any>, onException: (Throwable) -> Unit) {
+    override fun callFunction(name: String, args: Array<out Any>, onException: (Throwable) -> Unit) =
+        runEvent({
+            try {
+                lang.callFunction(langScope!!, name, args)
+            } finally {
+                // Only a called function leaves the language's scope entered on this thread.
+                if (isCompiled && lang.requireRelease)
+                    lang.release(langScope!!)
+            }
+        }, onException)
+
+    override fun runEvent(task: () -> Unit, onException: (Throwable) -> Unit) {
         if (langScope == null) {
             onException(IllegalStateException("Project should be in compiled state before calling function."))
             return
@@ -129,12 +140,9 @@ class ProjectImpl private constructor(
 
         obtainExecutor().post {
             JobLocker.withLock(threadPoolName!!) {
-                runCatching { lang.callFunction(langScope!!, name, args) }
+                runCatching(task)
                     .onFailure(::onError)
             }
-            if (isCompiled && lang.requireRelease)
-                runCatching { lang.release(langScope!!) }
-                    .onFailure(::onError)
         }
     }
 

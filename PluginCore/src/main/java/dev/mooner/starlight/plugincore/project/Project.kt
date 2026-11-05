@@ -57,6 +57,12 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
     abstract fun callFunction(name: String, args: Array<out Any>, onException: (Throwable) -> Unit = {})
 
     /**
+     * Runs [task] as one of the project's events: on its workers, among its other events, and with the same handling of
+     * an error as a called function gets, which may turn the project off.
+     */
+    abstract fun runEvent(task: () -> Unit, onException: (Throwable) -> Unit = {})
+
+    /**
      * Execute the compile pipeline of this project. Releases its original scope and context if present.
      *
      * @param throwException if true, throws exception on compile failure.
