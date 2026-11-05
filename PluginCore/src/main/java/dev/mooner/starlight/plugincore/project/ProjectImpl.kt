@@ -171,6 +171,8 @@ class ProjectImpl private constructor(
                     "Cannot find main script ${info.mainScript} for project ${info.name}"
                 )).readText(Charsets.UTF_8)
                  */
+                // Destroyed once the new one is in place, so a failed compile leaves the old version running.
+                val previousScope = langScope
                 if (isCompiled) {
                     if ("starlight.project.compile" in allowedEventIDs)
                         runCatching {
@@ -188,6 +190,11 @@ class ProjectImpl private constructor(
                 })
                 //setClassLoader()
                 langScope = pipeline.run(this@ProjectImpl to code)
+                // Releasing alone keeps what a scope holds: NeonJS keeps its engine, event loop and open sockets.
+                previousScope?.takeIf { it !== langScope }?.let { scope ->
+                    runCatching { lang.destroy(scope) }
+                        .onFailure { logger.w(tag, "Failed to destroy the previous scope: $it") }
+                }
                 EventHandler.fireEvent(Events.Project.Compile(project = this@ProjectImpl))
                 lifecycleRegistry.setCurrentState(ProjectLifecycle.State.DISABLED)
                 //projectManager.onStateChanged(this)

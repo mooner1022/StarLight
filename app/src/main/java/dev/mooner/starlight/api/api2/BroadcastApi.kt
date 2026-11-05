@@ -9,11 +9,11 @@ package dev.mooner.starlight.api.api2
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
-import dev.mooner.starlight.plugincore.event.EventHandler
-import dev.mooner.starlight.plugincore.event.Events
-import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.project.Project
-import java.util.*
+import dev.mooner.starlight.plugincore.project.ProjectID
+import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycleObserver
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArraySet
 
 private typealias BroadcastCallback = (value: Any) -> Unit
 private typealias ProjectCallbacks = MutableMap<String, MutableSet<BroadcastCallback>>
@@ -49,68 +49,50 @@ class BroadcastApi: Api<BroadcastApi.Broadcast>() {
             BroadcastManager.unregister(project, broadcastName, task)
 
         fun unregisterAll() =
-            BroadcastManager.unregisterAll()
+            BroadcastManager.unregisterAll(project)
     }
 
     object BroadcastManager {
 
-        private val callbacks: MutableMap<String, ProjectCallbacks> =
-            WeakHashMap()
+        private val callbacks: ConcurrentHashMap<ProjectID, ProjectCallbacks> =
+            ConcurrentHashMap()
 
         fun send(name: String, value: Any) {
             for ((_, projCallback) in callbacks) {
-                if (name in projCallback)
-                    projCallback[name]
-                        ?.forEach { v -> v.invoke(value) }
+                projCallback[name]
+                    ?.forEach { v -> v.invoke(value) }
             }
         }
 
         fun register(project: Project, name: String, task: BroadcastCallback) {
-            val key = project.info.name
-            callbacks.putIfAbsent(key, hashMapOf())
-
-            callbacks[key]!!.let { projCallback ->
-                projCallback.putIfAbsent(name, hashSetOf())
-                projCallback[name]!! += task
-            }
+            callbacks.computeIfAbsent(project.info.id) { id ->
+                project.getLifecycle().registerObserver(ReceiverObserver(id))
+                ConcurrentHashMap()
+            }.getOrPut(name, ::CopyOnWriteArraySet) += task
         }
 
         fun unregister(project: Project, name: String, task: BroadcastCallback) {
-            val key = project.info.name
-            if (key !in callbacks)
-                return
-
-            callbacks[key]!!.let { projCallback ->
-                if (name !in projCallback)
-                    return
-
-                projCallback[name]!! -= task
-            }
+            callbacks[project.info.id]
+                ?.get(name)
+                ?.remove(task)
         }
 
-        fun unregisterAll() {
-            callbacks.clear()
+        fun unregisterAll(project: Project) {
+            callbacks[project.info.id]?.clear()
         }
 
-        private fun removeProjectCallback(projectName: String) {
-            if (projectName in callbacks) {
-                callbacks[projectName]!!.clear()
-                callbacks -= projectName
-            }
-        }
+        /** The receivers belong to the code that registered them: they go when it's compiled again or destroyed. */
+        private class ReceiverObserver(
+            private val id: ProjectID
+        ): ProjectLifecycleObserver.ExplicitObserver {
 
-        private fun onProjectCompile(event: Events.Project.Compile) {
-            removeProjectCallback(event.project.info.name)
-        }
+            override fun onCompileStart(project: Project) = remove(project)
 
-        private fun onProjectDelete(event: Events.Project.Delete) {
-            removeProjectCallback(event.projectName)
-        }
+            override fun onDestroy(project: Project) = remove(project)
 
-        init {
-            EventHandler.apply {
-                on(this, ::onProjectCompile)
-                on(this, ::onProjectDelete)
+            private fun remove(project: Project) {
+                callbacks -= id
+                project.getLifecycle().unregisterObserver(this)
             }
         }
     }
