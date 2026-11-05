@@ -62,7 +62,7 @@ projects/hello-bot/
 | `isEnabled` | 켜져 있는지예요. |
 | `isPinned` | 즐겨찾기했는지예요. |
 | `createdMillis` | 만든 시각(밀리초)이에요. |
-| `allowedEventIds` | 호출이 허용된 이벤트 ID 목록이에요. 기본값은 `["starlight.*"]`이에요. |
+| `allowedEventIds` | 받을 이벤트 항목(이벤트 ID, 와일드카드, `!` 제외 항목)이에요. 프로젝트 설정의 **받을 이벤트**가 이 값을 고쳐요. |
 | `packages` | 프로젝트 정보 화면에 보이는 패키지 목록이에요. 메시지를 거르는 데 쓰이지는 않아요. |
 
 > [!WARNING]
