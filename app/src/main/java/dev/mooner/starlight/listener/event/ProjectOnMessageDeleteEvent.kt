@@ -9,12 +9,19 @@ package dev.mooner.starlight.listener.event
 import dev.mooner.starlight.plugincore.chat.DeletedMessage
 import dev.mooner.starlight.plugincore.language.CodeGenerator
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 
 class ProjectOnMessageDeleteEvent: ProjectEvent() {
 
     override val id: String = "delete"
 
     override val name: String = "기본 메세지 삭제 이벤트"
+
+    override val description: String = translate {
+        Locale.ENGLISH { "When the latest KakaoTalk message is deleted" }
+        Locale.KOREAN  { "카카오톡에서 가장 최근 메시지가 삭제됐을 때" }
+    }
 
     override val functionName: String = "onMessageDeleted"
 

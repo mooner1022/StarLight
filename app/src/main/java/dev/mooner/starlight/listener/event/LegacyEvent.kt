@@ -10,6 +10,8 @@ import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.Replier
 import dev.mooner.starlight.plugincore.language.CodeGenerator
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 
 class LegacyEvent: ProjectEvent() {
 
@@ -17,7 +19,16 @@ class LegacyEvent: ProjectEvent() {
 
     override val name: String = "레거시 호환 모드"
 
+    override val description: String = translate {
+        Locale.ENGLISH { "When a message arrives, in MessengerBot's legacy form" }
+        Locale.KOREAN  { "메시지를 받았을 때, 메신저봇 레거시 방식으로" }
+    }
+
     override val functionName: String = "response"
+
+    // Its seven parameters don't fit a row; the first two say what it is.
+    override val usage: String
+        get() = "$functionName(room, msg, …)"
 
     override val argTypes: Array<CodeGenerator.Argument<*>> =
         arrayOf(

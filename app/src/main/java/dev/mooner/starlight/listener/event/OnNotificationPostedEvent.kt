@@ -9,12 +9,19 @@ package dev.mooner.starlight.listener.event
 import android.service.notification.StatusBarNotification
 import dev.mooner.starlight.plugincore.language.CodeGenerator
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 
 class OnNotificationPostedEvent: ProjectEvent() {
 
     override val id: String = "post"
 
     override val name: String = "onNotificationPosted 이벤트"
+
+    override val description: String = translate {
+        Locale.ENGLISH { "When any app posts a notification, with the onNotificationPosted setting on" }
+        Locale.KOREAN  { "onNotificationPosted 이벤트 사용을 켰을 때, 아무 앱이나 알림을 올리면" }
+    }
 
     override val functionName: String = "onNotificationPosted"
 

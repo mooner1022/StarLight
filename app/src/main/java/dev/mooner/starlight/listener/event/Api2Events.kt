@@ -14,6 +14,8 @@ import dev.mooner.starlight.plugincore.language.CodeGenerator
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import kotlin.reflect.KClass
 
 /** The names of MessengerBot R's API2 events, which scripts listen for with `bot.on(…)`. */
@@ -44,6 +46,9 @@ abstract class Api2Event: ProjectEvent() {
     /** Code that goes before the listener is added. */
     protected open val setup: String? = null
 
+    override val usage: String
+        get() = "bot.on(Event.$constant)"
+
     /** Calls [deliver] with the project's bot, on its workers, if the script has a bot. */
     override fun dispatch(project: Project, args: Array<out Any>, onFailure: (Throwable) -> Unit) {
         val bot = Bot.find(project) ?: return
@@ -72,6 +77,10 @@ abstract class Api2Event: ProjectEvent() {
 class Api2MessageEvent: Api2Event() {
     override val id = "message"
     override val name = "API2 메시지 이벤트"
+    override val description = translate {
+        Locale.ENGLISH { "When a message arrives" }
+        Locale.KOREAN  { "메시지를 받았을 때" }
+    }
     override val functionName = "onMessage"
     override val constant = "MESSAGE"
     override val parameters = "msg"
@@ -84,6 +93,10 @@ class Api2MessageEvent: Api2Event() {
 class Api2CommandEvent: Api2Event() {
     override val id = "command"
     override val name = "API2 명령어 이벤트"
+    override val description = translate {
+        Locale.ENGLISH { "When a message starts with the bot's command prefix" }
+        Locale.KOREAN  { "봇의 명령어 접두사로 시작하는 메시지를 받았을 때" }
+    }
     override val functionName = "onCommand"
     override val constant = "COMMAND"
     override val parameters = "msg"
@@ -98,6 +111,10 @@ class Api2CommandEvent: Api2Event() {
 class Api2NotificationPostedEvent: Api2Event() {
     override val id = "notification_posted"
     override val name = "API2 알림 게시 이벤트"
+    override val description = translate {
+        Locale.ENGLISH { "When any app posts a notification, with the onNotificationPosted setting on" }
+        Locale.KOREAN  { "onNotificationPosted 이벤트 사용을 켰을 때, 아무 앱이나 알림을 올리면" }
+    }
     override val functionName = "onNotificationPosted"
     override val constant = "NOTIFICATION_POSTED"
     override val parameters = "sbn, sessionManager"
@@ -110,6 +127,10 @@ class Api2NotificationPostedEvent: Api2Event() {
 class Api2NotificationRemovedEvent: Api2Event() {
     override val id = "notification_removed"
     override val name = "API2 알림 삭제 이벤트"
+    override val description = translate {
+        Locale.ENGLISH { "When a notification is removed, with the onNotificationPosted setting on" }
+        Locale.KOREAN  { "onNotificationPosted 이벤트 사용을 켰을 때, 알림이 지워지면" }
+    }
     override val functionName = "onNotificationRemoved"
     override val constant = "NOTIFICATION_REMOVED"
     override val parameters = "sbn, rankingMap, reason"
@@ -127,6 +148,10 @@ class Api2NotificationRemovedEvent: Api2Event() {
 class Api2StartCompileEvent: Api2Event() {
     override val id = "start_compile"
     override val name = "API2 컴파일 시작 이벤트"
+    override val description = translate {
+        Locale.ENGLISH { "Right before the project is compiled again" }
+        Locale.KOREAN  { "프로젝트를 다시 컴파일하기 직전" }
+    }
     override val functionName = "onStartCompile"
     override val constant = "START_COMPILE"
     override val parameters = ""

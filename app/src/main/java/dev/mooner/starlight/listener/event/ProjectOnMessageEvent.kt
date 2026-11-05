@@ -18,6 +18,11 @@ class ProjectOnMessageEvent: ProjectEvent() {
 
     override val name: String = "기본 메세지 수신 이벤트"
 
+    override val description: String = translate {
+        Locale.ENGLISH { "When a message arrives" }
+        Locale.KOREAN  { "메시지를 받았을 때" }
+    }
+
     override val functionName: String = "onMessage"
 
     override val functionComment: String = translate {
