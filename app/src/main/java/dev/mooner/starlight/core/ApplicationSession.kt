@@ -18,6 +18,7 @@ import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.api.api2.AppApi
 import dev.mooner.starlight.api.api2.BotManagerApi
 import dev.mooner.starlight.api.api2.BroadcastApi
+import dev.mooner.starlight.api.api2.EventApi
 import dev.mooner.starlight.api.api2.HomeWidgetApi
 import dev.mooner.starlight.api.legacy.*
 import dev.mooner.starlight.api.node.EventEmitterApi
@@ -166,6 +167,7 @@ object ApplicationSession {
             addApi(AppApi())
             addApi(BroadcastApi())
             addApi(BotManagerApi())
+            addApi(EventApi())
             addApi(HomeWidgetApi())
         }
 
@@ -197,6 +199,13 @@ object ApplicationSession {
             }
             category("project") {
                 add<ProjectOnStartCompileEvent>()
+            }
+            category("api2") {
+                add<Api2MessageEvent>()
+                add<Api2CommandEvent>()
+                add<Api2NotificationPostedEvent>()
+                add<Api2NotificationRemovedEvent>()
+                add<Api2StartCompileEvent>()
             }
         }
 

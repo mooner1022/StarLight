@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.core.graphics.createBitmap
 import dev.mooner.starlight.agent.store.AttachmentStore
+import dev.mooner.starlight.listener.event.Api2CommandEvent
+import dev.mooner.starlight.listener.event.Api2MessageEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
@@ -115,10 +117,13 @@ internal object DebugMessenger {
     suspend fun send(project: Project, options: Options, wait: Wait): Sent {
         if (!project.isCompiled)
             throw ToolException("${project.info.name} isn't compiled: compile it first")
-        val eventId = ProjectEventManager.validateAndGetEventID(ProjectOnMessageEvent::class)
-            ?: throw ToolException("StarLight's message event isn't registered")
-        if (!project.isEventCallAllowed(eventId))
-            throw ToolException("${project.info.name} doesn't receive messages: its allowed events or API levels leave out $eventId")
+        // StarLight's onMessage and API2's message and command listeners, whichever the project receives.
+        val messageEvents = MESSAGE_EVENTS.filter { event ->
+            ProjectEventManager.validateAndGetEventID(event)?.let(project::isEventCallAllowed) == true
+        }
+        if (messageEvents.isEmpty())
+            throw ToolException("${project.info.name} doesn't receive messages: its allowed events and API levels leave out " +
+                MESSAGE_EVENTS.mapNotNull(ProjectEventManager::validateAndGetEventID).joinToString())
 
         val inbox = inbox(project)
         // Whatever came in since the last look answers an earlier message, not this one.
@@ -152,8 +157,8 @@ internal object DebugMessenger {
             hasMention = false,
             chatLogId = -1L,
         )
-        val functionName = ProjectOnMessageEvent::class.getInstance().functionName
-        project.callFunction(functionName, arrayOf(message)) { deliver(error = it) }
+        for (event in messageEvents)
+            event.getInstance().dispatch(project, arrayOf(message)) { deliver(error = it) }
 
         // An earlier message's late reply may come while this one waits; it's reported apart.
         val (events, late) = collect(inbox.events, wait, ours = { it.messageId == id }).partition { it.messageId == id }
@@ -225,6 +230,8 @@ internal object DebugMessenger {
     const val DEFAULT_WAIT_SECONDS = 5
     const val EXPECT_WAIT_SECONDS = 30
     const val MAX_WAIT_SECONDS = 60
+    private val MESSAGE_EVENTS = listOf(ProjectOnMessageEvent::class, Api2MessageEvent::class, Api2CommandEvent::class)
+
     private const val QUIET_MILLIS = 1_000L
     private const val MAX_KEPT = 50
     const val MAX_KEPT_IMAGES = 16

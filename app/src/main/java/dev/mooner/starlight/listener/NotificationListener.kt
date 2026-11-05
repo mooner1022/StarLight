@@ -18,6 +18,10 @@ import androidx.core.app.NotificationCompat.EXTRA_TITLE
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.listener.chat.ChatRoomImpl
+import dev.mooner.starlight.listener.event.Api2CommandEvent
+import dev.mooner.starlight.listener.event.Api2MessageEvent
+import dev.mooner.starlight.listener.event.Api2NotificationPostedEvent
+import dev.mooner.starlight.listener.event.Api2NotificationRemovedEvent
 import dev.mooner.starlight.listener.event.LegacyEvent
 import dev.mooner.starlight.listener.event.OnNotificationPostedEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageDeleteEvent
@@ -33,6 +37,7 @@ import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.fireEvent
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
@@ -78,14 +83,8 @@ class NotificationListener: NotificationListenerService() {
         if (!isGlobalPowerOn || !ApplicationSession.isInitComplete || sbn.packageName == packageName) return
 
         if (useNPostedEvent) {
-            Session.projectManager.fireEvent<OnNotificationPostedEvent>(sbn) { project, e ->
-                LOG.error {
-                    translate {
-                        Locale.ENGLISH { "Failed to call event on '${project.info.name}': $e" }
-                        Locale.KOREAN  { "프로젝트 '${project.info.name}'의 이벤트 호출 실패: $e" }
-                    }
-                }
-            }
+            Session.projectManager.fireEvent<OnNotificationPostedEvent>(sbn, onFailure = ::logEventFailure)
+            Session.projectManager.fireEvent<Api2NotificationPostedEvent>(sbn, onFailure = ::logEventFailure)
         }
 
         sbn.notification.actions?.let { actions ->
@@ -148,15 +147,9 @@ class NotificationListener: NotificationListenerService() {
                         }
                     }
 
-                    Session.projectManager.fireEvent<ProjectOnMessageEvent>(data) { project, e ->
-                        e.printStackTrace()
-                        LOG.error {
-                            translate {
-                                Locale.ENGLISH { "Failed to call event on '${project.info.name}': $e" }
-                                Locale.KOREAN  { "프로젝트 '${project.info.name}'의 이벤트 호출 실패: $e" }
-                            }
-                        }
-                    }
+                    Session.projectManager.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::logEventFailure)
+                    Session.projectManager.fireEvent<Api2MessageEvent>(data, onFailure = ::logEventFailure)
+                    Session.projectManager.fireEvent<Api2CommandEvent>(data, onFailure = ::logEventFailure)
 
                     // Each project's levels decide whether it gets this one.
                     run {
@@ -203,6 +196,8 @@ class NotificationListener: NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
         super.onNotificationRemoved(sbn, rankingMap, reason)
+        if (useNPostedEvent && isGlobalPowerOn && ApplicationSession.isInitComplete && sbn.packageName != packageName)
+            Session.projectManager.fireEvent<Api2NotificationRemovedEvent>(sbn, rankingMap, reason, onFailure = ::logEventFailure)
         if (sbn.packageName != PACKAGE_KAKAO_TALK)
             return
         LOG.verbose { "Notification removed with reason $reason" }
@@ -334,6 +329,14 @@ class NotificationListener: NotificationListenerService() {
         private fun getRoomByName(roomName: RoomName): ChatRoom? =
             roomIdMap[roomName]?.let(chatRooms::get)
 
+        /** The rooms messages came from so far. */
+        fun getRooms(): Collection<ChatRoom> =
+            chatRooms.values
+
+        /** The room named [nameOrId], or with that ID. */
+        fun getRoom(nameOrId: String): ChatRoom? =
+            getRoomByName(nameOrId) ?: chatRooms[nameOrId]
+
         fun getRoomNames(): Set<String> =
             roomIdMap.keys
 
@@ -353,6 +356,16 @@ class NotificationListener: NotificationListenerService() {
             getRoomByName(roomName)?.markAsRead() ?: false
         fun markAsReadByID(roomID: RoomID): Boolean =
             chatRooms[roomID]?.markAsRead() ?: false
+    }
+
+    private fun logEventFailure(project: Project, e: Throwable) {
+        e.printStackTrace()
+        LOG.error {
+            translate {
+                Locale.ENGLISH { "Failed to call event on '${project.info.name}': $e" }
+                Locale.KOREAN  { "프로젝트 '${project.info.name}'의 이벤트 호출 실패: $e" }
+            }
+        }
     }
 
     private fun onGlobalConfigUpdated(event: Events.Config.GlobalConfigUpdate) =

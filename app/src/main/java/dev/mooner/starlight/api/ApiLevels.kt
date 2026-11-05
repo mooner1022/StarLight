@@ -11,6 +11,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.api.api2.AppApi
 import dev.mooner.starlight.api.api2.BotManagerApi
 import dev.mooner.starlight.api.api2.BroadcastApi
+import dev.mooner.starlight.api.api2.EventApi
 import dev.mooner.starlight.api.api2.HomeWidgetApi
 import dev.mooner.starlight.api.legacy.*
 import dev.mooner.starlight.api.node.EventEmitterApi
@@ -75,10 +76,13 @@ object ApiLevels {
             group = R.string.api_level_group_msgbot,
             description = R.string.api_level_api2_description,
             apis = setOf(
-                ProjectLoggerApi::class, AppApi::class, BotManagerApi::class, BroadcastApi::class,
+                ProjectLoggerApi::class, AppApi::class, BotManagerApi::class, BroadcastApi::class, EventApi::class,
                 DeviceApi::class, FileStreamApi::class,
             ),
-            events = emptySet(),
+            events = setOf(
+                Api2MessageEvent::class, Api2CommandEvent::class, Api2NotificationPostedEvent::class,
+                Api2NotificationRemovedEvent::class, Api2StartCompileEvent::class,
+            ),
             preferredLanguageId = NEONJS_LANGUAGE_ID,
         ),
         Definition(

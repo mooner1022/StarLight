@@ -35,7 +35,8 @@ import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentDebugRoomBinding
-import dev.mooner.starlight.event.ApplicationEvent
+import dev.mooner.starlight.listener.event.Api2CommandEvent
+import dev.mooner.starlight.listener.event.Api2MessageEvent
 import dev.mooner.starlight.listener.event.LegacyEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
@@ -47,7 +48,6 @@ import dev.mooner.starlight.plugincore.chat.DebugChatRoom
 import dev.mooner.starlight.plugincore.chat.MediaFile
 import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.color
@@ -299,7 +299,8 @@ class DebugRoomFragment: Fragment() {
         // Called only if the project's levels and allowed events include it.
         project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, replier, ImageDB(selfProfileBitmap),
             onFailure = ::showErrorPeek)
-        EventHandler.fireEventWithScope(ApplicationEvent.DebugRoom.MessageCreate(data), scope = project)
+        project.fireEvent<Api2MessageEvent>(data, onFailure = ::showErrorPeek)
+        project.fireEvent<Api2CommandEvent>(data, onFailure = ::showErrorPeek)
     }
 
     private fun showErrorPeek(e: Throwable) {
