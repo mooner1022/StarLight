@@ -25,6 +25,13 @@ abstract class ProjectEvent {
      */
     open val functionComment: String? = null
 
+    /** When the event happens, in a few words, for lists of events; they show [name] without it. */
+    open val description: String? = null
+
+    /** How a script receives the event, as lists of events show it: by default, the function it calls. */
+    open val usage: String
+        get() = argTypes.joinToString(prefix = "$functionName(", postfix = ")") { it.name }
+
     /**
      * Delivers the event to [project]'s script, which is allowed to receive it. Calls the function named
      * [functionName] unless the event reaches the script another way, such as through listeners it registered.
