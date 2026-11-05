@@ -17,6 +17,11 @@ interface ProjectLifecycle {
 
     val state: State
 
+    /**
+     * Calls [observer] on each change of the project's state, on the thread that makes the change and before it goes
+     * on, until [scope] ends. The state the project is in when this is called isn't a change; a
+     * [ProjectLifecycleObserver.StateObserver] is told it once, as its first update.
+     */
     fun registerObserver(observer: ProjectLifecycleObserver, scope: CoroutineScope = lifecycleScope)
 
     fun unregisterObserver(observer: ProjectLifecycleObserver)

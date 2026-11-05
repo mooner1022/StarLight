@@ -6,9 +6,7 @@
 
 package dev.mooner.starlight.plugincore.project.lifecycle
 
-import dev.mooner.starlight.plugincore.project.Project
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlin.coroutines.CoroutineContext
 
 abstract class ProjectLifecycleScope internal constructor() : CoroutineScope {
@@ -20,16 +18,8 @@ abstract class ProjectLifecycleScope internal constructor() : CoroutineScope {
     }
 }
 
+/** Cancelled by the registry when the project is destroyed. */
 internal class ProjectLifecycleScopeImpl(
     override val lifecycle: ProjectLifecycle,
     override val coroutineContext: CoroutineContext
-): ProjectLifecycleScope(), ProjectLifecycleObserver.StateObserver {
-
-    override fun onUpdate(project: Project, state: ProjectLifecycle.State) {
-        println("Project LifeCycle state update: $state")
-        if (state == ProjectLifecycle.State.DESTROYED) {
-            lifecycle.unregisterObserver(this)
-            coroutineContext.cancel()
-        }
-    }
-}
+): ProjectLifecycleScope()
