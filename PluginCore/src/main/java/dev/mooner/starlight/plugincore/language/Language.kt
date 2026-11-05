@@ -75,6 +75,9 @@ abstract class Language {
 
     open val codeGenerator: CodeGenerator = DefaultJSCodeGenerator()
 
+    /** Globals the engine provides itself; an [Api] with one of these names isn't added to its scripts. */
+    open val nativeGlobals: Set<String> = emptySet()
+
     open fun formatDefaultCode(fileName: String, events: List<ProjectEvent>): String {
         // TODO: Change with user-updatable comment
         val defaultComment = codeGenerator.generateComment(
@@ -246,7 +249,7 @@ abstract class Language {
     open fun toPipeline(): Pipeline<Pair<Project, String>, Any> {
         return plumber {
             initial<Pair<Project, String>, Any>(id, name) { (project, code) ->
-                compile(code, Session.apiManager.getApis(), project, project.getClassLoader())
+                compile(code, Session.apiManager.getApis(project.info.apiLevels, this@Language), project, project.getClassLoader())
             }
         }
     }
@@ -256,7 +259,7 @@ abstract class Language {
         id = this.id,
         name = this.name,
         run = { project, code ->
-            compile(code, Session.apiManager.getApis(), project, project.getClassLoader())
+            compile(code, Session.apiManager.getApis(project.info.apiLevels, this@Language), project, project.getClassLoader())
         }
     )
 

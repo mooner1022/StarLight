@@ -9,6 +9,7 @@ package dev.mooner.starlight.plugincore.project.event
 object ProjectEventManager {
 
             const val PATH_DELIMITER  = '.'
+            const val EXCLUDE_PREFIX  = "!"
     private const val WILDCARD_ALL    = "*"
     private val       ID_SANITY_REGEX = "(^[-_\\dA-Za-z]+$)".toRegex()
 
@@ -80,10 +81,18 @@ object ProjectEventManager {
     fun filterAllowedEvents(ids: List<String>): Set<String> =
         filterAllowedEvents(ids.toSet())
 
+    /**
+     * The registered event IDs that [ids] allow. An entry may be a wildcard (`starlight.*`), and one starting with
+     * [EXCLUDE_PREFIX] takes the events it matches back out, so `starlight.*` with `!starlight.message.legacy` allows
+     * every StarLight event but that one, including those added later.
+     */
     fun filterAllowedEvents(ids: Set<String>): Set<String> {
         val result: MutableSet<String> = hashSetOf()
-        for (id in ids)
+        val (excluded, included) = ids.partition { it.startsWith(EXCLUDE_PREFIX) }
+        for (id in included)
             findAllID(id).forEach(result::add)
+        for (id in excluded)
+            result -= findAllID(id.removePrefix(EXCLUDE_PREFIX))
         return result
     }
 

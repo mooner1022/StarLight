@@ -372,6 +372,7 @@ class ProjectImpl private constructor(
             _allowedEventIDs.clear()
         ProjectEventManager
             .filterAllowedEvents(info.allowedEventIds)
+            .filter { Session.apiLevelManager.hasEvent(info.apiLevels, it) }
             .forEach(_allowedEventIDs::add)
     }
 
