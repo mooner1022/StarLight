@@ -68,6 +68,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         //Logger.v(T, "Application onCreate() called")
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         isStartupAborted = false // explicit reset
+        isSafeStart = false
         ConfigDSL.registerDialogProvider(SheetDialogProvider)
         ConfigDSL.registerDevModeProvider { GlobalConfig.category("dev").getBoolean("dev_mode", false) }
 
@@ -103,6 +104,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         val verdict = CrashGuard.onProcessStart(System.currentTimeMillis()) {
             getString(R.string.crash_interrupted_report)
         }
+        isSafeStart = verdict == CrashGuard.Verdict.SafeStart
         if (verdict is CrashGuard.Verdict.Blocked) {
             println("The same crash keeps coming back, aborting launch..")
             isStartupAborted = true
@@ -118,6 +120,8 @@ class GlobalApplication: Application(), LifecycleEventObserver {
             LOG.error { "Restarted after a crash: ${verdict.crash.summary}" }
             CrashNotifier.notifyRecovered(this, verdict.crash)
         }
+        if (isSafeStart)
+            LOG.warn { "Starting in safe mode: plugins aren't loaded and projects aren't compiled" }
 
         if (!ForegroundTask.isRunning) {
             LOG.verbose { "Starting foreground task..." }
@@ -204,6 +208,10 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         fun requireContext(): Context = mContext!!
 
         var isStartupAborted: Boolean = false
+            private set
+
+        /** This process started without plugins and without compiling the projects, as the user chose after a crash. */
+        var isSafeStart: Boolean = false
             private set
     }
 }

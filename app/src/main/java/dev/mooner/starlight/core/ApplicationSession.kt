@@ -117,7 +117,7 @@ object ApplicationSession {
 
         if (!BuildConfig.DYNAMIC_PLUGINS) {
             logger.info { "Plugins aren't available in this build" }
-        } else if (!GlobalConfig.category(CA_PLUGIN).getBoolean(CF_SAFE_MODE, false)) {
+        } else if (!GlobalApplication.isSafeStart && !GlobalConfig.category(CA_PLUGIN).getBoolean(CF_SAFE_MODE, false)) {
             Session.pluginLoader.loadPlugins(context)
                 .flowOn(Dispatchers.Default)
                 .catch { logger.error(it) }
@@ -200,7 +200,7 @@ object ApplicationSession {
         }
 
         emit(context.getString(R.string.step_projects))
-        Session.projectLoader.loadProjects()
+        Session.projectLoader.loadProjects(force = false, precompile = !GlobalApplication.isSafeStart)
         // Debug rooms kept the bots' files where the gallery listed them, before their folders were hidden from it.
         for (project in Session.projectManager.getProjects())
             project.directory.resolve(DebugRoomFragment.DIR_NAME).takeIf(File::isDirectory)?.hideFromGallery(context)

@@ -114,6 +114,13 @@ class CrashGuardTest {
     }
 
     @Test
+    fun `a safe start is used once`() {
+        val (next, verdict) = decide(State(safeStart = true))
+        assertEquals(Verdict.SafeStart, verdict)
+        assertEquals(Verdict.Clear, decide(next).second)
+    }
+
+    @Test
     fun `the signature is the root cause and the app frame it came from`() {
         val root = IllegalArgumentException("Unable to find project with id: 1234")
         root.stackTrace = arrayOf(

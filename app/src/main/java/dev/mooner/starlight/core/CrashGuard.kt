@@ -30,6 +30,8 @@ internal object CrashGuard {
         data class Recovered(val crash: Crash) : Verdict
         /** The same crash keeps coming back; don't start until the user chooses to. */
         data class Blocked(val crash: Crash) : Verdict
+        /** The user chose to start once without plugins and without compiling the projects. */
+        data object SafeStart : Verdict
     }
 
     @Serializable
@@ -54,6 +56,8 @@ internal object CrashGuard {
         val crashes: List<Crash> = emptyList(),
         /** The crash that blocked starting, until the user continues. */
         val blocked: Crash? = null,
+        /** The next start is to be a safe one; only that one. */
+        val safeStart: Boolean = false,
     )
 
     /** A start that ended without an error report. */
@@ -109,10 +113,10 @@ internal object CrashGuard {
         save(recorded(load(), crash))
     }
 
-    /** The user chose to start anyway: the crashes so far no longer count. */
+    /** The user chose to start anyway, or with [safeStart] once: the crashes so far no longer count. */
     @Synchronized
-    fun dismiss() =
-        save(State())
+    fun dismiss(safeStart: Boolean = false) =
+        save(State(safeStart = safeStart))
 
     internal fun recorded(state: State, crash: Crash): State =
         state.copy(
@@ -123,6 +127,8 @@ internal object CrashGuard {
 
     internal fun decide(state: State, now: Long, interruptedReport: () -> String): Pair<State, Verdict> {
         state.blocked?.let { return state to Verdict.Blocked(it) }
+        if (state.safeStart)
+            return state.copy(safeStart = false) to Verdict.SafeStart
 
         var current = state
         // The last process began to start and never got to finish or to report a crash.

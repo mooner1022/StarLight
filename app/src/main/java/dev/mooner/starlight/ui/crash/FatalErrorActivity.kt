@@ -55,6 +55,12 @@ class FatalErrorActivity : AppCompatActivity() {
             CrashGuard.dismiss()
             restartApplication()
         }
+        // Once without plugins and without compiling the projects, so the user can turn off what crashes.
+        binding.safeStart.isVisible = blocked
+        binding.safeStart.setOnClickListener {
+            CrashGuard.dismiss(safeStart = true)
+            restartApplication()
+        }
     }
 
     companion object {

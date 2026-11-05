@@ -25,7 +25,8 @@ class ProjectLoader(
         loadProjects(false)
     }
 
-    fun loadProjects(force: Boolean, dir: File = projectDir): List<Project> {
+    /** [precompile]: compile the enabled projects; a safe start leaves them off until the user acts. */
+    fun loadProjects(force: Boolean, dir: File = projectDir, precompile: Boolean = true): List<Project> {
         //projectDir.deleteRecursively()
         if (force || projects.isEmpty()) {
             projects.clear()
@@ -37,7 +38,7 @@ class ProjectLoader(
                     val project: Project
                     try {
                         project = ProjectImpl.loadFrom(folder, info)
-                        if (info.isEnabled)
+                        if (info.isEnabled && precompile)
                             precompiledNames += info.name
                     } catch (e: IllegalArgumentException) {
                         e.printStackTrace()
