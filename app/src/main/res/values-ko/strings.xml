@@ -366,4 +366,12 @@
     <string name="intro_done_subtitle">프로젝트 탭의 + 버튼으로 첫 봇을 만들어 보세요.</string>
     <string name="intro_done_later">나중에 설정에서 허용할 수 있어요</string>
     <string name="align_title">정렬 방식</string>
+    <string name="crash_channel">오류 보고</string>
+    <string name="crash_recovered_title">StarLight가 오류로 종료되었다가 다시 시작했어요</string>
+    <string name="crash_blocked_title">같은 오류가 반복되어 StarLight를 시작하지 않았어요.</string>
+    <string name="crash_interrupted_report">StarLight가 시작하는 도중 오류 기록 없이 두 번 연속 종료되었어요. 네이티브 코드를 쓰는 플러그인이나 메모리 부족이 원인일 수 있어요.</string>
+    <string name="crash_share">로그 공유</string>
+    <string name="crash_share_title">오류 로그 공유</string>
+    <string name="crash_exit">앱 종료</string>
+    <string name="crash_continue">계속하기</string>
 </resources>

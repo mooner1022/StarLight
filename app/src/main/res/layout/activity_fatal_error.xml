@@ -59,11 +59,13 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/textView7"
+        android:id="@+id/headline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fontFamily="@font/nanumsquare_round_bold"
-        android:text="마지막 종료에서 치명적인 오류가 발생했습니다."
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        tools:text="@string/crash_blocked_title"
         android:textColor="@color/text"
         android:textSize="16sp"
         android:layout_gravity="center_horizontal"
@@ -86,7 +88,7 @@
         app:layout_constraintBottom_toTopOf="@+id/buttons"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView7">
+        app:layout_constraintTop_toBottomOf="@+id/headline">
 
         <TextView
             android:id="@+id/errorLog"
@@ -121,7 +123,7 @@
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:background="@drawable/border_button_bg"
-            android:text="로그 공유"
+            android:text="@string/crash_share"
             android:textColor="@color/text"
             app:icon="@drawable/ic_round_ios_share_24"
             app:iconGravity="top"
@@ -135,7 +137,7 @@
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:background="@drawable/border_button_bg"
-            android:text="앱 종료"
+            android:text="@string/crash_exit"
             android:textColor="@color/text"
             app:icon="@drawable/ic_round_close_24"
             app:iconGravity="top"
@@ -149,7 +151,7 @@
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:background="@drawable/border_button_bg"
-            android:text="계속하기"
+            android:text="@string/crash_continue"
             android:textColor="@color/text"
             app:icon="@drawable/ic_round_refresh_24"
             app:iconGravity="top"

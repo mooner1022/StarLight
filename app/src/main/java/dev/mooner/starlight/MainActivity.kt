@@ -43,6 +43,7 @@ import dev.mooner.starlight.utils.LAYOUT_TABLET
 import dev.mooner.starlight.utils.applyEdgeToEdge
 import dev.mooner.starlight.utils.isNightMode
 import dev.mooner.starlight.utils.layoutMode
+import dev.mooner.starlight.utils.restartIfNotReady
 import dev.mooner.starlight.utils.showChangelogDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -56,6 +57,12 @@ class MainActivity : AppCompatActivity() {
     private var currentTabId: Int = R.id.nav_home
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Brought back before the runtime started: start over without restoring the tabs, which need it.
+        if (restartIfNotReady()) {
+            super.onCreate(null)
+            finish()
+            return
+        }
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
