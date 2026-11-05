@@ -67,6 +67,19 @@ object ApiLevels {
                 OnNotificationPostedEvent::class, ProjectOnStartCompileEvent::class,
             ),
             isDefault = true,
+            preferredLanguageId = NEONJS_LANGUAGE_ID,
+        ),
+        Definition(
+            id = API2,
+            name = R.string.api_level_api2,
+            group = R.string.api_level_group_msgbot,
+            description = R.string.api_level_api2_description,
+            apis = setOf(
+                ProjectLoggerApi::class, AppApi::class, BotManagerApi::class, BroadcastApi::class,
+                DeviceApi::class, FileStreamApi::class,
+            ),
+            events = emptySet(),
+            preferredLanguageId = NEONJS_LANGUAGE_ID,
         ),
         Definition(
             id = LEGACY,
@@ -80,18 +93,6 @@ object ApiLevels {
             events = setOf(
                 LegacyEvent::class, OnNotificationPostedEvent::class, ProjectOnStartCompileEvent::class,
             ),
-        ),
-        Definition(
-            id = API2,
-            name = R.string.api_level_api2,
-            group = R.string.api_level_group_msgbot,
-            description = R.string.api_level_api2_description,
-            apis = setOf(
-                ProjectLoggerApi::class, AppApi::class, BotManagerApi::class, BroadcastApi::class,
-                DeviceApi::class, FileStreamApi::class,
-            ),
-            events = emptySet(),
-            preferredLanguageId = "js_neon",
         ),
     )
 
@@ -139,6 +140,7 @@ object ApiLevels {
         languageId == RHINO_LANGUAGE_ID && levelIds != null && ORIGINAL in levelIds && API2 in levelIds
 
     private const val RHINO_LANGUAGE_ID = "JS_RHINO"
+    private const val NEONJS_LANGUAGE_ID = "js_neon"
 
     private fun wasLegacyEventOn(): Boolean =
         GlobalConfig.category("notifications")

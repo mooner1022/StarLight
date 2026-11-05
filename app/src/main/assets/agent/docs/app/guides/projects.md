@@ -30,11 +30,11 @@ order: 1
 | 방식 | 객체 | 이벤트 |
 |---|---|---|
 | **StarLight 오리지널** | `Log`, `Projects`, `Plugins`, `Languages`, `Platform`, `Env`, `Java`, `Notification`, `HomeWidget`, `MediaSharer`, `EventEmitter` | `onMessage`, `onMessageDeleted`, `onNotificationPosted`, `onStartCompile` |
-| **메신저봇 레거시** | `Log`, `Api`, `Utils`, `DataBase`, `Bridge`, `Device`, `FileStream` | `response`, `onNotificationPosted`, `onStartCompile` |
 | **메신저봇 API2** | `Log`, `BotManager`, `Broadcast`, `App`, `Device`, `FileStream` | `bot.on(...)`으로 등록하는 리스너 |
+| **메신저봇 레거시** | `Log`, `Api`, `Utils`, `DataBase`, `Bridge`, `Device`, `FileStream` | `response`, `onNotificationPosted`, `onStartCompile` |
 
 - 새 프로젝트의 마법사에서 고르고, 나중에 **프로젝트 설정 → API 방식**에서 바꿀 수 있어요. 바꾼 뒤에는 다시 컴파일해야 적용돼요.
-- **메신저봇 API2**를 고르면 언어 단계에서 NeonJS가 미리 골라져요.
+- **StarLight 오리지널**이나 **메신저봇 API2**를 고르면 언어 단계에서 NeonJS가 미리 골라져요.
 - Rhino에서 **StarLight 오리지널**과 **메신저봇 API2**를 함께 고르면, 최상위에 정의한 `onMessage` 함수가 StarLight 이벤트로도 불려 한 메시지에 두 번 호출될 수 있어요. NeonJS는 `export`한 함수만 부르므로 해당되지 않아요.
 - API 방식이 생기기 전에 만든 프로젝트는 세 방식을 모두 가진 채로 옮겨져요.
 
