@@ -372,4 +372,16 @@
     <string name="intro_done_subtitle">Create your first bot with the + button in the Projects tab.</string>
     <string name="intro_done_later">You can allow this later in Settings</string>
     <string name="align_title">Sort by</string>
+    <string name="crash_channel">Error reports</string>
+    <string name="crash_recovered_title">StarLight restarted after an error</string>
+    <string name="crash_blocked_title">StarLight didn\'t start because the same error kept happening.</string>
+    <string name="crash_interrupted_report">StarLight stopped twice in a row while starting, without leaving an error report. A plugin with native code, or the device running out of memory, may be the cause. Choose Safe mode to open the app without plugins and without running the enabled projects.</string>
+    <string name="crash_share">Share log</string>
+    <string name="crash_share_title">Share error log</string>
+    <string name="crash_exit">Close app</string>
+    <string name="crash_continue">Continue</string>
+    <string name="crash_safe_start">Safe mode</string>
+    <string name="safe_start_title">Running in safe mode</string>
+    <string name="safe_start_text">Plugins weren\'t loaded and enabled projects weren\'t started. Turn off the project or plugin that crashed, then restart.</string>
+    <string name="safe_start_restart">Restart</string>
 </resources>

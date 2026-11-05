@@ -8,6 +8,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
 import com.jakewharton.processphoenix.ProcessPhoenix
+import dev.mooner.starlight.core.ApplicationSession
+import dev.mooner.starlight.core.GlobalApplication
+import dev.mooner.starlight.ui.splash.SplashActivity
 
 /*
 @SuppressLint("QueryPermissionsNeeded")
@@ -31,6 +34,21 @@ fun Context.startActivityWithExtra(clazz: Class<*>, extras: Map<String, String> 
 inline fun <reified T: Activity> Context.startActivity() {
     val intent = Intent(this, T::class.java)
     startActivity(intent)
+}
+
+/**
+ * For screens that need the runtime. Android brings a screen back in a new process after the app crashed or was
+ * killed, and it can come back before the runtime started; then the app starts over from the splash, which waits for
+ * it. When this returns true, the caller calls `super.onCreate(null)` and `finish()` and stops there.
+ */
+fun Activity.restartIfNotReady(): Boolean {
+    if (ApplicationSession.isInitComplete)
+        return false
+    // When the start was aborted, the crash report is on top and the user decides from there.
+    if (!GlobalApplication.isStartupAborted)
+        startActivity(Intent(this, SplashActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+    return true
 }
 
 fun Context.restartApplication() {

@@ -20,6 +20,7 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
+import dev.mooner.starlight.ui.splash.SplashActivity
 
 class ForegroundTask: Service() {
 
@@ -52,6 +53,7 @@ class ForegroundTask: Service() {
             .setColor(ContextCompat.getColor(this, R.color.main_bright))
             .setContentIntent(pendingIntent)
             .setShowWhen(false)
+            .apply { if (GlobalApplication.isSafeStart) safeStartContent() }
             .build()
         val serviceType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
             ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
@@ -60,6 +62,20 @@ class ForegroundTask: Service() {
         ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, serviceType)
 
         isRunning = true
+    }
+
+    /** Says that the bots are off for this start, and how to get them back. */
+    private fun NotificationCompat.Builder.safeStartContent() {
+        val restart = PendingIntent.getActivity(this@ForegroundTask, 1,
+            Intent(this@ForegroundTask, SplashActivity::class.java)
+                .putExtra(SplashActivity.EXTRA_RESTART, true)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_IMMUTABLE)
+        setContentTitle(getString(R.string.safe_start_title))
+        setSubText(null)
+        setContentText(getString(R.string.safe_start_text))
+        setStyle(NotificationCompat.BigTextStyle().bigText(getString(R.string.safe_start_text)))
+        addAction(0, getString(R.string.safe_start_restart), restart)
     }
 
     override fun onBind(intent: Intent): IBinder? {

@@ -25,6 +25,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.jakewharton.processphoenix.ProcessPhoenix
 import dev.mooner.configdsl.ConfigDSL
 import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.PREF_IS_INITIAL
@@ -40,6 +41,7 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.setStarLightDirectory
 import dev.mooner.starlight.ui.common.SheetDialogProvider
+import dev.mooner.starlight.ui.crash.CrashNotifier
 import dev.mooner.starlight.ui.crash.FatalErrorActivity
 import dev.mooner.starlight.ui.splash.intro.IntroActivity
 import dev.mooner.starlight.utils.checkPermissions
@@ -51,24 +53,27 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import java.io.File
 
-private typealias StartupInfo = String
-
 private val LOG = LoggerFactory.logger {  }
 
 class GlobalApplication: Application(), LifecycleEventObserver {
 
     override fun onCreate() {
         super.onCreate()
+        // The short-lived process that restarts the app; it must not start a second copy of everything.
+        if (ProcessPhoenix.isPhoenixProcess(this))
+            return
         // Play builds keep everything in the app-specific folder, which needs no storage permission.
         if (!BuildConfig.SHARED_STORAGE)
             setStarLightDirectory(getExternalFilesDir(null) ?: filesDir)
         //Logger.v(T, "Application onCreate() called")
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         isStartupAborted = false // explicit reset
+        isSafeStart = false
         ConfigDSL.registerDialogProvider(SheetDialogProvider)
         ConfigDSL.registerDevModeProvider { GlobalConfig.category("dev").getBoolean("dev_mode", false) }
 
         mContext = applicationContext
+        CrashGuard.init(this)
 
         val pref = getSharedPreferences("general", 0)
         //pref.edit().clear().commit()
@@ -94,19 +99,29 @@ class GlobalApplication: Application(), LifecycleEventObserver {
             }.also(::startActivity)
         }
 
-        checkStartupInfo()?.let { info ->
-            println("Found fatal error on last run, aborting launch..")
-            val errorIntent = Intent(this, FatalErrorActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                putExtra("errorMessage", info)
-            }
+        // Earlier versions blocked the start on any crash with this file; the guard decides now.
+        File(getStarLightDirectory(), "STARTUP.info").takeIf(File::isFile)?.delete()
+        val verdict = CrashGuard.onProcessStart(System.currentTimeMillis()) {
+            getString(R.string.crash_interrupted_report)
+        }
+        isSafeStart = verdict == CrashGuard.Verdict.SafeStart
+        if (verdict is CrashGuard.Verdict.Blocked) {
+            println("The same crash keeps coming back, aborting launch..")
             isStartupAborted = true
-            startActivity(errorIntent)
+            startActivity(FatalErrorActivity.intent(this, verdict.crash.report, blocked = true)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return
         }
 
         // Init LogCollector
         LogCollector
+
+        if (verdict is CrashGuard.Verdict.Recovered) {
+            LOG.error { "Restarted after a crash: ${verdict.crash.summary}" }
+            CrashNotifier.notifyRecovered(this, verdict.crash)
+        }
+        if (isSafeStart)
+            LOG.warn { "Starting in safe mode: plugins aren't loaded and projects aren't compiled" }
 
         if (!ForegroundTask.isRunning) {
             LOG.verbose { "Starting foreground task..." }
@@ -160,19 +175,6 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         LOG.verbose { "ProjectCompileEvent called, event= $event, project= ${event.project}" }
     }
 
-    private fun checkStartupInfo(): StartupInfo? {
-        val startupFile = File(getStarLightDirectory(), "STARTUP.info")
-        if (startupFile.exists() && startupFile.isFile) {
-            try {
-                return startupFile.readText()
-            } catch (e: Exception) {
-                LOG.error { "Failed to open startup info: $e" }
-                startupFile.delete()
-            }
-        }
-        return null
-    }
-
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when(event) {
             Lifecycle.Event.ON_START -> {
@@ -206,6 +208,10 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         fun requireContext(): Context = mContext!!
 
         var isStartupAborted: Boolean = false
+            private set
+
+        /** This process started without plugins and without compiling the projects, as the user chose after a crash. */
+        var isSafeStart: Boolean = false
             private set
     }
 }

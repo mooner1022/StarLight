@@ -78,6 +78,7 @@ object ApplicationSession {
         initState = Session.InitState.Processing
 
         setExceptionHandler(context)
+        CrashGuard.startBegan()
         LogStats.start()
         MessageStats.start()
         ScriptWidgetEntries.start()
@@ -116,7 +117,7 @@ object ApplicationSession {
 
         if (!BuildConfig.DYNAMIC_PLUGINS) {
             logger.info { "Plugins aren't available in this build" }
-        } else if (!GlobalConfig.category(CA_PLUGIN).getBoolean(CF_SAFE_MODE, false)) {
+        } else if (!GlobalApplication.isSafeStart && !GlobalConfig.category(CA_PLUGIN).getBoolean(CF_SAFE_MODE, false)) {
             Session.pluginLoader.loadPlugins(context)
                 .flowOn(Dispatchers.Default)
                 .catch { logger.error(it) }
@@ -199,7 +200,7 @@ object ApplicationSession {
         }
 
         emit(context.getString(R.string.step_projects))
-        Session.projectLoader.loadProjects()
+        Session.projectLoader.loadProjects(force = false, precompile = !GlobalApplication.isSafeStart)
         // Debug rooms kept the bots' files where the gallery listed them, before their folders were hidden from it.
         for (project in Session.projectManager.getProjects())
             project.directory.resolve(DebugRoomFragment.DIR_NAME).takeIf(File::isDirectory)?.hideFromGallery(context)
@@ -208,6 +209,7 @@ object ApplicationSession {
 
         initState = Session.InitState.Done
         initMillis = System.currentTimeMillis()
+        CrashGuard.startFinished()
     }
 
     internal fun shutdown() {
@@ -240,7 +242,10 @@ object ApplicationSession {
         }
     }
 
-    private fun setExceptionHandler(context: Context) =
+    private fun setExceptionHandler(context: Context) {
+        // The platform's handler tells the system that the app crashed: it then finishes the activity that crashed
+        // instead of starting it again in a new process, as it would after a plain exit.
+        val platformHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { paramThread, paramThrowable ->
             val pInfo: PackageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             val versionCode = PackageInfoCompat.getLongVersionCode(pInfo)
@@ -262,13 +267,15 @@ object ApplicationSession {
             """.trimMargin() + paramThrowable.stackTraceToString() + "\n──────────"
 
             try {
-                File(getStarLightDirectory(), "STARTUP.info").writeText(errMsg)
+                CrashGuard.record(paramThrowable, errMsg, whileStarting = !isInitComplete)
             } catch (e: Throwable) {
                 e.printStackTrace()
             } finally {
                 logger.wtf { errMsg }
                 shutdown()
+                platformHandler?.uncaughtException(paramThread, paramThrowable)
                 exitProcess(2)
             }
         }
+    }
 }

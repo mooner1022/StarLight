@@ -39,6 +39,12 @@ class SplashActivity : AppCompatActivity() {
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
+        // From the safe start notification: start again as usual.
+        if (intent.getBooleanExtra(EXTRA_RESTART, false)) {
+            super.onCreate(null)
+            restartApplication()
+            return
+        }
         super.onCreate(savedInstanceState)
 
         binding = ActivitySplashBinding.inflate(layoutInflater)
@@ -165,6 +171,8 @@ class SplashActivity : AppCompatActivity() {
     }
 
     companion object {
+
+        const val EXTRA_RESTART = "restart"
 
         private const val MIN_LOAD_TIME = 1300L
         private const val ANIMATION_DURATION = 5000L

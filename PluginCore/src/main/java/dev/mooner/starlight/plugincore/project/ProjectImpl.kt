@@ -263,14 +263,7 @@ class ProjectImpl private constructor(
     }
 
     override fun destroy(requestUpdate: Boolean) {
-        logger.v("Destroying project [${info.name}]...")
-        stopAllJobs()
-        langScope?.let { scope ->
-            if (lang.requireRelease)
-                lang.release(scope)
-            lang.destroy(scope)
-            langScope = null
-        }
+        release()
         if (info.isEnabled) {
             info.isEnabled = false
             saveInfo()
@@ -279,6 +272,23 @@ class ProjectImpl private constructor(
 
         if (requestUpdate)
             requestUpdate()
+    }
+
+    /** Stops the project as the app shuts down, as after a crash; unlike [destroy], it stays on for the next start. */
+    internal fun shutdown() {
+        release()
+        lifecycleRegistry.setCurrentState(ProjectLifecycle.State.DESTROYED)
+    }
+
+    private fun release() {
+        logger.v("Destroying project [${info.name}]...")
+        stopAllJobs()
+        langScope?.let { scope ->
+            if (lang.requireRelease)
+                lang.release(scope)
+            lang.destroy(scope)
+            langScope = null
+        }
     }
 
     override fun rename(name: String, preserveMainScript: Boolean) {

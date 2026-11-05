@@ -110,8 +110,9 @@ class ProjectManager(
         EventHandler.fireEventWithScope(Events.Project.Delete(name, project.info.id))
     }
 
+    /** Stops every project as the app shuts down; the ones that are on stay on for the next start. */
     internal fun purge() =
-        projects.forEach { (_, u) -> u.destroy(requestUpdate = false) }
+        projects.forEach { (_, project) -> (project as? ProjectImpl)?.shutdown() ?: project.destroy(requestUpdate = false) }
 }
 
 @Suppress("UNCHECKED_CAST")
