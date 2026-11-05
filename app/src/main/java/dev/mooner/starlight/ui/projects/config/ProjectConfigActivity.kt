@@ -18,6 +18,7 @@ import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.config
+import dev.mooner.configdsl.findOption
 import dev.mooner.configdsl.options.*
 import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.configdsl.utils.PrimitiveTypedString
@@ -37,6 +38,8 @@ import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.ui.projects.events.EventCatalog
+import dev.mooner.starlight.ui.projects.events.showEventPicker
 import dev.mooner.starlight.utils.*
 import dev.mooner.starlight.utils.fitSystemBars
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +53,9 @@ import kotlin.time.Duration.Companion.seconds
 class ProjectConfigActivity: AppCompatActivity() {
 
     private val changedData: MutableDataMap = hashMapOf()
+    /** The allowed event entries chosen but not saved yet. */
+    private var pendingEventIds: List<String>? = null
+    private var structure: ConfigStructure? = null
     private lateinit var binding: ActivityProjectConfigBinding
     private lateinit var project: Project
     private var configAdapter: ConfigAdapter? = null
@@ -89,13 +95,15 @@ class ProjectConfigActivity: AppCompatActivity() {
                 }
                 if (parentId == project.getLanguage().id)
                     project.getLanguage().onConfigChanged(id, data)
+                // The levels decide which of the allowed events the project receives.
+                if (parentId == API_CATEGORY)
+                    withContext(Dispatchers.Main) { updateEventSummary() }
             }
             structure {
-                getStruct(project)
+                getStruct(project).also { structure = it }
             }
             @Suppress("UNCHECKED_CAST")
             configData((project.config.getData() as MutableDataMap)
-                .injectEventIds(project.info.allowedEventIds)
                 .injectApiLevels(project.info.apiLevels))
         }.build()
 
@@ -106,6 +114,12 @@ class ProjectConfigActivity: AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            pendingEventIds?.let { ids ->
+                project.info.allowedEventIds.clear()
+                project.info.allowedEventIds += ids
+                project.saveInfo()
+                pendingEventIds = null
+            }
             project.config.edit {
                 for ((catId, data) in changedData) {
                     // project.json holds the levels, as it does the allowed events.
@@ -113,16 +127,6 @@ class ProjectConfigActivity: AppCompatActivity() {
                         project.info.apiLevels = data[API_LEVELS]!!.jsonArray.mapTo(linkedSetOf()) { it.jsonPrimitive.content }
                         project.saveInfo()
                         data -= API_LEVELS
-                    }
-                    if (catId == "events" && "allowed_events" in data) {
-                        project.info.allowedEventIds.clear()
-                        data["allowed_events"]!!
-                            .let<_, List<ProjectEventIdData>>(json::decodeFromJsonElement)
-                            .mapNotNull(ProjectEventIdData::id)
-                            .forEach(project.info.allowedEventIds::add)
-                        project.saveInfo()
-
-                        data -= "allowed_events"
                     }
                     category(catId).apply {
                         data.forEach(::setRaw)
@@ -162,14 +166,29 @@ class ProjectConfigActivity: AppCompatActivity() {
         return this
     }
 
-    private fun MutableDataMap.injectEventIds(ids: Set<String>): MutableDataMap {
-        val data = JsonArray(ids.map { JsonObject(mapOf("event_id" to JsonPrimitive(it))) })
-        if ("events" in this)
-            this["events"]!!["allowed_events"] = data
-        else
-            this["events"] = mutableMapOf("allowed_events" to data)
-        return this
+    private fun currentEventIds(): List<String> =
+        pendingEventIds ?: project.info.allowedEventIds.toList()
+
+    /** The levels chosen on this screen, saved or not. */
+    private fun currentLevelIds(): Set<String>? =
+        changedData[API_CATEGORY]?.get(API_LEVELS)?.jsonArray?.mapTo(linkedSetOf()) { it.jsonPrimitive.content }
+            ?: project.info.apiLevels
+
+    private fun eventSummary(): String =
+        EventCatalog.summarize(this, currentEventIds(), currentLevelIds())
+
+    private fun updateEventSummary() {
+        structure?.findOption(EVENTS_CATEGORY, ALLOWED_EVENTS)?.updateDescription(eventSummary())
     }
+
+    private fun openEventPicker() =
+        showEventPicker(currentEventIds(), currentLevelIds()) { ids ->
+            if (ids == currentEventIds())
+                return@showEventPicker
+            pendingEventIds = ids
+            updateEventSummary()
+            binding.fabProjectConfig.show()
+        }
 
     private fun Project.getCustomButtons(): List<Pair<String, Icon>> {
         return try {
@@ -248,36 +267,17 @@ class ProjectConfigActivity: AppCompatActivity() {
                 }
             }
             category {
-                id = "events"
+                id = EVENTS_CATEGORY
                 title = "이벤트"
                 textColor = getColor(R.color.main_bright)
                 items {
-                    list {
-                        id = "allowed_events"
-                        title = "호출이 허용된 이벤트"
-                        description = "이 프로젝트를 호출할 수 있는 이벤트 ID들 이에요"
+                    button {
+                        id = ALLOWED_EVENTS
+                        title = getString(R.string.event_picker_title)
+                        description = eventSummary()
                         icon = Icon.NOTIFICATIONS_ACTIVE
                         iconTintColor = color { "#FF5C58" }
-                        structure {
-                            string {
-                                id = "event_id"
-                                title = "이벤트 ID"
-                                icon = null
-                                require = { string -> if (string.isBlank()) "이벤트 ID를 입력하세요" else null }
-                            }
-                        }
-                        onInflate { view ->
-                            LayoutInflater
-                                .from(view.context)
-                                .inflate(R.layout.card_simple_list_item, view as FrameLayout, true)
-                        }
-                        onDraw<ProjectEventIdData> { view, data ->
-                            val binding = CardSimpleListItemBinding.bind(view.findViewById(R.id.layout_simple_list_item))
-
-                            binding.title.text = data.id
-                            binding.description.visibility = View.GONE
-                            binding.icon.visibility = View.GONE
-                        }
+                        setOnClickListener(::openEventPicker)
                     }
                 }
             }
@@ -522,12 +522,6 @@ class ProjectConfigActivity: AppCompatActivity() {
 }
 
 @Serializable
-private data class ProjectEventIdData(
-    @SerialName("event_id")
-    val id: String
-)
-
-@Serializable
 internal data class ProjectButtonData(
     @SerialName("button_id")
     val id: String,
@@ -536,4 +530,6 @@ internal data class ProjectButtonData(
 )
 
 private const val API_CATEGORY = "api"
+private const val EVENTS_CATEGORY = "events"
+private const val ALLOWED_EVENTS = "allowed_events"
 private const val API_LEVELS = "levels"

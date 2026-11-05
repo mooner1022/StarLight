@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:ellipsize="middle"
+    android:fontFamily="@font/jbmono_nl_regular"
+    android:maxLines="1"
+    android:minHeight="40dp"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="12dp"
+    android:textColor="@color/text"
+    android:textSize="13sp"
+    tools:text="starlight.message.create"/>

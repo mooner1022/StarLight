@@ -37,7 +37,6 @@ import dev.mooner.starlight.databinding.DialogNewProjectBinding
 import dev.mooner.starlight.databinding.ItemApiLevelHeaderBinding
 import dev.mooner.starlight.databinding.ItemApiLevelOptionBinding
 import dev.mooner.starlight.databinding.ItemNewProjectLanguageBinding
-import dev.mooner.starlight.databinding.ItemProjectEventBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.api.ApiLevel
@@ -45,12 +44,14 @@ import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.GlobalConfig.getDefaultCategory
 import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
-import dev.mooner.starlight.plugincore.project.event.ProjectEvent
-import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
-import dev.mooner.starlight.plugincore.project.event.getInstance
+import dev.mooner.starlight.plugincore.project.event.AllowedEventEntries
 import dev.mooner.starlight.ui.common.Sheet
 import dev.mooner.starlight.ui.common.setOptionSelected
 import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.ui.projects.events.EventCatalog
+import dev.mooner.starlight.ui.projects.events.EventItem
+import dev.mooner.starlight.ui.projects.events.EventPickerList
+import dev.mooner.starlight.ui.projects.events.EventSource
 import dev.mooner.starlight.utils.createFailurePeek
 import dev.mooner.starlight.utils.dp
 import kotlinx.coroutines.Dispatchers
@@ -65,19 +66,10 @@ private val NAME_REGEX = "^[-_\\dA-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+$".toRegex()
 private const val CONFIG_LAST_LANGUAGE = "new_project_language"
 // StarLight's onMessage and API2's message listener; each shows only when the project has its level.
 private val DEFAULT_EVENT_IDS = setOf("starlight.message.create", "starlight.api2.message")
-private const val STARLIGHT_PLUGIN_ID = "starlight"
 private const val SELECTED_LANGUAGE_COLOR = "#50AD977A"
 private const val STEP_ANIM_DURATION = 180L
 
 private enum class Step { NAME, API, LANGUAGE, EVENTS, CONFIG }
-
-private class EventOption(
-    val pluginId: String,
-    val id: String,
-    val functionName: String,
-    val instance: ProjectEvent,
-    var isSelected: Boolean,
-)
 
 /** [onImport] adds a link on the first step that closes the dialog and imports a project zip instead. */
 @SuppressLint("CheckResult")
@@ -85,7 +77,9 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
     val context = requireContext()
     val binding = DialogNewProjectBinding.inflate(layoutInflater)
     val languages = Session.languageManager.getLanguages().sortedBy(Language::name)
-    val events = loadEventOptions()
+    val eventSources = EventCatalog.load()
+    // Kept while the user goes back and forth, as the levels change which events show.
+    val eventEntries = AllowedEventEntries(DEFAULT_EVENT_IDS)
 
     val lastLanguageId = getDefaultCategory().getString(CONFIG_LAST_LANGUAGE)
     val initialLanguage: Language? = languages.find { it.id == lastLanguageId } ?: languages.firstOrNull()
@@ -97,8 +91,8 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
     val levels = Session.apiLevelManager.getLevels()
     val selectedLevels: MutableSet<String> = linkedSetOf<String>().apply { addAll(Session.apiLevelManager.defaultLevelIds) }
 
-    fun isEventAvailable(event: EventOption): Boolean =
-        Session.apiLevelManager.hasEvent(selectedLevels, event.id)
+    fun isEventAvailable(item: EventItem): Boolean =
+        EventCatalog.isAvailable(selectedLevels, item)
 
     // Set once the pages' views exist, further down.
     var onLanguageStep: () -> Unit = {}
@@ -113,7 +107,7 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
         if (levels.isNotEmpty())
             add(Step.API)
         add(Step.LANGUAGE)
-        if (events.any(::isEventAvailable))
+        if (eventSources.any { it.events.any(::isEventAvailable) })
             add(Step.EVENTS)
         if (selectedLanguage?.projectConfigStructure()?.isNotEmpty() == true)
             add(Step.CONFIG)
@@ -260,9 +254,10 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
             ?.takeIf { configLanguage == language && Step.CONFIG in steps() }
             ?.toMap()
             .orEmpty()
-        val selectedEvents = events
-            .filter { it.isSelected && isEventAvailable(it) }
-            .associate { it.id to it.instance }
+        val selectedEvents = eventSources
+            .flatMap(EventSource::events)
+            .filter { eventEntries.isAllowed(it.id) && isEventAvailable(it) }
+            .associate { it.id to it.event }
         val apiLevels = selectedLevels.toSet()
         sheet.dismiss()
 
@@ -398,19 +393,8 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
 
     onEventsStep = {
         // The levels decide which events there are to choose; a choice made earlier stays when it comes back.
-        binding.pageEvents.removeAllViews()
-        for (event in events.filter(::isEventAvailable)) {
-            ItemProjectEventBinding.inflate(layoutInflater, binding.pageEvents, true).apply {
-                functionName.text = event.functionName
-                eventId.text = event.id
-                icon.loadPluginIcon(event.pluginId)
-                checkbox.isChecked = event.isSelected
-                root.setOnClickListener {
-                    event.isSelected = !event.isSelected
-                    checkbox.isChecked = event.isSelected
-                }
-            }
-        }
+        EventPickerList(binding.pageEvents, eventSources, eventEntries, selectedLevels.toSet(), EventPickerList.Mode.SIMPLE) {}
+            .build()
     }
 
     sheet = requireActivity().showSheet {
@@ -450,21 +434,6 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
 private fun Language.projectConfigStructure(): ConfigStructure =
     configStructure.filter { it.id == id }
 
-private fun loadEventOptions(): List<EventOption> =
-    ProjectEventManager.filterAllowedEvents(setOf("*"))
-        .mapNotNull { id ->
-            val instance = ProjectEventManager.findFirst(id)?.getInstance()
-                ?: return@mapNotNull null
-            EventOption(
-                pluginId     = id.substringBefore(ProjectEventManager.PATH_DELIMITER),
-                id           = id,
-                functionName = instance.functionName,
-                instance     = instance,
-                isSelected   = id in DEFAULT_EVENT_IDS,
-            )
-        }
-        .sortedWith(compareBy({ it.pluginId != STARLIGHT_PLUGIN_ID }, EventOption::pluginId, EventOption::functionName))
-
 private fun ItemNewProjectLanguageBinding.setLanguageSelected(selected: Boolean) {
     val context = root.context
     if (selected) {
@@ -483,20 +452,6 @@ private fun ImageView.loadLanguageIcon(language: Language) {
         else -> language.getIconFileOrNull() ?: R.drawable.ic_round_developer_mode_24
     }
     load(icon) {
-        scale(Scale.FIT)
-        transformations(RoundedCornersTransformation(resources.getDimension(R.dimen.lang_icon_corner_radius)))
-    }
-}
-
-private fun ImageView.loadPluginIcon(pluginId: String) {
-    if (pluginId == STARLIGHT_PLUGIN_ID) {
-        load(R.drawable.ic_logo_transparent)
-        return
-    }
-    val iconFile = Session.pluginManager.getPluginById(pluginId)
-        ?.getAsset("icon.png")
-        ?.takeIf { it.isFile }
-    load(iconFile ?: R.drawable.ic_round_plugins_24) {
         scale(Scale.FIT)
         transformations(RoundedCornersTransformation(resources.getDimension(R.dimen.lang_icon_corner_radius)))
     }

@@ -391,4 +391,36 @@
     <string name="api_levels_clash_warning">Rhino에서 StarLight 오리지널과 메신저봇 API2를 함께 고르면, 최상위 onMessage 함수가 StarLight 이벤트로도 불려 한 메시지에 두 번 호출될 수 있어요.</string>
     <string name="new_project_step_api">API 방식</string>
     <string name="new_project_step_api_description">이 프로젝트에서 쓸 API를 골라요. 여러 개를 고를 수 있어요.</string>
+    <string name="event_picker_title">받을 이벤트</string>
+    <string name="event_picker_message">체크한 이벤트가 생기면 스크립트가 불려요.</string>
+    <plurals name="event_picker_summary">
+        <item quantity="one">이벤트 %d개를 받아요</item>
+        <item quantity="other">이벤트 %d개를 받아요</item>
+    </plurals>
+    <string name="event_picker_summary_none">아무 이벤트도 받지 않아요</string>
+    <string name="event_picker_edit_ids">ID 직접 편집</string>
+    <string name="event_picker_back_to_list">목록으로</string>
+    <string name="event_picker_select_all">%s 모두 선택</string>
+    <string name="event_picker_auto_title">새 이벤트도 받기</string>
+    <string name="event_picker_auto_description">%s에 나중에 추가되는 이벤트도 바로 받아요.</string>
+    <string name="event_picker_auto_all">* 항목이 모든 이벤트를 받고 있어요. ID 직접 편집에서 바꿀 수 있어요.</string>
+    <plurals name="event_picker_unavailable">
+        <item quantity="one">API 방식에 없는 이벤트 %d개</item>
+        <item quantity="other">API 방식에 없는 이벤트 %d개</item>
+    </plurals>
+    <string name="event_picker_unavailable_reason">%s 방식에서 쓸 수 있어요</string>
+    <string name="event_picker_unknown_title">알 수 없는 항목</string>
+    <string name="event_picker_unknown_description">등록된 이벤트가 없는 항목이에요. 플러그인이 꺼져 있거나 ID가 틀렸을 수 있어요. 지우기 전까지는 그대로 남아요.</string>
+    <string name="event_picker_raw_hint">한 줄에 하나씩 적어요. 이벤트 ID, starlight.* 같은 와일드카드, !로 시작하는 제외 항목을 쓸 수 있어요.</string>
+    <plurals name="event_picker_raw_matches">
+        <item quantity="one">이벤트 %d개</item>
+        <item quantity="other">이벤트 %d개</item>
+    </plurals>
+    <string name="event_picker_raw_excludes">%d개 제외</string>
+    <string name="event_picker_raw_excludes_nothing">빼는 이벤트 없음</string>
+    <string name="event_picker_raw_unknown">등록된 이벤트 없음</string>
+    <string name="event_picker_raw_outside_levels">API 방식에 없음</string>
+    <string name="event_picker_more">외 %d개</string>
+    <string name="event_picker_auto_summary">+ 새 %s 이벤트</string>
+    <string name="event_picker_remove">%s 지우기</string>
 </resources>
