@@ -219,31 +219,53 @@ Broadcast.register("alert", (text) => Api.replyRoom("공지방", text));
 Broadcast.send("alert", "점검이 끝났어요");
 ```
 
-## 이벤트 방식: BotManager
+## 이벤트 방식: BotManager (메신저봇 API2)
 
-메신저봇 R의 API2처럼 이벤트 리스너를 등록하는 방식이에요. 새로 만드는 봇이라면 [`onMessage`](/docs/app/reference/events#onmessage)를 추천해요.
+메신저봇 R의 API2와 같은 방식이에요. 프로젝트의 [API 방식](/docs/app/guides/projects#api-방식)에 **메신저봇 API2**가 있어야 쓸 수 있고, NeonJS를 권장해요. 동작은 [kbotdocs의 API2 문서](https://kbotdocs.dev/reference/api2)를 따라요.
 
 ```javascript
 const bot = BotManager.getCurrentBot();
 
-bot.on("message", (msg) => {
+function onMessage(msg) {
     if (msg.content === "/핑") msg.reply("퐁");
-});
+}
+bot.addListener(Event.MESSAGE, onMessage);
+
+function onCommand(msg) {
+    // "@더하기 4 7" → msg.command === "더하기", msg.args → ["4", "7"]
+    if (msg.command === "더하기") msg.reply(Number(msg.args[0]) + Number(msg.args[1]));
+}
+bot.setCommandPrefix("@");
+bot.addListener(Event.COMMAND, onCommand);
 ```
 
 | `msg` 멤버 | 설명 |
 |---|---|
-| `content` | 메시지 내용 |
-| `room`, `channelId` | 방 이름과 방 ID |
-| `author.name` | 보낸 사람 이름 |
-| `isGroupChat()`, `isDebugRoom()`, `isMention()` | 단체방, 디버그 룸, 멘션 여부 (괄호를 붙여 불러요) |
-| `reply(message)`, `markAsRead()` | 답장, 읽음 표시 |
+| `content`, `room`, `packageName` | 메시지 내용, 방 이름, 메신저 패키지 이름 |
+| `channelId`, `logId` | 방 ID와 메시지 ID. BigInt예요. 숫자 ID가 없는 방(디버그 룸)의 `channelId`는 `null`이에요. |
+| `author.name`, `author.hash`, `author.avatar` | 보낸 사람 이름, 방 안에서의 고유 ID(`author.userHash`도 같아요), 프로필 사진 |
+| `image` | 사진 메시지면 `getBase64()`, `getBitmap()`이 있는 객체, 아니면 `null` |
+| `isGroupChat`, `isDebugRoom`, `isMention` | 단체방, 디버그 룸, 멘션 여부. 괄호 없이 읽는 값이에요. |
+| `isMultiChat` | 듀얼 메신저 여부. 아직 구분하지 않아 늘 `false`예요. |
+| `reply(message)`, `markAsRead()` | 답장, 읽음 표시. 성공하면 `true`예요. |
+| `command`, `args` | `command` 이벤트에서만: 접두사 뒤 첫 단어와 그 뒤 단어들의 배열 |
 
-- `bot.setCommandPrefix(prefix)`를 정하면 `"command"` 이벤트로 명령어를 따로 받을 수 있어요.
-- `BotManager.getRooms()`는 지금까지 메시지를 받은 방 이름 목록이에요.
+| 이벤트 (`Event.…`) | 리스너 인자 | 언제 |
+|---|---|---|
+| `MESSAGE` (`"message"`) | `msg` | 메시지를 받았을 때 |
+| `COMMAND` (`"command"`) | `msg` | `bot.setCommandPrefix()`로 정한 접두사로 시작하는 메시지를 받았을 때 |
+| `NOTIFICATION_POSTED` | `sbn, sessionManager` | 아무 앱이나 알림을 올렸을 때. **onNotificationPosted 이벤트 사용**을 켜야 해요. `sessionManager`는 늘 `null`이에요. |
+| `NOTIFICATION_REMOVED` | `sbn, rankingMap, reason` | 알림이 지워졌을 때. 같은 설정을 켜야 해요. |
+| `START_COMPILE` | 없음 | 다시 컴파일하기 직전 |
 
-> [!WARNING]
-> `bot.on()`으로 등록한 리스너는 **프로젝트 스위치를 꺼도, 허용 이벤트 목록과 상관없이** 계속 불려요. 리스너는 `bot.off()`로 지우거나, 프로젝트를 다시 컴파일하거나 스코프를 폐기하면 사라져요.
+- `Event.Activity.*`, `Event.TICK`, `Event.BATTERY_LEVEL_CHANGED` 상수도 있지만 StarLight에서는 불리지 않아요. 스크립트 전용 화면이 없기 때문이에요.
+- `bot`: `on`/`addListener`, `prependListener`, `off`/`removeListener`, `removeAllListeners`, `listeners`, `getListenersMap`, `send(방, 메시지)`(방은 이름, ID, `getRooms()`의 방), `canReply`, `markAsRead`, `setCommandPrefix`, `getName`, `getRootPath`, `getPower`/`setPower`, `compile`, `unload`
+- `BotManager`: `getCurrentBot`, `getBot(이름)`(컴파일되지 않았으면 `null`), `getBotList`, `getBotNames`, `getBotCount`, `getRooms`, `getPower`/`setPower`, `compile`, `compileAll`, `prepare`, `prepareAll`, `isCompiled`, `unload`
+- `BotManager.getRooms()`는 지금까지 메시지를 받은 방의 목록이에요. 각 방에 `name`, `channelId`, `isGroupChat`, `send(message)`, `markAsRead()`가 있어요.
+- 메신저 패키지를 고르는 `packageName` 인자는 받기만 하고 아직 쓰지 않아요.
+
+> [!NOTE]
+> 리스너는 다른 이벤트와 같은 규칙을 따라요. 프로젝트 스위치가 꺼져 있거나 허용 이벤트(`starlight.api2.*`)에 없으면 불리지 않고, 리스너에서 오류가 나면 **오류 발생시 비활성화** 설정에 따라 프로젝트가 꺼져요. `START_COMPILE` 리스너의 오류는 로그에만 남아요. 디버그 룸은 스위치가 꺼져 있어도 불러요. 리스너는 프로젝트를 다시 컴파일하거나 스코프를 폐기하면 사라져요.
 
 ## 언어마다 다른 전역
 

@@ -25,6 +25,18 @@ function onMessage(event) { … }
 | `onStartCompile()` | `starlight.project.compile` | 이미 컴파일된 프로젝트를 다시 컴파일하기 직전 |
 | `onProjectButtonClicked(buttonId)` | — | 프로젝트 카드의 사용자 지정 버튼을 눌렀을 때 |
 
+## 메신저봇 API2 이벤트
+
+**메신저봇 API2** 방식의 이벤트는 함수 이름이 아니라 `bot.addListener()`로 등록한 리스너로 전달돼요. 허용 이벤트 ID는 아래와 같고, 리스너와 인자는 [BotManager](/docs/app/reference/script-api#이벤트-방식-botmanager-메신저봇-api2)를 보세요.
+
+| 리스너 (`Event.…`) | 이벤트 ID |
+|---|---|
+| `MESSAGE` | `starlight.api2.message` |
+| `COMMAND` | `starlight.api2.command` |
+| `NOTIFICATION_POSTED` | `starlight.api2.notification_posted` |
+| `NOTIFICATION_REMOVED` | `starlight.api2.notification_removed` |
+| `START_COMPILE` | `starlight.api2.start_compile` |
+
 이벤트는 아래 조건을 모두 만족할 때만 불려요.
 
 - 설정의 **전역 전원**이 켜져 있어요.
