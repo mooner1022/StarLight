@@ -264,20 +264,21 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
             )
         }
 
-        init {
-            project.getLifecycle().registerObserver(object : ProjectLifecycleObserver.ExplicitObserver {
-                override fun onCompileStart(project: Project) {
-                    eventScope.coroutineContext.cancelChildren()
-                    eventScope.cancel()
-                    listeners.clear()
-                }
+        // The listeners belong to the code that added them: they go when it's compiled again or destroyed.
+        private val lifecycleObserver = object : ProjectLifecycleObserver.ExplicitObserver {
+            override fun onCompileStart(project: Project) = close()
 
-                override fun onDestroy(project: Project) {
-                    eventScope.coroutineContext.cancelChildren()
-                    eventScope.cancel()
-                    listeners.clear()
-                }
-            })
+            override fun onDestroy(project: Project) = close()
+        }
+
+        private fun close() {
+            eventScope.cancel()
+            listeners.clear()
+            project.getLifecycle().unregisterObserver(lifecycleObserver)
+        }
+
+        init {
+            project.getLifecycle().registerObserver(lifecycleObserver)
             EventHandler.on(eventScope, ::onMessageCreate)
             EventHandler.on(eventScope, ::onDebugRoomMessageCreate)
             EventHandler.on(eventScope, ::onNotificationPosted)
