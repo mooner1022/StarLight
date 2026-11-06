@@ -16,10 +16,10 @@ class BoundedRunTest {
 
     @Test
     fun workThatEndsInTimeGivesItsError() = runBlocking {
-        val ok = BoundedRun.run("ok", 5_000) { }
+        val ok = BoundedRun.run("ok", 5_000) { }!!
         assertTrue(ok.finished)
         assertNull(ok.error)
-        val failed = BoundedRun.run("failed", 5_000) { throw IllegalStateException("boom") }
+        val failed = BoundedRun.run("failed", 5_000) { throw IllegalStateException("boom") }!!
         assertTrue(failed.finished)
         assertEquals("boom", failed.error?.message)
     }
@@ -29,7 +29,7 @@ class BoundedRunTest {
         val release = CountDownLatch(1)
         val ended = CountDownLatch(1)
         val start = System.nanoTime()
-        val stuck = BoundedRun.run("stuck", 200, onEnd = { ended.countDown() }) { release.await() }
+        val stuck = BoundedRun.run("stuck", 200, onEnd = { ended.countDown() }) { release.await() }!!
         val waited = (System.nanoTime() - start) / 1_000_000
         assertFalse(stuck.finished)
         assertTrue("waited $waited ms", waited in 150..3_000)
@@ -37,6 +37,14 @@ class BoundedRunTest {
         // It ends whenever it does, and says so.
         release.countDown()
         assertTrue(ended.await(5, TimeUnit.SECONDS))
+    }
+
+    @Test
+    fun aRunThatMayNotStartLeavesItsThreadUnstarted() = runBlocking {
+        var seen: Thread? = null
+        val outcome = BoundedRun.run("refused", 5_000, canStart = { seen = it; false }) { error("must not run") }
+        assertNull(outcome)
+        assertEquals(Thread.State.NEW, seen!!.state)
     }
 
     @Test

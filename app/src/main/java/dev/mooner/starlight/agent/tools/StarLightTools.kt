@@ -744,17 +744,20 @@ class StarLightTools(private val docs: AgentDocs) {
      */
     private suspend fun compile(project: Project): ToolOutput = withContext(Dispatchers.IO) {
         val name = project.info.name
-        compiles[project.info.id]?.takeIf(Thread::isAlive)?.let { stuck ->
-            return@withContext ToolOutput("A compile of $name that started earlier is still running, stuck: it can't be " +
-                "stopped, and compiling again would wait behind it. The app has to be restarted first; tell the user. " +
-                "Where it is:\n" + whereIs(stuck), isError = true, summary = "Still compiling")
-        }
+        val id = project.info.id
         val startMillis = System.currentTimeMillis()
         val seconds = GlobalConfig.category("project").getInt(CONF_COMPILE_TIMEOUT, DEFAULT_COMPILE_TIMEOUT_SECONDS)
-        val outcome = BoundedRun.run("agent-compile-$name", seconds * 1000L, onEnd = { compiles.remove(project.info.id, it) }) {
-            compiles[project.info.id] = Thread.currentThread()
-            project.compile(true)
+        var running: Thread? = null
+        // Registered before it starts, in one step with the check, so that two compiles at once can't both start.
+        val canStart = { thread: Thread ->
+            compiles.compute(id) { _, current -> current?.takeIf(Thread::isAlive)?.also { running = it } ?: thread }
+            running == null
         }
+        val outcome = BoundedRun.run("agent-compile-$name", seconds * 1000L, canStart, onEnd = { compiles.remove(id, it) }) {
+            project.compile(true)
+        } ?: return@withContext ToolOutput("A compile of $name that started earlier is still running, stuck: it can't " +
+            "be stopped, and compiling again would wait behind it. The app has to be restarted first; tell the user. " +
+            "Where it is:\n" + whereIs(running!!), isError = true, summary = "Still compiling")
         val logs = synchronized(project.logger.logs) { project.logger.logs.filter { it.millis >= startMillis } }
         val logText = if (logs.isEmpty()) "" else "\n\nLogs:\n" + formatLogs(logs, logs.size)
         if (!outcome.finished)
