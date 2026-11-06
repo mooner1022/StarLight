@@ -15,6 +15,7 @@ import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.utils.DotenvParser
 import dev.mooner.starlight.utils.EnvMap
 import java.io.File
+import java.util.Collections
 
 class EnvironmentApi: Api<EnvironmentApi.Environment>() {
 
@@ -62,7 +63,17 @@ class EnvironmentApi: Api<EnvironmentApi.Environment>() {
 
     class Environment(
         envMap: EnvMap,
-    ): Map<String, String> by envMap {
+    ): MutableMap<String, String> by Collections.unmodifiableMap(LinkedHashMap(envMap)) {
+
+        // A MutableMap that can't change: NeonJS assigns through MutableMap and, given a read-only Kotlin map, fails on
+        // the cast with an internal error. This gives both engines the same error, with its reason.
+        override fun put(key: String, value: String): String? = throw readOnly()
+        override fun putAll(from: Map<out String, String>) = throw readOnly()
+        override fun remove(key: String): String? = throw readOnly()
+        override fun clear() = throw readOnly()
+
+        private fun readOnly() =
+            UnsupportedOperationException("Env is read-only: change the .env file and compile the project again")
 
         companion object {
 
