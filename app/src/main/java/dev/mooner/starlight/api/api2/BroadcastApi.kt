@@ -57,6 +57,8 @@ class BroadcastApi: Api<BroadcastApi.Broadcast>() {
         private val callbacks: ConcurrentHashMap<ProjectID, ProjectCallbacks> =
             ConcurrentHashMap()
 
+        // Receivers run here, on the sending thread. Two NeonJS projects broadcasting to each other from their handlers
+        // can each hold their own context and wait for the other's, which hangs both: NeonContext waits without a limit.
         fun send(name: String, value: Any) {
             for ((_, projCallback) in callbacks) {
                 projCallback[name]
