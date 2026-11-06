@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A bubble's content: an image sent without a bubble, or text with "show all" under a long message. -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:maxWidth="220dp"
+        android:maxHeight="280dp"
+        android:visibility="gone"
+        tools:ignore="ContentDescription"/>
+
+    <TextView
+        android:id="@+id/message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:drawablePadding="8dp"
+        android:fontFamily="@font/wantedsans_regular"
+        android:gravity="center_vertical|start"
+        android:includeFontPadding="false"
+        android:lineSpacingExtra="2dp"
+        android:minHeight="36dp"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="8dp"
+        android:textAlignment="viewStart"
+        android:textSize="15sp"
+        tools:text="Hello!"/>
+
+    <LinearLayout
+        android:id="@+id/footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="12dp"/>
+
+        <TextView
+            android:id="@+id/showAll"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackground"
+            android:drawablePadding="2dp"
+            android:fontFamily="@font/wantedsans_medium"
+            android:gravity="center_vertical"
+            android:includeFontPadding="false"
+            android:paddingHorizontal="12dp"
+            android:text="@string/title_show_all"
+            android:textSize="13sp"
+            app:drawableEndCompat="@drawable/ic_round_keyboard_arrow_right_24"/>
+    </LinearLayout>
+</LinearLayout>

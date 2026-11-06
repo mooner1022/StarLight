@@ -19,9 +19,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Toast
+import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
+import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMarginsRelative
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.github.dhaval2404.imagepicker.ImagePicker
@@ -50,7 +53,6 @@ import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
-import dev.mooner.starlight.plugincore.utils.color
 import dev.mooner.starlight.plugincore.utils.fireEvent
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
@@ -61,8 +63,8 @@ import dev.mooner.starlight.utils.peek
 import dev.mooner.starlight.utils.toBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
 import java.io.File
 import java.util.*
 import kotlin.properties.Delegates.notNull
@@ -82,7 +84,9 @@ class DebugRoomFragment: Fragment() {
     private var _binding: FragmentDebugRoomBinding? = null
     val binding get() = _binding!!
 
-    private val mutex: Mutex by lazy { Mutex(locked = false) }
+    /** Saves one at a time and in order, so the file ends with the latest list. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val saveDispatcher = Dispatchers.IO.limitedParallelism(1)
     private lateinit var chatList: MutableList<DebugRoomMessage>
     private var userChatAdapter: DebugRoomChatAdapter? = null
     val dir: File by lazy {
@@ -100,8 +104,6 @@ class DebugRoomFragment: Fragment() {
     private var sentPackage     = PACKAGE_KAKAO_TALK
     private var isGroupChat     = false
     private var sendOnEnter     = false
-    private var senderChatColor = color { "#F6946E" }
-    private var botChatColor    = color { "#706EB9" }
 
     //private lateinit var botProfileBitmap: Bitmap
     private lateinit var selfProfileBitmap: Bitmap
@@ -191,11 +193,16 @@ class DebugRoomFragment: Fragment() {
         else
             mutableListOf()
 
-        userChatAdapter = DebugRoomChatAdapter(activity, dir, chatList)
+        userChatAdapter = DebugRoomChatAdapter(activity, dir, chatList, chatStyle())
+        updateEmptyHint()
 
         binding.chatRecyclerView.apply {
             adapter = userChatAdapter
-            layoutManager = LinearLayoutManager(activity)
+            // Kept at the bottom, as chats are, while images that load late change heights above.
+            layoutManager = LinearLayoutManager(activity).apply { stackFromEnd = true }
+            // New messages enter on their own (DebugRoomChatAdapter.markEntering); the default animations
+            // wait for the list to move first and cross-fade the bubble before, so a quick reply looked late.
+            itemAnimator = null
             if (chatList.isNotEmpty()) {
                 scrollToPosition(chatList.size - 1)
             }
@@ -205,6 +212,19 @@ class DebugRoomFragment: Fragment() {
             if (binding.messageInput.text.toString().isBlank()) return@setOnClickListener
             send(binding.messageInput.text.toString())
             binding.messageInput.setText("")
+        }
+        binding.messageInput.doAfterTextChanged { text ->
+            val canSend = !text.isNullOrBlank()
+            binding.sendButton.isEnabled = canSend
+            binding.sendButton.alpha = if (canSend) 1f else 0.4f
+        }
+
+        binding.openSettings.setOnClickListener {
+            val behavior = BottomSheetBehavior.from(binding.bottomSheet.root)
+            behavior.state = if (behavior.state == BottomSheetBehavior.STATE_EXPANDED)
+                BottomSheetBehavior.STATE_COLLAPSED
+            else
+                BottomSheetBehavior.STATE_EXPANDED
         }
 
         BottomSheetBehavior.from(binding.bottomSheet.root)
@@ -220,9 +240,13 @@ class DebugRoomFragment: Fragment() {
             bind(binding.bottomSheet.configRecyclerView)
             structure(::getStructure)
             configData(GlobalConfig.getMutableData())
-            onValueUpdated { parentId, id, _, jsonData ->
+            onValueUpdated { parentId, id, value, jsonData ->
                 GlobalConfig.edit {
-                    category(parentId).setRaw(id, jsonData)
+                    // The theme's own color is kept unset, so the bubble follows light and dark again.
+                    if (id == "chat_color" && value == themeBubbleColor(parentId))
+                        category(parentId).remove(id)
+                    else
+                        category(parentId).setRaw(id, jsonData)
                 }
                 updateConfig()
             }
@@ -382,25 +406,60 @@ class DebugRoomFragment: Fragment() {
         )
     }
 
+    /**
+     * Adds [message] on the main thread, where the list is read, and saves the chat. Replies can come after the
+     * screen closed, from a timer or a send that finished late; they are still saved.
+     */
     private fun appendMessage(message: DebugRoomMessage, clearInput: Boolean) {
-        chatList += message
-        // Replies can come after the screen closed, from a timer or a send that finished late.
-        activity?.runOnUiThread {
-            val binding = _binding ?: return@runOnUiThread
-            userChatAdapter?.notifyItemInserted(chatList.size)
-            if (clearInput)
-                binding.messageInput.setText("")
-            binding.chatRecyclerView.post {
-                binding.chatRecyclerView.smoothScrollToPosition(chatList.size - 1)
-            }
+        val activity = activity
+        if (activity == null) {
+            synchronized(chatList) { chatList += message }
+            save()
+            return
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            mutex.lock()
-            val encoded = Session.json.encodeToString(chatList.toList())
-            File(dir, CHATS_FILE_NAME).writeText(encoded)
-            mutex.unlock()
+        activity.runOnUiThread {
+            synchronized(chatList) { chatList += message }
+            val binding = _binding
+            if (binding != null) {
+                val last = chatList.size - 1
+                userChatAdapter?.apply {
+                    markEntering(last)
+                    notifyItemInserted(last)
+                    // The one before may lose its time or start no longer being the last of a run.
+                    if (last > 0)
+                        notifyItemChanged(last - 1)
+                }
+                if (clearInput)
+                    binding.messageInput.setText("")
+                updateEmptyHint()
+                binding.chatRecyclerView.post {
+                    binding.chatRecyclerView.smoothScrollToPosition(last)
+                }
+            }
+            save()
         }
     }
+
+    private fun save() {
+        val snapshot = synchronized(chatList) { chatList.toList() }
+        CoroutineScope(saveDispatcher).launch {
+            File(dir, CHATS_FILE_NAME).writeText(Session.json.encodeToString(snapshot))
+        }
+    }
+
+    private fun updateEmptyHint() {
+        val binding = _binding ?: return
+        binding.emptyHint.isVisible = chatList.isEmpty()
+    }
+
+    /** Bubble colors from the room's settings, or the theme's where none was picked. */
+    private fun chatStyle(): DebugRoomChatAdapter.Style =
+        DebugRoomChatAdapter.Style.of(
+            context        = requireContext(),
+            selfColor      = GlobalConfig.category("d_user").getInt("chat_color"),
+            botColor       = GlobalConfig.category("d_bot").getInt("chat_color"),
+            botProfilePath = GlobalConfig.category("d_bot").getString("profile_image_path"),
+        )
 
     override fun onDestroy() {
         userChatAdapter = null
@@ -424,11 +483,14 @@ class DebugRoomFragment: Fragment() {
         sentPackage     = GlobalConfig.category("d_room").getString("package", PACKAGE_KAKAO_TALK)
         isGroupChat     = GlobalConfig.category("d_room").getBoolean("is_group_chat", false)
         sendOnEnter     = GlobalConfig.category("d_room").getBoolean("send_with_enter", false)
-        senderChatColor = GlobalConfig.category("d_user").getInt("chat_color", senderChatColor)
-        botChatColor    = GlobalConfig.category("d_bot") .getInt("chat_color", botChatColor)
 
         requireActivity().runOnUiThread {
             binding.roomTitle.text = roomName
+            binding.roomSubtitle.text = getString(
+                if (isGroupChat) R.string.debugroom_subtitle_group else R.string.debugroom_subtitle,
+                projectName
+            )
+            userChatAdapter?.style = chatStyle()
             if (sendOnEnter) {
                 binding.messageInput.setOnKeyListener { _, keyCode, event ->
                     if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
@@ -460,6 +522,25 @@ class DebugRoomFragment: Fragment() {
     }
 
     private fun reloadConfig() = configAdapter?.redraw()
+
+    private fun themeBubbleColor(categoryId: String): Int? =
+        when (categoryId) {
+            "d_user" -> requireActivity().getColor(R.color.debugroom_bubble_self)
+            "d_bot"  -> requireActivity().getColor(R.color.debugroom_bubble_bot)
+            else     -> null
+        }
+
+    /** The theme's bubble color first, then the earlier choices; the text color follows whichever is picked. */
+    private fun bubblePalette(@ColorRes themeColor: Int): List<Int> {
+        val activity = requireActivity()
+        return listOf(
+            activity.getColor(themeColor),
+            activity.getColor(R.color.main_bright),
+            activity.getColor(R.color.main_dark),
+            0xFF789395.toInt(),
+            0xFF9CBDA1.toInt(),
+        ).distinct()
+    }
 
     private fun getStructure(): ConfigStructure {
         val defaultColor = requireActivity().getColor(R.color.main_bright)
@@ -548,15 +629,10 @@ class DebugRoomFragment: Fragment() {
                         icon = Icon.MARK_CHAT_READ
                         flags = ColorPickerConfigOption.FLAG_CUSTOM_ARGB or ColorPickerConfigOption.FLAG_ALPHA_SELECTOR
                         colors {
-                            color(requireActivity().getColor(R.color.main_bright))
-                            color(requireActivity().getColor(R.color.main_dark))
-                            color(color { "#789395" })
-                            color(color { "#9CBDA1" })
+                            for (color in bubblePalette(R.color.debugroom_bubble_bot))
+                                color(color)
                         }
-                        defaultSelection = color { "#789395" }
-                        setOnColorSelectedListener { _, color ->
-                            botChatColor = color
-                        }
+                        defaultSelection = requireActivity().getColor(R.color.debugroom_bubble_bot)
                     }
                 }
             }
@@ -605,15 +681,10 @@ class DebugRoomFragment: Fragment() {
                         iconTintColor = defaultColor
                         flags = ColorPickerConfigOption.FLAG_CUSTOM_ARGB or ColorPickerConfigOption.FLAG_ALPHA_SELECTOR
                         colors {
-                            color(requireActivity().getColor(R.color.main_bright))
-                            color(requireActivity().getColor(R.color.main_dark))
-                            color(color { "#789395" })
-                            color(color { "#9CBDA1" })
+                            for (color in bubblePalette(R.color.debugroom_bubble_self))
+                                color(color)
                         }
-                        defaultSelection = color { "#b4cfb0" }
-                        setOnColorSelectedListener { _, color ->
-                            senderChatColor = color
-                        }
+                        defaultSelection = requireActivity().getColor(R.color.debugroom_bubble_self)
                     }
                 }
             }
@@ -633,6 +704,7 @@ class DebugRoomFragment: Fragment() {
                             val listSize = chatList.size
                             chatList.clear()
                             userChatAdapter?.notifyItemRangeRemoved(0, listSize)
+                            updateEmptyHint()
                         }
                         icon = Icon.LAYERS_CLEAR
                         //backgroundColor = Color.parseColor("#B8DFD8")

@@ -92,7 +92,13 @@
     <string name="align_reversed">내림차순 정렬</string>
     <string name="align_active_first">활성화 우선</string>
 
-    <string name="debugroom_type_here">메세지 입력…</string>
+    <string name="debugroom_type_here">메시지 입력…</string>
+    <string name="debugroom_settings">디버그 룸 설정</string>
+    <string name="debugroom_empty">메시지를 보내면 채팅방에서 온 것처럼 프로젝트를 시험할 수 있어요.</string>
+    <string name="debugroom_subtitle">%1$s · 디버그 룸</string>
+    <string name="debugroom_subtitle_group">%1$s · 디버그 룸 · 그룹 채팅</string>
+    <string name="debugroom_copied">메시지를 복사했어요.</string>
+    <string name="debugroom_file_missing">%1$s · 파일이 없어요</string>
     <string name="color_picker_none">고른 색 없음</string>
     <string name="color_picker_shades">음영</string>
     <string name="color_picker_custom">직접 고르기</string>

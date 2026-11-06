@@ -98,6 +98,12 @@
     <string name="align_active_first">Align active first</string>
 
     <string name="debugroom_type_here">Type here…</string>
+    <string name="debugroom_settings">Debug room settings</string>
+    <string name="debugroom_empty">Send a message to try the project as if it came from a chat room.</string>
+    <string name="debugroom_subtitle">%1$s · Debug room</string>
+    <string name="debugroom_subtitle_group">%1$s · Debug room · Group chat</string>
+    <string name="debugroom_copied">Copied the message.</string>
+    <string name="debugroom_file_missing">%1$s · File is gone</string>
     <string name="color_picker_none">No color picked</string>
     <string name="color_picker_shades">Shades</string>
     <string name="color_picker_custom">Custom</string>

@@ -24,41 +24,66 @@
         <LinearLayout
             android:id="@+id/top_bar"
             android:layout_width="match_parent"
-            android:layout_height="55dp"
+            android:layout_height="60dp"
+            android:background="@color/background"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:background="@color/background">
+            app:layout_constraintTop_toTopOf="parent">
 
             <ImageView
                 android:id="@+id/leave"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="10dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/close"
+                android:padding="10dp"
                 android:src="@drawable/ic_round_arrow_left_24"
-                android:layout_gravity="center_vertical"
-                app:tint="@color/text"
-                android:contentDescription="@string/close" />
+                app:tint="@color/text" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:gravity="center"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
                 android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/roomTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="start"
-                    android:layout_marginStart="8dp"
+                    android:ellipsize="end"
                     android:fontFamily="@font/nanumsquare_round_extrabold"
-                    android:gravity="center"
+                    android:maxLines="1"
+                    android:textColor="@color/text"
                     android:textSize="18sp"
-                    android:visibility="visible"
                     tools:text="DEBUG ROOM"/>
 
+                <TextView
+                    android:id="@+id/roomSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/wantedsans_regular"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:textColor="@color/debugroom_name"
+                    android:textSize="12sp"
+                    tools:text="test · 디버그 룸"/>
             </LinearLayout>
+
+            <ImageView
+                android:id="@+id/openSettings"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/debugroom_settings"
+                android:padding="10dp"
+                android:src="@drawable/ic_round_settings_24"
+                app:tint="@color/text" />
 
         </LinearLayout>
 
@@ -69,7 +94,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/top_bar"
-            app:cardBackgroundColor="@color/cardview"
+            app:cardBackgroundColor="@color/debugroom_chat_bg"
             app:cardCornerRadius="20dp"
             app:cardElevation="0dp">
 
@@ -79,9 +104,25 @@
                 android:layout_width="match_parent"
                 android:overScrollMode="never"
                 android:layout_marginBottom="22dp"
-                android:paddingBottom="16dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="12dp"
                 android:clipToPadding="false">
             </androidx.recyclerview.widget.RecyclerView>
+
+            <TextView
+                android:id="@+id/emptyHint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginHorizontal="40dp"
+                android:layout_marginBottom="22dp"
+                android:fontFamily="@font/wantedsans_regular"
+                android:gravity="center"
+                android:lineSpacingExtra="3dp"
+                android:text="@string/debugroom_empty"
+                android:textColor="@color/debugroom_time"
+                android:textSize="14sp"
+                android:visibility="gone"/>
 
         </androidx.cardview.widget.CardView>
 
@@ -104,37 +145,39 @@
             android:id="@+id/messageInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="@drawable/chat_edittext_bg"
-            android:ems="10"
-            android:inputType="textMultiLine"
-            android:fontFamily="sans-serif"
-            android:hint="@string/debugroom_type_here"
-            android:paddingStart="15dp"
-            android:paddingTop="3dp"
-            android:paddingEnd="10dp"
-            android:paddingBottom="5dp"
-            android:textColor="@color/gray"
-            android:textSize="18sp"
-            android:minHeight="48dp"
-            android:maxHeight="180dp"
-            android:layout_marginBottom="12dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="8dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_debugroom_input"
+            android:fontFamily="@font/wantedsans_regular"
+            android:hint="@string/debugroom_type_here"
             android:importantForAutofill="no"
+            android:inputType="textMultiLine|textCapSentences"
+            android:maxHeight="160dp"
+            android:minHeight="44dp"
+            android:paddingStart="16dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/text"
+            android:textColorHint="@color/debugroom_time"
+            android:textSize="15sp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/sendButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintStart_toStartOf="parent"/>
 
         <ImageView
             android:id="@+id/sendButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="8dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="12dp"
             android:layout_marginBottom="12dp"
+            android:alpha="0.4"
+            android:contentDescription="@string/send"
+            android:enabled="false"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:srcCompat="@drawable/ic_send"
-            android:contentDescription="@string/send" />
+            app:srcCompat="@drawable/ic_send" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

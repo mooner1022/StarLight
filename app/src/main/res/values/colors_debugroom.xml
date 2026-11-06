@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The chat area and its bubbles; a bubble color the user picks replaces these and gets its own text color. -->
+    <color name="debugroom_chat_bg">@color/cardview</color>
+    <color name="debugroom_bubble_self">@color/store_gold</color>
+    <color name="debugroom_bubble_bot">#ECECF0</color>
+    <color name="debugroom_text_dark">#2E2833</color>
+    <color name="debugroom_text_light">#F7F5F2</color>
+    <color name="debugroom_name">#6E6E76</color>
+    <color name="debugroom_time">#94949B</color>
+    <color name="debugroom_date_bg">#EEEEF2</color>
+    <color name="debugroom_input_stroke">#DCDCE2</color>
+</resources>
