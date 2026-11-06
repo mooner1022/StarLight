@@ -19,7 +19,7 @@ export function onMessage(event) {
 ```
 
 > [!IMPORTANT]
-> NeonJS는 **StarLight nightly 브랜치**에만 들어 있어요. 현재 내려받을 수 있는 정식 앱(StarLight 0.3.4b)에서는 쓸 수 없어요. 이 문서는 NeonJS 0.1.6을 기준으로 해요.
+> NeonJS는 **StarLight 1.0.0**부터 들어 있어요. 이 문서는 NeonJS 0.1.6을 기준으로 해요.
 
 ## Rhino와 무엇이 다른가요
 

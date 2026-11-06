@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       build_version:
-        description: 'Define version code'
-        required: true
-        default: '7'
+        description: 'Version code; leave empty to use the one in gradle/libs.versions.toml'
+        required: false
+        default: ''
  
 jobs:
   build:
@@ -30,11 +30,33 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
+    # A release takes the next code after the last release (1.0.0 was 10, 1.0.1 is 11), which the version bump
+    # commit puts in libs.versions.toml. Only snapshots use 1000 followed by the run number.
+    - name: Resolve versionCode
+      id: version
+      env:
+        INPUT_CODE: ${{ github.event.inputs.build_version }}
+      run: |
+        code="$INPUT_CODE"
+        if [ -z "$code" ]; then
+          code="$(sed -nE 's/^versionCode = "([0-9]+)"$/\1/p' gradle/libs.versions.toml)"
+        fi
+        if ! [[ "$code" =~ ^[0-9]+$ ]]; then
+          echo "::error::versionCode '$code' is not a number"
+          exit 1
+        fi
+        if [ "$code" -ge 1000 ]; then
+          echo "::error::versionCode $code looks like a snapshot's; a release takes the next code after the last release"
+          exit 1
+        fi
+        echo "Release versionCode: $code"
+        echo "code=$code" >> "$GITHUB_OUTPUT"
+
     - name: Bump versionCode
       uses: chkfung/android-version-actions@v1.2.2
       with:
         gradlePath: app/build.gradle.kts
-        versionCode: ${{github.event.inputs.build_version}}
+        versionCode: ${{ steps.version.outputs.code }}
  
     - name: Decode keystore
       env:

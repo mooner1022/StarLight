@@ -6,6 +6,9 @@ order: 3
 
 StarLight는 내장 저장소의 `StarLight` 폴더(`/storage/emulated/0/StarLight`)에 모든 데이터를 저장해요. 하위 폴더는 처음 필요할 때 만들어져요.
 
+> [!NOTE]
+> Google Play 판은 같은 구조를 앱 전용 폴더(`/storage/emulated/0/Android/data/dev.mooner.starlight/files`)에 저장해요. 이 폴더는 앱을 지우면 함께 지워지므로, 아래에서 앱을 다시 설치해도 남는다고 적은 데이터(`agent/` 등)도 지워져요. `plugins/` 폴더는 쓰지 않아요.
+
 ```text
 StarLight/
 ├─ projects/                 프로젝트
@@ -70,5 +73,5 @@ projects/hello-bot/
 
 ## 백업과 옮기기
 
-- 프로젝트 하나를 옮기려면 `projects/<이름>/` 폴더를 통째로 복사해요.
+- 프로젝트 하나를 옮기려면 `projects/<이름>/` 폴더를 통째로 복사하거나, [zip 파일로 내보내고 가져와요](/docs/app/guides/projects#내보내기와-가져오기). Google Play 판에서는 zip 파일을 쓰세요.
 - 앱 전체를 옮기려면 `StarLight` 폴더를 통째로 복사해요. 새 기기에서 앱을 설치하고 권한을 허용한 뒤 폴더를 넣고, 앱을 다시 시작하세요.

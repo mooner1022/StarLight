@@ -4,7 +4,7 @@ description: Java.type으로 Java·Android 클래스를 불러오고, 객체와 
 order: 2
 ---
 
-NeonJS 프로젝트는 `Java` 전역 객체로 Java와 Android의 클래스에 접근해요. StarLight는 NeonJS에 **모든 호스트 접근을 허용**해서, 스크립트는 기기에서 앱이 할 수 있는 거의 모든 일을 할 수 있어요.
+NeonJS 프로젝트는 `Java` 전역 객체로 Java와 Android의 클래스에 접근해요. StarLight는 NeonJS에 **모든 호스트 접근을 허용**해서, 스크립트는 기기에서 앱이 할 수 있는 거의 모든 일을 할 수 있어요. Google Play 판에는 [몇 가지 제한](#google-play-판의-제한)이 있어요.
 
 ## 클래스 불러오기: Java.type
 
@@ -137,3 +137,17 @@ console.log(`${Build.MANUFACTURER} ${Build.MODEL}, API ${Build.VERSION.SDK_INT}`
 
 > [!CAUTION]
 > NeonJS의 Java 접근에는 차단 목록이 없어요. `System`, `Runtime`, 리플렉션까지 모두 쓸 수 있으니, 출처를 모르는 스크립트나 모듈은 실행하지 마세요.
+
+## Google Play 판의 제한
+
+Google Play 판에서는 앱 밖의 코드를 불러오거나 실행할 수 있는 Java API를 스크립트에서 쓸 수 없어요. NeonJS와 Rhino 프로젝트 모두 같아요.
+
+| 막힌 것 | 예 |
+|---|---|
+| 리플렉션 | `java.lang.reflect`, `java.lang.invoke`, `Class.forName()`, `getMethod()` 같은 `Class`의 리플렉션 메서드 |
+| 클래스와 코드 로딩 | `ClassLoader`, `dalvik.system`의 클래스 |
+| 프로세스와 시스템 호출 | `Runtime`, `ProcessBuilder`, `android.system.Os` |
+| 앱 설치 | `PackageInstaller` |
+| 스크립트 엔진 내부 | `org.mozilla.javascript`(Rhino), `dev.mooner.neonjs`(NeonJS) |
+
+이 밖의 Java와 Android API는 GitHub 판과 똑같이 쓸 수 있어요.
