@@ -322,7 +322,7 @@ class DebugRoomFragment: Fragment() {
 
         // Called only if the project's levels and allowed events include it.
         project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, replier, ImageDB(selfProfileBitmap),
-            onFailure = ::showErrorPeek)
+            sentPackage, onFailure = ::showErrorPeek)
         project.fireEvent<Api2MessageEvent>(data, onFailure = ::showErrorPeek)
         project.fireEvent<Api2CommandEvent>(data, onFailure = ::showErrorPeek)
     }

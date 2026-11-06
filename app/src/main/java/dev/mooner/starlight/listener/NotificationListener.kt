@@ -156,7 +156,7 @@ class NotificationListener: NotificationListenerService() {
                         val imageDB = ImageDB(data.sender.profileBitmap)
                         val replier = getOrCreateReplier(roomID)
 
-                        Session.projectManager.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB) { project, e ->
+                        Session.projectManager.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB, pkgName) { project, e ->
                             e.printStackTrace()
                             LOG.error {
                                 translate {
