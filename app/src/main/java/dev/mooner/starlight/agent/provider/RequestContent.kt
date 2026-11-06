@@ -1,6 +1,7 @@
 package dev.mooner.starlight.agent.provider
 
 import dev.mooner.starlight.agent.model.AgentJson
+import dev.mooner.starlight.agent.model.CallResults
 import dev.mooner.starlight.agent.model.ChatMessage
 import dev.mooner.starlight.agent.model.Compaction
 import dev.mooner.starlight.agent.model.Part
@@ -60,9 +61,13 @@ internal object RequestContent {
     fun invalidJsonResult(arguments: String): String =
         buildJsonObject { put("INVALID_JSON", JsonPrimitive(arguments)) }.toString()
 
-    /** Messages the model sees: from the last summary on, without app-only notices and empty turns. */
-    fun visibleMessages(messages: List<ChatMessage>): List<ChatMessage> =
-        Compaction.view(messages).mapNotNull { message ->
+    /**
+     * Messages the model sees: from the last summary on, without app-only notices and empty turns, and with every tool
+     * call paired with a result. A call left without one, or a result without its call, would make the provider reject
+     * every request; saved conversations are kept whole as they change, so this is the last line of defence.
+     */
+    fun visibleMessages(messages: List<ChatMessage>): List<ChatMessage> {
+        val visible = Compaction.view(messages).mapNotNull { message ->
             val parts = message.parts.filter { it !is Part.Notice }
             when {
                 parts.isEmpty() && message.raw == null -> null
@@ -70,4 +75,10 @@ internal object RequestContent {
                 else -> message.copy(parts = parts)
             }
         }
+        return CallResults.withoutStrayResults(
+            CallResults.close(visible, { results -> ChatMessage("t-missing-" + results.first().callId, Role.TOOL, results, 0) }) { call, _ ->
+                Part.ToolResult(call.id, call.name, CallResults.MISSING, isError = true)
+            }
+        )
+    }
 }

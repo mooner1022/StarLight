@@ -5,6 +5,7 @@ import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.ApprovalPolicy
 import dev.mooner.starlight.agent.auth.SignInRequiredException
 import dev.mooner.starlight.agent.model.AgentJson
+import dev.mooner.starlight.agent.model.CallResults
 import dev.mooner.starlight.agent.model.Approval
 import dev.mooner.starlight.agent.model.ChatMessage
 import dev.mooner.starlight.agent.model.Compaction
@@ -16,6 +17,7 @@ import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
 import dev.mooner.starlight.agent.model.TitleSource
+import dev.mooner.starlight.agent.model.newMessageId
 import dev.mooner.starlight.agent.net.HttpStatusException
 import dev.mooner.starlight.agent.provider.LlmRequest
 import dev.mooner.starlight.agent.provider.LlmResult
@@ -243,7 +245,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             updatedAt = now,
         )
         hub.store.save(conversation.copy(
-            messages = conversation.messages + message,
+            // Calls a run that ended left without a result are closed first: a user message after them would make every
+            // request fail.
+            messages = CallResults.closeInterrupted(conversation.messages, waited = false, now) + message,
             updatedAt = now,
             error = null,
             project = project,
@@ -735,6 +739,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         var attempt = 0
         while (true) {
             val conversation = hub.store.get(id) ?: throw IOException("The conversation was deleted")
+            // The request pairs them anyway (RequestContent.visibleMessages); a saved history shouldn't need it.
+            if (attempt == 0 && CallResults.unanswered(conversation.messages).isNotEmpty())
+                LOG.warn { "Conversation $id has tool calls without a result; the request answers them as missing" }
             val request = LlmRequest(
                 conversationId = id,
                 model = model,
@@ -975,10 +982,15 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         }
     }
 
-    /** Gives the calls of the last assistant turn that have no result one, so that the history stays valid. */
+    /** Gives every call that has no result one, whatever turn it is in, so that the history stays valid. */
     private fun answerOpenCalls(id: String, reason: String) {
-        val (turn, open) = hub.store.get(id)?.messages?.let(History::openCalls) ?: return
-        addResults(id, turn.id, open.map { Part.ToolResult(it.id, it.name, reason, isError = true, summary = "Not run") })
+        val now = System.currentTimeMillis()
+        updateConversation(id) { conversation ->
+            val messages = CallResults.close(conversation.messages, { results -> ChatMessage(newId("t"), Role.TOOL, results, now) }) { call, _ ->
+                Part.ToolResult(call.id, call.name, reason, isError = true, summary = "Not run")
+            }
+            if (messages === conversation.messages) conversation else conversation.copy(messages = messages, updatedAt = now)
+        }
     }
 
     private fun addResults(id: String, turnId: String, results: List<Part.ToolResult>) {
@@ -1137,7 +1149,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
 
         fun approvalKey(conversationId: String, callId: String) = "$conversationId/$callId"
 
-        fun newId(prefix: String) = prefix + UUID.randomUUID().toString().replace("-", "").take(12)
+        fun newId(prefix: String) = newMessageId(prefix)
 
         fun cap(text: String): String =
             if (text.length <= MAX_TOOL_OUTPUT) text

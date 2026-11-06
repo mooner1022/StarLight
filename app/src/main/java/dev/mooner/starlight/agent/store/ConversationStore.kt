@@ -2,6 +2,7 @@ package dev.mooner.starlight.agent.store
 
 import android.util.AtomicFile
 import dev.mooner.starlight.agent.model.AgentJson
+import dev.mooner.starlight.agent.model.CallResults
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.model.Role
@@ -99,11 +100,17 @@ class ConversationStore(root: File) {
         mChanges.update { it + 1 }
     }
 
-    /** Marks runs the process didn't finish, after the app was killed in the middle of one. */
+    /**
+     * Marks runs the process didn't finish, after the app was killed in the middle of one, and closes the calls they
+     * left open: resuming then lets the model decide what to do again rather than repeat a call that may have been
+     * what stopped the app.
+     */
     fun markInterrupted() {
+        val now = System.currentTimeMillis()
         for (summary in mSummaries.value.filter { it.state.isActive }) {
             val conversation = get(summary.id) ?: continue
-            save(conversation.copy(state = RunState.INTERRUPTED))
+            val messages = CallResults.closeInterrupted(conversation.messages, waited = conversation.state == RunState.WAITING_APPROVAL, now)
+            save(conversation.copy(state = RunState.INTERRUPTED, messages = messages))
         }
     }
 

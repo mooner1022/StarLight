@@ -78,6 +78,10 @@ enum class Role {
     @SerialName("tool") TOOL,
 }
 
+/** A new message's ID: [prefix] (`m` for a turn, `t` for tool results, `n` for a notice) and 12 random hex digits. */
+fun newMessageId(prefix: String): String =
+    prefix + java.util.UUID.randomUUID().toString().replace("-", "").take(12)
+
 @Serializable
 data class ChatMessage(
     val id: String,
