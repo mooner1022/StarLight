@@ -22,15 +22,20 @@ class AgentDocs(context: Context) {
     private val files: DocFiles by lazy { DocFiles.load(AgentDocs::class.java.classLoader!!) }
 
     @Volatile
-    private var cached: Pair<String, ScriptCatalog>? = null
+    private var cached: Pair<List<Any>, ScriptCatalog>? = null
 
     fun catalog(): ScriptCatalog {
         val apis = Session.apiManager.getApis()
         val events = ProjectEventManager.find(ALL_EVENTS).sortedBy { it.qualifiedName }
-        val key = apis.joinToString { it.name } + "|" + events.joinToString { it.qualifiedName.orEmpty() }
+        val levels = Session.apiLevelManager.getLevels()
+        // Classes compare by identity, so a plugin loaded again (a new class loader) or changed levels make a new one.
+        val key = listOf(
+            apis.map { it.name to it.instanceClass },
+            events.map { it.java },
+            levels.map { Triple(it.id, it.apis.toSet(), it.events.toSet()) },
+        )
         cached?.takeIf { it.first == key }?.let { return it.second }
 
-        val levels = Session.apiLevelManager.getLevels()
         val catalog = ScriptCatalog(
             docs = files,
             apis = apis.map { api ->
