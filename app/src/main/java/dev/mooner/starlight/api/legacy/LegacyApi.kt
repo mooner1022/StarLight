@@ -10,6 +10,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
+import dev.mooner.neonjs.NeonContext
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.original.NotificationApi
 import dev.mooner.starlight.core.GlobalApplication
@@ -23,9 +24,6 @@ import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Callable
 
@@ -230,16 +228,23 @@ class LegacyApi: Api<LegacyApi.Api>() {
 
         @JvmOverloads
         fun UIThread(func: Callable<Any>, onComplete: (error: Throwable?, result: Any?) -> Unit = { _, _ -> }) {
-            runBlocking {
-                flow<Any> { emit(func.call()) }
-                    .flowOn(Dispatchers.Main)
-                    .catch { e ->
-                        onComplete(e, null)
-                    }
-                    .collect { result ->
-                        onComplete(null, result)
-                    }
+            val outcome = runCatching {
+                // On the main thread already (in a UI callback, say): waiting for it would never end.
+                if (Looper.myLooper() == Looper.getMainLooper())
+                    func.call()
+                else
+                    whileWaiting { runBlocking(Dispatchers.Main) { func.call() } }
             }
+            outcome.fold({ onComplete(null, it) }, { onComplete(it, null) })
+        }
+
+        /**
+         * Runs [block], which waits for the main thread, letting a NeonJS script's context go meanwhile: the main
+         * thread calling `func` needs it, and would otherwise wait for this thread forever. Rhino has no such lock.
+         */
+        private fun <R> whileWaiting(block: () -> R): R {
+            val context = NeonContext.current() ?: return block()
+            return context.releasing(block)
         }
 
         fun getActiveThreadsCount(): Int {
