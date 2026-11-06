@@ -24,8 +24,11 @@ import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.symbol.Variance
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonObjectBuilder
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -84,8 +87,11 @@ class AgentDocsProcessor(
 
         // An unresolved type gives a wrong descriptor, so a member would silently lose its docs at run time.
         val text = JSON.encodeToString(JsonObject.serializer(), json)
-        if (UNRESOLVED.any(text::contains)) {
-            logger.error("Unresolved types in the agent docs of $module (${UNRESOLVED.filter(text::contains).joinToString()}): " +
+        // Types and descriptors only: the docs' own text may well mention such a word.
+        val typeText = typeStrings(json)
+        val unresolved = UNRESOLVED.filter { marker -> typeText.any { it.contains(marker) } }
+        if (unresolved.isNotEmpty()) {
+            logger.error("Unresolved types in the agent docs of $module (${unresolved.joinToString()}): " +
                 "KSP ran without the full classpath. Build again; see docs/agent-docs.md §4.")
             return emptyList()
         }
@@ -147,7 +153,6 @@ class AgentDocsProcessor(
         })
     }
 
-    /** KSP gives a vararg parameter its element's descriptor; the JVM method takes an array of them. */
     /**
      * A suspend function's descriptor as the JVM has it: KSP's leaves out the `Continuation` the compiler adds as the
      * last parameter, and the `Object` it returns.
@@ -159,6 +164,14 @@ class AgentDocsProcessor(
         return descriptor.substring(0, close) + "Lkotlin/coroutines/Continuation;)Ljava/lang/Object;"
     }
 
+    /** The keys and string values of [element] outside its `doc` objects: the member keys, names and types. */
+    private fun typeStrings(element: JsonElement): List<String> = when (element) {
+        is JsonObject -> element.flatMap { (key, value) -> if (key == "doc") emptyList() else listOf(key) + typeStrings(value) }
+        is JsonArray -> element.flatMap(::typeStrings)
+        is JsonPrimitive -> if (element.isString) listOf(element.content) else emptyList()
+    }
+
+    /** KSP gives a vararg parameter its element's descriptor; the JVM method takes an array of them. */
     private fun varargsAsArray(descriptor: String, function: KSFunctionDeclaration): String {
         val varargs = function.parameters.withIndex().filter { it.value.isVararg }.map { it.index }
         if (varargs.isEmpty())
