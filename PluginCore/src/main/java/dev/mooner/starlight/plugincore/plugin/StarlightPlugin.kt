@@ -164,10 +164,13 @@ abstract class StarlightPlugin: Plugin, EventListener {
         getListeners().forEach(EventListener::onEnable)
     }
 
-    /** Marks the plugin disabled as StarLight unloads it, and calls its `onDisable`. */
+    /**
+     * Marks the plugin disabled as StarLight unloads it, and calls `onDisable` on every listener, as loading calls
+     * `onEnable` on them.
+     */
     internal fun disableOnUnload() {
         isEnabled = false
-        onDisable()
+        getListeners().forEach(EventListener::onDisable)
     }
 
     protected fun addListener(listener: EventListener) {
