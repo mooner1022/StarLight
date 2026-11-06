@@ -57,15 +57,23 @@ abstract class Api2Event: ProjectEvent() {
 
     protected abstract fun deliver(bot: Bot, args: Array<out Any>)
 
+    // onApi2Message beside StarLight's onMessage: in Rhino, a top-level function of an event's name is called as that
+    // event, so the listener would run twice.
+    override val alternateFunctionName: String
+        get() = "onApi2" + functionName.removePrefix("on")
+
+    override fun generateCode(generator: CodeGenerator): CodeGenerator.GeneratedFunction =
+        generateCode(generator, functionName)
+
     // Written out rather than through the language's generator, which in NeonJS would export the function and so
     // let StarLight's own event of the same name call it too.
-    override fun generateCode(generator: CodeGenerator): CodeGenerator.GeneratedFunction =
+    override fun generateCode(generator: CodeGenerator, name: String): CodeGenerator.GeneratedFunction =
         CodeGenerator.GeneratedFunction(
             imports = listOf(BOT_DECLARATION),
             function = buildString {
-                append("function $functionName($parameters) {\n}\n")
+                append("function $name($parameters) {\n}\n")
                 setup?.let { append(it).append('\n') }
-                append("bot.addListener(Event.$constant, $functionName);")
+                append("bot.addListener(Event.$constant, $name);")
             },
         )
 

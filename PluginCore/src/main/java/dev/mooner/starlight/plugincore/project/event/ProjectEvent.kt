@@ -43,6 +43,19 @@ abstract class ProjectEvent {
     open fun generateCode(generator: CodeGenerator): CodeGenerator.GeneratedFunction =
         generator.generateFunction(functionName, argTypes, null)
 
+    /**
+     * The name the starting code gives this event's function instead of [functionName] when another event of the new
+     * project already has a function of that name, as API2's message listener and StarLight's `onMessage` do; null
+     * to leave this one commented out then.
+     */
+    open val alternateFunctionName: String?
+        get() = null
+
+    /** [generateCode], with the function named [name]: [functionName], or [alternateFunctionName] on a clash. */
+    open fun generateCode(generator: CodeGenerator, name: String): CodeGenerator.GeneratedFunction =
+        if (name == functionName) generateCode(generator)
+        else generator.generateFunction(name, argTypes, null)
+
     override fun equals(other: Any?): Boolean = other is ProjectEvent && other.id == id
 
     override fun hashCode(): Int = name.hashCode() + id.hashCode()

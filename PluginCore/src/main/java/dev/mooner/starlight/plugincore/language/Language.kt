@@ -88,10 +88,14 @@ abstract class Language {
 
         val imports: MutableSet<String> = hashSetOf()
 
+        // An event with another name to fall back on gives way to the events without one.
+        val fixedNames = events.filter { it.alternateFunctionName == null }.mapTo(hashSetOf()) { it.functionName }
         val emitted: MutableSet<String> = hashSetOf()
         val body = buildString {
             for (event in events) {
-                val generated = event.generateCode(codeGenerator)
+                val alternate = event.alternateFunctionName
+                val functionName = if (alternate != null && event.functionName in fixedNames) alternate else event.functionName
+                val generated = event.generateCode(codeGenerator, functionName)
                 append("\n")
                 if (event.functionComment != null)
                     append(codeGenerator.generateComment(
@@ -99,7 +103,7 @@ abstract class Language {
                         isDocument = true,
                         content = event.functionComment!!
                     )).append("\n")
-                if (!emitted.add(event.functionName)) {
+                if (!emitted.add(functionName)) {
                     append(codeGenerator
                         .generateComment(
                             isMultiLine = false,

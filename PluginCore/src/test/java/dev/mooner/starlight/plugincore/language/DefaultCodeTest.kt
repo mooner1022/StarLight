@@ -42,6 +42,24 @@ class DefaultCodeTest {
     }
 
     @Test
+    fun anEventWithAnAlternateNameTakesItOnAClash() {
+        val listener = object : ProjectEvent() {
+            override val id = "b.message"
+            override val name = id
+            override val functionName = "onMessage"
+            override val argTypes: Array<CodeGenerator.Argument<*>> = arrayOf(CodeGenerator.Argument("msg", String::class))
+            override val alternateFunctionName = "onBMessage"
+        }
+        // First in the list, it still gives way to the event without another name.
+        val code = language.formatDefaultCode("index.js", listOf(listener, event("a.message", "onMessage", "event")))
+        assertTrue(code.contains("\nfunction onBMessage(msg) {"))
+        assertTrue(code.contains("\nfunction onMessage(event) {"))
+        assertTrue(!code.contains("주석 처리"))
+        // Alone, it keeps its own name.
+        assertTrue(language.formatDefaultCode("index.js", listOf(listener)).contains("\nfunction onMessage(msg) {"))
+    }
+
+    @Test
     fun generatesEveryFunctionWithoutDuplicates() {
         val code = language.formatDefaultCode("index.js", listOf(
             event("a.message", "onMessage", "event"),
