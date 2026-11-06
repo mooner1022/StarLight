@@ -16,10 +16,31 @@ import org.mozilla.javascript.ScriptableObject
 @Suppress("unused")
 class BridgeApi: Api<BridgeApi.Bridge>() {
 
+    /**
+     * The `Bridge` global of legacy projects: reaches the global scope of another Rhino project.
+     *
+     * Its members are static: use them on `Bridge` itself. Only `getScopeOf` and `isAllowed` exist; MessengerBot's
+     * other `Bridge` methods, such as `callFunctionOf` and `getVariableOf`, are missing.
+     *
+     * @see guide:projects#calling-other-projects
+     */
     class Bridge {
 
         companion object {
 
+            /**
+             * The global object of the Rhino project named [scriptName], which holds its variables and functions.
+             *
+             * A `.js` at the end of the name is dropped, so MessengerBot's script names work. Read and call what it
+             * holds as properties: `Bridge.getScopeOf("other").count`, `Bridge.getScopeOf("other").greet()`. A
+             * NeonJS project has no such scope.
+             *
+             * @param scriptName The project's name, matched exactly, with or without `.js`.
+             * @return The project's global object, as its own code sees it.
+             * @throws IllegalStateException When no project has that name, or it isn't compiled: before its first
+             * compile has finished, which includes a project's own first compile.
+             * @throws IllegalArgumentException When the project doesn't run on Rhino.
+             */
             @JvmStatic
             fun getScopeOf(scriptName: String): Any {
                 val projectName = if (scriptName.endsWith(".js")) scriptName.dropLast(3) else scriptName
@@ -30,6 +51,13 @@ class BridgeApi: Api<BridgeApi.Bridge>() {
                     ?: error("Project $projectName isn't compiled: its scope exists once a compile has finished")
             }
 
+            /**
+             * Whether [getScopeOf] can reach the project named [scriptName]: it exists, is compiled and runs on Rhino.
+             *
+             * Unlike [getScopeOf], it doesn't drop a `.js` at the end of the name.
+             *
+             * @param scriptName The project's name, matched exactly.
+             */
             @JvmStatic
             fun isAllowed(scriptName: String): Boolean =
                 Session.projectManager.getProjectByName(scriptName)?.let { proj ->

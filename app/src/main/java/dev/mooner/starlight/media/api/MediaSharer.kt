@@ -41,13 +41,15 @@ class MediaSharer internal constructor(project: Project) {
         core.send(room, files, null)
 
     /**
-     * [options]:
+     * Sends [files] to [room], as [options] say. Resolves to a [MediaSendResult]; failures are logged to the project too.
+     *
+     * [options] is an object with any of these; one left out takes its setting in **미디어 전송**:
      * - `fileName`: name to send under, an extension is added (`name_1`, `name_2`, ... for several files)
-     * - `timeout`: download timeout in milliseconds
-     * - `cache`: keep downloaded or decoded files to send again without downloading
+     * - `timeout`: download timeout in milliseconds; otherwise **다운로드 제한 시간 (초)**
+     * - `cache`: keep downloaded or decoded files to send again without downloading; otherwise **기본으로 캐시 사용**
      * - `headers`: download request headers, such as `{ Referer: "..." }`
      * - `leave`: once KakaoTalk has read the files, leave it for `"home"` (or `true`), `"starlight"` or a package
-     *   name; `"stay"` (or `false`) stays. Absent: the setting in Settings > Media sending.
+     *   name; `"stay"` (or `false`) stays. Otherwise **전송 후**.
      */
     fun send(room: Any?, files: Any?, options: Any?): CompletableFuture<MediaSendResult> =
         core.send(room, files, options)

@@ -17,14 +17,44 @@ private val LOG = LoggerFactory.logger {  }
 @Suppress("unused")
 class AppApi: Api<AppApi.App>() {
 
+    /**
+     * MessengerBot R's `App`: the app's Android context, and running code on the main thread; a global in API2
+     * projects.
+     *
+     * Use its static members, as `App.getContext()`. Of MessengerBot R's `App`, StarLight has only `getContext` and
+     * `runOnUiThread`: no `isMainThread`, `runDelayed` or `runOnBackgroundThread`.
+     */
     class App {
 
         companion object {
 
+            /**
+             * StarLight's application `Context`, for Android APIs that need one.
+             *
+             * @see guide:engines/neonjs#java-access
+             */
             @JvmStatic
             fun getContext(): Context = GlobalApplication.requireContext()
 
             /* Incomplete implementation */
+            /**
+             * Runs [task] on Android's main (UI) thread, then calls [onComplete] there with its error or result.
+             *
+             * It returns at once; the task runs later. Unlike MessengerBot R, [onComplete] isn't optional: pass a
+             * function that does nothing when the result isn't needed. An error thrown in [onComplete] itself is only
+             * logged to StarLight's own log, so catch errors inside it. Long work in [task] freezes StarLight's screens.
+             *
+             * In NeonJS, the main thread waits at most 2 seconds for the script's other code to finish before it
+             * runs [task], and again before [onComplete]. If the script is still busy then, as when it keeps running
+             * after this call, [task] doesn't run and [onComplete] gets an error saying the wait timed out; if it is
+             * busy past that too, the error is only logged.
+             *
+             * @param task The function to run, with no arguments.
+             * @param onComplete Called with `(error, result)`: the Java error [task] threw and `null`, or `null` and
+             * what [task] returned.
+             * @return A Kotlin coroutine `Job` for the scheduled task; scripts can ignore it.
+             * @see guide:engines/neonjs#java-access
+             */
             @JvmStatic
             fun runOnUiThread(task: Callable<Any>, onComplete: (error: Throwable?, result: Any?) -> Unit) =
                 CoroutineScope(Dispatchers.Main).launch {

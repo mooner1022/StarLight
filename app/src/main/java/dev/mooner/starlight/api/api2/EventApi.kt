@@ -29,28 +29,77 @@ class EventApi: Api<EventApi.Event>() {
         Event()
 
     // Fields rather than getters, so the names stay upper case in both engines.
+    /**
+     * MessengerBot R's `Event`: the names of the API2 events, for `bot.on(Event.MESSAGE, …)`; a global in API2
+     * projects.
+     *
+     * Each constant is the event's name as a string, such as `"message"`. A listener is called only when the project
+     * also receives the event's ID, such as `starlight.api2.message`. `TICK`, `BATTERY_LEVEL_CHANGED` and
+     * `Activity.*` are here for scripts that name them, but never fire.
+     *
+     * @see guide:events#api2-listeners
+     */
     class Event {
+        /** `"message"`: a chat message arrived; listeners get an `Api2Message` (event ID `starlight.api2.message`). */
         @JvmField val MESSAGE = "message"
+        /**
+         * `"command"`: a message starting with the bot's command prefix arrived; listeners get an `Api2Command` (event
+         * ID `starlight.api2.command`).
+         *
+         * Set the prefix first with `bot.setCommandPrefix(…)`.
+         */
         @JvmField val COMMAND = "command"
+        /**
+         * `"notificationPosted"`: an app posted a notification; listeners get `(sbn, sessionManager)` (event ID
+         * `starlight.api2.notification_posted`).
+         *
+         * `sessionManager` is always `null`. Fired only while the app setting **onNotificationPosted 이벤트 사용** is on.
+         */
         @JvmField val NOTIFICATION_POSTED = "notificationPosted"
+        /**
+         * `"notificationRemoved"`: a notification was removed; listeners get `(sbn, rankingMap, reason)` (event ID
+         * `starlight.api2.notification_removed`).
+         *
+         * Fired only while the app setting **onNotificationPosted 이벤트 사용** is on.
+         */
         @JvmField val NOTIFICATION_REMOVED = "notificationRemoved"
+        /**
+         * `"startCompile"`: the project is about to compile again; listeners get no arguments (event ID
+         * `starlight.api2.start_compile`).
+         */
         @JvmField val START_COMPILE = "startCompile"
-        /** StarLight doesn't fire it. */
+        /** `"tick"`, an event StarLight never fires. */
         @JvmField val TICK = "tick"
-        /** StarLight doesn't fire it, as MessengerBot R doesn't. */
+        /** `"batteryLevelChanged"`, an event StarLight never fires; MessengerBot R doesn't either. */
         @JvmField val BATTERY_LEVEL_CHANGED = "batteryLevelChanged"
-        /** StarLight has no script activity, so these never fire; they're here for scripts that name them. */
+        /**
+         * The names of the activity events, such as `Event.Activity.CREATE`; StarLight has no script activity, so they
+         * never fire.
+         */
         @JvmField val Activity = ActivityEvents()
     }
 
+    /**
+     * The names of MessengerBot R's activity events, as `Event.Activity`.
+     *
+     * StarLight has no script activity, so these events never fire; the names are here for scripts that use them.
+     */
     class ActivityEvents {
+        /** `"activityBackPressed"`, an event StarLight never fires. */
         @JvmField val BACK_PRESSED = "activityBackPressed"
+        /** `"activityCreate"`, an event StarLight never fires. */
         @JvmField val CREATE = "activityCreate"
+        /** `"activityDestroy"`, an event StarLight never fires. */
         @JvmField val DESTROY = "activityDestroy"
+        /** `"activityPause"`, an event StarLight never fires. */
         @JvmField val PAUSE = "activityPause"
+        /** `"activityRestart"`, an event StarLight never fires. */
         @JvmField val RESTART = "activityRestart"
+        /** `"activityResume"`, an event StarLight never fires. */
         @JvmField val RESUME = "activityResume"
+        /** `"activityStart"`, an event StarLight never fires. */
         @JvmField val START = "activityStart"
+        /** `"activityStop"`, an event StarLight never fires. */
         @JvmField val STOP = "activityStop"
     }
 }
