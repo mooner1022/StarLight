@@ -5,11 +5,14 @@ import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.Callable
+
+private val LOG = LoggerFactory.logger {  }
 
 @Suppress("unused")
 class AppApi: Api<AppApi.App>() {
@@ -27,11 +30,8 @@ class AppApi: Api<AppApi.App>() {
                 CoroutineScope(Dispatchers.Main).launch {
                     runCatching {
                         task.call()
-                    }.onFailure {
-                        onComplete(it, null)
-                    }.onSuccess {
-                        onComplete(null, it)
-                    }
+                    }.fold({ runCatching { onComplete(null, it) } }, { runCatching { onComplete(it, null) } })
+                        .onFailure { LOG.error { "App.runOnUiThread: onComplete failed: $it" } }
                 }
         }
     }
