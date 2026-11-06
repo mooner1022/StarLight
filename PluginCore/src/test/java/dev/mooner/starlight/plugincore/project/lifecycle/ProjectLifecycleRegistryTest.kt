@@ -143,6 +143,7 @@ class ProjectLifecycleRegistryTest {
         override val logger: ProjectLogger get() = error("unused")
         override fun getLifecycle(): ProjectLifecycle = error("unused")
         override fun callFunction(name: String, args: Array<out Any>, onException: (Throwable) -> Unit) = error("unused")
+        override fun runEvent(task: () -> Unit, onException: (Throwable) -> Unit) = error("unused")
         override fun compile(throwException: Boolean): Boolean = error("unused")
         override fun compileAsync(): Flow<Pair<PipelineStage<*, *>, Int>> = error("unused")
         override fun setEnabled(enabled: Boolean): Boolean = error("unused")

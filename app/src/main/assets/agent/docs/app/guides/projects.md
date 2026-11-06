@@ -30,7 +30,7 @@ order: 1
 | 방식 | 객체 | 이벤트 |
 |---|---|---|
 | **StarLight 오리지널** | `Log`, `Projects`, `Plugins`, `Languages`, `Platform`, `Env`, `Java`, `Notification`, `HomeWidget`, `MediaSharer`, `EventEmitter` | `onMessage`, `onMessageDeleted`, `onNotificationPosted`, `onStartCompile` |
-| **메신저봇 API2** | `Log`, `BotManager`, `Broadcast`, `App`, `Device`, `FileStream` | `bot.on(...)`으로 등록하는 리스너 |
+| **메신저봇 API2** | `Log`, `BotManager`, `Event`, `Broadcast`, `App`, `Device`, `FileStream` | `bot.addListener(…)`로 등록하는 리스너 (`starlight.api2.*`) |
 | **메신저봇 레거시** | `Log`, `Api`, `Utils`, `DataBase`, `Bridge`, `Device`, `FileStream` | `response`, `onNotificationPosted`, `onStartCompile` |
 
 - 새 프로젝트의 마법사에서 고르고, 나중에 **프로젝트 설정 → API 방식**에서 바꿀 수 있어요. 바꾼 뒤에는 다시 컴파일해야 적용돼요.

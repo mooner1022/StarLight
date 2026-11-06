@@ -93,7 +93,7 @@ class ProjectManager(
         }
 
         for (project in targets)
-            project.callFunction(event.functionName, args) { e -> onFailure(project, e) }
+            event.dispatch(project, args) { e -> onFailure(project, e) }
     }
 
     fun removeProject(project: Project, removeFiles: Boolean = true) =

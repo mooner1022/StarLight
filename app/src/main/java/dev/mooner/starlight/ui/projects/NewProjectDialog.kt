@@ -63,7 +63,8 @@ private val LOG = LoggerFactory.logger {  }
 private val NAME_REGEX = "^[-_\\dA-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+$".toRegex()
 
 private const val CONFIG_LAST_LANGUAGE = "new_project_language"
-private const val DEFAULT_EVENT_ID = "starlight.message.create"
+// StarLight's onMessage and API2's message listener; each shows only when the project has its level.
+private val DEFAULT_EVENT_IDS = setOf("starlight.message.create", "starlight.api2.message")
 private const val STARLIGHT_PLUGIN_ID = "starlight"
 private const val SELECTED_LANGUAGE_COLOR = "#50AD977A"
 private const val STEP_ANIM_DURATION = 180L
@@ -459,7 +460,7 @@ private fun loadEventOptions(): List<EventOption> =
                 id           = id,
                 functionName = instance.functionName,
                 instance     = instance,
-                isSelected   = id == DEFAULT_EVENT_ID,
+                isSelected   = id in DEFAULT_EVENT_IDS,
             )
         }
         .sortedWith(compareBy({ it.pluginId != STARLIGHT_PLUGIN_ID }, EventOption::pluginId, EventOption::functionName))

@@ -60,11 +60,7 @@ class JSRhino: Language() {
 
         val context = createAndroidHelper().enterContext().apply {
             optimizationLevel = optLevel
-            val langVersionIndex = config.getInt(CONF_LANG_VERSION)
-            languageVersion = if (langVersionIndex == null)
-                LANG_DEF_VERSION
-            else
-                indexToVersion(langVersionIndex)
+            languageVersion = configuredLanguageVersion()
             wrapFactory = PrimitiveWrapFactory()
         }
         //context.applicationClassLoader =
@@ -73,15 +69,22 @@ class JSRhino: Language() {
     }
 
     // Overrides the helper to set classloader as RuntimeClassLoader
+    private fun configuredLanguageVersion(): Int =
+        getLanguageConfig().getInt(CONF_LANG_VERSION)?.let(::indexToVersion) ?: LANG_DEF_VERSION
+
     private fun createAndroidHelper(): RhinoAndroidHelper {
         return object : RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")) {
             override fun createAndroidContextFactory(cacheDirectory: File?): AndroidContextFactory {
                 val classLoader = RuntimeClassLoader(currentThread.contextClassLoader)
                 return object : AndroidContextFactory(cacheDirectory, classLoader) {
 
-                    // Every context, including those that run callbacks on other threads, comes from here.
+                    // Every context, including those that run callbacks on other threads, comes from here. Those get
+                    // the script's language and values too, or a listener would see a Java string where the script
+                    // compares a JS one (`msg.content === "!hi"` false), and a BigInt as a Java object.
                     override fun makeContext(): Context =
                         super.makeContext().also { cx ->
+                            cx.languageVersion = configuredLanguageVersion()
+                            cx.wrapFactory = PrimitiveWrapFactory()
                             if (ScriptHostPolicy.isEnabled)
                                 PrimitiveWrapFactory.restrictContext(cx)
                         }

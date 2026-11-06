@@ -34,6 +34,6 @@ inline fun <reified T: ProjectEvent> Project.fireEvent(vararg args: Any, noinlin
             error("Argument type mismatch on position ${i}, required: ${eArg}, provided: $pArg")
     }
 
-    this.callFunction(event.functionName, args, onFailure)
+    event.dispatch(this, args, onFailure)
     return true
 }
