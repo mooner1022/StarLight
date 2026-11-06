@@ -98,6 +98,14 @@
     <string name="align_active_first">Align active first</string>
 
     <string name="debugroom_type_here">Type here…</string>
+    <string name="color_picker_none">No color picked</string>
+    <string name="color_picker_shades">Shades</string>
+    <string name="color_picker_custom">Custom</string>
+    <string name="color_picker_palette">Palette</string>
+    <string name="color_picker_hex_hint">RRGGBB</string>
+    <string name="color_picker_opacity">Opacity</string>
+    <string name="color_picker_brightness">Brightness</string>
+    <string name="color_picker_swatch">Color %1$s</string>
 
     <string name="layout_tv_last">Last</string>
     <string name="layout_tv_next">Next</string>

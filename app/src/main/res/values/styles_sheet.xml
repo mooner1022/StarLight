@@ -17,4 +17,28 @@
         <item name="android:windowEnterAnimation">@null</item>
         <item name="android:windowExitAnimation">@null</item>
     </style>
+
+    <!-- Over a group in a sheet's content, such as the color picker's shades. -->
+    <style name="ColorPickerLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">16dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:fontFamily">@font/wantedsans_medium</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:textColor">@color/text_sub</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <!-- One option of a two-way switch in a sheet; picked, it takes the gold pill. -->
+    <style name="ColorPickerMode">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:fontFamily">@font/wantedsans_medium</item>
+        <item name="android:gravity">center</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:textColor">@color/agent_text</item>
+        <item name="android:textSize">14sp</item>
+    </style>
 </resources>
