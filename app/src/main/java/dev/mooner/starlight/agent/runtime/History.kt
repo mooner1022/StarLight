@@ -1,5 +1,6 @@
 package dev.mooner.starlight.agent.runtime
 
+import dev.mooner.starlight.agent.model.CallResults
 import dev.mooner.starlight.agent.model.ChatMessage
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.model.Role
@@ -12,7 +13,7 @@ internal object History {
      * on. Notices are skipped: they are for the user, not part of the turns.
      */
     fun openCalls(messages: List<ChatMessage>): Pair<ChatMessage, List<Part.ToolCall>>? {
-        val turns = messages.filter(::takesPart)
+        val turns = messages.filter(CallResults::takesPart)
         val index = turns.indexOfLast { it.role != Role.TOOL }
         val turn = turns.getOrNull(index)?.takeIf { it.role == Role.ASSISTANT && it.toolCalls.isNotEmpty() } ?: return null
         val answered = turns.drop(index + 1).flatMapTo(HashSet()) { message ->
@@ -35,17 +36,8 @@ internal object History {
         val turn = messages.indexOfFirst { it.id == turnId }
         if (turn < 0)
             return messages
-        var answer = -1
-        for (index in turn + 1 until messages.size) {
-            val message = messages[index]
-            if (!takesPart(message))
-                continue
-            if (message.role == Role.TOOL)
-                answer = index
-            break
-        }
-        if (answer < 0)
-            return messages + newMessage()
+        val answer = CallResults.answerOf(messages, turn)
+            ?: return messages + newMessage()
         return messages.toMutableList().also { it[answer] = it[answer].copy(parts = it[answer].parts + results) }
     }
 
@@ -63,7 +55,4 @@ internal object History {
         }
         return project
     }
-
-    private fun takesPart(message: ChatMessage): Boolean =
-        message.parts.any { it !is Part.Notice }
 }

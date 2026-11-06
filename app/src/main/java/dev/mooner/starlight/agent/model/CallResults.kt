@@ -117,8 +117,11 @@ object CallResults {
         return out
     }
 
-    /** The index of the tool message answering the turn at [turn], notices skipped; null when none follows it. */
-    private fun answerOf(messages: List<ChatMessage>, turn: Int): Int? {
+    /**
+     * The index of the tool message answering the turn at [turn], notices skipped; null when none follows it. The one
+     * rule for where a turn's results are, which the run loop's History follows too.
+     */
+    fun answerOf(messages: List<ChatMessage>, turn: Int): Int? {
         for (index in turn + 1 until messages.size) {
             val message = messages[index]
             if (!takesPart(message))
@@ -128,6 +131,7 @@ object CallResults {
         return null
     }
 
-    private fun takesPart(message: ChatMessage): Boolean =
+    /** Whether [message] is part of what the model sees: notices aren't. */
+    fun takesPart(message: ChatMessage): Boolean =
         message.parts.any { it !is Part.Notice }
 }
