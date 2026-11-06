@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.languages.neonjs
 
+import android.os.Looper
 import android.widget.Toast
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.Icon
@@ -79,6 +80,7 @@ class JSNeon: Language() {
             ExecutionMode.INTERPRETER
 
         val engine = NeonEngine.builder()
+            .contextWaitLimit(MAIN_THREAD_WAIT_MILLIS, ::isMainThread)
             .executionMode(execMode)
             .optimizingTier(isOptimized && langConf.getBoolean(CONF_ADVANCED_OPTIMIZATION, false))
             .sandbox(
@@ -179,6 +181,7 @@ class JSNeon: Language() {
         val optimizationLevel = options["optimizationLevel"]?.toIntOrNull() ?: 0
 
         val engine = NeonEngine.builder()
+            .contextWaitLimit(MAIN_THREAD_WAIT_MILLIS, ::isMainThread)
             .let { if (BuildConfig.SCRIPT_JIT) it.optimizationLevel(optimizationLevel) else it.executionMode(ExecutionMode.INTERPRETER) }
             .sandbox(
                 SandboxPolicy.builder()
@@ -378,6 +381,15 @@ class JSNeon: Language() {
         private const val CONF_EXT_MODULE_SANDBOX = "load_ext_module_sandbox"
         private const val DEF_OPTIMIZATION_LEVEL = 2 // Adaptive
 
+        /**
+         * How long the main thread waits for a script's context that another thread is using, as when a callback runs on
+         * it (`App.runOnUiThread`): past it the call fails instead of freezing the app, well before Android's 5-second
+         * limit for answering input. A thread waiting for the main thread lets the context go (`Api.UIThread`).
+         */
+        private const val MAIN_THREAD_WAIT_MILLIS = 2_000L
+
+        private fun isMainThread(thread: Thread): Boolean =
+            thread === Looper.getMainLooper().thread
 
         private val hostAccess: HostAccess = buildHostAccess(ScriptHostPolicy.isEnabled)
 
