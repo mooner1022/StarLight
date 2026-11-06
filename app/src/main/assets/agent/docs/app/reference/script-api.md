@@ -277,3 +277,6 @@ bot.addListener(Event.COMMAND, onCommand);
 | HTTP | `fetch`, `WebSocket` | `Utils.getWebText()`, Java API |
 | Java 클래스 | `Java.type("…")` → 클래스 객체 | `Packages.…`, `importClass()` (`Java.type()`은 `java.lang.Class`를 돌려줘요) |
 | 다른 파일 | `import` | `require()` |
+
+> [!NOTE]
+> Google Play 판에서는 리플렉션, 클래스 로딩, 프로세스 실행 같은 일부 Java API를 쓸 수 없어요. [Google Play 판의 제한](/docs/neonjs/guides/java#google-play-판의-제한)을 보세요.

@@ -32,4 +32,4 @@ Kotlin으로 StarLight에 새 API, 이벤트, 설정 화면, 홈 위젯을 더�
 - [SDK와 변경 사항](/docs/plugins/sdk)
 
 > [!NOTE]
-> 문서는 **스냅샷 채널(StarLight 1.0.0 개발 빌드, nightly 브랜치)** 을 기준으로 해요. 베타(0.3.4b)와 정식 채널의 앱에는 NeonJS가 없고, 일부 화면과 기능이 다를 수 있어요.
+> 문서는 **StarLight 1.0.1**을 기준으로 해요. 이전 버전의 앱에는 없는 화면과 기능이 있을 수 있어요. Google Play 판에서 쓸 수 없는 기능은 [Google Play 판과 GitHub 판](/docs/app/start/install#google-play-판과-github-판)을 보세요.
