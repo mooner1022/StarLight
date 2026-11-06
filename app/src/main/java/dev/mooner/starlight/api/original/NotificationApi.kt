@@ -26,7 +26,6 @@ import dev.mooner.starlight.utils.createNotificationChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlin.properties.Delegates.notNull
 
 private typealias Callback = (id: Int) -> Unit
 private val LOG = LoggerFactory.logger {  }
@@ -35,7 +34,7 @@ class NotificationApi: Api<NotificationApi.Notification>() {
 
     @SuppressLint("MissingPermission")
     @Suppress("unused")
-    class Notification(
+    class Notification private constructor(
         private val id: Int,
         private val builder: NotificationBuilder
     ) {
@@ -137,6 +136,10 @@ class NotificationApi: Api<NotificationApi.Notification>() {
             const val STATE_DEFAULT = 0
             const val STATE_CREATED = 1
 
+            /** Posts one; only [NotificationBuilder.build] does, so that scripts don't see a constructor. */
+            internal fun post(id: Int, builder: NotificationBuilder): Notification =
+                Notification(id, builder)
+
             private const val CHANNEL_ID = "NotificationApiChannel"
             const val INTENT_ACTION = "NotificationApiAction"
 
@@ -150,8 +153,8 @@ class NotificationApi: Api<NotificationApi.Notification>() {
         private val id: Int
     ) {
 
-        internal var mTitle: String by notNull()
-        internal var mText: String by notNull()
+        internal var mTitle: String? = null
+        internal var mText: String? = null
 
         internal var lightArgb: Int? = null
         internal var lightOnMs: Int = 0
@@ -190,8 +193,20 @@ class NotificationApi: Api<NotificationApi.Notification>() {
             return this
         }
 
-        fun build() =
-            Notification(id, this)
+        /**
+         * Posts the notification; throws `IllegalStateException` if its title or text wasn't set.
+         *
+         * Without StarLight's notification permission, on Android 13 and later, nothing is shown: StarLight logs an
+         * error in its own log, and the result's `state` is `STATE_DEFAULT`.
+         *
+         * @return The notification, to change with `update` or remove with `delete`.
+         * @throws IllegalStateException If the title or the text wasn't set.
+         */
+        fun build(): Notification {
+            check(mTitle != null) { "Set the notification's title with setTitle before build" }
+            check(mText != null) { "Set the notification's text with setText before build" }
+            return Notification.post(id, this)
+        }
     }
 
     override val name: String = "Notification"
