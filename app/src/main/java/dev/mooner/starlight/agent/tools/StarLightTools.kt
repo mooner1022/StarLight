@@ -1,5 +1,6 @@
 package dev.mooner.starlight.agent.tools
 
+import dev.mooner.starlight.agent.docs.AgentDocs
 import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.CardKind
 import dev.mooner.starlight.agent.model.Plan
@@ -9,7 +10,6 @@ import dev.mooner.starlight.agent.store.CheckpointStore
 import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
@@ -36,7 +36,7 @@ import kotlin.math.roundToLong
  * (github.com/mooner1022/starlight-mcp), so that the same instructions work in both, and run on the app's own
  * project manager instead of a plugin's.
  */
-class StarLightTools(private val docs: DocsLibrary) {
+class StarLightTools(private val docs: AgentDocs) {
 
     val all: List<AgentTool> by lazy { (readTools + handOffTools + writeTools).sortedBy(AgentTool::name) }
 
@@ -148,54 +148,73 @@ class StarLightTools(private val docs: DocsLibrary) {
         },
         tool(
             "list_events",
-            "Lists the events projects can receive, with the function a script defines for each (such as onMessage) and " +
-                "its arguments. With a project, also tells which events it receives.",
+            "Lists the events a project can receive: ID, how a script receives it (a function such as onMessage(event), " +
+                "or an API2 listener), its API levels and what it is for. With a project, also whether that project " +
+                "receives each one; an event outside its API levels never arrives, even when allowed. describe_event " +
+                "shows an event's arguments.",
             ToolRisk.READ,
             params = { string("project", "Name (or id) of a project, to see which events it receives.", optional = true) },
             describe = { "List events" },
         ) { args ->
-            val allowed = args.stringArg("project")?.let { allowedEvents(findProject(args)) }
-            val json = buildJsonArray {
-                for (eventClass in ProjectEventManager.find(ALL_EVENTS)) {
-                    val id = ProjectEventManager.validateAndGetEventID(eventClass) ?: continue
-                    val event = eventClass.getInstance()
-                    addJsonObject {
-                        put("id", id)
-                        put("name", event.name)
-                        put("function", event.functionName)
-                        putJsonArray("args") { event.argTypes.forEach { add("${it.name}: ${it.type.java.simpleName}") } }
-                        allowed?.let { put("allowed", id in it) }
-                    }
+            val project = args.stringArg("project")?.let { findProject(args) }
+            val reception: ((String) -> DocsAnswers.Reception)? = project?.let { found ->
+                val allowed = allowedEvents(found)
+                fun receptionOf(id: String): DocsAnswers.Reception = when {
+                    !Session.apiLevelManager.hasEvent(found.info.apiLevels, id) -> DocsAnswers.Reception.NOT_IN_LEVELS
+                    id in allowed -> DocsAnswers.Reception.RECEIVES
+                    else -> DocsAnswers.Reception.NOT_ALLOWED
                 }
+                ::receptionOf
             }
-            ToolOutput(json.toString())
+            val lines = docs.answers().listEvents(reception)
+            ToolOutput(lines.joinToString("\n"), summary = "${lines.size - 1} events")
+        },
+        tool(
+            "describe_event",
+            "Shows one event as TypeScript declarations: how a script receives it, its arguments and their types, and " +
+                "the guides about it.",
+            ToolRisk.READ,
+            params = { string("id", "Event ID from list_events, such as starlight.message.create.") },
+            describe = { "Describe event ${it.stringArg("id")}" },
+        ) { args ->
+            val id = args.requireString("id")
+            ToolOutput(docs.answers().describeEvent(id), summary = id)
         },
         tool(
             "list_apis",
-            "Lists the global APIs StarLight gives scripts (from the app and its plugins), with their functions and values. " +
-                "levels names the API levels that include an API: a project gets it only if one of its levels does. An " +
-                "API with no levels, such as a plugin's, is in every project. list_projects shows each project's levels.",
+            "Lists the global objects and classes scripts can use, one line each with what it is. With a project, only " +
+                "the ones that project gets, from its API levels and language. describe_api shows one in full.",
             ToolRisk.READ,
+            params = { string("project", "Name (or id) of a project, to list only what it gets.", optional = true) },
             describe = { "List script APIs" },
-        ) { _ ->
-            val json = buildJsonArray {
-                for (api in Session.apiManager.getApis())
-                    addJsonObject {
-                        put("name", api.name)
-                        putJsonArray("levels") {
-                            Session.apiLevelManager.getLevels().filter { api.name in it.apis }.forEach { add(it.id) }
-                        }
-                        putJsonArray("functions") {
-                            api.objects.filterIsInstance<ApiObject.Function>().forEach { function ->
-                                add("${function.name}(${function.args.joinToString { it.simpleName }}): ${function.returns.simpleName}")
-                            }
-                        }
-                        putJsonArray("values") {
-                            api.objects.filterIsInstance<ApiObject.Value>().forEach { add("${it.name}: ${it.returns.simpleName}") }
-                        }
-                    }
-            }
-            ToolOutput(json.toString())
+        ) { args ->
+            val project = args.stringArg("project")?.let { findProject(args) }
+            val names = project?.let { Session.apiManager.getApis(it).map { api -> api.name }.toSet() }
+            val lines = docs.answers().listApis(names)
+            ToolOutput(lines.joinToString("\n"), summary = "${lines.size} APIs")
+        },
+        tool(
+            "describe_api",
+            "Shows a global object or class of the script API, or a type one of them returns, as TypeScript " +
+                "declarations with what each member does, then the types it leads to. Check it before relying on an API " +
+                "you are unsure of.",
+            ToolRisk.READ,
+            params = { string("name", "An API from list_apis, such as BotManager, or a type an API returns.") },
+            describe = { "Describe ${it.stringArg("name")}" },
+        ) { args ->
+            val name = args.requireString("name")
+            ToolOutput(docs.answers().describeApi(name), summary = name)
+        },
+        tool(
+            "read_guide",
+            "Reads a guide on how StarLight works: engines, projects, events, testing, the Google Play build, the app's " +
+                "screens. Without an id, lists the guides. An id may end in #section to read one section.",
+            ToolRisk.READ,
+            params = { string("id", "Guide id from the list, such as engines/neonjs or events#api2-listeners.", optional = true) },
+            describe = { "Read the guide ${it.stringArg("id") ?: "list"}" },
+        ) { args ->
+            val id = args.stringArg("id")
+            ToolOutput(docs.answers().readGuide(id), summary = id?.takeIf(String::isNotBlank) ?: "Guides")
         },
         tool(
             "get_project_logs",
@@ -219,21 +238,6 @@ class StarLightTools(private val docs: DocsLibrary) {
             describe = { "Read app logs" },
         ) { args ->
             ToolOutput(formatLogs(LogCollector.logs, args.intArg("limit") ?: DEFAULT_LOG_LIMIT))
-        },
-        tool(
-            "read_docs",
-            "Reads StarLight's documentation (in Korean): events and their objects, the script APIs, NeonJS modules, " +
-                "fetch, async code and Java access. Without a path, lists the pages. Check it before relying on an API " +
-                "you are unsure of.",
-            ToolRisk.READ,
-            params = { string("path", "Page path from the list, such as app/reference/events.", optional = true) },
-            describe = { "Read the docs" },
-        ) { args ->
-            val path = args.stringArg("path")
-            if (path.isNullOrBlank())
-                ToolOutput(docs.pages.joinToString("\n") { "${it.path}: ${it.title} - ${it.description}" }, summary = "Docs index")
-            else
-                ToolOutput(docs.page(path), summary = path)
         },
     )
 
@@ -501,7 +505,11 @@ class StarLightTools(private val docs: DocsLibrary) {
                 allowedEventIds.clear()
                 allowedEventIds.addAll(events)
             }
-            ToolOutput("Receives: ${allowedEvents(project).sorted().joinToString().ifEmpty { "nothing" }}", summary = project.info.name)
+            val (received, outside) = allowedEvents(project).sorted()
+                .partition { Session.apiLevelManager.hasEvent(project.info.apiLevels, it) }
+            val text = "Receives: ${received.joinToString().ifEmpty { "nothing" }}" +
+                if (outside.isEmpty()) "" else "\nAllowed, but outside its API levels, so never received: ${outside.joinToString()}"
+            ToolOutput(text, summary = project.info.name)
         },
         tool(
             "create_project",

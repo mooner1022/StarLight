@@ -30,13 +30,25 @@ class PlatformApi: Api<PlatformApi.Platform>() {
     override fun getInstance(project: Project): Any =
         Platform::class.java
 
+    /**
+     * Facts about the app running the script: its name, version and uptime.
+     *
+     * They are static methods, such as `Platform.getVersion()`; NeonJS also reads them as properties
+     * (`Platform.version`). The class isn't meant to be constructed.
+     */
     class Platform {
         companion object {
 
+            /** The app's name: always `StarLight`. */
             @JvmStatic
             fun getName(): String =
                 "StarLight"
 
+            /**
+             * The version of the StarLight app, such as `1.0.1`, with the suffix of its build.
+             *
+             * Release builds add their build date, as in `1.0.1-261106`. `Unknown` if Android doesn't report a version.
+             */
             @JvmStatic
             fun getVersion(): String =
                 GlobalApplication
@@ -44,6 +56,7 @@ class PlatformApi: Api<PlatformApi.Platform>() {
                     .getPackageInfo()
                     .versionName ?: "Unknown"
 
+            /** How long StarLight has been running, in milliseconds since it last started. */
             @JvmStatic
             fun getUptime(): Long =
                 System.currentTimeMillis() - ApplicationSession.initMillis

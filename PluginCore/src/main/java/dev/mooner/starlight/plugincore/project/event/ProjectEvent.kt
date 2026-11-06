@@ -28,6 +28,20 @@ abstract class ProjectEvent {
     /** When the event happens, in a few words, for lists of events; they show [name] without it. */
     open val description: String? = null
 
+    /**
+     * The arguments a script's function or listener receives: the ones the event is fired with, unless [dispatch]
+     * changes them, as API2 events do when they hand their listeners wrappers. Agent docs describe these.
+     */
+    open val scriptArguments: Array<CodeGenerator.Argument<*>>
+        get() = argTypes
+
+    /**
+     * For an event a script receives through a listener rather than a function: the name it passes to add one, such
+     * as API2's `"message"` in `bot.on("message", …)`. Agent docs pair it with the listener's arguments.
+     */
+    open val listenerName: String?
+        get() = null
+
     /** How a script receives the event, as lists of events show it: by default, the function it calls. */
     open val usage: String
         get() = argTypes.joinToString(prefix = "$functionName(", postfix = ")") { it.name }

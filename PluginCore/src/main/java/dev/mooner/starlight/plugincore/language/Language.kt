@@ -23,42 +23,52 @@ import dev.mooner.starlight.plugincore.utils.TimeUtils
 import dev.mooner.starlight.plugincore.utils.readConfigData
 import java.io.File
 
+/**
+ * A script language, as `Languages.getSelf()` and `Languages.ofId(id)` return it, and `project.getLanguage()`.
+ *
+ * Scripts mostly read its `id` and `name`. Its other public members are StarLight's and plugins' own, and aren't
+ * listed here.
+ */
 abstract class Language {
 
     /**
-     * Unique ID of the language.
+     * The language's ID: `js_neon` for NeonJS, `JS_RHINO` for Rhino, or a plugin's language's.
      */
     abstract val id: String
 
     /**
-     * The name being displayed to users.
+     * The language's name, as the app shows it, such as `JS(NeonJS)`.
      */
     abstract val name: String
 
     /**
-     * Extension of file which contains code, without a dot in front.
+     * The extension of its script files, without the dot, such as `js`.
      */
     abstract val fileExtension: String
 
     /**
      * true if the compiled scope requires release after execution, false if not.
+     * @suppress
      */
     abstract val requireRelease: Boolean
 
     /**
      * How many events of a project may run at once unless the project sets its own limit. 1 suits an engine whose
      * script runs on one thread at a time, where more calls would only wait for each other.
+     * @suppress
      */
     open val defaultConcurrency: Int = 3
 
     /**
      * List of config objects inserted in project config.
      * Only category which has same ID with language is inserted.
+     * @suppress
      */
     open val configStructure: ConfigStructure = emptyList()
 
     /**
      * List of default code config objects inserted in project creation dialog.
+     * @suppress
      */
     open val defaultCodeStructure: ConfigStructure = emptyList()
 
@@ -67,17 +77,24 @@ abstract class Language {
      *
      * %HEADER% - Position for header content
      * %BODY% - Position for main code
+     * @suppress
      */
     open val defaultCode: String = """
             %HEADER%
             %BODY%
         """.trimIndent()
 
+    /** @suppress */
     open val codeGenerator: CodeGenerator = DefaultJSCodeGenerator()
 
-    /** Globals the engine provides itself; an [Api] with one of these names isn't added to its scripts. */
+    /**
+     * Globals the engine provides itself; an [Api] with one of these names isn't added to its scripts.
+     *
+     * @suppress
+     */
     open val nativeGlobals: Set<String> = emptySet()
 
+    /** @suppress */
     open fun formatDefaultCode(fileName: String, events: List<ProjectEvent>): String {
         // TODO: Change with user-updatable comment
         val defaultComment = codeGenerator.generateComment(
@@ -132,6 +149,7 @@ abstract class Language {
      * Called when the value of config object defined above is saved to a local file.
      *
      * @param updated [Map] that contains id as key and updated value as value
+     * @suppress
      */
     @CallSuper
     open fun onConfigUpdated(updated: Map<String, Any>) {
@@ -144,6 +162,7 @@ abstract class Language {
      *
      * @param id id of config object
      * @param data updated value
+     * @suppress
      */
     open fun onConfigChanged(id: String, data: Any) {}
 
@@ -155,6 +174,7 @@ abstract class Language {
      * @param project the project that requested compilation
      *
      * @return scope of compilation result
+     * @suppress
      */
     abstract fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any
 
@@ -163,6 +183,7 @@ abstract class Language {
      * Should be called after scope evaluation, only if language requires release.
      *
      * @param scope scope which is compiled and used
+     * @suppress
      */
     open fun release(scope: Any) {}
 
@@ -171,6 +192,7 @@ abstract class Language {
      * Should be called on the last stage of scope lifecycle.
      *
      * @param scope scope which is compiled and used
+     * @suppress
      */
     open fun destroy(scope: Any) {}
 
@@ -181,6 +203,7 @@ abstract class Language {
      * @param functionName name of the function being called
      * @param args arguments passed to the function being called
      * @return return value of the called function
+     * @suppress
      */
     abstract fun callFunction(scope: Any, functionName: String, args: Array<out Any>): Any?
 
@@ -190,6 +213,7 @@ abstract class Language {
      * @param code [String] code to execute
      * @param options [Map] that contains options as key and value
      * @return [Any] value returned by the executed code
+     * @suppress
      */
     abstract fun eval(code: String, options: Map<String, String> = emptyMap()): Any
 
@@ -240,12 +264,15 @@ abstract class Language {
             else null
         }
 
+    /** @suppress */
     fun getIconFile(): File =
         getAsset("icon.png")
 
+    /** @suppress */
     fun getIconFileOrNull(): File? =
         getAssetOrNull("icon.png")
 
+    /** @suppress */
     open fun toPipeline(): Pipeline<Pair<Project, String>, Any> {
         return plumber {
             initial<Pair<Project, String>, Any>(id, name) { (project, code) ->
@@ -254,6 +281,7 @@ abstract class Language {
         }
     }
 
+    /** @suppress */
     @Deprecated("Deprecated, use toPipeline().")
     open fun toPipelineStage(): PipelineStage<Pair<Project, String>, Any> = LanguageStage(
         id = this.id,

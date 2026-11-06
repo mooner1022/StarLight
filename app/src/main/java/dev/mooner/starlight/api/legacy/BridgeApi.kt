@@ -16,10 +16,29 @@ import org.mozilla.javascript.ScriptableObject
 @Suppress("unused")
 class BridgeApi: Api<BridgeApi.Bridge>() {
 
+    /**
+     * The `Bridge` global of legacy projects: reaches the global scope of another Rhino project.
+     *
+     * Its members are static: use them on `Bridge` itself. Only `getScopeOf` and `isAllowed` exist; MessengerBot's
+     * other `Bridge` methods, such as `callFunctionOf` and `getVariableOf`, are missing.
+     *
+     * @see guide:projects#calling-other-projects
+     */
     class Bridge {
 
         companion object {
 
+            /**
+             * The global scope of the Rhino project named [scriptName], which holds its variables and functions.
+             *
+             * A `.js` at the end of the name is dropped, so MessengerBot's script names work. The project must be
+             * compiled, or this throws. A NeonJS project has no such scope.
+             *
+             * @param scriptName The project's name, matched exactly, with or without `.js`.
+             * @return The project's top-level scope, an `org.mozilla.javascript.ScriptableObject`.
+             * @throws IllegalStateException When no project has that name.
+             * @throws IllegalArgumentException When the project doesn't run on Rhino.
+             */
             @JvmStatic
             fun getScopeOf(scriptName: String): ScriptableObject {
                 val projectName = if (scriptName.endsWith(".js")) scriptName.dropLast(3) else scriptName
@@ -29,6 +48,13 @@ class BridgeApi: Api<BridgeApi.Bridge>() {
                 return project.getScope() as ScriptableObject
             }
 
+            /**
+             * Whether [getScopeOf] can reach the project named [scriptName]: it exists, is compiled and runs on Rhino.
+             *
+             * Unlike [getScopeOf], it doesn't drop a `.js` at the end of the name.
+             *
+             * @param scriptName The project's name, matched exactly.
+             */
             @JvmStatic
             fun isAllowed(scriptName: String): Boolean =
                 Session.projectManager.getProjectByName(scriptName)?.let { proj ->

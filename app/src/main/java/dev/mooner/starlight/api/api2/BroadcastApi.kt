@@ -35,19 +35,53 @@ class BroadcastApi: Api<BroadcastApi.Broadcast>() {
         return Broadcast(project)
     }
 
+    /**
+     * MessengerBot R's `Broadcast`: passes values between projects by name; a global in API2 projects.
+     *
+     * A project registers receivers for a name, and `send` calls the receivers of that name in every project. Of
+     * MessengerBot R's `Broadcast`, StarLight has only `send`, `register`, `unregister` and `unregisterAll`.
+     */
     class Broadcast(
         private val project: Project
     ) {
 
+        /**
+         * Calls every receiver registered for [broadcastName], in every project this one included, with [value].
+         *
+         * The receivers run right away, one after another, on the sending script's thread rather than on their
+         * projects' workers, and whether or not their projects are on. An error thrown by a receiver reaches the
+         * caller of `send` and skips the receivers after it. Nothing happens when no receiver has the name.
+         *
+         * @param broadcastName The name receivers registered for.
+         * @param value The value to pass; it can't be `null`. Send structured data as JSON text.
+         */
         fun send(broadcastName: String, value: Any) =
             BroadcastManager.send(broadcastName, value)
 
+        /**
+         * Registers [task] as this project's receiver for [broadcastName].
+         *
+         * It stays until it is unregistered, or until this project compiles again or is unloaded.
+         *
+         * @param broadcastName The name to receive.
+         * @param task The function called with each value sent under the name.
+         */
         fun register(broadcastName: String, task: BroadcastCallback) =
             BroadcastManager.register(project, broadcastName, task)
 
+        /**
+         * Removes [task] from this project's receivers for [broadcastName].
+         *
+         * It is matched by the Java object the engine passed for the function. NeonJS passes a new one each time, so
+         * there this doesn't find the receiver; use `unregisterAll()` instead.
+         *
+         * @param broadcastName The name it was registered for.
+         * @param task The function that was registered.
+         */
         fun unregister(broadcastName: String, task: BroadcastCallback) =
             BroadcastManager.unregister(project, broadcastName, task)
 
+        /** Removes every receiver this project registered. */
         fun unregisterAll() =
             BroadcastManager.unregisterAll(project)
     }

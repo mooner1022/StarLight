@@ -13,6 +13,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.about.libs.plugin)
+    alias(libs.plugins.ksp)
 }
 
 val nightly = true
@@ -177,6 +178,14 @@ dependencies {
 
     implementation(projects.configDSL)
     implementation(projects.pluginCore)
+
+    ksp(projects.docsProcessor)
+}
+
+// Script docs for StarLight AI, from the KDoc of what scripts can reach; see docs/agent-docs.md.
+ksp {
+    arg("starlight.docs.module", "starlight")
+    arg("starlight.docs.packages", "dev.mooner.starlight.api,dev.mooner.starlight.media,dev.mooner.starlight.listener")
 }
 
 /**

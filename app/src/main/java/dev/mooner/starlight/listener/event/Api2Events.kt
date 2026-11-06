@@ -8,6 +8,8 @@ package dev.mooner.starlight.listener.event
 
 import android.service.notification.NotificationListenerService.RankingMap
 import android.service.notification.StatusBarNotification
+import dev.mooner.starlight.api.api2.Api2Command
+import dev.mooner.starlight.api.api2.Api2Message
 import dev.mooner.starlight.api.api2.BotManagerApi.Bot
 import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.language.CodeGenerator
@@ -74,6 +76,16 @@ abstract class Api2Event: ProjectEvent() {
     }
 }
 
+/**
+ * A chat message arrived; the bot's `message` listeners, added with `bot.on(Event.MESSAGE, …)`, receive it.
+ *
+ * Called once per message from the apps the notification rules cover, and for messages sent in the debug room. The
+ * listeners run on the project's workers. Nothing is called until the script has its bot from
+ * `BotManager.getCurrentBot()`.
+ *
+ * @param msg The message: its text, sender and room, and `reply` to answer in that room.
+ * @see guide:events#api2-listeners
+ */
 class Api2MessageEvent: Api2Event() {
     override val id = "message"
     override val name = "API2 메시지 이벤트"
@@ -83,13 +95,25 @@ class Api2MessageEvent: Api2Event() {
     }
     override val functionName = "onMessage"
     override val constant = "MESSAGE"
+    override val listenerName = Api2Events.MESSAGE
     override val parameters = "msg"
     override val argTypes: Array<CodeGenerator.Argument<*>> = arrayOf("message" typedAs Message::class)
+    override val scriptArguments: Array<CodeGenerator.Argument<*>> = arrayOf("msg" typedAs Api2Message::class)
 
     override fun deliver(bot: Bot, args: Array<out Any>) =
         bot.deliverMessage(args[0] as Message)
 }
 
+/**
+ * A chat message starting with the bot's command prefix arrived; the bot's `command` listeners receive it.
+ *
+ * Nothing is called until the script sets a prefix with `bot.setCommandPrefix(…)`, and a word must follow the prefix:
+ * with the prefix `/`, the message `/help me` is the command `help` with the argument `me`, while `/` alone isn't a
+ * command. The message reaches `message` listeners as well.
+ *
+ * @param msg The command: the message's members, plus its command name and arguments.
+ * @see guide:events#api2-listeners
+ */
 class Api2CommandEvent: Api2Event() {
     override val id = "command"
     override val name = "API2 명령어 이벤트"
@@ -99,15 +123,26 @@ class Api2CommandEvent: Api2Event() {
     }
     override val functionName = "onCommand"
     override val constant = "COMMAND"
+    override val listenerName = Api2Events.COMMAND
     override val parameters = "msg"
     override val setup = "bot.setCommandPrefix(\"@\");"
     override val argTypes: Array<CodeGenerator.Argument<*>> = arrayOf("message" typedAs Message::class)
+    override val scriptArguments: Array<CodeGenerator.Argument<*>> = arrayOf("msg" typedAs Api2Command::class)
 
     override fun deliver(bot: Bot, args: Array<out Any>) =
         bot.deliverCommand(args[0] as Message)
 }
 
-/** Given `null` for the session manager MessengerBot R passes second, which StarLight doesn't have. */
+/**
+ * An app posted a notification; the bot's `notificationPosted` listeners receive it while the app
+ * setting **onNotificationPosted 이벤트 사용** is on.
+ *
+ * Every app's notifications count, except StarLight's own. The setting is off by default.
+ *
+ * @param sbn The notification, as Android's `StatusBarNotification`.
+ * @param sessionManager Always `null`: StarLight has no MessengerBot R `SessionManager`.
+ * @see guide:events#notification-events
+ */
 class Api2NotificationPostedEvent: Api2Event() {
     override val id = "notification_posted"
     override val name = "API2 알림 게시 이벤트"
@@ -117,13 +152,30 @@ class Api2NotificationPostedEvent: Api2Event() {
     }
     override val functionName = "onNotificationPosted"
     override val constant = "NOTIFICATION_POSTED"
+    override val listenerName = Api2Events.NOTIFICATION_POSTED
     override val parameters = "sbn, sessionManager"
     override val argTypes: Array<CodeGenerator.Argument<*>> = arrayOf("sbn" typedAs StatusBarNotification::class)
+    override val scriptArguments: Array<CodeGenerator.Argument<*>> = arrayOf(
+        "sbn" typedAs StatusBarNotification::class,
+        "sessionManager" typedAs Nothing::class,
+    )
 
     override fun deliver(bot: Bot, args: Array<out Any>) =
         bot.deliver(Api2Events.NOTIFICATION_POSTED, args[0], null)
 }
 
+/**
+ * A notification was removed; the bot's `notificationRemoved` listeners receive it while the app
+ * setting **onNotificationPosted 이벤트 사용** is on.
+ *
+ * Every app's notifications count, except StarLight's own. The setting is off by default.
+ *
+ * @param sbn The removed notification, as Android's `StatusBarNotification`.
+ * @param rankingMap Android's `NotificationListenerService.RankingMap` of the notifications still showing.
+ * @param reason Why it was removed: one of Android's `NotificationListenerService.REASON_*` constants, such as
+ * `REASON_CANCEL` (2).
+ * @see guide:events#notification-events
+ */
 class Api2NotificationRemovedEvent: Api2Event() {
     override val id = "notification_removed"
     override val name = "API2 알림 삭제 이벤트"
@@ -133,6 +185,7 @@ class Api2NotificationRemovedEvent: Api2Event() {
     }
     override val functionName = "onNotificationRemoved"
     override val constant = "NOTIFICATION_REMOVED"
+    override val listenerName = Api2Events.NOTIFICATION_REMOVED
     override val parameters = "sbn, rankingMap, reason"
     override val argTypes: Array<CodeGenerator.Argument<*>> = arrayOf(
         "sbn" typedAs StatusBarNotification::class,
@@ -144,7 +197,12 @@ class Api2NotificationRemovedEvent: Api2Event() {
         bot.deliver(Api2Events.NOTIFICATION_REMOVED, args[0], args[1], args[2])
 }
 
-/** Delivered by the bot itself when its project starts compiling, before the new code runs. */
+/**
+ * A compiled project is about to compile again; the bot's `startCompile` listeners receive it before the new code runs.
+ *
+ * The listeners run on the thread doing the compile, not on the project's workers. An error in one is logged and
+ * doesn't stop the compile. Right after, every listener of the bot is removed; the new code adds its own.
+ */
 class Api2StartCompileEvent: Api2Event() {
     override val id = "start_compile"
     override val name = "API2 컴파일 시작 이벤트"
@@ -154,6 +212,7 @@ class Api2StartCompileEvent: Api2Event() {
     }
     override val functionName = "onStartCompile"
     override val constant = "START_COMPILE"
+    override val listenerName = Api2Events.START_COMPILE
     override val parameters = ""
     override val argTypes: Array<CodeGenerator.Argument<*>> = emptyArray()
 

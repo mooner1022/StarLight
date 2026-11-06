@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -56,4 +57,22 @@ dependencies {
     api(projects.configDSL)
 
     testImplementation(libs.junit)
+
+    ksp(projects.docsProcessor)
+}
+
+// Script docs for StarLight AI, from the KDoc of what scripts can reach; see docs/agent-docs.md.
+ksp {
+    arg("starlight.docs.module", "plugincore")
+    // The packages scripts use whole, and the classes they reach from Projects, Plugins and Languages.
+    arg("starlight.docs.packages", listOf(
+        "dev.mooner.starlight.plugincore.chat",
+        "dev.mooner.starlight.plugincore.logger",
+        "dev.mooner.starlight.plugincore.library",
+        "dev.mooner.starlight.plugincore.project.Project",
+        "dev.mooner.starlight.plugincore.project.ProjectInfo",
+        "dev.mooner.starlight.plugincore.plugin.StarlightPlugin",
+        "dev.mooner.starlight.plugincore.plugin.PluginInfo",
+        "dev.mooner.starlight.plugincore.language.Language",
+    ).joinToString(","))
 }

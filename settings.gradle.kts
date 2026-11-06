@@ -25,6 +25,7 @@ dependencyResolutionManagement {
 include(":app")
 include(":PluginCore")
 include(":ConfigDSL")
+include(":docs-processor")
 
 rootProject.name = "StarLight"
 

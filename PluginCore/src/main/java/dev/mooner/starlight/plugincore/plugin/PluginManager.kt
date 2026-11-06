@@ -126,7 +126,7 @@ class PluginManager {
 
     internal fun purge() {
         for (plugin in plugins) {
-            plugin.onDisable()
+            plugin.disableOnUnload()
         }
         _plugins.clear()
     }

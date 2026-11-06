@@ -37,6 +37,7 @@ ketch = "2.0.5"
 cascade = "2.3.0"
 neonjs = "0.1.6"
 junit = "4.13.2"
+ksp = "2.3.13"
 
 [libraries]
 android-gradle-plugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
@@ -84,6 +85,7 @@ neonjs-core = { group = "dev.mooner.neonjs", name = "neonjs-core", version.ref =
 neonjs-android = { group = "dev.mooner.neonjs", name = "neonjs-android", version.ref = "neonjs" }
 neonjs-net = { group = "dev.mooner.neonjs", name = "neonjs-net", version.ref = "neonjs" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
@@ -93,6 +95,7 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 about-libs-plugin = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "about-libs" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 
 [bundles]
 androidx = ["androidx-core-ktx", "androidx-appcompat", "androidx-legacy", "androidx-recyclerview", "androidx-recyclerview-selection", "androidx-navigation-fragment-ktx", "androidx-lifecycle-runtime-ktx", "androidx-lifecycle-process", "material", "androidx-constraintlayout"]
