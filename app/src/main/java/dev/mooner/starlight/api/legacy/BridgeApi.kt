@@ -21,12 +21,13 @@ class BridgeApi: Api<BridgeApi.Bridge>() {
         companion object {
 
             @JvmStatic
-            fun getScopeOf(scriptName: String): ScriptableObject {
+            fun getScopeOf(scriptName: String): Any {
                 val projectName = if (scriptName.endsWith(".js")) scriptName.dropLast(3) else scriptName
                 val project = Session.projectManager.getProjectByName(projectName)
                     ?: error("Unable to find project: $projectName")
                 require(project.getLanguage().id == "JS_RHINO") { "Method 'Bridge.getScopeOf()' only supports project with language 'JS_RHINO'" }
-                return project.getScope() as ScriptableObject
+                return project.getScope() as? ScriptableObject
+                    ?: error("Project $projectName isn't compiled: its scope exists once a compile has finished")
             }
 
             @JvmStatic
