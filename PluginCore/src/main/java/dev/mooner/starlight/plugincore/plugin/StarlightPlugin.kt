@@ -134,6 +134,18 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     override fun isEnabled(): Boolean = isEnabled
 
+    /** Marks the plugin enabled once it has loaded, and calls `onEnable` on its listeners, itself included. */
+    internal fun enableOnLoad() {
+        isEnabled = true
+        getListeners().forEach(EventListener::onEnable)
+    }
+
+    /** Marks the plugin disabled as StarLight unloads it, and calls its `onDisable`. */
+    internal fun disableOnUnload() {
+        isEnabled = false
+        onDisable()
+    }
+
     protected fun addListener(listener: EventListener) {
         listeners += listener
         if (isEnabled)
