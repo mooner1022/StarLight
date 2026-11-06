@@ -199,7 +199,9 @@
     <string name="agent_tool_list_apis">Checked script APIs</string>
     <string name="agent_tool_project_logs">Read project logs</string>
     <string name="agent_tool_app_logs">Read app logs</string>
-    <string name="agent_tool_read_docs">Read the docs</string>
+    <string name="agent_tool_describe_api">Read a script API</string>
+    <string name="agent_tool_describe_event">Read an event</string>
+    <string name="agent_tool_read_guide">Read a guide</string>
     <string name="agent_tool_write_file">Wrote a file</string>
     <string name="agent_tool_edit_file">Edited a file</string>
     <string name="agent_tool_rename_file">Renamed a file</string>
