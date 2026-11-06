@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A message the bot sent: profile and name over the first of a run, the time beside the last. -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="12dp">
+
+    <include
+        android:id="@+id/date"
+        layout="@layout/item_debug_room_date"/>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/profile"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:importantForAccessibility="no"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/default_profile"/>
+
+        <TextView
+            android:id="@+id/sender"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="72dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/wantedsans_medium"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:textColor="@color/debugroom_name"
+            android:textSize="12sp"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constraintStart_toEndOf="@id/profile"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="BOT"/>
+
+        <include
+            android:id="@+id/bubble"
+            layout="@layout/layout_debug_room_bubble"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="72dp"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0"
+            app:layout_constraintStart_toEndOf="@id/profile"
+            app:layout_constraintTop_toBottomOf="@id/sender"
+            app:layout_goneMarginStart="46dp"
+            app:layout_goneMarginTop="0dp"/>
+
+        <TextView
+            android:id="@+id/time"
+            style="@style/DebugRoomTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            app:layout_constraintBottom_toBottomOf="@id/bubble"
+            app:layout_constraintStart_toEndOf="@id/bubble"
+            tools:text="오후 2:14"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

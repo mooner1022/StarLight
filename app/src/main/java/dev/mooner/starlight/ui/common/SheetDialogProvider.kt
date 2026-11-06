@@ -57,6 +57,16 @@ object SheetDialogProvider : ConfigDialogProvider {
     override fun peek(view: View, message: String, type: PeekType) =
         view.context.peek(message, type)
 
+    override fun color(
+        context     : Context,
+        title       : String,
+        colors      : Map<Int, IntArray>,
+        selected    : Int?,
+        allowCustom : Boolean,
+        allowAlpha  : Boolean,
+        onResult    : (Int?) -> Unit,
+    ) = context.showColorPickerSheet(title, colors, selected, allowCustom, allowAlpha, onResult)
+
     override fun input(context: Context, title: String, hint: String, initial: String, onResult: (String?) -> Unit) {
         val binding = ItemSheetPasswordBinding.inflate(LayoutInflater.from(context))
         binding.root.endIconMode = TextInputLayout.END_ICON_NONE

@@ -9,14 +9,8 @@ package dev.mooner.configdsl.options
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.Toast
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.color.colorChooser
 import dev.mooner.configdsl.*
 import dev.mooner.configdsl.utils.hasFlag
-import dev.mooner.configdsl.utils.setCommonAttrs
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.int
@@ -53,41 +47,29 @@ data class ColorPickerConfigOption(
         jsonElement.jsonPrimitive.int
 
     override fun onDraw(holder: ButtonConfigOption.ButtonViewHolder, data: Int) {
-        val mainColors = colors.keys.toIntArray()
-        val subColors  = colors.map { it.value.toIntArray() }.toTypedArray()
-
         val allowCustomArgb   = flags hasFlag FLAG_CUSTOM_ARGB
         val showAlphaSelector = allowCustomArgb && flags hasFlag FLAG_ALPHA_SELECTOR
 
-        val initialSelection = data.let { def -> if (def == 0x0) null else def }
-        var selected: Int? = null
+        // What the picker opens on; updated on each pick, as the row isn't drawn again after one.
+        var current = data.let { def -> if (def == 0x0) null else def }
 
-        holder.icon.imageTintList = initialSelection?.let(ColorStateList::valueOf)
+        holder.icon.imageTintList = current?.let(ColorStateList::valueOf)
         holder.layout.setOnClickListener { view ->
-            MaterialDialog(view.context, BottomSheet(LayoutMode.WRAP_CONTENT))
-                .colorChooser(
-                    colors = mainColors,
-                    subColors = subColors,
-                    allowCustomArgb = allowCustomArgb,
-                    showAlphaSelector = showAlphaSelector,
-                    initialSelection = initialSelection
-                ) { _, color ->
-                    selected = color
-                }.show {
-                    setCommonAttrs()
-                    title(text = displayTitle)
-
-                    positiveButton(R.string.ok) {
-                        if (selected == null) {
-                            Toast.makeText(context, R.string.configdsl_color_not_selected, Toast.LENGTH_SHORT).show()
-                        } else {
-                            holder.icon.imageTintList = ColorStateList.valueOf(selected)
-                            onColorSelectedListener?.invoke(holder.layout, selected)
-                            notifyUpdated(selected)
-                        }
-                    }
-                    negativeButton(R.string.cancel)
-                }
+            ConfigDSL.dialogProvider.color(
+                context     = view.context,
+                title       = displayTitle,
+                colors      = colors.mapValues { (_, shades) -> shades.toIntArray() },
+                selected    = current,
+                allowCustom = allowCustomArgb,
+                allowAlpha  = showAlphaSelector,
+            ) { selected ->
+                if (selected == null)
+                    return@color
+                current = selected
+                holder.icon.imageTintList = ColorStateList.valueOf(selected)
+                onColorSelectedListener?.invoke(holder.layout, selected)
+                notifyUpdated(selected)
+            }
         }
     }
 

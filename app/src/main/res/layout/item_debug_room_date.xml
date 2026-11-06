@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Over the first message of a day. -->
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal"
+    android:layout_marginTop="14dp"
+    android:layout_marginBottom="6dp"
+    android:background="@drawable/bg_debugroom_date"
+    android:fontFamily="@font/wantedsans_regular"
+    android:includeFontPadding="false"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="5dp"
+    android:textColor="@color/debugroom_name"
+    android:textSize="12sp"
+    android:visibility="gone"
+    tools:text="2026년 11월 6일 목요일"
+    tools:visibility="visible"/>

@@ -14,6 +14,7 @@ import com.afollestad.materialdialogs.LayoutMode
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.bottomsheets.BottomSheet
 import com.afollestad.materialdialogs.callbacks.onDismiss
+import com.afollestad.materialdialogs.color.colorChooser
 import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.input.getInputField
 import com.afollestad.materialdialogs.input.input
@@ -43,6 +44,21 @@ interface ConfigDialogProvider {
 
     fun multiSelect(context: Context, title: String, items: List<String>, selected: Set<Int>, onResult: (Set<Int>?) -> Unit) =
         MaterialDialogProvider.multiSelect(context, title, items, selected, onResult)
+
+    /**
+     * Picks a color: one of [colors], whose shades (the map's values) are offered once it's picked, or with
+     * [allowCustom] any color typed in, with its opacity when [allowAlpha]. [onResult] gets `null` when the picker
+     * closes without one.
+     */
+    fun color(
+        context     : Context,
+        title       : String,
+        colors      : Map<Int, IntArray>,
+        selected    : Int?,
+        allowCustom : Boolean,
+        allowAlpha  : Boolean,
+        onResult    : (Int?) -> Unit,
+    ) = MaterialDialogProvider.color(context, title, colors, selected, allowCustom, allowAlpha, onResult)
 
     fun peek(view: View, message: String, type: PeekType) =
         Toast.makeText(view.context, message, Toast.LENGTH_SHORT).show()
@@ -117,6 +133,38 @@ internal object MaterialDialogProvider : ConfigDialogProvider {
             negativeButton(R.string.cancel)
             onDismiss { onResult(result) }
         }
+    }
+
+    override fun color(
+        context     : Context,
+        title       : String,
+        colors      : Map<Int, IntArray>,
+        selected    : Int?,
+        allowCustom : Boolean,
+        allowAlpha  : Boolean,
+        onResult    : (Int?) -> Unit,
+    ) {
+        var picked: Int? = null
+        var result: Int? = null
+        MaterialDialog(context, BottomSheet(LayoutMode.WRAP_CONTENT))
+            .colorChooser(
+                colors = colors.keys.toIntArray(),
+                subColors = colors.values.toTypedArray(),
+                allowCustomArgb = allowCustom,
+                showAlphaSelector = allowCustom && allowAlpha,
+                initialSelection = selected
+            ) { _, color -> picked = color }
+            .show {
+                setCommonAttrs()
+                title(text = title)
+                positiveButton(R.string.ok) {
+                    if (picked == null)
+                        Toast.makeText(context, R.string.configdsl_color_not_selected, Toast.LENGTH_SHORT).show()
+                    result = picked
+                }
+                negativeButton(R.string.cancel)
+                onDismiss { onResult(result) }
+            }
     }
 
     override fun multiSelect(context: Context, title: String, items: List<String>, selected: Set<Int>, onResult: (Set<Int>?) -> Unit) {
