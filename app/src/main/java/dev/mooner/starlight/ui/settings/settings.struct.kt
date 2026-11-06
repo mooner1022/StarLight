@@ -28,6 +28,7 @@ import dev.mooner.configdsl.options.InfoState
 import dev.mooner.configdsl.options.OptionStatus
 import dev.mooner.configdsl.options.button
 import dev.mooner.configdsl.options.info
+import dev.mooner.configdsl.options.seekbar
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
 import dev.mooner.starlight.BuildConfig
@@ -137,6 +138,16 @@ internal fun SettingsFragment.getSettingsStruct() = config {
                             |기능을 활성화 할까요?
                             """.trimMargin()
                         }
+                    }
+                    seekbar {
+                        id = "agent_compile_timeout"
+                        title = "AI 컴파일 제한 시간 (초)"
+                        description = "StarLight AI가 프로젝트를 컴파일할 때 이 시간 안에 끝나지 않으면 실패로 처리합니다. 스크립트가 멈춰도 대화가 끊기지 않게 합니다."
+                        min = 10
+                        max = 300
+                        defaultValue = 60
+                        icon = Icon.TIMER
+                        iconTintColor = color { "#C9A7EB" }
                     }
                 }
             }

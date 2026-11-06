@@ -10,6 +10,7 @@ import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.ApiObject
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
@@ -29,6 +30,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.roundToLong
 
 /**
@@ -726,18 +728,33 @@ class StarLightTools(private val docs: DocsLibrary) {
         },
     )
 
+    /**
+     * Compiles [project] on a thread of its own and waits at most the time the app settings give: a script can hang its
+     * compile (an endless loop, a wait on the UI thread), and the call must still get a result, or the conversation is
+     * left with an unanswered call when the user closes the app that stopped responding. Stopping the run stops the
+     * wait too. The compile itself can't be stopped.
+     */
     private suspend fun compile(project: Project): ToolOutput = withContext(Dispatchers.IO) {
+        val name = project.info.name
+        compiles[project.info.id]?.takeIf(Thread::isAlive)?.let { stuck ->
+            return@withContext ToolOutput("A compile of $name that started earlier is still running, stuck: it can't be " +
+                "stopped, and compiling again would wait behind it. The app has to be restarted first; tell the user. " +
+                "Where it is:\n" + whereIs(stuck), isError = true, summary = "Still compiling")
+        }
         val startMillis = System.currentTimeMillis()
-        val error = try {
+        val seconds = GlobalConfig.category("project").getInt(CONF_COMPILE_TIMEOUT, DEFAULT_COMPILE_TIMEOUT_SECONDS)
+        val outcome = BoundedRun.run("agent-compile-$name", seconds * 1000L, onEnd = { compiles.remove(project.info.id, it) }) {
+            compiles[project.info.id] = Thread.currentThread()
             project.compile(true)
-            null
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            throw e
-        } catch (e: Throwable) {
-            e
         }
         val logs = synchronized(project.logger.logs) { project.logger.logs.filter { it.millis >= startMillis } }
         val logText = if (logs.isEmpty()) "" else "\n\nLogs:\n" + formatLogs(logs, logs.size)
+        if (!outcome.finished)
+            return@withContext ToolOutput("Compiling $name didn't finish within $seconds seconds, so it is reported as failed. " +
+                "Its script may be stuck, as in an endless loop or a wait on the UI thread, and the compile is still running: " +
+                "it can't be stopped, and the app may stop responding or have to be restarted before $name can be compiled " +
+                "again. Where it is:\n${whereIs(outcome.thread)}$logText", isError = true, summary = "Timed out after $seconds s")
+        val error = outcome.error
         if (error == null)
             return@withContext ToolOutput("Compiled ${project.info.name}$logText", summary = project.info.name)
         val location = ScriptErrors.locate(error)?.let { at ->
@@ -906,7 +923,23 @@ class StarLightTools(private val docs: DocsLibrary) {
         string("expectedHash", "Hash from reading the file; if the file changed since, nothing is written. An empty " +
             "string writes only if the file doesn't exist.", optional = true)
 
+    /** Compiles [compile] started, by project ID, until they end; one stuck stays here. */
+    private val compiles = ConcurrentHashMap<Any, Thread>()
+
+    /** The top of [thread]'s stack, the app's and the engines' frames, to tell where a compile is stuck. */
+    private fun whereIs(thread: Thread): String =
+        thread.stackTrace
+            .filter { frame -> STACK_PREFIXES.any(frame.className::startsWith) }
+            .take(MAX_STACK_FRAMES)
+            .joinToString("\n") { "  at ${it.className}.${it.methodName}(${it.fileName}:${it.lineNumber})" }
+            .ifEmpty { "  (no frames of the app)" }
+
     private companion object {
+        /** The settings key of the time compile_project waits, in seconds; in the app settings' project category. */
+        const val CONF_COMPILE_TIMEOUT = "agent_compile_timeout"
+        const val DEFAULT_COMPILE_TIMEOUT_SECONDS = 60
+        const val MAX_STACK_FRAMES = 12
+        val STACK_PREFIXES = listOf("dev.mooner.", "org.mozilla.javascript.")
         const val ALL_EVENTS = "*"
         const val MESSAGE_EVENT = "starlight.message.create"
         private const val DEFAULT_API_LEVEL = ApiLevels.ORIGINAL
