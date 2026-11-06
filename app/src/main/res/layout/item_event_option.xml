@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:minHeight="52dp"
+    android:paddingVertical="8dp"
+    android:paddingStart="14dp"
+    android:paddingEnd="4dp">
+
+    <LinearLayout
+        android:id="@+id/texts"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/checkbox"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/usage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/jbmono_nl_regular"
+            android:maxLines="1"
+            android:textColor="@color/text"
+            android:textSize="14sp"
+            tools:text="onMessage(event)"/>
+
+        <TextView
+            android:id="@+id/description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/wantedsans_regular"
+            android:textColor="@color/text_sub"
+            android:textSize="13sp"
+            tools:text="메시지를 받았을 때"/>
+
+        <TextView
+            android:id="@+id/note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/wantedsans_medium"
+            android:textColor="@color/main_bright"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="메신저봇 API2 방식에서 쓸 수 있어요"
+            tools:visibility="visible"/>
+
+        <TextView
+            android:id="@+id/eventId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:alpha="0.8"
+            android:ellipsize="middle"
+            android:fontFamily="@font/jbmono_nl_regular"
+            android:maxLines="1"
+            android:textColor="@color/text_sub"
+            android:textSize="11sp"
+            tools:text="starlight.message.create"/>
+    </LinearLayout>
+
+    <com.google.android.material.checkbox.MaterialCheckBox
+        android:id="@+id/checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:buttonTint="@color/main_bright"
+        android:clickable="false"
+        android:focusable="false"
+        android:importantForAccessibility="no"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

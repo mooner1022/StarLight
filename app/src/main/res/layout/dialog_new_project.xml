@@ -124,9 +124,7 @@
         android:id="@+id/pageEvents"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/configdsl_field_background"
         android:orientation="vertical"
-        android:paddingVertical="4dp"
         android:visibility="gone"/>
 
     <androidx.recyclerview.widget.RecyclerView

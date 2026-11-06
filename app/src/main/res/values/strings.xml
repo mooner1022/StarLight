@@ -397,4 +397,36 @@
     <string name="api_levels_clash_warning">With Rhino, choosing both StarLight original and MessengerBot API2 makes a top-level onMessage function run as StarLight\'s event too, so it can be called twice for one message.</string>
     <string name="new_project_step_api">API levels</string>
     <string name="new_project_step_api_description">Choose the APIs this project uses. You can choose more than one.</string>
+    <string name="event_picker_title">Events to receive</string>
+    <string name="event_picker_message">The script is called when a checked event happens.</string>
+    <plurals name="event_picker_summary">
+        <item quantity="one">Receives %d event</item>
+        <item quantity="other">Receives %d events</item>
+    </plurals>
+    <string name="event_picker_summary_none">Receives no events</string>
+    <string name="event_picker_edit_ids">Edit IDs</string>
+    <string name="event_picker_back_to_list">Back to list</string>
+    <string name="event_picker_select_all">Select all of %s</string>
+    <string name="event_picker_auto_title">Receive new events too</string>
+    <string name="event_picker_auto_description">Events %s adds later are received right away.</string>
+    <string name="event_picker_auto_all">The entry * receives every event. Change it in Edit IDs.</string>
+    <plurals name="event_picker_unavailable">
+        <item quantity="one">%d event outside the API levels</item>
+        <item quantity="other">%d events outside the API levels</item>
+    </plurals>
+    <string name="event_picker_unavailable_reason">Available with %s</string>
+    <string name="event_picker_unknown_title">Unknown entries</string>
+    <string name="event_picker_unknown_description">No registered event matches these: the plugin may be off, or the ID mistyped. They stay until you remove them.</string>
+    <string name="event_picker_raw_hint">One per line: an event ID, a wildcard such as starlight.*, or an exclusion starting with !.</string>
+    <plurals name="event_picker_raw_matches">
+        <item quantity="one">%d event</item>
+        <item quantity="other">%d events</item>
+    </plurals>
+    <string name="event_picker_raw_excludes">excludes %d</string>
+    <string name="event_picker_raw_excludes_nothing">takes nothing out</string>
+    <string name="event_picker_raw_unknown">no registered event</string>
+    <string name="event_picker_raw_outside_levels">outside the API levels</string>
+    <string name="event_picker_more">and %d more</string>
+    <string name="event_picker_auto_summary">+ new %s events</string>
+    <string name="event_picker_remove">Remove %s</string>
 </resources>

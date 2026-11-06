@@ -17,6 +17,11 @@ class ProjectOnStartCompileEvent: ProjectEvent() {
 
     override val name: String = "onStartCompile 이벤트"
 
+    override val description: String = translate {
+        Locale.ENGLISH { "Right before the project is compiled again" }
+        Locale.KOREAN  { "프로젝트를 다시 컴파일하기 직전" }
+    }
+
     override val functionName: String = "onStartCompile"
 
     override val functionComment: String = translate {

@@ -141,6 +141,10 @@ class Sheet internal constructor(
         binding.negative.text = text
     }
 
+    fun setNeutralText(text: CharSequence) {
+        binding.neutral.text = text
+    }
+
     private val noteDrawables = binding.note.compoundDrawablesRelative
 
     /** Shows [text] below the content and scrolls to it, or hides the note when it is empty. */
