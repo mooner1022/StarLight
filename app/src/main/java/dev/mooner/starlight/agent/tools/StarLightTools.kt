@@ -13,6 +13,7 @@ import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.project.event.getInstance
 import dev.mooner.starlight.utils.zip
@@ -513,7 +514,8 @@ class StarLightTools(private val docs: DocsLibrary) {
             params = {
                 string("name", "Project name: letters, digits, Hangul, '-' and '_'.")
                 string("language", "Language id from list_languages; js_neon (NeonJS) unless the user asks otherwise.")
-                stringArray("events", "Event ids it receives (default: $MESSAGE_EVENT).", optional = true)
+                stringArray("events", "Event ids it receives (default: $MESSAGE_EVENT); a wildcard such as starlight.* " +
+                    "stands for the matching events of its API levels.", optional = true)
                 stringArray("api_levels", "API level ids whose objects and events the scripts get, from list_apis " +
                     "(default: StarLight's own, $DEFAULT_API_LEVEL).", optional = true)
             },
@@ -528,13 +530,11 @@ class StarLightTools(private val docs: DocsLibrary) {
             val languageId = args.requireString("language")
             val language = Session.languageManager.getLanguage(languageId, false)
                 ?: throw ToolException("No language '$languageId'. See list_languages.")
-            val events = args.stringSet("events").ifEmpty { setOf(MESSAGE_EVENT) }.associateWith { id ->
-                (ProjectEventManager.findFirst(id) ?: throw ToolException("No event '$id'. See list_events.")).getInstance()
-            }
             val levels = args.stringSet("api_levels").ifEmpty { Session.apiLevelManager.defaultLevelIds }
             levels.firstOrNull { Session.apiLevelManager.getLevel(it) == null }?.let { id ->
                 throw ToolException("No API level '$id'. See list_apis.")
             }
+            val events = newProjectEvents(args.stringSet("events").ifEmpty { setOf(MESSAGE_EVENT) }, levels)
             checkpoint.project(name)
             manager.newProject(events = events) {
                 this.name = name
@@ -836,6 +836,24 @@ class StarLightTools(private val docs: DocsLibrary) {
 
     private fun allowedEvents(project: Project): Set<String> =
         ProjectEventManager.filterAllowedEvents(project.info.allowedEventIds)
+
+    /**
+     * The events a new project gets for the [requested] entries, each with its starting code. A wildcard
+     * (`starlight.*`) stands for the matching events that [levels] have, as the new-project screen picks them; an ID
+     * named outright is kept even outside them. Stored expanded, as set_project_events stores them.
+     */
+    private fun newProjectEvents(requested: Set<String>, levels: Set<String>): Map<String, ProjectEvent> {
+        val known = ProjectEventManager.find(ALL_EVENTS).mapNotNullTo(hashSetOf()) { ProjectEventManager.validateAndGetEventID(it) }
+        val unknown = requested.filter { '*' !in it && it.removePrefix("!") !in known }
+        if (unknown.isNotEmpty())
+            throw ToolException("Unknown events: ${unknown.joinToString()}. See list_events.")
+        val ids = ProjectEventManager.filterAllowedEvents(requested)
+            .filter { it in requested || Session.apiLevelManager.hasEvent(levels, it) }
+            .sorted()
+        if (ids.isEmpty())
+            throw ToolException("${requested.joinToString()} match no event of the API levels ${levels.joinToString()}. See list_events.")
+        return ids.associateWithTo(LinkedHashMap()) { ProjectEventManager.findFirst(it)!!.getInstance() }
+    }
 
     private fun ParamsBuilder.waitParams() {
         integer("waitSeconds", "Collect replies for this many seconds, at most ${DebugMessenger.MAX_WAIT_SECONDS}. With " +
