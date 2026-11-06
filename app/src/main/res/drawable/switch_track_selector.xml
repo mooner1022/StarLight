@@ -1,17 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_checked="true">
+    <item android:state_checked="true" android:state_enabled="true">
         <shape android:dither="true" android:shape="rectangle" android:useLevel="false" android:visible="true">
-            <solid android:color="@color/main_purple" />
-            <corners android:radius="22dp" />
-            <size android:width="2dp" android:height="18dp" />
+            <solid android:color="@color/main_bright" />
+            <corners android:radius="14dp" />
         </shape>
     </item>
-    <item android:state_checked="false">
+    <item android:state_checked="true" android:state_enabled="false">
+        <shape android:dither="true" android:shape="rectangle" android:useLevel="false" android:visible="true">
+            <solid android:color="@color/switch_track_disabled" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+    <item android:state_checked="false" android:state_enabled="true">
         <shape android:dither="true" android:shape="rectangle" android:useLevel="false" android:visible="true">
             <solid android:color="@color/switch_track" />
-            <corners android:radius="22dp" />
-            <size android:width="2dp" android:height="18dp" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+    <item android:state_checked="false" android:state_enabled="false">
+        <shape android:dither="true" android:shape="rectangle" android:useLevel="false" android:visible="true">
+            <solid android:color="@color/switch_track_disabled" />
+            <corners android:radius="14dp" />
         </shape>
     </item>
 </selector>

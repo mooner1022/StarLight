@@ -4,17 +4,6 @@ import dev.mooner.starlight.plugincore.project.Project
 
 abstract class Api <T> {
 
-    /*
-    private var _project: Project? = null
-
-    protected val project: Project
-        get() = _project!!
-
-    internal fun setProject(project: Project) {
-        _project = project
-    }
-     */
-
     protected class ApiFunctionBuilder {
 
         var name: String? = null
@@ -81,11 +70,33 @@ abstract class Api <T> {
 
     abstract fun getInstance(project: Project): Any
 
+    protected inline fun <reified T> getApiObjects(): List<ApiObject> {
+        val values: List<ApiValue> = T::class.java.declaredFields.map {
+            value {
+                name = it.name
+                returns = it.type
+            }
+        }
+        val functions: List<ApiFunction> = T::class.java.declaredMethods.map {
+            function {
+                name = it.name
+                args = it.parameterTypes
+                returns = it.returnType
+            }
+        }
+
+        return (values + functions)
+    }
+
     override fun equals(other: Any?): Boolean {
         return when(other) {
             null -> false
             !is Api<*> -> false
             else -> other.name == name
         }
+    }
+
+    override fun hashCode(): Int {
+        return name.hashCode()
     }
 }

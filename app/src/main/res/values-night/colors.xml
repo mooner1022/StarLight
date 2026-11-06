@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="main_purple">#ab9df2</color>
-    <color name="main_purple_light">#958FB5</color>
-    <color name="sub_purple">#706C81</color>
+    <color name="status_bar">@color/background_main</color>
 
+    <color name="background_main">#000000</color>
     <color name="background">#000000</color>
     <color name="cardview">#171717</color>
-    <color name="bottom_sheet">#74FFFFFF</color>
+    <color name="background_dialog">#1a1a1a</color>
+    <color name="background_card">#171717</color>
+    <color name="background_chip">#202020</color>
+    <color name="background_chip_accent">#AD977A</color>
+    <color name="background_popup">#2B2B2B</color>
+    <color name="background_log_card">#212122</color>
+
+    <color name="config_list_item_background">#202020</color>
 
     <color name="text">#D5D5D5</color>
+    <color name="text_clear">#FFFFFF</color>
+    <color name="text_sub">#9E9E9E</color>
 
-    <color name="switch_track">#636363</color>
+    <color name="switch_track">#868686</color>
+    <color name="switch_track_disabled">#585858</color>
 
     <color name="black">#FF000000</color>
     <color name="toolbar">#A6B1E1</color>
@@ -82,4 +91,12 @@
     <color name="orange_box_grey">#90a9b3</color>
     <color name="orange_box_dark_grey">#414d63</color>
     <color name="orange_box_white">#ffffff</color>
+
+    <color name="store_gold_soft">#2A251E</color>
+    <color name="store_restart_button">#3A3226</color>
+    <color name="store_skeleton">#252321</color>
+    <color name="store_shimmer">#1AFFFFFF</color>
+    <color name="store_chip_stroke">#4A4033</color>
+    <color name="home_widget_card">#1A181B</color>
+    <color name="home_widget_stroke">#1ADFC199</color>
 </resources>

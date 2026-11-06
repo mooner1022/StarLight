@@ -7,28 +7,52 @@
 package dev.mooner.starlight.ui.settings.dev
 
 import android.content.Context
+import android.content.pm.PackageInfo
 import android.content.res.Configuration
-import dev.mooner.starlight.plugincore.Session.globalConfig
+import androidx.core.content.edit
+import androidx.core.content.pm.PackageInfoCompat
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.OptionStatus
+import dev.mooner.configdsl.options.button
+import dev.mooner.configdsl.options.info
+import dev.mooner.configdsl.options.spinner
+import dev.mooner.configdsl.options.textList
+import dev.mooner.configdsl.options.toggle
+import dev.mooner.starlight.BuildConfig
+import dev.mooner.starlight.R
+import dev.mooner.starlight.WIDGET_DEF_STRING
+import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.plugincore.Session.pluginManager
-import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.utils.Icon
+import dev.mooner.starlight.plugincore.config.GlobalConfig
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.utils.onSaveConfigAdapter
 import dev.mooner.starlight.utils.*
 import java.util.*
 
 fun Context.startDevModeActivity() {
     val activityId = UUID.randomUUID().toString()
-
     startConfigActivity(
-        id = activityId,
+        uuid = activityId,
         title = "설정",
         subTitle = "개발자 모드",
-        saved = globalConfig.getAllConfigs(),
+        saved = GlobalConfig.getMutableData(),
         struct = config {
             category {
                 id = "dev_mode_config"
                 title = "개발자 모드"
-                textColor = color { "#706EB9" }
+                textColor = getColor(R.color.main_bright)
                 items {
+                    button {
+                        id = "configdsl_preview"
+                        title = "ConfigDSL 미리보기"
+                        description = "새로 추가한 설정 요소를 한 화면에서 확인해요"
+                        icon = Icon.LAYERS
+                        iconTintColor = color { "#87AAAA" }
+                        setOnClickListener { view ->
+                            view.context.startConfigDslPreview()
+                        }
+                    }
                     toggle {
                         id = "show_internal_log"
                         title = "내부 로그 표시"
@@ -37,14 +61,13 @@ fun Context.startDevModeActivity() {
                         iconTintColor = color { "#87AAAA" }
                         defaultValue = false
                     }
-                    toggle {
-                        dependency = "show_internal_log"
-                        id = "write_internal_log"
-                        title = "내부 로그 기록"
-                        description = "앱 내부의 디버깅용 로그를 로그 파일에 기록합니다."
-                        icon = Icon.EDIT
-                        iconTintColor = color { "#87AAAA" }
-                        defaultValue = false
+                    spinner {
+                        id = "update_channel"
+                        title = "업데이트 확인 채널"
+                        description = "최신 버전을 확인할 채널을 설정합니다."
+                        icon = Icon.BRANCH
+                        items = VersionChecker.Channel.entries.map(VersionChecker.Channel::name)
+                        defaultIndex = VersionChecker.Channel.STABLE.ordinal
                     }
                     button {
                         id = "make_error"
@@ -57,12 +80,24 @@ fun Context.startDevModeActivity() {
                         }
                     }
                     button {
+                        id = "reset_first_open"
+                        title = "초기 설정 초기화"
+                        description = "무루무루?"
+                        icon = Icon.REFRESH
+                        iconTintColor = color { "#FF5C58" }
+                        setOnClickListener { _ ->
+                            getSharedPreferences("general", 0).edit {
+                                putBoolean("isFirstOpen", true)
+                            }
+                        }
+                    }
+                    button {
                         id = "disable_dev_mode"
                         title = "개발자 모드 비활성화"
                         icon = Icon.DEVELOPER_BOARD_OFF
                         iconTintColor = color { "#FF8243" }
                         setOnClickListener { _ ->
-                            globalConfig.edit {
+                            GlobalConfig.edit {
                                 category("dev")["dev_mode"] = false
                             }
                             finishConfigActivity(activityId)
@@ -73,27 +108,29 @@ fun Context.startDevModeActivity() {
             category {
                 id = "beta_features"
                 title = "실험적 기능"
-                textColor = color { "#706EB9" }
+                textColor = getColor(R.color.main_bright)
                 items {
-                    button {
+                    info {
                         id = "caution"
                         title = "주의"
                         description = "아래 설정들은 실험적이며, 사용 시 앱이 작동하지 않거나 기기에 손상을 줄 수 있습니다.\n이 기능들을 사용함으로서 발생하는 문제에 대해 개발자는 책임을 지지 않습니다."
                         icon = Icon.ERROR
-                        iconTintColor = color { "#FF865E" }
+                        status = OptionStatus.WARNING
                     }
-                    toggle {
-                        id = "load_external_dex_libs"
-                        title = "외부 dex 라이브러리 로드"
-                        description = "/libs 디렉터리 내부의 .dex 라이브러리를 로드합니다."
-                        icon = Icon.CREATE_NEW_FOLDER
-                        iconTintColor = color { "#87AAAA" }
-                        defaultValue = false
-                    }
+                    // Play builds may not load dex from outside the app.
+                    if (BuildConfig.DYNAMIC_PLUGINS)
+                        toggle {
+                            id = "load_external_dex_libs"
+                            title = "외부 dex 라이브러리 로드"
+                            description = "/libs 디렉터리 내부의 .dex 라이브러리를 로드합니다."
+                            icon = Icon.CREATE_NEW_FOLDER
+                            iconTintColor = color { "#87AAAA" }
+                            defaultValue = false
+                        }
                     toggle {
                         id = "change_thread_pool_size"
-                        title = "Thread Pool 크기 변경"
-                        description = "프로젝트가 실행되는 Thread pool의 크기를 가변적으로 변경하는 설정을 추가합니다."
+                        title = "동시 실행 수 변경"
+                        description = "프로젝트의 이벤트를 동시에 몇 개까지 실행할지 정하는 설정을 추가합니다."
                         icon = Icon.COMPRESS
                         iconTintColor = color { "#87AAAA" }
                         defaultValue = false
@@ -103,17 +140,23 @@ fun Context.startDevModeActivity() {
             category {
                 id = "debug_info"
                 title = "debug info"
-                textColor = color { "#706EB9" }
+                textColor = getColor(R.color.main_bright)
                 items {
-                    fun debugInfo(title: String, value: String) = button {
+                    fun debugInfo(title: String, value: String) = info {
                         id = title
                         this.title = title
-                        description = value
+                        if (value.length > 24 || '\n' in value)
+                            description = value
+                        else
+                            this.value = value
+                        copyable = true
                     }
+                    val (screenWidth, screenHeight) = getScreenSizeDp(this@startDevModeActivity)
                     val layoutModeString = when(layoutMode) {
                         LAYOUT_DEFAULT -> "LAYOUT_DEFAULT"
-                        LAYOUT_TABLET -> "LAYOUT_TABLET"
-                        else -> "UNKNOWN"
+                        LAYOUT_TABLET  -> "LAYOUT_TABLET"
+                        LAYOUT_SLIM    -> "LAYOUT_SLIM"
+                        else           -> "UNKNOWN"
                     }
                     val uiMode = nightModeFlags
                     val uiModeString = when(uiMode) {
@@ -122,18 +165,29 @@ fun Context.startDevModeActivity() {
                         Configuration.UI_MODE_NIGHT_UNDEFINED -> "UI_MODE_NIGHT_UNDEFINED"
                         else -> "UNKNOWN"
                     }
-                    debugInfo("globalPower", globalConfig.category("general").getBoolean("global_power").toString())
+                    val pInfo: PackageInfo = applicationContext.packageManager.getPackageInfo(applicationContext.packageName, 0)
+                    val versionCode = PackageInfoCompat.getLongVersionCode(pInfo)
+                    debugInfo("globalPower", GlobalConfig.category("general").getBoolean("global_power").toString())
+                    debugInfo("kakaoTalkVersion", ApplicationSession.kakaoTalkVersion.toString())
+                    debugInfo("appVersion", "${pInfo.versionName}(build ${versionCode})")
+                    debugInfo("PLUGINCORE_VERSION", dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION.toString())
+                    debugInfo("screenSizeDp", "$screenWidth x $screenHeight")
                     debugInfo("layoutMode", "$layoutMode ($layoutModeString)")
                     debugInfo("uiMode", "$uiMode ($uiModeString)")
-                    debugInfo("widgets", globalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
-                    debugInfo("plugins", pluginManager.getPlugins().joinToString { it.info.id })
+                    debugInfo("widgets", GlobalConfig.category("widgets").getString("ids", WIDGET_DEF_STRING))
+                    textList {
+                        id = "plugins"
+                        title = "plugins"
+                        lines = pluginManager.plugins.map { it.info.id }
+                        monospace = true
+                        copyable = true
+                    }
                     //debugInfo("libs", )
-                    debugInfo("pluginSafeMode", globalConfig.category("plugin").getBoolean("safe_mode").toString())
-                    debugInfo("baseDirectory", getInternalDirectory().path)
-                    debugInfo("PLUGINCORE_VERSION", dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION.toString())
+                    debugInfo("pluginSafeMode", GlobalConfig.category("plugin").getBoolean("safe_mode").toString())
+                    debugInfo("baseDirectory", getStarLightDirectory().path)
                 }
             }
         },
-        onConfigChanged = globalConfig::onSaveConfigAdapter
+        onValueUpdated = GlobalConfig::onSaveConfigAdapter
     )
 }

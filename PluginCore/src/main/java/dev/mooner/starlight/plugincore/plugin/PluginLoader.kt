@@ -6,148 +6,189 @@
 
 package dev.mooner.starlight.plugincore.plugin
 
-import android.os.Environment
+import android.content.Context
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.logger.Logger
-import dev.mooner.starlight.plugincore.plugin.PluginDependency.Companion.VERSION_ANY
-import dev.mooner.starlight.plugincore.utils.readString
-import dev.mooner.starlight.plugincore.version.Version
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.plugin.arch.Arch
+import dev.mooner.starlight.plugincore.plugin.arch.getArch
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.plugincore.utils.copyAsReadOnly
+import dev.mooner.starlight.plugincore.utils.errorTranslated
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.utils.warnTranslated
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.File
-import java.io.FileNotFoundException
 import java.io.IOException
-import java.io.InputStream
 import java.lang.reflect.Method
-import java.util.jar.JarEntry
 import java.util.jar.JarFile
+
+private val logger = LoggerFactory.logger {  }
 
 class PluginLoader {
     private val classes: MutableMap<String, Class<*>> = hashMapOf()
-    private val loaders: MutableMap<String, PluginClassLoader> = LinkedHashMap()
+    private val loaders: MutableMap<String, PluginHostClassLoader> = LinkedHashMap()
 
-    companion object {
-        private const val T = "PluginLoader"
-    }
+    private val defDirectory = File(getStarLightDirectory(), "plugins/")
 
-    @Suppress("DEPRECATION")
-    private val defDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/")
-    //private val dexDirectory = File(Environment.getExternalStorageDirectory(), "StarLight/plugins/.dex/")
-
-    /*
-    fun loadPlugins(dir: File = defDirectory, onPluginLoad: ((name: String) -> Unit)? = null): Set<Plugin> {
-        if (!dir.exists() || !dir.isDirectory) {
-            dir.mkdirs()
-        }
-
-        val pluginInfos: MutableMap<String, Pair<File, PluginInfo>> = hashMapOf()
-        for (file in dir.listFiles { it -> it.extension in listOf("apk", "jar") }?: arrayOf()) {
-            val info: PluginInfo
-            try {
-                info = loadInfoFile(file)
-                pluginInfos[info.id] = Pair(file, info)
-            } catch (e: FileNotFoundException) {
-                Logger.e(T, e.toString())
-                //throw InvalidPluginException(e.toString())
-            } catch (e: IllegalStateException) {
-                Logger.e(T, e.toString())
-                //throw InvalidPluginException(e.toString())
-            } catch (e: Exception) {
-                Logger.e(T, "Unexpected error while loading plugin info: $e")
-            }
-        }
-
-        val plugins: MutableSet<StarlightPlugin> = hashSetOf()
-        for ((file: File, info: PluginInfo) in pluginInfos.values) {
-            try {
-                for (dependency in info.dependency) {
-                    if (dependency.pluginId !in pluginInfos) {
-                        throw DependencyNotFoundException("Unable to find dependency '$dependency' for plugin [${info.name}]")
-                        //Logger.e(T, "Unable to find plugin [$dependency] for plugin ${config.fullName}")
-                    }
-                    val pluginInfo = pluginInfos[dependency.pluginId]!!.second
-                    if (dependency.supportedVersion != VERSION_ANY && Version.fromString(dependency.supportedVersion) incompatibleWith pluginInfo.version) {
-                        Logger.w(javaClass.simpleName,"Incompatible dependency version(required: ${dependency.supportedVersion}, found: ${pluginInfo.version}) found on plugin: ${info.name}")
-                    }
-                }
-
-                if (onPluginLoad != null) onPluginLoad(info.name)
-                val plugin = loadPlugin(info, file)
-                if (info.apiVersion incompatibleWith Info.PLUGINCORE_VERSION) {
-                    Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin: ${info.fullName}")
-                    continue
-                }
-                plugins += plugin
-                plugin.onEnable()
-            } catch (e: Error) {
-                Logger.e(T, e.toString())
-                if (Session.isDebugging) e.printStackTrace()
-            }
-        }
-
-        Session.pluginManager.plugins = plugins
-        return plugins
-    }
-     */
-
-    fun loadPlugins(dir: File = defDirectory): Flow<Any> =
+    fun loadPlugins(context: Context, dir: File = defDirectory): Flow<Any> =
         flow {
-            if (!dir.exists() || !dir.isDirectory) {
-                dir.mkdirs()
-                emit(hashSetOf<StarlightPlugin>())
+            if (!PluginCodeLoader.isSupported) {
+                logger.info { "Plugins aren't loaded in this build" }
+                emit(Session.pluginManager.plugins)
+                return@flow
+            }
+            val entries: MutableMap<File, InstalledPlugin> = linkedMapOf()
+            val candidates = scan(dir, entries)
+
+            val resolution = PluginResolver.resolve(
+                candidates.mapValues { (_, value) -> value.second },
+                Info.PLUGINCORE_VERSION,
+                Session.pluginManager.getDisabledIds()
+            )
+            for ((id, exclusion) in resolution.excluded) {
+                val (file, info) = candidates[id]!!
+                logExclusion(info, exclusion)
+                entries[file] = InstalledPlugin(file, info, exclusion.toState())
             }
 
-            val pluginInfos: MutableMap<String, Pair<File, PluginInfo>> = hashMapOf()
-            for (file in dir.listFiles { it -> it.extension in listOf("apk", "jar") }?: arrayOf()) {
-                val info: PluginInfo
-                try {
-                    info = loadInfoFile(file)
-                    pluginInfos[info.id] = Pair(file, info)
-                } catch (e: FileNotFoundException) {
-                    Logger.e(T, e.toString())
-                    //throw InvalidPluginException(e.toString())
-                } catch (e: IllegalStateException) {
-                    Logger.e(T, e.toString())
-                    //throw InvalidPluginException(e.toString())
-                } catch (e: Exception) {
-                    Logger.e(T, "Unexpected error while loading plugin info: $e")
+            Session.pluginManager.purge()
+
+            logger.verbose {
+                "Plugin load priority\n" + resolution.order
+                    .withIndex()
+                    .joinToString("\n") { "#${it.index} - ${it.value}" }
+            }
+
+            for (id in resolution.order) {
+                val (file, info) = candidates[id]!!
+                emit(info.name)
+
+                entries[file] = try {
+                    val plugin = loadPlugin(context, file, info)
+
+                    Session.pluginManager.addPlugin(plugin)
+                    plugin.getListeners().forEach(EventListener::onEnable)
+                    InstalledPlugin(file, info, PluginState.Loaded(plugin))
+                } catch (e: Throwable) {
+                    logger.error(e)
+                    if (Info.DEBUG)
+                        e.printStackTrace()
+                    InstalledPlugin(file, info, PluginState.Failed(e))
                 }
             }
 
-            val plugins: MutableSet<StarlightPlugin> = hashSetOf()
-            for ((file: File, info: PluginInfo) in pluginInfos.values) {
-                try {
-                    for (dependency in info.dependency) {
-                        if (dependency.pluginId !in pluginInfos) {
-                            throw DependencyNotFoundException("Unable to find dependency '$dependency' for plugin [${info.name}]")
-                            //Logger.e(T, "Unable to find plugin [$dependency] for plugin ${config.fullName}")
-                        }
-                        val pluginInfo = pluginInfos[dependency.pluginId]!!.second
-                        if (dependency.supportedVersion != VERSION_ANY && Version.fromString(dependency.supportedVersion) incompatibleWith pluginInfo.version) {
-                            Logger.w(javaClass.simpleName,"Incompatible dependency version(required: ${dependency.supportedVersion}, found: ${pluginInfo.version}) found on plugin: ${info.name}")
-                        }
-                    }
+            context.codeCacheDir.resolve("plugins")
+                .listFiles { file -> file.name !in candidates }
+                ?.forEach(File::deleteRecursively)
 
-                    emit(info.name)
-                    val plugin = loadPlugin(info, file)
-                    if (info.apiVersion incompatibleWith Info.PLUGINCORE_VERSION) {
-                        Logger.w(javaClass.simpleName, "Incompatible plugin version(${info.apiVersion}) found on plugin: ${info.fullName}")
-                        continue
-                    }
-                    plugins += plugin
-                    plugin.onEnable()
-                } catch (e: Error) {
-                    Logger.e(T, e.toString())
-                    if (Session.isDebugging) e.printStackTrace()
-                }
-            }
-
-            Session.pluginManager.plugins = plugins
-            emit(plugins)
+            Session.pluginManager.setInstalled(entries.values.toList())
+            emit(Session.pluginManager.plugins)
         }
 
-    private fun loadPlugin(info: PluginInfo, file: File): StarlightPlugin {
+    fun scanPlugins(dir: File = defDirectory) {
+        val entries: MutableMap<File, InstalledPlugin> = linkedMapOf()
+        val disabled = Session.pluginManager.getDisabledIds()
+        for ((id, value) in scan(dir, entries)) {
+            val (file, info) = value
+            entries[file] = InstalledPlugin(file, info, if (id in disabled) PluginState.Disabled else PluginState.SafeMode)
+        }
+        Session.pluginManager.setInstalled(entries.values.toList())
+    }
+
+    private fun scan(dir: File, entries: MutableMap<File, InstalledPlugin>): Map<String, Pair<File, PluginInfo>> {
+        if (!dir.isDirectory)
+            dir.mkdirs()
+
+        val found: MutableMap<String, MutableList<Pair<File, PluginInfo>>> = linkedMapOf()
+        val files = dir.listFiles { file -> file.isFile && file.extension in SUPPORTED_EXT }
+            ?.sortedBy(File::getName)
+            .orEmpty()
+        for (file in files) {
+            try {
+                val info = PluginInstaller.readPluginInfo(file)
+                found.getOrPut(info.id) { arrayListOf() } += file to info
+            } catch (e: Exception) {
+                logger.error { "Failed to read plugin info from ${file.name}: $e" }
+                entries[file] = InstalledPlugin(file, null, PluginState.Invalid(e))
+            }
+        }
+
+        return found.mapValues { (id, list) ->
+            val kept = list.maxWith(
+                compareBy<Pair<File, PluginInfo>> { it.second.version }
+                    .thenBy { it.first.name == PluginInstaller.fileNameOf(id) }
+                    .thenBy { it.first.lastModified() }
+            )
+            for (other in list) {
+                if (other === kept)
+                    continue
+                val exclusion = PluginExclusion.DuplicateId(kept.first)
+                logExclusion(other.second, exclusion)
+                entries[other.first] = InstalledPlugin(other.first, other.second, PluginState.Excluded(exclusion))
+            }
+            kept
+        }
+    }
+
+    private fun PluginExclusion.toState(): PluginState =
+        if (this == PluginExclusion.Disabled)
+            PluginState.Disabled
+        else
+            PluginState.Excluded(this)
+
+    private fun logExclusion(info: PluginInfo, exclusion: PluginExclusion) {
+        when (exclusion) {
+            PluginExclusion.Disabled ->
+                logger.info { "Skipping disabled plugin: ${info.fullName}" }
+            is PluginExclusion.DuplicateId ->
+                logger.warnTranslated {
+                    Locale.ENGLISH { "Plugin ${info.fullName} was skipped because ${exclusion.kept.name} has the same id." }
+                    Locale.KOREAN  { "같은 id를 가진 ${exclusion.kept.name} 파일이 있어 플러그인 ${info.fullName}을(를) 건너뛰었어요." }
+                }
+            is PluginExclusion.IncompatibleApi ->
+                logger.warnTranslated {
+                    when (val reason = exclusion.reason) {
+                        is ApiCompatibility.RequiresNewerApp -> {
+                            Locale.ENGLISH { "Plugin ${info.fullName} requires PluginCore ${reason.required} or newer (current ${reason.current})." }
+                            Locale.KOREAN  { "플러그인 ${info.fullName}은(는) PluginCore ${reason.required} 이상이 필요해요. (현재 ${reason.current})" }
+                        }
+                        is ApiCompatibility.Outdated -> {
+                            Locale.ENGLISH { "Plugin ${info.fullName} targets PluginCore ${reason.apiVersion}, older than the supported ${reason.minimum}." }
+                            Locale.KOREAN  { "플러그인 ${info.fullName}은(는) 지원 범위(${reason.minimum} 이상)보다 오래된 PluginCore ${reason.apiVersion}용이에요." }
+                        }
+                        ApiCompatibility.Compatible -> {
+                            Locale.ENGLISH { "Plugin ${info.fullName} was excluded for its PluginCore version ${exclusion.apiVersion}." }
+                            Locale.KOREAN  { "플러그인 ${info.fullName}이(가) PluginCore 버전(${exclusion.apiVersion}) 때문에 제외됐어요." }
+                        }
+                    }
+                }
+            is PluginExclusion.MissingDependency ->
+                logger.errorTranslated {
+                    Locale.ENGLISH { "Required dependency ${exclusion.dependency} for plugin ${info.fullName} wasn't found." }
+                    Locale.KOREAN  { "플러그인 ${info.fullName}에 필요한 종속성 ${exclusion.dependency} 을(를) 찾을 수 없습니다." }
+                }
+            is PluginExclusion.ExcludedDependency ->
+                logger.errorTranslated {
+                    Locale.ENGLISH { "Required dependency ${exclusion.dependency} for plugin ${info.fullName} couldn't be loaded." }
+                    Locale.KOREAN  { "플러그인 ${info.fullName}에 필요한 종속성 ${exclusion.dependency} 을(를) 로드할 수 없습니다." }
+                }
+            is PluginExclusion.IncompatibleDependency ->
+                logger.errorTranslated {
+                    Locale.ENGLISH { "Incompatible dependency version(required: ${exclusion.dependency.supportedVersion}, found: ${exclusion.found}) found on plugin: ${info.name}" }
+                    Locale.KOREAN  { "요구된 버전과 다른 종속성 버전(required: ${exclusion.dependency.supportedVersion}, found: ${exclusion.found})이 발견되었습니다. 플러그인: ${info.name}" }
+                }
+            PluginExclusion.CircularDependency ->
+                logger.errorTranslated {
+                    Locale.ENGLISH { "Circular dependency found on plugin: ${info.fullName}" }
+                    Locale.KOREAN  { "순환 종속성이 발견되었습니다. 플러그인: ${info.fullName}" }
+                }
+        }
+    }
+
+    private fun loadPlugin(context: Context, file: File, info: PluginInfo): StarlightPlugin {
         val parent = file.parentFile
         val dataDir = File(parent, "${info.name}(${info.id})")
 
@@ -159,36 +200,139 @@ class PluginLoader {
             dataDir.mkdirs()
         }
 
-        Logger.v(T, "Loading plugin ${info.fullName}")
-        val loader: PluginClassLoader
+        logger.info {
+            translate { 
+                Locale.ENGLISH { "Loading plugin ${info.fullName}" }
+                Locale.KOREAN  { "${info.fullName} 플러그인 로드중" }
+            }
+        }
+        val loader: PluginHostClassLoader
         try {
-            loader = PluginClassLoader(this, javaClass.classLoader!!, info, dataDir, file)
-            Logger.v(T, "Loaded plugin ${info.fullName} (${file.name})")
+            val nativeLibDir =
+                if (info.usesNativeLibrary)
+                    loadNativeLibrary(info, file, context.filesDir)
+                else null
+
+            val dexFile = file.copyAsReadOnly(context.codeCacheDir.resolve("plugins/${info.id}"))
+
+            val parentLoader: ClassLoader = info.customClassLoader
+                ?.let { PluginCodeLoader.createCustomClassLoader(it, dexFile.path, javaClass.classLoader!!) }
+                ?: javaClass.classLoader!!
+
+            loader = PluginCodeLoader.createClassLoader(context, parentLoader, dexFile, nativeLibDir?.path, this, info, file)
+            logger.info {
+                translate {
+                    Locale.ENGLISH { "Loaded plugin ${info.fullName} (${file.name})" }
+                    Locale.KOREAN  { "${info.fullName} 플러그인 로드 성공" }
+                }
+            }
         } catch (e: InvalidPluginException) {
-            Logger.e(T, "Failed to load plugin ${info.fullName} (${file.name}): $e")
+            logger.error { "Failed to load plugin ${info.fullName} (${file.name}): $e" }
             throw e
         }
-        loaders[info.name] = loader
+        loaders[info.id] = loader
         val plugin = loader.plugin
-        plugin.setConfigPath(File(plugin.getDataFolder(), "config-plugin.json"))
+
         loadAssets(file, plugin)
+
         if (plugin !in Session.pluginManager.plugins) {
-            Session.pluginManager.plugins += plugin
+            Session.pluginManager.addPlugin(plugin)
         }
         return plugin
+    }
+
+    private fun loadNativeLibrary(info: PluginInfo, file: File, parentDir: File, force: Boolean = false): File {
+        val libsDir = if (info.id == "v8") {
+            parentDir.resolve("lib/")
+        } else {
+            parentDir.resolve("plugin_data/${info.id}/libs/").also {
+                if (!it.exists())
+                    it.mkdirs()
+            }
+        }
+
+        val pathPrefix = when(getArch()) {
+            Arch.X86_32   -> "x86"
+            Arch.X86_64   -> "x86_64"
+            Arch.ARM_32   -> "armeabi"
+            Arch.AARCH_64 -> "arm64"
+            else -> null
+        }
+        if (pathPrefix == null) {
+            logger.error { "Failed to resolve native library path prefix of arch: ${System.getProperty("os.arch")}" }
+            return libsDir
+        }
+
+        var jar: JarFile? = null
+        try {
+            jar = JarFile(file)
+            val entries = jar.entries()
+            while (entries.hasMoreElements()) {
+                val entry = entries.nextElement() ?: break
+                if (!entry.name.startsWith("lib/$pathPrefix")) continue
+
+                val fileName = entry.name
+                    .split("lib/$pathPrefix")
+                    .last()
+                    .split(File.separator)
+                    .drop(1)
+                    .joinToString(File.separator)
+
+                logger.verbose { fileName }
+                File(libsDir, fileName).apply {
+                    if (!exists() || force) {
+                        val entStream = jar.getInputStream(entry)
+                        if (isDirectory) {
+                            deleteRecursively()
+                        }
+                        parentFile?.mkdirs()
+                        writeBytes(entStream.readBytes())
+                        logger.verbose { "Loaded native library [${fileName}] from plugin [${info.fullName}]" }
+                    }
+                }
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            throw IllegalStateException("Failed to load native libraries: $e")
+        } finally {
+            jar?.close()
+        }
+
+        return libsDir
     }
 
     private fun loadAssets(file: File, plugin: StarlightPlugin, force: Boolean = false) {
         var jar: JarFile? = null
         try {
+            val parent = plugin.getInternalDataDirectory()
+                .resolve("assets")
+                .also { it.mkdirs() }
+            val assetVersion = runCatching { parent.resolve(".VERSION").readText().toInt() }
+                .getOrDefault(-1)
+            if (plugin.info.assetRevision == assetVersion)
+                return
+            logger.debug { "Found new version of asset($assetVersion -> ${plugin.info.assetRevision}), loading assets..." }
+            parent.apply {
+                deleteRecursively()
+                mkdirs()
+                resolve(".VERSION")
+                    .writeText(plugin.info.assetRevision.toString())
+            }
+
             jar = JarFile(file)
             val entries = jar.entries()
-            val parent = plugin.getDataFolder().resolve("assets/")
             while (entries.hasMoreElements()) {
                 val entry = entries.nextElement() ?: break
                 if (!entry.name.startsWith("assets/")) continue
 
-                val fileName = entry.name.split("assets/").last()
+                val fileName = entry.name.split("assets/")
+                    .drop(1)
+                    .let {
+                        if (it.size == 1)
+                            it[0]
+                        else
+                            it.joinToString("assets/")
+                    }
                 File(parent, fileName).apply {
                     if (force || !exists()) {
                         val entStream = jar.getInputStream(entry)
@@ -197,7 +341,7 @@ class PluginLoader {
                         }
                         parentFile?.mkdirs()
                         writeBytes(entStream.readBytes())
-                        Logger.v(T, "Loaded asset [${fileName}] from plugin [${plugin.info.fullName}]")
+                        logger.verbose { "Loaded asset [${fileName}] from plugin [${plugin.info.fullName}]" }
                     }
                 }
             }
@@ -209,35 +353,16 @@ class PluginLoader {
         }
     }
 
-    private fun loadInfoFile(file: File): PluginInfo {
-        var jar: JarFile? = null
-        var stream: InputStream? = null
-
-        try {
-            jar = JarFile(file)
-            val ent: JarEntry = jar.getJarEntry("res/raw/starlight.json") ?: throw FileNotFoundException("Cannot find starlight.json")
-
-            stream = jar.getInputStream(ent)
-            return PluginInfo.decodeFromString(stream.readString())
-        } catch (e: IOException) {
-            throw IllegalStateException("Cannot open starlight.json: $e")
-        } finally {
-            jar?.close()
-            stream?.close()
-        }
-    }
-
     fun getClass(name: String): Class<*>? {
-        classes[name] ?.let { return it } ?: synchronized(loaders) {
-            for ((_, loader) in loaders) {
-                try {
-                    return loader.findClass(name, false)
-                } catch (_: ClassNotFoundException) {
-
+        return classes[name]
+            ?: synchronized(loaders) {
+                for ((_, loader) in loaders) {
+                    try {
+                        return@synchronized loader.findClass(name, false)
+                    } catch (_: ClassNotFoundException) { }
                 }
+                null
             }
-        }
-        return null
     }
 
     fun registerListener(plugin: StarlightPlugin, listener: EventListener) {
@@ -253,7 +378,7 @@ class PluginLoader {
             }
         } catch (e: NoClassDefFoundError) {
             e.printStackTrace()
-            Logger.e("PluginLoader", "Error while adding listener ${listener.javaClass.simpleName}: NoClassDefFound")
+            logger.error { "Error while adding listener ${listener.javaClass.simpleName}: NoClassDefFound" }
             return
         }
 
@@ -261,7 +386,7 @@ class PluginLoader {
             //val annotation = method.getAnnotation(EventHandler::class.java) ?: continue
             val checkClass: Class<*> = method.parameterTypes[0]
             if (method.parameterTypes.size != 1 || !EventListener::class.java.isAssignableFrom(checkClass)) {
-                Logger.e("PluginLoader", "Attempted to register invalid listener: ${listener.javaClass.simpleName}")
+                logger.error { "Attempted to register invalid listener: ${listener.javaClass.simpleName}" }
                 continue
             }
             val eventClass = checkClass.asSubclass(EventListener::class.java)
@@ -279,14 +404,16 @@ class PluginLoader {
         }
     }
 
-    private fun removeClass(name: String) {
-        if (name in classes) {
-            classes -= name
-        }
-    }
-
     internal fun purge() {
         classes.clear()
         loaders.clear()
+    }
+
+    companion object {
+        val SUPPORTED_EXT =
+            arrayOf(/*"apk", "jar", "aar", */"slp")
+
+        val PRESERVED_IDS =
+            arrayOf("global", "starlight", "system", "core")
     }
 }

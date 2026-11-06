@@ -1,10 +1,10 @@
 package dev.mooner.starlight.utils.align
 
-import com.afollestad.materialdialogs.bottomsheets.BasicGridItem
+import dev.mooner.starlight.ui.common.SheetGridItem
 
-fun <T> Array<Align<T>>.toGridItems(): List<BasicGridItem> = this.map { item ->
-    BasicGridItem(
-        iconRes = item.icon,
+fun <T> Array<Align<T>>.toGridItems(): List<SheetGridItem> = this.map { item ->
+    SheetGridItem(
+        icon = item.icon,
         title = item.name
     )
 }

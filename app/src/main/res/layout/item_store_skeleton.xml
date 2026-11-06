@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="10dp"
+    android:background="@drawable/bg_store_card"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="14dp">
+
+    <View
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_store_icon"
+        android:backgroundTint="@color/store_skeleton"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="14dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <View
+            style="@style/StoreSkeleton"
+            android:layout_width="110dp"
+            android:layout_height="14dp"/>
+
+        <View
+            style="@style/StoreSkeleton"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:layout_marginTop="9dp"/>
+
+        <View
+            style="@style/StoreSkeleton"
+            android:layout_width="80dp"
+            android:layout_height="10dp"
+            android:layout_marginTop="7dp"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="72dp"
+        android:layout_height="34dp"
+        android:background="@drawable/bg_store_gold_pill"
+        android:backgroundTint="@color/store_skeleton"/>
+</LinearLayout>

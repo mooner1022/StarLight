@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/planBoard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_agent_tool"
+    android:orientation="vertical"
+    android:visibility="gone"
+    tools:visibility="visible">
+
+    <LinearLayout
+        android:id="@+id/planHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:contentDescription="@string/agent_plan_toggle"
+        android:gravity="center_vertical"
+        android:minHeight="40dp"
+        android:orientation="horizontal"
+        android:paddingStart="14dp"
+        android:paddingEnd="8dp">
+
+        <TextView
+            android:id="@+id/planTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/wantedsans_bold"
+            android:text="@string/agent_plan_title"
+            android:textColor="@color/agent_text"
+            android:textSize="13.5sp"/>
+
+        <TextView
+            android:id="@+id/planCurrent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:fontFamily="@font/wantedsans_medium"
+            android:maxLines="1"
+            android:textColor="@color/agent_text_muted"
+            android:textSize="13sp"
+            tools:text="명령어 모듈 작성"/>
+
+        <TextView
+            android:id="@+id/planCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:fontFamily="@font/jbmono_nl_regular"
+            android:textColor="@color/agent_text_muted"
+            android:textSize="12sp"
+            tools:text="2/5"/>
+
+        <ImageView
+            android:id="@+id/planChevron"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_marginStart="4dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_round_keyboard_arrow_down_24"
+            app:tint="@color/agent_text_faint"/>
+    </LinearLayout>
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/planProgress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="14dp"
+        android:layout_marginBottom="10dp"
+        android:importantForAccessibility="no"
+        app:indicatorColor="@color/agent_ok"
+        app:trackColor="@color/agent_surface_alt"
+        app:trackCornerRadius="2dp"
+        app:trackThickness="3dp"
+        tools:progress="40"/>
+
+    <dev.mooner.starlight.ui.agent.PlanStepsScroll
+        android:id="@+id/planScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fadingEdgeLength="20dp"
+        android:overScrollMode="never"
+        android:requiresFadingEdge="vertical"
+        android:scrollbars="vertical">
+
+        <LinearLayout
+            android:id="@+id/planSteps"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingBottom="10dp"/>
+    </dev.mooner.starlight.ui.agent.PlanStepsScroll>
+
+    <TextView
+        android:id="@+id/planGo"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginHorizontal="14dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_agent_button_gold"
+        android:fontFamily="@font/wantedsans_bold"
+        android:gravity="center"
+        android:text="@string/agent_plan_go"
+        android:textColor="@color/agent_on_gold"
+        android:textSize="13.5sp"
+        android:visibility="gone"
+        tools:visibility="visible"/>
+</LinearLayout>

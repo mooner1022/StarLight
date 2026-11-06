@@ -1,0 +1,478 @@
+/*
+ * ProjectImpl.kt created by Minki Moon(mooner1022)
+ * Copyright (c) mooner1022. all rights reserved.
+ * This code is licensed under the GNU General Public License v3.0.
+ */
+
+package dev.mooner.starlight.plugincore.project
+
+import android.util.AtomicFile
+import androidx.core.util.readText
+import androidx.core.util.writeText
+import dev.mooner.starlight.plugincore.RuntimeClassLoader
+import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.Session.json
+import dev.mooner.starlight.plugincore.Session.projectManager
+import dev.mooner.starlight.plugincore.config.data.FileConfig
+import dev.mooner.starlight.plugincore.config.data.MutableConfig
+import dev.mooner.starlight.plugincore.event.EventHandler
+import dev.mooner.starlight.plugincore.event.Events
+import dev.mooner.starlight.plugincore.language.Language
+import dev.mooner.starlight.plugincore.logger.ProjectLogger
+import dev.mooner.starlight.plugincore.logger.internal.Logger
+import dev.mooner.starlight.plugincore.pipeline.SimplePipeline
+import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
+import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
+import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycle
+import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycleRegistry
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.plugincore.utils.currentThread
+import dev.mooner.starlight.plugincore.utils.hasFile
+import dev.mooner.starlight.plugincore.utils.require
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.*
+import kotlinx.serialization.json.Json
+import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.coroutines.CoroutineContext
+
+class ProjectImpl private constructor(
+    override val directory: File,
+    private var mInfo: ProjectInfo
+): Project() {
+
+    override val info: ProjectInfo
+        get() = mInfo
+
+    override val config: MutableConfig =
+        FileConfig(File(directory, CONFIG_FILE_NAME))
+
+    override var threadPoolName: String? = null
+
+    override val coroutineContext: CoroutineContext
+        get() = obtainExecutor().scope.coroutineContext
+
+    @Volatile
+    private var executor: ProjectExecutor? = null
+
+    private val lastDropWarning = AtomicLong()
+
+    private val infoWriteScope = CoroutineScope(Dispatchers.IO.limitedParallelism(1))
+
+    private val lifecycle = ProjectLifecycleRegistry(this)
+    override fun getLifecycle(): ProjectLifecycle =
+        lifecycle
+
+    private val lifecycleRegistry: ProjectLifecycleRegistry
+        get() = lifecycle
+
+    private val _allowedEventIDs: MutableSet<String> = hashSetOf()
+    val allowedEventIDs: Set<String> get() = _allowedEventIDs
+
+    override val isCompiled: Boolean
+        get() = langScope != null
+
+    private var langScope: Any? = null
+
+    private val lang: Language =
+        Session.languageManager
+            .getLanguage(info.languageId, newInstance = true)
+            ?: throw IllegalArgumentException("Unable to find language ${info.languageId} for project '${info.name}'")
+
+    override val logger: ProjectLogger = if (directory.hasFile(LOGS_FILE_NAME)) {
+        ProjectLogger.fromFile(File(directory, LOGS_FILE_NAME))
+    } else {
+        ProjectLogger.create(directory)
+    }
+
+    private val tag: String
+        get() = "Project-${info.name}"
+
+    init {
+        val confFile = File(directory, CONFIG_FILE_NAME)
+        lang.setConfigFile(confFile)
+
+        reloadAllowedEventIDs()
+    }
+
+    override fun callFunction(name: String, args: Array<out Any>, onException: (Throwable) -> Unit) =
+        runEvent({
+            try {
+                lang.callFunction(langScope!!, name, args)
+            } finally {
+                // Only a called function leaves the language's scope entered on this thread.
+                if (isCompiled && lang.requireRelease)
+                    lang.release(langScope!!)
+            }
+        }, onException)
+
+    override fun runEvent(task: () -> Unit, onException: (Throwable) -> Unit) {
+        if (langScope == null) {
+            onException(IllegalStateException("Project should be in compiled state before calling function."))
+            return
+        }
+
+        fun onError(e: Throwable) {
+            logger.e(tag, translate {
+                Locale.ENGLISH { "Error while running: $e" }
+                Locale.KOREAN  { "실행 중 에러 발생: $e" }
+            })
+            val shutdownOnError = config
+                .category("general")
+                .getBoolean("shutdown_on_error", true)
+
+            if (shutdownOnError) {
+                logger.e(info.name, translate {
+                    Locale.ENGLISH { "Destroying project '${info.name}'..." }
+                    Locale.KOREAN  { "프로젝트 '${info.name}' 종료중..." }
+                })
+                destroy(requestUpdate = true)
+            }
+            e.printStackTrace()
+            onException(e)
+        }
+
+        obtainExecutor().post {
+            JobLocker.withLock(threadPoolName!!) {
+                runCatching(task)
+                    .onFailure(::onError)
+            }
+        }
+    }
+
+    override fun compile(throwException: Boolean): Boolean = runBlocking {
+        try {
+            compileAsync().collect()
+            true
+        } catch (e: Throwable) {
+            if (throwException) throw e
+            false
+        }
+    }
+
+    override fun compileAsync(): Flow<Pair<PipelineStage<*, *>, Int>> =
+        callbackFlow {
+            val size: Int
+            val pipeline = (getLanguage().toPipeline() as SimplePipeline).apply {
+                size = this.stages.size
+                setOnStageUpdateListener { stage, index ->
+                    val percentage = ((index.toFloat() / size.toFloat()) * 100f).toInt()
+                    trySend(stage to percentage)
+                }
+            }
+            val orgLifecycleState = lifecycle.state
+            try {
+                lifecycleRegistry.setCurrentState(ProjectLifecycle.State.COMPILING)
+                val code = directory.resolve(info.mainScript)
+                    .require(File::isFile) { "Main script ${info.mainScript} is not a file." }
+                    .runCatching(File::readText)
+                    .getOrElse(::error)
+
+                /*
+                val rawCode: String = (directory.listFiles()?.find { it.isFile && it.name == info.mainScript }?: throw IllegalArgumentException(
+                    "Cannot find main script ${info.mainScript} for project ${info.name}"
+                )).readText(Charsets.UTF_8)
+                 */
+                // Destroyed once the new one is in place, so a failed compile leaves the old version running.
+                val previousScope = langScope
+                if (isCompiled) {
+                    if ("starlight.project.compile" in allowedEventIDs)
+                        runCatching {
+                            lang.callFunction(langScope!!, "onStartCompile", emptyArray())
+                        }
+                    if (lang.requireRelease) {
+                        lang.release(langScope!!)
+                        logger.v(tag, "engine released")
+                    }
+                    stopAllJobs()
+                }
+                logger.i(translate {
+                    Locale.ENGLISH { "Compiling project ${info.name}..." }
+                    Locale.KOREAN  { "프로젝트 ${info.name} 컴파일 중..." }
+                })
+                //setClassLoader()
+                langScope = pipeline.run(this@ProjectImpl to code)
+                // Releasing alone keeps what a scope holds: NeonJS keeps its engine, event loop and open sockets.
+                previousScope?.takeIf { it !== langScope }?.let { scope ->
+                    runCatching { lang.destroy(scope) }
+                        .onFailure { logger.w(tag, "Failed to destroy the previous scope: $it") }
+                }
+                EventHandler.fireEvent(Events.Project.Compile(project = this@ProjectImpl))
+                lifecycleRegistry.setCurrentState(ProjectLifecycle.State.DISABLED)
+                //projectManager.onStateChanged(this)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                logger.e(tag, "ECOMF: $e")
+                lifecycleRegistry.setCurrentState(orgLifecycleState)
+                throw e
+            } finally {
+                requestUpdate()
+                close()
+            }
+            awaitClose()
+        }.flowOn(Dispatchers.IO)
+
+    override fun setEnabled(enabled: Boolean): Boolean {
+        if (!isCompiled)
+            return false
+        if (info.isEnabled != enabled) {
+            info.isEnabled = enabled
+            saveInfo()
+            val state = if (enabled)
+                ProjectLifecycle.State.ENABLED
+            else
+                ProjectLifecycle.State.DISABLED
+            lifecycleRegistry.setCurrentState(state)
+            requestUpdate()
+        }
+        return true
+    }
+
+    override fun requestUpdate() {
+        EventHandler.fireEventWithScope(Events.Project.InfoUpdate(project = this))
+    }
+
+    override fun saveInfo() {
+        val encoded = infoJson.encodeToString(info)
+        infoWriteScope.launch {
+            AtomicFile(File(directory.path, INFO_FILE_NAME)).writeText(encoded)
+        }
+
+        reloadAllowedEventIDs()
+    }
+
+    override fun loadInfo() {
+        this.mInfo = AtomicFile(File(directory.path, INFO_FILE_NAME))
+            .readText()
+            .let(json::decodeFromString)
+    }
+
+    override fun getLanguage(): Language {
+        return lang
+    }
+
+    override fun getScope(): Any? {
+        return langScope
+    }
+
+    override fun activeJobs(): Int {
+        val current = executor ?: return 0
+        return JobLocker.withParent(current.name).activeJobs()
+    }
+
+    override fun queuedEvents(): Int =
+        executor?.queuedEvents ?: 0
+
+    override fun stopAllJobs() {
+        val current = synchronized(this) {
+            executor.also { executor = null }
+        } ?: return
+        JobLocker.withParent(current.name).purge()
+        current.shutdown()
+    }
+
+    override fun destroy(requestUpdate: Boolean) {
+        release()
+        if (info.isEnabled) {
+            info.isEnabled = false
+            saveInfo()
+        }
+        lifecycleRegistry.setCurrentState(ProjectLifecycle.State.DESTROYED)
+
+        if (requestUpdate)
+            requestUpdate()
+    }
+
+    /** Stops the project as the app shuts down, as after a crash; unlike [destroy], it stays on for the next start. */
+    internal fun shutdown() {
+        release()
+        lifecycleRegistry.setCurrentState(ProjectLifecycle.State.DESTROYED)
+    }
+
+    private fun release() {
+        logger.v("Destroying project [${info.name}]...")
+        stopAllJobs()
+        langScope?.let { scope ->
+            if (lang.requireRelease)
+                lang.release(scope)
+            lang.destroy(scope)
+            langScope = null
+        }
+    }
+
+    override fun rename(name: String, preserveMainScript: Boolean) {
+        val mainScript = if (preserveMainScript)
+            info.mainScript
+        else {
+            val nName = name + "." + lang.fileExtension
+            File(directory, info.mainScript)
+                .renameTo(File(directory, nName))
+            nName
+        }
+        val orgName = info.name
+        val nInfo = info.copy(
+            name       = name,
+            mainScript = mainScript
+        )
+        mInfo = nInfo
+
+        projectManager.projects.let {
+            it -= orgName
+            it[info.name] = this
+        }
+
+        saveInfo()
+        requestUpdate()
+    }
+
+    override fun getDataDirectory(): File = with(directory.resolve("data")) {
+        if (!exists() || !isDirectory) mkdirs()
+        this
+    }
+
+    override fun getClassLoader(): ClassLoader {
+        val originalLoader = currentThread.contextClassLoader
+        return RuntimeClassLoader(originalLoader)
+    }
+
+    override fun isEventCallAllowed(eventId: String): Boolean =
+        allowedEventIDs.isNotEmpty() && eventId in allowedEventIDs
+
+    private fun obtainExecutor(): ProjectExecutor =
+        executor ?: synchronized(this) {
+            executor ?: ProjectExecutor("$tag-worker", getConcurrency(), ::onEventDropped).also {
+                threadPoolName = it.name
+                executor = it
+                Logger.v(tag, "Allocated ${it.name} (concurrency ${it.concurrency}) to project ${info.name}")
+            }
+        }
+
+    private fun getConcurrency(): Int =
+        config.category("beta_features")
+            .getInt("thread_pool_size", lang.defaultConcurrency)
+            .coerceAtLeast(1)
+
+    private fun onEventDropped() {
+        val now = System.currentTimeMillis()
+        val last = lastDropWarning.get()
+        if (now - last < DROP_WARNING_INTERVAL_MILLIS || !lastDropWarning.compareAndSet(last, now))
+            return
+        logger.w(tag, translate {
+            Locale.ENGLISH { "Event buffer is full, dropped the oldest events" }
+            Locale.KOREAN  { "이벤트 버퍼가 가득 차 가장 오래된 이벤트를 버렸어요" }
+        })
+    }
+
+    /*
+    private fun notifyStateUpdated(state: ProjectLifecycle.State) {
+        getLifecycle()
+    }
+     */
+
+    private fun reloadAllowedEventIDs() {
+        if (_allowedEventIDs.isNotEmpty())
+            _allowedEventIDs.clear()
+        ProjectEventManager
+            .filterAllowedEvents(info.allowedEventIds)
+            .filter { Session.apiLevelManager.hasEvent(info.apiLevels, it) }
+            .forEach(_allowedEventIDs::add)
+    }
+
+    companion object {
+        private const val CONFIG_FILE_NAME  = "config.json"
+        private const val INFO_FILE_NAME    = "project.json"
+        private const val LOGS_FILE_NAME    = "logs.json"
+
+        private const val DROP_WARNING_INTERVAL_MILLIS = 5_000L
+
+        private val infoJson = Json {
+            encodeDefaults = true
+            prettyPrint = true
+        }
+
+        fun create(dir: File, info: ProjectInfo, events: Map<String, ProjectEvent>): Project {
+            val folder = File(dir.path, info.name)
+                .also(File::mkdirs)
+
+            for ((eventId, _) in events)
+                info.allowedEventIds += eventId
+
+            File(folder.path, INFO_FILE_NAME)
+                .writeText(json.encodeToString(info), Charsets.UTF_8)
+
+            File(folder.path, info.mainScript)
+                .writeText(getLanguage(info).formatDefaultCode(info.mainScript, events.values.toList()), Charsets.UTF_8)
+
+            return loadFrom(folder, info)
+        }
+
+        fun loadFrom(directory: File, info: ProjectInfo): Project {
+            return ProjectImpl(directory, info)
+        }
+
+        private fun getLanguage(info: ProjectInfo): Language =
+            Session.languageManager.getLanguage(info.languageId)
+                ?: throw IllegalArgumentException("Cannot find language ${info.languageId} for project '${info.name}'")
+    }
+}
+
+/**
+ * A project's share of the app's workers ([Dispatchers.IO]): its events wait in a bounded buffer and run on the shared
+ * threads, at most [concurrency] at once, in arrival order when that is 1. What is launched in [scope] (timers,
+ * plugins) runs under the same limit, between events.
+ */
+internal class ProjectExecutor(
+    val name: String,
+    val concurrency: Int,
+    private val onDropped: () -> Unit,
+) {
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(concurrency) + CoroutineName(name))
+
+    @Volatile
+    private var closed = false
+
+    private val queued = AtomicInteger()
+
+    /** Events in the buffer, not yet taken by a worker. */
+    val queuedEvents: Int
+        get() = queued.get()
+
+    private val events = Channel<() -> Unit>(EVENT_BUFFER_SIZE, BufferOverflow.DROP_OLDEST) {
+        queued.decrementAndGet()
+        if (!closed) onDropped()
+    }
+
+    init {
+        repeat(concurrency) {
+            scope.launch {
+                for (event in events) {
+                    queued.decrementAndGet()
+                    event()
+                    yield()
+                }
+            }
+        }
+    }
+
+    fun post(event: () -> Unit) {
+        queued.incrementAndGet()
+        if (events.trySend(event).isFailure)
+            queued.decrementAndGet()
+    }
+
+    fun shutdown() {
+        closed = true
+        events.cancel()
+        scope.cancel()
+    }
+
+    companion object {
+        const val EVENT_BUFFER_SIZE = 256
+    }
+}

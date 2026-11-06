@@ -22,23 +22,28 @@ class UtilsApi: Api<UtilsApi.Utils>() {
             }
 
             @JvmStatic
-            fun getWebText(url: String): String = parse(url).text()
+            fun getWebText(url: String): String =
+                parse(url).text()
 
             @JvmStatic
-            fun getAndroidVersionCode(): Int = DeviceApi.Device.getAndroidVersionCode()
+            fun getAndroidVersionCode(): Int =
+                DeviceApi.Device.getAndroidVersionCode()
 
             @JvmStatic
-            fun getAndroidVersionName(): String = DeviceApi.Device.getAndroidVersionName()
+            fun getAndroidVersionName(): String =
+                DeviceApi.Device.getAndroidVersionName()
 
             @JvmStatic
-            fun getPhoneBrand(): String = DeviceApi.Device.getPhoneBrand()
+            fun getPhoneBrand(): String =
+                DeviceApi.Device.getPhoneBrand()
 
             @JvmStatic
-            fun getPhoneModel(): String = DeviceApi.Device.getPhoneModel()
+            fun getPhoneModel(): String =
+                DeviceApi.Device.getPhoneModel()
 
             /* NEW_API */
 
-            private val alphanumericPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+            private val alphanumericPool: List<Char> = listOf('a'..'z', 'A'..'Z', '0'..'9').flatten()
             @JvmStatic
             fun randomAlphanumeric(length: Int): String {
                 val arr: ArrayList<Char> = arrayListOf()

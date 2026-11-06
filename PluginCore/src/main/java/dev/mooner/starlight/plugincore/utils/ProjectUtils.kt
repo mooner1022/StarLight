@@ -6,19 +6,34 @@
 
 package dev.mooner.starlight.plugincore.utils
 
-import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
-import kotlin.reflect.full.createInstance
+import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
+import dev.mooner.starlight.plugincore.project.event.getInstance
+import kotlin.reflect.full.isSubclassOf
 
 inline fun <reified T: ProjectEvent> Project.fireEvent(vararg args: Any, noinline onFailure: (e: Throwable) -> Unit = {}): Boolean {
-    Logger.v("EventManager", "Calling explicit event ${T::class.simpleName} for project ${this.info.name}")
-    val event = T::class.createInstance().also { event ->
-        for ((index, arg) in event.argTypes.withIndex()) {
-            if (arg != args[index]::class)
-                error("Passed argument types [${args.joinToString { clazz -> clazz::class.simpleName.toString() }}] do not match the required argument types: [${event.argTypes.joinToString { clazz -> clazz.simpleName.toString() }}]")
-        }
+    logger.v("EventManager", "Calling explicit event ${T::class.simpleName} for project ${this.info.name}")
+
+    val eventId = ProjectEventManager.validateAndGetEventID(T::class)
+        ?: error("Unregistered event: ${T::class.qualifiedName}")
+
+    if (!this.isEventCallAllowed(eventId))
+        return false
+
+    val event = T::class.getInstance()
+    val actualTypes = event.argTypes
+        .map { it.type }
+    if (actualTypes.size < args.size)
+        error("Argument length mismatch, required: ${actualTypes.size}, provided: ${args.size}")
+
+    for (i in args.indices) {
+        val eArg = actualTypes[i]
+        val pArg = args[i]::class
+        if (!pArg.isSubclassOf(eArg))
+            error("Argument type mismatch on position ${i}, required: ${eArg}, provided: $pArg")
     }
-    this.callFunction(event.functionName, args, onFailure)
+
+    event.dispatch(this, args, onFailure)
     return true
 }

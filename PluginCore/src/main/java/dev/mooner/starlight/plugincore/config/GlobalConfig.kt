@@ -6,42 +6,42 @@
 
 package dev.mooner.starlight.plugincore.config
 
-import android.view.View
+import android.util.AtomicFile
+import androidx.core.util.writeText
+import dev.mooner.configdsl.DataMap
+import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.starlight.plugincore.Session.json
-import dev.mooner.starlight.plugincore.config.category.ConfigCategory
-import dev.mooner.starlight.plugincore.config.category.MutableConfigCategory
+import dev.mooner.starlight.plugincore.config.data.MutableConfig
+import dev.mooner.starlight.plugincore.config.data.category.MutableConfigCategory
+import dev.mooner.starlight.plugincore.event.EventHandler
+import dev.mooner.starlight.plugincore.event.Events
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.utils.readConfigData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
+import kotlinx.coroutines.sync.Mutex
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
-class GlobalConfig(
-    path: File
-): Config {
+object GlobalConfig: MutableConfig {
 
-    private val mData: MutableMap<String, MutableMap<String, TypedString>> by lazy {
-        if (!file.exists() || !file.isFile) {
-            file.parentFile?.mkdirs()
-            file.createNewFile()
-            hashMapOf()
-        } else {
-            val raw = file.readText()
-            if (raw.isBlank())
-                hashMapOf()
-            else
-                json.decodeFromString(raw)
-        }
-    }
+    private const val FILE_NAME = "config-general.json"
+    private const val DEFAULT_CATEGORY = "general"
 
-    private val cachedCategories: MutableMap<String, MutableConfigCategory> = hashMapOf()
-    private var file = File(path, FILE_NAME)
-    private var isSaved: Boolean = false
+    private val cachedCategories: MutableMap<String, MutableConfigCategory> = ConcurrentHashMap()
+    private val mData           : MutableDataMap by lazy { file.readConfigData() }
+    private val flushScope      = CoroutineScope(Dispatchers.IO)
+    private val file            = AtomicFile(File(getStarLightDirectory(), FILE_NAME))
+    private val fileAccessMutex = Mutex()
 
-    override fun getData(): ConfigData = mData
+    override fun getData(): DataMap =
+        mData
 
-    override operator fun get(id: String): ConfigCategory =
+    override fun getMutableData(): MutableDataMap =
+        mData
+
+    override operator fun get(id: String): MutableConfigCategory =
         category(id)
 
     override fun contains(id: String): Boolean = categoryOrNull(id) != null
@@ -55,58 +55,38 @@ class GlobalConfig(
     override fun categoryOrNull(id: String): MutableConfigCategory? =
         getCategoryOrNull(id)
 
-    fun getAllConfigs(): Map<String, Map<String, TypedString>> =
-        mData
-
-    fun edit(block: GlobalConfig.() -> Unit) {
+    override fun edit(block: MutableConfig.() -> Unit) {
         this.apply(block)
         push()
     }
 
-    fun push() {
-        isSaved = true
-        CoroutineScope(Dispatchers.IO).launch {
-            val str = json.encodeToString(mData)
-            with(file) {
-                if (!exists()) {
-                    mkdirs()
-                }
-                if (!isFile) {
-                    deleteRecursively()
-                }
-                writeText(str)
+    override fun push() {
+        flushScope.launch {
+            fileAccessMutex.lock()
+            try {
+                file.writeText(json.encodeToString(mData))
+            } finally {
+                fileAccessMutex.unlock()
             }
+            EventHandler.fireEvent(Events.Config.GlobalConfigUpdate())
         }
-
-        /*
-        scope.launch {
-            val str = Json.encodeToString(configs)
-            println("saved: $str")
-            File(path, FILE_NAME).writeText(str)
-        }
-        */
     }
 
-    fun onSaveConfigAdapter(parentId: String, id: String, view: View?, data: Any) {
-        edit {
-            category(parentId).setAny(id, data)
-        }
+    fun invalidateCache() {
+        mData.clear()
+        cachedCategories.clear()
+        file.readConfigData().forEach(mData::put)
     }
 
     private fun getCategoryOrNull(id: String): MutableConfigCategory? =
-        cachedCategories[id] ?: mData[id]?.let { MutableConfigCategory(it) }
+        cachedCategories[id] ?: mData[id]?.let(::MutableConfigCategory)
 
     private fun getOrCreateCategory(id: String): MutableConfigCategory {
         return getCategoryOrNull(id) ?: let {
-            mData[id] = mutableMapOf()
+            mData[id] = ConcurrentHashMap()
             MutableConfigCategory(mData[id]!!).also {
                 cachedCategories[id] = it
             }
         }
-    }
-
-    companion object {
-        private const val FILE_NAME = "config-general.json"
-        private const val DEFAULT_CATEGORY = "general"
     }
 }

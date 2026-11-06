@@ -6,107 +6,93 @@
 
 package dev.mooner.starlight.plugincore
 
-import android.os.Build
-import android.os.Environment
+import dev.mooner.starlight.plugincore.api.ApiLevelManager
 import dev.mooner.starlight.plugincore.api.ApiManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.plugincore.event.EventManager
 import dev.mooner.starlight.plugincore.language.LanguageManager
 import dev.mooner.starlight.plugincore.library.LibraryLoader
 import dev.mooner.starlight.plugincore.library.LibraryManager
 import dev.mooner.starlight.plugincore.library.LibraryManagerApi
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.internal.Logger
+import dev.mooner.starlight.plugincore.plugin.PluginContext
+import dev.mooner.starlight.plugincore.plugin.PluginContextImpl
 import dev.mooner.starlight.plugincore.plugin.PluginLoader
 import dev.mooner.starlight.plugincore.plugin.PluginManager
 import dev.mooner.starlight.plugincore.project.ProjectLoader
 import dev.mooner.starlight.plugincore.project.ProjectManager
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.TranslationManager
 import dev.mooner.starlight.plugincore.utils.NetworkUtil
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.widget.WidgetManager
 import kotlinx.serialization.json.Json
 import java.io.File
-import kotlin.properties.Delegates
+import kotlin.properties.Delegates.notNull
 
 object Session {
 
     @JvmStatic
-    private var isDuringInit = false
+    var state: InitState = InitState.None
+        private set
 
-    @JvmStatic
-    private var mIsInitComplete = false
-    val isInitComplete get() = mIsInitComplete
+    val isInitComplete
+        get() = state == InitState.Done
 
-    private val mJson: ThreadLocal<Json> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        ThreadLocal.withInitial {
-            Json {
-                isLenient = true
-                ignoreUnknownKeys = true
-                prettyPrint = true
-            }
-        }
-    } else {
-        object : ThreadLocal<Json>() {
-            override fun initialValue(): Json {
-                return Json {
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                    prettyPrint = true
-                }
-            }
-        }
+    val json: Json = Json {
+        isLenient = true
+        ignoreUnknownKeys = true
+        prettyPrint = true
     }
-    val json: Json
-        get() = mJson.get()!!
 
-    @Suppress("DEPRECATION")
-    val globalConfig: GlobalConfig =
-        GlobalConfig(File(Environment.getExternalStorageDirectory(), "StarLight/"))
+    val languageManager : LanguageManager = LanguageManager()
+    val pluginLoader    : PluginLoader    = PluginLoader()
+    val pluginManager   : PluginManager   = PluginManager()
+    val widgetManager   : WidgetManager   = WidgetManager()
+    val apiLevelManager : ApiLevelManager = ApiLevelManager()
 
-    val languageManager: LanguageManager = LanguageManager()
-    val pluginLoader: PluginLoader       = PluginLoader()
-    val pluginManager: PluginManager     = PluginManager()
-    val widgetManager: WidgetManager     = WidgetManager()
-    val eventManager: EventManager       = EventManager()
+    var projectManager: ProjectManager by notNull()
+        private set
+    var projectLoader: ProjectLoader by notNull()
+        private set
 
-    private var mProjectLoader: ProjectLoader by Delegates.notNull()
-    private var mProjectManager: ProjectManager by Delegates.notNull()
-    val projectManager get() = mProjectManager
-    val projectLoader get() = mProjectLoader
+    private var libraryLoader: LibraryLoader? = null
+    var libraryManager: LibraryManager? = null
+        private set
 
-    private var mLibraryLoader: LibraryLoader? = null
-    private var mLibraryManager: LibraryManager? = null
-    private val libraryLoader: LibraryLoader? get() = mLibraryLoader
-    val libraryManager: LibraryManager? get() = mLibraryManager
+    var apiManager: ApiManager by notNull()
+        private set
 
-    private var mApiManager: ApiManager by Delegates.notNull()
-    val apiManager get() = mApiManager
-
-    const val isDebugging: Boolean = true
-
-    fun init(baseDir: File) {
-        if (isInitComplete || isDuringInit) {
+    fun init(locale: Locale, baseDir: File, codeCacheDir: File): PluginContext? {
+        if (state != InitState.None) {
             Logger.w("Session", "Rejecting re-init of Session")
-            return
+            return null
         }
-        isDuringInit = true
+        state = InitState.Processing
 
         val preStack = Thread.currentThread().stackTrace[2]
         if (!preStack.className.startsWith("dev.mooner.starlight")) {
             throw IllegalAccessException("Illegal access to internal function init() from $preStack")
         }
 
+        TranslationManager.init(locale)
+
         val projectDir = File(baseDir, "projects/")
+        projectManager = ProjectManager(projectDir)
+        projectLoader  = ProjectLoader(projectDir)
+        apiManager     = ApiManager()
 
-        mProjectManager = ProjectManager(projectDir)
-        mProjectLoader = ProjectLoader(projectDir)
-        mApiManager = ApiManager()
-
-        if (globalConfig.category("beta_features").getBoolean("load_external_dex_libs", false)) {
-            mLibraryLoader = LibraryLoader()
-            mLibraryManager = LibraryManager(libraryLoader!!.loadLibraries(baseDir).toMutableSet())
+        if (GlobalConfig.category("beta_features").getBoolean("load_external_dex_libs", false)) {
+            libraryLoader  = LibraryLoader()
+            libraryManager = LibraryManager(libraryLoader!!.loadLibraries(baseDir, codeCacheDir).toMutableSet())
             apiManager.addApi(LibraryManagerApi())
         }
-        isDuringInit = false
-        mIsInitComplete = true
+        state = InitState.Done
+
+        return PluginContextImpl(
+            "starlight",
+            "StarLight",
+            getStarLightDirectory().path
+        )
     }
 
     fun shutdown() {
@@ -122,10 +108,16 @@ object Session {
 
         languageManager.purge()
         widgetManager.purge()
+        apiLevelManager.purge()
         pluginLoader.purge()
         pluginManager.purge()
         projectManager.purge()
+    }
 
-        mJson.remove()
+    sealed class InitState {
+
+        data object None       : InitState()
+        data object Processing : InitState()
+        data object Done       : InitState()
     }
 }

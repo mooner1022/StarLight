@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:alpha="0.6"
+    android:gravity="end"
+    android:orientation="vertical"
+    android:paddingStart="64dp"
+    android:paddingTop="4dp"
+    android:paddingEnd="14dp"
+    android:paddingBottom="4dp">
+
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_agent_bubble_user"
+        android:fontFamily="@font/wantedsans_medium"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:textColor="@color/agent_on_user_bubble"
+        android:textSize="15sp"
+        tools:text="그리고 도움말 명령어도 넣어 줘"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:fontFamily="@font/wantedsans_medium"
+        android:text="@string/agent_queued"
+        android:textColor="@color/agent_text_faint"
+        android:textSize="11sp"/>
+</LinearLayout>

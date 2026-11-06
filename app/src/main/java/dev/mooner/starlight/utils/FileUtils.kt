@@ -1,20 +1,30 @@
 package dev.mooner.starlight.utils
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import android.media.MediaScannerConnection
 import android.os.Build
-import android.os.Environment
 import android.provider.Settings
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.EditText
+import android.widget.Toast
+import androidx.core.net.toUri
+import com.google.android.material.chip.ChipGroup
+import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.BuildConfig
+import dev.mooner.starlight.R
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.ui.editor.DefaultEditorActivity
 import java.io.File
-
-@Suppress("DEPRECATION")
-fun getInternalDirectory() = File(Environment.getExternalStorageDirectory(), "StarLight/")
 
 fun Context.requestManageStoragePermission() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
-    val uri = Uri.parse("package:${BuildConfig.APPLICATION_ID}")
+    val uri = "package:${BuildConfig.APPLICATION_ID}".toUri()
 
     startActivity(
         Intent(
@@ -22,4 +32,100 @@ fun Context.requestManageStoragePermission() {
             uri
         )
     )
+}
+
+fun getLanguageByExtension(ext: String): DefaultEditorActivity.Language? =
+    DefaultEditorActivity.Language.entries.firstOrNull { ext in it.fileExt }
+
+fun String.toFile(): File =
+    File(this)
+
+/**
+ * Keeps the media in this folder and below out of the gallery, the photo picker and the share sheets that list
+ * photos, for files the app keeps for itself in the shared StarLight folder: puts a `.nomedia` file in it, making the
+ * folder if need be. The first time, the media scanner looks at the folder again, so that what it listed before
+ * drops out. The files stay where they are for the app and for file managers.
+ */
+fun File.hideFromGallery(context: Context?) {
+    val marker = File(this, NO_MEDIA_FILE)
+    if (marker.exists() || !(isDirectory || mkdirs()))
+        return
+    if (runCatching { marker.createNewFile() }.getOrDefault(false) && context != null)
+        // The marker for older media scanners, which hide a folder when they come across it; the folder for newer ones.
+        MediaScannerConnection.scanFile(context.applicationContext, arrayOf(marker.path, path), null, null)
+}
+
+private const val NO_MEDIA_FILE = ".nomedia"
+
+private val FILE_NAME_REGEX = "(^[-_.A-Za-z0-9/]+$)".toRegex()
+
+internal fun validateFileName(name: String, parent: File?): String? = when {
+    name.isEmpty() -> translate {
+        Locale.ENGLISH { "Enter a name for the file or folder." }
+        Locale.KOREAN  { "폴더/파일의 이름을 입력해주세요." }
+    }
+    !FILE_NAME_REGEX.matches(name) -> translate {
+        Locale.ENGLISH { "Only letters, numbers, -, _, . and / are allowed." }
+        Locale.KOREAN  { "영문, 숫자, -, _, ., / 만 사용할 수 있어요." }
+    }
+    File(parent, name).exists() -> translate {
+        Locale.ENGLISH { "A file with this name already exists." }
+        Locale.KOREAN  { "이미 존재하는 이름이에요." }
+    }
+    else -> null
+}
+
+
+@SuppressLint("CheckResult")
+fun Context.showNewFileDialog(root: File, directory: Boolean = false, onFileCreated: (file: File) -> Unit) {
+    val content = LayoutInflater.from(this).inflate(R.layout.dialog_editor_create_file, null)
+    val chipGroup: ChipGroup = content.findViewById(R.id.chip_group_file_type)
+    chipGroup.check(if (directory) R.id.chip_directory else R.id.chip_file)
+
+    showSheet {
+        title = translate {
+            Locale.ENGLISH { "New file" }
+            Locale.KOREAN  { "새로 만들기" }
+        }
+        icon = R.drawable.ic_round_note_add_24
+        content(content)
+        negative(R.string.cancel)
+        positive(R.string.ok, autoDismiss = false) {
+            val nameInput: EditText = content.findViewById(R.id.edit_text_filename)
+            val error = validateFileName(nameInput.text.toString(), root)
+            if (error != null) {
+                nameInput.error = error
+                nameInput.requestFocus()
+                return@positive
+            }
+
+            val file = File(root, nameInput.text.toString())
+
+            val selectedId = chipGroup.checkedChipId
+            when (selectedId) {
+                R.id.chip_file -> {
+                    file.parentFile?.let { parent ->
+                        if (!parent.exists())
+                            parent.mkdirs()
+                    }
+                    file.createNewFile()
+                }
+                R.id.chip_directory ->
+                    file.mkdirs()
+                View.NO_ID -> {
+                    val message = translate {
+                        Locale.ENGLISH { "Choose what to create. (Folder/File)" }
+                        Locale.KOREAN  { "생성할 종류를 선택해 주세요. (폴더/파일)" }
+                    }
+                    if (this@showNewFileDialog is Activity)
+                        createFailurePeek(message, PeekAlert.Position.Top).peek()
+                    else
+                        Toast.makeText(this@showNewFileDialog, message, Toast.LENGTH_LONG).show()
+                    return@positive
+                }
+            }
+            onFileCreated(file)
+            it.dismiss()
+        }
+    }
 }

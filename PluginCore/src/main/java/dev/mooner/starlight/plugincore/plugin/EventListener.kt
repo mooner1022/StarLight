@@ -1,5 +1,6 @@
 package dev.mooner.starlight.plugincore.plugin
 
+import android.content.Context
 import dev.mooner.starlight.plugincore.project.Project
 
 interface EventListener {
@@ -15,4 +16,6 @@ interface EventListener {
     fun onProjectUpdated(project: Project) {}
 
     fun onNetworkStateChanged(state: Int) {}
+
+    fun onSchemeAction(context: Context, isGlobal: Boolean, params: Map<String, String>) {}
 }

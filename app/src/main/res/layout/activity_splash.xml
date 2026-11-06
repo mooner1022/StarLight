@@ -8,26 +8,28 @@
     android:background="@color/splash_background"
     tools:context=".ui.splash.SplashActivity">
 
-    <ImageView
-        android:id="@+id/splashAnimImageView"
-        android:layout_width="400dp"
-        android:layout_height="400dp"
-        android:layout_marginTop="180dp"
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/splash_anim_view"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:layout_marginHorizontal="@dimen/card_margin_horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.495"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/splash_anim"/>
+        app:lottie_fileName="splash_anim.json"
+        app:lottie_loop="false"
+        app:lottie_autoPlay="true"/>
 
     <TextView
         android:id="@+id/textViewLoadStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:fontFamily="@font/nanumsquare_round_regular"
         android:textColor="#FFFFFF"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/splashAnimImageView"/>
+        app:layout_constraintTop_toBottomOf="@+id/splash_anim_view"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

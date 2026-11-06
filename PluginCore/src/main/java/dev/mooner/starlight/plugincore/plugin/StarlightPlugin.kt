@@ -6,74 +6,154 @@
 
 package dev.mooner.starlight.plugincore.plugin
 
-import android.view.View
+import androidx.annotation.CallSuper
+import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
-import dev.mooner.starlight.plugincore.config.Config
-import dev.mooner.starlight.plugincore.config.ConfigImpl
-import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.TypedString
+import dev.mooner.starlight.plugincore.config.data.ConfigData
+import dev.mooner.starlight.plugincore.config.data.FileConfig
+import dev.mooner.starlight.plugincore.config.data.MutableConfig
+import dev.mooner.starlight.plugincore.event.EventHandler
+import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.language.Language
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import dev.mooner.starlight.plugincore.project.event.ProjectEventBuilder
+import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.project.fireEvent
+import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.getFileSize
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.utils.infoTranslated
 import dev.mooner.starlight.plugincore.widget.Widget
-import kotlinx.serialization.decodeFromString
+import dev.mooner.starlight.plugincore.widget.WidgetDefinition
 import java.io.File
-import kotlin.io.path.Path
-import kotlin.io.path.pathString
+
+private val logger = LoggerFactory.logger {  }
 
 @Suppress("unused")
 abstract class StarlightPlugin: Plugin, EventListener {
 
-    internal lateinit var file: File
-    private lateinit var dataDir: File
-    private lateinit var classLoader: ClassLoader
-    private var isEnabled = false
-    private var configPath: File? = null
+    internal lateinit var originalFile: File
+    private lateinit var internalDir: File
 
+    private var isEnabled = false
+    private val listeners: MutableSet<EventListener> = hashSetOf()
+
+    private lateinit var classLoader: ClassLoader
     private lateinit var mInfo: PluginInfo
     override val info: PluginInfo
         get() = mInfo
 
-    val fileSize: Float get() = file.getFileSize()
-    val fileName: String get() = file.name
+    private var configCache: MutableConfig? = null
+
+    val context: PluginContext by lazy {
+        PluginContextImpl(info.id, info.name, getInternalDataDirectory().path)
+    }
+
+    val fileSize: Float
+        get() = originalFile.getFileSize()
+    val fileName: String
+        get() = originalFile.name
 
     constructor() {
         val classLoader = this.javaClass.classLoader
-        if (classLoader !is PluginClassLoader) {
-            throw IllegalStateException("StarlightPlugin requires ${PluginClassLoader::class.java.name}")
+        if (classLoader !is PluginHostClassLoader) {
+            throw IllegalStateException("StarlightPlugin must be loaded by the plugin loader")
         }
         classLoader.initialize(this)
     }
 
     protected constructor(
         config: PluginInfo,
-        dataDir: File,
+        internalDir: File,
         file: File,
     ) {
         val classLoader = this.javaClass.classLoader
-        if (classLoader is PluginClassLoader) {
+        if (classLoader is PluginHostClassLoader) {
             throw IllegalStateException("Cannot use initialization constructor at runtime")
         }
-        init(config, dataDir, file, classLoader!!)
+        init(config, file, internalDir, classLoader!!)
     }
 
     override fun getConfigStructure(): ConfigStructure { return emptyList() }
 
-    @Deprecated(
-        message = "Retained for legacy compatability, don't use it.",
-        replaceWith = ReplaceWith("onConfigUpdated(config: Config)", "dev.mooner.starlight.plugincore.plugin.onConfigUpdated")
-    )
-    override fun onConfigUpdated(updated: Map<String, Any>) {}
+    @CallSuper
+    override fun onConfigUpdated(config: ConfigData, updated: Map<String, Set<String>>) =
+        invalidateConfigCache()
 
-    override fun onConfigUpdated(config: Config, updated: Map<String, Set<String>>) {}
+    override fun onConfigValueUpdated(id: String, data: Any) {}
 
-    override fun onConfigChanged(id: String, view: View?, data: Any) {}
+    /**
+     * Whether this plugin still needs the values asked for by [getSetupStructure].
+     *
+     * The app asks this on the main thread whenever it shows the plugin, including every time the
+     * plugin list is drawn, so it must be cheap: read a field, don't do I/O. Return `true` only when
+     * [getSetupStructure] has something to show. When this turns `true` while the plugin runs, such as
+     * when a saved token is rejected, call [requestSetup] so the app notices without waiting for a redraw.
+     */
+    override fun isSetupRequired(): Boolean = false
+
+    /**
+     * Why the setup is needed, shown at the top of the setup dialog in place of the generic message,
+     * e.g. that the saved token was rejected. `null` for the first setup. Same rules as [isSetupRequired].
+     */
+    override fun getSetupReason(): String? = null
+
+    /**
+     * Tells the app that this plugin needs its setup again. Make [isSetupRequired] return `true` first.
+     *
+     * The app updates the plugin list and, while it is open, shows the setup dialog unless the user put
+     * off the setup for the same [getSetupReason]. Safe to call from any thread.
+     */
+    protected fun requestSetup() {
+        EventHandler.fireEventWithScope(Events.Plugin.SetupRequested(this))
+    }
+
+    /**
+     * Items shown in the setup dialog, which the app opens on launch while [isSetupRequired] is `true`
+     * (unless the user put it off for the same [getSetupReason]) and from the plugin list or info
+     * screen at any time.
+     *
+     * This is separate from [getConfigStructure], and the app doesn't save what is entered here:
+     * the values only reach [onSetup].
+     */
+    override fun getSetupStructure(): ConfigStructure = emptyList()
+
+    /**
+     * Receives the values entered in the setup dialog when the user confirms it.
+     *
+     * Called on the main thread, so switch dispatchers for I/O or network checks. Items the user
+     * didn't touch are absent from [values], as in the plugin config, so read them with a default.
+     * The app doesn't save [values]: keep what you need yourself, or call [saveToConfig].
+     *
+     * @return `null` when setup is done, or a message to show while the dialog stays open.
+     */
+    override suspend fun onSetup(values: ConfigData): String? = null
 
     override fun isEnabled(): Boolean = isEnabled
+
+    protected fun addListener(listener: EventListener) {
+        listeners += listener
+        if (isEnabled)
+            listener.onEnable()
+    }
+
+    /**
+     * Returns all event listeners associated with this plugin, including the plugin itself.
+     *
+     * @return Set of event listeners
+     */
+    fun getListeners(): Set<EventListener> =
+        listeners + this
+
+    /**
+     * Invalidate cached config data inside plugin instance
+     */
+    fun invalidateConfigCache() {
+        configCache = null
+    }
 
     protected fun setEnabled(enabled: Boolean) {
         if (isEnabled != enabled) {
@@ -86,20 +166,46 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    internal fun setConfigPath(path: File) {
-        configPath = path
-    }
+    protected fun getPluginConfig(): ConfigData =
+        getMutablePluginConfig()
 
-    protected fun getPluginConfig(): Config {
-        return if (configPath == null || !configPath!!.isFile || !configPath!!.exists()) ConfigImpl(emptyMap()) else {
-            val loadedMap: Map<String, Map<String, TypedString>> = Session.json.decodeFromString(configPath!!.readText())
-            ConfigImpl(loadedMap)
+    /**
+     * Writes [values], such as those passed to [onSetup], into the plugin config shown by
+     * [getConfigStructure]. Entries already there are replaced and the rest are kept.
+     */
+    protected fun saveToConfig(values: ConfigData) {
+        getMutablePluginConfig().edit {
+            for ((categoryId, entries) in values.getData())
+                for ((key, value) in entries)
+                    category(categoryId).setRaw(key, value)
         }
     }
 
-    override fun getDataFolder(): File = dataDir
+    private fun getMutablePluginConfig(): MutableConfig {
+        return configCache ?: let {
+            val configPath = getExternalDataDirectory().resolve("config-plugin.json")
+            FileConfig(configPath).also {
+                configCache = it
+            }
+        }
+    }
 
-    override fun getAsset(path: String): File = File(dataDir.resolve("assets"), path)
+    override fun getInternalDataDirectory(): File =
+        internalDir
+            .resolve("plugin_data")
+            .resolve(info.id)
+
+    override fun getExternalDataDirectory(): File =
+        getStarLightDirectory()
+            .resolve("plugins")
+            .resolve("${info.name}(${info.id})")
+
+    @Deprecated("Deprecated, use getExternalDataDirectory().", ReplaceWith("getExternalDataDirectory()"))
+    override fun getDataFolder(): File =
+        getExternalDataDirectory()
+
+    override fun getAsset(path: String): File =
+        context.getAsset(path)
 
     override fun toString(): String = info.fullName
 
@@ -111,24 +217,19 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
-    override fun hashCode(): Int {
-        var result = dataDir.hashCode()
-        result = 31 * result + isEnabled.hashCode()
-        result = 31 * result + info.hashCode()
-        result = 31 * result + fileSize.hashCode()
-        return result
-    }
+    override fun hashCode(): Int =
+        info.id.hashCode()
 
     final override fun init(
-        info: PluginInfo,
-        dataDir: File,
-        file: File,
-        classLoader: ClassLoader
+        info        : PluginInfo,
+        internalDir : File,
+        file        : File,
+        classLoader : ClassLoader
     ) {
-        this.mInfo = info
-        this.dataDir = dataDir
-        this.file = file
-        this.classLoader = classLoader
+        this.mInfo         = info
+        this.internalDir   = internalDir
+        this.originalFile  = file
+        this.classLoader   = classLoader
     }
 
     protected fun getClassLoader(): ClassLoader = classLoader
@@ -136,26 +237,47 @@ abstract class StarlightPlugin: Plugin, EventListener {
     protected fun addLanguage(language: Language) {
         var isLoadSuccess = false
         try {
-            Session.languageManager.addLanguage(Path(dataDir.resolve("assets").path, language.id).pathString, language)
+            Session.languageManager.addLanguage(context, language)
             isLoadSuccess = true
         } catch (e: IllegalStateException) {
-            Logger.e(T, e.toString())
+            logger.error(e)
             e.printStackTrace()
         } finally {
-            Logger.i(T,(if (isLoadSuccess) "Successfully added" else "Failed to add") + " language ${language.name}")
+            logger.infoTranslated {
+                if (isLoadSuccess) {
+                    Locale.ENGLISH { "Successfully added language {name}" }
+                    Locale.KOREAN  { "성공적으로 언어 {name}을 추가했어요" }
+                } else {
+                    Locale.ENGLISH { "Failed to add language {name}" }
+                    Locale.KOREAN  { "언어 {name}을 추가하는 데 실패했어요" }
+                }
+                format(
+                    "name" to language.name
+                )
+            }
         }
     }
 
-    protected fun addWidget(widget: Widget) =
-        Session.widgetManager.addWidget(this.info.name, widget)
+    protected fun addWidget(widget: Class<out Widget>) =
+        Session.widgetManager.addWidget(context, widget)
+
+    protected fun addWidget(definition: WidgetDefinition) =
+        Session.widgetManager.addWidget(context, definition)
+
+    protected inline fun <reified T> addWidget() where T : Widget =
+        Session.widgetManager.addWidget(context, T::class.java)
 
     protected fun <T> addApi(api: Api<T>) =
         Session.apiManager.addApi(api)
 
-    protected inline fun <reified T: ProjectEvent> fireProjectEvent(vararg args: Any, noinline onFailure: (project: Project, e: Throwable) -> Unit = { _, _ -> }) =
-        Session.projectManager.fireEvent<T>(args, onFailure = onFailure)
+    protected fun registerProjectEvents(builder: ProjectEventBuilder.() -> Unit) {
+        val events = ProjectEventBuilder(context).apply(builder).build()
 
-    companion object {
-        private const val T = "StarlightPlugin"
+        for ((id, event) in events) {
+            ProjectEventManager.register(id, event)
+        }
     }
+
+    protected inline fun <reified T: ProjectEvent> fireProjectEvent(vararg args: Any, noinline onFailure: (project: Project, e: Throwable) -> Unit = { _, _ -> }) =
+        Session.projectManager.fireEvent<T>(*args, onFailure = onFailure)
 }

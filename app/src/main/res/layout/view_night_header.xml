@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/nightSky"
+    android:layout_width="match_parent"
+    android:layout_height="230dp"
+    android:importantForAccessibility="noHideDescendants"
+    android:visibility="gone">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_night_header_glow"/>
+
+    <dev.mooner.starlight.ui.plugins.store.StarFieldView
+        android:id="@+id/nightStars"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <ImageView
+        android:id="@+id/nightLogo"
+        android:layout_width="124dp"
+        android:layout_height="124dp"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="-28dp"
+        android:alpha="0.75"
+        android:rotation="12"
+        android:src="@drawable/ic_logo_transparent"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_night_header_fade"/>
+
+</FrameLayout>

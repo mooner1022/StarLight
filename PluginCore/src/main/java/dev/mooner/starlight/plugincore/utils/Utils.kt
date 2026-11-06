@@ -3,8 +3,9 @@ package dev.mooner.starlight.plugincore.utils
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.util.Base64
+import androidx.core.graphics.toColorInt
+import dev.mooner.configdsl.LazyMessage
 import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -28,7 +29,14 @@ fun isNightMode(context: Context): Boolean {
     }
 }
 
-inline fun color(color: () -> String): Int = Color.parseColor(color())
+private val colorCache: MutableMap<Int, Int> = hashMapOf()
+fun color(color: () -> String): Int {
+    val nColor = color()
+    val nHash = nColor.hashCode()
+    return colorCache[nHash]
+        ?: nColor.toColorInt()
+            .also { colorCache[nHash] = it }
+}
 
 fun Bitmap.toBase64(): String {
     val stream = ByteArrayOutputStream()
@@ -44,3 +52,10 @@ fun requiredField(fieldName: String, value: Any?) {
 }
 
 fun <A, B> pairOf(first: A, second: B): Pair<A, B> = Pair(first, second)
+
+fun Boolean.runIf(value: Boolean, block: () -> Unit) {
+    if (this == value) block()
+}
+
+inline fun <T> T.require(condition: T.() -> Boolean, lazyMessage: LazyMessage): T =
+    if (this.condition()) this else throw IllegalArgumentException(lazyMessage())

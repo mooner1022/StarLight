@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Add to chat": where to attach from, then what the conversation is about and how it runs. -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_store_sheet"
+    android:orientation="vertical"
+    android:paddingTop="12dp"
+    android:paddingBottom="24dp">
+
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/bg_store_sheet_handle"/>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="6dp"
+        android:paddingHorizontal="10dp">
+
+        <ImageButton
+            android:id="@+id/close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="start|center_vertical"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/agent_add_close"
+            android:src="@drawable/ic_agent_close"
+            app:tint="@color/agent_text_muted"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:drawablePadding="6dp"
+            android:fontFamily="@font/wantedsans_bold"
+            android:gravity="center_vertical"
+            android:text="@string/agent_add_title"
+            android:textColor="@color/agent_text"
+            android:textSize="16sp"
+            app:drawableStartCompat="@drawable/ic_store_sparkle_small"/>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp">
+
+        <LinearLayout
+            android:id="@+id/photos"
+            android:layout_width="0dp"
+            android:layout_height="96dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_agent_sheet_tile"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_agent_image"
+                app:tint="@color/agent_accent"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/wantedsans_medium"
+                android:text="@string/agent_add_photos"
+                android:textColor="@color/agent_text"
+                android:textSize="13.5sp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/files"
+            android:layout_width="0dp"
+            android:layout_height="96dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_agent_sheet_tile"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_round_article_24"
+                app:tint="@color/agent_accent"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/wantedsans_medium"
+                android:text="@string/agent_add_files"
+                android:textColor="@color/agent_text"
+                android:textSize="13.5sp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="12dp"
+        android:id="@+id/group"
+        android:background="@drawable/bg_agent_sheet_group"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/projectRow"
+            style="@style/AgentSheetRow">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_round_projects_24"
+                app:tint="@color/agent_text_muted"/>
+
+            <TextView
+                style="@style/AgentRowTitle"
+                android:layout_width="0dp"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:text="@string/agent_add_project"/>
+
+            <TextView
+                android:id="@+id/projectValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="@font/wantedsans_regular"
+                android:maxWidth="170dp"
+                android:maxLines="1"
+                android:textColor="@color/agent_text_faint"
+                android:textSize="13.5sp"
+                tools:text="없음"/>
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_round_keyboard_arrow_right_24"
+                app:tint="@color/agent_text_faint"/>
+        </LinearLayout>
+
+        <View style="@style/AgentDivider" android:layout_marginVertical="0dp"/>
+
+        <LinearLayout
+            android:id="@+id/approvalRow"
+            style="@style/AgentSheetRow">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_agent_shield"
+                app:tint="@color/agent_text_muted"/>
+
+            <TextView
+                style="@style/AgentRowTitle"
+                android:layout_width="0dp"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:text="@string/agent_approval"/>
+
+            <TextView
+                android:id="@+id/approvalValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="@font/wantedsans_regular"
+                android:maxWidth="170dp"
+                android:maxLines="1"
+                android:textColor="@color/agent_text_faint"
+                android:textSize="13.5sp"
+                tools:text="삭제·켜고 끄기"/>
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_round_keyboard_arrow_right_24"
+                app:tint="@color/agent_text_faint"/>
+        </LinearLayout>
+
+        <View style="@style/AgentDivider" android:layout_marginVertical="0dp"/>
+
+        <LinearLayout
+            android:id="@+id/modelRow"
+            style="@style/AgentSheetRow">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_agent_sparkle"
+                app:tint="@color/agent_text_muted"/>
+
+            <TextView
+                style="@style/AgentRowTitle"
+                android:layout_width="0dp"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:text="@string/agent_model"/>
+
+            <TextView
+                android:id="@+id/modelValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="@font/wantedsans_regular"
+                android:maxWidth="170dp"
+                android:maxLines="1"
+                android:textColor="@color/agent_text_faint"
+                android:textSize="13.5sp"
+                tools:text="Claude Opus 5.5"/>
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="2dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_round_keyboard_arrow_right_24"
+                app:tint="@color/agent_text_faint"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

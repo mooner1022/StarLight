@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="agent_surface_alt">#202020</color>
+    <color name="agent_border">#14FFFFFF</color>
+    <color name="agent_text">#E8E8EA</color>
+    <color name="agent_text_muted">#A6A6AC</color>
+    <color name="agent_text_faint">#7C7C82</color>
+    <color name="agent_accent">@color/store_gold</color>
+    <color name="agent_user_bubble">#2E2833</color>
+    <color name="agent_code_bg">#1E1E20</color>
+
+    <color name="agent_meteor">#7FD6F7</color>
+    <color name="agent_meteor_soft">#247FD6F7</color>
+    <color name="agent_dusk">#F6B17A</color>
+    <color name="agent_ok">#7ACA8A</color>
+    <color name="agent_error">#FF6188</color>
+    <color name="agent_error_soft">#24FF6188</color>
+
+    <color name="agent_brand_openai">#ECECF1</color>
+    <color name="agent_brand_openrouter">#C8FF00</color>
+    <color name="agent_popup">#2A2530</color>
+    <color name="agent_popup_border">#29FFF7E8</color>
+    <color name="agent_popup_ripple">#1FFFF7E8</color>
+    <color name="agent_popup_text">@color/agent_on_night</color>
+    <color name="agent_popup_icon">@color/agent_gold</color>
+    <color name="agent_popup_danger">#FF7A93</color>
+</resources>

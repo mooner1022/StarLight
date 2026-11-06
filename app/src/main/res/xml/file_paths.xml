@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ file_paths.xml created by Minki Moon(mooner1022) on 12/16/23, 2:08 PM
+  ~ Copyright (c) mooner1022. all rights reserved.
+  ~ This code is licensed under the GNU General Public License v3.0.
+  -->
+
+<paths>
+    <files-path name="files" path="."/>
+    <external-files-path name="external_files_path" path="."/>
+    <external-path name="external_files" path="."/>
+</paths>

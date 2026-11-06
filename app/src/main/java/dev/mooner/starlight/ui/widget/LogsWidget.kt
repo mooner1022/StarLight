@@ -1,207 +1,136 @@
 package dev.mooner.starlight.ui.widget
 
-import android.animation.LayoutTransition
-import android.content.Context
+import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.ImageButton
-import android.widget.TextView
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.LayoutManager
-import dev.mooner.starlight.R
-import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.eventManager
+import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
+import dev.mooner.starlight.CA_DEV_MODE
+import dev.mooner.starlight.databinding.CardLogBinding
+import dev.mooner.starlight.databinding.WidgetLogsBinding
+import dev.mooner.starlight.logging.LogCollector
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.event.Events
-import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.logger.LogType
-import dev.mooner.starlight.plugincore.logger.Logger
-import dev.mooner.starlight.plugincore.widget.Widget
-import dev.mooner.starlight.plugincore.widget.WidgetSize
-import dev.mooner.starlight.ui.logs.LogsRecyclerViewAdapter
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.plugincore.widget.widget
+import dev.mooner.starlight.plugincore.widget.x
+import dev.mooner.starlight.ui.logs.LogItem
 import dev.mooner.starlight.utils.showLogsDialog
-import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
-import kotlinx.coroutines.*
-import java.lang.Integer.min
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
-class LogsWidget: Widget() {
+const val WIDGET_LOGS = "widget_logs"
 
-    companion object {
+private const val SETTING_MIN_LEVEL = "min_level"
+private const val MAX_CANDIDATES = 10
+private const val MAX_MESSAGE_LINES = 3
+private val RENDER_DELAY = 200.milliseconds
 
-        private const val LOGS_MAX_SIZE = 3
+val LogsWidget = widget(WIDGET_LOGS) {
+    name {
+        Locale.ENGLISH { "Logs" }
+        Locale.KOREAN  { "로그" }
     }
+    span(default = 4 x 4, min = 2 x 2, max = 8 x 8)
 
-    override val id: String = "widget_logs"
-    override val name: String = "로그"
-    override val size: WidgetSize = WidgetSize.Wrap
-
-    private var pauseUpdate: Boolean = false
-    private var stackedLogs: MutableList<LogData> = mutableListOf()
-
-    private var job: CompletableJob? = null
-
-    private var mAdapter: LogsRecyclerViewAdapter? = null
-    private var mThumbnailAdapter: LogsRecyclerViewAdapter? = null
-    private var mView: View? = null
-
-    override fun onCreateWidget(view: View) {
-        mView = view
-        val context = view.context
-        LayoutInflater.from(context).inflate(R.layout.widget_logs, view as ViewGroup, true)
-        with(view) {
-            val tvMoreLogs: TextView = findViewById(R.id.tvMoreLogs)
-            tvMoreLogs.setOnClickListener {
-                context.showLogsDialog()
-            }
-
-            val buttonMoreLogs: ImageButton = findViewById(R.id.buttonMoreLogs)
-            buttonMoreLogs.setOnClickListener {
-                context.showLogsDialog()
-            }
-
-            layoutTransition = LayoutTransition()
-            val rvLogs: RecyclerView = findViewById(R.id.rvLogs)
-            val textViewNoLogsYet: TextView = findViewById(R.id.textViewNoLogsYet)
-            val logs = Logger.logs
-            mAdapter = LogsRecyclerViewAdapter(context)
-
-            if (logs.isNotEmpty()) {
-                mAdapter!!.apply {
-                    data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
-                    notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
-                }
-                rvLogs.apply {
-                    itemAnimator = FadeInUpAnimator()
-                    layoutManager = initLayoutManager(context)
-                    adapter = mAdapter
-                    visibility = View.VISIBLE
-                }
-                mView!!.updateHeight()
-                textViewNoLogsYet.visibility = View.GONE
-            }
-
-            bindLogger()
-        }
-    }
-
-    /*
-    override fun onPauseWidget() {
-        super.onPauseWidget()
-        unbindLogger()
-    }
-
-    override fun onResumeWidget() {
-        super.onResumeWidget()
-        if (this::mAdapter.isInitialized) {
-            val logs = Logger.logs
-            Logger.e("onResumeWidget")
-            if (mAdapter.data.size != logs.size) {
-                val missedLogs = logs.drop(mAdapter.data.size)
-                for (data in missedLogs) {
-                    mAdapter.pushLog(data, LOGS_MAX_SIZE)
-                }
-            }
-            bindLogger()
-        }
-    }
-     */
-
-    override fun onResumeWidget() {
-        super.onResumeWidget()
-        pauseUpdate = false
-        if (stackedLogs.isNotEmpty() && mAdapter != null) {
-            val logs = if (stackedLogs.size > 3) {
-                stackedLogs.drop(stackedLogs.size - 3)
-            } else stackedLogs
-
-            for (logData in logs) {
-                mAdapter!!.pushLog(logData, LOGS_MAX_SIZE)
-            }
-            stackedLogs.clear()
-        }
-    }
-
-    override fun onPauseWidget() {
-        super.onPauseWidget()
-        pauseUpdate = true
-    }
-
-    override fun onDestroyWidget() {
-        super.onDestroyWidget()
-        mView = null
-        unbindLogger()
-        mAdapter = null
-    }
-
-    override fun onCreateThumbnail(view: View) {
-        LayoutInflater.from(view.context).inflate(R.layout.widget_logs, view as ViewGroup, true)
-
-        val dummyLog = LogData(
-            type = LogType.DEBUG,
-            message = "This is a test log.\nMessage is shown here."
+    settings {
+        choice(
+            id = SETTING_MIN_LEVEL,
+            title = translate {
+                Locale.ENGLISH { "Minimum level" }
+                Locale.KOREAN  { "최소 로그 수준" }
+            },
+            options = listOf(
+                LogType.VERBOSE.name to translate {
+                    Locale.ENGLISH { "All" }
+                    Locale.KOREAN  { "전체" }
+                },
+                LogType.INFO.name  to "INFO",
+                LogType.WARN.name  to "WARN",
+                LogType.ERROR.name to "ERROR",
+            ),
         )
-
-        with(view) {
-            val rvLogs: RecyclerView = findViewById(R.id.rvLogs)
-            val textViewNoLogsYet: TextView = findViewById(R.id.textViewNoLogsYet)
-            val logs: List<LogData> = listOf(dummyLog, dummyLog, dummyLog)
-            mThumbnailAdapter = LogsRecyclerViewAdapter(context, false)
-
-            mThumbnailAdapter!!.apply {
-                data = logs.subList(logs.size - min(LOGS_MAX_SIZE, logs.size), logs.size).toMutableList()
-                notifyItemRangeInserted(0, min(LOGS_MAX_SIZE, logs.size))
-            }
-            rvLogs.apply {
-                layoutManager = initLayoutManager(context)
-                adapter = mThumbnailAdapter
-                visibility = View.VISIBLE
-            }
-            view.updateHeight()
-            textViewNoLogsYet.visibility = View.GONE
-
-            bindLogger()
-        }
     }
 
-    override fun onDestroyThumbnail() {
-        super.onDestroyThumbnail()
-        mThumbnailAdapter = null
-    }
+    content {
+        val binding = inflate(WidgetLogsBinding::inflate)
+        val minPriority = settings.string(SETTING_MIN_LEVEL)
+            ?.let { runCatching { LogType.valueOf(it) }.getOrNull() }
+            ?.priority
+            ?: LogType.VERBOSE.priority
+        val inflater = LayoutInflater.from(context)
+        val shown: ArrayDeque<LogData> = ArrayDeque()
 
-    private fun initLayoutManager(context: Context): LayoutManager =
-        LinearLayoutManager(context).apply {
-            reverseLayout = true
-            stackFromEnd = true
-        }
+        fun isVisibleLog(log: LogData): Boolean =
+            log.type.priority >= minPriority &&
+                    (log.type != LogType.VERBOSE || GlobalConfig.category(CA_DEV_MODE).getBoolean("show_internal_log", false))
 
-    private fun bindLogger() {
-        val mJob = job ?: let {
-            val newJob = SupervisorJob()
-            job = newJob
-            newJob
-        }
-        CoroutineScope(Dispatchers.Default + mJob).launch {
-            eventManager.on(this, ::onLogCreated)
-        }
-    }
-
-    private fun unbindLogger() = job?.cancel()
-
-    private fun onLogCreated(event: Events.Log.LogCreateEvent) {
-        val log = event.log
-        if (log.type == LogType.VERBOSE && !Session.globalConfig.category("dev_mode_config").getBoolean("show_internal_log", false)) return
-
-        if (pauseUpdate) {
-            stackedLogs += log
-        } else {
-            mAdapter?.pushLog(log, LOGS_MAX_SIZE)
-            if (mView != null) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    mView!!.updateHeight()
-                }
+        fun render() {
+            val hasLogs = shown.isNotEmpty()
+            binding.textViewNoLogsYet.isVisible = !hasLogs
+            binding.logList.isVisible = hasLogs
+            binding.logList.removeAllViews()
+            for (log in shown) {
+                val item = CardLogBinding.inflate(inflater, binding.logList, false)
+                LogItem().withLogData(log, LogItem.ViewType.NORMAL, copyOnLongClick = false).bindView(item, emptyList())
+                item.logContentText.maxLines = MAX_MESSAGE_LINES
+                item.logContentText.ellipsize = TextUtils.TruncateAt.END
+                binding.logList.addView(item.root)
             }
+        }
+
+        var pendingRender: Job? = null
+        fun scheduleRender() {
+            if (pendingRender?.isActive == true)
+                return
+            pendingRender = launch {
+                delay(RENDER_DELAY)
+                render()
+            }
+        }
+
+        fun push(log: LogData) {
+            shown.addFirst(log)
+            while (shown.size > MAX_CANDIDATES)
+                shown.removeLast()
+        }
+
+        val openLogs = View.OnClickListener { it.context.showLogsDialog() }
+        binding.tvMoreLogs.setOnClickListener(openLogs)
+        binding.buttonMoreLogs.setOnClickListener(openLogs)
+
+        if (isPreview) {
+            repeat(MAX_CANDIDATES) { push(previewLog()) }
+            render()
+            return@content
+        }
+
+        repeatWhile(Lifecycle.State.STARTED) {
+            shown.clear()
+            LogCollector.logs
+                .filter(::isVisibleLog)
+                .takeLast(MAX_CANDIDATES)
+                .forEach(::push)
+            render()
+        }
+        on<Events.Log.Create> {
+            if (!isVisibleLog(log))
+                return@on
+            push(log)
+            scheduleRender()
         }
     }
 }
+
+private fun previewLog(): LogData =
+    LogData(
+        type = LogType.INFO,
+        message = translate {
+            Locale.ENGLISH { "This is a dummy log for preview.\nMessage is shown here." }
+            Locale.KOREAN  { "이건 미리보기용 더미 로그에요.\n로그 메세지는 여기에 보여져요." }
+        }
+    )

@@ -1,115 +1,152 @@
 package dev.mooner.starlight.ui.splash
 
+import android.annotation.SuppressLint
 import android.content.Intent
-import android.os.Build.VERSION.SDK_INT
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import coil.Coil
 import coil.ImageLoader
-import coil.decode.GifDecoder
-import coil.decode.ImageDecoderDecoder
-import coil.load
-import coil.request.repeatCount
 import dev.mooner.starlight.MainActivity
-import dev.mooner.starlight.R
-import dev.mooner.starlight.core.GlobalApplication.Companion.REQUIRED_PERMISSIONS
-import dev.mooner.starlight.core.session.ApplicationSession
+import dev.mooner.starlight.PREF_IS_INITIAL
+import dev.mooner.starlight.core.ApplicationSession
+import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.databinding.ActivitySplashBinding
-import dev.mooner.starlight.event.SessionStageUpdateEvent
+import dev.mooner.starlight.event.ApplicationEvent
+import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.on
-import dev.mooner.starlight.plugincore.logger.Logger
-import dev.mooner.starlight.ui.crash.FatalErrorActivity
-import dev.mooner.starlight.ui.splash.quickstart.QuickStartActivity
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.ui.splash.intro.IntroActivity
+import dev.mooner.starlight.utils.applyEdgeToEdge
 import dev.mooner.starlight.utils.checkPermissions
-import dev.mooner.starlight.utils.getInternalDirectory
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
-import java.io.File
+import dev.mooner.starlight.utils.restartApplication
+import kotlinx.coroutines.*
 
+private val LOG = LoggerFactory.logger {  }
+
+@SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySplashBinding
 
+    @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
+        // From the safe start notification: start again as usual.
+        if (intent.getBooleanExtra(EXTRA_RESTART, false)) {
+            super.onCreate(null)
+            restartApplication()
+            return
+        }
         super.onCreate(savedInstanceState)
-        binding = ActivitySplashBinding.inflate(layoutInflater)
-        val view = binding.root
-        setContentView(view)
 
-        val pref = getSharedPreferences("general", 0)
-        val isInitial = pref.getBoolean("isInitial", true)
-        if (isInitial) pref.edit {
-            putBoolean("isInitial", false)
+        binding = ActivitySplashBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        applyEdgeToEdge(binding.root)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemGestures())
+            // Apply the insets as padding to the view. Here, set all the dimensions
+            // as appropriate to your layout. You can also update the view's margin if
+            // more appropriate.
+            view.updatePadding(insets.left, insets.top, insets.right, insets.bottom)
+
+            // Return CONSUMED if you don't want the window insets to keep passing down
+            // to descendant views.
+            WindowInsetsCompat.CONSUMED
         }
 
-        val isPermissionsGrant = checkPermissions(REQUIRED_PERMISSIONS)
+        bindLogNotifier()
+
+        val pref = getSharedPreferences("general", 0)
+        val isInitial = pref.getBoolean(PREF_IS_INITIAL, true)
+        val isPermissionsGrant = checkPermissions(IntroActivity.REQUIRED_PERMISSIONS)
 
         val imageLoader = ImageLoader.Builder(applicationContext)
-            .componentRegistry {
+            /*
+            .components {
                 if (SDK_INT >= 28) {
-                    add(ImageDecoderDecoder(applicationContext))
+                    add(ImageDecoderDecoder.Factory())
                 } else {
-                    add(GifDecoder())
+                    add(GifDecoder.Factory())
                 }
             }
+             */
             .build()
         Coil.setImageLoader(imageLoader)
 
-        binding.splashAnimImageView.load(R.drawable.splash_anim) { repeatCount(0) }
+        LOG.verbose {
+            """
+                TEST_QUICK_START= $TEST_QUICK_START
+                isInitial= $isInitial
+                isPermissionsGrant= $isPermissionsGrant
+            """.trimIndent()
+        }
 
-        //Logger.v("TEST_QUICK_START= $TEST_QUICK_START\nisInitial= $isInitial\nisPermissionsGrant= $isPermissionsGrant")
         if (TEST_QUICK_START || isInitial || !isPermissionsGrant) {
-            startActivity(Intent(this, QuickStartActivity::class.java))
+            //ConfigDSL.registerAdapterImpl(::ParentConfigAdapterImpl)
+            startActivity(Intent(this, IntroActivity::class.java)
+                .putExtra(IntroActivity.EXTRA_PERMISSIONS_ONLY, !TEST_QUICK_START && !isInitial))
+            finish()
         } else {
-            val intent = Intent(this@SplashActivity, MainActivity::class.java)
-            init(intent)
+            if (GlobalApplication.lastStageValue != null)
+                binding.textViewLoadStatus.text = "✦ ${GlobalApplication.lastStageValue}"
+            init()
         }
     }
 
-    private fun init(intent: Intent) {
-        val startupFile = File(getInternalDirectory(), "STARTUP.info")
-        if (startupFile.exists() && startupFile.isFile) {
-            val startupData: Map<String, String> = Session.json.decodeFromString(startupFile.readText())
-            if (startupData.containsKey("last_error")) {
-                val errorIntent = Intent(this, FatalErrorActivity::class.java).apply {
-                    putExtra("errorMessage", startupData["last_error"])
-                }
-                startupFile.delete()
-                startActivity(errorIntent)
-                finish()
-                return
-            }
-        }
-
+    @SuppressLint("SetTextI18n")
+    private fun init() {
         val initMillis = System.currentTimeMillis()
 
-        //val webview = WebView(applicationContext)
-        //webview.loadUrl(EditorActivity.ENTRY_POINT)
-
-        lifecycleScope.launchWhenCreated {
-            if (Session.isInitComplete) {
-                launch(Dispatchers.Default) {
-                    startApplication(initMillis, intent)
+        val restartJob = lifecycleScope.launch(start = CoroutineStart.LAZY) {
+            delay(7000L)
+            when(ApplicationSession.initState) {
+                Session.InitState.None ->
+                    restartApplication()
+                Session.InitState.Done -> {
+                    if (lifecycle.currentState == Lifecycle.State.STARTED)
+                        startApplication(initMillis)
                 }
-            } else {
-                Session.eventManager.on<SessionStageUpdateEvent>(this) {
-                    value?.let {
-                        Logger.i(T, value)
-                        runOnUiThread {
-                            binding.textViewLoadStatus.text = value
+                else -> {}
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.CREATED) {
+                if (GlobalApplication.isStartupAborted)
+                    return@repeatOnLifecycle
+                if (ApplicationSession.isInitComplete) {
+                    startApplication(initMillis)
+                } else {
+                    restartJob.start()
+                    EventHandler.on<ApplicationEvent.Session.StageUpdate>(this) {
+                        if (value == null) {
+                            startApplication(initMillis)
+                            return@on
                         }
-                    } ?: startApplication(initMillis, intent)
+                        if (restartJob.isActive)
+                            restartJob.cancel()
+                        println("------------------------ $value")
+                        LOG.info { value }
+                        withContext(Dispatchers.Main) {
+                            binding.textViewLoadStatus.text = "✦ $value"
+                        }
+                    }
                 }
             }
         }
     }
 
-    private suspend fun startApplication(initMillis: Long, intent: Intent) {
+    private suspend fun startApplication(initMillis: Long) {
+        val intent = Intent(this@SplashActivity, MainActivity::class.java)
         val currentMillis = System.currentTimeMillis()
         if ((currentMillis - initMillis) <= MIN_LOAD_TIME) {
             val delay = if (!ApplicationSession.isInitComplete)
@@ -126,14 +163,18 @@ class SplashActivity : AppCompatActivity() {
 
     private fun startMainActivity(intent: Intent) = runOnUiThread {
         startActivity(intent)
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, android.R.anim.fade_in, android.R.anim.fade_out)
+        else
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()
     }
 
     companion object {
-        private val T = SplashActivity::class.simpleName!!
 
-        private const val MIN_LOAD_TIME = 1500L
+        const val EXTRA_RESTART = "restart"
+
+        private const val MIN_LOAD_TIME = 1300L
         private const val ANIMATION_DURATION = 5000L
 
         private const val TEST_QUICK_START = false

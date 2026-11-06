@@ -4,24 +4,32 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Resources
+import android.util.DisplayMetrics
 import android.util.TypedValue
 import android.view.View
-import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import android.widget.ProgressBar
+import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.core.widget.ImageViewCompat
 import androidx.core.widget.NestedScrollView
 import coil.ImageLoader
 import coil.imageLoader
 import coil.load
-import coil.loadAny
 import coil.request.Disposable
 import coil.request.ImageRequest
-import dev.mooner.starlight.plugincore.logger.Logger
-import kotlin.reflect.full.createInstance
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import kotlin.reflect.full.primaryConstructor
+
+private val LOG = LoggerFactory.logger {  }
 
 fun NestedScrollView.bindFadeImage(imageView: ImageView) {
     setOnScrollChangeListener { _, _, scrollY, _, _ ->
@@ -43,11 +51,11 @@ inline fun ImageView.loadWithTint(
     imageLoader: ImageLoader = context.imageLoader,
     builder: ImageRequest.Builder.() -> Unit = {}
 ): Disposable {
-    ImageViewCompat.setImageTintList(this, if (tintColor == null) null else ColorStateList.valueOf(context.getColor(tintColor)))
+    ImageViewCompat.setImageTintList(this, tintColor?.let { color -> ColorStateList.valueOf(context.getColor(color)) })
     return load(drawableResId, imageLoader, builder)
 }
 
-inline fun ImageView.loadAnyWithTint(
+inline fun ImageView.loadWithTint(
     data: Any?,
     imageLoader: ImageLoader = context.imageLoader,
     @ColorRes
@@ -55,7 +63,7 @@ inline fun ImageView.loadAnyWithTint(
     builder: ImageRequest.Builder.() -> Unit = {}
 ): Disposable {
     ImageViewCompat.setImageTintList(this, if (tintColor == null) null else ColorStateList.valueOf(context.getColor(tintColor)))
-    return loadAny(data, imageLoader, builder)
+    return load(data, imageLoader, builder)
 }
 
 private fun ProgressBar.setProgressGraceful(to: Int) {
@@ -63,7 +71,7 @@ private fun ProgressBar.setProgressGraceful(to: Int) {
 
     val start = progress
     val end = ((to.toFloat() / 100f) * width).toInt()
-    Logger.v("Animating progressbar to= $to, start= $start, end= $end")
+    LOG.verbose { "Animating progressbar to= $to, start= $start, end= $end" }
     val animator = ValueAnimator.ofInt(start, end).apply {
         interpolator = AccelerateDecelerateInterpolator()
         startDelay = 0
@@ -82,23 +90,71 @@ var ProgressBar.graceProgress: Int
         setProgressGraceful(value)
     }
 
-private val Number.toPx get() = TypedValue.applyDimension(
-    TypedValue.COMPLEX_UNIT_DIP,
-    this.toFloat(),
-    Resources.getSystem().displayMetrics
-).toInt()
+private val Number.toPx
+    get() = TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP,
+        this.toFloat(),
+        Resources.getSystem().displayMetrics
+    )
 
-fun dp(value: Int): Int = value.toPx
+fun dp(value: Int): Int =
+    value.toPx.toInt()
+fun dp(value: Float): Float =
+    value.toPx
 
-inline fun View.applyLayoutParams(block: ViewGroup.LayoutParams.() -> Unit) {
-    applyLayoutParams<ViewGroup.LayoutParams>(block)
+inline fun View.applyLayoutParams(block: LayoutParams.() -> Unit) {
+    applyLayoutParams<LayoutParams>(block)
 }
 
 @JvmName("applyLayoutParamsTyped")
-inline fun <reified T : ViewGroup.LayoutParams> View.applyLayoutParams(
+inline fun <reified T : LayoutParams> View.applyLayoutParams(
     block: T.() -> Unit
 ) {
-    val params = (layoutParams?: T::class.createInstance()) as T
+    val params = (layoutParams ?: T::class.primaryConstructor!!.call(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)) as T
     block(params)
     layoutParams = params
+}
+
+fun ComponentActivity.applyEdgeToEdge(
+    rootView: View? = null,
+    typeMask: Int = WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
+    onApplyWindowInsets: ((view: View, insets: Insets) -> Unit)? = null
+) {
+    enableEdgeToEdge()
+
+    val rootView: View = rootView ?: window.decorView.findViewById(android.R.id.content)
+    ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
+        val insets = windowInsets.getInsets(typeMask)
+        view.updatePadding(insets.left, insets.top, insets.right, insets.bottom)
+        onApplyWindowInsets?.invoke(view, insets)
+        WindowInsetsCompat.CONSUMED
+    }
+}
+
+/**
+ * Keeps [rootView] clear of the system bars, display cutout and keyboard when the window draws behind
+ * them, which Android 15 and later force on apps that target them. Otherwise these insets don't reach
+ * the content, so nothing changes.
+ */
+fun ComponentActivity.fitSystemBars(rootView: View) {
+    val initial = Insets.of(rootView.paddingLeft, rootView.paddingTop, rootView.paddingRight, rootView.paddingBottom)
+    ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
+        val insets = windowInsets.getInsets(
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime()
+        )
+        view.updatePadding(
+            initial.left + insets.left,
+            initial.top + insets.top,
+            initial.right + insets.right,
+            initial.bottom + insets.bottom,
+        )
+        WindowInsetsCompat.CONSUMED
+    }
+}
+
+fun getScreenSizeDp(context: Context): Pair<Float, Float> {
+    val displayMetrics: DisplayMetrics = context.resources.displayMetrics
+    val dpHeight: Float = displayMetrics.heightPixels / displayMetrics.density
+    val dpWidth: Float = displayMetrics.widthPixels / displayMetrics.density
+    return dpWidth to dpHeight
 }

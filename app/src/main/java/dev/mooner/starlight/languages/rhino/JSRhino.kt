@@ -1,31 +1,44 @@
 package dev.mooner.starlight.languages.rhino
 
-import android.net.Uri
+import androidx.core.net.toUri
+import com.faendir.rhino_android.AndroidContextFactory
 import com.faendir.rhino_android.RhinoAndroidHelper
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.seekbar
+import dev.mooner.configdsl.options.spinner
+import dev.mooner.configdsl.options.toggle
+import dev.mooner.starlight.BuildConfig
+import dev.mooner.starlight.languages.ScriptHostPolicy
+import dev.mooner.starlight.plugincore.RuntimeClassLoader
+import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.InstanceType
-import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.config
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.language.Language
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
-import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.utils.getInternalDirectory
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.utils.currentThread
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.utils.verboseTranslated
 import dev.mooner.starlight.utils.toURI
-import org.mozilla.javascript.Context
+import org.mozilla.javascript.*
 import org.mozilla.javascript.Function
-import org.mozilla.javascript.ImporterTopLevel
-import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.commonjs.module.Require
-import org.mozilla.javascript.commonjs.module.provider.StrongCachingModuleScriptProvider
-import org.mozilla.javascript.commonjs.module.provider.UrlModuleSourceProvider
+import org.mozilla.javascript.commonjs.module.RequireBuilder
+import org.mozilla.javascript.commonjs.module.provider.SoftCachingModuleScriptProvider
 import java.io.File
+import java.net.URI
+
+private val LOG = LoggerFactory.logger {  }
 
 class JSRhino: Language() {
 
     override val id: String = "JS_RHINO"
 
-    override val name: String = "자바스크립트(라이노)"
+    override val name: String = "JS(RhinoJS)"
 
     override val fileExtension: String = "js"
 
@@ -34,115 +47,172 @@ class JSRhino: Language() {
     override val configStructure: ConfigStructure = configs
 
     override val defaultCode: String = """
-            function onMessage(event) {
-                
-            }
+            %HEADER%
+            %BODY%
         """.trimIndent()
 
-    override fun onConfigUpdated(updated: Map<String, Any>) {}
-
-    private fun enterContext(): Context {
+    internal fun enterContext(): Context {
         val config = getLanguageConfig()
-        val optLevel = if (config.getBoolean(CONF_OPTIMIZE_CODE, false))
-            config.getInt(CONF_OPTIMIZATION_LEVEL, 0)
+        val optLevel = if (BuildConfig.SCRIPT_JIT && config.getBoolean(CONF_OPTIMIZE_CODE, false))
+            config.getInt(CONF_OPTIMIZATION_LEVEL, DEF_OPTIMIZATION_LEVEL)
         else
             -1
-        val context = RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")).enterContext().apply {
+
+        val context = createAndroidHelper().enterContext().apply {
             optimizationLevel = optLevel
-            val langVersionIndex = config.getInt(CONF_LANG_VERSION)
-            languageVersion = if (langVersionIndex == null)
-                LANG_DEF_VERSION
-            else
-                indexToVersion(langVersionIndex)
+            languageVersion = configuredLanguageVersion()
             wrapFactory = PrimitiveWrapFactory()
         }
+        //context.applicationClassLoader =
+        //    RuntimeClassLoader(currentThread.contextClassLoader)
         return context
     }
 
-    override fun compile(code: String, apis: List<Api<*>>, project: Project?): Any {
-        val context = enterContext()
-        val scope = context.initStandardObjects(ImporterTopLevel(context))
-        //val scope = context.newObject(shared)
-        //val engine = ScriptEngineManager().getEngineByName("rhino")!!
-        if (project != null) {
-            var importLines: StringBuilder? = null
-            for(methodBlock in apis) {
-                when(methodBlock.instanceType) {
-                    InstanceType.CLASS -> {
-                        val line = "const ${methodBlock.name} = Packages.${methodBlock.instanceClass.name};\n"
-                        if (importLines == null) importLines = StringBuilder(line)
-                        else importLines.append(line)
-                        //context.evaluateString(scope, "const ${methodBlock.name} = ${methodBlock.instanceClass.name};", "import", 1, null)
-                    }
-                    InstanceType.OBJECT -> {
-                        val instance = methodBlock.getInstance(project)
-                        scope.put(methodBlock.name, scope, instance)
-                        //ScriptableObject.putProperty(scope, methodBlock.name, Context.javaToJS(instance, scope))
+    // Overrides the helper to set classloader as RuntimeClassLoader
+    private fun configuredLanguageVersion(): Int =
+        getLanguageConfig().getInt(CONF_LANG_VERSION)?.let(::indexToVersion) ?: LANG_DEF_VERSION
+
+    private fun createAndroidHelper(): RhinoAndroidHelper {
+        return object : RhinoAndroidHelper(File(System.getProperty("java.io.tmpdir", "."), "classes")) {
+            override fun createAndroidContextFactory(cacheDirectory: File?): AndroidContextFactory {
+                val classLoader = RuntimeClassLoader(currentThread.contextClassLoader)
+                return object : AndroidContextFactory(cacheDirectory, classLoader) {
+
+                    // Every context, including those that run callbacks on other threads, comes from here. Those get
+                    // the script's language and values too, or a listener would see a Java string where the script
+                    // compares a JS one (`msg.content === "!hi"` false), and a BigInt as a Java object.
+                    override fun makeContext(): Context =
+                        super.makeContext().also { cx ->
+                            cx.languageVersion = configuredLanguageVersion()
+                            cx.wrapFactory = PrimitiveWrapFactory()
+                            if (ScriptHostPolicy.isEnabled)
+                                PrimitiveWrapFactory.restrictContext(cx)
+                        }
+
+                    override fun hasFeature(cx: Context?, featureIndex: Int): Boolean {
+                        return when(featureIndex) {
+                            Context.FEATURE_ENABLE_JAVA_MAP_ACCESS ->
+                                true
+                            else ->
+                                super.hasFeature(cx, featureIndex)
+                        }
                     }
                 }
-                //engine.put(methodBlock.blockName, methodBlock.instance)
-            }
-            if (importLines != null) {
-                //Logger.v(importLines.toString())
-                context.evaluateString(scope, importLines.toString(), "import", 1, null)
             }
         }
-
-        val langConf = getLanguageConfig()
-        if (langConf.getBoolean("load_ext_modules", false)) {
-            Logger.v(T, "load_ext_modules")
-            val isSandboxed = langConf.getBoolean("load_ext_module_sandbox", false)
-            val require = initRequire(context, scope, isSandboxed)
-            require.install(scope)
-        }
-
-        //engine.eval(code)
-        context.evaluateString(scope, code, project?.info?.name ?: name, 1, null)
-        //scope.put()
-        Context.exit()
-        return scope
     }
 
+    override fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any =
+        enterContext().use { context ->
+            val scope = if (project != null)
+                context.initStandardObjects(RhinoGlobalObject(context, project))
+            else
+                context.initStandardObjects(ImporterTopLevel(context))
+
+            var importLines: StringBuilder? = null
+            for(api in apis) {
+                when(api.instanceType) {
+                    InstanceType.CLASS -> {
+                        val line = "const ${api.name} = Packages.${api.instanceClass.name};\n"
+                        if (importLines == null)
+                            importLines = StringBuilder(line)
+                        else
+                            importLines.append(line)
+                    }
+                    InstanceType.OBJECT -> {
+                        if (project == null)
+                            continue
+                        val instance = api.getInstance(project)
+                        scope.put(api.name, scope, instance)
+                    }
+                }
+            }
+            if (importLines != null)
+                context.evaluateString(scope, importLines.toString(), "import", 1, null)
+
+            val langConf = getLanguageConfig()
+            if (langConf.getBoolean("load_ext_modules", true)) {
+                LOG.verboseTranslated {
+                    Locale.ENGLISH { "[Load external modules] Option enabled" }
+                    Locale.KOREAN  { "[외부 모듈 로드] 설정 활성화됨" }
+                }
+                val isSandboxed = langConf.getBoolean(CONF_EXT_MODULE_SANDBOX, DEF_EXT_MODULE_SANDBOX)
+                val require = initRequire(context, scope, isSandboxed, project)
+                require.install(scope)
+            }
+
+            context.evaluateString(scope, code, project?.info?.name ?: name, 1, null)
+            scope
+        }
+
     override fun release(scope: Any) {
-        super.release(scope)
         try {
             Context.exit()
         } catch (e: IllegalStateException) {
-            Logger.v(T, "Failed to release engine: ${e.message}")
+            LOG.verboseTranslated {
+                Locale.ENGLISH { "Failed to release engine scope: $e" }
+                Locale.KOREAN  { "엔진 스코프를 release 하지 못했습니다: $e" }
+            }
         }
     }
 
     override fun callFunction(
         scope: Any,
         functionName: String,
-        args: Array<out Any>,
-        onError: (e: Exception) -> Unit
-    ) {
-        try {
-            val rhino = scope as Scriptable
-            val context = enterContext()
-            val function = rhino.get(functionName, scope)
-            if (function == Scriptable.NOT_FOUND || function !is Function) {
-                Logger.v(T, "Unable to locate function: $functionName")
-                return
+        args: Array<out Any>
+    ): Any? {
+        val rhino = scope as Scriptable
+        val context = enterContext()
+        val function = rhino.get(functionName, scope)
+        if (function == Scriptable.NOT_FOUND || function !is Function) {
+            LOG.verboseTranslated {
+                Locale.ENGLISH { "WARN: Unable to locate function: $functionName" }
+                Locale.KOREAN  { "경고: 일치하는 함수를 찾을 수 없음: $functionName" }
             }
-            function.call(context, scope, scope, args)
-        } catch (e: Exception) {
-            onError(e)
+            return null
         }
-        //ScriptableObject.callMethod(engine as Scriptable, methodName, args)
-        //val invocable = engine as Invocable
-        //invocable.invokeFunction(methodName, args)
+        context.errorReporter = defaultErrorReporter
+        return function.call(context, scope, scope, args)
     }
 
-    override fun eval(code: String): Any {
-        val context = enterContext()
-        val scope = context.initStandardObjects(ImporterTopLevel(context))
-        val result = context.evaluateString(scope, code, "eval", 0, null)
-        Context.exit()
-        return result
-        //val engine = ScriptEngineManager().getEngineByName("rhino")!!
-        //return engine.eval(code)
+    override fun eval(code: String, options: Map<String, String>): Any {
+        val allowJavaAccess   = options["allowJavaAccess"]?.toBoolean() ?: true
+        val allowApiAccess    = options["allowApiAccess"]?.toBoolean() ?: false
+        val optimizationLevel = options["optimizationLevel"]?.toIntOrNull() ?: 0
+        val langVersionIndex  = options["langVersion"]?.toIntOrNull() ?: 9
+
+        return createAndroidHelper().enterContext().apply {
+            this.optimizationLevel = if (BuildConfig.SCRIPT_JIT) optimizationLevel else -1
+            languageVersion = indexToVersion(langVersionIndex)
+            wrapFactory = PrimitiveWrapFactory()
+        }.use { context ->
+            val scope = if (!allowJavaAccess) {
+                // Restricted builds set their class shutter when the context is made, and Rhino refuses to
+                // replace it. The safe standard objects below leave out Java packages either way.
+                try {
+                    context.setClassShutter { false }
+                } catch (_: SecurityException) {
+                }
+                context.initSafeStandardObjects()
+            } else
+                context.initStandardObjects(ImporterTopLevel(context))
+
+            if (allowJavaAccess && allowApiAccess) {
+                val apis = Session.apiManager.getApis()
+                for (api in apis) {
+                    if (api.instanceType == InstanceType.OBJECT)
+                        continue
+                    context.evaluateString(
+                        scope,
+                        "const ${api.name} = Packages.${api.instanceClass.name};",
+                        "import",
+                        1,
+                        null
+                    )
+                }
+            }
+            context.evaluateString(scope, code, "eval", 0, null)
+        }
     }
 
     private fun indexToVersion(index: Int): Int {
@@ -162,12 +232,31 @@ class JSRhino: Language() {
         }
     }
 
-    private fun initRequire(context: Context, scope: Scriptable, sandboxed: Boolean): Require {
-        val file = getInternalDirectory().resolve("modules/")
-        val scriptProvider = StrongCachingModuleScriptProvider(
-            UrlModuleSourceProvider(listOf(Uri.parse("file://${file.path}/").toURI()), null)
+    private fun initRequire(context: Context, scope: Scriptable, sandboxed: Boolean, project: Project?): Require {
+        fun parseUri(path: String): URI =
+            "file://${path}/".toUri().toURI()
+
+        val requirePath: MutableList<File> = arrayListOf()
+        if (GlobalConfig.category("project").getBoolean("load_global_libraries", false))
+            getStarLightDirectory()
+                .resolve("modules")
+                .let(requirePath::add)
+
+        project?.directory?.let(requirePath::add)
+
+        val scriptProvider = SoftCachingModuleScriptProvider(
+            NestedModuleSourceProvider(
+                requirePath
+                    .map(File::getPath)
+                    .map(::parseUri),
+                null
+            )
         )
-        return Require(context, scope, scriptProvider, null, null, sandboxed)
+
+        return RequireBuilder()
+            .setModuleScriptProvider(scriptProvider)
+            .setSandboxed(sandboxed)
+            .createRequire(context, scope)
     }
 
     companion object {
@@ -177,7 +266,43 @@ class JSRhino: Language() {
         private const val CONF_OPTIMIZE_CODE = "optimize_code"
         private const val CONF_OPTIMIZATION_LEVEL = "optimization_level"
         private const val CONF_LANG_VERSION = "js_version"
+        private const val CONF_EXT_MODULE_SANDBOX = "load_ext_module_sandbox"
         private const val LANG_DEF_VERSION = Context.VERSION_ES6
+        private const val DEF_OPTIMIZATION_LEVEL = 1
+        private const val DEF_EXT_MODULE_SANDBOX = true
+
+        private val defaultErrorReporter = object : ErrorReporter {
+            override fun warning(
+                message: String?,
+                sourceName: String?,
+                line: Int,
+                lineSource: String?,
+                lineOffset: Int
+            ) {
+                LOG.warn { "$sourceName#$line: $message" }
+            }
+
+            override fun error(
+                message: String?,
+                sourceName: String?,
+                line: Int,
+                lineSource: String?,
+                lineOffset: Int
+            ) {
+                LOG.error { "$sourceName#$line: $message" }
+            }
+
+            override fun runtimeError(
+                message: String?,
+                sourceName: String?,
+                line: Int,
+                lineSource: String?,
+                lineOffset: Int
+            ): EvaluatorException {
+                LOG.error { "runtime $sourceName#$line: $message" }
+                return EvaluatorException(message, sourceName, line, lineSource, lineOffset)
+            }
+        }
 
         private val configs = config {
             category {
@@ -200,22 +325,22 @@ class JSRhino: Language() {
                         max = 9
                         icon = Icon.COMPRESS
                         iconTintColor = color { "#57837B" }
-                        defaultValue = 1
+                        defaultValue = DEF_OPTIMIZATION_LEVEL
                     }
                     toggle {
                         id = "load_ext_modules"
                         title = "외부 모듈 로드"
-                        description = "컴파일 시 /modules 폴더 내의 모듈을 로드합니다."
-                        defaultValue = false
+                        description = "컴파일 시 프로젝트 폴더 내의 모듈을 로드합니다."
+                        defaultValue = true
                         icon = Icon.FOLDER
                         iconTintColor = color { "#C7B198" }
                     }
                     toggle {
-                        id = "load_ext_module_sandbox"
+                        id = CONF_EXT_MODULE_SANDBOX
                         dependency = "load_ext_modules"
                         title = "샌드박스 환경에서 로드"
                         description = "/modules 폴더 내의 모듈을 샌드박스 환경에서 실행합니다."
-                        defaultValue = true
+                        defaultValue = DEF_EXT_MODULE_SANDBOX
                         icon = Icon.LOCK
                         iconTintColor = color { "#F8B400" }
                     }

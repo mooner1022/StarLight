@@ -1,6 +1,11 @@
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("./JetBrainsMono-Regular.ttf");
+}
+
 * {
     user-select: none;
-    -ms-user-select: none;
+    -webkit-user-select: none;
     outline: 0;
     margin: 0;
     padding: 0;
@@ -34,4 +39,11 @@ body {
     width: 100%;
     height: 100%;
     margin: 0;
+}
+
+#editor .cm-content,
+#editor .cm-content *,
+#editor .cm-panels input {
+    user-select: text;
+    -webkit-user-select: text;
 }

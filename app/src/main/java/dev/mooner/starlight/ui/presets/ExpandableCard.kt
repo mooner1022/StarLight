@@ -11,7 +11,6 @@ import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.OnClickListener
 import android.view.ViewGroup
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
@@ -23,6 +22,7 @@ import android.widget.LinearLayout
 import androidx.annotation.DrawableRes
 import androidx.annotation.LayoutRes
 import androidx.core.content.ContextCompat
+import androidx.core.content.withStyledAttributes
 import coil.load
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ExpandableCardBinding
@@ -44,6 +44,7 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
     private var binding: ExpandableCardBinding by Delegates.notNull()
 
     private var _title: String? = null
+    private var _subTitle: String? = null
     private var _switchValue: Boolean = false
     private var _switchEnabled: Boolean = true
     private var innerView: View? = null
@@ -98,17 +99,13 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
     }
 
     private fun init(context: Context, attrs: AttributeSet?, defStyle: Int) {
-        val attr = context.obtainStyledAttributes(
-            attrs, R.styleable.ExpandableCard, defStyle, 0
-        )
-
-        _title         = attr.getString(R.styleable.ExpandableCard_title)
-        innerViewResId = attr.getResourceId(R.styleable.ExpandableCard_innerView, View.NO_ID)
-        iconDrawable   = attr.getDrawable(R.styleable.ExpandableCard_icon)
-        startExpanded  = attr.getBoolean(R.styleable.ExpandableCard_startExpanded, false)
-        showSwitch     = attr.getBoolean(R.styleable.ExpandableCard_showSwitch, true)
-
-        attr.recycle()
+        context.withStyledAttributes(attrs, R.styleable.ExpandableCard, defStyle, 0) {
+            _title         = getString(R.styleable.ExpandableCard_title)
+            innerViewResId = getResourceId(R.styleable.ExpandableCard_innerView, NO_ID)
+            iconDrawable   = getDrawable(R.styleable.ExpandableCard_icon)
+            startExpanded  = getBoolean(R.styleable.ExpandableCard_startExpanded, false)
+            showSwitch     = getBoolean(R.styleable.ExpandableCard_showSwitch, true)
+        }
         //invalidateTextPaintAndMeasurements()
     }
 
@@ -118,10 +115,12 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
         with(binding) {
             if (!_title.isNullOrEmpty())
                 cardTitle.text = _title
+            if (!_subTitle.isNullOrEmpty())
+                cardSubtitle.text = _subTitle
 
+            cardHeader.visibility = VISIBLE
             iconDrawable?.let { drawable ->
-                cardHeader.visibility = View.VISIBLE
-                cardIcon.visibility   = View.VISIBLE
+                cardIcon.visibility   = VISIBLE
                 cardIcon.load(drawable)
             }
 
@@ -130,17 +129,14 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
             }
 
             cardLayout.apply {
-                rippleColor = ContextCompat.getColorStateList(context, android.R.color.transparent)
                 setOnClickListener(onClickListener)
             }
             cardArrow.setOnClickListener(onClickListener)
 
             cardSwitch.apply {
+                visibility = GONE
                 if (showSwitch) {
-                    visibility = View.VISIBLE
                     setOnCheckedChangeListener(switchCheckChangedListener)
-                } else {
-                    visibility = View.GONE
                 }
             }
         }
@@ -187,10 +183,10 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
                 if (interpolatedTime == 1f) {
                     animateState = STATE_IDLE
                     if (animType == AnimationType.Collapse)
-                        innerView?.visibility = View.GONE
+                        innerView?.visibility = GONE
                 } else if (interpolatedTime == 0f) {
                     if (animType == AnimationType.Expand)
-                        innerView?.visibility = View.VISIBLE
+                        innerView?.visibility = VISIBLE
                 }
 
                 val height = when(animType) {
@@ -200,9 +196,7 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
 
                 with(binding) {
                     cardLayout.layoutParams.height = height
-
-                    cardContainer.requestLayout()
-                    cardContainer.layoutParams.height = height
+                    cardLayout.requestLayout()
                 }
             }
 
@@ -230,12 +224,10 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
 
         if (showSwitch) {
             val switchAnim = when(animType) {
-                AnimationType.Expand -> {
-                    AlphaAnimation(1f, 0f)
-                }
-                AnimationType.Collapse -> {
+                AnimationType.Expand ->
                     AlphaAnimation(0f, 1f)
-                }
+                AnimationType.Collapse ->
+                    AlphaAnimation(1f, 0f)
             }.apply {
                 interpolator = cubicBezierInterpolator
                 duration = ANIM_DURATION
@@ -248,15 +240,15 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
                 override fun onAnimationRepeat(p0: Animation?) {}
                 override fun onAnimationStart(p0: Animation?) {
                     binding.cardSwitch.visibility = when(animType) {
-                        AnimationType.Expand -> View.VISIBLE
-                        AnimationType.Collapse -> View.INVISIBLE
+                        AnimationType.Expand -> INVISIBLE
+                        AnimationType.Collapse -> VISIBLE
                     }
                 }
 
                 override fun onAnimationEnd(p0: Animation?) {
                     binding.cardSwitch.visibility = when(animType) {
-                        AnimationType.Expand -> View.GONE
-                        AnimationType.Collapse -> View.VISIBLE
+                        AnimationType.Expand -> VISIBLE
+                        AnimationType.Collapse -> GONE
                     }
                 }
             })
@@ -269,7 +261,7 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
         layout.measure(specWidth, specHeight)
         var totalHeight = 0
         val initialVisibility = layout.visibility
-        layout.visibility = View.VISIBLE
+        layout.visibility = VISIBLE
         val numberOfChildren = layout.childCount
         for (i in 0 until numberOfChildren) {
             val child = layout.getChildAt(i)
@@ -284,7 +276,7 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
         return totalHeight
     }
 
-    fun setIcon(@DrawableRes drawableRes: Int = -1, drawable: Drawable? = null, loader: ((ImageView) -> Unit)?) {
+    fun setIcon(@DrawableRes drawableRes: Int = -1, drawable: Drawable? = null, loader: ((ImageView) -> Unit)? = null) {
         if (drawableRes != -1) {
             iconDrawable = ContextCompat.getDrawable(context, drawableRes)
             binding.cardIcon.load(iconDrawable)
@@ -295,6 +287,13 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
             loader(binding.cardIcon)
             iconDrawable = binding.cardIcon.drawable
         }
+    }
+
+    fun getIconVisibility(): Int =
+        binding.cardIcon.visibility
+
+    fun setIconVisibility(visibility: Int) {
+        binding.cardIcon.visibility = visibility
     }
 
     fun setOnSwitchChangeListener(listener: OnSwitchChangeListener) {
@@ -311,17 +310,26 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
 
     fun setOnInnerViewInflateListener(listener: () -> Unit) {
         if (innerView != null) {
-            //listener()
+            listener()
             return
         }
         this.viewInflateListener = listener
     }
+
+    val expanded: Boolean
+        get() = expandState == STATE_EXPANDED || expandState == STATE_EXPANDING
 
     var title: String?
         get() = _title
         set(value) {
             binding.cardTitle.text = value
             _title = value
+        }
+
+    var subTitle: String? get() = _subTitle
+        set(value) {
+            binding.cardSubtitle.text = value
+            _subTitle = value
         }
 
     var switchValue: Boolean
@@ -335,7 +343,7 @@ class ExpandableCard @JvmOverloads constructor(context: Context, attrs: Attribut
         get() = _switchEnabled
         set(value) {
             binding.cardSwitch.isEnabled = value
-            _switchValue = value
+            _switchEnabled = value
         }
 
     sealed class AnimationType {

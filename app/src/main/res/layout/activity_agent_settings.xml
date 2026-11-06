@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/agent_bg"
+    android:orientation="vertical">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_agent_night">
+
+        <dev.mooner.starlight.ui.plugins.store.StarFieldView
+            android:id="@+id/stars"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <LinearLayout
+            android:id="@+id/headerContent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="6dp"
+            android:paddingBottom="22dp">
+
+            <ImageButton
+                android:id="@+id/back"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/agent_cancel"
+                android:src="@drawable/ic_round_arrow_left_24"
+                app:tint="@color/agent_on_night"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_agent_sparkle"
+                    app:tint="@color/agent_gold"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:fontFamily="@font/wantedsans_bold"
+                    android:text="@string/agent_settings"
+                    android:textColor="@color/agent_on_night"
+                    android:textSize="24sp"/>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="18dp"
+            android:paddingBottom="28dp">
+
+            <TextView
+                style="@style/AgentSectionTitle"
+                android:text="@string/agent_providers"/>
+
+            <TextView
+                style="@style/AgentSectionBody"
+                android:text="@string/agent_providers_body"/>
+
+            <LinearLayout
+                android:id="@+id/providers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical"/>
+
+            <TextView
+                style="@style/AgentSectionTitle"
+                android:layout_marginTop="26dp"
+                android:text="@string/agent_behavior"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_agent_surface"
+                android:orientation="vertical"
+                android:paddingVertical="6dp">
+
+                <TextView
+                    style="@style/AgentRowTitle"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/agent_approval"/>
+
+                <LinearLayout
+                    android:id="@+id/approvals"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="4dp"/>
+
+                <View style="@style/AgentDivider"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    android:paddingTop="12dp">
+
+                    <TextView
+                        style="@style/AgentRowTitle"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:text="@string/agent_max_steps"/>
+
+                    <TextView
+                        android:id="@+id/maxStepsValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/jbmono_nl_regular"
+                        android:textColor="@color/agent_accent"
+                        android:textSize="14sp"/>
+                </LinearLayout>
+
+                <TextView
+                    style="@style/AgentRowBody"
+                    android:layout_marginHorizontal="16dp"
+                    android:text="@string/agent_max_steps_desc"/>
+
+                <SeekBar
+                    android:id="@+id/maxSteps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
+                    android:layout_marginVertical="8dp"
+                    android:max="19"
+                    android:progressBackgroundTint="@color/agent_border"
+                    android:progressTint="@color/agent_gold"
+                    android:thumbTint="@color/agent_gold"/>
+
+                <View style="@style/AgentDivider"/>
+
+                <LinearLayout
+                    android:id="@+id/notifyRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/AgentRowTitle"
+                            android:text="@string/agent_notify_finish"/>
+
+                        <TextView
+                            style="@style/AgentRowBody"
+                            android:text="@string/agent_notify_finish_desc"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/notify"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:clickable="false"
+                        android:thumb="@drawable/switch_thumb"
+                        app:track="@drawable/switch_track_selector"
+                        app:useMaterialThemeColors="false"/>
+                </LinearLayout>
+
+                <!-- Live Updates exist from Android 16 on; the code hides this group elsewhere. -->
+                <LinearLayout
+                    android:id="@+id/liveUpdatesGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <View style="@style/AgentDivider"/>
+
+                    <LinearLayout
+                        android:id="@+id/liveUpdatesRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="12dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/AgentRowTitle"
+                                android:text="@string/agent_live_updates"/>
+
+                            <TextView
+                                style="@style/AgentRowBody"
+                                android:text="@string/agent_live_updates_desc"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/liveUpdates"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:clickable="false"
+                            android:thumb="@drawable/switch_thumb"
+                            app:track="@drawable/switch_track_selector"
+                            app:useMaterialThemeColors="false"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/liveUpdatesStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="16dp"
+                        android:layout_marginBottom="10dp"
+                        android:background="@drawable/bg_agent_notice"
+                        android:fontFamily="@font/wantedsans_regular"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="8dp"
+                        android:textColor="@color/agent_text_muted"
+                        android:textSize="12.5sp"
+                        android:text="@string/agent_live_updates_blocked"
+                        android:visibility="gone"/>
+                </LinearLayout>
+
+                <View style="@style/AgentDivider"/>
+
+                <LinearLayout
+                    android:id="@+id/webSearchRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/AgentRowTitle"
+                            android:text="@string/agent_web_search"/>
+
+                        <TextView
+                            style="@style/AgentRowBody"
+                            android:text="@string/agent_web_search_desc"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/webSearch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:clickable="false"
+                        android:thumb="@drawable/switch_thumb"
+                        app:track="@drawable/switch_track_selector"
+                        app:useMaterialThemeColors="false"/>
+                </LinearLayout>
+
+                <View style="@style/AgentDivider"/>
+
+                <LinearLayout
+                    android:id="@+id/autoTitlesRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/AgentRowTitle"
+                            android:text="@string/agent_auto_titles"/>
+
+                        <TextView
+                            style="@style/AgentRowBody"
+                            android:text="@string/agent_auto_titles_desc"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/autoTitles"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:clickable="false"
+                        android:thumb="@drawable/switch_thumb"
+                        app:track="@drawable/switch_track_selector"
+                        app:useMaterialThemeColors="false"/>
+                </LinearLayout>
+
+                <View style="@style/AgentDivider"/>
+
+                <TextView
+                    style="@style/AgentRowTitle"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/agent_instructions"/>
+
+                <EditText
+                    android:id="@+id/instructions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="10dp"
+                    android:background="@drawable/bg_agent_code"
+                    android:fontFamily="@font/wantedsans_regular"
+                    android:gravity="top"
+                    android:hint="@string/agent_instructions_hint"
+                    android:importantForAutofill="no"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:minLines="3"
+                    android:padding="12dp"
+                    android:textColor="@color/agent_text"
+                    android:textColorHint="@color/agent_text_faint"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <TextView
+                style="@style/AgentSectionTitle"
+                android:layout_marginTop="26dp"
+                android:text="@string/agent_history"/>
+
+            <!-- Says where conversations are kept, which depends on the build. -->
+            <TextView
+                android:id="@+id/historyBody"
+                style="@style/AgentSectionBody"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_agent_surface"
+                android:orientation="vertical"
+                android:paddingVertical="6dp">
+
+                <LinearLayout
+                    android:id="@+id/exportHistory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp">
+
+                    <TextView
+                        style="@style/AgentRowTitle"
+                        android:text="@string/agent_history_export"/>
+
+                    <TextView
+                        style="@style/AgentRowBody"
+                        android:text="@string/agent_history_export_desc"/>
+                </LinearLayout>
+
+                <View style="@style/AgentDivider"/>
+
+                <LinearLayout
+                    android:id="@+id/importHistory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp">
+
+                    <TextView
+                        style="@style/AgentRowTitle"
+                        android:text="@string/agent_history_import"/>
+
+                    <TextView
+                        style="@style/AgentRowBody"
+                        android:text="@string/agent_history_import_desc"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                style="@style/AgentSectionBody"
+                android:layout_marginTop="18dp"
+                android:text="@string/agent_privacy"/>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

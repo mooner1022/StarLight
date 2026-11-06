@@ -10,7 +10,6 @@ import dev.mooner.starlight.plugincore.utils.draw
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.plugincore.widget.WidgetSize
 
-
 class DummyWidgetSlim: Widget() {
 
     override val id: String = "dummy_slim"
@@ -33,14 +32,14 @@ class DummyWidgetSlim: Widget() {
         val context = view.context
         draw(view as FrameLayout) {
             val chipGroup = ChipGroup(context)
-            chipGroup.add(
+            chipGroup.place(
                 width = matchParent,
                 height = wrapContent,
             ) {
                 isSingleLine = false
                 isNestedScrollingEnabled = true
                 layoutTransition = LayoutTransition()
-                params {
+                updateParams {
                     marginStart = dp { 10 }
                     marginEnd = dp { 70 }
                     gravity = Gravity.CENTER_VERTICAL or Gravity.START
@@ -60,7 +59,7 @@ class DummyWidgetSlim: Widget() {
                     chipGroup.addView(chip)
                 }
             ) {
-                params {
+                updateParams {
                     topMargin = dp { 30 }
                     gravity = Gravity.TOP or Gravity.END
                 }
@@ -73,7 +72,7 @@ class DummyWidgetSlim: Widget() {
                     chipGroup.removeAllViewsInLayout()
                 }
             ) {
-                params {
+                updateParams {
                     bottomMargin = dp { 30 }
                     gravity = Gravity.BOTTOM or Gravity.END
                 }

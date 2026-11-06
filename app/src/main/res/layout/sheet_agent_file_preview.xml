@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A file the agent sent, shown in the app: Markdown rendered, text as it is, images whole. -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_store_sheet"
+    android:orientation="vertical"
+    android:paddingTop="12dp">
+
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/bg_store_sheet_handle"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingEnd="10dp">
+
+        <FrameLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_agent_tile">
+
+            <ImageView
+                android:id="@+id/icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_round_article_24"
+                app:tint="@color/agent_accent"/>
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="middle"
+                android:fontFamily="@font/wantedsans_bold"
+                android:maxLines="1"
+                android:textColor="@color/agent_text"
+                android:textSize="16sp"
+                tools:text="test-summary.md"/>
+
+            <TextView
+                android:id="@+id/meta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/jbmono_nl_regular"
+                android:maxLines="1"
+                android:textColor="@color/agent_text_faint"
+                android:textSize="11.5sp"
+                tools:text="47 B"/>
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/agent_add_close"
+            android:src="@drawable/ic_agent_close"
+            app:tint="@color/agent_text_muted"/>
+    </LinearLayout>
+
+    <View
+        style="@style/AgentDivider"
+        android:layout_marginHorizontal="0dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="0dp"/>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="14dp">
+
+            <TextView
+                android:id="@+id/note"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_agent_notice"
+                android:fontFamily="@font/wantedsans_regular"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
+                android:textColor="@color/agent_text_muted"
+                android:textSize="12.5sp"
+                android:visibility="gone"/>
+
+            <!-- Markdown goes here through MarkdownRenderer. -->
+            <LinearLayout
+                android:id="@+id/content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+
+            <TextView
+                android:id="@+id/code"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_agent_code"
+                android:fontFamily="@font/jbmono_nl_regular"
+                android:lineSpacingExtra="2dp"
+                android:padding="12dp"
+                android:textColor="@color/agent_text"
+                android:textIsSelectable="true"
+                android:textSize="12sp"
+                android:visibility="gone"/>
+
+            <ImageView
+                android:id="@+id/image"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:importantForAccessibility="no"
+                android:visibility="gone"/>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <View
+        style="@style/AgentDivider"
+        android:layout_marginHorizontal="0dp"
+        android:layout_marginVertical="0dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="20dp">
+
+        <TextView
+            android:id="@+id/share"
+            style="@style/AgentCardAction"
+            android:text="@string/agent_card_share"
+            app:drawableStartCompat="@drawable/ic_round_ios_share_24"/>
+
+        <TextView
+            android:id="@+id/save"
+            style="@style/AgentCardAction"
+            android:text="@string/agent_card_save"
+            app:drawableStartCompat="@drawable/ic_agent_download"/>
+
+        <TextView
+            android:id="@+id/openWith"
+            style="@style/AgentCardAction"
+            android:text="@string/agent_preview_open_with"
+            app:drawableStartCompat="@drawable/ic_agent_open"/>
+    </LinearLayout>
+</LinearLayout>

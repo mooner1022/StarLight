@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="debugroom_bubble_bot">#2C2C30</color>
+    <color name="debugroom_name">#A6A6AC</color>
+    <color name="debugroom_time">#7C7C82</color>
+    <color name="debugroom_date_bg">#222225</color>
+    <color name="debugroom_input_stroke">#333338</color>
+</resources>

@@ -1,85 +1,217 @@
+/*
+ *     __. ,       .       .   ,
+ *    (__ -+- _.._.|   * _ |_ -+-
+ *    .__) | (_][  |___|(_][ ) |
+ *                      ._|
+ *        Project StarLight
+ *
+ * GlobalApplication.kt created by Minki Moon(mooner1022)
+ * Copyright (c) mooner1022. all rights reserved.
+ * This code is licensed under the GNU General Public License v3.0.
+ */
+
 package dev.mooner.starlight.core
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
-import dev.mooner.starlight.core.session.ApplicationSession
-import dev.mooner.starlight.event.SessionStageUpdateEvent
-import dev.mooner.starlight.plugincore.Session
+import android.os.Environment
+import android.provider.Settings
+import android.widget.Toast
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
+import com.jakewharton.processphoenix.ProcessPhoenix
+import dev.mooner.configdsl.ConfigDSL
+import dev.mooner.starlight.BuildConfig
+import dev.mooner.starlight.PREF_IS_INITIAL
+import dev.mooner.starlight.R
+import dev.mooner.starlight.event.ApplicationEvent
+import dev.mooner.starlight.logging.LogCollector
+import dev.mooner.starlight.plugincore.Info
+import dev.mooner.starlight.plugincore.config.GlobalConfig
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.utils.setStarLightDirectory
+import dev.mooner.starlight.ui.common.SheetDialogProvider
+import dev.mooner.starlight.ui.crash.CrashNotifier
+import dev.mooner.starlight.ui.crash.FatalErrorActivity
+import dev.mooner.starlight.ui.splash.intro.IntroActivity
 import dev.mooner.starlight.utils.checkPermissions
+import dev.mooner.starlight.utils.info
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import java.io.File
 
-class GlobalApplication: Application() {
+private val LOG = LoggerFactory.logger {  }
+
+class GlobalApplication: Application(), LifecycleEventObserver {
 
     override fun onCreate() {
         super.onCreate()
+        // The short-lived process that restarts the app; it must not start a second copy of everything.
+        if (ProcessPhoenix.isPhoenixProcess(this))
+            return
+        // Play builds keep everything in the app-specific folder, which needs no storage permission.
+        if (!BuildConfig.SHARED_STORAGE)
+            setStarLightDirectory(getExternalFilesDir(null) ?: filesDir)
         //Logger.v(T, "Application onCreate() called")
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
+        isStartupAborted = false // explicit reset
+        isSafeStart = false
+        ConfigDSL.registerDialogProvider(SheetDialogProvider)
+        ConfigDSL.registerDevModeProvider { GlobalConfig.category("dev").getBoolean("dev_mode", false) }
 
         mContext = applicationContext
+        CrashGuard.init(this)
 
         val pref = getSharedPreferences("general", 0)
         //pref.edit().clear().commit()
-        val isInitial = pref.getBoolean("isInitial", true)
+        val isInitial = pref.getBoolean(PREF_IS_INITIAL, true)
 
-        val isPermissionsGrant = checkPermissions(REQUIRED_PERMISSIONS)
+        val isPermissionsGrant = checkPermissions(IntroActivity.REQUIRED_PERMISSIONS)
 
-        if (isInitial || !isPermissionsGrant) return
+        if (isInitial || !isPermissionsGrant)
+            return
+
+        if (BuildConfig.SHARED_STORAGE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+            Toast.makeText(this, "Android 12 이상 버전에서는 모든 파일 액세스 권한이 필요합니다.", Toast.LENGTH_LONG).show()
+            Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                data = Uri.fromParts("package", packageName, null)
+            }.also(::startActivity)
+        }
+        if (!Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "다른 앱 위에 그리기 권한이 필요합니다.", Toast.LENGTH_LONG).show()
+            Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                data = Uri.fromParts("package", packageName, null)
+            }.also(::startActivity)
+        }
+
+        // Earlier versions blocked the start on any crash with this file; the guard decides now.
+        File(getStarLightDirectory(), "STARTUP.info").takeIf(File::isFile)?.delete()
+        val verdict = CrashGuard.onProcessStart(System.currentTimeMillis()) {
+            getString(R.string.crash_interrupted_report)
+        }
+        isSafeStart = verdict == CrashGuard.Verdict.SafeStart
+        if (verdict is CrashGuard.Verdict.Blocked) {
+            println("The same crash keeps coming back, aborting launch..")
+            isStartupAborted = true
+            startActivity(FatalErrorActivity.intent(this, verdict.crash.report, blocked = true)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return
+        }
+
+        // Init LogCollector
+        LogCollector
+
+        if (verdict is CrashGuard.Verdict.Recovered) {
+            LOG.error { "Restarted after a crash: ${verdict.crash.summary}" }
+            CrashNotifier.notifyRecovered(this, verdict.crash)
+        }
+        if (isSafeStart)
+            LOG.warn { "Starting in safe mode: plugins aren't loaded and projects aren't compiled" }
 
         if (!ForegroundTask.isRunning) {
-            Logger.v(T, "Starting foreground task...")
+            LOG.verbose { "Starting foreground task..." }
             val intent = Intent(this, ForegroundTask::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
                 startForegroundService(intent)
-            } else {
-                startService(intent)
+                LOG.info(R.string.log_foreground_started)
+            } catch (e: IllegalStateException) {
+                LOG.error { "Failed to start foreground task: $e" }
             }
         }
 
-        CoroutineScope(Dispatchers.Default).launch {
-            ApplicationSession.init(applicationContext)
-                .collect {
-                    Session.eventManager.fireEvent(SessionStageUpdateEvent(value = it))
-                    if (it == null) {
-                        Session.eventManager.on(callback = ::onProjectCreated)
-                        Session.eventManager.on(callback = ::onProjectInfoUpdated)
-                        Session.eventManager.on(callback = ::onProjectCompiled)
+        ApplicationSession.init(applicationContext)
+            .onEach {
+                lastStageValue = it
+                EventHandler.fireEvent(ApplicationEvent.Session.StageUpdate(it))
+            }
+            .onCompletion { cause ->
+                if (cause != null)
+                    return@onCompletion
+                lastStageValue = null
+                EventHandler.fireEvent(ApplicationEvent.Session.StageUpdate(null))
+
+                EventHandler.apply {
+                    on(callback = ::onProjectCreated)
+                    on(callback = ::onProjectInfoUpdated)
+                    on(callback = ::onProjectCompiled)
+                    on<Events.Scheme.SchemeOpenEvent> {
+                        LOG.info { params }
                     }
                 }
+                LoggerFactory.logger("System").info {
+                    """
+                    || Project ✦ StarLight |
+                    |Running PluginCore v${Info.PLUGINCORE_VERSION}
+                    """.trimMargin()
+                }
+            }
+            .launchIn(CoroutineScope(Dispatchers.Default))
+    }
+
+    private fun onProjectCreated(event: Events.Project.Create) {
+        LOG.verbose { "ProjectCreateEvent called, event= $event, project= ${event.project}" }
+    }
+
+    private fun onProjectInfoUpdated(event: Events.Project.InfoUpdate) {
+        LOG.verbose { "ProjectInfoUpdateEvent called, event= $event, project= ${event.project}" }
+    }
+
+    private fun onProjectCompiled(event: Events.Project.Compile) {
+        LOG.verbose { "ProjectCompileEvent called, event= $event, project= ${event.project}" }
+    }
+
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        when(event) {
+            Lifecycle.Event.ON_START -> {
+                mState = STATE_FOREGROUND
+                LOG.verbose { "Application state changing to STATE_FOREGROUND" }
+            }
+            Lifecycle.Event.ON_STOP  -> {
+                mState = STATE_BACKGROUND
+                LOG.verbose { "Application state changing to STATE_BACKGROUND" }
+            }
+            else -> {}
         }
-    }
-
-    private fun onProjectCreated(event: Events.Project.ProjectCreateEvent) {
-        Logger.v("ProjectCreateEvent called, event= $event, project= ${event.project}")
-    }
-
-    private fun onProjectInfoUpdated(event: Events.Project.ProjectInfoUpdateEvent) {
-        Logger.v("ProjectInfoUpdateEvent called, event= $event, project= ${event.project}")
-    }
-
-    private fun onProjectCompiled(event: Events.Project.ProjectCompileEvent) {
-        Logger.v("ProjectCompileEvent called, event= $event, project= ${event.project}")
+        ApplicationEvent.Lifecycle.Update(source, event)
+            .also(EventHandler::fireEventWithScope)
     }
 
     companion object {
-        private val T = GlobalApplication::class.simpleName
 
-        val REQUIRED_PERMISSIONS = arrayOf(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.INTERNET,
-        )
+        const val STATE_UNDEFINED  = -1
+        const val STATE_FOREGROUND = 0
+        const val STATE_BACKGROUND = 1
+
+        private var mState: Int = STATE_UNDEFINED
+        val state get() = mState
+
+        internal var lastStageValue: String? = null
 
         @SuppressLint("StaticFieldLeak")
         @JvmStatic
         private var mContext: Context? = null
         fun requireContext(): Context = mContext!!
+
+        var isStartupAborted: Boolean = false
+            private set
+
+        /** This process started without plugins and without compiling the projects, as the user chose after a crash. */
+        var isSafeStart: Boolean = false
+            private set
     }
 }

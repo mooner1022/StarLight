@@ -1,7 +1,10 @@
 package dev.mooner.starlight.plugincore.project
 
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.currentThread
+import dev.mooner.starlight.plugincore.utils.debugTranslated
+import dev.mooner.starlight.plugincore.utils.infoTranslated
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.CountDownLatch
@@ -13,7 +16,7 @@ object JobLocker {
      *
      */
 
-    private const val T = "JobLocker"
+    private val LOG = LoggerFactory.logger {  }
 
     private val parents: ConcurrentMap<String, Parent> = ConcurrentHashMap()
 
@@ -24,15 +27,8 @@ object JobLocker {
         parent.awaitRelease()
     }
 
-    fun withParent(name: String): Parent {
-        return if (parents.containsKey(name)) {
-            parents[name]!!
-        } else {
-            val parent = Parent(name)
-            parents[name] = parent
-            parent
-        }
-    }
+    fun withParent(name: String): Parent =
+        parents.computeIfAbsent(name) { Parent(it) }
 
     class Parent(
         val name: String
@@ -54,24 +50,27 @@ object JobLocker {
             val key = defaultKey
             runningJobs[key] = data
 
-            Logger.v(T, "Registered job $key")
+            LOG.verbose { "Registered job $key" }
         }
 
         fun awaitRelease() {
             val key = defaultKey
 
             if (key !in runningJobs) {
-                Logger.w("Failed to await for release: task $key is not registered or already released")
+                LOG.infoTranslated {
+                    Locale.ENGLISH { "Failed to await for release: task $key is not registered or already released" }
+                    Locale.KOREAN  { "작업 release를 기다리지 못함: 작업 $key 가 등록되지 않았거나 이미 release됨" }
+                }
                 return
             }
             val data = runningJobs[key]!!
 
             if (!data.canRelease) {
-                Logger.v("Postponed release of job $key")
+                LOG.verbose { "Postponed release of job $key" }
                 data.latch.await()
             }
             runningJobs -= key
-            Logger.v(T, "Released job $key")
+            LOG.verbose { "Released job $key" }
         }
 
         /*
@@ -113,11 +112,20 @@ object JobLocker {
         fun requestLock(key: String = defaultKey): String {
             if (key in runningJobs) {
                 runningJobs[key]!!.releaseCounter++
-                Logger.v(T, "Locked job $key")
+                LOG.verbose { "Locked job $key" }
             } else {
-                Logger.w(T, "Failed to lock job: job $key is not registered or already released")
+                LOG.infoTranslated {
+                    Locale.ENGLISH { "Failed to lock job: job $key is not registered or already released" }
+                    Locale.KOREAN  { "작업을 lock 하지 못함: 작업 $key 가 등록되지 않았거나 이미 release 됨" }
+                }
             }
             return key
+        }
+
+        fun tryRelease(key: String = defaultKey) {
+            if (key !in runningJobs)
+                return
+            requestRelease(key)
         }
 
         fun requestRelease(key: String = defaultKey) {
@@ -126,7 +134,7 @@ object JobLocker {
                 runningJobs[key]!!.also {
                     it.releaseCounter--
                     if (it.canRelease) {
-                        Logger.v(T, "Releasing locked job $key")
+                        LOG.verbose { "Releasing locked job $key" }
                         //it.listener(null)
                         it.latch.countDown()
                         //isReleased = true
@@ -135,7 +143,10 @@ object JobLocker {
                 //if (isReleased)
                 //    runningJobs -= key
             } else {
-                Logger.w(T, "Failed to release job: job $key is not registered or already released")
+                LOG.infoTranslated {
+                    Locale.ENGLISH { "Failed to lock job: job $key is not registered or already released" }
+                    Locale.KOREAN  { "작업을 lock 하지 못함: 작업 $key 가 등록되지 않았거나 이미 release 됨" }
+                }
             }
         }
 
@@ -151,7 +162,10 @@ object JobLocker {
                      */
                 }
                 //runningJobs -= key
-                Logger.w(T, "Force released job $key, this might not be a normal behavior")
+                LOG.infoTranslated {
+                    Locale.ENGLISH { "Force released job $key, this might not be a normal behavior" }
+                    Locale.KOREAN  { "작업 $key 를 강제로 release 함, 이것은 정상적이거나 의도된 행동이 아닐 수 있습니다." }
+                }
             }
         }
 
@@ -169,7 +183,10 @@ object JobLocker {
                      */
                 }
                 runningJobs.clear()
-                Logger.w(T, "Released all jobs of parent $name")
+                LOG.debugTranslated {
+                    Locale.ENGLISH { "Released all jobs of parent $name" }
+                    Locale.KOREAN  { "부모 $name 의 모든 작업 release 완료" }
+                }
             }
         }
 
@@ -184,3 +201,6 @@ object JobLocker {
          */
     }
 }
+
+fun JobLocker.withProject(project: Project): JobLocker.Parent =
+    withParent(project.threadPoolName!!)

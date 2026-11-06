@@ -1,6 +1,39 @@
 package dev.mooner.starlight.plugincore.utils
 
+import android.os.Environment
 import java.io.File
+import java.io.IOException
+
+@Volatile
+private var starLightDirectory: File? = null
+
+/**
+ * Sets the folder StarLight keeps its files in, once, before anything reads it. Builds that keep
+ * their files on shared storage don't call it.
+ */
+fun setStarLightDirectory(directory: File) {
+    check(starLightDirectory == null) { "StarLight directory is already set" }
+    starLightDirectory = directory
+}
+
+/** The folder StarLight keeps its files in: /sdcard/StarLight unless [setStarLightDirectory] set another. */
+@Suppress("DEPRECATION")
+fun getStarLightDirectory(): File =
+    starLightDirectory ?: File(Environment.getExternalStorageDirectory(), "StarLight/")
+
+fun File.copyAsReadOnly(directory: File): File {
+    val target = directory.resolve("${length()}-${lastModified()}.$extension")
+    if (!target.exists()) {
+        directory.deleteRecursively()
+        directory.mkdirs()
+        val temp = directory.resolve("${target.name}.tmp")
+        copyTo(temp)
+        if (!temp.renameTo(target))
+            throw IOException("Failed to move $temp to $target")
+    }
+    target.setReadOnly()
+    return target
+}
 
 fun File.hasFile(fileName: String): Boolean {
     return this.listFiles()?.find { it.name == fileName } != null
@@ -17,3 +50,9 @@ operator fun File.plusAssign(file: File) {
 operator fun File.plusAssign(directory: String) {
     this.resolve(directory)
 }
+
+val File?.isValidFile
+    get() = this != null && this.exists() && this.isFile
+
+val File?.isValidDirectory
+    get() = this != null && this.exists() && this.isDirectory

@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/composerRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_agent_composer"
+    android:orientation="vertical"
+    android:paddingVertical="6dp">
+
+    <!-- Shown while the user rewrites one of their messages; sending replaces it and what came after. -->
+    <LinearLayout
+        android:id="@+id/editBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_agent_chip"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="10dp"
+        android:paddingEnd="2dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_agent_edit"
+            app:tint="@color/agent_accent"/>
+
+        <TextView
+            android:id="@+id/editText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:fontFamily="@font/wantedsans_medium"
+            android:paddingVertical="6dp"
+            android:text="@string/agent_editing"
+            android:textColor="@color/agent_accent"
+            android:textSize="12sp"/>
+
+        <ImageButton
+            android:id="@+id/editCancel"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/agent_edit_cancel"
+            android:padding="7dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_agent_close"
+            app:tint="@color/agent_accent"/>
+    </LinearLayout>
+
+    <!-- The project this conversation is about, set from the add sheet. -->
+    <LinearLayout
+        android:id="@+id/projectChip"
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_agent_chip"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="10dp"
+        android:paddingEnd="2dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_round_projects_24"
+            app:tint="@color/agent_accent"/>
+
+        <TextView
+            android:id="@+id/projectName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/wantedsans_medium"
+            android:maxWidth="200dp"
+            android:maxLines="1"
+            android:textColor="@color/agent_accent"
+            android:textSize="12.5sp"
+            tools:text="hello-bot"/>
+
+        <ImageButton
+            android:id="@+id/projectRemove"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/agent_add_project_remove"
+            android:padding="7dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_agent_close"
+            app:tint="@color/agent_accent"/>
+    </LinearLayout>
+
+    <HorizontalScrollView
+        android:id="@+id/attachmentsScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:paddingHorizontal="10dp"
+        android:paddingTop="4dp"
+        android:scrollbars="none"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:id="@+id/attachments"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"/>
+    </HorizontalScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="bottom"
+        android:orientation="horizontal"
+        android:paddingHorizontal="6dp">
+
+        <ImageButton
+            android:id="@+id/attach"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/agent_add_title"
+            android:src="@drawable/ic_agent_add"
+            app:tint="@color/agent_text_muted"/>
+
+        <EditText
+            android:id="@+id/input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@null"
+            android:fontFamily="@font/wantedsans_regular"
+            android:hint="@string/agent_composer_hint"
+            android:importantForAutofill="no"
+            android:inputType="textMultiLine|textCapSentences"
+            android:maxLines="6"
+            android:minHeight="44dp"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="10dp"
+            android:textColor="@color/agent_text"
+            android:textColorHint="@color/agent_text_faint"
+            android:textSize="15sp"/>
+
+        <!-- How full the model's context window is; shown once it is known, opens the details on a tap. -->
+        <FrameLayout
+            android:id="@+id/contextMeter"
+            android:layout_width="36dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="2dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/contextRing"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:max="100"
+                app:indicatorColor="@color/agent_text_muted"
+                app:indicatorSize="22dp"
+                app:trackColor="@color/agent_surface_alt"
+                app:trackThickness="3dp"
+                tools:progress="72"/>
+        </FrameLayout>
+
+        <ImageButton
+            android:id="@+id/send"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="2dp"
+            android:background="@drawable/bg_agent_send"
+            android:contentDescription="@string/agent_send"
+            android:src="@drawable/ic_agent_send"
+            app:tint="@color/agent_on_gold"/>
+    </LinearLayout>
+</LinearLayout>

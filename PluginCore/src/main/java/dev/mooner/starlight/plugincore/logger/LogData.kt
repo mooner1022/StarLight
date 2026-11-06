@@ -1,6 +1,7 @@
 package dev.mooner.starlight.plugincore.logger
 
-import dev.mooner.starlight.plugincore.utils.TimeUtils.Companion.formatCurrentDate
+import dev.mooner.starlight.plugincore.utils.TimeUtils.Companion.formatMillis
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -15,10 +16,13 @@ data class LogData(
     val threadName: String = Thread.currentThread().name,
     @SerialName("m")
     val message: String,
+    @EncodeDefault
     @SerialName("l")
     val millis: Long = System.currentTimeMillis(),
     @Transient
-    val isLocal: Boolean = false
+    val isLocal: Boolean = false,
+    @Transient
+    val flags: Int = 0,
 ) {
 
     companion object {
@@ -26,18 +30,44 @@ data class LogData(
         private const val MAX_TAG_INDENT    = 20
 
         private const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS"
+
+        const val FLAG_NOTIFY         = 1 shl 0
+        const val FLAG_COMPILE_RESULT = 1 shl 1
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other != null && (other is LogData && equals(other))
+    }
+
+    private fun equals(data: LogData): Boolean {
+        return hashCode() == data.hashCode()
+    }
+
+    fun toSimpleString(): String {
+        return "%s %s - %s:\n%s"
+            .format(type.name.substring(0, 1), formatMillis(millis, "HH:mm:ss.SSS"), tag, message)
     }
 
     fun toString(excludeThread: Boolean = false): String {
         return if (excludeThread)
             "%s %7.7s - %$MAX_TAG_INDENT.${MAX_TAG_INDENT}s: %s"
-                .format(formatCurrentDate(TIMESTAMP_FORMAT), type.name, tag, message)
+                .format(formatMillis(millis, TIMESTAMP_FORMAT), type.name, tag, message)
         else
             "%s %7.7s [%-$MAX_THREAD_INDENT.${MAX_THREAD_INDENT}s] - %$MAX_TAG_INDENT.${MAX_TAG_INDENT}s: %s"
-                .format(formatCurrentDate(TIMESTAMP_FORMAT), type.name, threadName, tag, message)
+                .format(formatMillis(millis, TIMESTAMP_FORMAT), type.name, threadName, tag, message)
     }
 
     override fun toString(): String {
         return toString(excludeThread = false)
+    }
+
+    override fun hashCode(): Int {
+        var result = type.hashCode()
+        result = 31 * result + tag.hashCode()
+        result = 31 * result + threadName.hashCode()
+        result = 31 * result + message.hashCode()
+        result = 31 * result + millis.hashCode()
+        result = 31 * result + isLocal.hashCode()
+        return result
     }
 }

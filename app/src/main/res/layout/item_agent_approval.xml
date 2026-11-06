@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="6dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_agent_approval"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/icon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:importantForAccessibility="no"
+                app:tint="@color/agent_dusk"
+                tools:src="@drawable/ic_agent_delete"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:fontFamily="@font/wantedsans_bold"
+                android:text="@string/agent_approval_title"
+                android:textColor="@color/agent_text"
+                android:textSize="14sp"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:fontFamily="@font/wantedsans_regular"
+            android:textColor="@color/agent_text_muted"
+            android:textSize="14sp"
+            tools:text="hello-bot 프로젝트와 파일을 삭제"/>
+
+        <HorizontalScrollView
+            android:id="@+id/previewScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_agent_code"
+            android:scrollbars="none"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/preview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="@font/jbmono_nl_regular"
+                android:maxLines="14"
+                android:padding="10dp"
+                android:textColor="@color/agent_text_muted"
+                android:textSize="11.5sp"
+                tools:text="@@ -1,3 +1,3 @@"/>
+        </HorizontalScrollView>
+
+        <LinearLayout
+            android:id="@+id/buttons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/always"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackground"
+                android:ellipsize="end"
+                android:fontFamily="@font/wantedsans_medium"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:text="@string/agent_allow_always"
+                android:textColor="@color/agent_accent"
+                android:textSize="13sp"/>
+
+            <TextView
+                android:id="@+id/deny"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_agent_button_plain"
+                android:fontFamily="@font/wantedsans_bold"
+                android:gravity="center"
+                android:paddingHorizontal="18dp"
+                android:text="@string/agent_deny"
+                android:textColor="@color/agent_text"
+                android:textSize="14sp"/>
+
+            <TextView
+                android:id="@+id/allow"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_agent_button_gold"
+                android:fontFamily="@font/wantedsans_bold"
+                android:gravity="center"
+                android:paddingHorizontal="18dp"
+                android:text="@string/agent_allow"
+                android:textColor="@color/agent_on_gold"
+                android:textSize="14sp"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

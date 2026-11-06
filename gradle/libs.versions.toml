@@ -1,0 +1,100 @@
+[versions]
+# app info
+compileSdk = "37"
+minSdk = "26"
+targetSdk = "33"
+versionCode = "11"
+versionName = "1.0.1"
+buildTools = "35.0.0"
+androidGradlePlugin = "8.13.2"
+kotlin = "2.4.20"
+coil = "2.7.0"
+about-libs = "11.2.2"
+fast-adapter = "5.7.0"
+androidx-core = "1.17.0"
+androidx-appcompat = "1.7.0"
+androidx-legacy = "1.0.0"
+androidx-recyclerview = "1.4.0"
+androidx-recyclerview-selection = "1.2.0"
+androidx-navigation = "2.9.0"
+androidx-lifecycle = "2.9.0"
+android-material = "1.12.0"
+androidx-constraintlayout = "2.2.1"
+kotlinx-serialization = "1.11.0"
+kotlinx-coroutines = "1.11.0"
+lottie = "6.7.1"
+material-dialogs = "3.3.0"
+recyclerview-animators = "4.0.2"
+imagepicker = "2.1"
+leakcanary-android = "2.14"
+jsoup = "1.23.2"
+flexbox = "3.0.0"
+chip-navigation-bar = "1.4.0"
+process-phoenix = "3.0.0"
+markwon = "4.6.2"
+dalvik-dx = "16.0.1"
+ketch = "2.0.5"
+cascade = "2.3.0"
+neonjs = "0.1.6"
+junit = "4.13.2"
+
+[libraries]
+android-gradle-plugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
+cascade = { module = "me.saket.cascade:cascade", version.ref = "cascade" }
+kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidx-appcompat" }
+androidx-legacy = { group = "androidx.legacy", name = "legacy-support-v4", version.ref = "androidx-legacy" }
+androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "androidx-recyclerview" }
+androidx-recyclerview-selection = { group = "androidx.recyclerview", name = "recyclerview-selection", version.ref = "androidx-recyclerview-selection" }
+androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "androidx-navigation" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "androidx-lifecycle" }
+material = { group = "com.google.android.material", name = "material", version.ref = "android-material" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "androidx-constraintlayout" }
+kotlin-serialization = { group = "org.jetbrains.kotlin", name = "kotlin-serialization", version.ref = "kotlin" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlin-reflection = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
+kotlin-stdlib-jdk8 = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+coil = { group = "io.coil-kt", name = "coil", version.ref = "coil" }
+lottie = { group = "com.airbnb.android", name = "lottie", version.ref = "lottie" }
+material-dialogs = { group = "com.afollestad.material-dialogs", name = "core", version.ref = "material-dialogs" }
+material-dialogs-input = { group = "com.afollestad.material-dialogs", name = "input", version.ref = "material-dialogs" }
+material-dialogs-color = { group = "com.afollestad.material-dialogs", name = "color", version.ref = "material-dialogs" }
+material-dialogs-lifecycle = { group = "com.afollestad.material-dialogs", name = "lifecycle", version.ref = "material-dialogs" }
+recyclerview-animators = { group = "jp.wasabeef", name = "recyclerview-animators", version.ref = "recyclerview-animators" }
+imagepicker = { group = "com.github.dhaval2404", name = "imagepicker", version.ref = "imagepicker" }
+leakcanary-android = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary-android" }
+jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+flexbox = { group = "com.google.android.flexbox", name = "flexbox", version.ref = "flexbox" }
+chip-navigation-bar = { group = "com.github.ismaeldivita", name = "chip-navigation-bar", version.ref = "chip-navigation-bar" }
+process-phoenix = { group = "com.jakewharton", name = "process-phoenix", version.ref = "process-phoenix" }
+about-libs = { group = "com.mikepenz", name = "aboutlibraries", version.ref = "about-libs" }
+about-libs-core = { group = "com.mikepenz", name = "aboutlibraries-core", version.ref = "about-libs" }
+about-libs-plugin = { group = "com.mikepenz.aboutlibraries.plugin", name = "aboutlibraries-plugin", version.ref = "about-libs" }
+fast-adapter = { group = "com.mikepenz", name = "fastadapter", version.ref = "fast-adapter" }
+fast-adapter-extensions-binding = { group = "com.mikepenz", name = "fastadapter-extensions-binding", version.ref = "fast-adapter" }
+markwon-core = { group = "io.noties.markwon", name = "core", version.ref = "markwon" }
+dalvik-dx = { group = "com.jakewharton.android.repackaged", name = "dalvik-dx", version.ref = "dalvik-dx" }
+ketch = { group = "com.github.khushpanchal", name = "Ketch", version.ref = "ketch" }
+neonjs-core = { group = "dev.mooner.neonjs", name = "neonjs-core", version.ref = "neonjs" }
+neonjs-android = { group = "dev.mooner.neonjs", name = "neonjs-android", version.ref = "neonjs" }
+neonjs-net = { group = "dev.mooner.neonjs", name = "neonjs-net", version.ref = "neonjs" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+android-library = { id = "com.android.library", version.ref = "androidGradlePlugin" }
+android-test = { id = "com.android.test", version.ref = "androidGradlePlugin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+about-libs-plugin = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "about-libs" }
+
+[bundles]
+androidx = ["androidx-core-ktx", "androidx-appcompat", "androidx-legacy", "androidx-recyclerview", "androidx-recyclerview-selection", "androidx-navigation-fragment-ktx", "androidx-lifecycle-runtime-ktx", "androidx-lifecycle-process", "material", "androidx-constraintlayout"]
+kotlin = ["kotlin-reflection", "kotlin-stdlib", "kotlin-stdlib-jdk8", "kotlinx-coroutines-core", "kotlinx-coroutines-android", "kotlinx-serialization-json"]
+material-dialogs = ["material-dialogs", "material-dialogs-input", "material-dialogs-color", "material-dialogs-lifecycle"]

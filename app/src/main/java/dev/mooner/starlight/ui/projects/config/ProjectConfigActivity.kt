@@ -6,88 +6,142 @@
 
 package dev.mooner.starlight.ui.projects.config
 
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
 import coil.load
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.google.android.material.snackbar.Snackbar
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.MutableDataMap
+import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.findOption
+import dev.mooner.configdsl.options.*
+import dev.mooner.configdsl.utils.PeekType
+import dev.mooner.configdsl.utils.PrimitiveTypedString
+import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
+import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.databinding.ActivityProjectConfigBinding
-import dev.mooner.starlight.databinding.ConfigButtonFlatBinding
+import dev.mooner.starlight.databinding.CardSimpleListItemBinding
+import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.globalConfig
-import dev.mooner.starlight.plugincore.config.ButtonConfigObject
-import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.config
+import dev.mooner.starlight.plugincore.Session.json
+import dev.mooner.starlight.plugincore.Session.projectManager
+import dev.mooner.starlight.plugincore.config.*
+import dev.mooner.starlight.plugincore.config.data.*
+import dev.mooner.starlight.plugincore.api.ApiLevel
 import dev.mooner.starlight.plugincore.project.Project
-import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.ui.config.ConfigAdapter
-import dev.mooner.starlight.utils.bindFadeImage
-import java.io.File
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.ui.projects.events.EventCatalog
+import dev.mooner.starlight.ui.projects.events.showEventPicker
+import dev.mooner.starlight.utils.*
+import dev.mooner.starlight.utils.fitSystemBars
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.*
+import kotlin.properties.Delegates.notNull
+import kotlin.time.Duration.Companion.seconds
 
 class ProjectConfigActivity: AppCompatActivity() {
-    private val changedData: MutableMap<String, MutableMap<String, Any>> = hashMapOf()
+
+    private val changedData: MutableDataMap = hashMapOf()
+    /** The allowed event entries chosen but not saved yet. */
+    private var pendingEventIds: List<String>? = null
+    private var structure: ConfigStructure? = null
     private lateinit var binding: ActivityProjectConfigBinding
     private lateinit var project: Project
     private var configAdapter: ConfigAdapter? = null
+
+    private var projectButtonIDs: Set<String> by notNull()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityProjectConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fitSystemBars(binding.root)
+
+        bindLogNotifier()
 
         val fabProjectConfig = binding.fabProjectConfig
 
         val projectName = intent.getStringExtra("projectName")!!
-        project = Session.projectManager.getProject(projectName)?: throw IllegalStateException("Cannot find project $projectName")
+        project = projectManager.getProjectByName(projectName)
+            ?: throw IllegalStateException("Unable to find project $projectName")
+
+        projectButtonIDs = project
+            .getCustomButtons()
+            .map { it.first }
+            .toSet()
 
         configAdapter = ConfigAdapter.Builder(this) {
+            lifecycleOwner(this@ProjectConfigActivity)
             bind(binding.configRecyclerView)
-            onConfigChanged { parentId, id, view, data ->
-                if (parentId in changedData)
-                    changedData[parentId]!![id] = data
-                else
-                    changedData[parentId] = hashMapOf(id to data)
+            onValueUpdated { parentId, id, data, jsonData ->
+                changedData
+                    .putIfAbsent(parentId, hashMapOf(id to jsonData))
+                    ?.put(id, jsonData)
 
-                if (!fabProjectConfig.isShown)
-                    fabProjectConfig.show()
-                project.getLanguage().onConfigChanged(id, view, data)
+                withContext(Dispatchers.Main) {
+                    if (!fabProjectConfig.isShown)
+                        fabProjectConfig.show()
+                }
+                if (parentId == project.getLanguage().id)
+                    project.getLanguage().onConfigChanged(id, data)
+                // The levels decide which of the allowed events the project receives.
+                if (parentId == API_CATEGORY)
+                    withContext(Dispatchers.Main) { updateEventSummary() }
             }
             structure {
-                getConfigs(project)
+                getStruct(project).also { structure = it }
             }
-            savedData(project.config.getData())
-            lifecycleOwner(this@ProjectConfigActivity)
+            @Suppress("UNCHECKED_CAST")
+            configData((project.config.getData() as MutableDataMap)
+                .injectApiLevels(project.info.apiLevels))
         }.build()
 
-        fabProjectConfig.setOnClickListener { view ->
+        fabProjectConfig.setOnClickListener {
             if (configAdapter?.hasError == true) {
-                Snackbar.make(view, "올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", Snackbar.LENGTH_SHORT).show()
+                peek("올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", PeekType.ERROR)
                 fabProjectConfig.hide()
                 return@setOnClickListener
             }
 
+            pendingEventIds?.let { ids ->
+                project.info.allowedEventIds.clear()
+                project.info.allowedEventIds += ids
+                project.saveInfo()
+                pendingEventIds = null
+            }
             project.config.edit {
                 for ((catId, data) in changedData) {
+                    // project.json holds the levels, as it does the allowed events.
+                    if (catId == API_CATEGORY && API_LEVELS in data) {
+                        project.info.apiLevels = data[API_LEVELS]!!.jsonArray.mapTo(linkedSetOf()) { it.jsonPrimitive.content }
+                        project.saveInfo()
+                        data -= API_LEVELS
+                    }
                     category(catId).apply {
-                        data.forEach(::setAny)
+                        data.forEach(::setRaw)
                     }
                 }
             }
 
             val langConfIds = project.getLanguage().configStructure.map { it.id }
             val filtered = changedData.filter { it.key in langConfIds }
-            if (filtered.isNotEmpty()) project.getLanguage().onConfigUpdated(filtered)
-            Snackbar.make(view, "설정 저장 완료", Snackbar.LENGTH_SHORT).show()
+            if (filtered.isNotEmpty())
+                project.getLanguage().onConfigUpdated(filtered)
+
+            createSuccessPeek("설정 저장 완료!", PeekAlert.Position.Bottom).peek()
+            if (ApiLevels.hasListenerNameClash(project.info.apiLevels, project.info.languageId))
+                peek(getString(R.string.api_levels_clash_warning), PeekType.INFO)
             fabProjectConfig.hide()
         }
 
@@ -97,25 +151,95 @@ class ProjectConfigActivity: AppCompatActivity() {
 
         val textViewConfigProjectName: TextView = findViewById(R.id.textViewConfigProjectName)
         textViewConfigProjectName.text = projectName
+        fabProjectConfig.hide()
     }
 
-    private fun getConfigs(project: Project): ConfigStructure {
-        val configs = config {
+    override fun onDestroy() {
+        super.onDestroy()
+        configAdapter?.destroy()
+        configAdapter = null
+    }
+
+    private fun MutableDataMap.injectApiLevels(levelIds: Set<String>?): MutableDataMap {
+        val ids = levelIds ?: Session.apiLevelManager.getLevels().map(ApiLevel::id)
+        getOrPut(API_CATEGORY) { mutableMapOf() }[API_LEVELS] = JsonArray(ids.map(::JsonPrimitive))
+        return this
+    }
+
+    private fun currentEventIds(): List<String> =
+        pendingEventIds ?: project.info.allowedEventIds.toList()
+
+    /** The levels chosen on this screen, saved or not. */
+    private fun currentLevelIds(): Set<String>? =
+        changedData[API_CATEGORY]?.get(API_LEVELS)?.jsonArray?.mapTo(linkedSetOf()) { it.jsonPrimitive.content }
+            ?: project.info.apiLevels
+
+    private fun eventSummary(): String =
+        EventCatalog.summarize(this, currentEventIds(), currentLevelIds())
+
+    private fun updateEventSummary() {
+        structure?.findOption(EVENTS_CATEGORY, ALLOWED_EVENTS)?.updateDescription(eventSummary())
+    }
+
+    private fun openEventPicker() =
+        showEventPicker(currentEventIds(), currentLevelIds()) { ids ->
+            if (ids == currentEventIds())
+                return@showEventPicker
+            pendingEventIds = ids
+            updateEventSummary()
+            binding.fabProjectConfig.show()
+        }
+
+    private fun Project.getCustomButtons(): List<Pair<String, Icon>> {
+        return try {
+            runCatching {
+                config
+                    .category("beta_features")
+                    .getString("custom_buttons")
+                    ?.let<_, List<Map<String, PrimitiveTypedString>>>(json::decodeFromString)
+                    ?.map { it["button_id"]!!.castAs<String>() to Icon.entries.toTypedArray()[it["button_icon"]!!.castAs()] }
+                    ?: listOf()
+            }.getOrElse {
+                config
+                    .category("beta_features")
+                    .getList("custom_buttons")
+                    ?.map<_, ProjectButtonData>(json::decodeFromJsonElement)
+                    ?.map { it.id to (it.icon?.let(Icon.entries::get) ?: Icon.LAYERS) }
+                    ?: listOf()
+            }
+        } catch (e: Exception) {
+            logger.warn(translate {
+                Locale.ENGLISH { "Failed to parse custom buttons: $e" }
+                Locale.KOREAN  { "커스텀 버튼 목록을 불러오지 못함: $e" }
+            })
+            listOf()
+        }
+    }
+
+    private fun getStruct(project: Project): ConfigStructure {
+        return config {
             category {
                 id = "general"
                 title = "일반"
-                textColor = color { "#706EB9" }
+                textColor = getColor(R.color.main_bright)
                 items {
-                    button {
-                        id = "open_folder"
-                        title = "폴더 열기"
-                        type = ButtonConfigObject.Type.FLAT
-                        setOnClickListener { _ ->
-                            openFolderInExplorer(this@ProjectConfigActivity, project.directory)
-                        }
+                    info {
+                        id = "folder_location"
+                        title = "프로젝트 위치"
+                        description = project.directory.path
+                        copyable = true
                         icon = Icon.FOLDER
-                        //backgroundColor = Color.parseColor("#B8DFD8")
                         iconTintColor = color { "#93B5C6" }
+                    }
+                    button {
+                        id = "rename_project"
+                        title = translate {
+                            Locale.ENGLISH { "Rename Project" }
+                            Locale.KOREAN  { "프로젝트 이름 변경" }
+                        }
+                        icon = Icon.EDIT
+                        //iconTintColor = color { "#94A684" }
+                        setOnClickListener(::showProjectRenameDialog)
                     }
                     toggle {
                         id = "shutdown_on_error"
@@ -126,26 +250,63 @@ class ProjectConfigActivity: AppCompatActivity() {
                     }
                 }
             }
-        } +
-        project.getLanguage().configStructure +
-        config {
-            val betaFeatureCategory = globalConfig.category("beta_features")
-            val changeThreadPoolSize = betaFeatureCategory.getBoolean("change_thread_pool_size", false)
-            val addCustomButtons = betaFeatureCategory.getBoolean("add_custom_buttons", true)
+            category {
+                id = API_CATEGORY
+                title = getString(R.string.api_levels_title)
+                textColor = getColor(R.color.main_bright)
+                items {
+                    multiChoice {
+                        id = API_LEVELS
+                        title = getString(R.string.api_levels_title)
+                        description = getString(R.string.api_levels_description)
+                        icon = Icon.LAYERS
+                        iconTintColor = color { "#B8A4C9" }
+                        for (level in Session.apiLevelManager.getLevels())
+                            option(level.id, level.name)
+                    }
+                }
+            }
+            category {
+                id = EVENTS_CATEGORY
+                title = "이벤트"
+                textColor = getColor(R.color.main_bright)
+                items {
+                    button {
+                        id = ALLOWED_EVENTS
+                        title = getString(R.string.event_picker_title)
+                        description = eventSummary()
+                        icon = Icon.NOTIFICATIONS_ACTIVE
+                        iconTintColor = color { "#FF5C58" }
+                        setOnClickListener(::openEventPicker)
+                    }
+                }
+            }
+            project.getLanguage().let { language ->
+                combine(language.configStructure) { category ->
+                    category.id == language.id
+                }
+            }
+
+            val (changeThreadPoolSize, addCustomButtons) = GlobalConfig.category("beta_features")
+                .run { arrayOf(
+                    getBoolean("change_thread_pool_size", false),
+                    getBoolean("add_custom_buttons", true)
+                ) }
 
             if (changeThreadPoolSize || addCustomButtons) {
                 category {
                     id = "beta_features"
                     title = "실험적 기능"
-                    textColor = color("#706EB9")
+                    textColor = getColor(R.color.main_bright)
                     items {
                         if (changeThreadPoolSize) {
                             seekbar {
                                 id = "thread_pool_size"
-                                title = "Thread pool 크기"
+                                title = "동시 실행 수"
+                                description = "앱의 공유 스레드에서 이 프로젝트의 이벤트를 동시에 몇 개까지 실행할지 정합니다."
                                 min = 1
                                 max = 10
-                                defaultValue = 3
+                                defaultValue = project.getLanguage().defaultConcurrency
                                 icon = Icon.COMPRESS
                                 iconTintColor = color { "#57837B" }
                             }
@@ -160,26 +321,37 @@ class ProjectConfigActivity: AppCompatActivity() {
                                     string {
                                         id = "button_id"
                                         title = "id"
+                                        description = "버튼 이벤트 호출 시 사용될 ID"
                                         icon = null
-                                        require = { string -> if (string.isBlank()) "id를 입력하세요" else null }
+                                        require = { string ->
+                                            if (string.isBlank())
+                                                "버튼 id를 입력하세요"
+                                            else if (string in projectButtonIDs)
+                                                "이미 존재하는 버튼 id"
+                                            else null
+                                        }
                                     }
-                                    string {
+                                    spinner {
                                         id = "button_icon"
                                         title = "아이콘"
                                         icon = null
-                                        require = { string -> if (string.isBlank()) "아이콘 id를 입력하세요" else null }
+                                        defaultIndex = 0
+                                        items = Icon.entries.map(Icon::name)
                                     }
                                 }
                                 onInflate { view ->
-                                    LayoutInflater.from(view.context).inflate(R.layout.config_button_card, view as FrameLayout, true)
+                                    LayoutInflater.from(view.context).inflate(R.layout.card_simple_list_item, view as FrameLayout, true)
                                 }
-                                onDraw { view, data ->
-                                    val binding = ConfigButtonFlatBinding.bind(view.findViewById(R.id.layout_configButton))
+                                onDraw<ProjectButtonData> { view, data ->
+                                    val binding = CardSimpleListItemBinding.bind(view.findViewById(R.id.layout_simple_list_item))
 
-                                    binding.title.text = data["button_id"] as String
+                                    binding.title.text = data.id
                                     binding.description.visibility = View.GONE
 
-                                    val icon = Icon.valueOf(data["button_icon"] as String)
+                                    val icon = if (data.icon != null)
+                                        Icon.entries[data.icon]
+                                    else
+                                        Icon.LAYERS
                                     binding.icon.load(icon.drawableRes)
                                 }
                             }
@@ -193,38 +365,68 @@ class ProjectConfigActivity: AppCompatActivity() {
                 textColor = color { "#FF865E" }
                 items {
                     button {
+                        id = "reload_info"
+                        title = "프로젝트 정보 다시 로드"
+                        description = "프로젝트 정보를 파일에서 다시 불러옵니다. 이 옵션은 앱의 정상적인 작동을 방해할 수 있습니다."
+                        style = ButtonStyle.DANGER
+                        confirm("파일에서 프로젝트 정보를 다시 불러올까요? 저장하지 않은 변경 사항은 사라질 수 있어요.")
+                        setOnClickListener { _ ->
+                            project.loadInfo()
+                            peek("프로젝트 정보를 다시 불러왔어요.", PeekType.SUCCESS)
+                        }
+                        icon = Icon.REFRESH
+                        iconTintColor = color { "#FF5C58" }
+                    }
+                    button {
                         id = "interrupt_thread"
                         title = "프로젝트 스레드 강제 종료"
-                        description = "${project.activeJobs()}개의 작업이 실행중이에요."
-                        setOnClickListener { view ->
+                        bindDescription(every = 1.seconds) {
+                            "${project.activeJobs()}개의 작업이 실행 중이고, ${project.queuedEvents()}개의 이벤트가 대기 중이에요."
+                        }
+                        style = ButtonStyle.DANGER
+                        confirm { "실행 중인 작업 ${project.activeJobs()}개를 강제 종료할까요?" }
+                        setOnClickListener { _ ->
                             val active = project.activeJobs()
+                            val queued = project.queuedEvents()
                             project.stopAllJobs()
-                            Snackbar.make(view, "${active}개의 작업을 강제 종료하고 할당 해제했어요.", Snackbar.LENGTH_SHORT).show()
+                            peek("${active}개의 작업을 강제 종료하고 대기 중이던 이벤트 ${queued}개를 비웠어요.", PeekType.SUCCESS)
                         }
                         icon = Icon.LAYERS_CLEAR
                         //backgroundColor = Color.parseColor("#B8DFD8")
                         iconTintColor = color { "#FF5C58" }
                     }
                     button {
+                        id = "destroy_scope"
+                        title = "프로젝트 스코프 폐기"
+                        description = "프로젝트의 컴파일된 스코프를 폐기합니다. 이후 프로젝트를 사용하기 위해선 다시 컴파일 해야 합니다."
+                        style = ButtonStyle.DANGER
+                        confirm("스코프를 폐기하면 다시 컴파일하기 전까지 프로젝트가 동작하지 않아요. 계속할까요?")
+                        setOnClickListener { _ ->
+                            project.destroy(requestUpdate = isForeground())
+                            finish()
+                        }
+                        icon = Icon.DEVELOPER_BOARD_OFF
+                        //backgroundColor = Color.parseColor("#B8DFD8")
+                        iconTintColor = color { "#FF5C58" }
+                    }
+                    button {
                         id = "delete_project"
                         title = "프로젝트 제거"
+                        style = ButtonStyle.DANGER
                         setOnClickListener { _ ->
-                            MaterialDialog(binding.root.context, BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-                                cornerRadius(25f)
-                                cancelOnTouchOutside(true)
-                                noAutoDismiss()
-                                //icon(res = R.drawable.ic_round_delete_forever_24)
-                                title(text = "프로젝트를 정말로 제거할까요?")
-                                message(text = "주의: 프로젝트 제거시 복구가 불가합니다.")
-                                positiveButton(text = context.getString(R.string.delete)) {
-                                    Session.projectManager.removeProject(project, removeFiles = true)
-                                    Snackbar.make(binding.root, "프로젝트를 제거했어요.", Snackbar.LENGTH_SHORT).show()
-                                    dismiss()
+                            showSheet {
+                                title = "프로젝트를 정말로 제거할까요?"
+                                message = "주의: 프로젝트 제거시 복구가 불가합니다."
+                                icon = R.drawable.ic_round_delete_forever_24
+                                positive(R.string.delete) {
+                                    projectManager.removeProject(
+                                        project,
+                                        removeFiles = true
+                                    )
+                                    peek("프로젝트를 제거했어요.", PeekType.SUCCESS)
                                     finish()
                                 }
-                                negativeButton(text = context.getString(R.string.close)) {
-                                    dismiss()
-                                }
+                                negative(R.string.close)
                             }
                         }
                         icon = Icon.DELETE_SWEEP
@@ -234,13 +436,100 @@ class ProjectConfigActivity: AppCompatActivity() {
                 }
             }
         }
-        return configs
     }
 
-    private fun openFolderInExplorer(context: Context, file: File) {
-        val intent = Intent(Intent.ACTION_VIEW)
-        val uri = FileProvider.getUriForFile(context, "$packageName.provider", file)
-        intent.setDataAndType(uri, "*/*")
-        startActivity(Intent.createChooser(intent, "폴더 열기"))
+    private fun showProjectRenameDialog() {
+        var name: String? = null
+        var updateMainScript = true
+
+        showSheet {
+            title = translate {
+                Locale.ENGLISH { "Rename project" }
+                Locale.KOREAN  { "프로젝트 이름 변경" }
+            }
+            message = translate {
+                Locale.ENGLISH { "What name should it be changed to?" }
+                Locale.KOREAN  { "어떤 이름으로 변경할까요?" }
+            }
+            icon = R.drawable.ic_round_edit_24
+            configStruct(this@ProjectConfigActivity) {
+                struct {
+                    category {
+                        id = "def"
+                        items {
+                            string {
+                                id = "name"
+                                title = "이름"
+                                icon = Icon.EDIT
+                                hint = translate {
+                                    Locale.ENGLISH { "Enter name..." }
+                                    Locale.KOREAN  { "변경될 이름 입력..." }
+                                }
+                                require = lambda@{ v ->
+                                    if (v.isBlank() || !"(^[-_\\dA-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+$)".toRegex().matches(v)) {
+                                        name = null
+                                        return@lambda translate {
+                                            Locale.ENGLISH { "Illegal name format" }
+                                            Locale.KOREAN  { "올바르지 않은 이름 형식이에요" }
+                                        }
+                                    }
+                                    if (projectManager.getProjectByName(v, ignoreCase = true) != null) {
+                                        name = null
+                                        return@lambda translate {
+                                            Locale.ENGLISH { "Name shadowed" }
+                                            Locale.KOREAN  { "이미 존재하는 이름이에요." }
+                                        }
+                                    }
+                                    name = v
+                                    return@lambda null
+                                }
+                            }
+                            toggle {
+                                id = "preserve_main_script"
+                                title = "메인 스크립트 이름 변경"
+                                description = "메인 스크립트의 이름을 같이 변경합니다."
+                                defaultValue = true
+                                icon = Icon.FILE
+                                setOnValueChangedListener { _, toggle ->
+                                    updateMainScript = toggle
+                                }
+                            }
+                        }
+                    }
+                }
+                data {
+                    mutableMapOf(
+                        "def" to mutableMapOf(
+                            "name" to JsonPrimitive(project.info.name)
+                        )
+                    )
+                }
+            }
+            positive(R.string.ok, autoDismiss = false) { sheet ->
+                if (name == null)
+                    return@positive
+                project.rename(name!!, !updateMainScript)
+                peek(translate {
+                    Locale.ENGLISH { "Successfully renamed project." }
+                    Locale.KOREAN  { "프로젝트의 이름을 성공적으로 변경했어요." }
+                }, PeekType.SUCCESS)
+                sheet.dismiss()
+                finish()
+            }
+            negative(R.string.cancel)
+        }
     }
 }
+
+@Serializable
+internal data class ProjectButtonData(
+    @SerialName("button_id")
+    val id: String,
+    @SerialName("button_icon")
+    val icon: Int? = null,
+)
+
+private const val API_CATEGORY = "api"
+private const val EVENTS_CATEGORY = "events"
+private const val ALLOWED_EVENTS = "allowed_events"
+private const val API_LEVELS = "levels"

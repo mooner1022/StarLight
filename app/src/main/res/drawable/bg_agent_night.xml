@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The plugin store's night: warm charcoal with a gold glow. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="315"
+                android:endColor="@color/agent_night_bottom"
+                android:startColor="@color/agent_night_top"/>
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:centerX="0.9"
+                android:centerY="0.15"
+                android:endColor="#00DFC199"
+                android:gradientRadius="240dp"
+                android:startColor="#40DFC199"
+                android:type="radial"/>
+        </shape>
+    </item>
+</layer-list>

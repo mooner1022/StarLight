@@ -6,68 +6,72 @@
 
 package dev.mooner.starlight.ui.projects
 
-import android.animation.LayoutTransition
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
-import android.widget.EditText
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.getSystemService
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import coil.load
-import com.afollestad.materialdialogs.LayoutMode
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.bottomsheets.BottomSheet
-import com.afollestad.materialdialogs.bottomsheets.gridItems
-import com.afollestad.materialdialogs.customview.customView
-import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
-import com.google.android.material.snackbar.Snackbar
+import com.mikepenz.fastadapter.FastAdapter
+import com.mikepenz.fastadapter.adapters.ItemAdapter
+import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentProjectsBinding
-import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.globalConfig
 import dev.mooner.starlight.plugincore.Session.projectManager
+import dev.mooner.starlight.plugincore.config.GlobalConfig
+import dev.mooner.starlight.plugincore.config.GlobalConfig.getDefaultCategory
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.event.on
-import dev.mooner.starlight.plugincore.logger.Logger
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.project.ProjectID
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.utils.*
 import dev.mooner.starlight.utils.align.Align
 import dev.mooner.starlight.utils.align.toGridItems
-import dev.mooner.starlight.utils.dpToPx
-import jp.wasabeef.recyclerview.animators.FadeInUpAnimator
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import java.lang.ref.WeakReference
+import kotlin.math.min
 
 class ProjectsFragment : Fragment(), View.OnClickListener {
 
     private var _binding: FragmentProjectsBinding? = null
     private val binding get() = _binding!!
 
-    private var isPaused = false
-    private var requiresUpdate = false
-    private val updatedProjects: MutableSet<Project> = hashSetOf()
+    private var updateReceiveScope: CoroutineScope? = null
 
-    private lateinit var projects: List<Project>
-    private var recyclerAdapter: ProjectListAdapter? = null
+    private var projects: List<Project> = emptyList()
+    private val listItems: MutableMap<ProjectID, ProjectListItem> = hashMapOf()
+    private var itemAdapter: ItemAdapter<ProjectListItem>? = null
+    private var searchQuery: String = ""
+
     private val aligns = arrayOf(
         ALIGN_GANADA,
         ALIGN_DATE,
         ALIGN_COMPILED
     )
     private var alignState: Align<Project> = getAlignByName(
-        globalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name)
+        getDefaultCategory().getString(CONFIG_PROJECTS_ALIGN, DEFAULT_ALIGN.name)
     )?: DEFAULT_ALIGN
-    private var isReversed: Boolean = globalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_REVERSED).toBoolean()
-    private var isActiveFirst: Boolean = globalConfig.getDefaultCategory().getString(CONFIG_PROJECTS_ACTIVE_FIRST).toBoolean()
+    private var isReversed: Boolean =
+        getDefaultCategory().getString(CONFIG_PROJECTS_REVERSED).toBoolean()
+    private var isActiveFirst: Boolean =
+        getDefaultCategory().getString(CONFIG_PROJECTS_ACTIVE_FIRST).toBoolean()
+
+    private val pickProjectArchive = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null)
+            viewLifecycleOwner.importProject(requireActivity(), uri)
+    }
 
     @SuppressLint("CheckResult")
     override fun onCreateView(
@@ -77,116 +81,152 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
     ): View {
         _binding = FragmentProjectsBinding.inflate(inflater, container, false)
 
-        val activity = activity as MainActivity
-        recyclerAdapter = ProjectListAdapter(activity)
+        itemAdapter = ItemAdapter()
+        val fastAdapter = FastAdapter.with(itemAdapter!!)
 
         projects = projectManager.getProjects()
 
         binding.apply {
-            fabNewProject.setOnClickListener(this@ProjectsFragment)
+            updateAlignChip()
 
-            cardViewProjectAlign.setOnClickListener(this@ProjectsFragment)
+            alignProject.setOnClickListener(this@ProjectsFragment)
+            searchProject.setOnClickListener(this@ProjectsFragment)
+            searchClose.setOnClickListener(this@ProjectsFragment)
+            newProject.setOnClickListener(this@ProjectsFragment)
 
-            textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
-
-            alignStateIcon.load(alignState.icon)
-
-            recyclerViewProjectList.setup()
-        }
-
-        lifecycleScope.launchWhenCreated {
-            updateEmptyText()
-            val sortFlow = sortDataAsync()
-                .flowOn(Dispatchers.Default)
-                .onEach { list ->
-                    recyclerAdapter!!.apply {
-                        data = list
-                        notifyItemRangeInserted(0, data.size)
-                    }
-                    updateTitle(projects)
+            searchInput.doAfterTextChanged { text ->
+                val query = text?.toString()?.trim().orEmpty()
+                if (query != searchQuery) {
+                    searchQuery = query
+                    submitList()
                 }
-
-            launch {
-                sortFlow.collect()
+            }
+            searchInput.setOnEditorActionListener { view, actionId, _ ->
+                if (actionId != EditorInfo.IME_ACTION_SEARCH)
+                    return@setOnEditorActionListener false
+                requireContext().getSystemService<InputMethodManager>()
+                    ?.hideSoftInputFromWindow(view.windowToken, 0)
+                view.clearFocus()
+                true
             }
 
-            Session.eventManager.apply {
-                on(this@launchWhenCreated, callback = ::onProjectUpdated)
-                on(this@launchWhenCreated, callback = ::onProjectCompiled)
-                on(this@launchWhenCreated, callback = ::onProjectDeleted)
-                on(this@launchWhenCreated, callback = ::onProjectCreated)
+            recyclerViewProjectList.setup(fastAdapter)
+        }
+
+        updateReceiveScope = CoroutineScope(Dispatchers.Default + SupervisorJob()).also { scope ->
+            EventHandler.apply {
+                on(scope, callback = ::onProjectUpdated)
+                on(scope, callback = ::onProjectCompiled)
+                on(scope, callback = ::onProjectDeleted)
+                on(scope, callback = ::onProjectCreated)
             }
         }
+
+        submitList()
 
         return binding.root
     }
 
     override fun onClick(view: View) {
         when(view.id) {
-            R.id.cardViewProjectAlign -> showProjectAlignDialog()
-            R.id.fabNewProject -> showNewProjectDialog()
+            R.id.align_project -> showProjectAlignDialog()
+            R.id.search_project -> setSearchVisible(binding.searchBar.visibility != View.VISIBLE)
+            R.id.searchClose -> setSearchVisible(false)
+            R.id.new_project -> showNewProjectDialog(onImport = {
+                pickProjectArchive.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
+            })
         }
     }
 
-    private suspend fun onProjectUpdated(event: Events.Project.ProjectInfoUpdateEvent) = updateProjectView(event.project)
+    private suspend fun onProjectUpdated(event: Events.Project.InfoUpdate) =
+        updateProjectView(event.project)
 
-    private suspend fun onProjectCompiled(event: Events.Project.ProjectCompileEvent) = updateProjectView(event.project)
+    private suspend fun onProjectCompiled(event: Events.Project.Compile) =
+        updateProjectView(event.project)
 
-    private suspend fun onProjectDeleted(event: Events.Project.ProjectDeleteEvent) = updateList(null)
+    private suspend fun onProjectDeleted(event: Events.Project.Delete) =
+        notifyProjectRemoved(event.projectId, event.projectName)
 
-    private suspend fun onProjectCreated(event: Events.Project.ProjectCreateEvent) = updateList(event.project)
+    private suspend fun onProjectCreated(event: Events.Project.Create) =
+        notifyProjectAdded(event.project)
 
-    private fun RecyclerView.setup() {
-        itemAnimator = FadeInUpAnimator()
+    private fun RecyclerView.setup(adapter: FastAdapter<ProjectListItem>) {
+        //itemAnimator = FadeInUpAnimator()
         layoutManager = LinearLayoutManager(activity)
-        adapter = recyclerAdapter
+        this.adapter = adapter
     }
 
-    private suspend fun updateEmptyText() = withContext(Dispatchers.Main) {
-        if (projects.isEmpty()) {
-            with(binding.textViewNoProjectYet) {
-                visibility = View.VISIBLE
-
-                setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_box_empty, 0, 0)
-                text = getString(R.string.nothing_yet)
-                    .format("프로젝트가", "(⊙_⊙;)")
-            }
+    private fun setSearchVisible(visible: Boolean) {
+        val input = binding.searchInput
+        val imm = requireContext().getSystemService<InputMethodManager>()
+        binding.searchBar.visibility = if (visible) View.VISIBLE else View.GONE
+        if (visible) {
+            input.requestFocus()
+            imm?.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
         } else {
-            binding.textViewNoProjectYet.visibility = View.GONE
+            imm?.hideSoftInputFromWindow(input.windowToken, 0)
+            input.text.clear()
+            input.clearFocus()
+        }
+    }
+
+    private fun updateEmptyText(isFiltered: Boolean, isEmpty: Boolean) {
+        with(binding.textViewNoProjectYet) {
+            when {
+                !isEmpty -> visibility = View.GONE
+                isFiltered -> {
+                    visibility = View.VISIBLE
+                    setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                    text = getString(R.string.project_search_empty)
+                }
+                else -> {
+                    visibility = View.VISIBLE
+                    setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_box_empty, 0, 0)
+                    text = getString(R.string.no_projects)
+                }
+            }
         }
     }
 
     private suspend fun updateProjectView(project: Project) {
-        if (isPaused)
-            updatedProjects += project
-        else {
-            val index = recyclerAdapter!!.data.indexOf(project)
-            if (index == -1) {
-                Logger.w(T, "Failed to update project list: index not found")
-                return
-            }
-            withContext(Dispatchers.Main) {
-                recyclerAdapter!!.notifyItemChanged(index)
-                updateTitle(projects)
-            }
+        withContext(Dispatchers.Main) {
+            if (_binding == null)
+                return@withContext
+            listItems[project.info.id]?.tryUpdateView()
+            updateTitle(projects)
         }
     }
 
-    private suspend fun updateList(project: Project?) {
-        projects = projectManager.getProjects()
-        if (isPaused) {
-            requiresUpdate = true
-            return
-        }
+    private suspend fun notifyProjectRemoved(projectId: ProjectID, projectName: String) {
         withContext(Dispatchers.Main) {
-            updateEmptyText()
-            update()
-            project?.let(::scrollTo)
+            if (_binding == null)
+                return@withContext
+            listItems -= projectId
+            projects = projectManager.getProjects()
+            submitList()
+            updateTitle(projects)
+            createSuccessPeek(translate {
+                Locale.ENGLISH { "Successfully removed project $projectName" }
+                Locale.KOREAN  { "프로젝트 $projectName 삭제 완료" }
+            }, PeekAlert.Position.Bottom).peek()
+        }
+    }
+
+    private suspend fun notifyProjectAdded(project: Project) {
+        withContext(Dispatchers.Main) {
+            if (_binding == null)
+                return@withContext
+            projects = projectManager.getProjects()
+            submitList()
+            updateTitle(projects)
+            binding.recyclerViewProjectList.post {
+                itemAdapter?.scrollTo(project)
+            }
         }
     }
 
     private fun updateTitle(projects: List<Project>) {
-        val activity = activity as MainActivity
+        val activity = activity as? MainActivity ?: return
 
         val count = projects.count { it.info.isEnabled }
         activity.binding.statusText.text = getString(R.string.subtitle_projects).format(count)
@@ -194,130 +234,59 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
     @SuppressLint("CheckResult")
     private fun showProjectAlignDialog() =
-        MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            cornerRadius(res = R.dimen.card_radius)
-            maxWidth(res = R.dimen.dialog_width)
-            lifecycleOwner(this@ProjectsFragment)
-            gridItems(aligns.toGridItems()) { dialog, _, item ->
-                alignState = getAlignByName(item.title)?: DEFAULT_ALIGN
-                isReversed = dialog.findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked
-                isActiveFirst = dialog.findViewById<CheckBox>(R.id.checkBoxAlignActiveFirst).isChecked
+        requireActivity().showSheet {
+            lifecycleOwner = viewLifecycleOwner
+            title = getString(R.string.align_title)
+            icon = R.drawable.ic_round_sort_by_alpha_24
+            grid(aligns.toGridItems(), selected = aligns.indexOf(alignState)) { sheet, index ->
+                alignState = aligns[index]
+                isReversed = sheet.isChecked(0)
+                isActiveFirst = sheet.isChecked(1)
                 update()
             }
-            //customView(R.layout.dialog_align_state)
-            customView(R.layout.dialog_align_projects)
-            findViewById<CheckBox>(R.id.checkBoxAlignReversed).isChecked = isReversed
-            findViewById<CheckBox>(R.id.checkBoxAlignActiveFirst).isChecked = isActiveFirst
+            checkbox(R.string.align_reversed, isReversed)
+            checkbox(R.string.align_active_first, isActiveFirst)
         }
 
-    @SuppressLint("CheckResult")
-    private fun showNewProjectDialog() =
-        MaterialDialog(requireActivity(), BottomSheet(LayoutMode.WRAP_CONTENT)).show {
-            cornerRadius(res = R.dimen.card_radius)
-            maxWidth(res = R.dimen.dialog_width)
-            customView(R.layout.dialog_new_project)
-            lifecycleOwner(this@ProjectsFragment)
-            cancelOnTouchOutside(true)
-            noAutoDismiss()
+    private fun getAlignByName(name: String): Align<Project>? =
+        aligns.find { it.name == name }
 
-            val nameEditText: EditText = findViewById(R.id.editTextNewProjectName)
+    private fun sortedProjects(): List<Project> {
+        val align = alignState.comparator
+        val alignComparator = Comparator<Project> { a, b -> align.compare(a, b) }
+            .let { if (isReversed) it.reversed() else it }
+        val comparator = compareByDescending<Project> { it.info.isPinned }
+            .let { if (isActiveFirst) it.thenByDescending { project -> project.isCompiled && project.info.isEnabled } else it }
+            .then(alignComparator)
 
-            //val languageSpinner: NiceSpinner
-            // = findViewById(R.id.spinnerLanguage)
-            nameEditText.text.clear()
-
-            val chipGroup: ChipGroup = this.findViewById(R.id.langSelectionGroup)
-            chipGroup.layoutTransition.enableTransitionType(LayoutTransition.CHANGING)
-            val languages = Session.languageManager.getLanguages()
-            for ((index, language) in languages.withIndex()) {
-                val chip = Chip(this.windowContext).apply {
-                    id = index
-                    text = language.name
-                    chipMinHeight = dpToPx(context, 30f)
-                    isCheckable = true
-                    if (index == 0) {
-                        isChecked = true
-                    }
-                }
-                chipGroup.addView(chip)
-            }
-
-            positiveButton(text = "생성") {
-                val projectName = nameEditText.text.toString()
-                if (projectManager.getProject(projectName) != null) {
-                    nameEditText.error = "이미 존재하는 이름이에요."
-                    nameEditText.requestFocus()
-                    return@positiveButton
-                }
-                if (!"(^[-_0-9A-Za-zㄱ-ㅎㅏ-ㅣ가-힣]+\$)".toRegex().matches(projectName)) {
-                    nameEditText.error = "이름은 숫자와 -, _, 영문자, 한글만 가능해요."
-                    nameEditText.requestFocus()
-                    return@positiveButton
-                }
-
-                val id = chipGroup.checkedChipId
-                if (id == View.NO_ID) {
-                    Snackbar.make(this.view, "사용할 언어를 선택해주세요.", Snackbar.LENGTH_SHORT).show()
-                    return@positiveButton
-                }
-                val selectedLang = Session.languageManager.getLanguages()[id]
-                projectManager.newProject {
-                    name = projectName
-                    mainScript = "$projectName.${selectedLang.fileExtension}"
-                    languageId = selectedLang.id
-                }
-                it.dismiss()
-            }
-            negativeButton(text = "취소") {
-                it.dismiss()
-            }
-            //onDismiss {
-            //    binding.fabNewProject.show()
-            //`}
-        }
-
-    private fun getAlignByName(name: String): Align<Project>? = aligns.find { it.name == name }
-
-    private fun sortDataAsync(): Flow<List<Project>> =
-        flow {
-            val comparable = compareByDescending<Project> { it.info.isPinned }
-                .thenByDescending { it.isCompiled }
-                .thenByDescending { it.info.name }
-            emit(projects.sortedWith(comparable))
-        }
-
-    private fun sortData(): List<Project> {
-        val aligned = alignState.sort(
-            projects,
-            mapOf(
-                "activeFirst" to isActiveFirst
-            )
-        )
-        return if (isReversed) aligned.asReversed() else aligned
+        val query = searchQuery
+        return projects
+            .filter { query.isEmpty() || it.info.name.contains(query, ignoreCase = true) }
+            .sortedWith(comparator)
     }
 
-    private fun reloadList(list: List<Project>) {
-        recyclerAdapter?.apply {
-            val orgDataSize = data.size
-            data = listOf()
-            notifyItemRangeRemoved(0, orgDataSize)
-            data = list
-            notifyItemRangeInserted(0, list.size)
+    private fun submitList() {
+        val weakThis = WeakReference<Fragment>(this)
+        listItems.keys.retainAll(projects.map { it.info.id }.toSet())
+        val items = sortedProjects().map { project ->
+            listItems.getOrPut(project.info.id) { ProjectListItem(weakThis) }
+                .withProject(project)
         }
+        itemAdapter?.set(items)
+        updateEmptyText(isFiltered = searchQuery.isNotEmpty(), isEmpty = items.isEmpty())
+    }
+
+    private fun updateAlignChip() {
+        binding.alignProject.text = getString(R.string.aligned_by)
+            .format(if (isReversed) alignState.reversedName else alignState.name)
+        binding.alignProject.setChipIconResource(alignState.icon)
     }
 
     private fun update() {
-        val sortFlow = sortDataAsync()
-            .flowOn(Dispatchers.Default)
-            .onEach { list -> reloadList(list) }
-        lifecycleScope.launch {
-            sortFlow.collect()
-        }
+        submitList()
+        updateAlignChip()
 
-        binding.textViewAlignState.text = if (isReversed) alignState.reversedName else alignState.name
-        binding.alignStateIcon.load(drawableResId = alignState.icon)
-
-        globalConfig.edit {
+        GlobalConfig.edit {
             getDefaultCategory().apply {
                 set(CONFIG_PROJECTS_ALIGN, alignState.name)
                 set(CONFIG_PROJECTS_REVERSED, isReversed.toString())
@@ -325,69 +294,40 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             }
         }
     }
-    private fun scrollTo(project: Project) {
-        val index = recyclerAdapter!!.data.indexOf(project)
-        if (index == -1) {
-            Logger.v("Failed to scroll to project: index not found")
+
+    private fun ItemAdapter<ProjectListItem>.scrollTo(project: Project) {
+        val index = getAdapterPosition(project.info.id.getLongHash())
+        if (index == -1)
             return
-        }
         binding.recyclerViewProjectList.postDelayed({
-            binding.recyclerViewProjectList.smoothScrollToPosition(index)
+            val scrollIdx = min(index + 2, adapterItemCount - 1)
+            _binding?.recyclerViewProjectList?.smoothScrollToPosition(scrollIdx)
         }, 500)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        isPaused = true
-    }
-
-    override fun onResume() {
-        super.onResume()
-        isPaused = false
-        if (requiresUpdate) {
-            lifecycleScope.launch {
-                updateEmptyText()
-            }
-            update()
-            requiresUpdate = false
-        }
-        if (updatedProjects.isNotEmpty()) {
-            for (project in updatedProjects) {
-                val index = recyclerAdapter!!.data.indexOf(project)
-                if (index == -1) {
-                    Logger.w(T, "Failed to update project list: index not found")
-                    continue
-                }
-                recyclerAdapter!!.notifyItemChanged(index)
-            }
-            updatedProjects.clear()
-        }
-        updateTitle(projects)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        recyclerAdapter = null
+        if (updateReceiveScope != null) {
+            updateReceiveScope!!.cancel()
+            updateReceiveScope = null
+        }
+        itemAdapter = null
+        listItems.clear()
+        _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateTitle(projects)
     }
 
     companion object {
-        private const val T = "ProjectsFragment"
-
         @JvmStatic
         private val ALIGN_GANADA: Align<Project> = Align(
             name = "가나다 순",
             reversedName = "가나다 역순",
             icon = R.drawable.ic_round_sort_by_alpha_24,
-            sort = { list, args ->
-                val comparable = with(compareBy<Project> { it.info.isPinned }) {
-                    if (args["activeFirst"] == true) {
-                        thenBy { !it.info.isEnabled }.thenBy { it.info.name }
-                    } else {
-                        compareBy { it.info.name }
-                    }
-                }
-                list.sortedWith(comparable)
-            }
+            comparator = compareBy(String.CASE_INSENSITIVE_ORDER) { it.info.name }
         )
 
         @JvmStatic
@@ -395,16 +335,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             name = "생성일 순",
             reversedName = "생성일 역순",
             icon = R.drawable.ic_baseline_edit_calendar_24,
-            sort = { list, args ->
-                val comparable = with(compareBy<Project> { it.info.isPinned }) {
-                    if (args["activeFirst"] == true) {
-                        thenBy { it.info.isEnabled }.thenBy { it.info.createdMillis }
-                    } else {
-                        compareBy { it.info.createdMillis }
-                    }
-                }
-                list.sortedWith(comparable).asReversed()
-            }
+            comparator = compareByDescending { it.info.createdMillis }
         )
 
         @JvmStatic
@@ -412,16 +343,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             name = "컴파일 순",
             reversedName = "미 컴파일 순",
             icon = R.drawable.ic_round_refresh_24,
-            sort = { list, args ->
-                val comparable = with(compareBy<Project> { it.info.isPinned }) {
-                    if (args["activeFirst"] == true) {
-                        thenBy { it.info.isEnabled }.thenBy { it.isCompiled }
-                    } else {
-                        compareBy { it.isCompiled }
-                    }
-                }
-                list.sortedWith(comparable).asReversed()
-            }
+            comparator = compareByDescending { it.isCompiled }
         )
 
         @JvmStatic

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      Lets media sending open the KakaoTalk of another user (Dual Messenger) without Android asking which one. It can
+      only be granted over adb: adb shell pm grant dev.mooner.starlight android.permission.INTERACT_ACROSS_USERS
+    -->
+    <uses-permission
+        android:name="android.permission.INTERACT_ACROSS_USERS"
+        tools:ignore="ProtectedPermissions"/>
+</manifest>

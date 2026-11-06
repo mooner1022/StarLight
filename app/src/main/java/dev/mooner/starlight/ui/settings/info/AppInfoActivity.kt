@@ -7,18 +7,25 @@
 package dev.mooner.starlight.ui.settings.info
 
 import android.content.pm.PackageInfo
-import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.snackbar.Snackbar
+import androidx.core.content.pm.PackageInfoCompat
 import com.mikepenz.aboutlibraries.LibsBuilder
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.button
+import dev.mooner.configdsl.options.info
+import dev.mooner.configdsl.utils.PeekType
+import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityAppInfoBinding
-import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.config.config
-import dev.mooner.starlight.plugincore.utils.Icon
-import dev.mooner.starlight.ui.config.ConfigAdapter
+import dev.mooner.starlight.plugincore.Info
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.utils.bindFadeImage
+import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.utils.getPackageInfo
 import dev.mooner.starlight.utils.openWebUrl
+import dev.mooner.starlight.utils.peek
 
 class AppInfoActivity : AppCompatActivity() {
 
@@ -27,23 +34,21 @@ class AppInfoActivity : AppCompatActivity() {
 
     private var devModeClicks: Int = 0
 
-    private val isDevMode get() = Session.globalConfig.category("dev").getBoolean("dev_mode", false)
+    private val isDevMode get() = GlobalConfig.category("dev").getBoolean("dev_mode", false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAppInfoBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        fitSystemBars(binding.root)
 
-        val pInfo: PackageInfo = applicationContext.packageManager.getPackageInfo(applicationContext.packageName, 0)
-        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-            pInfo.longVersionCode
-        else
-            pInfo.versionCode
+        val pInfo: PackageInfo = getPackageInfo()
+        val versionCode = PackageInfoCompat.getLongVersionCode(pInfo)
 
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.recyclerView)
-            structure { getConfig(pInfo, versionCode) }
-            savedData(emptyMap())
+            structure { getConfig(pInfo.versionName!!, versionCode) }
+            configData(hashMapOf())
             lifecycleOwner(this@AppInfoActivity)
         }.build()
 
@@ -52,23 +57,27 @@ class AppInfoActivity : AppCompatActivity() {
         binding.scroll.bindFadeImage(binding.imageViewLogo)
     }
 
-    private fun getConfig(pInfo: PackageInfo, versionCode: Number) = config {
+    private fun getConfig(versionName: String, versionCode: Number) = config {
+        val defaultColor = getColor(R.color.main_bright)
         category {
             id = "general"
             items {
-                button {
+                info {
                     id = "name"
                     title = "앱 버전"
-                    description = "v${pInfo.versionName}(build ${versionCode})"
+                    value = "v$versionName"
+                    description = "build $versionCode"
+                    copyable = true
                     icon = Icon.STAR
-                    iconTintColor = color { "#6455A1" }
+                    iconTintColor = defaultColor
                 }
-                button {
+                info {
                     id = "version"
                     title = "PluginCore 버전"
-                    description = "v${dev.mooner.starlight.plugincore.Info.PLUGINCORE_VERSION}"
+                    value = "v${Info.PLUGINCORE_VERSION}"
+                    copyable = true
                     icon = Icon.LAYERS
-                    iconTintColor = color { "#C073A0" }
+                    iconTintColor = defaultColor
                 }
                 button {
                     id = "github"
@@ -87,22 +96,22 @@ class AppInfoActivity : AppCompatActivity() {
                     id = "dev"
                     title = "무너"
                     icon = Icon.DEVELOPER_BOARD
-                    description = "ariel@mooner.dev"
-                    iconTintColor = color { "#3A1C71" }
+                    description = "siwol@mooner.dev"
+                    iconTintColor = defaultColor
                     setOnClickListener { _ ->
                         if (isDevMode) {
-                            Snackbar.make(binding.root, "이미 개발자 모드가 활성화되었습니다.", Snackbar.LENGTH_SHORT).show()
+                            peek("이미 개발자 모드가 활성화되었습니다.")
                         } else {
                             devModeClicks++
                             when(devModeClicks) {
                                 in 4..7 -> {
-                                    Snackbar.make(binding.root, "개발자 모드 활성화까지 ${8 - devModeClicks} 남았습니다.", Snackbar.LENGTH_SHORT).show()
+                                    peek("개발자 모드 활성화까지 ${8 - devModeClicks} 남았습니다.")
                                 }
                                 8 -> {
-                                    Session.globalConfig.edit {
+                                    GlobalConfig.edit {
                                         category("dev")["dev_mode"] = true
                                     }
-                                    Snackbar.make(binding.root, "개발자 모드 활성화", Snackbar.LENGTH_SHORT).show()
+                                    peek("개발자 모드 활성화", PeekType.SUCCESS)
                                 }
                             }
                         }
@@ -120,15 +129,15 @@ class AppInfoActivity : AppCompatActivity() {
                     id = "opensource_license"
                     title = "오픈소스 라이센스"
                     icon = Icon.DEVELOPER_MODE
-                    iconTintColor = color { "#D76D77" }
+                    iconTintColor = defaultColor
                     setOnClickListener { _ ->
-                        LibsBuilder().apply {
-                            withShowLoadingProgress(true)
-                            withAboutIconShown(true)
-                            withAboutVersionShown(true)
-                            withAboutAppName("Project StarLight")
-                            withEdgeToEdge(true)
-                        }.start(this@AppInfoActivity)
+                        LibsBuilder()
+                            .withShowLoadingProgress(true)
+                            .withAboutIconShown(true)
+                            .withAboutVersionShown(true)
+                            .withAboutAppName("Project ✦ StarLight")
+                            .withEdgeToEdge(true)
+                            .start(this@AppInfoActivity)
                     }
                 }
             }

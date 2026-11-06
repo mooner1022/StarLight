@@ -6,11 +6,15 @@
 
 package dev.mooner.starlight.plugincore.project
 
+import android.util.AtomicFile
+import androidx.core.util.readText
 import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.Session.projectManager
-import dev.mooner.starlight.plugincore.logger.Logger
-import kotlinx.serialization.decodeFromString
+import dev.mooner.starlight.plugincore.event.EventHandler
+import dev.mooner.starlight.plugincore.event.Events
+import dev.mooner.starlight.plugincore.logger.internal.Logger
 import java.io.File
+import java.io.FileNotFoundException
 
 class ProjectLoader(
     private val projectDir: File
@@ -21,26 +25,21 @@ class ProjectLoader(
         loadProjects(false)
     }
 
-    fun loadProjects(force: Boolean, dir: File = projectDir): List<Project> {
+    /** [precompile]: compile the enabled projects; a safe start leaves them off until the user acts. */
+    fun loadProjects(force: Boolean, dir: File = projectDir, precompile: Boolean = true): List<Project> {
         //projectDir.deleteRecursively()
         if (force || projects.isEmpty()) {
             projects.clear()
-            for (folder in dir.listFiles()?.filter { it.isDirectory }?:return emptyList()) {
+            val precompiledNames: MutableSet<String> = hashSetOf()
+            for (folder in dir.listFiles()?.filter { it.isDirectory } ?: return emptyList()) {
                 val info: ProjectInfo
                 try {
-                    info = getProjectConfig(folder)
+                    info = getProjectInfo(folder)
                     val project: Project
                     try {
-                        project = Project(folder, info)
-                        if (info.isEnabled) {
-                            try {
-                                project.compile(true)
-                            } catch (e: Exception) {
-                                Logger.w(T, "Failed to pre-compile project ${info.name}: $e")
-                                info.isEnabled = false
-                                project.saveInfo()
-                            }
-                        }
+                        project = ProjectImpl.loadFrom(folder, info)
+                        if (info.isEnabled && precompile)
+                            precompiledNames += info.name
                     } catch (e: IllegalArgumentException) {
                         e.printStackTrace()
                         Logger.e(T, e)
@@ -53,17 +52,56 @@ class ProjectLoader(
                     Logger.e(T, "Failed to load project '${folder.name}': $e")
                 }
             }
+            for (name in precompiledNames) {
+                val project = projects[name] ?: continue
+                if (project.info.isEnabled)
+                    precompile(project)
+            }
         }
         return projects.values.toList()
     }
 
-    private fun getProjectConfig(dir: File): ProjectInfo {
-        val result = dir.listFiles()?.find { it.isFile && it.name == "project.json" }
-            ?: throw IllegalStateException("Could not find project.json from ${dir.name}")
+    /**
+     * Loads one project folder that isn't loaded yet, such as an imported one, and announces it the way
+     * [ProjectManager.newProject] does. An enabled project is compiled first, as [loadProjects] does.
+     */
+    fun loadProject(dir: File): Project {
+        val info = getProjectInfo(dir)
+        require(projectManager.getProjectByName(info.name) == null) { "A project named '${info.name}' already exists" }
+        require(projectManager.getProjectById(info.id.toString()) == null) { "A project with id ${info.id} already exists" }
+        val project = ProjectImpl.loadFrom(dir, info)
+        projects[info.name] = project
+        if (info.isEnabled)
+            precompile(project)
+        EventHandler.fireEventWithScope(Events.Project.Create(project))
+        return project
+    }
+
+    /** Compiles an enabled project so it runs right away, or disables it if that fails. */
+    private fun precompile(project: Project) {
         try {
-            return json.decodeFromString(result.readText(Charsets.UTF_8))
+            project.compile(true)
         } catch (e: Exception) {
-            throw IllegalArgumentException("Could not parse project.json from ${dir.name}")
+            Logger.w(T, "Failed to pre-compile project ${project.info.name}: $e")
+            project.info.isEnabled = false
+            project.saveInfo()
+        }
+    }
+
+    /** Reads a project folder's project.json. */
+    fun readProjectInfo(dir: File): ProjectInfo =
+        getProjectInfo(dir)
+
+    private fun getProjectInfo(dir: File): ProjectInfo {
+        val raw = try {
+            AtomicFile(File(dir, "project.json")).readText()
+        } catch (_: FileNotFoundException) {
+            throw IllegalStateException("Could not find project.json from ${dir.name}")
+        }
+        try {
+            return json.decodeFromString(raw)
+        } catch (_: Exception) {
+            throw IllegalArgumentException("Failed to parse project.json from ${dir.name}")
         }
     }
 

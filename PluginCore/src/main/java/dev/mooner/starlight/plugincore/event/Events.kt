@@ -6,40 +6,111 @@
 
 package dev.mooner.starlight.plugincore.event
 
+import android.content.Context
+import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
 import dev.mooner.starlight.plugincore.logger.LogData
+import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
+import dev.mooner.starlight.plugincore.project.ProjectID
 import kotlinx.coroutines.CoroutineScope
 import dev.mooner.starlight.plugincore.project.Project as SProject
+import dev.mooner.starlight.plugincore.translation.Locale as LocaleEnum
 
 sealed class Events {
 
+    sealed class Notification {
+
+        class Post(
+            val statusBarNotification: StatusBarNotification,
+            val context: Context,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+
+        class Dismiss(
+            val sbn: StatusBarNotification,
+            val rankingMap: NotificationListenerService.RankingMap,
+            val reason: Int,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+
+        class Click(
+            val notificationId: Int,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+    }
+
+    sealed class Message {
+
+        class Create(
+            val message: dev.mooner.starlight.plugincore.chat.Message,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+    }
+
     sealed class Project {
 
-        class ProjectCreateEvent(
+        class Create(
             val project: SProject,
-            val coroutineScope: CoroutineScope = eventCoroutineScope
+            val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
 
-        class ProjectInfoUpdateEvent(
+        class InfoUpdate(
             val project: SProject,
-            val coroutineScope: CoroutineScope = eventCoroutineScope
+            val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
 
-        class ProjectCompileEvent(
+        class Compile(
             val project: SProject,
-            val coroutineScope: CoroutineScope = eventCoroutineScope
+            val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
 
-        class ProjectDeleteEvent(
-            val projectName: String,
-            val coroutineScope: CoroutineScope = eventCoroutineScope
+        class Delete(
+            val projectName : String,
+            val projectId   : ProjectID,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
     }
 
     sealed class Log {
 
-        class LogCreateEvent(
+        class Create(
             val log: LogData,
-            val coroutineScope: CoroutineScope = eventCoroutineScope
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+    }
+
+    sealed class Config {
+
+        class GlobalConfigUpdate(
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+    }
+
+    sealed class Plugin {
+
+        /** Fired by [StarlightPlugin.requestSetup] when a plugin needs its setup again. */
+        class SetupRequested(
+            val plugin: StarlightPlugin,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+    }
+
+    sealed class Scheme {
+
+        data class SchemeOpenEvent(
+            val params: Map<String, String>,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
+        ): Event, CoroutineScope by coroutineScope
+    }
+
+    sealed class Locale {
+
+        /**
+         * @warn This event should be only fired from main application, or system can break!
+         */
+        class Update(
+            val locale: LocaleEnum,
+            val coroutineScope: CoroutineScope = eventHandlerScope()
         ): Event, CoroutineScope by coroutineScope
     }
 }

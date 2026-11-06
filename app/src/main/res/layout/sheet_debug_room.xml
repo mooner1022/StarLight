@@ -36,12 +36,12 @@
         app:layout_constraintTop_toTopOf="parent"/>
 
     <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/configRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginStart="@dimen/card_margin_horizontal"
         android:layout_marginEnd="@dimen/card_margin_horizontal"
         android:layout_marginTop="16dp"
-        android:id="@+id/configRecyclerView"
         android:overScrollMode="never"
         android:nestedScrollingEnabled="true"
         android:clipToPadding="false"

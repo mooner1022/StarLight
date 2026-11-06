@@ -6,18 +6,21 @@
 
 package dev.mooner.starlight.plugincore.language
 
-import android.view.View
+import android.util.AtomicFile
+import androidx.annotation.CallSuper
+import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.Session.json
 import dev.mooner.starlight.plugincore.api.Api
-import dev.mooner.starlight.plugincore.config.ConfigStructure
-import dev.mooner.starlight.plugincore.config.TypedString
-import dev.mooner.starlight.plugincore.config.category.ConfigCategory
-import dev.mooner.starlight.plugincore.config.category.internal.ConfigCategoryImpl
+import dev.mooner.starlight.plugincore.config.data.category.ConfigCategory
+import dev.mooner.starlight.plugincore.config.data.category.internal.ConfigCategoryImpl
+import dev.mooner.starlight.plugincore.pipeline.Pipeline
 import dev.mooner.starlight.plugincore.pipeline.stage.LanguageStage
 import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
+import dev.mooner.starlight.plugincore.pipeline.stage.plumber
 import dev.mooner.starlight.plugincore.project.Project
-import kotlinx.serialization.decodeFromString
+import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import dev.mooner.starlight.plugincore.utils.TimeUtils
+import dev.mooner.starlight.plugincore.utils.readConfigData
 import java.io.File
 
 abstract class Language {
@@ -43,30 +46,106 @@ abstract class Language {
     abstract val requireRelease: Boolean
 
     /**
-     * List of config objects injected in project config.
+     * How many events of a project may run at once unless the project sets its own limit. 1 suits an engine whose
+     * script runs on one thread at a time, where more calls would only wait for each other.
      */
-    open val configStructure: ConfigStructure = listOf()
+    open val defaultConcurrency: Int = 3
+
+    /**
+     * List of config objects inserted in project config.
+     * Only category which has same ID with language is inserted.
+     */
+    open val configStructure: ConfigStructure = emptyList()
+
+    /**
+     * List of default code config objects inserted in project creation dialog.
+     */
+    open val defaultCodeStructure: ConfigStructure = emptyList()
 
     /**
      * Default code used when a project is created.
+     *
+     * %HEADER% - Position for header content
+     * %BODY% - Position for main code
      */
-    abstract val defaultCode: String
+    open val defaultCode: String = """
+            %HEADER%
+            %BODY%
+        """.trimIndent()
+
+    open val codeGenerator: CodeGenerator = DefaultJSCodeGenerator()
+
+    /** Globals the engine provides itself; an [Api] with one of these names isn't added to its scripts. */
+    open val nativeGlobals: Set<String> = emptySet()
+
+    open fun formatDefaultCode(fileName: String, events: List<ProjectEvent>): String {
+        // TODO: Change with user-updatable comment
+        val defaultComment = codeGenerator.generateComment(
+            isMultiLine = true,
+            isDocument = false,
+            content = "$fileName created with Project StarLight ✦\nCreated on ${TimeUtils.formatCurrentDate("dd/MM/yy hh:mm a")}"
+        )
+
+        val imports: MutableSet<String> = hashSetOf()
+
+        val emitted: MutableSet<String> = hashSetOf()
+        val body = buildString {
+            for (event in events) {
+                val generated = event.generateCode(codeGenerator)
+                append("\n")
+                if (event.functionComment != null)
+                    append(codeGenerator.generateComment(
+                        isMultiLine = true,
+                        isDocument = true,
+                        content = event.functionComment!!
+                    )).append("\n")
+                if (!emitted.add(event.functionName)) {
+                    append(codeGenerator
+                        .generateComment(
+                            isMultiLine = false,
+                            isDocument = false,
+                            content = "동일한 함수명의 이벤트가 두 개 이상 발견되어 주석 처리 되었습니다."
+                        )
+                    ).append("\n").append(
+                        codeGenerator.generateComment(
+                            isMultiLine = true,
+                            isDocument = false,
+                            content = generated.function
+                        )
+                    ).append("\n")
+                    continue
+                }
+                imports += generated.imports
+                append(generated.function).append("\n")
+            }
+        }
+
+        val header = defaultComment + imports.joinToString("\n")
+            .let { if (it.isNotBlank()) "\n${it}" else it }
+
+        return defaultCode
+            .replace(PLACEHOLDER_HEADER, header)
+            .replace(PLACEHOLDER_BODY, body)
+    }
 
     /**
      * Called when the value of config object defined above is saved to a local file.
      *
      * @param updated [Map] that contains id as key and updated value as value
      */
-    open fun onConfigUpdated(updated: Map<String, Any>) {}
+    @CallSuper
+    open fun onConfigUpdated(updated: Map<String, Any>) {
+        // Invalidate cache for lazy loading
+        configCache = null
+    }
 
     /**
      * Called when the value of config object defined above is updated.
      *
      * @param id id of config object
-     * @param view view which the config object is being drawn
      * @param data updated value
      */
-    open fun onConfigChanged(id: String, view: View?, data: Any) {}
+    open fun onConfigChanged(id: String, data: Any) {}
 
     /**
      * Compiles code with given code and apis
@@ -77,14 +156,23 @@ abstract class Language {
      *
      * @return scope of compilation result
      */
-    abstract fun compile(code: String, apis: List<Api<*>>, project: Project?): Any
+    abstract fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any
 
     /**
-     * Releases the compiled scope
+     * Releases the compiled scope.
+     * Should be called after scope evaluation, only if language requires release.
      *
      * @param scope scope which is compiled and used
      */
     open fun release(scope: Any) {}
+
+    /**
+     * Destroys and releases the scope, with all resources it was holding.
+     * Should be called on the last stage of scope lifecycle.
+     *
+     * @param scope scope which is compiled and used
+     */
+    open fun destroy(scope: Any) {}
 
     /**
      * Calls a function defined in the scope with arguments provided
@@ -92,19 +180,21 @@ abstract class Language {
      * @param scope scope which is compiled and used
      * @param functionName name of the function being called
      * @param args arguments passed to the function being called
-     * @param onError callback called when an error occurs while running.
+     * @return return value of the called function
      */
-    abstract fun callFunction(scope: Any, functionName: String, args: Array<out Any>, onError: (e: Exception) -> Unit = {})
+    abstract fun callFunction(scope: Any, functionName: String, args: Array<out Any>): Any?
 
     /**
      * Compiles and runs a code instantly
      *
-     * @param code code to execute
+     * @param code [String] code to execute
+     * @param options [Map] that contains options as key and value
      * @return [Any] value returned by the executed code
      */
-    abstract fun eval(code: String): Any
+    abstract fun eval(code: String, options: Map<String, String> = emptyMap()): Any
 
     private var configFile: File? = null
+    private var configCache: ConfigCategory? = null
 
     internal fun setConfigFile(path: File) {
         configFile = path
@@ -131,34 +221,51 @@ abstract class Language {
      * @return the deserialized object of config values, wrapped with [ConfigCategory]
      */
     protected fun getLanguageConfig(): ConfigCategory {
-        val data = if (configFile == null || !configFile!!.isFile || !configFile!!.exists()) mapOf() else {
-            val raw = configFile!!.readText()
-            val typed: Map<String, Map<String, TypedString>> =
-                if (raw.isNotBlank())
-                    json.decodeFromString(raw)
-                else
-                    emptyMap()
-            typed[id]?: emptyMap()
-        }
+        return configCache ?: loadLanguageConfig().also { configCache = it }
+    }
+
+    private fun loadLanguageConfig(): ConfigCategory {
+        val data = configFile
+            ?.let { AtomicFile(it).readConfigData()[id] }
+            ?: emptyMap()
         return ConfigCategoryImpl(data)
     }
 
-    protected fun getAsset(directory: String): File = File(Session.languageManager.getAssetPath(id), directory)
+    protected fun getAsset(directory: String): File =
+        File(Session.languageManager.getAssetPath(id), directory)
 
-    protected fun getAssetOrNull(directory: String): File? = with(getAsset(directory)) {
-        if (exists() && canRead()) this
-        else null
+    protected fun getAssetOrNull(directory: String): File? =
+        with(getAsset(directory)) {
+            if (exists() && canRead()) this
+            else null
+        }
+
+    fun getIconFile(): File =
+        getAsset("icon.png")
+
+    fun getIconFileOrNull(): File? =
+        getAssetOrNull("icon.png")
+
+    open fun toPipeline(): Pipeline<Pair<Project, String>, Any> {
+        return plumber {
+            initial<Pair<Project, String>, Any>(id, name) { (project, code) ->
+                compile(code, Session.apiManager.getApis(project.info.apiLevels, this@Language), project, project.getClassLoader())
+            }
+        }
     }
 
-    fun getIconFile(): File = getAsset("icon.png")
-
-    fun getIconFileOrNull(): File? = getAssetOrNull("icon.png")
-
-    fun toPipelineStage(): PipelineStage<Pair<Project, String>, Any> = LanguageStage(
+    @Deprecated("Deprecated, use toPipeline().")
+    open fun toPipelineStage(): PipelineStage<Pair<Project, String>, Any> = LanguageStage(
         id = this.id,
         name = this.name,
         run = { project, code ->
-            compile(code, Session.apiManager.getApis(), project)
+            compile(code, Session.apiManager.getApis(project.info.apiLevels, this@Language), project, project.getClassLoader())
         }
     )
+
+    companion object {
+
+        const val PLACEHOLDER_HEADER = "%HEADER%"
+        const val PLACEHOLDER_BODY   = "%BODY%"
+    }
 }

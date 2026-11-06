@@ -6,11 +6,17 @@
 
 package dev.mooner.starlight.plugincore.project
 
-import dev.mooner.starlight.plugincore.Session.eventManager
+import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.Events
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
+import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
+import dev.mooner.starlight.plugincore.project.event.getInstance
 import java.io.File
-import kotlin.reflect.full.createInstance
+import java.util.*
+import kotlin.reflect.KClass
+
+typealias ProjectFailureCallback = (project: Project, e: Throwable) -> Unit
 
 class ProjectManager(
     private val projectDir: File
@@ -25,69 +31,91 @@ class ProjectManager(
         return projects.values.toList()
     }
 
-    fun getProject(name: String): Project? {
-        return projects[name]
+    @JvmOverloads
+    fun getProjectByName(name: String, ignoreCase: Boolean = false): Project? {
+        return if (ignoreCase) {
+            projects.keys
+                .find { it.equals(name, ignoreCase = true) }
+                ?.let(projects::get)
+        } else {
+            projects[name]
+        }
+    }
+
+    fun getProjectById(id: String): Project? {
+        val uuid = UUID.fromString(id)
+        return projects.values.find { it.info.id == uuid }
     }
 
     fun updateProjectInfo(name: String, callListener: Boolean = false, block: ProjectInfo.() -> Unit) {
-        val project = projects[name]?: throw IllegalArgumentException("Cannot find project [$name]")
+        val project = projects[name] ?: throw IllegalArgumentException("Cannot find project [$name]")
         project.info.block()
         project.saveInfo()
-        if (callListener) {
-            eventManager.fireEventWithContext(Events.Project.ProjectInfoUpdateEvent(project))
-        }
+        if (callListener)
+            project.requestUpdate()
     }
 
-    fun newProject(info: ProjectInfo, dir: File = projectDir) {
-        Project.create(dir, info).also { project ->
+    fun newProject(info: ProjectInfo, dir: File = projectDir, events: Map<String, ProjectEvent>) {
+        ProjectImpl.create(dir, info, events).also { project ->
             projects[info.name] = project
-            eventManager.fireEventWithContext(Events.Project.ProjectCreateEvent(project))
+            EventHandler.fireEventWithScope(Events.Project.Create(project))
         }
     }
 
-    fun newProject(dir: File = projectDir, block: ProjectInfoBuilder.() -> Unit) {
+    fun newProject(dir: File = projectDir, events: Map<String, ProjectEvent>, block: ProjectInfoBuilder.() -> Unit) {
         val info = ProjectInfoBuilder().apply(block).build()
-        newProject(info, dir)
+        newProject(info, dir, events)
     }
 
-    fun fireEvent(eventId: String, functionName: String, args: Array<out Any>, onFailure: (project: Project, e: Throwable) -> Unit) {
-        //if (!Session.eventManager.hasEvent(eventId)) {
-        //    Logger.e(ProjectManager::class.simpleName, "Rejecting event call from '$eventId' which is not registered on EventManager")
-        //    return
-        //}
-        projects.values
-            .filter { it.isCompiled && it.info.isEnabled && it.isEventCallAllowed(eventId) }
-            .let { availableProjects ->
-                if (availableProjects.isEmpty()) return
-                for (project in availableProjects) {
-                    project.callFunction(functionName, args) { e -> onFailure(project, e) }
-                }
-            }
+    fun fireEvent(eventClass: KClass<ProjectEvent>, args: Array<out Any>, onFailure: ProjectFailureCallback) {
+        if (!Session.isInitComplete)
+            return
+
+        val eventId = ProjectEventManager.validateAndGetEventID(eventClass)
+            ?: error("Non-registered event: ${eventClass.qualifiedName}")
+
+        val targets = projects.values.filter { project ->
+            project.isCompiled && project.info.isEnabled && project.isEventCallAllowed(eventId)
+        }
+        if (targets.isEmpty())
+            return
+
+        val event = eventClass.getInstance()
+        val actualTypes = event.argTypes
+            .map { it.type }
+        if (actualTypes.size < args.size)
+            error("Argument length mismatch, required: ${actualTypes.size}, provided: ${args.size}")
+
+        for (i in args.indices) {
+            val eArg = actualTypes[i]
+            if (!eArg.javaObjectType.isInstance(args[i]))
+                error("Argument type mismatch on position ${i}, required: ${eArg}, provided: ${args[i]::class}")
+        }
+
+        for (project in targets)
+            event.dispatch(project, args) { e -> onFailure(project, e) }
     }
 
-    fun removeProject(project: Project, removeFiles: Boolean = true) {
+    fun removeProject(project: Project, removeFiles: Boolean = true) =
         removeProject(project.info.name, removeFiles)
-    }
 
     fun removeProject(name: String, removeFiles: Boolean = true) {
-        projects[name]?.let {
-            if (removeFiles)
-                it.directory.deleteRecursively()
-            projects -= name
-        }
-        eventManager.fireEventWithContext(Events.Project.ProjectDeleteEvent(name))
+        val project = projects[name] ?: return
+
+        if (project.isCompiled)
+            project.destroy()
+        if (removeFiles)
+            project.directory.deleteRecursively()
+        projects -= name
+        EventHandler.fireEventWithScope(Events.Project.Delete(name, project.info.id))
     }
 
-    internal fun purge() = projects.forEach { (_, u) -> u.destroy(requestUpdate = true) }
+    /** Stops every project as the app shuts down; the ones that are on stay on for the next start. */
+    internal fun purge() =
+        projects.forEach { (_, project) -> (project as? ProjectImpl)?.shutdown() ?: project.destroy(requestUpdate = false) }
 }
 
-inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, noinline onFailure: (project: Project, e: Throwable) -> Unit = { _, _ -> }) {
-    val event = T::class.createInstance().also { event ->
-        for ((index, arg) in event.argTypes.withIndex()) {
-            //Logger.v("${arg.jvmName}, ${args[index]::class.jvmName}")
-            if (arg != args[index]::class)
-                error("Passed argument types [${args.joinToString { clazz -> clazz::class.simpleName.toString() }}] do not match the required argument types: [${event.argTypes.joinToString { clazz -> clazz.simpleName.toString() }}]")
-        }
-    }
-    this.fireEvent(event.id, event.functionName, args, onFailure)
+@Suppress("UNCHECKED_CAST")
+inline fun <reified T: ProjectEvent> ProjectManager.fireEvent(vararg args: Any, noinline onFailure: ProjectFailureCallback = { _, _ -> }) {
+    this.fireEvent(eventClass = T::class as KClass<ProjectEvent>, args, onFailure)
 }

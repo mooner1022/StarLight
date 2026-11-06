@@ -7,9 +7,11 @@ data class Version(
     val major: Int,
     val minor: Int,
     val patch: Int,
-    val build: Int? = null
-) {
+    val build: String? = null,
+): Comparable<Version> {
     companion object {
+
+        @JvmStatic
         fun fromString(string: String): Version {
             if (string.count{ it == '.' } < 2) throw IllegalArgumentException("Illegal version string")
             try {
@@ -19,13 +21,14 @@ data class Version(
                     major = split[0].toInt(),
                     minor = split[1].toInt(),
                     patch = split[2].toInt(),
-                    build = if (split.size > 3) split[3].toIntOrNull() else null
+                    build = if (split.size > 3) split[3] else null
                 )
             } catch (e: Exception) {
                 throw IllegalArgumentException("Failed to parse version string: $e")
             }
         }
 
+        @JvmStatic
         fun check(string: String): Boolean {
             if (string.count{ it == '.' } < 2) return false
             try {
@@ -34,7 +37,7 @@ data class Version(
                 repeat(3) { index ->
                     if (split[index].toIntOrNull() == null) return false
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 return false
             }
             return true
@@ -42,7 +45,7 @@ data class Version(
     }
 
     override fun toString(): String =
-        (if (build != null) arrayOf(major, minor, patch, build) else arrayOf(major, minor, patch)).joinToString(".")
+        listOfNotNull(major, minor, patch, build).joinToString(".")
 
     override fun equals(other: Any?): Boolean = when(other) {
         null -> false
@@ -52,7 +55,7 @@ data class Version(
     }
 
     fun isCompatibleWith(version: Version): Boolean =
-        version.major == this.major
+        version.major == this.major && version.minor == this.minor
 
     infix fun compatibleWith(version: Version): Boolean =
         isCompatibleWith(version)
@@ -60,8 +63,14 @@ data class Version(
     infix fun incompatibleWith(version: Version): Boolean =
         !isCompatibleWith(version)
 
+    override fun compareTo(other: Version): Int =
+        compareValuesBy(this, other, Version::major, Version::minor, Version::patch)
+
     infix fun newerThan(target: Version): Boolean =
-        this.major > target.major && this.minor > target.minor && this.patch > target.patch
+        this > target
+
+    infix fun newerThan(target: String): Boolean =
+        newerThan(fromString(target))
 
     override fun hashCode(): Int {
         var result = major.hashCode()

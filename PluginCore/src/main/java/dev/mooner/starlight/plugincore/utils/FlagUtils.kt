@@ -6,13 +6,16 @@
 
 package dev.mooner.starlight.plugincore.utils
 
-fun flagOf(vararg flags: Int): Int {
+typealias BitFlag = Int
+typealias Flags   = Int
+
+fun flagOf(vararg flags: Flags): Flags {
     val result = 0x0
     for (flag in flags)
         result or flag
     return result
 }
 
-infix fun Int.addFlag(flag: Int): Int = this or flag
+infix fun Flags.addFlag(flag: BitFlag): Flags = this or flag
 
-infix fun Int.hasFlag(flag: Int): Boolean = (this and flag) != 0
+infix fun Flags.hasFlag(flag: BitFlag): Boolean = (this and flag) != 0

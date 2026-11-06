@@ -1,0 +1,769 @@
+/*
+ * DebugRoomFragment.kt created by Minki Moon(mooner1022) on 22. 12. 28. 오후 8:25
+ * Copyright (c) mooner1022. all rights reserved.
+ * This code is licensed under the GNU General Public License v3.0.
+ */
+
+package dev.mooner.starlight.ui.debugroom
+
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Bundle
+import android.view.KeyEvent
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.ViewGroup.MarginLayoutParams
+import android.widget.Toast
+import androidx.annotation.ColorRes
+import androidx.annotation.DrawableRes
+import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
+import androidx.core.view.updateMarginsRelative
+import androidx.core.widget.doAfterTextChanged
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.github.dhaval2404.imagepicker.ImagePicker
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import dev.mooner.configdsl.ConfigStructure
+import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.adapters.ConfigAdapter
+import dev.mooner.configdsl.config
+import dev.mooner.configdsl.options.*
+import dev.mooner.peekalert.PeekAlert
+import dev.mooner.starlight.PACKAGE_KAKAO_TALK
+import dev.mooner.starlight.R
+import dev.mooner.starlight.databinding.FragmentDebugRoomBinding
+import dev.mooner.starlight.listener.event.Api2CommandEvent
+import dev.mooner.starlight.listener.event.Api2MessageEvent
+import dev.mooner.starlight.listener.event.LegacyEvent
+import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
+import dev.mooner.starlight.listener.legacy.ImageDB
+import dev.mooner.starlight.listener.legacy.Replier
+import dev.mooner.starlight.logging.bindLogNotifier
+import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.chat.ChatSender
+import dev.mooner.starlight.plugincore.chat.DebugChatRoom
+import dev.mooner.starlight.plugincore.chat.MediaFile
+import dev.mooner.starlight.plugincore.chat.Message
+import dev.mooner.starlight.plugincore.config.GlobalConfig
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.utils.fireEvent
+import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
+import dev.mooner.starlight.utils.createSimplePeek
+import dev.mooner.starlight.utils.dp
+import dev.mooner.starlight.utils.hideFromGallery
+import dev.mooner.starlight.utils.peek
+import dev.mooner.starlight.utils.toBitmap
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import java.io.File
+import java.util.*
+import kotlin.properties.Delegates.notNull
+
+private val logger = LoggerFactory.logger {  }
+
+private const val RESULT_BOT       = 0x0
+private const val RESULT_USER      = 0x1
+private const val ARG_PROJECT_NAME = "projectName"
+private const val ARG_SHOW_LEAVE   = "showLeave"
+private const val ARG_FIXED_PAD    = "fixedPadding"
+
+private const val CHATS_FILE_NAME = "chats.json"
+
+class DebugRoomFragment: Fragment() {
+
+    private var _binding: FragmentDebugRoomBinding? = null
+    val binding get() = _binding!!
+
+    /** Saves one at a time and in order, so the file ends with the latest list. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val saveDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private lateinit var chatList: MutableList<DebugRoomMessage>
+    private var userChatAdapter: DebugRoomChatAdapter? = null
+    val dir: File by lazy {
+        val directory = project.directory.resolve(DIR_NAME)
+        if (!directory.exists()) directory.mkdirs()
+        directory
+    }
+
+    private lateinit var projectName: String
+    private var showLeave       = true
+    private var fixedPadding    = false
+    private var roomName        = "undefined"
+    private var sender          = "debug_sender"
+    private var botName         = "BOT"
+    private var sentPackage     = PACKAGE_KAKAO_TALK
+    private var isGroupChat     = false
+    private var sendOnEnter     = false
+
+    //private lateinit var botProfileBitmap: Bitmap
+    private lateinit var selfProfileBitmap: Bitmap
+
+    private var bottomSheetState: Int = BottomSheetBehavior.STATE_COLLAPSED
+
+    private lateinit var project: Project
+    private var configAdapter: ConfigAdapter? = null
+    private var imageHash: Int = 0
+    private var roomId: String by notNull()
+
+    private val onSend: (msg: String) -> Unit = { msg ->
+        val viewType = if (msg.length >= 500)
+            DebugRoomChatAdapter.CHAT_BOT_LONG
+        else
+            DebugRoomChatAdapter.CHAT_BOT
+        addMessage(botName, msg, viewType, false)
+    }
+    private val replier = Replier { _, msg, _ ->
+        onSend(msg)
+        true
+    }
+    private val onSendMedia: (media: List<MediaFile>) -> Unit = { media ->
+        // The files are only there until this returns, so each is copied before it is shown.
+        for (file in media)
+            addMedia(botName, file)
+    }
+    private val onMarkAsRead: () -> Unit = {
+        activity?.runOnUiThread {
+            activity?.peek("읽음 처리 호출됨", position = PeekAlert.Position.Top)
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        imageHash    = 0
+        roomId       = GlobalConfig.category("d_room").let { category ->
+            if (!category.contains("id"))
+                category["id"] = UUID.randomUUID().toString()
+            category.getString("id")!!
+        }
+        projectName  = arguments?.getString(ARG_PROJECT_NAME) ?: "ERROR: Project name not defined"
+        showLeave    = arguments?.getBoolean(ARG_SHOW_LEAVE)  ?: true
+        fixedPadding = arguments?.getBoolean(ARG_FIXED_PAD)   ?: false
+    }
+
+    @SuppressLint("SetTextI18n")
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentDebugRoomBinding.inflate(inflater, container, false)
+
+        val activity = requireActivity()
+        activity.bindLogNotifier()
+
+        binding.roomTitle.text = if (roomName == "undefined") projectName else roomName
+
+        project = Session.projectManager.getProjectByName(projectName) ?: let {
+            Toast.makeText(activity, "프로젝트 '${projectName}'을 찾을 수 없어요 :(", Toast.LENGTH_LONG).show()
+            return binding.root
+        }
+
+        updateConfig()
+
+        val selfProfilePath = GlobalConfig.category("d_user").getString("profile_image_path")
+        selfProfileBitmap = if (selfProfilePath == null) {
+            loadBitmapFromResource(R.drawable.default_profile)
+        } else {
+            runCatching {
+                loadBitmapFromFile(File(selfProfilePath))
+            }.onFailure {
+                Toast.makeText(activity, "프로필 사진 '$selfProfilePath'를 찾을 수 없어 기본 프로필로 대체했어요.", Toast.LENGTH_LONG).show()
+                GlobalConfig.edit {
+                    category("d_user").remove("profile_image_path")
+                }
+            }.getOrElse {
+                loadBitmapFromResource(R.drawable.default_profile)
+            }
+        }
+
+        val listFile = dir.resolve(CHATS_FILE_NAME)
+        chatList = if (listFile.exists() && listFile.isFile)
+            Session.json.decodeFromString(listFile.readText())
+        else
+            mutableListOf()
+
+        userChatAdapter = DebugRoomChatAdapter(activity, dir, chatList, chatStyle())
+        updateEmptyHint()
+
+        binding.chatRecyclerView.apply {
+            adapter = userChatAdapter
+            // Kept at the bottom, as chats are, while images that load late change heights above.
+            layoutManager = LinearLayoutManager(activity).apply { stackFromEnd = true }
+            // New messages enter on their own (DebugRoomChatAdapter.markEntering); the default animations
+            // wait for the list to move first and cross-fade the bubble before, so a quick reply looked late.
+            itemAnimator = null
+            if (chatList.isNotEmpty()) {
+                scrollToPosition(chatList.size - 1)
+            }
+        }
+
+        binding.sendButton.setOnClickListener {
+            if (binding.messageInput.text.toString().isBlank()) return@setOnClickListener
+            send(binding.messageInput.text.toString())
+            binding.messageInput.setText("")
+        }
+        binding.messageInput.doAfterTextChanged { text ->
+            val canSend = !text.isNullOrBlank()
+            binding.sendButton.isEnabled = canSend
+            binding.sendButton.alpha = if (canSend) 1f else 0.4f
+        }
+
+        binding.openSettings.setOnClickListener {
+            val behavior = BottomSheetBehavior.from(binding.bottomSheet.root)
+            behavior.state = if (behavior.state == BottomSheetBehavior.STATE_EXPANDED)
+                BottomSheetBehavior.STATE_COLLAPSED
+            else
+                BottomSheetBehavior.STATE_EXPANDED
+        }
+
+        BottomSheetBehavior.from(binding.bottomSheet.root)
+            .addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                bottomSheetState = newState
+            }
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+        })
+
+        configAdapter = ConfigAdapter.Builder(activity) {
+            bind(binding.bottomSheet.configRecyclerView)
+            structure(::getStructure)
+            configData(GlobalConfig.getMutableData())
+            onValueUpdated { parentId, id, value, jsonData ->
+                GlobalConfig.edit {
+                    // The theme's own color is kept unset, so the bubble follows light and dark again.
+                    if (id == "chat_color" && value == themeBubbleColor(parentId))
+                        category(parentId).remove(id)
+                    else
+                        category(parentId).setRaw(id, jsonData)
+                }
+                updateConfig()
+            }
+        }.build()
+
+        if (fixedPadding) {
+            binding.bottomSheet.configRecyclerView.apply {
+                updateLayoutParams<MarginLayoutParams> {
+                    val px = dp(20)
+                    updateMarginsRelative(
+                        start = px,
+                        end = px
+                    )
+                }
+                //requestLayout()
+            }
+        }
+
+        if (showLeave) {
+            binding.leave.setOnClickListener {
+                activity.finish()
+            }
+        } else {
+            binding.leave.visibility = View.GONE
+        }
+
+        return binding.root
+    }
+
+
+    private fun loadBitmapFromResource(@DrawableRes res: Int): Bitmap =
+        BitmapFactory.decodeResource(resources, res)
+
+    private fun loadBitmapFromFile(file: File): Bitmap =
+        Uri.fromFile(file).toBitmap(requireContext())
+
+    @SuppressLint("CheckResult")
+    private fun send(message: String) {
+        val hasMention = mentionRegex.containsMatchIn(message)
+        val actualMessage: String = if (hasMention) {
+            val mentionedNames = mentionRegex.findAll(message).map { it.value.drop(2).dropLast(1) }
+            var mMsg: String = message
+            for (name in mentionedNames)
+                mMsg = mMsg.replace("<@$name>", "@$name")
+            mMsg
+        } else
+            message
+
+        val viewType = if (actualMessage.length >= 500) DebugRoomChatAdapter.CHAT_SELF_LONG else DebugRoomChatAdapter.CHAT_SELF
+        addMessage(sender, actualMessage, viewType, true)
+        val data = Message(
+            image = null,
+            message = actualMessage,
+            sender = ChatSender(
+                name = sender,
+                id = null,
+                profileBitmap = selfProfileBitmap
+            ),
+            room = DebugChatRoom(
+                id = roomId,
+                name = roomName,
+                isGroupChat = isGroupChat,
+                onSend = onSend,
+                onMarkAsRead = onMarkAsRead,
+                onSendMedia = onSendMedia,
+            ),
+            packageName = sentPackage,
+            hasMention = hasMention,
+            chatLogId = -1L
+        )
+
+        project.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::showErrorPeek)
+
+        // Called only if the project's levels and allowed events include it.
+        project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, replier, ImageDB(selfProfileBitmap),
+            onFailure = ::showErrorPeek)
+        project.fireEvent<Api2MessageEvent>(data, onFailure = ::showErrorPeek)
+        project.fireEvent<Api2CommandEvent>(data, onFailure = ::showErrorPeek)
+    }
+
+    private fun showErrorPeek(e: Throwable) {
+        val activity = activity ?: return
+        activity.runOnUiThread {
+            if (activity.isFinishing || activity.isDestroyed)
+                return@runOnUiThread
+            activity.createSimplePeek(
+                title = project.info.name,
+                text = e.toString()
+            ) {
+                paddingDp = 12
+                iconRes = R.drawable.ic_round_error_outline_24
+                backgroundColor(res = R.color.code_error)
+                action("자세히 보기") {
+                    textColor(res = R.color.black)
+                    setOnActionListener { view ->
+                        view.context.showSheet {
+                            title = project.info.name + " 에러 로그"
+                            icon = R.drawable.ic_round_error_outline_24
+                            message = e.toString() + "\n\nstacktrace:\n" + e.stackTraceToString()
+                            isMessageSelectable = true
+                            cancelOnTouchOutside = false
+                            positive(R.string.close)
+                        }
+                    }
+                }
+            }.apply {
+                setTitleColor(res = R.color.white)
+                setTextColor(res = R.color.white)
+            }.peek()
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun addMessage(sender: String, msg: String, viewType: Int, clearInput: Boolean) {
+        val message = if (msg.length >= 500) {
+            val fileName = UUID.randomUUID().toString() + ".chat"
+            File(dir, "chats").apply {
+                mkdirs()
+                resolve(fileName).writeText(msg)
+            }
+            DebugRoomMessage(
+                sender = sender,
+                message = msg.substring(0..499).replace("\u200b", ""),
+                fileName = fileName,
+                viewType = viewType
+            )
+        } else {
+            DebugRoomMessage(
+                sender = sender,
+                message = msg,
+                viewType = viewType
+            )
+        }
+        appendMessage(message, clearInput)
+    }
+
+    /**
+     * Keeps a copy of [media] under `chats/media/` and shows it as the bot's message. The room's folder is in the
+     * shared StarLight folder, so it is kept out of the gallery; clearing the chat deletes it, so this checks each time.
+     */
+    private fun addMedia(sender: String, media: MediaFile) {
+        val extension = media.name.substringAfterLast('.', "").takeIf { it.isNotEmpty() }?.let { ".$it" }.orEmpty()
+        val stored = "media/" + UUID.randomUUID().toString() + extension
+        dir.hideFromGallery(context)
+        val copy = File(dir, "chats").resolve(stored)
+        copy.parentFile?.mkdirs()
+        media.file.copyTo(copy, overwrite = true)
+        appendMessage(
+            DebugRoomMessage(
+                sender = sender,
+                message = media.name,
+                fileName = stored,
+                viewType = DebugRoomChatAdapter.CHAT_BOT_MEDIA,
+                mimeType = media.mimeType,
+            ),
+            clearInput = false,
+        )
+    }
+
+    /**
+     * Adds [message] on the main thread, where the list is read, and saves the chat. Replies can come after the
+     * screen closed, from a timer or a send that finished late; they are still saved.
+     */
+    private fun appendMessage(message: DebugRoomMessage, clearInput: Boolean) {
+        val activity = activity
+        if (activity == null) {
+            synchronized(chatList) { chatList += message }
+            save()
+            return
+        }
+        activity.runOnUiThread {
+            synchronized(chatList) { chatList += message }
+            val binding = _binding
+            if (binding != null) {
+                val last = chatList.size - 1
+                userChatAdapter?.apply {
+                    markEntering(last)
+                    notifyItemInserted(last)
+                    // The one before may lose its time or start no longer being the last of a run.
+                    if (last > 0)
+                        notifyItemChanged(last - 1)
+                }
+                if (clearInput)
+                    binding.messageInput.setText("")
+                updateEmptyHint()
+                binding.chatRecyclerView.post {
+                    binding.chatRecyclerView.smoothScrollToPosition(last)
+                }
+            }
+            save()
+        }
+    }
+
+    private fun save() {
+        val snapshot = synchronized(chatList) { chatList.toList() }
+        CoroutineScope(saveDispatcher).launch {
+            File(dir, CHATS_FILE_NAME).writeText(Session.json.encodeToString(snapshot))
+        }
+    }
+
+    private fun updateEmptyHint() {
+        val binding = _binding ?: return
+        binding.emptyHint.isVisible = chatList.isEmpty()
+    }
+
+    /** Bubble colors from the room's settings, or the theme's where none was picked. */
+    private fun chatStyle(): DebugRoomChatAdapter.Style =
+        DebugRoomChatAdapter.Style.of(
+            context        = requireContext(),
+            selfColor      = GlobalConfig.category("d_user").getInt("chat_color"),
+            botColor       = GlobalConfig.category("d_bot").getInt("chat_color"),
+            botProfilePath = GlobalConfig.category("d_bot").getString("profile_image_path"),
+        )
+
+    override fun onDestroy() {
+        userChatAdapter = null
+        configAdapter?.destroy()
+        configAdapter = null
+        super.onDestroy()
+    }
+
+    fun onBackPressed(): Boolean {
+        return if (bottomSheetState != BottomSheetBehavior.STATE_COLLAPSED && bottomSheetState != BottomSheetBehavior.STATE_HIDDEN) {
+            BottomSheetBehavior.from(binding.bottomSheet.root).state =
+                BottomSheetBehavior.STATE_COLLAPSED
+            true
+        } else false
+    }
+
+    private fun updateConfig() {
+        roomName        = GlobalConfig.category("d_room").getString("name", "undefined")
+        sender          = GlobalConfig.category("d_user").getString("name", "debug_sender")
+        botName         = GlobalConfig.category("d_bot") .getString("name", "BOT")
+        sentPackage     = GlobalConfig.category("d_room").getString("package", PACKAGE_KAKAO_TALK)
+        isGroupChat     = GlobalConfig.category("d_room").getBoolean("is_group_chat", false)
+        sendOnEnter     = GlobalConfig.category("d_room").getBoolean("send_with_enter", false)
+
+        requireActivity().runOnUiThread {
+            binding.roomTitle.text = roomName
+            binding.roomSubtitle.text = getString(
+                if (isGroupChat) R.string.debugroom_subtitle_group else R.string.debugroom_subtitle,
+                projectName
+            )
+            userChatAdapter?.style = chatStyle()
+            if (sendOnEnter) {
+                binding.messageInput.setOnKeyListener { _, keyCode, event ->
+                    if (keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
+                        send(binding.messageInput.text.toString())
+                        true
+                    } else
+                        false
+                }
+            } else {
+                binding.messageInput.setOnKeyListener { _, _, _ -> false }
+            }
+        }
+    }
+
+    private fun openImagePicker(resultCode: Int) {
+        ImagePicker.with(this).apply {
+            galleryOnly()
+            crop(1f, 1f)
+            maxResultSize(512, 512)
+            saveDir(requireActivity().cacheDir.resolve("DebugRoom"))
+            galleryMimeTypes(
+                mimeTypes = arrayOf(
+                    "image/png",
+                    "image/jpg",
+                    "image/jpeg"
+                )
+            )
+        }.start(resultCode)
+    }
+
+    private fun reloadConfig() = configAdapter?.redraw()
+
+    private fun themeBubbleColor(categoryId: String): Int? =
+        when (categoryId) {
+            "d_user" -> requireActivity().getColor(R.color.debugroom_bubble_self)
+            "d_bot"  -> requireActivity().getColor(R.color.debugroom_bubble_bot)
+            else     -> null
+        }
+
+    /** The theme's bubble color first, then the earlier choices; the text color follows whichever is picked. */
+    private fun bubblePalette(@ColorRes themeColor: Int): List<Int> {
+        val activity = requireActivity()
+        return listOf(
+            activity.getColor(themeColor),
+            activity.getColor(R.color.main_bright),
+            activity.getColor(R.color.main_dark),
+            0xFF789395.toInt(),
+            0xFF9CBDA1.toInt(),
+        ).distinct()
+    }
+
+    private fun getStructure(): ConfigStructure {
+        val defaultColor = requireActivity().getColor(R.color.main_bright)
+        return config {
+            category {
+                id = "d_room"
+                title = "일반"
+                textColor = defaultColor
+                items {
+                    string {
+                        id = "name"
+                        title = "방 이름"
+                        icon = Icon.BOOKMARK
+                        iconTintColor = defaultColor
+                        require = { text ->
+                            if (text.isBlank()) "이름을 입력해주세요."
+                            else null
+                        }
+                    }
+                    string {
+                        id = "package"
+                        title = "앱 패키지"
+                        icon = Icon.LIST_BULLETED
+                        iconTintColor = defaultColor
+                        hint = "ex) $PACKAGE_KAKAO_TALK"
+                        defaultValue = PACKAGE_KAKAO_TALK
+                    }
+                    toggle {
+                        id = "is_group_chat"
+                        title = "isGroupChat"
+                        icon = Icon.MARK_CHAT_UNREAD
+                        iconTintColor = defaultColor
+                        defaultValue = false
+                    }
+                    toggle {
+                        id = "send_with_enter"
+                        title = "엔터 키로 전송"
+                        icon = Icon.SEND
+                        iconTintColor = defaultColor
+                        defaultValue = false
+                    }
+                }
+            }
+            category {
+                id = "d_bot"
+                title = "봇"
+                textColor = defaultColor
+                items {
+                    string {
+                        id = "name"
+                        title = "이름"
+                        icon = Icon.BOOKMARK
+                        iconTintColor = defaultColor
+                        require = { text ->
+                            if (text.isBlank()) "이름을 입력해주세요."
+                            else null
+                        }
+                    }
+                    button {
+                        id = "set_profile_image"
+                        title = "프로필 이미지 설정"
+                        val profileImagePath = GlobalConfig.category("d_bot").getString("profile_image_path")
+                        if (profileImagePath == null) {
+                            setIcon(icon = Icon.ACCOUNT_BOX)
+                            iconTintColor = defaultColor
+                        } else {
+                            val file = File(profileImagePath)
+                            if (file.exists() && file.isFile) {
+                                setIcon(iconFile = file)
+                                iconTintColor = null
+                            } else {
+                                GlobalConfig.edit {
+                                    category("d_bot") -= "profile_image_path"
+                                }
+                                setIcon(icon = Icon.ACCOUNT_BOX)
+                                iconTintColor = defaultColor
+                            }
+                        }
+                        setOnClickListener { _ ->
+                            openImagePicker(RESULT_BOT)
+                        }
+                    }
+                    colorPicker {
+                        id = "chat_color"
+                        title = "채팅 말풍선 색 설정"
+                        icon = Icon.MARK_CHAT_READ
+                        flags = ColorPickerConfigOption.FLAG_CUSTOM_ARGB or ColorPickerConfigOption.FLAG_ALPHA_SELECTOR
+                        colors {
+                            for (color in bubblePalette(R.color.debugroom_bubble_bot))
+                                color(color)
+                        }
+                        defaultSelection = requireActivity().getColor(R.color.debugroom_bubble_bot)
+                    }
+                }
+            }
+            category {
+                id = "d_user"
+                title = "전송자"
+                textColor = defaultColor
+                items {
+                    string {
+                        id = "name"
+                        title = "이름"
+                        icon = Icon.BOOKMARK
+                        iconTintColor = defaultColor
+                        require = { text ->
+                            if (text.isBlank()) "이름을 입력해주세요."
+                            else null
+                        }
+                    }
+                    button {
+                        id = "set_profile_image"
+                        title = "프로필 이미지 설정"
+                        iconTintColor = defaultColor
+                        val profileImagePath = GlobalConfig.category("d_user").getString("profile_image_path")
+                        if (profileImagePath == null) {
+                            setIcon(icon = Icon.ACCOUNT_BOX)
+                        } else {
+                            val file = File(profileImagePath)
+                            if (file.exists() && file.isFile) {
+                                setIcon(iconFile = file)
+                                iconTintColor = null
+                            } else {
+                                GlobalConfig.edit {
+                                    category("d_user") -= "profile_image_path"
+                                }
+                                setIcon(icon = Icon.ACCOUNT_BOX)
+                            }
+                        }
+                        setOnClickListener { _ ->
+                            openImagePicker(RESULT_USER)
+                        }
+                    }
+                    colorPicker {
+                        id = "chat_color"
+                        title = "채팅 말풍선 색 설정"
+                        icon = Icon.MARK_CHAT_READ
+                        iconTintColor = defaultColor
+                        flags = ColorPickerConfigOption.FLAG_CUSTOM_ARGB or ColorPickerConfigOption.FLAG_ALPHA_SELECTOR
+                        colors {
+                            for (color in bubblePalette(R.color.debugroom_bubble_self))
+                                color(color)
+                        }
+                        defaultSelection = requireActivity().getColor(R.color.debugroom_bubble_self)
+                    }
+                }
+            }
+            category {
+                id = "d_cautious"
+                title = "위험"
+                textColor = defaultColor
+                items {
+                    button {
+                        id = "clear_chat"
+                        title = "대화 기록 초기화"
+                        style = ButtonStyle.DANGER
+                        confirm("이 디버그 룸의 대화 기록을 모두 지울까요?")
+                        setOnClickListener { _ ->
+                            dir.deleteRecursively()
+                            dir.mkdirs()
+                            val listSize = chatList.size
+                            chatList.clear()
+                            userChatAdapter?.notifyItemRangeRemoved(0, listSize)
+                            updateEmptyHint()
+                        }
+                        icon = Icon.LAYERS_CLEAR
+                        //backgroundColor = Color.parseColor("#B8DFD8")
+                    }
+                }
+            }
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        when (resultCode) {
+            Activity.RESULT_OK -> {
+                val uri: Uri = data?.data!!
+                GlobalConfig.edit {
+                    val category = when(requestCode) {
+                        RESULT_BOT -> category("d_bot")
+                        RESULT_USER -> category("d_user")
+                        else -> return@edit
+                    }
+                    category["profile_image_path"] = uri.path!!
+                }
+                val bitmap = uri.toBitmap(requireContext())
+                when(requestCode) {
+                    //RESULT_BOT -> {
+                    //    botProfileBitmap = bitmap
+                    //}
+                    RESULT_USER -> {
+                        selfProfileBitmap = bitmap
+                    }
+                }
+                reloadConfig()
+            }
+            ImagePicker.RESULT_ERROR -> {
+                Toast.makeText(requireActivity(), ImagePicker.getError(data), Toast.LENGTH_SHORT).show()
+            }
+            else -> {
+                logger.verbose { "Image select task canceled" }
+            }
+        }
+    }
+
+    companion object {
+        private val mentionRegex = "<@(.*?)>".toRegex()
+
+        /** The folder in a project's folder that holds its debug room: the chat, long messages and the bot's files. */
+        const val DIR_NAME = "debugroom"
+
+        @JvmStatic
+        fun newInstance(projectName: String, showLeave: Boolean, fixedPadding: Boolean = false) =
+            DebugRoomFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PROJECT_NAME, projectName)
+                    putBoolean(ARG_SHOW_LEAVE, showLeave)
+                    putBoolean(ARG_FIXED_PAD, fixedPadding)
+                }
+            }
+    }
+
+}

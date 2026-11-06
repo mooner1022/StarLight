@@ -8,14 +8,18 @@ import android.content.Intent
 import android.os.Bundle
 import dev.mooner.starlight.listener.NotificationListener
 import dev.mooner.starlight.plugincore.chat.ChatRoom
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
+
+private val LOG = LoggerFactory.logger {  }
 
 data class ChatRoomImpl(
+    override val id: String,
     override val name: String,
     override val isGroupChat: Boolean,
     override val isDebugRoom: Boolean = false,
-    val session: Notification.Action,
-    private val context: Context
+    val sendSession: Notification.Action,
+    val readSession: Notification.Action,
+    private val context: Context,
 ): ChatRoom {
 
     private var lastReceivedId: Long = 0
@@ -25,18 +29,15 @@ data class ChatRoomImpl(
     }
 
     override fun send(message: String): Boolean {
-        println("send")
         return try {
             val sendIntent = Intent()
             val msg = Bundle()
-            for (input in session.remoteInputs) msg.putCharSequence(
-                input.resultKey,
-                message
-            )
-            NotificationListener.notifySent(lastReceivedId)
-            RemoteInput.addResultsToIntent(session.remoteInputs, sendIntent, msg)
-            session.actionIntent.send(context, 0, sendIntent)
-            Logger.v("ChatRoom", "send() success: $message")
+            for (input in sendSession.remoteInputs)
+                msg.putCharSequence(input.resultKey, message)
+            NotificationListener.notifySent()
+            RemoteInput.addResultsToIntent(sendSession.remoteInputs, sendIntent, msg)
+            sendSession.actionIntent.send(context, 0, sendIntent)
+            LOG.verbose { "send() success: $message" }
             true
         } catch (e: PendingIntent.CanceledException) {
             e.printStackTrace()
@@ -46,8 +47,8 @@ data class ChatRoomImpl(
 
     override fun markAsRead(): Boolean {
         try {
-            session.actionIntent.send(context, 1, Intent())
-        } catch (e: PendingIntent.CanceledException) {
+            readSession.actionIntent.send(context, 1, null)
+        } catch (_: PendingIntent.CanceledException) {
             return false
         }
         return true

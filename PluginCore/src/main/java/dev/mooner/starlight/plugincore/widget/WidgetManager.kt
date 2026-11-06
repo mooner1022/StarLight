@@ -1,45 +1,65 @@
 package dev.mooner.starlight.plugincore.widget
 
-import dev.mooner.starlight.plugincore.logger.Logger
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.plugin.PluginContext
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.utils.errorTranslated
+
+private val logger = LoggerFactory.logger {  }
 
 class WidgetManager {
 
-    companion object {
-        private const val T = "WidgetManager"
+    private val definitions: MutableMap<String, WidgetDefinition> = linkedMapOf()
+    private val widgetInfo: MutableMap<String, WidgetInfo> = linkedMapOf()
+
+    fun addWidget(context: PluginContext, widget: Class<out Widget>) {
+        logger.verbose { "Adding widget ${widget.name} from plugin ${context.name}" }
+        addWidget(context, LegacyWidgetDefinition(widget))
     }
 
-    //private val widgets: MutableSet<Widget> = hashSetOf()
-    private val widgets: MutableMap<String, MutableSet<Widget>> = hashMapOf()
-    private val widgetIds: MutableSet<String> = hashSetOf()
+    fun addWidget(context: PluginContext, definition: WidgetDefinition) {
+        val id = definition.id
 
-    fun addWidget(pluginName: String, widget: Widget) {
-        if (widget.id in widgetIds) {
-            Logger.e(T, "Rejecting registration of duplicated widget id: ${widget.id}")
+        if (id in definitions) {
+            logger.errorTranslated {
+                Locale.ENGLISH { "Rejecting registration of duplicated widget id: $id" }
+                Locale.KOREAN  { "중복된 위젯 id를 가진 위젯의 등록이 거부됨: $id" }
+            }
             return
         }
 
-        if (pluginName in widgets)
-            widgets[pluginName]!! += widget
-        else
-            widgets[pluginName] = hashSetOf(widget)
-
-        widgetIds += widget.id
+        definitions[id] = definition
+        widgetInfo[id] = WidgetInfo(
+            pluginName = context.name,
+            id = id,
+            name = definition.name
+        )
     }
 
-    fun getWidgetById(id: String): Widget? {
-        if (id !in widgetIds) return null
+    fun getDefinition(id: String): WidgetDefinition? =
+        definitions[id]
 
-        for ((_, _widgets) in widgets) {
-            for (widget in _widgets) {
-                if (widget.id == id) return widget
-            }
-        }
-        return null
-    }
+    fun getDefinitions(): Collection<WidgetDefinition> =
+        definitions.values
 
-    fun getWidgets(): Map<String, Set<Widget>> = widgets
+    @Deprecated("Use getDefinition() instead.", ReplaceWith("getDefinition(id)"))
+    fun getWidgetById(id: String): Class<out Widget>? =
+        (definitions[id] as? LegacyWidgetDefinition)?.widgetClass
+
+    @Deprecated("Use getDefinitions() instead.", ReplaceWith("getDefinitions()"))
+    fun getWidgets(): Map<String, Class<out Widget>> =
+        definitions
+            .mapNotNull { (id, definition) -> (definition as? LegacyWidgetDefinition)?.let { id to it.widgetClass } }
+            .toMap()
+
+    fun getWidgetInfo(id: String): WidgetInfo? =
+        widgetInfo[id]
+
+    fun getAllWidgetInfo(): Map<String, WidgetInfo> =
+        widgetInfo
 
     internal fun purge() {
-        widgets.clear()
+        definitions.clear()
+        widgetInfo.clear()
     }
 }

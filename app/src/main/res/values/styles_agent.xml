@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Section titles carry a small gold star, a motif from the plugin store. -->
+    <style name="AgentSectionTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:drawablePadding">8dp</item>
+        <item name="android:fontFamily">@font/wantedsans_bold</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textColor">@color/agent_text</item>
+        <item name="android:textSize">17sp</item>
+        <item name="drawableStartCompat">@drawable/ic_store_sparkle_small</item>
+    </style>
+
+    <style name="AgentSectionBody">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">4dp</item>
+        <item name="android:fontFamily">@font/wantedsans_regular</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+        <item name="android:textColor">@color/agent_text_muted</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="AgentRowTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">@font/wantedsans_medium</item>
+        <item name="android:textColor">@color/agent_text</item>
+        <item name="android:textSize">14.5sp</item>
+    </style>
+
+    <style name="AgentRowBody">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:fontFamily">@font/wantedsans_regular</item>
+        <item name="android:textColor">@color/agent_text_faint</item>
+        <item name="android:textSize">12.5sp</item>
+    </style>
+
+    <style name="AgentDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:layout_marginHorizontal">16dp</item>
+        <item name="android:layout_marginVertical">4dp</item>
+        <item name="android:background">@color/agent_border</item>
+    </style>
+
+    <style name="AgentField">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:background">@drawable/bg_agent_chip_outline</item>
+        <item name="android:fontFamily">@font/wantedsans_regular</item>
+        <item name="android:importantForAutofill">no</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:paddingHorizontal">16dp</item>
+        <item name="android:textColor">@color/agent_text</item>
+        <item name="android:textColorHint">@color/agent_text_faint</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <!-- The small pill buttons under a file or project card. -->
+    <style name="AgentCardAction">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">34dp</item>
+        <item name="android:layout_marginEnd">6dp</item>
+        <item name="android:background">@drawable/bg_agent_card_action</item>
+        <item name="android:drawablePadding">5dp</item>
+        <item name="android:fontFamily">@font/wantedsans_medium</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">11dp</item>
+        <item name="android:paddingEnd">13dp</item>
+        <item name="android:textColor">@color/agent_text</item>
+        <item name="android:textSize">12.5sp</item>
+        <item name="drawableTint">@color/agent_accent</item>
+    </style>
+
+    <!-- A row of the add sheet: a label on the left, its value and a chevron on the right. -->
+    <style name="AgentSheetRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:minHeight">54dp</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">10dp</item>
+    </style>
+</resources>

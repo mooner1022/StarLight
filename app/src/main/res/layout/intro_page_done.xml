@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:overScrollMode="never">
+
+    <LinearLayout
+        android:id="@+id/pageContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="28dp"
+        android:paddingVertical="28dp">
+
+        <FrameLayout
+            android:id="@+id/doneLogoFrame"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:tag="pop">
+
+            <View
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_intro_logo_glow"/>
+
+            <ImageView
+                android:id="@+id/doneLogo"
+                android:layout_width="84dp"
+                android:layout_height="84dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_logo_transparent"/>
+
+        </FrameLayout>
+
+        <TextView
+            style="@style/IntroTitle"
+            android:layout_marginTop="14dp"
+            android:text="@string/intro_done_title"/>
+
+        <TextView
+            style="@style/IntroSubtitle"
+            android:gravity="center"
+            android:text="@string/intro_done_subtitle"/>
+
+        <LinearLayout
+            android:id="@+id/summary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:background="@drawable/bg_intro_card"
+            android:orientation="vertical"
+            android:paddingHorizontal="18dp"
+            android:paddingVertical="8dp"/>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

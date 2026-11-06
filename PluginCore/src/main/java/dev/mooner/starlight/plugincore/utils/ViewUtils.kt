@@ -35,7 +35,7 @@ class ViewBuilder(
 
     fun dp(value: Int): Int = value.toPx
 
-    fun View.params(block: FrameLayout.LayoutParams.() -> Unit) {
+    fun View.updateParams(block: FrameLayout.LayoutParams.() -> Unit) {
         val params = if (layoutParams == null) {
             FrameLayout.LayoutParams(wrapContent, wrapContent).apply(block)
         } else {
@@ -44,14 +44,14 @@ class ViewBuilder(
         layoutParams = params
     }
 
-    fun <T: View> T.add(
+    fun <T: View> T.place(
         width: Int = UNDEFINED,
         height: Int = UNDEFINED,
         block: T.() -> Unit = {}
     ) {
         val view = this.apply(block)
         if (width != UNDEFINED || height != UNDEFINED)
-            view.params {
+            view.updateParams {
                 if (width != UNDEFINED)
                     this.width = width
                 if (height != UNDEFINED)
@@ -69,7 +69,7 @@ class ViewBuilder(
     ) {
         val button = Button(context).apply(block)
         if (width != UNDEFINED || height != UNDEFINED)
-            button.params {
+            button.updateParams {
                 if (width != UNDEFINED)
                     this.width = width
                 if (height != UNDEFINED)
@@ -91,7 +91,7 @@ class ViewBuilder(
     ) {
         val textView = TextView(context).apply(block)
         if (width != UNDEFINED || height != UNDEFINED)
-            textView.params {
+            textView.updateParams {
                 if (width != UNDEFINED)
                     this.width = width
                 if (height != UNDEFINED)
