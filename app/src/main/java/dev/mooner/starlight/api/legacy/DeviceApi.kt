@@ -116,7 +116,7 @@ class DeviceApi: Api<DeviceApi.Device>() {
             @JvmOverloads
             @SuppressLint("WakelockTimeout")
             fun acquireWakeLock(levelAndFlags: Int, tag: String = "dev.mooner.starlight:api_wakelock_tag", timeout: Long? = null) {
-                wakeLock?.release()
+                wakeLock?.takeIf { it.isHeld }?.release()
                 wakeLock = getPowerManager().newWakeLock(levelAndFlags, tag)
 
                 timeout?.let(wakeLock!!::acquire)
@@ -124,8 +124,9 @@ class DeviceApi: Api<DeviceApi.Device>() {
             }
 
             @JvmStatic
+            @JvmOverloads
             fun releaseWakeLock(flags: Int = 0) {
-                wakeLock?.release(flags)
+                wakeLock?.takeIf { it.isHeld }?.release(flags)
             }
 
             @JvmStatic
