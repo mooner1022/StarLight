@@ -53,7 +53,6 @@ private typealias RoomName = String
 class NotificationListener: NotificationListenerService() {
 
     private var isGlobalPowerOn : Boolean = true
-    private var legacyEvent     : Boolean = false
     private var useNPostedEvent : Boolean = false
     private var logRecMessage   : Boolean = false
 
@@ -159,7 +158,8 @@ class NotificationListener: NotificationListenerService() {
                         }
                     }
 
-                    if (legacyEvent) {
+                    // Each project's levels decide whether it gets this one.
+                    run {
                         val imageDB = ImageDB(data.sender.profileBitmap)
                         val replier = getOrCreateReplier(roomID)
 
@@ -372,11 +372,6 @@ class NotificationListener: NotificationListenerService() {
                 }
             }
 
-        legacyEvent = GlobalConfig
-            .category("notifications")
-            .getSubCategory("event")
-            ?.getBoolean("use_legacy_event", legacyEvent)
-            ?: legacyEvent
         useNPostedEvent = GlobalConfig
             .category("notifications")
             .getSubCategory("noti")

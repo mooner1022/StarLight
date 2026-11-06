@@ -1,6 +1,9 @@
 package dev.mooner.starlight.plugincore.api
 
+import dev.mooner.starlight.plugincore.Session
+import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.TranslationManager
 
@@ -31,7 +34,24 @@ class ApiManager {
         }
     }
 
-    fun getApis(): List<Api<*>> = mApis
+    /** Every API, whichever levels it belongs to. */
+    fun getApis(): List<Api<*>> =
+        synchronized(mApis) { mApis.toList() }
+
+    /**
+     * The APIs a project that chose [levelIds] gets, without the globals [language] provides itself. A `null` [levelIds]
+     * is a project from before levels, which gets every API.
+     */
+    fun getApis(levelIds: Set<String>?, language: Language? = null): List<Api<*>> {
+        val native = language?.nativeGlobals.orEmpty()
+        return getApis().filter { api ->
+            api.name !in native && Session.apiLevelManager.hasApi(levelIds, api.name)
+        }
+    }
+
+    /** The APIs [project] gets, from its levels and its language. */
+    fun getApis(project: Project): List<Api<*>> =
+        getApis(project.info.apiLevels, runCatching { project.getLanguage() }.getOrNull())
 
     internal fun purge() {
         mApis.clear()

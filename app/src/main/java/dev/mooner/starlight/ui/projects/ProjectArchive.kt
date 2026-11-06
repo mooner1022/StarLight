@@ -1,5 +1,6 @@
 package dev.mooner.starlight.ui.projects
 
+import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.project.Project
@@ -70,7 +71,8 @@ internal object ProjectArchive {
                 if (!root.renameTo(target)) {
                     root.copyRecursively(target)
                 }
-                return Session.projectLoader.loadProject(target)
+                // One exported before levels gets them as the projects here did.
+                return Session.projectLoader.loadProject(target).also(ApiLevels::migrate)
             } catch (e: Throwable) {
                 // Left in place, the folder would load on the next start although the import failed.
                 target.deleteRecursively()

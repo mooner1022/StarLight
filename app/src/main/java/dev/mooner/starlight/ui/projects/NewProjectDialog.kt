@@ -32,11 +32,15 @@ import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
+import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.databinding.DialogNewProjectBinding
+import dev.mooner.starlight.databinding.ItemApiLevelHeaderBinding
+import dev.mooner.starlight.databinding.ItemApiLevelOptionBinding
 import dev.mooner.starlight.databinding.ItemNewProjectLanguageBinding
 import dev.mooner.starlight.databinding.ItemProjectEventBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.projectManager
+import dev.mooner.starlight.plugincore.api.ApiLevel
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.config.GlobalConfig.getDefaultCategory
 import dev.mooner.starlight.plugincore.language.Language
@@ -45,6 +49,7 @@ import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.project.event.getInstance
 import dev.mooner.starlight.ui.common.Sheet
+import dev.mooner.starlight.ui.common.setOptionSelected
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.createFailurePeek
 import dev.mooner.starlight.utils.dp
@@ -63,7 +68,7 @@ private const val STARLIGHT_PLUGIN_ID = "starlight"
 private const val SELECTED_LANGUAGE_COLOR = "#50AD977A"
 private const val STEP_ANIM_DURATION = 180L
 
-private enum class Step { NAME, LANGUAGE, EVENTS, CONFIG }
+private enum class Step { NAME, API, LANGUAGE, EVENTS, CONFIG }
 
 private class EventOption(
     val pluginId: String,
@@ -82,8 +87,21 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
     val events = loadEventOptions()
 
     val lastLanguageId = getDefaultCategory().getString(CONFIG_LAST_LANGUAGE)
-    var selectedLanguage: Language? = languages.find { it.id == lastLanguageId } ?: languages.firstOrNull()
+    val initialLanguage: Language? = languages.find { it.id == lastLanguageId } ?: languages.firstOrNull()
+    var selectedLanguage: Language? = initialLanguage
+    // Once the user picks a language, the levels no longer choose one for them.
+    var isLanguagePicked = false
     var step = Step.NAME
+
+    val levels = Session.apiLevelManager.getLevels()
+    val selectedLevels: MutableSet<String> = linkedSetOf<String>().apply { addAll(Session.apiLevelManager.defaultLevelIds) }
+
+    fun isEventAvailable(event: EventOption): Boolean =
+        Session.apiLevelManager.hasEvent(selectedLevels, event.id)
+
+    // Set once the pages' views exist, further down.
+    var onLanguageStep: () -> Unit = {}
+    var onEventsStep: () -> Unit = {}
 
     val configData: MutableDataMap = hashMapOf()
     var configAdapter: ConfigAdapter? = null
@@ -91,8 +109,11 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
 
     fun steps(): List<Step> = buildList {
         add(Step.NAME)
+        if (levels.isNotEmpty())
+            add(Step.API)
         add(Step.LANGUAGE)
-        add(Step.EVENTS)
+        if (events.any(::isEventAvailable))
+            add(Step.EVENTS)
         if (selectedLanguage?.projectConfigStructure()?.isNotEmpty() == true)
             add(Step.CONFIG)
     }
@@ -141,6 +162,7 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
         sheet.setNegativeText(getString(if (index == 0) R.string.cancel else R.string.previous))
         sheet.setPositiveEnabled(when (step) {
             Step.NAME     -> isNameValid()
+            Step.API      -> selectedLevels.isNotEmpty()
             Step.LANGUAGE -> selectedLanguage != null
             else          -> true
         })
@@ -192,6 +214,7 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
         val language = selectedLanguage
         val (title, description) = when (target) {
             Step.NAME     -> getString(R.string.new_project_step_name) to getString(R.string.project_name_hint)
+            Step.API      -> getString(R.string.new_project_step_api) to getString(R.string.new_project_step_api_description)
             Step.LANGUAGE -> getString(R.string.new_project_step_language) to getString(R.string.new_project_step_language_description)
             Step.EVENTS   -> getString(R.string.new_project_step_events) to getString(R.string.project_events_description)
             Step.CONFIG   -> getString(R.string.new_project_step_config, language?.name) to getString(R.string.new_project_step_config_description)
@@ -201,7 +224,12 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
 
         if (target == Step.CONFIG && language != null)
             prepareConfig(language)
+        if (target == Step.LANGUAGE)
+            onLanguageStep()
+        if (target == Step.EVENTS)
+            onEventsStep()
         binding.pageName.isVisible = target == Step.NAME
+        binding.pageApi.isVisible = target == Step.API
         binding.pageLanguage.isVisible = target == Step.LANGUAGE
         binding.pageEvents.isVisible = target == Step.EVENTS
         binding.pageConfig.isVisible = target == Step.CONFIG
@@ -232,8 +260,9 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
             ?.toMap()
             .orEmpty()
         val selectedEvents = events
-            .filter(EventOption::isSelected)
+            .filter { it.isSelected && isEventAvailable(it) }
             .associate { it.id to it.instance }
+        val apiLevels = selectedLevels.toSet()
         sheet.dismiss()
 
         GlobalConfig.edit {
@@ -245,6 +274,7 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
                     this.name  = name
                     mainScript = "$name.${language.fileExtension}"
                     languageId = language.id
+                    this.apiLevels = apiLevels
                 }
                 if (presets.isNotEmpty()) {
                     projectManager.getProjectByName(name)?.let { project ->
@@ -306,26 +336,78 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
             row.setLanguageSelected(languages[index] == selectedLanguage)
         }
     }
+    val clashWarning = ItemApiLevelHeaderBinding.inflate(layoutInflater, binding.pageLanguage, true).root.apply {
+        setText(R.string.api_levels_clash_warning)
+        setTextColor(context.getColor(R.color.code_error))
+        typeface = null
+    }
+    fun updateClashWarning() {
+        clashWarning.isVisible = ApiLevels.hasListenerNameClash(selectedLevels, selectedLanguage?.id)
+    }
     languageRows.forEachIndexed { index, row ->
         row.cardWrapper.setOnClickListener {
             selectedLanguage = languages[index]
+            isLanguagePicked = true
             updateLanguageSelection()
+            updateClashWarning()
             updateNameHelper()
             updateStepIndicator()
             updateButtons()
         }
     }
     updateLanguageSelection()
+    onLanguageStep = {
+        // A level may suit a language better, such as API2 and NeonJS, until the user picks one.
+        if (!isLanguagePicked) {
+            val preferred = levels
+                .filter { it.id in selectedLevels }
+                .firstNotNullOfOrNull { level -> languages.find { it.id == level.preferredLanguageId } }
+            selectedLanguage = preferred ?: initialLanguage
+            updateLanguageSelection()
+            updateNameHelper()
+        }
+        updateClashWarning()
+    }
 
-    for (event in events) {
-        ItemProjectEventBinding.inflate(layoutInflater, binding.pageEvents, true).apply {
-            functionName.text = event.functionName
-            eventId.text = event.id
-            icon.loadPluginIcon(event.pluginId)
-            checkbox.isChecked = event.isSelected
-            root.setOnClickListener {
-                event.isSelected = !event.isSelected
+    // Grouped under their headings, such as StarLight's own and MessengerBot compatibility.
+    val levelCards = levels.groupBy(ApiLevel::group).flatMap { (group, groupLevels) ->
+        ItemApiLevelHeaderBinding.inflate(layoutInflater, binding.pageApi, true).root.text = group
+        groupLevels.map { level ->
+            ItemApiLevelOptionBinding.inflate(layoutInflater, binding.pageApi, true).apply {
+                label.text = level.name
+                description.text = level.description
+                description.isVisible = level.description != null
+                objects.text = level.apis.sorted().joinToString(" · ")
+                objects.isVisible = level.apis.isNotEmpty()
+            }.root to level
+        }
+    }
+    fun updateLevelSelection() =
+        levelCards.forEach { (card, level) -> card.setOptionSelected(level.id in selectedLevels) }
+    for ((card, level) in levelCards) {
+        card.setOnClickListener {
+            if (!selectedLevels.remove(level.id))
+                selectedLevels += level.id
+            updateLevelSelection()
+            updateStepIndicator()
+            updateButtons()
+        }
+    }
+    updateLevelSelection()
+
+    onEventsStep = {
+        // The levels decide which events there are to choose; a choice made earlier stays when it comes back.
+        binding.pageEvents.removeAllViews()
+        for (event in events.filter(::isEventAvailable)) {
+            ItemProjectEventBinding.inflate(layoutInflater, binding.pageEvents, true).apply {
+                functionName.text = event.functionName
+                eventId.text = event.id
+                icon.loadPluginIcon(event.pluginId)
                 checkbox.isChecked = event.isSelected
+                root.setOnClickListener {
+                    event.isSelected = !event.isSelected
+                    checkbox.isChecked = event.isSelected
+                }
             }
         }
     }

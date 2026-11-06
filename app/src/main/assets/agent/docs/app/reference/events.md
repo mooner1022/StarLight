@@ -20,7 +20,7 @@ function onMessage(event) { … }
 |---|---|---|
 | `onMessage(event)` | `starlight.message.create` | 메시지를 받았을 때 |
 | `onMessageDeleted(event)` | `starlight.message.delete` | 카카오톡에서 가장 최근 메시지가 삭제됐을 때 |
-| `response(room, msg, sender, isGroupChat, replier, imageDB)` | `starlight.message.legacy` | 메시지를 받았을 때. **레거시 이벤트 사용**을 켜야 해요. |
+| `response(room, msg, sender, isGroupChat, replier, imageDB)` | `starlight.message.legacy` | 메시지를 받았을 때. 프로젝트의 API 방식에 **메신저봇 레거시**가 있어야 해요. |
 | `onNotificationPosted(sbn)` | `starlight.notification.post` | 아무 앱이나 알림을 올렸을 때. **onNotificationPosted 이벤트 사용**을 켜야 해요. |
 | `onStartCompile()` | `starlight.project.compile` | 이미 컴파일된 프로젝트를 다시 컴파일하기 직전 |
 | `onProjectButtonClicked(buttonId)` | — | 프로젝트 카드의 사용자 지정 버튼을 눌렀을 때 |
@@ -99,7 +99,7 @@ export function onMessage(event) {
 
 ## response (레거시)
 
-메신저봇, 채자봇 같은 다른 앱의 봇 코드와 호환되는 함수예요. **설정 → 알림, 이벤트**에서 **레거시 이벤트 사용**을 켜야 불려요. 켜 두면 메시지마다 `onMessage` 다음에 `response`도 불려요.
+메신저봇, 채자봇 같은 다른 앱의 봇 코드와 호환되는 함수예요. 프로젝트의 [API 방식](/docs/app/guides/projects#api-방식)에 **메신저봇 레거시**가 있어야 불려요. **StarLight 오리지널**도 함께 고르면 메시지마다 `onMessage` 다음에 `response`도 불려요.
 
 ```javascript title="Rhino"
 function response(room, msg, sender, isGroupChat, replier, imageDB) {

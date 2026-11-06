@@ -1,6 +1,7 @@
 package dev.mooner.configdsl.options
 
 import android.content.Context
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,6 +21,8 @@ class MultiChoiceConfigOption(
     override val default     : Set<String>,
     override val icon        : IconInfo,
     override val dependency  : String? = null,
+             /** How many chosen labels the row lists, one per line, before it ends with "…". */
+             val summaryLimit: Int = DEFAULT_SUMMARY_LIMIT,
 ): ConfigOption<MultiChoiceConfigOption.MultiChoiceViewHolder, Set<String>>() {
 
     override val hasError: Boolean = false
@@ -28,7 +31,11 @@ class MultiChoiceConfigOption(
         val view = LayoutInflater
             .from(parent.context)
             .inflate(R.layout.config_info, parent, false)
-        return MultiChoiceViewHolder(view)
+        return MultiChoiceViewHolder(view).apply {
+            // One chosen label per line, lined up at the end like a single value is.
+            value.maxLines = Int.MAX_VALUE
+            value.gravity = Gravity.END
+        }
     }
 
     override fun dataToJson(value: Set<String>): JsonElement =
@@ -54,11 +61,18 @@ class MultiChoiceConfigOption(
         }
     }
 
-    private fun summaryOf(context: Context, keys: Set<String>): String =
-        choices
-            .filter { it.key in keys }
-            .joinToString { it.label }
-            .ifEmpty { context.getString(R.string.configdsl_none_selected) }
+    private fun summaryOf(context: Context, keys: Set<String>): String {
+        val labels = choices.filter { it.key in keys }.map(Choice::label)
+        if (labels.isEmpty())
+            return context.getString(R.string.configdsl_none_selected)
+        val shown = if (labels.size > summaryLimit) labels.take(summaryLimit) + ELLIPSIS else labels
+        return shown.joinToString("\n")
+    }
+
+    companion object {
+        const val DEFAULT_SUMMARY_LIMIT = 3
+        private const val ELLIPSIS = "…"
+    }
 
     class MultiChoiceViewHolder(itemView: View): DefaultViewHolder(itemView) {
 
@@ -71,6 +85,9 @@ class MultiChoiceConfigOption(
 class MultiChoiceConfigBuilder: ConfigBuilderBase<MultiChoiceConfigOption.MultiChoiceViewHolder, Set<String>>() {
 
     var defaultKeys: Set<String> = emptySet()
+
+    /** How many chosen labels the row lists before it ends with "…". */
+    var summaryLimit: Int = MultiChoiceConfigOption.DEFAULT_SUMMARY_LIMIT
 
     private val choices: MutableList<Choice> = arrayListOf()
 
@@ -90,6 +107,7 @@ class MultiChoiceConfigBuilder: ConfigBuilderBase<MultiChoiceConfigOption.MultiC
             default     = defaultKeys,
             icon        = IconInfo.auto(icon, iconFile, iconResId, iconTintColor),
             dependency  = dependency,
+            summaryLimit = summaryLimit.coerceAtLeast(1),
         )
     }
 }

@@ -1152,9 +1152,11 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             }
         }?.takeIf { (line, _) -> line > 0 }
 
+    // Only what the project's API levels give its scripts.
     private fun buildApiCompletions(): String =
         buildJsonArray {
-            for (api in Session.apiManager.getApis()) {
+            val apis = getProject()?.let(Session.apiManager::getApis) ?: Session.apiManager.getApis()
+            for (api in apis) {
                 addJsonObject {
                     put("name", api.name)
                     putJsonArray("members") {

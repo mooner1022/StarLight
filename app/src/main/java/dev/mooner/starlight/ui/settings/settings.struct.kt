@@ -172,14 +172,6 @@ internal fun SettingsFragment.getSettingsStruct() = config {
                 textColor = requireContext().getColor(R.color.main_bright)
                 items {
                     toggle {
-                        id = "use_legacy_event"
-                        title = "레거시 이벤트 사용"
-                        description = "메신저봇이나 채자봇과 호환되는 이벤트를 사용합니다. (response)"
-                        icon = Icon.BOOKMARK
-                        iconTintColor = color { "#9ED2BE" }
-                        defaultValue = false
-                    }
-                    toggle {
                         id = "log_received_message"
                         title = "수신 메세지 로그 표시"
                         description = "수신된 메세지의 방, 보낸 사람, 내용을 로그에 기록합니다."

@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.plugincore
 
+import dev.mooner.starlight.plugincore.api.ApiLevelManager
 import dev.mooner.starlight.plugincore.api.ApiManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.language.LanguageManager
@@ -47,6 +48,7 @@ object Session {
     val pluginLoader    : PluginLoader    = PluginLoader()
     val pluginManager   : PluginManager   = PluginManager()
     val widgetManager   : WidgetManager   = WidgetManager()
+    val apiLevelManager : ApiLevelManager = ApiLevelManager()
 
     var projectManager: ProjectManager by notNull()
         private set
@@ -106,6 +108,7 @@ object Session {
 
         languageManager.purge()
         widgetManager.purge()
+        apiLevelManager.purge()
         pluginLoader.purge()
         pluginManager.purge()
         projectManager.purge()

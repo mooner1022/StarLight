@@ -40,13 +40,6 @@ internal fun getProblemSolverStruct() = config {
                     .category("general")
                     .getBoolean("global_power", true)
             }
-            item(Icon.BOOKMARK, "레거시 호환 이벤트") {
-                GlobalConfig
-                    .category("notifications")
-                    .getSubCategory("event")
-                    ?.getBoolean("use_legacy_event", false)
-                    ?: false
-            }
             info {
                 id = "kakaoTalkVer"
                 title = "카카오톡 버전"

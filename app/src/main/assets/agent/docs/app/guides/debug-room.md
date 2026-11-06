@@ -15,7 +15,7 @@ order: 3
 
 ## 메시지 보내기
 
-아래 입력창에 메시지를 쓰고 보내면, 이 프로젝트의 `onMessage` 함수가 불려요. 설정에서 **레거시 이벤트 사용**을 켰다면 `response` 함수도 함께 불려요.
+아래 입력창에 메시지를 쓰고 보내면, 이 프로젝트의 `onMessage` 함수가 불려요. 프로젝트의 API 방식에 **메신저봇 레거시**가 있으면 `response` 함수도 함께 불려요.
 
 - 봇의 답장은 봇 이름(기본 `BOT`)의 말풍선으로 보여요. 500자가 넘는 답장은 긴 말풍선으로 보여요.
 - 봇이 [`MediaSharer.send()`나 `event.room.sendMedia()`](/docs/app/reference/script-api#파일-보내기-mediasharer-roomsendmedia)로 보낸 파일도 채팅에 보여요. 이미지는 사진으로, 다른 파일은 이름과 크기로 보이고, 누르면 이미지·Markdown·텍스트는 앱 안에서 미리 보고 다른 파일은 다른 앱으로 열어요.
