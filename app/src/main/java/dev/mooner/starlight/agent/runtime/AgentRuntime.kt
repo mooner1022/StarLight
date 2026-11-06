@@ -245,9 +245,10 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             updatedAt = now,
         )
         hub.store.save(conversation.copy(
-            // Calls a run that ended left without a result are closed first: a user message after them would make every
-            // request fail.
-            messages = CallResults.closeInterrupted(conversation.messages, waited = false, now) + message,
+            // Calls left without a result are closed first: a user message after them would make every request fail.
+            // Runs that end close theirs, and the app's start closes those of runs it ended, so these are only ever
+            // from elsewhere, such as an older version: nothing is known about them.
+            messages = CallResults.closeMissing(conversation.messages, now) + message,
             updatedAt = now,
             error = null,
             project = project,

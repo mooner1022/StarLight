@@ -35,6 +35,12 @@ object CallResults {
             Part.ToolResult(call.id, call.name, output, isError = true, summary = "Interrupted")
         }
 
+    /** [messages] with every call that has no result closed as [MISSING]. */
+    fun closeMissing(messages: List<ChatMessage>, now: Long): List<ChatMessage> =
+        close(messages, { results -> ChatMessage(newMessageId("t"), Role.TOOL, results, now) }) { call, _ ->
+            Part.ToolResult(call.id, call.name, MISSING, isError = true, summary = "No result")
+        }
+
     /** A turn and those of its calls that have no result in the tool message right after it. */
     data class Unanswered(val turn: ChatMessage, val calls: List<Part.ToolCall>)
 

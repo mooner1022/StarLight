@@ -82,6 +82,12 @@ class CallResultsTest {
     }
 
     @Test
+    fun callsFoundOpenOnlyLaterAreClosedAsUnknown() {
+        val closed = CallResults.closeMissing(listOf(user("u1"), assistant("a1", "c1", "c2"), tool("t1", "c1")), now = 0)
+        assertEquals(listOf(CallResults.MISSING), closed[2].parts.filterIsInstance<Part.ToolResult>().drop(1).map { it.output })
+    }
+
+    @Test
     fun resultsWithoutTheirCallAreDropped() {
         // As a summary can leave them: the turn that made the call was summarized away.
         val messages = listOf(tool("t0", "gone"), user("u1"), assistant("a1", "c1"), tool("t1", "c1", "other"))
