@@ -480,7 +480,6 @@ class ScriptCatalog(
             return Triple(key.substring(0, open), params, key.substring(close + 1))
         }
 
-        /** The classes [type] names, its type arguments and array components included. */
         /** How far [undocumentedTypes] follows undocumented types: `Projects` gives `Project`, then `ProjectInfo`. */
         const val UNDOCUMENTED_DEPTH = 2
 
@@ -499,6 +498,7 @@ class ScriptCatalog(
             "kotlin.CharSequence" to "java.lang.CharSequence", "kotlin.Comparable" to "java.lang.Comparable",
         )
 
+        /** The classes [type] names, its type arguments and array components included. */
         fun classesIn(type: Type): List<Class<*>> = when (type) {
             is Class<*> -> if (type.isArray) classesIn(type.componentType!!) else if (type.isPrimitive) emptyList() else listOf(type)
             is ParameterizedType -> classesIn(type.rawType) + type.actualTypeArguments.flatMap(::classesIn)

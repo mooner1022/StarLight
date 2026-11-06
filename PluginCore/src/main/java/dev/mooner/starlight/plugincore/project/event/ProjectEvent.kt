@@ -60,7 +60,8 @@ abstract class ProjectEvent {
     /**
      * The name the starting code gives this event's function instead of [functionName] when another event of the new
      * project already has a function of that name, as API2's message listener and StarLight's `onMessage` do; null
-     * to leave this one commented out then.
+     * to leave this one commented out then. An event that sets it and overrides `generateCode(generator)` overrides
+     * `generateCode(generator, name)` too, or the alternate name gets a bare function.
      */
     open val alternateFunctionName: String?
         get() = null
