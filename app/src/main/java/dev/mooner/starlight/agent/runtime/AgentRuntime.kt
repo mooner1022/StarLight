@@ -43,7 +43,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -612,7 +614,16 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     }
 
     private suspend fun run(id: String) {
-        updateConversation(id) { it.copy(state = RunState.RUNNING, error = null) }
+        updateConversation(id) {
+            // An older version marked a run the app's end cut short without closing its calls. Closed now as
+            // ConversationStore.markInterrupted closes them, so that resuming doesn't repeat a call that may have hung
+            // the app.
+            val messages = if (it.state == RunState.INTERRUPTED)
+                CallResults.closeInterrupted(it.messages, waited = false, System.currentTimeMillis())
+            else
+                it.messages
+            it.copy(state = RunState.RUNNING, error = null, messages = messages)
+        }
         var steps = 0
         val maxSteps = hub.settings.maxSteps
         // One summary per run: if the model still can't fit the conversation, the error shows.
@@ -634,7 +645,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 if (flushQueued(id, closing = false))
                     continue
                 // Notices are for the user; what counts is the last turn the model takes part in.
-                val last = conversation.messages.lastOrNull { message -> message.parts.any { it !is Part.Notice } } ?: return
+                val last = conversation.messages.lastOrNull(CallResults::takesPart) ?: return
                 when {
                     // Done, unless the user wrote more in the meantime, or the turn was only paused.
                     last.role == Role.ASSISTANT && !paused -> if (!flushQueued(id, closing = true)) break
@@ -880,6 +891,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 hub.checkpoints.recorder(id, turn)
             }
         }
+        // A stop that came before the tool started, while an earlier call finished, ends the run here: once marked, the
+        // call would be reported as one that may have taken effect.
+        currentCoroutineContext().ensureActive()
         runningCalls[id] = call.id
         val output = try {
             tool.run(context, args)
