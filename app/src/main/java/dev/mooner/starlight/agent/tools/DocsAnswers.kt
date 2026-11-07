@@ -2,6 +2,7 @@ package dev.mooner.starlight.agent.tools
 
 import dev.mooner.starlight.agent.docs.DtsRenderer
 import dev.mooner.starlight.agent.docs.GuideLibrary
+import java.lang.reflect.MalformedParameterizedTypeException
 
 /**
  * What the docs tools answer (docs/agent-docs.md §7), apart from looking up the project a question is about.
@@ -47,9 +48,17 @@ class DocsAnswers(private val renderer: DtsRenderer, private val guides: GuideLi
                 ?: throw ToolException("No API or type named $name. list_apis lists the APIs.")
         } catch (e: LinkageError) {
             // A plugin's class whose members name classes Android doesn't have.
-            throw ToolException("$name can't be described: its members refer to a class that isn't there ($e).")
+            throw missingClass(name, e)
+        } catch (e: TypeNotPresentException) {
+            // The same, in a generic signature.
+            throw missingClass(name, e)
+        } catch (e: MalformedParameterizedTypeException) {
+            throw missingClass(name, e)
         }
     }
+
+    private fun missingClass(name: String, e: Throwable) =
+        ToolException("$name can't be described: its members refer to a class that isn't there ($e).")
 
     /** The list of guides without an [id]; otherwise the guide or section it names. */
     fun readGuide(id: String?): String {

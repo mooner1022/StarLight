@@ -350,14 +350,18 @@ class ScriptCatalog(
             result += Signature(
                 name = name,
                 params = executable.parameters.mapIndexed { i, parameter ->
+                    val vararg = executable.isVarArgs && i == executable.parameterCount - 1
+                    val javaType = executable.genericParameterTypes.getOrElse(i) { parameter.type }
                     Param(
                         name = names?.getOrNull(i) ?: parameter.name,
-                        type = TypeRef.of(executable.genericParameterTypes.getOrElse(i) { parameter.type }).let { type ->
+                        // A vararg reflects as its array, and the declaration adds the `[]` itself: the element is its type,
+                        // as the docs give it.
+                        type = TypeRef.of(if (vararg) elementOf(javaType) else javaType).let { type ->
                             val nullable = runCatching { kotlin?.valueParameters?.getOrNull(i)?.type?.isMarkedNullable }.getOrNull()
                             if (nullable == true) type.copy(nullable = true) else type
                         },
                         optional = false,
-                        vararg = executable.isVarArgs && i == executable.parameterCount - 1,
+                        vararg = vararg,
                     )
                 },
                 returns = (executable as? Method)?.genericReturnType?.let(TypeRef::of)
@@ -373,6 +377,13 @@ class ScriptCatalog(
         is Method -> executable.kotlinFunction
         is Constructor<*> -> executable.kotlinFunction
         else -> null
+    }
+
+    /** The element type of the array type [type], or [type] when it isn't one. */
+    private fun elementOf(type: Type): Type = when (type) {
+        is GenericArrayType -> type.genericComponentType
+        is Class<*> -> type.componentType ?: type
+        else -> type
     }
 
     /**

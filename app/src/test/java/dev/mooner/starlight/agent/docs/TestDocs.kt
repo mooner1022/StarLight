@@ -43,7 +43,7 @@ object TestDocs {
 
     val guides = GuideLibrary(
         File(GUIDES).walkTopDown().filter { it.isFile && it.extension == "md" }.mapNotNull { file ->
-            GuideLibrary.parse(file.relativeTo(File(GUIDES)).path.removeSuffix(".md"), file.readText())
+            GuideLibrary.parse(file.relativeTo(File(GUIDES)).invariantSeparatorsPath.removeSuffix(".md"), file.readText())
         }.toList()
     )
 
