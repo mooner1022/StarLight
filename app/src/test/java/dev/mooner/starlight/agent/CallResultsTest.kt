@@ -21,8 +21,8 @@ class CallResultsTest {
     private fun notice(id: String) = ChatMessage(id, Role.ASSISTANT, listOf(Part.Notice(NoticeKind.ERROR, "failed")), 0)
 
     private fun close(messages: List<ChatMessage>) =
-        CallResults.close(messages, { ChatMessage("new", Role.TOOL, it, 0) }) { call, first ->
-            Part.ToolResult(call.id, call.name, if (first) "first" else "later", isError = true)
+        CallResults.close(messages, 0, { ChatMessage("new", Role.TOOL, it, 0) }) { call, place ->
+            Part.ToolResult(call.id, call.name, place.name.lowercase(), isError = true)
         }
 
     private fun results(message: ChatMessage) =
@@ -34,22 +34,23 @@ class CallResultsTest {
         val messages = listOf(user("u1"), assistant("a1", "c1", "c2"), tool("t1", "c1"), user("u2"))
         val closed = close(messages)
         assertEquals(listOf("u1", "a1", "t1", "u2"), closed.map { it.id })
-        assertEquals(listOf("c1" to "ok", "c2" to "first"), results(closed[2]))
+        // The user's message came after it, so no run was at the call.
+        assertEquals(listOf("c1" to "ok", "c2" to "earlier_turn"), results(closed[2]))
     }
 
     @Test
     fun aTurnWithNoToolMessageGetsOneRightAfterIt() {
-        val messages = listOf(user("u1"), assistant("a1", "c1", "c2"), user("u2"))
+        val messages = listOf(user("u1"), assistant("a1", "c1", "c2"))
         val closed = close(messages)
-        assertEquals(listOf("u1", "a1", "new", "u2"), closed.map { it.id })
+        assertEquals(listOf("u1", "a1", "new"), closed.map { it.id })
         assertEquals(listOf("c1" to "first", "c2" to "later"), results(closed[2]))
     }
 
     @Test
     fun noticesBetweenATurnAndItsResultsAreSkipped() {
-        val messages = listOf(user("u1"), assistant("a1", "c1", "c2"), notice("n1"), tool("t1", "c1"), user("u2"))
+        val messages = listOf(user("u1"), assistant("a1", "c1", "c2"), notice("n1"), tool("t1", "c1"), notice("n2"))
         val closed = close(messages)
-        assertEquals(listOf("u1", "a1", "n1", "t1", "u2"), closed.map { it.id })
+        assertEquals(listOf("u1", "a1", "n1", "t1", "n2"), closed.map { it.id })
         assertEquals(listOf("c1" to "ok", "c2" to "first"), results(closed[3]))
     }
 
@@ -62,10 +63,11 @@ class CallResultsTest {
 
     @Test
     fun openCallsInSeveralTurnsAreAllClosedInPlace() {
-        val messages = listOf(user("u1"), assistant("a1", "c1"), user("u2"), assistant("a2", "c2", "c3"), tool("t2", "c2"), user("u3"))
+        val messages = listOf(user("u1"), assistant("a1", "c1"), user("u2"), assistant("a2", "c2", "c3"), tool("t2", "c2"))
         val closed = close(messages)
-        assertEquals(listOf("u1", "a1", "new", "u2", "a2", "t2", "u3"), closed.map { it.id })
-        assertEquals(listOf("c1" to "first"), results(closed[2]))
+        assertEquals(listOf("u1", "a1", "new", "u2", "a2", "t2"), closed.map { it.id })
+        // Only the last turn's first open call is the one a run was at.
+        assertEquals(listOf("c1" to "earlier_turn"), results(closed[2]))
         assertEquals(listOf("c2" to "ok", "c3" to "first"), results(closed[5]))
     }
 
@@ -79,6 +81,9 @@ class CallResultsTest {
         assertEquals(listOf(CallResults.INTERRUPTED_WAITING, CallResults.INTERRUPTED_BEFORE),
             waiting[2].parts.filterIsInstance<Part.ToolResult>().drop(1).map { it.output })
         assertTrue(waiting[2].parts.filterIsInstance<Part.ToolResult>().drop(1).all { it.isError })
+        // A call an earlier turn left open wasn't running: nothing is known about it.
+        val older = CallResults.closeInterrupted(listOf(user("u0"), assistant("a0", "c0")) + messages, waited = false, now = 0)
+        assertEquals(listOf(CallResults.MISSING), older[2].parts.filterIsInstance<Part.ToolResult>().map { it.output })
     }
 
     @Test

@@ -22,27 +22,48 @@ object CallResults {
     const val MISSING = "No result was saved for this call, so whether it ran is unknown."
 
     /**
-     * [messages] with the calls a process that ended left open closed (see [close]): the first of a turn as
-     * [INTERRUPTED], or [INTERRUPTED_WAITING] when the run [waited] for the user, the rest as [INTERRUPTED_BEFORE].
+     * [messages] with the calls a process that ended left open closed (see [close]): the one the run was at as
+     * [INTERRUPTED], or [INTERRUPTED_WAITING] when the run [waited] for the user, the rest of its turn as
+     * [INTERRUPTED_BEFORE], and those of earlier turns as [MISSING].
      */
     fun closeInterrupted(messages: List<ChatMessage>, waited: Boolean, now: Long): List<ChatMessage> =
-        close(messages, { results -> ChatMessage(newMessageId("t"), Role.TOOL, results, now) }) { call, first ->
-            val output = when {
-                !first -> INTERRUPTED_BEFORE
-                waited -> INTERRUPTED_WAITING
-                else -> INTERRUPTED
+        close(messages, now) { call, place ->
+            val output = when (place) {
+                Place.FIRST -> if (waited) INTERRUPTED_WAITING else INTERRUPTED
+                Place.LATER -> INTERRUPTED_BEFORE
+                Place.EARLIER_TURN -> MISSING
             }
-            Part.ToolResult(call.id, call.name, output, isError = true, summary = "Interrupted")
+            Part.ToolResult(call.id, call.name, output, isError = true,
+                summary = if (place == Place.EARLIER_TURN) "No result" else "Interrupted")
         }
 
     /** [messages] with every call that has no result closed as [MISSING]. */
     fun closeMissing(messages: List<ChatMessage>, now: Long): List<ChatMessage> =
-        close(messages, { results -> ChatMessage(newMessageId("t"), Role.TOOL, results, now) }) { call, _ ->
+        close(messages, now) { call, _ ->
             Part.ToolResult(call.id, call.name, MISSING, isError = true, summary = "No result")
         }
 
     /** A turn and those of its calls that have no result in the tool message right after it. */
     data class Unanswered(val turn: ChatMessage, val calls: List<Part.ToolCall>)
+
+    /** Where an unanswered call is, which tells what can be said about it. */
+    enum class Place {
+        /** The first open call of the [current] turn: the one the run was at, running it or waiting for the user. */
+        FIRST,
+        /** One after it in that turn, which didn't start. */
+        LATER,
+        /** One of an earlier turn, left open elsewhere, such as by an older version: nothing is known about it. */
+        EARLIER_TURN,
+    }
+
+    /**
+     * The turn a run goes on with, and its calls that have no result: the last turn the model took part in, when it is
+     * the assistant's and has open calls; null otherwise.
+     */
+    fun current(messages: List<ChatMessage>): Unanswered? {
+        val last = messages.lastOrNull { takesPart(it) && it.role != Role.TOOL } ?: return null
+        return unanswered(messages).lastOrNull()?.takeIf { it.turn.id == last.id }
+    }
 
     /** Every turn with unanswered calls, oldest first. Notices are skipped: the model never sees them. */
     fun unanswered(messages: List<ChatMessage>): List<Unanswered> {
@@ -61,24 +82,32 @@ object CallResults {
     }
 
     /**
-     * [messages] with a result for every unanswered call: [result] makes it from the call and whether it is the first
-     * unanswered one of its turn (the turn's calls run in order, so that one is the call that was running). Results go
-     * into the tool message right after the turn, or a new one made by [newMessage] right after it: not at the end,
-     * where the user's next message may already be.
+     * [messages] with a result for every unanswered call: [result] makes it from the call and its [Place] (a turn's
+     * calls run in order, so the first open one of the [current] turn is the call the run was at). Results go into the
+     * tool message right after the turn, or a new one made by [newMessage] right after it: not at the end, where the
+     * user's next message may already be.
      */
     fun close(
         messages: List<ChatMessage>,
-        newMessage: (List<Part.ToolResult>) -> ChatMessage,
-        result: (call: Part.ToolCall, first: Boolean) -> Part.ToolResult,
+        now: Long,
+        newMessage: (List<Part.ToolResult>) -> ChatMessage = { results -> ChatMessage(newMessageId("t"), Role.TOOL, results, now) },
+        result: (call: Part.ToolCall, place: Place) -> Part.ToolResult,
     ): List<ChatMessage> {
         val open = unanswered(messages)
         if (open.isEmpty())
             return messages
+        val current = current(messages)?.turn?.id
         val out = messages.toMutableList()
         // From the last turn back, so that inserting a message keeps the earlier indexes right.
         for ((turn, calls) in open.asReversed()) {
             val index = out.indexOfFirst { it.id == turn.id }
-            val results = calls.mapIndexed { i, call -> result(call, i == 0) }
+            val results = calls.mapIndexed { i, call ->
+                result(call, when {
+                    turn.id != current -> Place.EARLIER_TURN
+                    i == 0 -> Place.FIRST
+                    else -> Place.LATER
+                })
+            }
             val answer = answerOf(out, index)
             if (answer != null)
                 out[answer] = out[answer].copy(parts = out[answer].parts + results)

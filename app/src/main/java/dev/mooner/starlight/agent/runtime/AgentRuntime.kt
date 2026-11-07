@@ -133,6 +133,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     private val approvalPreviews = ConcurrentHashMap<String, String>()
     /** When each run going on started. */
     private val startedAt = ConcurrentHashMap<String, Long>()
+    /** The call whose tool is running, by conversation; one a stop cut short stays until its result is written. */
+    private val runningCalls = ConcurrentHashMap<String, String>()
     private val mDismissed = MutableStateFlow<Set<String>>(emptySet())
     /** Runs whose progress notification the user swiped away; they aren't shown as a Live Update again. */
     val dismissed: StateFlow<Set<String>> = mDismissed.asStateFlow()
@@ -708,7 +710,10 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         } catch (e: CancellationException) {
             val byTimeLimit = (e as? StopException)?.byTimeLimit == true
             withContext(NonCancellable) {
-                answerOpenCalls(id, if (byTimeLimit) "Android stopped the run before this ran." else "The user stopped the run before this ran.")
+                val who = if (byTimeLimit) "Android" else "The user"
+                answerOpenCalls(id, "$who stopped the run before this ran.",
+                    running = "$who stopped the run while this call ran, so whether it took effect is unknown, and what it " +
+                        "started may go on, as a compile does. Check before running it again.")
                 if (byTimeLimit)
                     appendNotice(id, NoticeKind.TIME_LIMIT, string(R.string.agent_notice_time_limit))
                 else
@@ -875,9 +880,11 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 hub.checkpoints.recorder(id, turn)
             }
         }
+        runningCalls[id] = call.id
         val output = try {
             tool.run(context, args)
         } catch (e: CancellationException) {
+            // Left in runningCalls: the stop tells this call, which may have taken effect, from those that didn't start.
             throw e
         } catch (e: ToolException) {
             ToolOutput.error(e.message ?: e.toString())
@@ -886,6 +893,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             LOG.warn { "Tool ${tool.name} failed: $e" }
             ToolOutput.error("${tool.name} failed: ${e.message ?: e}")
         }
+        runningCalls.remove(id, call.id)
         return Part.ToolResult(call.id, call.name, cap(output.text), output.isError, output.summary, output.card, output.images,
             output.diff)
     }
@@ -983,12 +991,22 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         }
     }
 
-    /** Gives every call that has no result one, whatever turn it is in, so that the history stays valid. */
-    private fun answerOpenCalls(id: String, reason: String) {
+    /**
+     * Gives every call that has no result one, whatever turn it is in, so that the history stays valid: [reason] for
+     * those of the run's turn that didn't start, [running] for the one whose tool was running, and
+     * [CallResults.MISSING] for an earlier turn's.
+     */
+    private fun answerOpenCalls(id: String, reason: String, running: String = reason) {
         val now = System.currentTimeMillis()
+        val runningCall = runningCalls.remove(id)
         updateConversation(id) { conversation ->
-            val messages = CallResults.close(conversation.messages, { results -> ChatMessage(newId("t"), Role.TOOL, results, now) }) { call, _ ->
-                Part.ToolResult(call.id, call.name, reason, isError = true, summary = "Not run")
+            val messages = CallResults.close(conversation.messages, now) { call, place ->
+                when {
+                    place == CallResults.Place.EARLIER_TURN ->
+                        Part.ToolResult(call.id, call.name, CallResults.MISSING, isError = true, summary = "No result")
+                    call.id == runningCall -> Part.ToolResult(call.id, call.name, running, isError = true, summary = "Stopped")
+                    else -> Part.ToolResult(call.id, call.name, reason, isError = true, summary = "Not run")
+                }
             }
             if (messages === conversation.messages) conversation else conversation.copy(messages = messages, updatedAt = now)
         }

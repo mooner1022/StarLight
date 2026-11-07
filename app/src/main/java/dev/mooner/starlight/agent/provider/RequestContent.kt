@@ -76,7 +76,7 @@ internal object RequestContent {
             }
         }
         return CallResults.withoutStrayResults(
-            CallResults.close(visible, { results -> ChatMessage("t-missing-" + results.first().callId, Role.TOOL, results, 0) }) { call, _ ->
+            CallResults.close(visible, 0, { results -> ChatMessage("t-missing-" + results.first().callId, Role.TOOL, results, 0) }) { call, _ ->
                 Part.ToolResult(call.id, call.name, CallResults.MISSING, isError = true)
             }
         )
