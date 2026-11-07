@@ -13,11 +13,11 @@ import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.project.Project
-import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.project.event.getInstance
 import dev.mooner.starlight.utils.zip
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArrayBuilder
 import kotlinx.serialization.json.JsonObject
@@ -542,16 +542,22 @@ class StarLightTools(private val docs: AgentDocs) {
             levels.firstOrNull { Session.apiLevelManager.getLevel(it) == null }?.let { id ->
                 throw ToolException("No API level '$id'. See list_apis.")
             }
-            val events = newProjectEvents(args.stringSet("events").ifEmpty { setOf(MESSAGE_EVENT) }, levels)
+            val ids = newProjectEvents(args.stringSet("events").ifEmpty { setOf(MESSAGE_EVENT) }, levels)
+            val (received, outside) = ids.partition { Session.apiLevelManager.hasEvent(levels, it) }
             checkpoint.project(name)
-            manager.newProject(events = events) {
+            // Starting code only for the events it receives: an outside one's would use objects the project doesn't have.
+            manager.newProject(events = received.associateWithTo(LinkedHashMap()) { ProjectEventManager.findFirst(it)!!.getInstance() }) {
                 this.name = name
                 mainScript = "$name.${language.fileExtension}"
                 this.languageId = language.id
                 apiLevels = levels
+                // Only these: the default, starlight.*, would let every StarLight event of its levels in.
+                allowedEventIds = ids.toSet()
             }
             val project = manager.getProjectByName(name) ?: throw ToolException("Project $name was not created")
-            ToolOutput("Created $name with main script ${project.info.mainScript}", summary = name)
+            val text = "Created $name with main script ${project.info.mainScript}" +
+                if (outside.isEmpty()) "" else "\nAllowed, but outside its API levels, so never received: ${outside.joinToString()}"
+            ToolOutput(text, summary = name)
         },
         tool(
             "set_project_enabled",
@@ -741,39 +747,64 @@ class StarLightTools(private val docs: AgentDocs) {
      * compile (an endless loop, a wait on the UI thread), and the call must still get a result, or the conversation is
      * left with an unanswered call when the user closes the app that stopped responding. Stopping the run stops the
      * wait too. The compile itself can't be stopped.
+     *
+     * A project compiles once at a time. A compile of it started earlier, by another conversation or a run the user
+     * stopped, is waited for while it is within that time, and only past it reported stuck.
      */
-    private suspend fun compile(project: Project): ToolOutput = withContext(Dispatchers.IO) {
+    private suspend fun compile(project: Project): ToolOutput {
         val name = project.info.name
         val id = project.info.id
-        val startMillis = System.currentTimeMillis()
         val seconds = GlobalConfig.category("project").getInt(CONF_COMPILE_TIMEOUT, DEFAULT_COMPILE_TIMEOUT_SECONDS)
-        var running: Thread? = null
-        // Registered before it starts, in one step with the check, so that two compiles at once can't both start.
-        val canStart = { thread: Thread ->
-            compiles.compute(id) { _, current -> current?.takeIf(Thread::isAlive)?.also { running = it } ?: thread }
-            running == null
+        val millis = seconds * 1000L
+        while (true) {
+            val startMillis = System.currentTimeMillis()
+            var earlier: RunningCompile? = null
+            // Registered before it starts, in one step with the check, so that two compiles at once can't both start. One
+            // counts until it ends: before BoundedRun starts it, it isn't alive yet.
+            val canStart = { thread: Thread ->
+                compiles.compute(id) { _, current ->
+                    current?.takeIf { it.thread.state != Thread.State.TERMINATED }?.also { earlier = it }
+                        ?: RunningCompile(thread, startMillis)
+                }
+                earlier == null
+            }
+            val onEnd = { thread: Thread ->
+                compiles.computeIfPresent(id) { _, current -> current.takeUnless { it.thread === thread } }
+                Unit
+            }
+            val outcome = BoundedRun.run("agent-compile-$name", millis, canStart, onEnd) { project.compile(true) }
+            if (outcome != null)
+                return compileResult(project, outcome, startMillis, seconds)
+            val other = earlier!!
+            val deadline = other.startMillis + millis
+            while (other.thread.state != Thread.State.TERMINATED && System.currentTimeMillis() < deadline)
+                runInterruptible { other.thread.join((deadline - System.currentTimeMillis()).coerceAtLeast(1)) }
+            if (other.thread.state != Thread.State.TERMINATED)
+                return ToolOutput("A compile of $name that started ${(System.currentTimeMillis() - other.startMillis) / 1000} " +
+                    "seconds ago is still running, stuck: it can't be stopped, and compiling again would wait behind it. The " +
+                    "app has to be restarted first; tell the user. Where it is:\n" + whereIs(other.thread), isError = true,
+                    summary = "Still compiling")
         }
-        val outcome = BoundedRun.run("agent-compile-$name", seconds * 1000L, canStart, onEnd = { compiles.remove(id, it) }) {
-            project.compile(true)
-        } ?: return@withContext ToolOutput("A compile of $name that started earlier is still running, stuck: it can't " +
-            "be stopped, and compiling again would wait behind it. The app has to be restarted first; tell the user. " +
-            "Where it is:\n" + whereIs(running!!), isError = true, summary = "Still compiling")
+    }
+
+    private fun compileResult(project: Project, outcome: BoundedRun.Outcome, startMillis: Long, seconds: Int): ToolOutput {
+        val name = project.info.name
         val logs = synchronized(project.logger.logs) { project.logger.logs.filter { it.millis >= startMillis } }
         val logText = if (logs.isEmpty()) "" else "\n\nLogs:\n" + formatLogs(logs, logs.size)
         if (!outcome.finished)
-            return@withContext ToolOutput("Compiling $name didn't finish within $seconds seconds, so it is reported as failed. " +
+            return ToolOutput("Compiling $name didn't finish within $seconds seconds, so it is reported as failed. " +
                 "Its script may be stuck, as in an endless loop or a wait on the UI thread, and the compile is still running: " +
                 "it can't be stopped, and the app may stop responding or have to be restarted before $name can be compiled " +
                 "again. Where it is:\n${whereIs(outcome.thread)}$logText", isError = true, summary = "Timed out after $seconds s")
         val error = outcome.error
         if (error == null)
-            return@withContext ToolOutput("Compiled ${project.info.name}$logText", summary = project.info.name)
+            return ToolOutput("Compiled ${project.info.name}$logText", summary = project.info.name)
         val location = ScriptErrors.locate(error)?.let { at ->
             val source = at.source?.let { sourcePath(project, it) } ?: project.info.mainScript
             " (at $source:${at.line}${at.column?.let { ":$it" }.orEmpty()})"
         }.orEmpty()
         val message = ScriptErrors.message(error)
-        ToolOutput("Failed to compile ${project.info.name}: $message$location$logText", isError = true, summary = message.take(120))
+        return ToolOutput("Failed to compile ${project.info.name}: $message$location$logText", isError = true, summary = message.take(120))
     }
 
     /**
@@ -849,11 +880,11 @@ class StarLightTools(private val docs: AgentDocs) {
         ProjectEventManager.filterAllowedEvents(project.info.allowedEventIds)
 
     /**
-     * The events a new project gets for the [requested] entries, each with its starting code. A wildcard
-     * (`starlight.*`) stands for the matching events that [levels] have, as the new-project screen picks them; an ID
-     * named outright is kept even outside them. Stored expanded, as set_project_events stores them.
+     * The IDs of the events a new project receives for the [requested] entries, stored expanded, as set_project_events
+     * stores them. A wildcard (`starlight.*`) stands for the matching events that [levels] have, as the new-project
+     * screen picks them; an ID named outright is kept even outside them, as set_project_events keeps it.
      */
-    private fun newProjectEvents(requested: Set<String>, levels: Set<String>): Map<String, ProjectEvent> {
+    private fun newProjectEvents(requested: Set<String>, levels: Set<String>): List<String> {
         val known = ProjectEventManager.find(ALL_EVENTS).mapNotNullTo(hashSetOf()) { ProjectEventManager.validateAndGetEventID(it) }
         val unknown = requested.filter { '*' !in it && it.removePrefix("!") !in known }
         if (unknown.isNotEmpty())
@@ -863,7 +894,7 @@ class StarLightTools(private val docs: AgentDocs) {
             .sorted()
         if (ids.isEmpty())
             throw ToolException("${requested.joinToString()} match no event of the API levels ${levels.joinToString()}. See list_events.")
-        return ids.associateWithTo(LinkedHashMap()) { ProjectEventManager.findFirst(it)!!.getInstance() }
+        return ids
     }
 
     private fun ParamsBuilder.waitParams() {
@@ -953,7 +984,9 @@ class StarLightTools(private val docs: AgentDocs) {
             "string writes only if the file doesn't exist.", optional = true)
 
     /** Compiles [compile] started, by project ID, until they end; one stuck stays here. */
-    private val compiles = ConcurrentHashMap<Any, Thread>()
+    private val compiles = ConcurrentHashMap<Any, RunningCompile>()
+
+    private class RunningCompile(val thread: Thread, val startMillis: Long)
 
     /** The top of [thread]'s stack, the app's and the engines' frames, to tell where a compile is stuck. */
     private fun whereIs(thread: Thread): String =

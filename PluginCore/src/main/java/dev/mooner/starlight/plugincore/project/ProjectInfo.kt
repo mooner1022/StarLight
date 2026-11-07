@@ -72,6 +72,8 @@ class ProjectInfoBuilder {
     var languageId : String by notNull()
     /** The levels to start with; the default ones when not set. */
     var apiLevels  : Set<String>? = null
+    /** The allowed-event entries to start with; `starlight.*` when not set. The events given for starting code join them. */
+    var allowedEventIds: Set<String>? = null
 
     fun build() = ProjectInfo(
         name = name,
@@ -79,7 +81,11 @@ class ProjectInfoBuilder {
         languageId = languageId,
         isEnabled = false,
         apiLevels = apiLevels ?: Session.apiLevelManager.defaultLevelIds,
-        //allowedEventIds = allowedEventIds,
         //packages = packages
-    )
+    ).also { info ->
+        allowedEventIds?.let { ids ->
+            info.allowedEventIds.clear()
+            info.allowedEventIds += ids
+        }
+    }
 }
