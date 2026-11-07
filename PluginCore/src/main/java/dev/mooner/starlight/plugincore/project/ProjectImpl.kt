@@ -171,7 +171,17 @@ class ProjectImpl private constructor(
             }
             // One compile of the project at a time, whoever started it (the app, a script, StarLight AI): two at once
             // would each release and swap the scope the other is building. One stuck past the wait fails this one.
-            if (!runInterruptible { compilePermit.tryAcquire(COMPILE_WAIT_SECONDS, TimeUnit.SECONDS) }) {
+            // Noted inside the block: cancelled just as the permit is taken, runInterruptible throws instead of returning
+            // it, and it is given back here.
+            var acquired = false
+            try {
+                runInterruptible { acquired = compilePermit.tryAcquire(COMPILE_WAIT_SECONDS, TimeUnit.SECONDS) }
+            } catch (e: Throwable) {
+                if (acquired)
+                    compilePermit.release()
+                throw e
+            }
+            if (!acquired) {
                 logger.e(tag, translate {
                     Locale.ENGLISH { "A compile of ${info.name} that started earlier is still running" }
                     Locale.KOREAN  { "먼저 시작된 ${info.name} 컴파일이 아직 진행 중이에요" }
