@@ -79,7 +79,6 @@ class JSNeon: Language() {
             ExecutionMode.INTERPRETER
 
         val engine = NeonEngine.builder()
-            .contextWaitLimit(MainThreadWait.LIMIT_MILLIS, MainThreadWait::appliesTo)
             .executionMode(execMode)
             .optimizingTier(isOptimized && langConf.getBoolean(CONF_ADVANCED_OPTIMIZATION, false))
             .sandbox(
@@ -180,7 +179,6 @@ class JSNeon: Language() {
         val optimizationLevel = options["optimizationLevel"]?.toIntOrNull() ?: 0
 
         val engine = NeonEngine.builder()
-            .contextWaitLimit(MainThreadWait.LIMIT_MILLIS, MainThreadWait::appliesTo)
             .let { if (BuildConfig.SCRIPT_JIT) it.optimizationLevel(optimizationLevel) else it.executionMode(ExecutionMode.INTERPRETER) }
             .sandbox(
                 SandboxPolicy.builder()
@@ -379,6 +377,7 @@ class JSNeon: Language() {
         private const val CONF_LOAD_EXT_MODULES = "load_ext_modules"
         private const val CONF_EXT_MODULE_SANDBOX = "load_ext_module_sandbox"
         private const val DEF_OPTIMIZATION_LEVEL = 2 // Adaptive
+
 
         private val hostAccess: HostAccess = buildHostAccess(ScriptHostPolicy.isEnabled)
 
