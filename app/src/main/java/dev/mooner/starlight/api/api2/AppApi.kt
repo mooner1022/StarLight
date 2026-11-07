@@ -1,6 +1,7 @@
 package dev.mooner.starlight.api.api2
 
 import android.content.Context
+import dev.mooner.neonjs.NeonTimeoutException
 import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
@@ -10,6 +11,7 @@ import dev.mooner.starlight.plugincore.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import java.util.concurrent.Callable
 
@@ -47,8 +49,9 @@ class AppApi: Api<AppApi.App>() {
              *
              * In NeonJS, the main thread waits at most 2 seconds for the script's other code to finish before it
              * runs [task], and again before [onComplete]. If the script is still busy then, as when it keeps running
-             * after this call, [task] doesn't run and [onComplete] gets an error saying the wait timed out; if it is
-             * busy past that too, the error is only logged.
+             * after this call, [task] doesn't run and [onComplete] gets an error saying the wait timed out. If the
+             * script is busy past the second wait too, [onComplete] is called on another thread instead, once the
+             * script's code has finished.
              *
              * @param task The function to run, with no arguments.
              * @param onComplete Called with `(error, result)`: the Java error [task] threw and `null`, or `null` and
@@ -63,9 +66,21 @@ class AppApi: Api<AppApi.App>() {
                     // onComplete in a main-thread message of its own: each may wait for the script's context, and two
                     // waits in one message would hold the main thread past input's time limit.
                     yield()
-                    outcome.fold({ runCatching { onComplete(null, it) } }, { runCatching { onComplete(it, null) } })
-                        .onFailure { LOG.error { "App.runOnUiThread: onComplete failed: $it" } }
+                    val error = runCatching { complete(outcome, onComplete) }.exceptionOrNull() ?: return@launch
+                    if (error !is NeonTimeoutException) {
+                        LOG.error { "App.runOnUiThread: onComplete failed: $error" }
+                        return@launch
+                    }
+                    // The main thread gave up waiting for the script's context before onComplete started. Off it, the
+                    // wait has no limit, so the script still gets the outcome once its other code has finished.
+                    withContext(Dispatchers.IO) {
+                        runCatching { complete(outcome, onComplete) }
+                            .onFailure { LOG.error { "App.runOnUiThread: onComplete failed: $it" } }
+                    }
                 }
+
+            private fun complete(outcome: Result<Any?>, onComplete: (error: Throwable?, result: Any?) -> Unit) =
+                outcome.fold({ onComplete(null, it) }, { onComplete(it, null) })
         }
     }
 

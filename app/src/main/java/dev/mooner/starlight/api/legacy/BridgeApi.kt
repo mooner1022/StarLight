@@ -72,7 +72,7 @@ class BridgeApi: Api<BridgeApi.Bridge>() {
         function {
             name = "getScopeOf"
             args = arrayOf(String::class.java)
-            returns = ScriptableObject::class.java
+            returns = Any::class.java
         },
         function {
             name = "isAllowed"

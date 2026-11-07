@@ -447,13 +447,14 @@ class LegacyApi: Api<LegacyApi.Api>() {
          */
         @JvmOverloads
         fun UIThread(func: Callable<Any>, onComplete: (error: Throwable?, result: Any?) -> Unit = { _, _ -> }) {
-            val outcome = runCatching {
+            val outcome =
                 // On the main thread already (in a UI callback, say): waiting for it would never end.
                 if (Looper.myLooper() == Looper.getMainLooper())
-                    func.call()
+                    runCatching { func.call() }
+                // Only func's own error is caught: an interrupt of the wait, as when the project stops, ends the script
+                // instead of reaching onComplete.
                 else
-                    whileWaiting { runBlocking(Dispatchers.Main) { func.call() } }
-            }
+                    whileWaiting { runBlocking(Dispatchers.Main) { runCatching { func.call() } } }
             outcome.fold({ onComplete(null, it) }, { onComplete(it, null) })
         }
 
