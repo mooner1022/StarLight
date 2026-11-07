@@ -11,6 +11,10 @@ public final class dev/mooner/starlight/plugincore/Info$Companion {
 	public final fun getPLUGINCORE_VERSION ()Ldev/mooner/starlight/plugincore/version/Version;
 }
 
+public abstract interface annotation class dev/mooner/starlight/plugincore/RequiresPluginCore : java/lang/annotation/Annotation {
+	public abstract fun version ()Ljava/lang/String;
+}
+
 public final class dev/mooner/starlight/plugincore/RuntimeClassLoader : java/lang/ClassLoader {
 	public fun <init> (Ljava/lang/ClassLoader;)V
 	public final fun findClass (Ljava/lang/String;Z)Ljava/lang/Class;
