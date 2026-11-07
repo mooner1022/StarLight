@@ -176,20 +176,11 @@ class AgentDocsProcessor(
         val varargs = function.parameters.withIndex().filter { it.value.isVararg }.map { it.index }
         if (varargs.isEmpty())
             return descriptor
-        val close = descriptor.indexOf(')')
-        val params = mutableListOf<String>()
-        var i = 1
-        while (i < close) {
-            val start = i
-            while (descriptor[i] == '[')
-                i++
-            i = if (descriptor[i] == 'L') descriptor.indexOf(';', i) + 1 else i + 1
-            params += descriptor.substring(start, i)
-        }
+        val params = parameterDescriptors(descriptor)?.toMutableList() ?: return descriptor
         for (index in varargs)
             if (index < params.size)
                 params[index] = "[" + params[index]
-        return "(" + params.joinToString("") + descriptor.substring(close)
+        return "(" + params.joinToString("") + descriptor.substring(descriptor.indexOf(')'))
     }
 
     private fun JsonObjectBuilder.property(resolver: Resolver, property: KSPropertyDeclaration) {
@@ -305,4 +296,29 @@ class AgentDocsProcessor(
         /** What KSP writes for a type it couldn't resolve, in Kotlin types and in JVM descriptors. */
         val UNRESOLVED = listOf("<ERROR", "error/NonExistentClass")
     }
+}
+
+/** The parameter descriptors of the method [descriptor], such as `(I[Ljava/lang/String;)V`; null when it is malformed. */
+internal fun parameterDescriptors(descriptor: String): List<String>? {
+    val close = descriptor.indexOf(')')
+    if (!descriptor.startsWith("(") || close < 0)
+        return null
+    val params = mutableListOf<String>()
+    var i = 1
+    while (i < close) {
+        val start = i
+        while (i < close && descriptor[i] == '[')
+            i++
+        if (i == close)
+            return null
+        i = if (descriptor[i] == 'L') {
+            // A class name ends with ';' before the parameters do.
+            val end = descriptor.indexOf(';', i)
+            if (end < 0 || end > close)
+                return null
+            end + 1
+        } else i + 1
+        params += descriptor.substring(start, i)
+    }
+    return params
 }

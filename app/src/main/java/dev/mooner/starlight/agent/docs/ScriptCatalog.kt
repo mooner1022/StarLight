@@ -134,14 +134,27 @@ class ScriptCatalog(
     private fun externalOf(cls: Class<*>, isClass: Boolean): Set<Class<*>> =
         runCatching { describe(cls, isClass).external }.getOrDefault(emptySet())
 
-    /** Package prefixes of the code APIs come from: StarLight's, and each plugin's own beside the libraries it bundles. */
+    /**
+     * Package prefixes of the code APIs come from: StarLight's, and each plugin's own beside the libraries it bundles,
+     * the first three parts of its API's package (`com.example.` for `com.example.MyApi`).
+     */
     private val ownPackages: List<String> by lazy {
-        (listOf("dev.mooner.") + apis.map { api -> api.cls.name.split('.').take(3).joinToString(".", postfix = ".") }).distinct()
+        (listOf("dev.mooner.") + apis.mapNotNull { api ->
+            api.cls.name.substringBeforeLast('.', "").takeIf { it.isNotEmpty() }
+                ?.split('.')?.take(3)?.joinToString(".", postfix = ".")
+        }).distinct()
     }
 
-    /** Whether [cls] is StarLight's or a plugin's own, rather than the platform's or a library's. */
-    fun isOwn(cls: Class<*>): Boolean =
-        !isPlatform(cls) && ownPackages.any(cls.name::startsWith)
+    /**
+     * Whether [cls] is StarLight's or a plugin's own, rather than the platform's or a library's. The longer prefix
+     * decides: NeonJS's `dev.mooner.neonjs.` is a library's within StarLight's `dev.mooner.`, and a plugin's
+     * `org.example.bot.` its own within `org.`.
+     */
+    fun isOwn(cls: Class<*>): Boolean {
+        val own = ownPackages.filter(cls.name::startsWith).maxOfOrNull { it.length } ?: return false
+        val platform = PLATFORM_PACKAGES.filter(cls.name::startsWith).maxOfOrNull { it.length } ?: return true
+        return own > platform
+    }
 
     /** A class of the closure by its Kotlin name, as doc files write types: nested classes joined with `.`. */
     fun classForKotlinName(name: String): Class<*>? =
@@ -185,8 +198,9 @@ class ScriptCatalog(
     }
 
     /**
-     * [field]'s value when it is a string constant: a final static field, or a final field of a class that only holds
-     * such fields (API2's `Event`), which is safe to construct to read them. Null otherwise.
+     * [field]'s value when it is a string constant: a final static field, or a final field of a class of StarLight's
+     * that only holds such fields (API2's `Event`), which is safe to construct to read them. Null otherwise: a plugin's
+     * class isn't constructed, as its constructor could do anything, and reading docs mustn't run it.
      */
     private fun constantOf(field: Field, isStatic: Boolean): String? {
         if (field.type != String::class.java || !Modifier.isFinal(field.modifiers))
@@ -194,7 +208,8 @@ class ScriptCatalog(
         val owner = field.declaringClass
         val instance = when {
             isStatic -> null
-            !holdsOnlyConstants(owner) -> return null
+            // Plugins' classes come from loaders of their own.
+            owner.classLoader !== ScriptCatalog::class.java.classLoader || !holdsOnlyConstants(owner) -> return null
             else -> synchronized(constantHolders) {
                 constantHolders.getOrPut(owner) { runCatching { owner.getConstructor().newInstance() }.getOrNull() }
             } ?: return null
@@ -473,7 +488,7 @@ class ScriptCatalog(
             else -> "L" + cls.name.replace('.', '/') + ";"
         }
 
-        /** Splits a key into its name, parameter descriptors and return descriptor. */
+        /** Splits a key into its name, parameter descriptors and return descriptor; null when it is malformed. */
         fun parseKey(key: String): Triple<String, List<String>, String>? {
             val open = key.indexOf('(')
             val close = key.indexOf(')', open)
@@ -483,9 +498,17 @@ class ScriptCatalog(
             var i = open + 1
             while (i < close) {
                 val start = i
-                while (key[i] == '[')
+                while (i < close && key[i] == '[')
                     i++
-                i = if (key[i] == 'L') key.indexOf(';', i) + 1 else i + 1
+                if (i == close)
+                    return null
+                i = if (key[i] == 'L') {
+                    // A class name ends with ';' before the parameters do.
+                    val end = key.indexOf(';', i)
+                    if (end < 0 || end > close)
+                        return null
+                    end + 1
+                } else i + 1
                 params += key.substring(start, i)
             }
             return Triple(key.substring(0, open), params, key.substring(close + 1))
