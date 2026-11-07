@@ -497,8 +497,7 @@ class StarLightTools(private val docs: AgentDocs) {
             val project = findProject(args)
             val allow = args.stringSet("allow")
             val disallow = args.stringSet("disallow")
-            val known = ProjectEventManager.find(ALL_EVENTS).mapNotNullTo(hashSetOf()) { ProjectEventManager.validateAndGetEventID(it) }
-            val unknown = (allow + disallow) - known
+            val unknown = (allow + disallow) - knownEventIds()
             if (unknown.isNotEmpty())
                 throw ToolException("Unknown events: ${unknown.joinToString()}. See list_events.")
             // Allowed ids may be wildcards such as starlight.*; they are stored expanded so that one can be removed.
@@ -508,11 +507,7 @@ class StarLightTools(private val docs: AgentDocs) {
                 allowedEventIds.clear()
                 allowedEventIds.addAll(events)
             }
-            val (received, outside) = allowedEvents(project).sorted()
-                .partition { Session.apiLevelManager.hasEvent(project.info.apiLevels, it) }
-            val text = "Receives: ${received.joinToString().ifEmpty { "nothing" }}" +
-                if (outside.isEmpty()) "" else "\nAllowed, but outside its API levels, so never received: ${outside.joinToString()}"
-            ToolOutput(text, summary = project.info.name)
+            ToolOutput(describeReception(allowedEvents(project), project.info.apiLevels), summary = project.info.name)
         },
         tool(
             "create_project",
@@ -522,8 +517,10 @@ class StarLightTools(private val docs: AgentDocs) {
             params = {
                 string("name", "Project name: letters, digits, Hangul, '-' and '_'.")
                 string("language", "Language id from list_languages; js_neon (NeonJS) unless the user asks otherwise.")
-                stringArray("events", "Event ids it receives (default: $MESSAGE_EVENT); a wildcard such as starlight.* " +
-                    "stands for the matching events of its API levels.", optional = true)
+                stringArray("events", "Event ids it receives, each with starting code; a wildcard such as starlight.* " +
+                    "stands for the matching events of its API levels. Default: every StarLight event of its API levels " +
+                    "(starlight.*), as a project made in the app receives, with starting code for $MESSAGE_EVENT.",
+                    optional = true)
                 stringArray("api_levels", "API level ids whose objects and events the scripts get, from list_apis " +
                     "(default: StarLight's own, $DEFAULT_API_LEVEL).", optional = true)
             },
@@ -542,8 +539,9 @@ class StarLightTools(private val docs: AgentDocs) {
             levels.firstOrNull { Session.apiLevelManager.getLevel(it) == null }?.let { id ->
                 throw ToolException("No API level '$id'. See list_apis.")
             }
-            val ids = newProjectEvents(args.stringSet("events").ifEmpty { setOf(MESSAGE_EVENT) }, levels)
-            val (received, outside) = ids.partition { Session.apiLevelManager.hasEvent(levels, it) }
+            val requested = args.stringSet("events")
+            val ids = newProjectEvents(requested.ifEmpty { setOf(MESSAGE_EVENT) }, levels)
+            val received = ids.filter { Session.apiLevelManager.hasEvent(levels, it) }
             checkpoint.project(name)
             // Starting code only for the events it receives: an outside one's would use objects the project doesn't have.
             manager.newProject(events = received.associateWithTo(LinkedHashMap()) { ProjectEventManager.findFirst(it)!!.getInstance() }) {
@@ -551,13 +549,15 @@ class StarLightTools(private val docs: AgentDocs) {
                 mainScript = "$name.${language.fileExtension}"
                 this.languageId = language.id
                 apiLevels = levels
-                // Only these: the default, starlight.*, would let every StarLight event of its levels in.
-                allowedEventIds = ids.toSet()
+                // Events named: only these, as the default, starlight.*, would let every StarLight event of its levels in.
+                // None named: that default, as the new-project screen leaves it.
+                if (requested.isNotEmpty())
+                    allowedEventIds = ids.toSet()
             }
             val project = manager.getProjectByName(name) ?: throw ToolException("Project $name was not created")
-            val text = "Created $name with main script ${project.info.mainScript}" +
-                if (outside.isEmpty()) "" else "\nAllowed, but outside its API levels, so never received: ${outside.joinToString()}"
-            ToolOutput(text, summary = name)
+            // With the default, the StarLight events outside its levels aren't worth listing: it didn't ask for them.
+            val allowed = if (requested.isNotEmpty()) ids else allowedEvents(project).filter { Session.apiLevelManager.hasEvent(levels, it) }
+            ToolOutput("Created $name with main script ${project.info.mainScript}\n" + describeReception(allowed, levels), summary = name)
         },
         tool(
             "set_project_enabled",
@@ -879,13 +879,24 @@ class StarLightTools(private val docs: AgentDocs) {
     private fun allowedEvents(project: Project): Set<String> =
         ProjectEventManager.filterAllowedEvents(project.info.allowedEventIds)
 
+    /** The IDs of every registered event, the ones set_project_events and create_project accept. */
+    private fun knownEventIds(): Set<String> =
+        ProjectEventManager.find(AgentDocs.ALL_EVENTS).mapNotNullTo(hashSetOf()) { ProjectEventManager.validateAndGetEventID(it) }
+
+    /** Which of the allowed event [ids] a project of the API [levels] receives, and which its levels leave out. */
+    private fun describeReception(ids: Collection<String>, levels: Set<String>?): String {
+        val (received, outside) = ids.sorted().partition { Session.apiLevelManager.hasEvent(levels, it) }
+        return "Receives: ${received.joinToString().ifEmpty { "nothing" }}" +
+            if (outside.isEmpty()) "" else "\nAllowed, but outside its API levels, so never received: ${outside.joinToString()}"
+    }
+
     /**
      * The IDs of the events a new project receives for the [requested] entries, stored expanded, as set_project_events
      * stores them. A wildcard (`starlight.*`) stands for the matching events that [levels] have, as the new-project
      * screen picks them; an ID named outright is kept even outside them, as set_project_events keeps it.
      */
     private fun newProjectEvents(requested: Set<String>, levels: Set<String>): List<String> {
-        val known = ProjectEventManager.find(ALL_EVENTS).mapNotNullTo(hashSetOf()) { ProjectEventManager.validateAndGetEventID(it) }
+        val known = knownEventIds()
         val unknown = requested.filter { '*' !in it && it.removePrefix("!") !in known }
         if (unknown.isNotEmpty())
             throw ToolException("Unknown events: ${unknown.joinToString()}. See list_events.")
@@ -1002,7 +1013,6 @@ class StarLightTools(private val docs: AgentDocs) {
         const val DEFAULT_COMPILE_TIMEOUT_SECONDS = 60
         const val MAX_STACK_FRAMES = 12
         val STACK_PREFIXES = listOf("dev.mooner.", "org.mozilla.javascript.")
-        const val ALL_EVENTS = "*"
         const val MESSAGE_EVENT = "starlight.message.create"
         private const val DEFAULT_API_LEVEL = ApiLevels.ORIGINAL
         const val PROJECT_INFO_FILE = "project.json"

@@ -95,7 +95,16 @@ abstract class Language {
     open val nativeGlobals: Set<String> = emptySet()
 
     /** @suppress */
-    open fun formatDefaultCode(fileName: String, events: List<ProjectEvent>): String {
+    open fun formatDefaultCode(fileName: String, events: List<ProjectEvent>): String =
+        formatDefaultCode(fileName, events, events)
+
+    /**
+     * The starting code with a function for each of [events]. [received] are all the events the new project receives,
+     * those without starting code too: an event with an alternate name takes it when one of them calls a function of
+     * its name.
+     * @suppress
+     */
+    open fun formatDefaultCode(fileName: String, events: List<ProjectEvent>, received: Collection<ProjectEvent>): String {
         // TODO: Change with user-updatable comment
         val defaultComment = codeGenerator.generateComment(
             isMultiLine = true,
@@ -105,8 +114,9 @@ abstract class Language {
 
         val imports: MutableSet<String> = hashSetOf()
 
-        // An event with another name to fall back on gives way to the events without one.
-        val fixedNames = events.filter { it.alternateFunctionName == null }.mapTo(hashSetOf()) { it.functionName }
+        // An event with another name to fall back on gives way to the events without one, which StarLight calls by
+        // their names whether or not they have starting code.
+        val fixedNames = (events + received).filter { it.alternateFunctionName == null }.mapTo(hashSetOf()) { it.functionName }
         val emitted: MutableSet<String> = hashSetOf()
         val body = buildString {
             for (event in events) {

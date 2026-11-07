@@ -24,6 +24,7 @@ import dev.mooner.starlight.plugincore.pipeline.SimplePipeline
 import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
+import dev.mooner.starlight.plugincore.project.event.getInstance
 import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycle
 import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycleRegistry
 import dev.mooner.starlight.plugincore.translation.Locale
@@ -378,10 +379,7 @@ class ProjectImpl private constructor(
     private fun reloadAllowedEventIDs() {
         if (_allowedEventIDs.isNotEmpty())
             _allowedEventIDs.clear()
-        ProjectEventManager
-            .filterAllowedEvents(info.allowedEventIds)
-            .filter { Session.apiLevelManager.hasEvent(info.apiLevels, it) }
-            .forEach(_allowedEventIDs::add)
+        receivedEventIds(info).forEach(_allowedEventIDs::add)
     }
 
     companion object {
@@ -406,11 +404,21 @@ class ProjectImpl private constructor(
             File(folder.path, INFO_FILE_NAME)
                 .writeText(json.encodeToString(info), Charsets.UTF_8)
 
+            // Every event it receives, not only those with starting code: a wildcard such as starlight.* lets in events
+            // that call functions by name, which a listener's function mustn't take.
+            val received = receivedEventIds(info)
+                .mapNotNull { id -> ProjectEventManager.findFirst(id)?.let { runCatching { it.getInstance() }.getOrNull() } }
             File(folder.path, info.mainScript)
-                .writeText(getLanguage(info).formatDefaultCode(info.mainScript, events.values.toList()), Charsets.UTF_8)
+                .writeText(getLanguage(info).formatDefaultCode(info.mainScript, events.values.toList(), received), Charsets.UTF_8)
 
             return loadFrom(folder, info)
         }
+
+        /** The IDs of the registered events that [info]'s allowed-event entries let in and its API levels have. */
+        private fun receivedEventIds(info: ProjectInfo): List<String> =
+            ProjectEventManager
+                .filterAllowedEvents(info.allowedEventIds)
+                .filter { Session.apiLevelManager.hasEvent(info.apiLevels, it) }
 
         fun loadFrom(directory: File, info: ProjectInfo): Project {
             return ProjectImpl(directory, info)

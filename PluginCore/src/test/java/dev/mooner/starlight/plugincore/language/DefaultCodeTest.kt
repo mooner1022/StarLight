@@ -57,6 +57,10 @@ class DefaultCodeTest {
         assertTrue(!code.contains("주석 처리"))
         // Alone, it keeps its own name.
         assertTrue(language.formatDefaultCode("index.js", listOf(listener)).contains("\nfunction onMessage(msg) {"))
+        // An event the project receives without starting code still calls onMessage, so the listener gives way.
+        val received = language.formatDefaultCode("index.js", listOf(listener), listOf(listener, event("a.message", "onMessage", "event")))
+        assertTrue(received.contains("\nfunction onBMessage(msg) {"))
+        assertTrue(!received.contains("function onMessage("))
     }
 
     @Test
