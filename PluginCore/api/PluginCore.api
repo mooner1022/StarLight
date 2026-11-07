@@ -1,0 +1,2471 @@
+public final class dev/mooner/starlight/plugincore/Info {
+	public static final field Companion Ldev/mooner/starlight/plugincore/Info$Companion;
+	public static final field DEBUG Z
+	public fun <init> ()V
+	public static final fun getMIN_PLUGIN_API_VERSION ()Ldev/mooner/starlight/plugincore/version/Version;
+	public static final fun getPLUGINCORE_VERSION ()Ldev/mooner/starlight/plugincore/version/Version;
+}
+
+public final class dev/mooner/starlight/plugincore/Info$Companion {
+	public final fun getMIN_PLUGIN_API_VERSION ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun getPLUGINCORE_VERSION ()Ldev/mooner/starlight/plugincore/version/Version;
+}
+
+public abstract interface annotation class dev/mooner/starlight/plugincore/RequiresPluginCore : java/lang/annotation/Annotation {
+	public abstract fun version ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/RuntimeClassLoader : java/lang/ClassLoader {
+	public fun <init> (Ljava/lang/ClassLoader;)V
+	public final fun findClass (Ljava/lang/String;Z)Ljava/lang/Class;
+	public static synthetic fun findClass$default (Ldev/mooner/starlight/plugincore/RuntimeClassLoader;Ljava/lang/String;ZILjava/lang/Object;)Ljava/lang/Class;
+}
+
+public final class dev/mooner/starlight/plugincore/Session {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/Session;
+	public final fun getApiLevelManager ()Ldev/mooner/starlight/plugincore/api/ApiLevelManager;
+	public final fun getApiManager ()Ldev/mooner/starlight/plugincore/api/ApiManager;
+	public final fun getJson ()Lkotlinx/serialization/json/Json;
+	public final fun getLanguageManager ()Ldev/mooner/starlight/plugincore/language/LanguageManager;
+	public final fun getLibraryManager ()Ldev/mooner/starlight/plugincore/library/LibraryManager;
+	public final fun getPluginLoader ()Ldev/mooner/starlight/plugincore/plugin/PluginLoader;
+	public final fun getPluginManager ()Ldev/mooner/starlight/plugincore/plugin/PluginManager;
+	public final fun getProjectLoader ()Ldev/mooner/starlight/plugincore/project/ProjectLoader;
+	public final fun getProjectManager ()Ldev/mooner/starlight/plugincore/project/ProjectManager;
+	public static final fun getState ()Ldev/mooner/starlight/plugincore/Session$InitState;
+	public final fun getWidgetManager ()Ldev/mooner/starlight/plugincore/widget/WidgetManager;
+	public final fun init (Ldev/mooner/starlight/plugincore/translation/Locale;Ljava/io/File;Ljava/io/File;)Ldev/mooner/starlight/plugincore/plugin/PluginContext;
+	public final fun isInitComplete ()Z
+	public final fun shutdown ()V
+}
+
+public abstract class dev/mooner/starlight/plugincore/Session$InitState {
+}
+
+public final class dev/mooner/starlight/plugincore/Session$InitState$Done : dev/mooner/starlight/plugincore/Session$InitState {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/Session$InitState$Done;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/Session$InitState$None : dev/mooner/starlight/plugincore/Session$InitState {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/Session$InitState$None;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/Session$InitState$Processing : dev/mooner/starlight/plugincore/Session$InitState {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/Session$InitState$Processing;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class dev/mooner/starlight/plugincore/api/Api {
+	public fun <init> ()V
+	public fun equals (Ljava/lang/Object;)Z
+	protected final fun function (Lkotlin/jvm/functions/Function1;)Ldev/mooner/starlight/plugincore/api/ApiObject$Function;
+	public abstract fun getInstance (Ldev/mooner/starlight/plugincore/project/Project;)Ljava/lang/Object;
+	public abstract fun getInstanceClass ()Ljava/lang/Class;
+	public abstract fun getInstanceType ()Ldev/mooner/starlight/plugincore/api/InstanceType;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getObjects ()Ljava/util/List;
+	public fun hashCode ()I
+	protected final fun value (Lkotlin/jvm/functions/Function1;)Ldev/mooner/starlight/plugincore/api/ApiObject$Value;
+}
+
+protected final class dev/mooner/starlight/plugincore/api/Api$ApiFunctionBuilder {
+	public fun <init> ()V
+	public final fun build ()Ldev/mooner/starlight/plugincore/api/ApiObject$Function;
+	public final fun getArgs ()[Ljava/lang/Class;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getReturns ()Ljava/lang/Class;
+	public final fun setArgs ([Ljava/lang/Class;)V
+	public final fun setName (Ljava/lang/String;)V
+	public final fun setReturns (Ljava/lang/Class;)V
+}
+
+protected final class dev/mooner/starlight/plugincore/api/Api$ApiValueBuilder {
+	public fun <init> ()V
+	public final fun build ()Ldev/mooner/starlight/plugincore/api/ApiObject$Value;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getReturns ()Ljava/lang/Class;
+	public final fun setName (Ljava/lang/String;)V
+	public final fun setReturns (Ljava/lang/Class;)V
+}
+
+public final class dev/mooner/starlight/plugincore/api/ApiLevel {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;ZLjava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;ZLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/util/Set;
+	public final fun component6 ()Ljava/util/Set;
+	public final fun component7 ()Z
+	public final fun component8 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;ZLjava/lang/String;)Ldev/mooner/starlight/plugincore/api/ApiLevel;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/api/ApiLevel;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;ZLjava/lang/String;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/api/ApiLevel;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApis ()Ljava/util/Set;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getEvents ()Ljava/util/Set;
+	public final fun getGroup ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPreferredLanguageId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isDefault ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/api/ApiLevelManager {
+	public fun <init> ()V
+	public final fun getDefaultLevelIds ()Ljava/util/Set;
+	public final fun getLevel (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/api/ApiLevel;
+	public final fun getLevels ()Ljava/util/List;
+	public final fun hasApi (Ljava/util/Set;Ljava/lang/String;)Z
+	public final fun hasEvent (Ljava/util/Set;Ljava/lang/String;)Z
+	public final fun register (Ldev/mooner/starlight/plugincore/api/ApiLevel;)Z
+}
+
+public final class dev/mooner/starlight/plugincore/api/ApiManager {
+	public fun <init> ()V
+	public final fun addApi (Ldev/mooner/starlight/plugincore/api/Api;)V
+	public final fun getApis ()Ljava/util/List;
+	public final fun getApis (Ldev/mooner/starlight/plugincore/project/Project;)Ljava/util/List;
+	public final fun getApis (Ljava/util/Set;Ldev/mooner/starlight/plugincore/language/Language;)Ljava/util/List;
+	public static synthetic fun getApis$default (Ldev/mooner/starlight/plugincore/api/ApiManager;Ljava/util/Set;Ldev/mooner/starlight/plugincore/language/Language;ILjava/lang/Object;)Ljava/util/List;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/api/ApiObject {
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getReturns ()Ljava/lang/Class;
+}
+
+public final class dev/mooner/starlight/plugincore/api/ApiObject$Function : dev/mooner/starlight/plugincore/api/ApiObject {
+	public fun <init> (Ljava/lang/String;[Ljava/lang/Class;Ljava/lang/Class;)V
+	public synthetic fun <init> (Ljava/lang/String;[Ljava/lang/Class;Ljava/lang/Class;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()[Ljava/lang/Class;
+	public final fun component3 ()Ljava/lang/Class;
+	public final fun copy (Ljava/lang/String;[Ljava/lang/Class;Ljava/lang/Class;)Ldev/mooner/starlight/plugincore/api/ApiObject$Function;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/api/ApiObject$Function;Ljava/lang/String;[Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/api/ApiObject$Function;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArgs ()[Ljava/lang/Class;
+	public fun getName ()Ljava/lang/String;
+	public fun getReturns ()Ljava/lang/Class;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/api/ApiObject$Value : dev/mooner/starlight/plugincore/api/ApiObject {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Class;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Class;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Class;)Ldev/mooner/starlight/plugincore/api/ApiObject$Value;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/api/ApiObject$Value;Ljava/lang/String;Ljava/lang/Class;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/api/ApiObject$Value;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getName ()Ljava/lang/String;
+	public fun getReturns ()Ljava/lang/Class;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/api/InstanceType : java/lang/Enum {
+	public static final field CLASS Ldev/mooner/starlight/plugincore/api/InstanceType;
+	public static final field OBJECT Ldev/mooner/starlight/plugincore/api/InstanceType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/api/InstanceType;
+	public static fun values ()[Ldev/mooner/starlight/plugincore/api/InstanceType;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/chat/ChatRoom {
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun isDebugRoom ()Z
+	public abstract fun isGroupChat ()Z
+	public abstract fun markAsRead ()Z
+	public abstract fun send (Ljava/lang/String;)Z
+	public fun sendMedia (Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+	public fun sendMedia (Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+}
+
+public final class dev/mooner/starlight/plugincore/chat/ChatRoom$DefaultImpls {
+	public static fun sendMedia (Ldev/mooner/starlight/plugincore/chat/ChatRoom;Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+	public static fun sendMedia (Ldev/mooner/starlight/plugincore/chat/ChatRoom;Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+}
+
+public final class dev/mooner/starlight/plugincore/chat/ChatSender {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Landroid/graphics/Bitmap;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Landroid/graphics/Bitmap;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Landroid/graphics/Bitmap;)Ldev/mooner/starlight/plugincore/chat/ChatSender;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/chat/ChatSender;Ljava/lang/String;Ljava/lang/String;Landroid/graphics/Bitmap;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/chat/ChatSender;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getProfileBase64 ()Ljava/lang/String;
+	public final fun getProfileBitmap ()Landroid/graphics/Bitmap;
+	public final fun getProfileHash ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/chat/DebugChatRoom : dev/mooner/starlight/plugincore/chat/ChatRoom {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun component4 ()Z
+	public final fun component5 ()Lkotlin/jvm/functions/Function1;
+	public final fun component6 ()Lkotlin/jvm/functions/Function0;
+	public final fun component7 ()Lkotlin/jvm/functions/Function1;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;ZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)Ldev/mooner/starlight/plugincore/chat/DebugChatRoom;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/chat/DebugChatRoom;Ljava/lang/String;Ljava/lang/String;ZZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/chat/DebugChatRoom;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
+	public final fun getOnMarkAsRead ()Lkotlin/jvm/functions/Function0;
+	public final fun getOnSend ()Lkotlin/jvm/functions/Function1;
+	public final fun getOnSendMedia ()Lkotlin/jvm/functions/Function1;
+	public fun hashCode ()I
+	public fun isDebugRoom ()Z
+	public fun isGroupChat ()Z
+	public fun markAsRead ()Z
+	public fun send (Ljava/lang/String;)Z
+	public fun sendMedia (Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+	public fun sendMedia (Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/chat/DeletedMessage {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ldev/mooner/starlight/plugincore/chat/ChatRoom;Ljava/lang/String;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ldev/mooner/starlight/plugincore/chat/ChatRoom;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ldev/mooner/starlight/plugincore/chat/ChatRoom;Ljava/lang/String;J)Ldev/mooner/starlight/plugincore/chat/DeletedMessage;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/chat/DeletedMessage;Ljava/lang/String;Ljava/lang/String;Ldev/mooner/starlight/plugincore/chat/ChatRoom;Ljava/lang/String;JILjava/lang/Object;)Ldev/mooner/starlight/plugincore/chat/DeletedMessage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChatLogId ()J
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getPackageName ()Ljava/lang/String;
+	public final fun getRoom ()Ldev/mooner/starlight/plugincore/chat/ChatRoom;
+	public final fun getSender ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/chat/MediaFile {
+	public fun <init> (Ljava/io/File;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/io/File;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getFile ()Ljava/io/File;
+	public final fun getMimeType ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/chat/MediaSendResult {
+	public static final field Companion Ldev/mooner/starlight/plugincore/chat/MediaSendResult$Companion;
+	public fun <init> (ZLjava/lang/String;IILjava/lang/String;Ljava/util/List;Ljava/lang/String;)V
+	public final fun getError ()Ljava/lang/String;
+	public final fun getErrors ()Ljava/util/List;
+	public final fun getFailed ()I
+	public final fun getOk ()Z
+	public final fun getRoom ()Ljava/lang/String;
+	public final fun getSent ()I
+	public final fun getVia ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/chat/MediaSendResult$Companion {
+	public final fun failure (Ljava/lang/String;Ljava/lang/String;)Ldev/mooner/starlight/plugincore/chat/MediaSendResult;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/chat/MediaSender {
+	public static final field Companion Ldev/mooner/starlight/plugincore/chat/MediaSender$Companion;
+	public abstract fun send (Ldev/mooner/starlight/plugincore/chat/ChatRoom;Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+}
+
+public final class dev/mooner/starlight/plugincore/chat/MediaSender$Companion {
+	public final fun getCurrent ()Ldev/mooner/starlight/plugincore/chat/MediaSender;
+	public final fun setCurrent (Ldev/mooner/starlight/plugincore/chat/MediaSender;)V
+}
+
+public final class dev/mooner/starlight/plugincore/chat/Message {
+	public fun <init> (Ljava/lang/String;Landroid/graphics/Bitmap;Ldev/mooner/starlight/plugincore/chat/ChatSender;Ldev/mooner/starlight/plugincore/chat/ChatRoom;Ljava/lang/String;ZJ)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Landroid/graphics/Bitmap;
+	public final fun component3 ()Ldev/mooner/starlight/plugincore/chat/ChatSender;
+	public final fun component4 ()Ldev/mooner/starlight/plugincore/chat/ChatRoom;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Z
+	public final fun component7 ()J
+	public final fun copy (Ljava/lang/String;Landroid/graphics/Bitmap;Ldev/mooner/starlight/plugincore/chat/ChatSender;Ldev/mooner/starlight/plugincore/chat/ChatRoom;Ljava/lang/String;ZJ)Ldev/mooner/starlight/plugincore/chat/Message;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/chat/Message;Ljava/lang/String;Landroid/graphics/Bitmap;Ldev/mooner/starlight/plugincore/chat/ChatSender;Ldev/mooner/starlight/plugincore/chat/ChatRoom;Ljava/lang/String;ZJILjava/lang/Object;)Ldev/mooner/starlight/plugincore/chat/Message;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getChatLogId ()J
+	public final fun getHasMention ()Z
+	public final fun getImage ()Landroid/graphics/Bitmap;
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getPackageName ()Ljava/lang/String;
+	public final fun getRoom ()Ldev/mooner/starlight/plugincore/chat/ChatRoom;
+	public final fun getSender ()Ldev/mooner/starlight/plugincore/chat/ChatSender;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/chat/MessageParserSpec {
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun parse (ILandroid/content/Context;Landroid/service/notification/StatusBarNotification;[Landroid/app/Notification$Action;)Ldev/mooner/starlight/plugincore/chat/Message;
+}
+
+public final class dev/mooner/starlight/plugincore/chat/ParserSpecManager {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/chat/ParserSpecManager;
+	public final fun getAllSpecs ()Ljava/util/Map;
+	public final fun getSpecById (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/chat/MessageParserSpec;
+	public final fun registerSpec (Ldev/mooner/starlight/plugincore/chat/MessageParserSpec;)V
+}
+
+public final class dev/mooner/starlight/plugincore/config/GlobalConfig : dev/mooner/starlight/plugincore/config/data/MutableConfig {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/config/GlobalConfig;
+	public synthetic fun category (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public fun category (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory;
+	public synthetic fun categoryOrNull (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public fun categoryOrNull (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory;
+	public fun contains (Ljava/lang/String;)Z
+	public fun edit (Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun get (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public fun get (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory;
+	public fun getData ()Ljava/util/Map;
+	public final fun getDefaultCategory ()Ldev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory;
+	public fun getMutableData ()Ljava/util/Map;
+	public final fun invalidateCache ()V
+	public fun push ()V
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/config/data/ConfigData {
+	public abstract fun category (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public abstract fun categoryOrNull (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public abstract fun contains (Ljava/lang/String;)Z
+	public abstract fun get (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public abstract fun getData ()Ljava/util/Map;
+}
+
+public final class dev/mooner/starlight/plugincore/config/data/FileConfig : dev/mooner/starlight/plugincore/config/data/MutableConfig {
+	public fun <init> (Ljava/io/File;)V
+	public synthetic fun category (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public fun category (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory;
+	public synthetic fun categoryOrNull (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public fun categoryOrNull (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory;
+	public fun contains (Ljava/lang/String;)Z
+	public fun edit (Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun get (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public fun get (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory;
+	public fun getData ()Ljava/util/Map;
+	public fun getMutableData ()Ljava/util/Map;
+	public fun push ()V
+}
+
+public final class dev/mooner/starlight/plugincore/config/data/InMemoryConfig : dev/mooner/starlight/plugincore/config/data/ConfigData {
+	public fun <init> (Ljava/util/Map;)V
+	public fun category (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public fun categoryOrNull (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public fun contains (Ljava/lang/String;)Z
+	public fun get (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public fun getData ()Ljava/util/Map;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/config/data/MutableConfig : dev/mooner/starlight/plugincore/config/data/ConfigData {
+	public synthetic fun category (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public abstract fun category (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory;
+	public synthetic fun categoryOrNull (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public abstract fun categoryOrNull (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory;
+	public abstract fun edit (Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun get (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public abstract fun get (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory;
+	public abstract fun getMutableData ()Ljava/util/Map;
+	public abstract fun push ()V
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/config/data/category/ConfigCategory {
+	public abstract fun contains (Ljava/lang/String;)Z
+	public abstract fun getBoolean (Ljava/lang/String;)Ljava/lang/Boolean;
+	public fun getBoolean (Ljava/lang/String;Z)Z
+	public abstract fun getDouble (Ljava/lang/String;)Ljava/lang/Double;
+	public fun getDouble (Ljava/lang/String;D)D
+	public abstract fun getFloat (Ljava/lang/String;)Ljava/lang/Float;
+	public fun getFloat (Ljava/lang/String;F)F
+	public abstract fun getInt (Ljava/lang/String;)Ljava/lang/Integer;
+	public fun getInt (Ljava/lang/String;I)I
+	public abstract fun getList (Ljava/lang/String;)Ljava/util/List;
+	public abstract fun getLong (Ljava/lang/String;)Ljava/lang/Long;
+	public fun getLong (Ljava/lang/String;J)J
+	public abstract fun getObject (Ljava/lang/String;)Lkotlinx/serialization/json/JsonObject;
+	public abstract fun getString (Ljava/lang/String;)Ljava/lang/String;
+	public fun getString (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public abstract fun getSubCategory (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+}
+
+public final class dev/mooner/starlight/plugincore/config/data/category/ConfigCategory$DefaultImpls {
+	public static fun getBoolean (Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;Ljava/lang/String;Z)Z
+	public static fun getDouble (Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;Ljava/lang/String;D)D
+	public static fun getFloat (Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;Ljava/lang/String;F)F
+	public static fun getInt (Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;Ljava/lang/String;I)I
+	public static fun getLong (Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;Ljava/lang/String;J)J
+	public static fun getString (Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory : dev/mooner/starlight/plugincore/config/data/category/ConfigCategory {
+	public fun <init> (Ljava/util/Map;)V
+	public fun contains (Ljava/lang/String;)Z
+	public fun getBoolean (Ljava/lang/String;)Ljava/lang/Boolean;
+	public fun getBoolean (Ljava/lang/String;Z)Z
+	public final fun getData ()Ljava/util/Map;
+	public fun getDouble (Ljava/lang/String;)Ljava/lang/Double;
+	public fun getDouble (Ljava/lang/String;D)D
+	public fun getFloat (Ljava/lang/String;)Ljava/lang/Float;
+	public fun getFloat (Ljava/lang/String;F)F
+	public fun getInt (Ljava/lang/String;)Ljava/lang/Integer;
+	public fun getInt (Ljava/lang/String;I)I
+	public fun getList (Ljava/lang/String;)Ljava/util/List;
+	public fun getLong (Ljava/lang/String;)Ljava/lang/Long;
+	public fun getLong (Ljava/lang/String;J)J
+	public fun getObject (Ljava/lang/String;)Lkotlinx/serialization/json/JsonObject;
+	public fun getString (Ljava/lang/String;)Ljava/lang/String;
+	public fun getString (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public synthetic fun getSubCategory (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public fun getSubCategory (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/config/data/category/MutableConfigCategory;
+	public final fun minusAssign (Ljava/lang/String;)V
+	public final fun remove (Ljava/lang/String;)V
+	public final fun set (Ljava/lang/String;D)V
+	public final fun set (Ljava/lang/String;F)V
+	public final fun set (Ljava/lang/String;I)V
+	public final fun set (Ljava/lang/String;J)V
+	public final fun set (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun set (Ljava/lang/String;Z)V
+	public final fun setBoolean (Ljava/lang/String;Z)V
+	public final fun setDouble (Ljava/lang/String;D)V
+	public final fun setFloat (Ljava/lang/String;F)V
+	public final fun setInt (Ljava/lang/String;I)V
+	public final fun setLong (Ljava/lang/String;J)V
+	public final fun setRaw (Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;)V
+	public final fun setString (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public abstract class dev/mooner/starlight/plugincore/editor/CodeEditorActivity : androidx/appcompat/app/AppCompatActivity {
+	public static final field Companion Ldev/mooner/starlight/plugincore/editor/CodeEditorActivity$Companion;
+	public static final field KEY_BASE_DIRECTORY Ljava/lang/String;
+	public static final field KEY_MAIN_FILE Ljava/lang/String;
+	public static final field KEY_PROJECT_NAME Ljava/lang/String;
+	public fun <init> ()V
+	protected final fun getBaseDirectory ()Ljava/io/File;
+	protected final fun getMainFileName ()Ljava/lang/String;
+	protected final fun getProject ()Ldev/mooner/starlight/plugincore/project/Project;
+	protected fun onCreate (Landroid/os/Bundle;)V
+	protected final fun readCode (Ljava/lang/String;)Ljava/lang/String;
+	protected final fun readCodeOrDefault (Ljava/lang/String;Ldev/mooner/starlight/plugincore/language/Language;)Ljava/lang/String;
+	protected final fun saveCode (Ljava/lang/String;Ljava/lang/String;)Z
+}
+
+public final class dev/mooner/starlight/plugincore/editor/CodeEditorActivity$Companion {
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/event/Event : kotlinx/coroutines/CoroutineScope {
+}
+
+public final class dev/mooner/starlight/plugincore/event/EventHandler : kotlinx/coroutines/CoroutineScope {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/event/EventHandler;
+	public final fun fireEvent (Ldev/mooner/starlight/plugincore/event/Event;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun fireEventWithScope (Ldev/mooner/starlight/plugincore/event/Event;Lkotlinx/coroutines/CoroutineScope;)Lkotlinx/coroutines/Job;
+	public static synthetic fun fireEventWithScope$default (Ldev/mooner/starlight/plugincore/event/EventHandler;Ldev/mooner/starlight/plugincore/event/Event;Lkotlinx/coroutines/CoroutineScope;ILjava/lang/Object;)Lkotlinx/coroutines/Job;
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getEventFlow ()Lkotlinx/coroutines/flow/SharedFlow;
+	public final fun getLOG ()Ldev/mooner/starlight/plugincore/logger/TLogger;
+}
+
+public final class dev/mooner/starlight/plugincore/event/EventHandlerKt {
+	public static final fun eventHandlerScope ()Lkotlinx/coroutines/CoroutineScope;
+}
+
+public abstract class dev/mooner/starlight/plugincore/event/Events {
+}
+
+public abstract class dev/mooner/starlight/plugincore/event/Events$Config {
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Config$GlobalConfigUpdate : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> ()V
+	public fun <init> (Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+}
+
+public abstract class dev/mooner/starlight/plugincore/event/Events$Locale {
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Locale$Update : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Ldev/mooner/starlight/plugincore/translation/Locale;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Ldev/mooner/starlight/plugincore/translation/Locale;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getLocale ()Ldev/mooner/starlight/plugincore/translation/Locale;
+}
+
+public abstract class dev/mooner/starlight/plugincore/event/Events$Log {
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Log$Create : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Ldev/mooner/starlight/plugincore/logger/LogData;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Ldev/mooner/starlight/plugincore/logger/LogData;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getLog ()Ldev/mooner/starlight/plugincore/logger/LogData;
+}
+
+public abstract class dev/mooner/starlight/plugincore/event/Events$Message {
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Message$Create : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Ldev/mooner/starlight/plugincore/chat/Message;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Ldev/mooner/starlight/plugincore/chat/Message;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getMessage ()Ldev/mooner/starlight/plugincore/chat/Message;
+}
+
+public abstract class dev/mooner/starlight/plugincore/event/Events$Notification {
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Notification$Click : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (ILkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (ILkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getNotificationId ()I
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Notification$Dismiss : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Landroid/service/notification/StatusBarNotification;Landroid/service/notification/NotificationListenerService$RankingMap;ILkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Landroid/service/notification/StatusBarNotification;Landroid/service/notification/NotificationListenerService$RankingMap;ILkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getRankingMap ()Landroid/service/notification/NotificationListenerService$RankingMap;
+	public final fun getReason ()I
+	public final fun getSbn ()Landroid/service/notification/StatusBarNotification;
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Notification$Post : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Landroid/service/notification/StatusBarNotification;Landroid/content/Context;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Landroid/service/notification/StatusBarNotification;Landroid/content/Context;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getContext ()Landroid/content/Context;
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getStatusBarNotification ()Landroid/service/notification/StatusBarNotification;
+}
+
+public abstract class dev/mooner/starlight/plugincore/event/Events$Plugin {
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Plugin$SetupRequested : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getPlugin ()Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;
+}
+
+public abstract class dev/mooner/starlight/plugincore/event/Events$Project {
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Project$Compile : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Ldev/mooner/starlight/plugincore/project/Project;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Ldev/mooner/starlight/plugincore/project/Project;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getProject ()Ldev/mooner/starlight/plugincore/project/Project;
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Project$Create : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Ldev/mooner/starlight/plugincore/project/Project;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Ldev/mooner/starlight/plugincore/project/Project;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getProject ()Ldev/mooner/starlight/plugincore/project/Project;
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Project$Delete : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Ljava/lang/String;Ljava/util/UUID;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/UUID;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getProjectId ()Ljava/util/UUID;
+	public final fun getProjectName ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Project$InfoUpdate : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Ldev/mooner/starlight/plugincore/project/Project;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Ldev/mooner/starlight/plugincore/project/Project;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getProject ()Ldev/mooner/starlight/plugincore/project/Project;
+}
+
+public abstract class dev/mooner/starlight/plugincore/event/Events$Scheme {
+}
+
+public final class dev/mooner/starlight/plugincore/event/Events$Scheme$SchemeOpenEvent : dev/mooner/starlight/plugincore/event/Event, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Ljava/util/Map;Lkotlinx/coroutines/CoroutineScope;)V
+	public synthetic fun <init> (Ljava/util/Map;Lkotlinx/coroutines/CoroutineScope;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/Map;
+	public final fun component2 ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun copy (Ljava/util/Map;Lkotlinx/coroutines/CoroutineScope;)Ldev/mooner/starlight/plugincore/event/Events$Scheme$SchemeOpenEvent;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/event/Events$Scheme$SchemeOpenEvent;Ljava/util/Map;Lkotlinx/coroutines/CoroutineScope;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/event/Events$Scheme$SchemeOpenEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun getParams ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/language/CodeGenerator {
+	public abstract fun generateComment (ZZLjava/lang/String;)Ljava/lang/String;
+	public abstract fun generateFunction (Ljava/lang/String;[Ldev/mooner/starlight/plugincore/language/CodeGenerator$Argument;Lkotlin/reflect/KClass;)Ldev/mooner/starlight/plugincore/language/CodeGenerator$GeneratedFunction;
+}
+
+public final class dev/mooner/starlight/plugincore/language/CodeGenerator$Argument {
+	public fun <init> (Ljava/lang/String;Lkotlin/reflect/KClass;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lkotlin/reflect/KClass;
+	public final fun copy (Ljava/lang/String;Lkotlin/reflect/KClass;)Ldev/mooner/starlight/plugincore/language/CodeGenerator$Argument;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/language/CodeGenerator$Argument;Ljava/lang/String;Lkotlin/reflect/KClass;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/language/CodeGenerator$Argument;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getType ()Lkotlin/reflect/KClass;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/language/CodeGenerator$GeneratedFunction {
+	public fun <init> (Ljava/util/List;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/util/List;Ljava/lang/String;)Ldev/mooner/starlight/plugincore/language/CodeGenerator$GeneratedFunction;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/language/CodeGenerator$GeneratedFunction;Ljava/util/List;Ljava/lang/String;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/language/CodeGenerator$GeneratedFunction;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFunction ()Ljava/lang/String;
+	public final fun getImports ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/language/DefaultJSCodeGenerator : dev/mooner/starlight/plugincore/language/CodeGenerator {
+	public fun <init> ()V
+	public fun generateComment (ZZLjava/lang/String;)Ljava/lang/String;
+	public fun generateFunction (Ljava/lang/String;[Ldev/mooner/starlight/plugincore/language/CodeGenerator$Argument;Lkotlin/reflect/KClass;)Ldev/mooner/starlight/plugincore/language/CodeGenerator$GeneratedFunction;
+}
+
+public abstract class dev/mooner/starlight/plugincore/language/Language {
+	public static final field Companion Ldev/mooner/starlight/plugincore/language/Language$Companion;
+	public static final field PLACEHOLDER_BODY Ljava/lang/String;
+	public static final field PLACEHOLDER_HEADER Ljava/lang/String;
+	public fun <init> ()V
+	public abstract fun callFunction (Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+	public abstract fun compile (Ljava/lang/String;Ljava/util/List;Ldev/mooner/starlight/plugincore/project/Project;Ljava/lang/ClassLoader;)Ljava/lang/Object;
+	public fun destroy (Ljava/lang/Object;)V
+	public abstract fun eval (Ljava/lang/String;Ljava/util/Map;)Ljava/lang/Object;
+	public static synthetic fun eval$default (Ldev/mooner/starlight/plugincore/language/Language;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Ljava/lang/Object;
+	public fun formatDefaultCode (Ljava/lang/String;Ljava/util/List;)Ljava/lang/String;
+	public fun formatDefaultCode (Ljava/lang/String;Ljava/util/List;Ljava/util/Collection;)Ljava/lang/String;
+	protected final fun getAsset (Ljava/lang/String;)Ljava/io/File;
+	protected final fun getAssetOrNull (Ljava/lang/String;)Ljava/io/File;
+	public fun getCodeGenerator ()Ldev/mooner/starlight/plugincore/language/CodeGenerator;
+	public fun getConfigStructure ()Ljava/util/List;
+	public fun getDefaultCode ()Ljava/lang/String;
+	public fun getDefaultCodeStructure ()Ljava/util/List;
+	public fun getDefaultConcurrency ()I
+	public abstract fun getFileExtension ()Ljava/lang/String;
+	public final fun getIconFile ()Ljava/io/File;
+	public final fun getIconFileOrNull ()Ljava/io/File;
+	public abstract fun getId ()Ljava/lang/String;
+	protected final fun getLanguageConfig ()Ldev/mooner/starlight/plugincore/config/data/category/ConfigCategory;
+	public abstract fun getName ()Ljava/lang/String;
+	public fun getNativeGlobals ()Ljava/util/Set;
+	public abstract fun getRequireRelease ()Z
+	public fun onConfigChanged (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun onConfigUpdated (Ljava/util/Map;)V
+	public fun release (Ljava/lang/Object;)V
+	public fun toPipeline ()Ldev/mooner/starlight/plugincore/pipeline/Pipeline;
+	public fun toPipelineStage ()Ldev/mooner/starlight/plugincore/pipeline/stage/PipelineStage;
+}
+
+public final class dev/mooner/starlight/plugincore/language/Language$Companion {
+}
+
+public final class dev/mooner/starlight/plugincore/language/LanguageManager {
+	public fun <init> ()V
+	public final fun addLanguage (Ldev/mooner/starlight/plugincore/plugin/PluginContext;Ldev/mooner/starlight/plugincore/language/Language;)V
+	public final fun getLanguage (Ljava/lang/String;Z)Ldev/mooner/starlight/plugincore/language/Language;
+	public static synthetic fun getLanguage$default (Ldev/mooner/starlight/plugincore/language/LanguageManager;Ljava/lang/String;ZILjava/lang/Object;)Ldev/mooner/starlight/plugincore/language/Language;
+	public final fun getLanguages ()[Ldev/mooner/starlight/plugincore/language/Language;
+}
+
+public final class dev/mooner/starlight/plugincore/library/Library {
+	public fun <init> (Ljava/lang/ClassLoader;Ljava/io/File;)V
+	public final fun component1 ()Ljava/lang/ClassLoader;
+	public final fun component2 ()Ljava/io/File;
+	public final fun copy (Ljava/lang/ClassLoader;Ljava/io/File;)Ldev/mooner/starlight/plugincore/library/Library;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/library/Library;Ljava/lang/ClassLoader;Ljava/io/File;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/library/Library;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClassLoader ()Ljava/lang/ClassLoader;
+	public final fun getFile ()Ljava/io/File;
+	public fun hashCode ()I
+	public final fun loadClass (Ljava/lang/String;)Ljava/lang/Class;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/library/LibraryLoader {
+	public fun <init> ()V
+	public final fun loadLibraries (Ljava/io/File;Ljava/io/File;)Ljava/util/Set;
+}
+
+public final class dev/mooner/starlight/plugincore/library/LibraryLoader$Companion {
+}
+
+public final class dev/mooner/starlight/plugincore/library/LibraryManager {
+	public fun <init> (Ljava/util/Set;)V
+	public final fun getLibraries ()Ljava/util/List;
+}
+
+public final class dev/mooner/starlight/plugincore/library/LibraryManagerApi : dev/mooner/starlight/plugincore/api/Api {
+	public fun <init> ()V
+	public fun getInstance (Ldev/mooner/starlight/plugincore/project/Project;)Ljava/lang/Object;
+	public fun getInstanceClass ()Ljava/lang/Class;
+	public fun getInstanceType ()Ldev/mooner/starlight/plugincore/api/InstanceType;
+	public fun getName ()Ljava/lang/String;
+	public fun getObjects ()Ljava/util/List;
+}
+
+public final class dev/mooner/starlight/plugincore/logger/LogData {
+	public static final field Companion Ldev/mooner/starlight/plugincore/logger/LogData$Companion;
+	public static final field FLAG_COMPILE_RESULT I
+	public static final field FLAG_NOTIFY I
+	public fun <init> (Ldev/mooner/starlight/plugincore/logger/LogType;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JZI)V
+	public synthetic fun <init> (Ldev/mooner/starlight/plugincore/logger/LogType;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JZIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/logger/LogType;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()J
+	public final fun component6 ()Z
+	public final fun component7 ()I
+	public final fun copy (Ldev/mooner/starlight/plugincore/logger/LogType;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JZI)Ldev/mooner/starlight/plugincore/logger/LogData;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/logger/LogData;Ldev/mooner/starlight/plugincore/logger/LogType;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JZIILjava/lang/Object;)Ldev/mooner/starlight/plugincore/logger/LogData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFlags ()I
+	public final fun getMessage ()Ljava/lang/String;
+	public final fun getMillis ()J
+	public final fun getTag ()Ljava/lang/String;
+	public final fun getThreadName ()Ljava/lang/String;
+	public final fun getType ()Ldev/mooner/starlight/plugincore/logger/LogType;
+	public fun hashCode ()I
+	public final fun isLocal ()Z
+	public final fun toSimpleString ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public final fun toString (Z)Ljava/lang/String;
+	public static synthetic fun toString$default (Ldev/mooner/starlight/plugincore/logger/LogData;ZILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final synthetic class dev/mooner/starlight/plugincore/logger/LogData$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/logger/LogData$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/mooner/starlight/plugincore/logger/LogData;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/mooner/starlight/plugincore/logger/LogData;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/logger/LogData$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/logger/LogType : java/lang/Enum {
+	public static final field CRITICAL Ldev/mooner/starlight/plugincore/logger/LogType;
+	public static final field DEBUG Ldev/mooner/starlight/plugincore/logger/LogType;
+	public static final field ERROR Ldev/mooner/starlight/plugincore/logger/LogType;
+	public static final field INFO Ldev/mooner/starlight/plugincore/logger/LogType;
+	public static final field VERBOSE Ldev/mooner/starlight/plugincore/logger/LogType;
+	public static final field WARN Ldev/mooner/starlight/plugincore/logger/LogType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getPriority ()I
+	public static fun valueOf (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/logger/LogType;
+	public static fun values ()[Ldev/mooner/starlight/plugincore/logger/LogType;
+}
+
+public final class dev/mooner/starlight/plugincore/logger/Logger {
+	public static final field Companion Ldev/mooner/starlight/plugincore/logger/Logger$Companion;
+	public fun <init> ()V
+	public static final fun d (Ljava/lang/String;)V
+	public static final fun d (Ljava/lang/String;Ljava/lang/String;)V
+	public static final fun e (Ljava/lang/String;)V
+	public static final fun e (Ljava/lang/String;Ljava/lang/String;)V
+	public static final fun e (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public static final fun e (Ljava/lang/Throwable;)V
+	public static final fun i (Ljava/lang/String;)V
+	public static final fun i (Ljava/lang/String;Ljava/lang/String;)V
+	public static final fun v (Ljava/lang/String;)V
+	public static final fun v (Ljava/lang/String;Ljava/lang/String;)V
+	public static final fun w (Ljava/lang/String;)V
+	public static final fun w (Ljava/lang/String;Ljava/lang/String;)V
+	public static final fun wtf (Ljava/lang/String;)V
+	public static final fun wtf (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class dev/mooner/starlight/plugincore/logger/Logger$Companion {
+	public final fun d (Ljava/lang/String;)V
+	public final fun d (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun e (Ljava/lang/String;)V
+	public final fun e (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun e (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public final fun e (Ljava/lang/Throwable;)V
+	public final fun i (Ljava/lang/String;)V
+	public final fun i (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun v (Ljava/lang/String;)V
+	public final fun v (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun w (Ljava/lang/String;)V
+	public final fun w (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun wtf (Ljava/lang/String;)V
+	public final fun wtf (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class dev/mooner/starlight/plugincore/logger/LoggerFactory {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/logger/LoggerFactory;
+	public final fun logger (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/logger/TLogger;
+	public final fun logger (Lkotlin/jvm/functions/Function0;)Ldev/mooner/starlight/plugincore/logger/TLogger;
+}
+
+public final class dev/mooner/starlight/plugincore/logger/ProjectLogger {
+	public static final field Companion Ldev/mooner/starlight/plugincore/logger/ProjectLogger$Companion;
+	public final fun addOnLogCreateListener (Lkotlin/jvm/functions/Function1;)I
+	public final fun clear ()V
+	public final fun d (Ljava/lang/String;)V
+	public final fun d (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun debug (Ljava/lang/String;)V
+	public final fun debug (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun e (Ljava/lang/String;)V
+	public final fun e (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun error (Ljava/lang/String;)V
+	public final fun error (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getLogs ()Ljava/util/List;
+	public final fun i (Ljava/lang/String;)V
+	public final fun i (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun info (Ljava/lang/String;)V
+	public final fun info (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun removeOnLogCreateListener (I)V
+	public final fun v (Ljava/lang/String;)V
+	public final fun v (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun verbose (Ljava/lang/String;)V
+	public final fun verbose (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun w (Ljava/lang/String;)V
+	public final fun w (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun warn (Ljava/lang/String;)V
+	public final fun warn (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun wtf (Ljava/lang/String;)V
+	public final fun wtf (Ljava/lang/String;Ljava/lang/String;)V
+}
+
+public final class dev/mooner/starlight/plugincore/logger/ProjectLogger$Companion {
+	public final fun create (Ljava/io/File;)Ldev/mooner/starlight/plugincore/logger/ProjectLogger;
+	public final fun fromFile (Ljava/io/File;)Ldev/mooner/starlight/plugincore/logger/ProjectLogger;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/logger/TLogger {
+	public abstract fun debug (Lkotlin/jvm/functions/Function0;)V
+	public abstract fun error (ILkotlin/jvm/functions/Function0;)V
+	public abstract fun error (Ljava/lang/Throwable;)V
+	public abstract fun error (Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;)V
+	public abstract fun error (Lkotlin/jvm/functions/Function0;)V
+	public abstract fun info (ILkotlin/jvm/functions/Function0;)V
+	public abstract fun info (Lkotlin/jvm/functions/Function0;)V
+	public abstract fun log (Ldev/mooner/starlight/plugincore/logger/LogType;Lkotlin/jvm/functions/Function0;)V
+	public abstract fun verbose (Lkotlin/jvm/functions/Function0;)V
+	public abstract fun warn (Ljava/lang/Throwable;)V
+	public abstract fun warn (Lkotlin/jvm/functions/Function0;)V
+	public abstract fun wtf (Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class dev/mooner/starlight/plugincore/logger/internal/TLoggerImpl : dev/mooner/starlight/plugincore/logger/TLogger {
+	public fun <init> (Ljava/lang/String;)V
+	public fun debug (Lkotlin/jvm/functions/Function0;)V
+	public fun error (ILkotlin/jvm/functions/Function0;)V
+	public fun error (Ljava/lang/Throwable;)V
+	public fun error (Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;)V
+	public fun error (Lkotlin/jvm/functions/Function0;)V
+	public fun info (ILkotlin/jvm/functions/Function0;)V
+	public fun info (Lkotlin/jvm/functions/Function0;)V
+	public fun log (Ldev/mooner/starlight/plugincore/logger/LogType;Lkotlin/jvm/functions/Function0;)V
+	public fun verbose (Lkotlin/jvm/functions/Function0;)V
+	public fun warn (Ljava/lang/Throwable;)V
+	public fun warn (Lkotlin/jvm/functions/Function0;)V
+	public fun wtf (Lkotlin/jvm/functions/Function0;)V
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/pipeline/Pipeline {
+	public abstract fun getStages ()Ljava/util/List;
+	public abstract fun run (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class dev/mooner/starlight/plugincore/pipeline/SimplePipeline : dev/mooner/starlight/plugincore/pipeline/Pipeline {
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun addStage (Ldev/mooner/starlight/plugincore/pipeline/stage/PipelineStage;)V
+	public fun getStages ()Ljava/util/List;
+	public fun run (Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun setOnStageUpdateListener (Lkotlin/jvm/functions/Function2;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/pipeline/SimplePipeline$Builder {
+	public fun <init> ()V
+	public final fun build ()Ldev/mooner/starlight/plugincore/pipeline/Pipeline;
+	public final fun initial (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ldev/mooner/starlight/plugincore/pipeline/stage/PipelineStage;
+	public final fun pipe (Ldev/mooner/starlight/plugincore/pipeline/stage/PipelineStage;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ldev/mooner/starlight/plugincore/pipeline/stage/PipelineStage;
+}
+
+public final class dev/mooner/starlight/plugincore/pipeline/stage/LanguageStage : dev/mooner/starlight/plugincore/pipeline/stage/PipelineStage {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function2;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lkotlin/jvm/functions/Function2;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function2;)Ldev/mooner/starlight/plugincore/pipeline/stage/LanguageStage;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/pipeline/stage/LanguageStage;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/pipeline/stage/LanguageStage;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getId ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
+	public final fun getRun ()Lkotlin/jvm/functions/Function2;
+	public fun hashCode ()I
+	public synthetic fun run (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun run (Lkotlin/Pair;)Ljava/lang/Object;
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/pipeline/stage/PipelineStage {
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun run (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class dev/mooner/starlight/plugincore/pipeline/stage/PipelineStageImpl : dev/mooner/starlight/plugincore/pipeline/stage/PipelineStage {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public final fun getBlock ()Lkotlin/jvm/functions/Function1;
+	public fun getId ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
+	public fun run (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class dev/mooner/starlight/plugincore/pipeline/stage/PipelineStageImplKt {
+	public static final fun initialStage (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ldev/mooner/starlight/plugincore/pipeline/stage/PipelineStage;
+	public static final fun plumber (Lkotlin/jvm/functions/Function1;)Ldev/mooner/starlight/plugincore/pipeline/Pipeline;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/plugin/ApiCompatibility {
+	public static final field Companion Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility$Companion;
+	public fun isCompatible ()Z
+	public static fun of (Ldev/mooner/starlight/plugincore/version/Version;)Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;
+	public static fun of (Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;)Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;
+	public static fun of (Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;)Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/ApiCompatibility$Companion {
+	public final fun of (Ldev/mooner/starlight/plugincore/version/Version;)Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;
+	public final fun of (Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;)Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;
+	public final fun of (Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;)Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;
+	public static synthetic fun of$default (Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility$Companion;Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/ApiCompatibility$Compatible : dev/mooner/starlight/plugincore/plugin/ApiCompatibility {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility$Compatible;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun isCompatible ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/ApiCompatibility$DefaultImpls {
+	public static fun isCompatible (Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;)Z
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/ApiCompatibility$Outdated : dev/mooner/starlight/plugincore/plugin/ApiCompatibility {
+	public fun <init> (Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun component2 ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun copy (Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;)Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility$Outdated;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility$Outdated;Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility$Outdated;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApiVersion ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun getMinimum ()Ldev/mooner/starlight/plugincore/version/Version;
+	public fun hashCode ()I
+	public fun isCompatible ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/ApiCompatibility$RequiresNewerApp : dev/mooner/starlight/plugincore/plugin/ApiCompatibility {
+	public fun <init> (Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun component2 ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun copy (Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;)Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility$RequiresNewerApp;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility$RequiresNewerApp;Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/version/Version;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility$RequiresNewerApp;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrent ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun getRequired ()Ldev/mooner/starlight/plugincore/version/Version;
+	public fun hashCode ()I
+	public fun isCompatible ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/DependencyNotFoundException : java/lang/Exception {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/plugin/EventListener {
+	public fun onDisable ()V
+	public fun onEnable ()V
+	public fun onNetworkStateChanged (I)V
+	public fun onProjectCreated (Ldev/mooner/starlight/plugincore/project/Project;)V
+	public fun onProjectRemoved (Ldev/mooner/starlight/plugincore/project/Project;)V
+	public fun onProjectUpdated (Ldev/mooner/starlight/plugincore/project/Project;)V
+	public fun onSchemeAction (Landroid/content/Context;ZLjava/util/Map;)V
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/EventListener$DefaultImpls {
+	public static fun onDisable (Ldev/mooner/starlight/plugincore/plugin/EventListener;)V
+	public static fun onEnable (Ldev/mooner/starlight/plugincore/plugin/EventListener;)V
+	public static fun onNetworkStateChanged (Ldev/mooner/starlight/plugincore/plugin/EventListener;I)V
+	public static fun onProjectCreated (Ldev/mooner/starlight/plugincore/plugin/EventListener;Ldev/mooner/starlight/plugincore/project/Project;)V
+	public static fun onProjectRemoved (Ldev/mooner/starlight/plugincore/plugin/EventListener;Ldev/mooner/starlight/plugincore/project/Project;)V
+	public static fun onProjectUpdated (Ldev/mooner/starlight/plugincore/plugin/EventListener;Ldev/mooner/starlight/plugincore/project/Project;)V
+	public static fun onSchemeAction (Ldev/mooner/starlight/plugincore/plugin/EventListener;Landroid/content/Context;ZLjava/util/Map;)V
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/InstalledPlugin {
+	public fun <init> (Ljava/io/File;Ldev/mooner/starlight/plugincore/plugin/PluginInfo;Ldev/mooner/starlight/plugincore/plugin/PluginState;)V
+	public final fun component1 ()Ljava/io/File;
+	public final fun component2 ()Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public final fun component3 ()Ldev/mooner/starlight/plugincore/plugin/PluginState;
+	public final fun copy (Ljava/io/File;Ldev/mooner/starlight/plugincore/plugin/PluginInfo;Ldev/mooner/starlight/plugincore/plugin/PluginState;)Ldev/mooner/starlight/plugincore/plugin/InstalledPlugin;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/InstalledPlugin;Ljava/io/File;Ldev/mooner/starlight/plugincore/plugin/PluginInfo;Ldev/mooner/starlight/plugincore/plugin/PluginState;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/InstalledPlugin;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFile ()Ljava/io/File;
+	public final fun getInfo ()Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getState ()Ldev/mooner/starlight/plugincore/plugin/PluginState;
+	public fun hashCode ()I
+	public final fun isDuplicate ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/InvalidPluginException : java/lang/Exception {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginCategory : java/lang/Enum {
+	public static final field Companion Ldev/mooner/starlight/plugincore/plugin/PluginCategory$Companion;
+	public static final field DEVTOOLS Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+	public static final field ENGINE Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+	public static final field LIBRARY Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+	public static final field MESSENGER Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+	public static final field OTHER Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+	public static final field UTILITY Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getId ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+	public static fun values ()[Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginCategory$Companion {
+	public final fun fromId (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+	public final fun getDEFAULT ()Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/plugin/PluginChange {
+	public abstract fun getInfo ()Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginChange$Installed : dev/mooner/starlight/plugincore/plugin/PluginChange {
+	public fun <init> (Ldev/mooner/starlight/plugincore/plugin/PluginInfo;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public final fun copy (Ldev/mooner/starlight/plugincore/plugin/PluginInfo;)Ldev/mooner/starlight/plugincore/plugin/PluginChange$Installed;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginChange$Installed;Ldev/mooner/starlight/plugincore/plugin/PluginInfo;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginChange$Installed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getInfo ()Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginChange$Removed : dev/mooner/starlight/plugincore/plugin/PluginChange {
+	public fun <init> (Ldev/mooner/starlight/plugincore/plugin/PluginInfo;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public final fun copy (Ldev/mooner/starlight/plugincore/plugin/PluginInfo;)Ldev/mooner/starlight/plugincore/plugin/PluginChange$Removed;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginChange$Removed;Ldev/mooner/starlight/plugincore/plugin/PluginInfo;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginChange$Removed;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getInfo ()Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginChange$Updated : dev/mooner/starlight/plugincore/plugin/PluginChange {
+	public fun <init> (Ldev/mooner/starlight/plugincore/plugin/PluginInfo;Ldev/mooner/starlight/plugincore/version/Version;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public final fun component2 ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun copy (Ldev/mooner/starlight/plugincore/plugin/PluginInfo;Ldev/mooner/starlight/plugincore/version/Version;)Ldev/mooner/starlight/plugincore/plugin/PluginChange$Updated;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginChange$Updated;Ldev/mooner/starlight/plugincore/plugin/PluginInfo;Ldev/mooner/starlight/plugincore/version/Version;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginChange$Updated;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFrom ()Ldev/mooner/starlight/plugincore/version/Version;
+	public fun getInfo ()Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginClassLoader : dalvik/system/PathClassLoader, dev/mooner/starlight/plugincore/plugin/PluginHostClassLoader {
+	public fun <init> (Landroid/content/Context;Ljava/lang/ClassLoader;Ljava/io/File;Ljava/lang/String;Ldev/mooner/starlight/plugincore/plugin/PluginLoader;Ldev/mooner/starlight/plugincore/plugin/PluginInfo;Ljava/io/File;)V
+	public fun findClass (Ljava/lang/String;Z)Ljava/lang/Class;
+	public fun getPlugin ()Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;
+	public fun initialize (Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;)V
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/plugin/PluginContext {
+	public abstract fun getAsset (Ljava/lang/String;)Ljava/io/File;
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getPlugin ()Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;
+	public abstract fun getResourceDir ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginDependency {
+	public static final field Companion Ldev/mooner/starlight/plugincore/plugin/PluginDependency$Companion;
+	public static final field VERSION_ANY Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Z)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getPluginId ()Ljava/lang/String;
+	public final fun getSupportedVersion ()Ljava/lang/String;
+	public final fun isOptional ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginDependency$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginDependencySerializer : kotlinx/serialization/KSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/plugin/PluginDependencySerializer;
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/mooner/starlight/plugincore/plugin/PluginDependency;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/mooner/starlight/plugincore/plugin/PluginDependency;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/plugin/PluginExclusion {
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginExclusion$CircularDependency : dev/mooner/starlight/plugincore/plugin/PluginExclusion {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$CircularDependency;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginExclusion$Disabled : dev/mooner/starlight/plugincore/plugin/PluginExclusion {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$Disabled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginExclusion$DuplicateId : dev/mooner/starlight/plugincore/plugin/PluginExclusion {
+	public fun <init> (Ljava/io/File;)V
+	public final fun component1 ()Ljava/io/File;
+	public final fun copy (Ljava/io/File;)Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$DuplicateId;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$DuplicateId;Ljava/io/File;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$DuplicateId;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKept ()Ljava/io/File;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginExclusion$ExcludedDependency : dev/mooner/starlight/plugincore/plugin/PluginExclusion {
+	public fun <init> (Ldev/mooner/starlight/plugincore/plugin/PluginDependency;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/plugin/PluginDependency;
+	public final fun copy (Ldev/mooner/starlight/plugincore/plugin/PluginDependency;)Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$ExcludedDependency;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$ExcludedDependency;Ldev/mooner/starlight/plugincore/plugin/PluginDependency;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$ExcludedDependency;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDependency ()Ldev/mooner/starlight/plugincore/plugin/PluginDependency;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginExclusion$IncompatibleApi : dev/mooner/starlight/plugincore/plugin/PluginExclusion {
+	public fun <init> (Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun component2 ()Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;
+	public final fun copy (Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;)Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$IncompatibleApi;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$IncompatibleApi;Ldev/mooner/starlight/plugincore/version/Version;Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$IncompatibleApi;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApiVersion ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun getReason ()Ldev/mooner/starlight/plugincore/plugin/ApiCompatibility;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginExclusion$IncompatibleDependency : dev/mooner/starlight/plugincore/plugin/PluginExclusion {
+	public fun <init> (Ldev/mooner/starlight/plugincore/plugin/PluginDependency;Ldev/mooner/starlight/plugincore/version/Version;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/plugin/PluginDependency;
+	public final fun component2 ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun copy (Ldev/mooner/starlight/plugincore/plugin/PluginDependency;Ldev/mooner/starlight/plugincore/version/Version;)Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$IncompatibleDependency;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$IncompatibleDependency;Ldev/mooner/starlight/plugincore/plugin/PluginDependency;Ldev/mooner/starlight/plugincore/version/Version;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$IncompatibleDependency;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDependency ()Ldev/mooner/starlight/plugincore/plugin/PluginDependency;
+	public final fun getFound ()Ldev/mooner/starlight/plugincore/version/Version;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginExclusion$MissingDependency : dev/mooner/starlight/plugincore/plugin/PluginExclusion {
+	public fun <init> (Ldev/mooner/starlight/plugincore/plugin/PluginDependency;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/plugin/PluginDependency;
+	public final fun copy (Ldev/mooner/starlight/plugincore/plugin/PluginDependency;)Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$MissingDependency;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$MissingDependency;Ldev/mooner/starlight/plugincore/plugin/PluginDependency;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginExclusion$MissingDependency;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDependency ()Ldev/mooner/starlight/plugincore/plugin/PluginDependency;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginInfo {
+	public static final field Companion Ldev/mooner/starlight/plugincore/plugin/PluginInfo$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ldev/mooner/starlight/plugincore/version/Version;ILdev/mooner/starlight/plugincore/version/Version;Ljava/util/List;ZLjava/util/List;Ljava/lang/String;Ldev/mooner/starlight/plugincore/plugin/PluginCategory;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ldev/mooner/starlight/plugincore/version/Version;ILdev/mooner/starlight/plugincore/version/Version;Ljava/util/List;ZLjava/util/List;Ljava/lang/String;Ldev/mooner/starlight/plugincore/plugin/PluginCategory;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/util/List;
+	public final fun component11 ()Ljava/lang/String;
+	public final fun component12 ()Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun component6 ()I
+	public final fun component7 ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun component8 ()Ljava/util/List;
+	public final fun component9 ()Z
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ldev/mooner/starlight/plugincore/version/Version;ILdev/mooner/starlight/plugincore/version/Version;Ljava/util/List;ZLjava/util/List;Ljava/lang/String;Ldev/mooner/starlight/plugincore/plugin/PluginCategory;)Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginInfo;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ldev/mooner/starlight/plugincore/version/Version;ILdev/mooner/starlight/plugincore/version/Version;Ljava/util/List;ZLjava/util/List;Ljava/lang/String;Ldev/mooner/starlight/plugincore/plugin/PluginCategory;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public final fun encode ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApiVersion ()Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun getAssetRevision ()I
+	public final fun getAuthors ()Ljava/util/List;
+	public final fun getCategory ()Ldev/mooner/starlight/plugincore/plugin/PluginCategory;
+	public final fun getCustomClassLoader ()Ljava/lang/String;
+	public final fun getDependency ()Ljava/util/List;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getFullName ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getMainClass ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getSoftDependency ()Ljava/util/List;
+	public final fun getUsesNativeLibrary ()Z
+	public final fun getVersion ()Ldev/mooner/starlight/plugincore/version/Version;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class dev/mooner/starlight/plugincore/plugin/PluginInfo$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/plugin/PluginInfo$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/mooner/starlight/plugincore/plugin/PluginInfo;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginInfo$Companion {
+	public final fun decodeFromString (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginInstaller {
+	public static final field Companion Ldev/mooner/starlight/plugincore/plugin/PluginInstaller$Companion;
+	public fun <init> (Ljava/io/File;Ljava/io/File;)V
+	public final fun fileOf (Ljava/lang/String;)Ljava/io/File;
+	public final fun inspect (Ljava/io/File;)Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public final fun install (Ljava/io/File;Ljava/lang/String;Ldev/mooner/starlight/plugincore/plugin/PluginRepository;)Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public static synthetic fun install$default (Ldev/mooner/starlight/plugincore/plugin/PluginInstaller;Ljava/io/File;Ljava/lang/String;Ldev/mooner/starlight/plugincore/plugin/PluginRepository;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public final fun originOf (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/plugin/PluginOrigin;
+	public final fun uninstall (Ljava/io/File;Ldev/mooner/starlight/plugincore/plugin/PluginInfo;Z)V
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginInstaller$Companion {
+	public final fun dataDirNameOf (Ldev/mooner/starlight/plugincore/plugin/PluginInfo;)Ljava/lang/String;
+	public final fun fileNameOf (Ljava/lang/String;)Ljava/lang/String;
+	public final fun readPluginInfo (Ljava/io/File;)Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public final fun sha256 (Ljava/io/File;)Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginLoader {
+	public static final field Companion Ldev/mooner/starlight/plugincore/plugin/PluginLoader$Companion;
+	public fun <init> ()V
+	public final fun getClass (Ljava/lang/String;)Ljava/lang/Class;
+	public final fun loadPlugins (Landroid/content/Context;Ljava/io/File;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun loadPlugins$default (Ldev/mooner/starlight/plugincore/plugin/PluginLoader;Landroid/content/Context;Ljava/io/File;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public final fun registerListener (Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;Ldev/mooner/starlight/plugincore/plugin/EventListener;)V
+	public final fun scanPlugins (Ljava/io/File;)V
+	public static synthetic fun scanPlugins$default (Ldev/mooner/starlight/plugincore/plugin/PluginLoader;Ljava/io/File;ILjava/lang/Object;)V
+	public final fun setClass (Ljava/lang/String;Ljava/lang/Class;)V
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginLoader$Companion {
+	public final fun getPRESERVED_IDS ()[Ljava/lang/String;
+	public final fun getSUPPORTED_EXT ()[Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginManager {
+	public static final field Companion Ldev/mooner/starlight/plugincore/plugin/PluginManager$Companion;
+	public fun <init> ()V
+	public final fun getChanges ()Ljava/util/Map;
+	public final fun getDisabledIds ()Ljava/util/Set;
+	public final fun getInstalled ()Ljava/util/List;
+	public final fun getInstalled (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/plugin/InstalledPlugin;
+	public final fun getPluginById (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;
+	public final fun getPluginByName (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;
+	public final fun getPlugins ()Ljava/util/Set;
+	public final fun getRequiresRestart ()Z
+	public final fun install (Ldev/mooner/starlight/plugincore/plugin/PluginInstaller;Ljava/io/File;Ljava/lang/String;Ldev/mooner/starlight/plugincore/plugin/PluginRepository;)Ldev/mooner/starlight/plugincore/plugin/PluginChange;
+	public static synthetic fun install$default (Ldev/mooner/starlight/plugincore/plugin/PluginManager;Ldev/mooner/starlight/plugincore/plugin/PluginInstaller;Ljava/io/File;Ljava/lang/String;Ldev/mooner/starlight/plugincore/plugin/PluginRepository;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginChange;
+	public final fun isPluginEnabled (Ljava/lang/String;)Z
+	public final fun removePlugin (Ljava/lang/String;)Z
+	public final fun setPluginEnabled (Ljava/lang/String;Z)V
+	public final fun uninstall (Ldev/mooner/starlight/plugincore/plugin/PluginInstaller;Ljava/lang/String;Z)V
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginManager$Companion {
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginOrigin {
+	public static final field Companion Ldev/mooner/starlight/plugincore/plugin/PluginOrigin$Companion;
+	public fun <init> (Ldev/mooner/starlight/plugincore/plugin/PluginRepository;Ljava/lang/String;J)V
+	public synthetic fun <init> (Ldev/mooner/starlight/plugincore/plugin/PluginRepository;Ljava/lang/String;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/plugin/PluginRepository;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun copy (Ldev/mooner/starlight/plugincore/plugin/PluginRepository;Ljava/lang/String;J)Ldev/mooner/starlight/plugincore/plugin/PluginOrigin;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginOrigin;Ldev/mooner/starlight/plugincore/plugin/PluginRepository;Ljava/lang/String;JILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginOrigin;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInstalledAt ()J
+	public final fun getRepository ()Ldev/mooner/starlight/plugincore/plugin/PluginRepository;
+	public final fun getSha256 ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun isLocalFile ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class dev/mooner/starlight/plugincore/plugin/PluginOrigin$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/plugin/PluginOrigin$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/mooner/starlight/plugincore/plugin/PluginOrigin;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/mooner/starlight/plugincore/plugin/PluginOrigin;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginOrigin$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginRepository {
+	public static final field Companion Ldev/mooner/starlight/plugincore/plugin/PluginRepository$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Ldev/mooner/starlight/plugincore/plugin/PluginRepository;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginRepository;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginRepository;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class dev/mooner/starlight/plugincore/plugin/PluginRepository$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/plugin/PluginRepository$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/mooner/starlight/plugincore/plugin/PluginRepository;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/mooner/starlight/plugincore/plugin/PluginRepository;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginRepository$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/plugin/PluginState {
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginState$Disabled : dev/mooner/starlight/plugincore/plugin/PluginState {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/plugin/PluginState$Disabled;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginState$Excluded : dev/mooner/starlight/plugincore/plugin/PluginState {
+	public fun <init> (Ldev/mooner/starlight/plugincore/plugin/PluginExclusion;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/plugin/PluginExclusion;
+	public final fun copy (Ldev/mooner/starlight/plugincore/plugin/PluginExclusion;)Ldev/mooner/starlight/plugincore/plugin/PluginState$Excluded;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginState$Excluded;Ldev/mooner/starlight/plugincore/plugin/PluginExclusion;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginState$Excluded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getExclusion ()Ldev/mooner/starlight/plugincore/plugin/PluginExclusion;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginState$Failed : dev/mooner/starlight/plugincore/plugin/PluginState {
+	public fun <init> (Ljava/lang/Throwable;)V
+	public final fun component1 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/Throwable;)Ldev/mooner/starlight/plugincore/plugin/PluginState$Failed;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginState$Failed;Ljava/lang/Throwable;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginState$Failed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Ljava/lang/Throwable;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginState$Invalid : dev/mooner/starlight/plugincore/plugin/PluginState {
+	public fun <init> (Ljava/lang/Throwable;)V
+	public final fun component1 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/Throwable;)Ldev/mooner/starlight/plugincore/plugin/PluginState$Invalid;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginState$Invalid;Ljava/lang/Throwable;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginState$Invalid;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Ljava/lang/Throwable;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginState$Loaded : dev/mooner/starlight/plugincore/plugin/PluginState {
+	public fun <init> (Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;
+	public final fun copy (Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;)Ldev/mooner/starlight/plugincore/plugin/PluginState$Loaded;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/plugin/PluginState$Loaded;Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/plugin/PluginState$Loaded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPlugin ()Ldev/mooner/starlight/plugincore/plugin/StarlightPlugin;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/PluginState$SafeMode : dev/mooner/starlight/plugincore/plugin/PluginState {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/plugin/PluginState$SafeMode;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class dev/mooner/starlight/plugincore/plugin/StarlightPlugin : dev/mooner/starlight/plugincore/plugin/EventListener, dev/mooner/starlight/plugincore/plugin/Plugin {
+	public fun <init> ()V
+	protected fun <init> (Ldev/mooner/starlight/plugincore/plugin/PluginInfo;Ljava/io/File;Ljava/io/File;)V
+	protected final fun addApi (Ldev/mooner/starlight/plugincore/api/Api;)V
+	protected final fun addLanguage (Ldev/mooner/starlight/plugincore/language/Language;)V
+	protected final fun addListener (Ldev/mooner/starlight/plugincore/plugin/EventListener;)V
+	protected final fun addWidget (Ldev/mooner/starlight/plugincore/widget/WidgetDefinition;)V
+	protected final fun addWidget (Ljava/lang/Class;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAsset (Ljava/lang/String;)Ljava/io/File;
+	protected final fun getClassLoader ()Ljava/lang/ClassLoader;
+	public fun getConfigStructure ()Ljava/util/List;
+	public final fun getContext ()Ldev/mooner/starlight/plugincore/plugin/PluginContext;
+	public fun getDataFolder ()Ljava/io/File;
+	public fun getExternalDataDirectory ()Ljava/io/File;
+	public final fun getFileName ()Ljava/lang/String;
+	public final fun getFileSize ()F
+	public fun getInfo ()Ldev/mooner/starlight/plugincore/plugin/PluginInfo;
+	public fun getInternalDataDirectory ()Ljava/io/File;
+	public final fun getListeners ()Ljava/util/Set;
+	protected final fun getPluginConfig ()Ldev/mooner/starlight/plugincore/config/data/ConfigData;
+	public fun getSetupReason ()Ljava/lang/String;
+	public fun getSetupStructure ()Ljava/util/List;
+	public fun hashCode ()I
+	public final fun init (Ldev/mooner/starlight/plugincore/plugin/PluginInfo;Ljava/io/File;Ljava/io/File;Ljava/lang/ClassLoader;)V
+	public final fun invalidateConfigCache ()V
+	public fun isEnabled ()Z
+	public fun isSetupRequired ()Z
+	public fun onConfigUpdated (Ldev/mooner/starlight/plugincore/config/data/ConfigData;Ljava/util/Map;)V
+	public fun onConfigValueUpdated (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun onDisable ()V
+	public fun onEnable ()V
+	public fun onNetworkStateChanged (I)V
+	public fun onProjectCreated (Ldev/mooner/starlight/plugincore/project/Project;)V
+	public fun onProjectRemoved (Ldev/mooner/starlight/plugincore/project/Project;)V
+	public fun onProjectUpdated (Ldev/mooner/starlight/plugincore/project/Project;)V
+	public fun onSchemeAction (Landroid/content/Context;ZLjava/util/Map;)V
+	public fun onSetup (Ldev/mooner/starlight/plugincore/config/data/ConfigData;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	protected final fun registerProjectEvents (Lkotlin/jvm/functions/Function1;)V
+	protected final fun requestSetup ()V
+	protected final fun saveToConfig (Ldev/mooner/starlight/plugincore/config/data/ConfigData;)V
+	protected final fun setEnabled (Z)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/arch/Arch : java/lang/Enum {
+	public static final field AARCH_64 Ldev/mooner/starlight/plugincore/plugin/arch/Arch;
+	public static final field ARM_32 Ldev/mooner/starlight/plugincore/plugin/arch/Arch;
+	public static final field RISCV Ldev/mooner/starlight/plugincore/plugin/arch/Arch;
+	public static final field RISCV_64 Ldev/mooner/starlight/plugincore/plugin/arch/Arch;
+	public static final field UNKNOWN Ldev/mooner/starlight/plugincore/plugin/arch/Arch;
+	public static final field X86_32 Ldev/mooner/starlight/plugincore/plugin/arch/Arch;
+	public static final field X86_64 Ldev/mooner/starlight/plugincore/plugin/arch/Arch;
+	public final fun getArchNames ()[Ljava/lang/String;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/plugin/arch/Arch;
+	public static fun values ()[Ldev/mooner/starlight/plugincore/plugin/arch/Arch;
+}
+
+public final class dev/mooner/starlight/plugincore/plugin/arch/ArchKt {
+	public static final fun getArch ()Ldev/mooner/starlight/plugincore/plugin/arch/Arch;
+	public static final fun getArchByName (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/plugin/arch/Arch;
+}
+
+public final class dev/mooner/starlight/plugincore/project/ForceReleasedException : java/lang/Exception {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class dev/mooner/starlight/plugincore/project/JobLocker {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/project/JobLocker;
+	public final fun withLock (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public final fun withParent (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/project/JobLocker$Parent;
+}
+
+public final class dev/mooner/starlight/plugincore/project/JobLocker$Parent {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun activeJobs ()I
+	public final fun awaitRelease ()V
+	public final fun forceRelease (Ljava/lang/String;)V
+	public static synthetic fun forceRelease$default (Ldev/mooner/starlight/plugincore/project/JobLocker$Parent;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun getName ()Ljava/lang/String;
+	public final fun purge ()V
+	public final fun registerJob ()V
+	public final fun requestLock (Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun requestLock$default (Ldev/mooner/starlight/plugincore/project/JobLocker$Parent;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+	public final fun requestRelease (Ljava/lang/String;)V
+	public static synthetic fun requestRelease$default (Ldev/mooner/starlight/plugincore/project/JobLocker$Parent;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun tryRelease (Ljava/lang/String;)V
+	public static synthetic fun tryRelease$default (Ldev/mooner/starlight/plugincore/project/JobLocker$Parent;Ljava/lang/String;ILjava/lang/Object;)V
+}
+
+public final class dev/mooner/starlight/plugincore/project/JobLockerKt {
+	public static final fun withProject (Ldev/mooner/starlight/plugincore/project/JobLocker;Ldev/mooner/starlight/plugincore/project/Project;)Ldev/mooner/starlight/plugincore/project/JobLocker$Parent;
+}
+
+public abstract class dev/mooner/starlight/plugincore/project/Project : dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleOwner, kotlinx/coroutines/CoroutineScope {
+	public fun <init> ()V
+	public abstract fun activeJobs ()I
+	public abstract fun callFunction (Ljava/lang/String;[Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun callFunction$default (Ldev/mooner/starlight/plugincore/project/Project;Ljava/lang/String;[Ljava/lang/Object;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public abstract fun compile (Z)Z
+	public static synthetic fun compile$default (Ldev/mooner/starlight/plugincore/project/Project;ZILjava/lang/Object;)Z
+	public abstract fun compileAsync ()Lkotlinx/coroutines/flow/Flow;
+	public fun destroy ()V
+	public abstract fun destroy (Z)V
+	public static synthetic fun destroy$default (Ldev/mooner/starlight/plugincore/project/Project;ZILjava/lang/Object;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public abstract fun getConfig ()Ldev/mooner/starlight/plugincore/config/data/MutableConfig;
+	public abstract fun getDataDirectory ()Ljava/io/File;
+	public abstract fun getDirectory ()Ljava/io/File;
+	public abstract fun getInfo ()Ldev/mooner/starlight/plugincore/project/ProjectInfo;
+	public abstract fun getLanguage ()Ldev/mooner/starlight/plugincore/language/Language;
+	public abstract fun getLogger ()Ldev/mooner/starlight/plugincore/logger/ProjectLogger;
+	public abstract fun getScope ()Ljava/lang/Object;
+	public abstract fun getThreadPoolName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public abstract fun isCompiled ()Z
+	public abstract fun isEventCallAllowed (Ljava/lang/String;)Z
+	public abstract fun loadInfo ()V
+	public fun queuedEvents ()I
+	public fun rename (Ljava/lang/String;)V
+	public abstract fun rename (Ljava/lang/String;Z)V
+	public abstract fun requestUpdate ()V
+	public abstract fun runEvent (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun runEvent$default (Ldev/mooner/starlight/plugincore/project/Project;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public abstract fun saveInfo ()V
+	public abstract fun setEnabled (Z)Z
+	public abstract fun setThreadPoolName (Ljava/lang/String;)V
+	public abstract fun stopAllJobs ()V
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectButton {
+	public static final field Companion Ldev/mooner/starlight/plugincore/project/ProjectButton$Companion;
+	public fun <init> (Ljava/lang/String;Ldev/mooner/configdsl/Icon;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ldev/mooner/configdsl/Icon;
+	public final fun copy (Ljava/lang/String;Ldev/mooner/configdsl/Icon;)Ldev/mooner/starlight/plugincore/project/ProjectButton;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/project/ProjectButton;Ljava/lang/String;Ldev/mooner/configdsl/Icon;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/project/ProjectButton;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getIcon ()Ldev/mooner/configdsl/Icon;
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class dev/mooner/starlight/plugincore/project/ProjectButton$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/project/ProjectButton$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/mooner/starlight/plugincore/project/ProjectButton;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/mooner/starlight/plugincore/project/ProjectButton;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectButton$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectImpl : dev/mooner/starlight/plugincore/project/Project {
+	public static final field Companion Ldev/mooner/starlight/plugincore/project/ProjectImpl$Companion;
+	public fun activeJobs ()I
+	public fun callFunction (Ljava/lang/String;[Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)V
+	public fun compile (Z)Z
+	public fun compileAsync ()Lkotlinx/coroutines/flow/Flow;
+	public fun destroy (Z)V
+	public final fun getAllowedEventIDs ()Ljava/util/Set;
+	public fun getConfig ()Ldev/mooner/starlight/plugincore/config/data/MutableConfig;
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public fun getDataDirectory ()Ljava/io/File;
+	public fun getDirectory ()Ljava/io/File;
+	public fun getInfo ()Ldev/mooner/starlight/plugincore/project/ProjectInfo;
+	public fun getLanguage ()Ldev/mooner/starlight/plugincore/language/Language;
+	public fun getLifecycle ()Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle;
+	public fun getLogger ()Ldev/mooner/starlight/plugincore/logger/ProjectLogger;
+	public fun getScope ()Ljava/lang/Object;
+	public fun getThreadPoolName ()Ljava/lang/String;
+	public fun isCompiled ()Z
+	public fun isEventCallAllowed (Ljava/lang/String;)Z
+	public fun loadInfo ()V
+	public fun queuedEvents ()I
+	public fun rename (Ljava/lang/String;Z)V
+	public fun requestUpdate ()V
+	public fun runEvent (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)V
+	public fun saveInfo ()V
+	public fun setEnabled (Z)Z
+	public fun setThreadPoolName (Ljava/lang/String;)V
+	public fun stopAllJobs ()V
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectImpl$Companion {
+	public final fun create (Ljava/io/File;Ldev/mooner/starlight/plugincore/project/ProjectInfo;Ljava/util/Map;)Ldev/mooner/starlight/plugincore/project/Project;
+	public final fun loadFrom (Ljava/io/File;Ldev/mooner/starlight/plugincore/project/ProjectInfo;)Ldev/mooner/starlight/plugincore/project/Project;
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectInfo {
+	public static final field Companion Ldev/mooner/starlight/plugincore/project/ProjectInfo$Companion;
+	public fun <init> (Ljava/util/UUID;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZJLjava/util/Set;Ljava/util/Set;Ljava/util/Set;)V
+	public synthetic fun <init> (Ljava/util/UUID;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZJLjava/util/Set;Ljava/util/Set;Ljava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/util/UUID;
+	public final fun component10 ()Ljava/util/Set;
+	public final fun component11 ()Ljava/util/Set;
+	public final fun component2 ()I
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Z
+	public final fun component7 ()Z
+	public final fun component8 ()J
+	public final fun component9 ()Ljava/util/Set;
+	public final fun copy (Ljava/util/UUID;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZJLjava/util/Set;Ljava/util/Set;Ljava/util/Set;)Ldev/mooner/starlight/plugincore/project/ProjectInfo;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/project/ProjectInfo;Ljava/util/UUID;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZJLjava/util/Set;Ljava/util/Set;Ljava/util/Set;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/project/ProjectInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllowedEventIds ()Ljava/util/Set;
+	public final fun getApiLevels ()Ljava/util/Set;
+	public final fun getCreatedMillis ()J
+	public final fun getId ()Ljava/util/UUID;
+	public final fun getLanguageId ()Ljava/lang/String;
+	public final fun getMainScript ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPackages ()Ljava/util/Set;
+	public final fun getVersion ()I
+	public fun hashCode ()I
+	public final fun isEnabled ()Z
+	public final fun isPinned ()Z
+	public final fun setApiLevels (Ljava/util/Set;)V
+	public final fun setEnabled (Z)V
+	public final fun setPinned (Z)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class dev/mooner/starlight/plugincore/project/ProjectInfo$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/project/ProjectInfo$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/mooner/starlight/plugincore/project/ProjectInfo;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/mooner/starlight/plugincore/project/ProjectInfo;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectInfo$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectInfoBuilder {
+	public fun <init> ()V
+	public final fun build ()Ldev/mooner/starlight/plugincore/project/ProjectInfo;
+	public final fun getAllowedEventIds ()Ljava/util/Set;
+	public final fun getApiLevels ()Ljava/util/Set;
+	public final fun getLanguageId ()Ljava/lang/String;
+	public final fun getMainScript ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun setAllowedEventIds (Ljava/util/Set;)V
+	public final fun setApiLevels (Ljava/util/Set;)V
+	public final fun setLanguageId (Ljava/lang/String;)V
+	public final fun setMainScript (Ljava/lang/String;)V
+	public final fun setName (Ljava/lang/String;)V
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectLoader {
+	public static final field Companion Ldev/mooner/starlight/plugincore/project/ProjectLoader$Companion;
+	public fun <init> (Ljava/io/File;)V
+	public final fun loadProject (Ljava/io/File;)Ldev/mooner/starlight/plugincore/project/Project;
+	public final fun loadProjects ()V
+	public final fun loadProjects (ZLjava/io/File;Z)Ljava/util/List;
+	public static synthetic fun loadProjects$default (Ldev/mooner/starlight/plugincore/project/ProjectLoader;ZLjava/io/File;ZILjava/lang/Object;)Ljava/util/List;
+	public final fun readProjectInfo (Ljava/io/File;)Ldev/mooner/starlight/plugincore/project/ProjectInfo;
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectLoader$Companion {
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectManager {
+	public fun <init> (Ljava/io/File;)V
+	public final fun fireEvent (Lkotlin/reflect/KClass;[Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)V
+	public final fun getEnabledProjects ()Ljava/util/List;
+	public final fun getProjectById (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/project/Project;
+	public final fun getProjectByName (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/project/Project;
+	public final fun getProjectByName (Ljava/lang/String;Z)Ldev/mooner/starlight/plugincore/project/Project;
+	public static synthetic fun getProjectByName$default (Ldev/mooner/starlight/plugincore/project/ProjectManager;Ljava/lang/String;ZILjava/lang/Object;)Ldev/mooner/starlight/plugincore/project/Project;
+	public final fun getProjects ()Ljava/util/List;
+	public final fun newProject (Ldev/mooner/starlight/plugincore/project/ProjectInfo;Ljava/io/File;Ljava/util/Map;)V
+	public final fun newProject (Ljava/io/File;Ljava/util/Map;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun newProject$default (Ldev/mooner/starlight/plugincore/project/ProjectManager;Ldev/mooner/starlight/plugincore/project/ProjectInfo;Ljava/io/File;Ljava/util/Map;ILjava/lang/Object;)V
+	public static synthetic fun newProject$default (Ldev/mooner/starlight/plugincore/project/ProjectManager;Ljava/io/File;Ljava/util/Map;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun removeProject (Ldev/mooner/starlight/plugincore/project/Project;Z)V
+	public final fun removeProject (Ljava/lang/String;Z)V
+	public static synthetic fun removeProject$default (Ldev/mooner/starlight/plugincore/project/ProjectManager;Ldev/mooner/starlight/plugincore/project/Project;ZILjava/lang/Object;)V
+	public static synthetic fun removeProject$default (Ldev/mooner/starlight/plugincore/project/ProjectManager;Ljava/lang/String;ZILjava/lang/Object;)V
+	public final fun updateProjectInfo (Ljava/lang/String;ZLkotlin/jvm/functions/Function1;)V
+	public static synthetic fun updateProjectInfo$default (Ldev/mooner/starlight/plugincore/project/ProjectManager;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
+public final class dev/mooner/starlight/plugincore/project/event/AllowedEventEntries {
+	public static final field Companion Ldev/mooner/starlight/plugincore/project/event/AllowedEventEntries$Companion;
+	public static final field WILDCARD_ALL Ljava/lang/String;
+	public fun <init> (Ljava/util/Collection;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/util/Collection;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun canSetAutomatic (Ljava/lang/String;)Z
+	public final fun getAllowed ()Ljava/util/Set;
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getUnknown ()Ljava/util/List;
+	public final fun isAllowed (Ljava/lang/String;)Z
+	public final fun isAutomatic (Ljava/lang/String;)Z
+	public final fun matches (Ljava/lang/String;)Ljava/util/Set;
+	public final fun remove (Ljava/lang/String;)V
+	public final fun setAllowed (Ljava/lang/String;Z)V
+	public final fun setAllowed (Ljava/util/Collection;Z)V
+	public final fun setAutomatic (Ljava/lang/String;Z)V
+}
+
+public final class dev/mooner/starlight/plugincore/project/event/AllowedEventEntries$Companion {
+	public final fun wildcardOf (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public abstract class dev/mooner/starlight/plugincore/project/event/ProjectEvent {
+	public fun <init> ()V
+	public fun dispatch (Ldev/mooner/starlight/plugincore/project/Project;[Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun generateCode (Ldev/mooner/starlight/plugincore/language/CodeGenerator;)Ldev/mooner/starlight/plugincore/language/CodeGenerator$GeneratedFunction;
+	public fun generateCode (Ldev/mooner/starlight/plugincore/language/CodeGenerator;Ljava/lang/String;)Ldev/mooner/starlight/plugincore/language/CodeGenerator$GeneratedFunction;
+	public fun getAlternateFunctionName ()Ljava/lang/String;
+	public abstract fun getArgTypes ()[Ldev/mooner/starlight/plugincore/language/CodeGenerator$Argument;
+	public fun getDescription ()Ljava/lang/String;
+	public fun getFunctionComment ()Ljava/lang/String;
+	public abstract fun getFunctionName ()Ljava/lang/String;
+	public abstract fun getId ()Ljava/lang/String;
+	public fun getListenerName ()Ljava/lang/String;
+	public abstract fun getName ()Ljava/lang/String;
+	public fun getScriptArguments ()[Ldev/mooner/starlight/plugincore/language/CodeGenerator$Argument;
+	public fun getUsage ()Ljava/lang/String;
+	public fun hashCode ()I
+	protected final fun typedAs (Ljava/lang/String;Lkotlin/reflect/KClass;)Ldev/mooner/starlight/plugincore/language/CodeGenerator$Argument;
+}
+
+public final class dev/mooner/starlight/plugincore/project/event/ProjectEventBuilder {
+	public fun <init> (Ldev/mooner/starlight/plugincore/plugin/PluginContext;)V
+	public final fun build ()Ljava/util/Map;
+	public final fun category (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class dev/mooner/starlight/plugincore/project/event/ProjectEventBuilder$CategoryBuilder {
+	public fun <init> (Ldev/mooner/starlight/plugincore/project/event/ProjectEventBuilder;)V
+	public final fun category (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
+	public final fun plus (Lkotlin/reflect/KClass;)V
+}
+
+public final class dev/mooner/starlight/plugincore/project/event/ProjectEventBuilderKt {
+	public static final fun getInstance (Lkotlin/reflect/KClass;)Ldev/mooner/starlight/plugincore/project/event/ProjectEvent;
+}
+
+public final class dev/mooner/starlight/plugincore/project/event/ProjectEventManager {
+	public static final field EXCLUDE_PREFIX Ljava/lang/String;
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/project/event/ProjectEventManager;
+	public static final field PATH_DELIMITER C
+	public final fun dump ()Ljava/lang/String;
+	public final fun filterAllowedEvents (Ljava/util/List;)Ljava/util/Set;
+	public final fun filterAllowedEvents (Ljava/util/Set;)Ljava/util/Set;
+	public final fun find (Ljava/lang/String;)Ljava/util/Set;
+	public final fun findFirst (Ljava/lang/String;)Lkotlin/reflect/KClass;
+	public final fun isIdUsed (Ljava/lang/String;)Z
+	public final fun register (Ljava/lang/String;Lkotlin/reflect/KClass;)Z
+	public final fun validateAndGetEventID (Lkotlin/reflect/KClass;)Ljava/lang/String;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle {
+	public abstract fun getLifecycleScope ()Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleScope;
+	public abstract fun getState ()Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;
+	public abstract fun registerObserver (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver;Lkotlinx/coroutines/CoroutineScope;)V
+	public static synthetic fun registerObserver$default (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle;Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver;Lkotlinx/coroutines/CoroutineScope;ILjava/lang/Object;)V
+	public abstract fun unregisterObserver (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver;)V
+	public abstract fun whileInState (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$DefaultImpls {
+	public static synthetic fun registerObserver$default (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle;Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver;Lkotlinx/coroutines/CoroutineScope;ILjava/lang/Object;)V
+}
+
+public final class dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$Event : java/lang/Enum {
+	public static final field ON_COMPILE_END Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$Event;
+	public static final field ON_COMPILE_START Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$Event;
+	public static final field ON_DESTROY Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$Event;
+	public static final field ON_DISABLE Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$Event;
+	public static final field ON_ENABLE Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$Event;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getTargetState ()Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;
+	public static fun valueOf (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$Event;
+	public static fun values ()[Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$Event;
+}
+
+public final class dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State : java/lang/Enum {
+	public static final field COMPILING Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;
+	public static final field DESTROYED Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;
+	public static final field DISABLED Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;
+	public static final field ENABLED Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;
+	public static fun values ()[Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver {
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver$ExplicitObserver : dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver {
+	public fun onCompileEnd (Ldev/mooner/starlight/plugincore/project/Project;)V
+	public fun onCompileStart (Ldev/mooner/starlight/plugincore/project/Project;)V
+	public fun onDestroy (Ldev/mooner/starlight/plugincore/project/Project;)V
+	public fun onDisable (Ldev/mooner/starlight/plugincore/project/Project;)V
+	public fun onEnable (Ldev/mooner/starlight/plugincore/project/Project;)V
+}
+
+public final class dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver$ExplicitObserver$DefaultImpls {
+	public static fun onCompileEnd (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver$ExplicitObserver;Ldev/mooner/starlight/plugincore/project/Project;)V
+	public static fun onCompileStart (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver$ExplicitObserver;Ldev/mooner/starlight/plugincore/project/Project;)V
+	public static fun onDestroy (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver$ExplicitObserver;Ldev/mooner/starlight/plugincore/project/Project;)V
+	public static fun onDisable (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver$ExplicitObserver;Ldev/mooner/starlight/plugincore/project/Project;)V
+	public static fun onEnable (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver$ExplicitObserver;Ldev/mooner/starlight/plugincore/project/Project;)V
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver$StateObserver : dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver {
+	public abstract fun onUpdate (Ldev/mooner/starlight/plugincore/project/Project;Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;)V
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleOwner {
+	public abstract fun getLifecycle ()Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle;
+}
+
+public final class dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleRegistry : dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle {
+	public fun <init> (Ldev/mooner/starlight/plugincore/project/Project;)V
+	public fun getLifecycleScope ()Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleScope;
+	public fun getState ()Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;
+	public fun registerObserver (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver;Lkotlinx/coroutines/CoroutineScope;)V
+	public final fun setCurrentState (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;)V
+	public fun unregisterObserver (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleObserver;)V
+	public fun whileInState (Ldev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycle$State;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract class dev/mooner/starlight/plugincore/project/lifecycle/ProjectLifecycleScope : kotlinx/coroutines/CoroutineScope {
+	public final fun launchWhenCompiled (Lkotlin/jvm/functions/Function2;)V
+}
+
+public final class dev/mooner/starlight/plugincore/serializers/FileSerializer : kotlinx/serialization/KSerializer {
+	public fun <init> ()V
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/io/File;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/io/File;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class dev/mooner/starlight/plugincore/serializers/UUIDSerializer : kotlinx/serialization/KSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/serializers/UUIDSerializer;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/util/UUID;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/util/UUID;)V
+}
+
+public abstract class dev/mooner/starlight/plugincore/template/Template {
+	public fun <init> ()V
+	public abstract fun getDefaultCode ()Ljava/lang/String;
+	public abstract fun getName ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/template/TemplateManager {
+	public fun <init> ()V
+	public final fun addTemplate (Ldev/mooner/starlight/plugincore/template/Template;)V
+	public final fun formatCode (Ldev/mooner/starlight/plugincore/project/Project;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/template/UserTemplate : dev/mooner/starlight/plugincore/template/Template {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Ldev/mooner/starlight/plugincore/template/UserTemplate;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/template/UserTemplate;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/template/UserTemplate;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getDefaultCode ()Ljava/lang/String;
+	public fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/translation/Locale : java/lang/Enum {
+	public static final field ENGLISH Ldev/mooner/starlight/plugincore/translation/Locale;
+	public static final field KOREAN Ldev/mooner/starlight/plugincore/translation/Locale;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/translation/Locale;
+	public static fun values ()[Ldev/mooner/starlight/plugincore/translation/Locale;
+}
+
+public final class dev/mooner/starlight/plugincore/translation/TranslationBuilder {
+	public fun <init> ()V
+	public final fun build ()Lkotlin/Pair;
+	public final fun format ([Lkotlin/Pair;)V
+	public final fun invoke (Ldev/mooner/starlight/plugincore/translation/Locale;Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class dev/mooner/starlight/plugincore/translation/TranslationManager {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/translation/TranslationManager;
+	public final fun getLocale ()Ldev/mooner/starlight/plugincore/translation/Locale;
+	public final fun translate (Lkotlin/jvm/functions/Function1;)Ljava/lang/String;
+	public final fun translateTo (Ldev/mooner/starlight/plugincore/translation/Locale;Lkotlin/jvm/functions/Function1;)Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/translation/TranslationManagerKt {
+	public static final fun translate (Lkotlin/jvm/functions/Function1;)Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/utils/ConfigUtilsKt {
+	public static final fun decodeConfigData (Lkotlinx/serialization/json/Json;Ljava/lang/String;)Ljava/util/Map;
+	public static final fun decodeLegacyData (Lkotlinx/serialization/json/Json;Ljava/lang/String;)Ljava/util/Map;
+	public static final fun dumpAllData (Ljava/util/Map;)V
+	public static final fun onSaveConfigAdapter (Ldev/mooner/starlight/plugincore/config/data/MutableConfig;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Lkotlinx/serialization/json/JsonElement;)V
+}
+
+public final class dev/mooner/starlight/plugincore/utils/CryptoUtilsKt {
+	public static final fun bytesToHex ([B)Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/utils/FileUtilsKt {
+	public static final fun copyAsReadOnly (Ljava/io/File;Ljava/io/File;)Ljava/io/File;
+	public static final fun getFileSize (Ljava/io/File;)F
+	public static final fun getStarLightDirectory ()Ljava/io/File;
+	public static final fun hasFile (Ljava/io/File;Ljava/lang/String;)Z
+	public static final fun isValidDirectory (Ljava/io/File;)Z
+	public static final fun isValidFile (Ljava/io/File;)Z
+	public static final fun plusAssign (Ljava/io/File;Ljava/io/File;)V
+	public static final fun plusAssign (Ljava/io/File;Ljava/lang/String;)V
+	public static final fun setStarLightDirectory (Ljava/io/File;)V
+}
+
+public final class dev/mooner/starlight/plugincore/utils/FlagUtilsKt {
+	public static final fun addFlag (II)I
+	public static final fun flagOf ([I)I
+	public static final fun hasFlag (II)Z
+}
+
+public final class dev/mooner/starlight/plugincore/utils/LazyMutable : kotlin/properties/ReadWriteProperty {
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	public final fun getInitializer ()Lkotlin/jvm/functions/Function0;
+	public fun getValue (Ljava/lang/Object;Lkotlin/reflect/KProperty;)Ljava/lang/Object;
+	public fun setValue (Ljava/lang/Object;Lkotlin/reflect/KProperty;Ljava/lang/Object;)V
+}
+
+public final class dev/mooner/starlight/plugincore/utils/LazyMutableKt {
+	public static final fun lazyMutable (Lkotlin/jvm/functions/Function0;)Lkotlin/properties/ReadWriteProperty;
+}
+
+public final class dev/mooner/starlight/plugincore/utils/LoggingUtilsKt {
+	public static final fun debugTranslated (Ldev/mooner/starlight/plugincore/logger/TLogger;Lkotlin/jvm/functions/Function1;)V
+	public static final fun errorTranslated (Ldev/mooner/starlight/plugincore/logger/TLogger;Lkotlin/jvm/functions/Function1;)V
+	public static final fun infoTranslated (Ldev/mooner/starlight/plugincore/logger/TLogger;Lkotlin/jvm/functions/Function1;)V
+	public static final fun verboseTranslated (Ldev/mooner/starlight/plugincore/logger/TLogger;Lkotlin/jvm/functions/Function1;)V
+	public static final fun warnTranslated (Ldev/mooner/starlight/plugincore/logger/TLogger;Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class dev/mooner/starlight/plugincore/utils/NetworkUtil {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/utils/NetworkUtil;
+	public static final field NETWORK_STATUS_ETHERNET I
+	public static final field NETWORK_STATUS_MOBILE I
+	public static final field NETWORK_STATUS_NOT_CONNECTED I
+	public static final field NETWORK_STATUS_WIFI I
+	public final fun addOnNetworkStateChangedListener (Lkotlin/jvm/functions/Function1;)V
+	public final fun getNetworkStatus (Landroid/content/Context;)I
+	public final fun registerNetworkStatusListener (Landroid/content/Context;)V
+}
+
+public final class dev/mooner/starlight/plugincore/utils/ThreadUtilsKt {
+	public static final fun getCurrentThread ()Ljava/lang/Thread;
+}
+
+public final class dev/mooner/starlight/plugincore/utils/TimeUtils {
+	public static final field Companion Ldev/mooner/starlight/plugincore/utils/TimeUtils$Companion;
+	public fun <init> ()V
+}
+
+public final class dev/mooner/starlight/plugincore/utils/TimeUtils$Companion {
+	public final fun formatCurrentDate (Ljava/lang/String;)Ljava/lang/String;
+	public final fun formatMillis (JLjava/lang/String;)Ljava/lang/String;
+	public final fun getTimestamp (Z)Ljava/lang/String;
+	public static synthetic fun getTimestamp$default (Ldev/mooner/starlight/plugincore/utils/TimeUtils$Companion;ZILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/utils/UtilsKt {
+	public static final fun color (Lkotlin/jvm/functions/Function0;)I
+	public static final fun isNightMode (Landroid/content/Context;)Z
+	public static final fun pairOf (Ljava/lang/Object;Ljava/lang/Object;)Lkotlin/Pair;
+	public static final fun readString (Ljava/io/InputStream;)Ljava/lang/String;
+	public static final fun require (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
+	public static final fun requiredField (Ljava/lang/String;Ljava/lang/Object;)V
+	public static final fun runIf (ZZLkotlin/jvm/functions/Function0;)V
+	public static final fun toBase64 (Landroid/graphics/Bitmap;)Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/utils/ViewBuilder {
+	public static final field Companion Ldev/mooner/starlight/plugincore/utils/ViewBuilder$Companion;
+	public fun <init> (Landroid/widget/FrameLayout;)V
+	public final fun button (IILjava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun button$default (Ldev/mooner/starlight/plugincore/utils/ViewBuilder;IILjava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun dp (I)I
+	public final fun dp (Lkotlin/jvm/functions/Function0;)I
+	public final fun getMatchParent ()I
+	public final fun getWrapContent ()I
+	public final fun place (Landroid/view/View;IILkotlin/jvm/functions/Function1;)V
+	public static synthetic fun place$default (Ldev/mooner/starlight/plugincore/utils/ViewBuilder;Landroid/view/View;IILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun textView (IILjava/lang/String;Ljava/lang/Float;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun textView$default (Ldev/mooner/starlight/plugincore/utils/ViewBuilder;IILjava/lang/String;Ljava/lang/Float;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public final fun updateParams (Landroid/view/View;Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class dev/mooner/starlight/plugincore/utils/ViewBuilder$Companion {
+}
+
+public final class dev/mooner/starlight/plugincore/utils/ViewUtilsKt {
+	public static final fun draw (Landroid/view/View;Lkotlin/jvm/functions/Function1;)Ldev/mooner/starlight/plugincore/utils/ViewBuilder;
+}
+
+public final class dev/mooner/starlight/plugincore/version/Version : java/lang/Comparable {
+	public static final field Companion Ldev/mooner/starlight/plugincore/version/Version$Companion;
+	public fun <init> (IIILjava/lang/String;)V
+	public synthetic fun <init> (IIILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun check (Ljava/lang/String;)Z
+	public fun compareTo (Ldev/mooner/starlight/plugincore/version/Version;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public final fun compatibleWith (Ldev/mooner/starlight/plugincore/version/Version;)Z
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (IIILjava/lang/String;)Ldev/mooner/starlight/plugincore/version/Version;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/version/Version;IIILjava/lang/String;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/version/Version;
+	public fun equals (Ljava/lang/Object;)Z
+	public static final fun fromString (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun getBuild ()Ljava/lang/String;
+	public final fun getMajor ()I
+	public final fun getMinor ()I
+	public final fun getPatch ()I
+	public fun hashCode ()I
+	public final fun incompatibleWith (Ldev/mooner/starlight/plugincore/version/Version;)Z
+	public final fun isCompatibleWith (Ldev/mooner/starlight/plugincore/version/Version;)Z
+	public final fun newerThan (Ldev/mooner/starlight/plugincore/version/Version;)Z
+	public final fun newerThan (Ljava/lang/String;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/version/Version$Companion {
+	public final fun check (Ljava/lang/String;)Z
+	public final fun fromString (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/version/Version;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/version/VersionSerializer : kotlinx/serialization/KSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/version/VersionSerializer;
+	public fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/mooner/starlight/plugincore/version/Version;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/mooner/starlight/plugincore/version/Version;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+}
+
+public final class dev/mooner/starlight/plugincore/widget/GridCell {
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Ldev/mooner/starlight/plugincore/widget/GridCell;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/widget/GridCell;IIILjava/lang/Object;)Ldev/mooner/starlight/plugincore/widget/GridCell;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getColumn ()I
+	public final fun getRow ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/GridPlacement {
+	public fun <init> (Ldev/mooner/starlight/plugincore/widget/GridCell;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/widget/GridCell;
+	public final fun component2 ()Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public final fun copy (Ldev/mooner/starlight/plugincore/widget/GridCell;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;)Ldev/mooner/starlight/plugincore/widget/GridPlacement;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/widget/GridPlacement;Ldev/mooner/starlight/plugincore/widget/GridCell;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/widget/GridPlacement;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCell ()Ldev/mooner/starlight/plugincore/widget/GridCell;
+	public final fun getSpan ()Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class dev/mooner/starlight/plugincore/widget/Widget : androidx/lifecycle/LifecycleEventObserver, androidx/lifecycle/LifecycleOwner {
+	public fun <init> ()V
+	public fun equals (Ljava/lang/Object;)Z
+	public abstract fun getId ()Ljava/lang/String;
+	public synthetic fun getLifecycle ()Landroidx/lifecycle/Lifecycle;
+	public fun getLifecycle ()Landroidx/lifecycle/LifecycleRegistry;
+	public abstract fun getName ()Ljava/lang/String;
+	public fun getSize ()Ldev/mooner/starlight/plugincore/widget/WidgetSize;
+	public fun hashCode ()I
+	public abstract fun onCreateThumbnail (Landroid/view/View;)V
+	public abstract fun onCreateWidget (Landroid/view/View;)V
+	public fun onDestroyThumbnail ()V
+	public fun onDestroyWidget ()V
+	public fun onPauseWidget ()V
+	public fun onResumeWidget ()V
+	public fun onStateChanged (Landroidx/lifecycle/LifecycleOwner;Landroidx/lifecycle/Lifecycle$Event;)V
+	protected final fun updateHeight (Landroid/view/View;)V
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetBuilder {
+	public final fun content (Lkotlin/jvm/functions/Function1;)V
+	public final fun getAutoHeight ()Z
+	public final fun getDevOnly ()Z
+	public final fun name (Ljava/lang/String;)V
+	public final fun name (Lkotlin/jvm/functions/Function1;)V
+	public final fun preview (Lkotlin/jvm/functions/Function1;)V
+	public final fun setAutoHeight (Z)V
+	public final fun setDevOnly (Z)V
+	public final fun settings (Lkotlin/jvm/functions/Function1;)V
+	public final fun span (Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;)V
+	public static synthetic fun span$default (Ldev/mooner/starlight/plugincore/widget/WidgetBuilder;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;ILjava/lang/Object;)V
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetBuilderKt {
+	public static final fun widget (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ldev/mooner/starlight/plugincore/widget/WidgetDefinition;
+}
+
+public abstract class dev/mooner/starlight/plugincore/widget/WidgetController {
+	public abstract fun attach (Landroidx/lifecycle/Lifecycle;)V
+	public abstract fun create (Landroid/widget/FrameLayout;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;ZLjava/util/Map;)V
+	public static synthetic fun create$default (Ldev/mooner/starlight/plugincore/widget/WidgetController;Landroid/widget/FrameLayout;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;ZLjava/util/Map;ILjava/lang/Object;)V
+	public abstract fun destroy ()V
+	public final fun getOnError ()Lkotlin/jvm/functions/Function1;
+	public abstract fun resize (Ldev/mooner/starlight/plugincore/widget/WidgetSpan;)V
+	public final fun setOnError (Lkotlin/jvm/functions/Function1;)V
+	public fun updateSettings (Ljava/util/Map;)V
+}
+
+public abstract class dev/mooner/starlight/plugincore/widget/WidgetDefinition {
+	public fun createSettingsForm (Ljava/util/Map;)Ldev/mooner/starlight/plugincore/widget/WidgetSettingsForm;
+	public fun equals (Ljava/lang/Object;)Z
+	public abstract fun getHasSettings ()Z
+	public abstract fun getId ()Ljava/lang/String;
+	public abstract fun getName ()Ljava/lang/String;
+	public abstract fun getSpanSpec ()Ldev/mooner/starlight/plugincore/widget/WidgetSpanSpec;
+	public fun hashCode ()I
+	public abstract fun isAutoHeight ()Z
+	public abstract fun isDevOnly ()Z
+	public abstract fun newController ()Ldev/mooner/starlight/plugincore/widget/WidgetController;
+}
+
+public abstract interface annotation class dev/mooner/starlight/plugincore/widget/WidgetDsl : java/lang/annotation/Annotation {
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetGridPacker {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/widget/WidgetGridPacker;
+	public final fun pack (Ljava/util/List;I)Ljava/util/List;
+	public final fun rowCount (Ljava/util/List;)I
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetInfo {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ldev/mooner/starlight/plugincore/widget/WidgetInfo;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/widget/WidgetInfo;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/widget/WidgetInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPluginName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetLayout {
+	public static final field Companion Ldev/mooner/starlight/plugincore/widget/WidgetLayout$Companion;
+	public static final field VERSION I
+	public fun <init> ()V
+	public fun <init> (ILjava/util/List;)V
+	public synthetic fun <init> (ILjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()I
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (ILjava/util/List;)Ldev/mooner/starlight/plugincore/widget/WidgetLayout;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/widget/WidgetLayout;ILjava/util/List;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/widget/WidgetLayout;
+	public final fun encode (Lkotlinx/serialization/json/Json;)Ljava/lang/String;
+	public final fun encodeLegacyIds (Lkotlinx/serialization/json/Json;)Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getItems ()Ljava/util/List;
+	public final fun getVersion ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class dev/mooner/starlight/plugincore/widget/WidgetLayout$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/widget/WidgetLayout$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/mooner/starlight/plugincore/widget/WidgetLayout;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/mooner/starlight/plugincore/widget/WidgetLayout;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetLayout$Companion {
+	public final fun decode (Ljava/lang/String;Ljava/lang/String;Lkotlinx/serialization/json/Json;Lkotlin/jvm/functions/Function0;)Ldev/mooner/starlight/plugincore/widget/WidgetLayout$DecodeResult;
+	public static synthetic fun decode$default (Ldev/mooner/starlight/plugincore/widget/WidgetLayout$Companion;Ljava/lang/String;Ljava/lang/String;Lkotlinx/serialization/json/Json;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/widget/WidgetLayout$DecodeResult;
+	public final fun newInstanceId ()Ljava/lang/String;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetLayout$DecodeResult {
+	public fun <init> (Ldev/mooner/starlight/plugincore/widget/WidgetLayout;Z)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/widget/WidgetLayout;
+	public final fun component2 ()Z
+	public final fun copy (Ldev/mooner/starlight/plugincore/widget/WidgetLayout;Z)Ldev/mooner/starlight/plugincore/widget/WidgetLayout$DecodeResult;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/widget/WidgetLayout$DecodeResult;Ldev/mooner/starlight/plugincore/widget/WidgetLayout;ZILjava/lang/Object;)Ldev/mooner/starlight/plugincore/widget/WidgetLayout$DecodeResult;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLayout ()Ldev/mooner/starlight/plugincore/widget/WidgetLayout;
+	public fun hashCode ()I
+	public final fun isMigrated ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetManager {
+	public fun <init> ()V
+	public final fun addWidget (Ldev/mooner/starlight/plugincore/plugin/PluginContext;Ldev/mooner/starlight/plugincore/widget/WidgetDefinition;)V
+	public final fun addWidget (Ldev/mooner/starlight/plugincore/plugin/PluginContext;Ljava/lang/Class;)V
+	public final fun getAllWidgetInfo ()Ljava/util/Map;
+	public final fun getDefinition (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/widget/WidgetDefinition;
+	public final fun getDefinitions ()Ljava/util/Collection;
+	public final fun getWidgetById (Ljava/lang/String;)Ljava/lang/Class;
+	public final fun getWidgetInfo (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/widget/WidgetInfo;
+	public final fun getWidgets ()Ljava/util/Map;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetPlacement {
+	public static final field Companion Ldev/mooner/starlight/plugincore/widget/WidgetPlacement$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ljava/util/Map;)Ldev/mooner/starlight/plugincore/widget/WidgetPlacement;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/widget/WidgetPlacement;Ljava/lang/String;Ljava/lang/String;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ljava/util/Map;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/widget/WidgetPlacement;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInstanceId ()Ljava/lang/String;
+	public final fun getSettings ()Ljava/util/Map;
+	public final fun getSpan ()Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public final fun getWidgetId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class dev/mooner/starlight/plugincore/widget/WidgetPlacement$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/widget/WidgetPlacement$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/mooner/starlight/plugincore/widget/WidgetPlacement;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/mooner/starlight/plugincore/widget/WidgetPlacement;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetPlacement$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetScope : androidx/lifecycle/LifecycleOwner {
+	public final fun getContainer ()Landroid/widget/FrameLayout;
+	public final fun getContext ()Landroid/content/Context;
+	public final fun getCoroutineScope ()Lkotlinx/coroutines/CoroutineScope;
+	public fun getLifecycle ()Landroidx/lifecycle/Lifecycle;
+	public final fun getSettings ()Ldev/mooner/starlight/plugincore/widget/WidgetSettings;
+	public final fun getSpan ()Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public final fun inflate (I)Landroid/view/View;
+	public final fun inflate (Lkotlin/jvm/functions/Function3;)Ljava/lang/Object;
+	public final fun isPreview ()Z
+	public final fun launch (Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/Job;
+	public final fun onResize (Lkotlin/jvm/functions/Function1;)V
+	public final fun repeatWhile (Landroidx/lifecycle/Lifecycle$State;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/Job;
+	public final fun ticker-VtjQ1oo (JLkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/Job;
+	public final fun view (I)Landroid/view/View;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetSettings {
+	public static final field Companion Ldev/mooner/starlight/plugincore/widget/WidgetSettings$Companion;
+	public final fun boolean (Ljava/lang/String;)Z
+	public final fun string (Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetSettings$Companion {
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetSettingsBuilder {
+	public final fun choice (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)V
+	public static synthetic fun choice$default (Ldev/mooner/starlight/plugincore/widget/WidgetSettingsBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun toggle (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
+	public static synthetic fun toggle$default (Ldev/mooner/starlight/plugincore/widget/WidgetSettingsBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)V
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetSettingsForm {
+	public static final field CATEGORY_ID Ljava/lang/String;
+	public static final field Companion Ldev/mooner/starlight/plugincore/widget/WidgetSettingsForm$Companion;
+	public final fun getData ()Ljava/util/Map;
+	public final fun getStructure ()Ljava/util/List;
+	public final fun toValue (Ljava/lang/String;Lkotlinx/serialization/json/JsonElement;)Lkotlinx/serialization/json/JsonElement;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetSettingsForm$Companion {
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetSize : java/lang/Enum {
+	public static final field Large Ldev/mooner/starlight/plugincore/widget/WidgetSize;
+	public static final field Medium Ldev/mooner/starlight/plugincore/widget/WidgetSize;
+	public static final field Slim Ldev/mooner/starlight/plugincore/widget/WidgetSize;
+	public static final field Wrap Ldev/mooner/starlight/plugincore/widget/WidgetSize;
+	public static final field XLarge Ldev/mooner/starlight/plugincore/widget/WidgetSize;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getViewType ()I
+	public static fun valueOf (Ljava/lang/String;)Ldev/mooner/starlight/plugincore/widget/WidgetSize;
+	public static fun values ()[Ldev/mooner/starlight/plugincore/widget/WidgetSize;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetSpan {
+	public static final field Companion Ldev/mooner/starlight/plugincore/widget/WidgetSpan$Companion;
+	public static final field MAX_COLUMNS I
+	public fun <init> (II)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/widget/WidgetSpan;IIILjava/lang/Object;)Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getX ()I
+	public final fun getY ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class dev/mooner/starlight/plugincore/widget/WidgetSpan$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Ldev/mooner/starlight/plugincore/widget/WidgetSpan$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetSpan$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetSpanKt {
+	public static final fun x (II)Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+}
+
+public final class dev/mooner/starlight/plugincore/widget/WidgetSpanSpec {
+	public fun <init> (Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;)V
+	public synthetic fun <init> (Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public final fun component2 ()Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public final fun component3 ()Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public final fun copy (Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;)Ldev/mooner/starlight/plugincore/widget/WidgetSpanSpec;
+	public static synthetic fun copy$default (Ldev/mooner/starlight/plugincore/widget/WidgetSpanSpec;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;Ldev/mooner/starlight/plugincore/widget/WidgetSpan;ILjava/lang/Object;)Ldev/mooner/starlight/plugincore/widget/WidgetSpanSpec;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDefault ()Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public final fun getMax ()Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public final fun getMin ()Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public fun hashCode ()I
+	public final fun isResizable ()Z
+	public final fun resolve (Ldev/mooner/starlight/plugincore/widget/WidgetSpan;I)Ldev/mooner/starlight/plugincore/widget/WidgetSpan;
+	public fun toString ()Ljava/lang/String;
+}
+
