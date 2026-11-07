@@ -8,6 +8,9 @@ import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.store.AttachmentStore
 import dev.mooner.starlight.agent.store.CheckpointStore
 import dev.mooner.starlight.api.ApiLevels
+import dev.mooner.starlight.listener.event.Api2MessageEvent
+import dev.mooner.starlight.listener.event.LegacyEvent
+import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
@@ -519,7 +522,8 @@ class StarLightTools(private val docs: AgentDocs) {
                 string("language", "Language id from list_languages; js_neon (NeonJS) unless the user asks otherwise.")
                 stringArray("events", "Event ids it receives, each with starting code; a wildcard such as starlight.* " +
                     "stands for the matching events of its API levels. Default: every StarLight event of its API levels " +
-                    "(starlight.*), as a project made in the app receives, with starting code for $MESSAGE_EVENT.",
+                    "(starlight.*), as a project made in the app receives, with starting code for the message event of " +
+                    "each level ($MESSAGE_EVENT for StarLight's own).",
                     optional = true)
                 stringArray("api_levels", "API level ids whose objects and events the scripts get, from list_apis " +
                     "(default: StarLight's own, $DEFAULT_API_LEVEL).", optional = true)
@@ -540,7 +544,9 @@ class StarLightTools(private val docs: AgentDocs) {
                 throw ToolException("No API level '$id'. See list_apis.")
             }
             val requested = args.stringSet("events")
-            val ids = newProjectEvents(requested.ifEmpty { setOf(MESSAGE_EVENT) }, levels)
+            // None named: the message event of each level, as $MESSAGE_EVENT isn't one of every level's.
+            val starters = requested.ifEmpty { messageEvents(levels) }
+            val ids = if (starters.isEmpty()) emptyList() else newProjectEvents(starters, levels)
             val received = ids.filter { Session.apiLevelManager.hasEvent(levels, it) }
             checkpoint.project(name)
             // Starting code only for the events it receives: an outside one's would use objects the project doesn't have.
@@ -907,6 +913,12 @@ class StarLightTools(private val docs: AgentDocs) {
             throw ToolException("${requested.joinToString()} match no event of the API levels ${levels.joinToString()}. See list_events.")
         return ids
     }
+
+    /** The events [levels] deliver messages as: StarLight's own, API2's and the legacy `response`. */
+    private fun messageEvents(levels: Set<String>): Set<String> =
+        listOf(ProjectOnMessageEvent::class, Api2MessageEvent::class, LegacyEvent::class)
+            .mapNotNull(ProjectEventManager::validateAndGetEventID)
+            .filterTo(linkedSetOf()) { Session.apiLevelManager.hasEvent(levels, it) }
 
     private fun ParamsBuilder.waitParams() {
         integer("waitSeconds", "Collect replies for this many seconds, at most ${DebugMessenger.MAX_WAIT_SECONDS}. With " +
