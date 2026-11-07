@@ -29,6 +29,8 @@ import dev.mooner.starlight.plugincore.utils.infoTranslated
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.plugincore.widget.WidgetDefinition
 import java.io.File
+import java.util.Collections
+import java.util.IdentityHashMap
 
 private val logger = LoggerFactory.logger {  }
 
@@ -161,11 +163,16 @@ abstract class StarlightPlugin: Plugin, EventListener {
     /**
      * Calls `onEnable` on the plugin's listeners, itself included, and then marks it enabled.
      *
-     * The flag is set last, so a listener added during `onEnable` isn't also enabled by [addListener], and a plugin
-     * whose `onEnable` throws doesn't report itself enabled.
+     * The flag is set last, so a plugin whose `onEnable` throws doesn't report itself enabled. A listener added during
+     * an `onEnable`, which [addListener] leaves alone until then, is enabled here once, after the ones before it.
      */
     internal fun enableOnLoad() {
-        getListeners().forEach(EventListener::onEnable)
+        val enabled: MutableSet<EventListener> = Collections.newSetFromMap(IdentityHashMap())
+        while (true) {
+            val next = getListeners().firstOrNull { it !in enabled } ?: break
+            enabled += next
+            next.onEnable()
+        }
         isEnabled = true
     }
 
