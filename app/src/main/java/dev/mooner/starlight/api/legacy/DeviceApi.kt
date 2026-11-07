@@ -197,12 +197,13 @@ class DeviceApi: Api<DeviceApi.Device>() {
             @JvmStatic
             @JvmOverloads
             @SuppressLint("WakelockTimeout")
+            @Synchronized
             fun acquireWakeLock(levelAndFlags: Int, tag: String = "dev.mooner.starlight:api_wakelock_tag", timeout: Long? = null) {
                 wakeLock?.takeIf { it.isHeld }?.release()
-                wakeLock = getPowerManager().newWakeLock(levelAndFlags, tag)
-
-                timeout?.let(wakeLock!!::acquire)
-                    ?: wakeLock!!.acquire()
+                // Not reference-counted, so that releasing one whose timeout just ended does nothing instead of throwing.
+                val lock = getPowerManager().newWakeLock(levelAndFlags, tag).apply { setReferenceCounted(false) }
+                wakeLock = lock
+                if (timeout != null) lock.acquire(timeout) else lock.acquire()
             }
 
             /**
@@ -215,6 +216,7 @@ class DeviceApi: Api<DeviceApi.Device>() {
              */
             @JvmStatic
             @JvmOverloads
+            @Synchronized
             fun releaseWakeLock(flags: Int = 0) {
                 wakeLock?.takeIf { it.isHeld }?.release(flags)
             }

@@ -10,6 +10,7 @@ import dev.mooner.starlight.plugincore.project.Project
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import java.util.concurrent.Callable
 
 private val LOG = LoggerFactory.logger {  }
@@ -58,9 +59,11 @@ class AppApi: Api<AppApi.App>() {
             @JvmStatic
             fun runOnUiThread(task: Callable<Any>, onComplete: (error: Throwable?, result: Any?) -> Unit) =
                 CoroutineScope(Dispatchers.Main).launch {
-                    runCatching {
-                        task.call()
-                    }.fold({ runCatching { onComplete(null, it) } }, { runCatching { onComplete(it, null) } })
+                    val outcome = runCatching { task.call() }
+                    // onComplete in a main-thread message of its own: each may wait for the script's context, and two
+                    // waits in one message would hold the main thread past input's time limit.
+                    yield()
+                    outcome.fold({ runCatching { onComplete(null, it) } }, { runCatching { onComplete(it, null) } })
                         .onFailure { LOG.error { "App.runOnUiThread: onComplete failed: $it" } }
                 }
         }
