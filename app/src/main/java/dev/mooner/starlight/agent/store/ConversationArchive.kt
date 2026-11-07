@@ -1,6 +1,7 @@
 package dev.mooner.starlight.agent.store
 
 import dev.mooner.starlight.agent.model.AgentJson
+import dev.mooner.starlight.agent.model.CallResults
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.RunState
 import dev.mooner.starlight.utils.unzip
@@ -68,7 +69,12 @@ internal object ConversationArchive {
                     val target = File(attachmentsDir, conversation.id)
                     if (attachments.isDirectory && !target.exists())
                         attachments.copyRecursively(target)
-                    add(if (conversation.state.isActive) conversation.copy(state = RunState.INTERRUPTED) else conversation)
+                    // A run exported while it went on, closed as one the app's end interrupted (ConversationStore.markInterrupted).
+                    add(if (!conversation.state.isActive) conversation else conversation.copy(
+                        state = RunState.INTERRUPTED,
+                        messages = CallResults.closeInterrupted(conversation.messages,
+                            waited = conversation.state == RunState.WAITING_APPROVAL, System.currentTimeMillis()),
+                    ))
                     true
                 }.getOrDefault(false)
                 if (added) imported++ else skipped++

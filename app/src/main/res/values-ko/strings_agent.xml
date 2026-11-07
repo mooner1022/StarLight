@@ -197,7 +197,9 @@
     <string name="agent_tool_list_apis">스크립트 API 확인</string>
     <string name="agent_tool_project_logs">프로젝트 로그 확인</string>
     <string name="agent_tool_app_logs">앱 로그 확인</string>
-    <string name="agent_tool_read_docs">문서 확인</string>
+    <string name="agent_tool_describe_api">스크립트 API 확인</string>
+    <string name="agent_tool_describe_event">이벤트 확인</string>
+    <string name="agent_tool_read_guide">가이드 확인</string>
     <string name="agent_tool_write_file">파일 쓰기</string>
     <string name="agent_tool_edit_file">파일 수정</string>
     <string name="agent_tool_rename_file">파일 이름 변경</string>

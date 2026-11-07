@@ -1,5 +1,6 @@
 package dev.mooner.starlight.agent.tools
 
+import dev.mooner.starlight.agent.docs.AgentDocs
 import dev.mooner.starlight.agent.model.Card
 import dev.mooner.starlight.agent.model.CardKind
 import dev.mooner.starlight.agent.model.Plan
@@ -7,15 +8,19 @@ import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.store.AttachmentStore
 import dev.mooner.starlight.agent.store.CheckpointStore
 import dev.mooner.starlight.api.ApiLevels
+import dev.mooner.starlight.listener.event.Api2MessageEvent
+import dev.mooner.starlight.listener.event.LegacyEvent
+import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.Session
-import dev.mooner.starlight.plugincore.api.ApiObject
+import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.logger.LogData
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.project.event.getInstance
 import dev.mooner.starlight.utils.zip
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArrayBuilder
 import kotlinx.serialization.json.JsonObject
@@ -29,6 +34,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.roundToLong
 
 /**
@@ -36,7 +42,7 @@ import kotlin.math.roundToLong
  * (github.com/mooner1022/starlight-mcp), so that the same instructions work in both, and run on the app's own
  * project manager instead of a plugin's.
  */
-class StarLightTools(private val docs: DocsLibrary) {
+class StarLightTools(private val docs: AgentDocs) {
 
     val all: List<AgentTool> by lazy { (readTools + handOffTools + writeTools).sortedBy(AgentTool::name) }
 
@@ -148,54 +154,73 @@ class StarLightTools(private val docs: DocsLibrary) {
         },
         tool(
             "list_events",
-            "Lists the events projects can receive, with the function a script defines for each (such as onMessage) and " +
-                "its arguments. With a project, also tells which events it receives.",
+            "Lists the events a project can receive: ID, how a script receives it (a function such as onMessage(event), " +
+                "or an API2 listener), its API levels and what it is for. With a project, also whether that project " +
+                "receives each one; an event outside its API levels never arrives, even when allowed. describe_event " +
+                "shows an event's arguments.",
             ToolRisk.READ,
             params = { string("project", "Name (or id) of a project, to see which events it receives.", optional = true) },
             describe = { "List events" },
         ) { args ->
-            val allowed = args.stringArg("project")?.let { allowedEvents(findProject(args)) }
-            val json = buildJsonArray {
-                for (eventClass in ProjectEventManager.find(ALL_EVENTS)) {
-                    val id = ProjectEventManager.validateAndGetEventID(eventClass) ?: continue
-                    val event = eventClass.getInstance()
-                    addJsonObject {
-                        put("id", id)
-                        put("name", event.name)
-                        put("function", event.functionName)
-                        putJsonArray("args") { event.argTypes.forEach { add("${it.name}: ${it.type.java.simpleName}") } }
-                        allowed?.let { put("allowed", id in it) }
-                    }
+            val project = args.stringArg("project")?.let { findProject(args) }
+            val reception: ((String) -> DocsAnswers.Reception)? = project?.let { found ->
+                val allowed = allowedEvents(found)
+                fun receptionOf(id: String): DocsAnswers.Reception = when {
+                    !Session.apiLevelManager.hasEvent(found.info.apiLevels, id) -> DocsAnswers.Reception.NOT_IN_LEVELS
+                    id in allowed -> DocsAnswers.Reception.RECEIVES
+                    else -> DocsAnswers.Reception.NOT_ALLOWED
                 }
+                ::receptionOf
             }
-            ToolOutput(json.toString())
+            val lines = docs.answers().listEvents(reception)
+            ToolOutput(lines.joinToString("\n"), summary = "${lines.size - 1} events")
+        },
+        tool(
+            "describe_event",
+            "Shows one event as TypeScript declarations: how a script receives it, its arguments and their types, and " +
+                "the guides about it.",
+            ToolRisk.READ,
+            params = { string("id", "Event ID from list_events, such as starlight.message.create.") },
+            describe = { "Describe event ${it.stringArg("id")}" },
+        ) { args ->
+            val id = args.requireString("id")
+            ToolOutput(docs.answers().describeEvent(id), summary = id)
         },
         tool(
             "list_apis",
-            "Lists the global APIs StarLight gives scripts (from the app and its plugins), with their functions and values. " +
-                "levels names the API levels that include an API: a project gets it only if one of its levels does. An " +
-                "API with no levels, such as a plugin's, is in every project. list_projects shows each project's levels.",
+            "Lists the global objects and classes scripts can use, one line each with what it is. With a project, only " +
+                "the ones that project gets, from its API levels and language. describe_api shows one in full.",
             ToolRisk.READ,
+            params = { string("project", "Name (or id) of a project, to list only what it gets.", optional = true) },
             describe = { "List script APIs" },
-        ) { _ ->
-            val json = buildJsonArray {
-                for (api in Session.apiManager.getApis())
-                    addJsonObject {
-                        put("name", api.name)
-                        putJsonArray("levels") {
-                            Session.apiLevelManager.getLevels().filter { api.name in it.apis }.forEach { add(it.id) }
-                        }
-                        putJsonArray("functions") {
-                            api.objects.filterIsInstance<ApiObject.Function>().forEach { function ->
-                                add("${function.name}(${function.args.joinToString { it.simpleName }}): ${function.returns.simpleName}")
-                            }
-                        }
-                        putJsonArray("values") {
-                            api.objects.filterIsInstance<ApiObject.Value>().forEach { add("${it.name}: ${it.returns.simpleName}") }
-                        }
-                    }
-            }
-            ToolOutput(json.toString())
+        ) { args ->
+            val project = args.stringArg("project")?.let { findProject(args) }
+            val names = project?.let { Session.apiManager.getApis(it).map { api -> api.name }.toSet() }
+            val lines = docs.answers().listApis(names)
+            ToolOutput(lines.joinToString("\n"), summary = "${lines.size} APIs")
+        },
+        tool(
+            "describe_api",
+            "Shows a global object or class of the script API, or a type one of them returns, as TypeScript " +
+                "declarations with what each member does, then the types it leads to. Check it before relying on an API " +
+                "you are unsure of.",
+            ToolRisk.READ,
+            params = { string("name", "An API from list_apis, such as BotManager, or a type an API returns.") },
+            describe = { "Describe ${it.stringArg("name")}" },
+        ) { args ->
+            val name = args.requireString("name")
+            ToolOutput(docs.answers().describeApi(name), summary = name)
+        },
+        tool(
+            "read_guide",
+            "Reads a guide on how StarLight works: engines, projects, events, testing, the Google Play build, the app's " +
+                "screens. Without an id, lists the guides. An id may end in #section to read one section.",
+            ToolRisk.READ,
+            params = { string("id", "Guide id from the list, such as engines/neonjs or events#api2-listeners.", optional = true) },
+            describe = { "Read the guide ${it.stringArg("id") ?: "list"}" },
+        ) { args ->
+            val id = args.stringArg("id")
+            ToolOutput(docs.answers().readGuide(id), summary = id?.takeIf(String::isNotBlank) ?: "Guides")
         },
         tool(
             "get_project_logs",
@@ -219,21 +244,6 @@ class StarLightTools(private val docs: DocsLibrary) {
             describe = { "Read app logs" },
         ) { args ->
             ToolOutput(formatLogs(LogCollector.logs, args.intArg("limit") ?: DEFAULT_LOG_LIMIT))
-        },
-        tool(
-            "read_docs",
-            "Reads StarLight's documentation (in Korean): events and their objects, the script APIs, NeonJS modules, " +
-                "fetch, async code and Java access. Without a path, lists the pages. Check it before relying on an API " +
-                "you are unsure of.",
-            ToolRisk.READ,
-            params = { string("path", "Page path from the list, such as app/reference/events.", optional = true) },
-            describe = { "Read the docs" },
-        ) { args ->
-            val path = args.stringArg("path")
-            if (path.isNullOrBlank())
-                ToolOutput(docs.pages.joinToString("\n") { "${it.path}: ${it.title} - ${it.description}" }, summary = "Docs index")
-            else
-                ToolOutput(docs.page(path), summary = path)
         },
     )
 
@@ -490,8 +500,7 @@ class StarLightTools(private val docs: DocsLibrary) {
             val project = findProject(args)
             val allow = args.stringSet("allow")
             val disallow = args.stringSet("disallow")
-            val known = ProjectEventManager.find(ALL_EVENTS).mapNotNullTo(hashSetOf()) { ProjectEventManager.validateAndGetEventID(it) }
-            val unknown = (allow + disallow) - known
+            val unknown = (allow + disallow) - knownEventIds()
             if (unknown.isNotEmpty())
                 throw ToolException("Unknown events: ${unknown.joinToString()}. See list_events.")
             // Allowed ids may be wildcards such as starlight.*; they are stored expanded so that one can be removed.
@@ -501,7 +510,7 @@ class StarLightTools(private val docs: DocsLibrary) {
                 allowedEventIds.clear()
                 allowedEventIds.addAll(events)
             }
-            ToolOutput("Receives: ${allowedEvents(project).sorted().joinToString().ifEmpty { "nothing" }}", summary = project.info.name)
+            ToolOutput(describeReception(allowedEvents(project), project.info.apiLevels), summary = project.info.name)
         },
         tool(
             "create_project",
@@ -511,7 +520,11 @@ class StarLightTools(private val docs: DocsLibrary) {
             params = {
                 string("name", "Project name: letters, digits, Hangul, '-' and '_'.")
                 string("language", "Language id from list_languages; js_neon (NeonJS) unless the user asks otherwise.")
-                stringArray("events", "Event ids it receives (default: $MESSAGE_EVENT).", optional = true)
+                stringArray("events", "Event ids it receives, each with starting code; a wildcard such as starlight.* " +
+                    "stands for the matching events of its API levels. Default: every StarLight event of its API levels " +
+                    "(starlight.*), as a project made in the app receives, with starting code for the message event of " +
+                    "each level ($MESSAGE_EVENT for StarLight's own).",
+                    optional = true)
                 stringArray("api_levels", "API level ids whose objects and events the scripts get, from list_apis " +
                     "(default: StarLight's own, $DEFAULT_API_LEVEL).", optional = true)
             },
@@ -526,22 +539,31 @@ class StarLightTools(private val docs: DocsLibrary) {
             val languageId = args.requireString("language")
             val language = Session.languageManager.getLanguage(languageId, false)
                 ?: throw ToolException("No language '$languageId'. See list_languages.")
-            val events = args.stringSet("events").ifEmpty { setOf(MESSAGE_EVENT) }.associateWith { id ->
-                (ProjectEventManager.findFirst(id) ?: throw ToolException("No event '$id'. See list_events.")).getInstance()
-            }
             val levels = args.stringSet("api_levels").ifEmpty { Session.apiLevelManager.defaultLevelIds }
             levels.firstOrNull { Session.apiLevelManager.getLevel(it) == null }?.let { id ->
                 throw ToolException("No API level '$id'. See list_apis.")
             }
+            val requested = args.stringSet("events")
+            // None named: the message event of each level, as $MESSAGE_EVENT isn't one of every level's.
+            val starters = requested.ifEmpty { messageEvents(levels) }
+            val ids = if (starters.isEmpty()) emptyList() else newProjectEvents(starters, levels)
+            val received = ids.filter { Session.apiLevelManager.hasEvent(levels, it) }
             checkpoint.project(name)
-            manager.newProject(events = events) {
+            // Starting code only for the events it receives: an outside one's would use objects the project doesn't have.
+            manager.newProject(events = received.associateWithTo(LinkedHashMap()) { ProjectEventManager.findFirst(it)!!.getInstance() }) {
                 this.name = name
                 mainScript = "$name.${language.fileExtension}"
                 this.languageId = language.id
                 apiLevels = levels
+                // Events named: only these, as the default, starlight.*, would let every StarLight event of its levels in.
+                // None named: that default, as the new-project screen leaves it.
+                if (requested.isNotEmpty())
+                    allowedEventIds = ids.toSet()
             }
             val project = manager.getProjectByName(name) ?: throw ToolException("Project $name was not created")
-            ToolOutput("Created $name with main script ${project.info.mainScript}", summary = name)
+            // With the default, the StarLight events outside its levels aren't worth listing: it didn't ask for them.
+            val allowed = if (requested.isNotEmpty()) ids else allowedEvents(project).filter { Session.apiLevelManager.hasEvent(levels, it) }
+            ToolOutput("Created $name with main script ${project.info.mainScript}\n" + describeReception(allowed, levels), summary = name)
         },
         tool(
             "set_project_enabled",
@@ -726,26 +748,69 @@ class StarLightTools(private val docs: DocsLibrary) {
         },
     )
 
-    private suspend fun compile(project: Project): ToolOutput = withContext(Dispatchers.IO) {
-        val startMillis = System.currentTimeMillis()
-        val error = try {
-            project.compile(true)
-            null
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            throw e
-        } catch (e: Throwable) {
-            e
+    /**
+     * Compiles [project] on a thread of its own and waits at most the time the app settings give: a script can hang its
+     * compile (an endless loop, a wait on the UI thread), and the call must still get a result, or the conversation is
+     * left with an unanswered call when the user closes the app that stopped responding. Stopping the run stops the
+     * wait too. The compile itself can't be stopped.
+     *
+     * A project compiles once at a time. A compile of it started earlier, by another conversation or a run the user
+     * stopped, is waited for while it is within that time, and only past it reported stuck.
+     */
+    private suspend fun compile(project: Project): ToolOutput {
+        val name = project.info.name
+        val id = project.info.id
+        val seconds = GlobalConfig.category("project").getInt(CONF_COMPILE_TIMEOUT, DEFAULT_COMPILE_TIMEOUT_SECONDS)
+        val millis = seconds * 1000L
+        while (true) {
+            val startMillis = System.currentTimeMillis()
+            var earlier: RunningCompile? = null
+            // Registered before it starts, in one step with the check, so that two compiles at once can't both start. One
+            // counts until it ends: before BoundedRun starts it, it isn't alive yet.
+            val canStart = { thread: Thread ->
+                compiles.compute(id) { _, current ->
+                    current?.takeIf { it.thread.state != Thread.State.TERMINATED }?.also { earlier = it }
+                        ?: RunningCompile(thread, startMillis)
+                }
+                earlier == null
+            }
+            val onEnd = { thread: Thread ->
+                compiles.computeIfPresent(id) { _, current -> current.takeUnless { it.thread === thread } }
+                Unit
+            }
+            val outcome = BoundedRun.run("agent-compile-$name", millis, canStart, onEnd) { project.compile(true) }
+            if (outcome != null)
+                return compileResult(project, outcome, startMillis, seconds)
+            val other = earlier!!
+            val deadline = other.startMillis + millis
+            while (other.thread.state != Thread.State.TERMINATED && System.currentTimeMillis() < deadline)
+                runInterruptible { other.thread.join((deadline - System.currentTimeMillis()).coerceAtLeast(1)) }
+            if (other.thread.state != Thread.State.TERMINATED)
+                return ToolOutput("A compile of $name that started ${(System.currentTimeMillis() - other.startMillis) / 1000} " +
+                    "seconds ago is still running, stuck: it can't be stopped, and compiling again would wait behind it. The " +
+                    "app has to be restarted first; tell the user. Where it is:\n" + whereIs(other.thread), isError = true,
+                    summary = "Still compiling")
         }
+    }
+
+    private fun compileResult(project: Project, outcome: BoundedRun.Outcome, startMillis: Long, seconds: Int): ToolOutput {
+        val name = project.info.name
         val logs = synchronized(project.logger.logs) { project.logger.logs.filter { it.millis >= startMillis } }
         val logText = if (logs.isEmpty()) "" else "\n\nLogs:\n" + formatLogs(logs, logs.size)
+        if (!outcome.finished)
+            return ToolOutput("Compiling $name didn't finish within $seconds seconds, so it is reported as failed. " +
+                "Its script may be stuck, as in an endless loop or a wait on the UI thread, and the compile is still running: " +
+                "it can't be stopped, and the app may stop responding or have to be restarted before $name can be compiled " +
+                "again. Where it is:\n${whereIs(outcome.thread)}$logText", isError = true, summary = "Timed out after $seconds s")
+        val error = outcome.error
         if (error == null)
-            return@withContext ToolOutput("Compiled ${project.info.name}$logText", summary = project.info.name)
+            return ToolOutput("Compiled ${project.info.name}$logText", summary = project.info.name)
         val location = ScriptErrors.locate(error)?.let { at ->
             val source = at.source?.let { sourcePath(project, it) } ?: project.info.mainScript
             " (at $source:${at.line}${at.column?.let { ":$it" }.orEmpty()})"
         }.orEmpty()
         val message = ScriptErrors.message(error)
-        ToolOutput("Failed to compile ${project.info.name}: $message$location$logText", isError = true, summary = message.take(120))
+        return ToolOutput("Failed to compile ${project.info.name}: $message$location$logText", isError = true, summary = message.take(120))
     }
 
     /**
@@ -819,6 +884,41 @@ class StarLightTools(private val docs: DocsLibrary) {
 
     private fun allowedEvents(project: Project): Set<String> =
         ProjectEventManager.filterAllowedEvents(project.info.allowedEventIds)
+
+    /** The IDs of every registered event, the ones set_project_events and create_project accept. */
+    private fun knownEventIds(): Set<String> =
+        ProjectEventManager.find(AgentDocs.ALL_EVENTS).mapNotNullTo(hashSetOf()) { ProjectEventManager.validateAndGetEventID(it) }
+
+    /** Which of the allowed event [ids] a project of the API [levels] receives, and which its levels leave out. */
+    private fun describeReception(ids: Collection<String>, levels: Set<String>?): String {
+        val (received, outside) = ids.sorted().partition { Session.apiLevelManager.hasEvent(levels, it) }
+        return "Receives: ${received.joinToString().ifEmpty { "nothing" }}" +
+            if (outside.isEmpty()) "" else "\nAllowed, but outside its API levels, so never received: ${outside.joinToString()}"
+    }
+
+    /**
+     * The IDs of the events a new project receives for the [requested] entries, stored expanded, as set_project_events
+     * stores them. A wildcard (`starlight.*`) stands for the matching events that [levels] have, as the new-project
+     * screen picks them; an ID named outright is kept even outside them, as set_project_events keeps it.
+     */
+    private fun newProjectEvents(requested: Set<String>, levels: Set<String>): List<String> {
+        val known = knownEventIds()
+        val unknown = requested.filter { '*' !in it && it.removePrefix("!") !in known }
+        if (unknown.isNotEmpty())
+            throw ToolException("Unknown events: ${unknown.joinToString()}. See list_events.")
+        val ids = ProjectEventManager.filterAllowedEvents(requested)
+            .filter { it in requested || Session.apiLevelManager.hasEvent(levels, it) }
+            .sorted()
+        if (ids.isEmpty())
+            throw ToolException("${requested.joinToString()} match no event of the API levels ${levels.joinToString()}. See list_events.")
+        return ids
+    }
+
+    /** The events [levels] deliver messages as: StarLight's own, API2's and the legacy `response`. */
+    private fun messageEvents(levels: Set<String>): Set<String> =
+        listOf(ProjectOnMessageEvent::class, Api2MessageEvent::class, LegacyEvent::class)
+            .mapNotNull(ProjectEventManager::validateAndGetEventID)
+            .filterTo(linkedSetOf()) { Session.apiLevelManager.hasEvent(levels, it) }
 
     private fun ParamsBuilder.waitParams() {
         integer("waitSeconds", "Collect replies for this many seconds, at most ${DebugMessenger.MAX_WAIT_SECONDS}. With " +
@@ -906,8 +1006,25 @@ class StarLightTools(private val docs: DocsLibrary) {
         string("expectedHash", "Hash from reading the file; if the file changed since, nothing is written. An empty " +
             "string writes only if the file doesn't exist.", optional = true)
 
+    /** Compiles [compile] started, by project ID, until they end; one stuck stays here. */
+    private val compiles = ConcurrentHashMap<Any, RunningCompile>()
+
+    private class RunningCompile(val thread: Thread, val startMillis: Long)
+
+    /** The top of [thread]'s stack, the app's and the engines' frames, to tell where a compile is stuck. */
+    private fun whereIs(thread: Thread): String =
+        thread.stackTrace
+            .filter { frame -> STACK_PREFIXES.any(frame.className::startsWith) }
+            .take(MAX_STACK_FRAMES)
+            .joinToString("\n") { "  at ${it.className}.${it.methodName}(${it.fileName}:${it.lineNumber})" }
+            .ifEmpty { "  (no frames of the app)" }
+
     private companion object {
-        const val ALL_EVENTS = "*"
+        /** The settings key of the time compile_project waits, in seconds; in the app settings' project category. */
+        const val CONF_COMPILE_TIMEOUT = "agent_compile_timeout"
+        const val DEFAULT_COMPILE_TIMEOUT_SECONDS = 60
+        const val MAX_STACK_FRAMES = 12
+        val STACK_PREFIXES = listOf("dev.mooner.", "org.mozilla.javascript.")
         const val MESSAGE_EVENT = "starlight.message.create"
         private const val DEFAULT_API_LEVEL = ApiLevels.ORIGINAL
         const val PROJECT_INFO_FILE = "project.json"

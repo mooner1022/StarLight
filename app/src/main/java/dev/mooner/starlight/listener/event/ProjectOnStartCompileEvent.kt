@@ -11,6 +11,15 @@ import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 
+/**
+ * The project is about to compile again; calls the running code's `onStartCompile()` before new code replaces it.
+ *
+ * Only a project that is already compiled calls it, so a first compile, as when the app starts, doesn't. It runs on the
+ * thread doing the compile, not on the project's workers, and the compile waits for it to return: keep it short, such
+ * as saving state. An error it throws is ignored, without being logged. If it is `async`, its Promise isn't awaited.
+ *
+ * @see guide:projects#compiling-and-turning-on
+ */
 class ProjectOnStartCompileEvent: ProjectEvent() {
 
     override val id: String = "compile"

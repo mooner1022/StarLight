@@ -5,6 +5,7 @@ import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.ApprovalPolicy
 import dev.mooner.starlight.agent.auth.SignInRequiredException
 import dev.mooner.starlight.agent.model.AgentJson
+import dev.mooner.starlight.agent.model.CallResults
 import dev.mooner.starlight.agent.model.Approval
 import dev.mooner.starlight.agent.model.ChatMessage
 import dev.mooner.starlight.agent.model.Compaction
@@ -16,6 +17,7 @@ import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
 import dev.mooner.starlight.agent.model.TitleSource
+import dev.mooner.starlight.agent.model.newMessageId
 import dev.mooner.starlight.agent.net.HttpStatusException
 import dev.mooner.starlight.agent.provider.LlmRequest
 import dev.mooner.starlight.agent.provider.LlmResult
@@ -41,7 +43,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -131,6 +135,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     private val approvalPreviews = ConcurrentHashMap<String, String>()
     /** When each run going on started. */
     private val startedAt = ConcurrentHashMap<String, Long>()
+    /** The call whose tool is running, by conversation; one a stop cut short stays until its result is written. */
+    private val runningCalls = ConcurrentHashMap<String, String>()
     private val mDismissed = MutableStateFlow<Set<String>>(emptySet())
     /** Runs whose progress notification the user swiped away; they aren't shown as a Live Update again. */
     val dismissed: StateFlow<Set<String>> = mDismissed.asStateFlow()
@@ -243,7 +249,10 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             updatedAt = now,
         )
         hub.store.save(conversation.copy(
-            messages = conversation.messages + message,
+            // Calls left without a result are closed first: a user message after them would make every request fail.
+            // Runs that end close theirs, and the app's start closes those of runs it ended, so these are only ever
+            // from elsewhere, such as an older version: nothing is known about them.
+            messages = CallResults.closeMissing(conversation.messages, now) + message,
             updatedAt = now,
             error = null,
             project = project,
@@ -605,7 +614,16 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     }
 
     private suspend fun run(id: String) {
-        updateConversation(id) { it.copy(state = RunState.RUNNING, error = null) }
+        updateConversation(id) {
+            // An older version marked a run the app's end cut short without closing its calls. Closed now as
+            // ConversationStore.markInterrupted closes them, so that resuming doesn't repeat a call that may have hung
+            // the app.
+            val messages = if (it.state == RunState.INTERRUPTED)
+                CallResults.closeInterrupted(it.messages, waited = false, System.currentTimeMillis())
+            else
+                it.messages
+            it.copy(state = RunState.RUNNING, error = null, messages = messages)
+        }
         var steps = 0
         val maxSteps = hub.settings.maxSteps
         // One summary per run: if the model still can't fit the conversation, the error shows.
@@ -627,7 +645,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 if (flushQueued(id, closing = false))
                     continue
                 // Notices are for the user; what counts is the last turn the model takes part in.
-                val last = conversation.messages.lastOrNull { message -> message.parts.any { it !is Part.Notice } } ?: return
+                val last = conversation.messages.lastOrNull(CallResults::takesPart) ?: return
                 when {
                     // Done, unless the user wrote more in the meantime, or the turn was only paused.
                     last.role == Role.ASSISTANT && !paused -> if (!flushQueued(id, closing = true)) break
@@ -703,7 +721,10 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         } catch (e: CancellationException) {
             val byTimeLimit = (e as? StopException)?.byTimeLimit == true
             withContext(NonCancellable) {
-                answerOpenCalls(id, if (byTimeLimit) "Android stopped the run before this ran." else "The user stopped the run before this ran.")
+                val who = if (byTimeLimit) "Android" else "The user"
+                answerOpenCalls(id, "$who stopped the run before this ran.",
+                    running = "$who stopped the run while this call ran, so whether it took effect is unknown, and what it " +
+                        "started may go on, as a compile does. Check before running it again.")
                 if (byTimeLimit)
                     appendNotice(id, NoticeKind.TIME_LIMIT, string(R.string.agent_notice_time_limit))
                 else
@@ -735,6 +756,9 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         var attempt = 0
         while (true) {
             val conversation = hub.store.get(id) ?: throw IOException("The conversation was deleted")
+            // The request pairs them anyway (RequestContent.visibleMessages); a saved history shouldn't need it.
+            if (attempt == 0 && CallResults.unanswered(conversation.messages).isNotEmpty())
+                LOG.warn { "Conversation $id has tool calls without a result; the request answers them as missing" }
             val request = LlmRequest(
                 conversationId = id,
                 model = model,
@@ -867,9 +891,14 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                 hub.checkpoints.recorder(id, turn)
             }
         }
+        // A stop that came before the tool started, while an earlier call finished, ends the run here: once marked, the
+        // call would be reported as one that may have taken effect.
+        currentCoroutineContext().ensureActive()
+        runningCalls[id] = call.id
         val output = try {
             tool.run(context, args)
         } catch (e: CancellationException) {
+            // Left in runningCalls: the stop tells this call, which may have taken effect, from those that didn't start.
             throw e
         } catch (e: ToolException) {
             ToolOutput.error(e.message ?: e.toString())
@@ -878,6 +907,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             LOG.warn { "Tool ${tool.name} failed: $e" }
             ToolOutput.error("${tool.name} failed: ${e.message ?: e}")
         }
+        runningCalls.remove(id, call.id)
         return Part.ToolResult(call.id, call.name, cap(output.text), output.isError, output.summary, output.card, output.images,
             output.diff)
     }
@@ -975,10 +1005,25 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         }
     }
 
-    /** Gives the calls of the last assistant turn that have no result one, so that the history stays valid. */
-    private fun answerOpenCalls(id: String, reason: String) {
-        val (turn, open) = hub.store.get(id)?.messages?.let(History::openCalls) ?: return
-        addResults(id, turn.id, open.map { Part.ToolResult(it.id, it.name, reason, isError = true, summary = "Not run") })
+    /**
+     * Gives every call that has no result one, whatever turn it is in, so that the history stays valid: [reason] for
+     * those of the run's turn that didn't start, [running] for the one whose tool was running, and
+     * [CallResults.MISSING] for an earlier turn's.
+     */
+    private fun answerOpenCalls(id: String, reason: String, running: String = reason) {
+        val now = System.currentTimeMillis()
+        val runningCall = runningCalls.remove(id)
+        updateConversation(id) { conversation ->
+            val messages = CallResults.close(conversation.messages, now) { call, place ->
+                when {
+                    place == CallResults.Place.EARLIER_TURN ->
+                        Part.ToolResult(call.id, call.name, CallResults.MISSING, isError = true, summary = "No result")
+                    call.id == runningCall -> Part.ToolResult(call.id, call.name, running, isError = true, summary = "Stopped")
+                    else -> Part.ToolResult(call.id, call.name, reason, isError = true, summary = "Not run")
+                }
+            }
+            if (messages === conversation.messages) conversation else conversation.copy(messages = messages, updatedAt = now)
+        }
     }
 
     private fun addResults(id: String, turnId: String, results: List<Part.ToolResult>) {
@@ -1137,7 +1182,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
 
         fun approvalKey(conversationId: String, callId: String) = "$conversationId/$callId"
 
-        fun newId(prefix: String) = prefix + UUID.randomUUID().toString().replace("-", "").take(12)
+        fun newId(prefix: String) = newMessageId(prefix)
 
         fun cap(text: String): String =
             if (text.length <= MAX_TOOL_OUTPUT) text

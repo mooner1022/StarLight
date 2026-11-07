@@ -67,6 +67,10 @@ class Api2Test {
         assertEquals("function onCommand(msg) {\n}\nbot.setCommandPrefix(\"@\");\nbot.addListener(Event.COMMAND, onCommand);",
             command.function)
 
+        // Beside StarLight's onMessage, the listener is named apart, so Rhino doesn't call it as that event too.
+        assertEquals("function onApi2Message(msg) {\n}\nbot.addListener(Event.MESSAGE, onApi2Message);",
+            Api2MessageEvent().let { it.generateCode(generator, it.alternateFunctionName) }.function)
+
         val removed = Api2NotificationRemovedEvent().generateCode(generator)
         assertEquals("function onNotificationRemoved(sbn, rankingMap, reason) {\n}\nbot.addListener(Event.NOTIFICATION_REMOVED, onNotificationRemoved);",
             removed.function)

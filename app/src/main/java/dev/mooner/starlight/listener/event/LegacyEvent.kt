@@ -13,6 +13,26 @@ import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 
+/**
+ * A chat message arrived, in a room of an app the notification rules cover; MessengerBot's legacy `response` form.
+ *
+ * `response` is called once per message, on the project's workers, in each project that is on, has the MessengerBot
+ * legacy API level and allows the event. The debug room screen calls it too, but `send_debug_message` doesn't.
+ * MessengerBot's later arguments, `isMention`,
+ * `logId`, `channelId` and `userHash`, aren't passed, so they are `undefined`.
+ *
+ * @param room The room's name.
+ * @param msg The message's text.
+ * @param sender The sender's name.
+ * @param isGroupChat Whether the room is a group chat.
+ * @param replier Sends replies to the room.
+ * @param imageDB The sender's profile image.
+ * @param packageName The package name of the messenger the message came from, such as `com.kakao.talk`; in the
+ * debug room, the one its settings name.
+ * @see guide:events#event-functions
+ * @see guide:projects#allowed-events
+ * @see guide:testing#how-debug-messages-differ
+ */
 class LegacyEvent: ProjectEvent() {
 
     override val id: String = "legacy"

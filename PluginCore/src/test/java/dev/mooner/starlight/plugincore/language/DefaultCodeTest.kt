@@ -42,6 +42,59 @@ class DefaultCodeTest {
     }
 
     @Test
+    fun anEventWithAnAlternateNameTakesItOnAClash() {
+        val listener = object : ProjectEvent() {
+            override val id = "b.message"
+            override val name = id
+            override val functionName = "onMessage"
+            override val argTypes: Array<CodeGenerator.Argument<*>> = arrayOf(CodeGenerator.Argument("msg", String::class))
+            override val alternateFunctionName = "onBMessage"
+        }
+        // First in the list, it still gives way to the event without another name.
+        val code = language.formatDefaultCode("index.js", listOf(listener, event("a.message", "onMessage", "event")))
+        assertTrue(code.contains("\nfunction onBMessage(msg) {"))
+        assertTrue(code.contains("\nfunction onMessage(event) {"))
+        assertTrue(!code.contains("주석 처리"))
+        // Alone, it keeps its own name.
+        assertTrue(language.formatDefaultCode("index.js", listOf(listener)).contains("\nfunction onMessage(msg) {"))
+        // An event the project receives without starting code still calls onMessage, so the listener gives way.
+        val received = language.formatDefaultCode("index.js", listOf(listener), listOf(listener, event("a.message", "onMessage", "event")))
+        assertTrue(received.contains("\nfunction onBMessage(msg) {"))
+        assertTrue(!received.contains("function onMessage("))
+    }
+
+    @Test
+    fun aNewProjectGetsTheStartingCodeOfALanguageOverridingOnlyTheOlderForm() {
+        val older = object : Language() {
+            override val id = "older"
+            override val name = "Older"
+            override val fileExtension = "lua"
+            override val requireRelease = false
+            override fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any = Unit
+            override fun callFunction(scope: Any, functionName: String, args: Array<out Any>): Any? = null
+            override fun eval(code: String, options: Map<String, String>): Any = Unit
+            // Calling super, as an override that adds to the default does: it mustn't come back here.
+            override fun formatDefaultCode(fileName: String, events: List<ProjectEvent>): String =
+                "-- own\n" + super.formatDefaultCode(fileName, events)
+        }
+        val events = listOf(event("a.message", "onMessage", "event"))
+        val code = older.newProjectCode("index.lua", events, events)
+        assertTrue(code.startsWith("-- own\n"))
+        assertTrue(code.contains("\nfunction onMessage(event) {"))
+
+        // A language overriding neither form gets the received events' naming.
+        val listener = object : ProjectEvent() {
+            override val id = "b.message"
+            override val name = id
+            override val functionName = "onMessage"
+            override val argTypes: Array<CodeGenerator.Argument<*>> = arrayOf(CodeGenerator.Argument("msg", String::class))
+            override val alternateFunctionName = "onBMessage"
+        }
+        val received = language.newProjectCode("index.js", listOf(listener), listOf(listener, event("a.message", "onMessage", "event")))
+        assertTrue(received.contains("\nfunction onBMessage(msg) {"))
+    }
+
+    @Test
     fun generatesEveryFunctionWithoutDuplicates() {
         val code = language.formatDefaultCode("index.js", listOf(
             event("a.message", "onMessage", "event"),
