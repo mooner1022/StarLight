@@ -14,6 +14,7 @@ import dev.mooner.neonjs.NeonContext
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.original.NotificationApi
 import dev.mooner.starlight.core.GlobalApplication
+import dev.mooner.starlight.languages.neonjs.MainThreadWait
 import dev.mooner.starlight.listener.NotificationListener
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.api.Api
@@ -439,7 +440,9 @@ class LegacyApi: Api<LegacyApi.Api>() {
          * The calling script waits until `func` has returned, and `onComplete` runs on the caller's thread before this
          * returns. Keep `func` short: the app's screens don't respond while it runs. In NeonJS, the script lets go of
          * its context while it waits, so `func` and code other threads call in the meantime (Java callbacks, other
-         * workers when the project runs more than one) can run.
+         * workers when the project runs more than one) can run. The main thread waits at most 2 seconds for that context
+         * before it runs `func`: if another thread is still using it then, `func` doesn't run and `onComplete` gets an
+         * error saying the wait timed out.
          *
          * @param func The function to run on the main thread.
          * @param onComplete Called with `(error, result)`: what `func` threw and `null`, or `null` and what it
@@ -450,11 +453,11 @@ class LegacyApi: Api<LegacyApi.Api>() {
             val outcome =
                 // On the main thread already (in a UI callback, say): waiting for it would never end.
                 if (Looper.myLooper() == Looper.getMainLooper())
-                    runCatching { func.call() }
+                    runCatching { MainThreadWait.bounded { func.call() } }
                 // Only func's own error is caught: an interrupt of the wait, as when the project stops, ends the script
                 // instead of reaching onComplete.
                 else
-                    whileWaiting { runBlocking(Dispatchers.Main) { runCatching { func.call() } } }
+                    whileWaiting { runBlocking(Dispatchers.Main) { runCatching { MainThreadWait.bounded { func.call() } } } }
             outcome.fold({ onComplete(null, it) }, { onComplete(it, null) })
         }
 

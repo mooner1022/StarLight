@@ -3,6 +3,7 @@ package dev.mooner.starlight.api.api2
 import android.content.Context
 import dev.mooner.neonjs.NeonTimeoutException
 import dev.mooner.starlight.core.GlobalApplication
+import dev.mooner.starlight.languages.neonjs.MainThreadWait
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
@@ -62,17 +63,19 @@ class AppApi: Api<AppApi.App>() {
             @JvmStatic
             fun runOnUiThread(task: Callable<Any>, onComplete: (error: Throwable?, result: Any?) -> Unit) =
                 CoroutineScope(Dispatchers.Main).launch {
-                    val outcome = runCatching { task.call() }
+                    val outcome = runCatching { MainThreadWait.bounded { task.call() } }
                     // onComplete in a main-thread message of its own: each may wait for the script's context, and two
                     // waits in one message would hold the main thread past input's time limit.
                     yield()
-                    val error = runCatching { complete(outcome, onComplete) }.exceptionOrNull() ?: return@launch
+                    val error = runCatching { MainThreadWait.bounded { complete(outcome, onComplete) } }.exceptionOrNull()
+                        ?: return@launch
                     if (error !is NeonTimeoutException) {
                         LOG.error { "App.runOnUiThread: onComplete failed: $error" }
                         return@launch
                     }
-                    // The main thread gave up waiting for the script's context before onComplete started. Off it, the
-                    // wait has no limit, so the script still gets the outcome once its other code has finished.
+                    // Only the wait to start onComplete is bounded, so the main thread gave up on it before onComplete
+                    // started. Off it, the wait has no limit, so the script still gets the outcome once its other code
+                    // has finished.
                     withContext(Dispatchers.IO) {
                         runCatching { complete(outcome, onComplete) }
                             .onFailure { LOG.error { "App.runOnUiThread: onComplete failed: $it" } }
