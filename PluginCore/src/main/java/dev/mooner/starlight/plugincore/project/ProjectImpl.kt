@@ -438,7 +438,7 @@ class ProjectImpl private constructor(
             val received = receivedEventIds(info)
                 .mapNotNull { id -> ProjectEventManager.findFirst(id)?.let { runCatching { it.getInstance() }.getOrNull() } }
             File(folder.path, info.mainScript)
-                .writeText(getLanguage(info).formatDefaultCode(info.mainScript, events.values.toList(), received), Charsets.UTF_8)
+                .writeText(getLanguage(info).newProjectCode(info.mainScript, events.values.toList(), received), Charsets.UTF_8)
 
             return loadFrom(folder, info)
         }

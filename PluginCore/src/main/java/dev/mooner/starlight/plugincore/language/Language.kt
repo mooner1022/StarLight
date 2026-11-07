@@ -160,6 +160,23 @@ abstract class Language {
     }
 
     /**
+     * A new project's starting code: through the two-argument [formatDefaultCode] when the language overrides only that
+     * one, as a plugin's language made before [received] was added does, so that its own starting code is kept.
+     * Chosen here rather than in the three-argument default, which an override calling `super` would otherwise reach
+     * again and again.
+     */
+    internal fun newProjectCode(fileName: String, events: List<ProjectEvent>, received: Collection<ProjectEvent>): String {
+        fun declaringClass(vararg parameters: Class<*>) =
+            javaClass.getMethod("formatDefaultCode", String::class.java, *parameters).declaringClass
+        val onlyOlderForm = declaringClass(List::class.java) != Language::class.java &&
+            declaringClass(List::class.java, Collection::class.java) == Language::class.java
+        return if (onlyOlderForm)
+            formatDefaultCode(fileName, events)
+        else
+            formatDefaultCode(fileName, events, received)
+    }
+
+    /**
      * Called when the value of config object defined above is saved to a local file.
      *
      * @param updated [Map] that contains id as key and updated value as value
