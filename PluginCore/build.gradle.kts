@@ -49,6 +49,14 @@ kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_1_8
     }
+    // The public API, dumped to api/PluginCore.api: checkKotlinAbi fails when the code no longer matches it, and
+    // updateKotlinAbi rewrites it. The dump of each release, kept in api/releases, records which version added what.
+    // See docs/plugincore-compatibility.md.
+    @OptIn(org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation::class)
+    abiValidation {
+        // Android has no main compilation; every variant's classes are dumped together (full's plugin loaders too).
+        binariesSource.set(org.jetbrains.kotlin.gradle.dsl.abi.BinariesSource.NON_TEST_COMPILATIONS)
+    }
 }
 
 dependencies {

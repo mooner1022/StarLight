@@ -41,6 +41,10 @@ jobs:
     - name: Build debug
       run: ./gradlew assembleFullDebug
 
+    # Plugins build against PluginCore's public API: a change to it must be deliberate, with updateKotlinAbi.
+    - name: Check PluginCore's public API against its dump
+      run: ./gradlew :PluginCore:checkKotlinAbi
+
     - name: Check the Google Play build against Play policies
       run: ./gradlew verifyPlayDebugPolicy
 
