@@ -68,10 +68,24 @@ class DocFiles(files: List<DocFile>) {
 
     val modules: List<DocFile> = files
 
-    private val classes: Map<String, DocClass> =
-        files.flatMap { it.classes.entries }.associate { it.key to it.value }
+    private val classes: Map<String, DocClass> = HashMap<String, DocClass>().apply {
+        // The app's files come first, so a plugin's can't replace their docs.
+        for (file in files)
+            for ((name, cls) in file.classes)
+                putIfAbsent(name, cls)
+    }
 
     private val packages: List<String> = files.flatMap(DocFile::packages)
+
+    /**
+     * The classes of files that name no packages. A plugin's does, as the StarLight Gradle plugin runs the docs
+     * processor without `starlight.docs.packages`, and lists every public class of the plugin.
+     */
+    private val listed: Set<String> = files.filter { it.packages.isEmpty() }.flatMapTo(hashSetOf()) { it.classes.keys }
+
+    /** These files and [more], such as the loaded plugins'. */
+    operator fun plus(more: List<DocFile>): DocFiles =
+        if (more.isEmpty()) this else DocFiles(modules + more)
 
     fun docOf(cls: Class<*>): DocClass? =
         classes[cls.name]
@@ -88,6 +102,8 @@ class DocFiles(files: List<DocFile>) {
 
     /** Whether [cls] is inside a documented package, or is a documented class: described, and followed in a closure. */
     fun isDocumented(cls: Class<*>): Boolean {
+        if (cls.name in listed)
+            return true
         val packageName = cls.name.substringBeforeLast('.', "")
         return packages.any { packageName == it || packageName.startsWith("$it.") || cls.name == it || cls.name.startsWith("$it\$") }
     }

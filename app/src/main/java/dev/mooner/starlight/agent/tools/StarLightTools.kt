@@ -214,7 +214,8 @@ class StarLightTools(private val docs: AgentDocs) {
         tool(
             "read_guide",
             "Reads a guide on how StarLight works: engines, projects, events, testing, the Google Play build, the app's " +
-                "screens. Without an id, lists the guides. An id may end in #section to read one section.",
+                "screens; and the loaded plugins' guides, as <plugin id>:<id>. Without an id, lists the guides. An id " +
+                "may end in #section to read one section.",
             ToolRisk.READ,
             params = { string("id", "Guide id from the list, such as engines/neonjs or events#api2-listeners.", optional = true) },
             describe = { "Read the guide ${it.stringArg("id") ?: "list"}" },

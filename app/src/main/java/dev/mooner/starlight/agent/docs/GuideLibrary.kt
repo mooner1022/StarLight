@@ -4,7 +4,7 @@ import android.content.res.AssetManager
 
 /**
  * The guides: hand-written Markdown on concepts no single declaration holds (docs/agent-docs.md §3.4), read by
- * `guide:` references and the `read_guide` tool.
+ * `guide:` references and the `read_guide` tool. The app's, and the loaded plugins' (§9).
  */
 class GuideLibrary(pages: List<Guide>) {
 
@@ -14,26 +14,41 @@ class GuideLibrary(pages: List<Guide>) {
         val title: String,
         val summary: String,
         val body: String,
+        /** `starlight`, or the ID of the plugin whose package has it. */
+        val module: String = MODULE,
     ) {
+        /** How references and `read_guide` name it: [id] for the app's, `<plugin ID>:<id>` for a plugin's. */
+        val ref: String
+            get() = if (module == MODULE) id else "$module:$id"
+
         /** Each heading's anchor, with the text that follows it up to the next heading of its level or above. */
         val sections: Map<String, String> by lazy { sectionsOf(body) }
     }
 
-    private val pages: Map<String, Guide> = pages.associateBy(Guide::id)
+    private val pages: Map<String, Guide> = LinkedHashMap<String, Guide>().apply {
+        // The app's guides come first, so a plugin can't replace one.
+        for (guide in pages)
+            putIfAbsent(guide.ref, guide)
+    }
 
+    /** The app's guides, then the plugins'. */
     val guides: List<Guide>
-        get() = pages.values.sortedBy(Guide::id)
+        get() = pages.values.sortedWith(compareBy<Guide> { it.module != MODULE }.thenBy(Guide::ref))
 
-    fun guide(id: String): Guide? =
-        pages[id]
+    /** These guides and [more], such as a plugin's. */
+    operator fun plus(more: List<Guide>): GuideLibrary =
+        if (more.isEmpty()) this else GuideLibrary(pages.values + more)
+
+    fun guide(ref: String): Guide? =
+        pages[parse(ref).first]
 
     /**
-     * A guide or one of its sections, by `<id>[#anchor]`, a `guide:` reference or a `guide:starlight:` one.
-     * `null` if there is no such guide or anchor.
+     * A guide or one of its sections, by `<id>[#anchor]`, `<plugin ID>:<id>[#anchor]`, or either as a `guide:`
+     * reference; `guide:starlight:<id>` is the app's. `null` if there is no such guide or anchor.
      */
     fun read(ref: String): String? {
-        val (id, anchor) = parse(ref) ?: return null
-        val guide = pages[id] ?: return null
+        val (key, anchor) = parse(ref)
+        val guide = pages[key] ?: return null
         if (anchor == null)
             return "# ${guide.title}\n${guide.summary}\n\n${guide.body.trim()}"
         val section = guide.sections[anchor] ?: return null
@@ -42,31 +57,28 @@ class GuideLibrary(pages: List<Guide>) {
 
     /** Whether [ref] names an existing guide, and anchor if it has one. */
     fun resolves(ref: String): Boolean {
-        val (id, anchor) = parse(ref) ?: return false
-        val guide = pages[id] ?: return false
+        val (key, anchor) = parse(ref)
+        val guide = pages[key] ?: return false
         return anchor == null || anchor in guide.sections
     }
 
     /** The one line shown for [ref] in lists: its guide's summary, or for a section the guide's and its titles. */
     fun summaryOf(ref: String): String? {
-        val (id, anchor) = parse(ref) ?: return null
-        val guide = pages[id] ?: return null
+        val (key, anchor) = parse(ref)
+        val guide = pages[key] ?: return null
         val heading = anchor?.let { guide.sections[it]?.lineSequence()?.first()?.trimStart('#', ' ') }
         return if (heading == null) guide.summary else "${guide.title}: $heading"
     }
 
-    /** `<id>` and anchor of [ref]; `null` for a guide of another module, which this library doesn't hold. */
-    private fun parse(ref: String): Pair<String, String?>? {
+    /** The [Guide.ref] [ref] names, and its anchor. Without a module, it is the app's. */
+    private fun parse(ref: String): Pair<String, String?> {
         var rest = ref.trim().removePrefix(PREFIX)
-        val module = rest.substringBefore(':', missingDelimiterValue = "")
-        if (module.isNotEmpty()) {
-            if (module != MODULE)
-                return null
+        val module = moduleOf(rest)
+        if (module != null)
             rest = rest.substringAfter(':')
-        }
         val id = rest.substringBefore('#').removeSuffix(".md").trim('/')
         val anchor = rest.substringAfter('#', missingDelimiterValue = "").ifEmpty { null }
-        return id to anchor
+        return (if (module == null || module == MODULE) id else "$module:$id") to anchor
     }
 
     companion object {
@@ -74,6 +86,20 @@ class GuideLibrary(pages: List<Guide>) {
         const val PREFIX = "guide:"
         const val MODULE = "starlight"
         const val ROOT = "agent/guides"
+
+        /** `guide:` followed by an ID that names no module: `guide:setup`, not `guide:starlight:projects`. */
+        private val UNQUALIFIED = Regex("""\b${Regex.escape(PREFIX)}(?![A-Za-z0-9._-]+:[A-Za-z0-9])""")
+
+        /** The module before the ID in a reference without its `guide:`, if it names one. Plugin IDs have no `/` or `#`. */
+        private fun moduleOf(ref: String): String? =
+            ref.substringBefore(':', missingDelimiterValue = "").takeIf { it.isNotEmpty() && '/' !in it && '#' !in it }
+
+        /**
+         * [text] with each `guide:` reference that names no module made one of [module]'s: in a plugin's docs and
+         * guides, `guide:setup` is the plugin's own guide, and `guide:starlight:projects` the app's.
+         */
+        fun qualify(text: String, module: String): String =
+            if (module == MODULE) text else text.replace(UNQUALIFIED, Regex.escapeReplacement("$PREFIX$module:"))
 
         /** The guides in the app's assets. */
         fun load(assets: AssetManager): GuideLibrary =
@@ -88,7 +114,7 @@ class GuideLibrary(pages: List<Guide>) {
             }
 
         /** A guide from its file's text: front matter with `title` and `summary`, then Markdown. */
-        fun parse(id: String, text: String): Guide? {
+        fun parse(id: String, text: String, module: String = MODULE): Guide? {
             if (!text.startsWith("---"))
                 return null
             val header = text.removePrefix("---").substringBefore("\n---")
@@ -99,7 +125,7 @@ class GuideLibrary(pages: List<Guide>) {
                 }
                 .toMap()
             val body = text.removePrefix("---").substringAfter("\n---").substringAfter('\n')
-            return Guide(id, fields["title"].orEmpty(), fields["summary"].orEmpty(), body)
+            return Guide(id, fields["title"].orEmpty(), fields["summary"].orEmpty(), body, module)
         }
 
         /** A heading's anchor: lowercased, spaces as `-`, characters other than letters, digits and `-` removed. */
