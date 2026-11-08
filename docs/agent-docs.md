@@ -12,7 +12,7 @@ Specification for the documentation StarLight AI reads about the script APIs, ev
 
 - The agent knows exactly what a given project's scripts can use: objects, members, events and their arguments. This is filtered by the project's API levels, its language and the plugins that are loaded.
 - Facts can't drift from the code. Structure is read from what is registered at run time, and prose sits next to the declaration it describes.
-- Plugins document their APIs and events the same way the app does, with no extra setup beyond the StarLight Gradle plugin (slplugin).
+- Plugins document their APIs and events the same way the app does, with no extra setup beyond the StarLight Gradle plugin (slplugin) and KSP.
 - Output is compact: signatures in TypeScript declaration form, with one-line summaries. Long explanations live in guides that the agent opens only when it needs them.
 
 Non-goals:
@@ -117,7 +117,7 @@ class ProjectOnMessageEvent : ProjectEvent() { … }
 
 **What the script receives.** `argTypes` are the arguments StarLight fires an event with. They aren't always what a script gets: an API2 event is fired with a `Message`, but `dispatch` hands its listeners an `Api2Message`. Another example: `notification_posted` listeners get `(sbn, sessionManager)`, where `sessionManager` is always `null`.
 
-So `ProjectEvent` gains a property, added in PluginCore 1.0.2:
+So `ProjectEvent` gains a property, added in PluginCore 1.1.0:
 
 ```kotlin
 /** The arguments a script's function or listener receives; the ones the event is fired with, unless dispatch changes them. */
@@ -346,22 +346,27 @@ This table lives in one class, and it is the only place to change.
 - **Plugin package:**
   - `starlight/agent/<pluginId>.api.json` at the APK root, from KSP;
   - `assets/agent/guides/**.md`.
-  - Both are read from the package file, as `assets/starlight.json` is today.
-- **Guide IDs** are namespaced by the plugin ID (`discord:setup`).
-- **slplugin:**
-  - bundles `:docs-processor`, so there's no repository to resolve it from;
-  - applies KSP with `starlight.docs.module` set to the plugin ID;
-  - compiles with `-java-parameters`.
+  - Both are read from the package file of each loaded plugin (`InstalledPlugin.file`), as `assets/starlight.json` is, by `PluginDocs`. They are read again when the loaded plugins or their files change.
+- **Packages:** slplugin leaves `starlight.docs.packages` out, so a plugin's file lists every public class of the plugin module, with `"packages": []`. For a file that names no packages, the catalog treats the classes it lists as documented and follows them in a closure.
+- **Precedence:** the app's doc files and guides come first. A plugin's file can't replace the docs of a class the app's files have, and a plugin's guides never replace the app's.
+- **Guide IDs** are namespaced by the plugin ID (`discord:setup`). `read_guide` lists the app's guides, then the plugins'.
+- **References:** in a plugin's KDoc and guides, a `guide:` reference without a module is the plugin's own guide (`guide:setup` in plugin `discord` is `guide:discord:setup`). `guide:starlight:<id>` is the app's. They are rewritten with the module when the package is read, also in the text, so the agent sees references it can open.
+- **slplugin** (0.5.0 and later):
+  - bundles a copy of `:docs-processor`, so there's no repository to resolve it from. The copy is built into its own jar inside slplugin's, because Gradle instruments the plugin's own jar, and is added to the plugin's `ksp` configuration with `kotlinx-serialization-json`. This module is the original: change it here first, then copy it to slplugin (`plugin/src/docsProcessor`, and its tests to `plugin/src/test`, where they use JUnit 5's imports).
+  - runs it when the plugin's build applies KSP, with `starlight.docs.module` set to the plugin ID: from `starlight { manifest { } }`, or from the hand-written `src/main/assets/starlight.json`. KSP isn't applied by slplugin, because each KSP release supports a range of AGP versions (2.3.13 refuses AGP before 8.12), while slplugin supports AGP 8.0 and later. So a plugin adds one line to its `plugins { }` block.
+  - runs KSP tasks one at a time, as the app's root build does (§4);
+  - compiles with parameter names: `-parameters` for Java, `-java-parameters` for Kotlin;
+  - checks the package: the doc file is the one StarLight reads (`<pluginId>.api.json`, format 1, its module is the plugin ID), and each guide has front matter with a `title` and a `summary`. It reports how many classes and guides the package documents.
 - **Older plugins:** without docs they still appear with their reflected structure.
-- **Coverage:** plugins aren't held to it; the catalog logs what is undocumented.
+- **Coverage:** plugins aren't held to it. A description lists the plugin's types that have no docs (`// Without docs:`).
 
 ## 10. Phases
 
 | Phase | Content | Ships in |
 |---|---|---|
 | 0 | KSP spike: KSP2 with Kotlin 2.4.20 and AGP 8.13 on `:app` and `:PluginCore`; both flavors, configuration cache and the release workflow build. If KSP can't be used, prose falls back to run-time annotations, and only §3 and §4 change. | — |
-| 1 | `:docs-processor`, catalog, renderer, tools, guides, KDoc for the app's 22 APIs, their types and its 10 events, `ProjectEvent.scriptArguments`, `CoreApis`, tests, system prompt, removal of `assets/agent/docs`, `DocsLibrary` and `read_docs` | StarLight 1.0.2 and PluginCore 1.0.2 |
-| 2 | Reading plugin docs and guides, slplugin release, docs for the Discord, webserver, MCP and ktor plugins, a page for plugin authors on the site | PluginCore 1.0.2 and later |
+| 1 | `:docs-processor`, catalog, renderer, tools, guides, KDoc for the app's 22 APIs, their types and its 10 events, `ProjectEvent.scriptArguments`, `CoreApis`, tests, system prompt, removal of `assets/agent/docs`, `DocsLibrary` and `read_docs` | StarLight 1.1.0 and PluginCore 1.1.0 |
+| 2 | Reading plugin docs and guides (StarLight 1.1.0), slplugin release (0.5.0); then docs for the Discord, webserver, MCP and ktor plugins, a page for plugin authors on the site | PluginCore 1.1.0 and later |
 | 3 | The editor's autocomplete from the catalog; exporting the API reference for the site | later |
 
 ## 11. Verification

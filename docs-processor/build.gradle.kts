@@ -1,5 +1,8 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+// The StarLight Gradle plugin (slplugin) bundles a copy of this processor for plugins, in plugin/src/docsProcessor
+// (docs/agent-docs.md §9). Change it here first, then copy it there.
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
 }
