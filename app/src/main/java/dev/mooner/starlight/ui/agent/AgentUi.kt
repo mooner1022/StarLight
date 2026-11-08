@@ -10,21 +10,31 @@ import dev.mooner.starlight.agent.model.TurnUsage
 import dev.mooner.starlight.agent.provider.ProviderKind
 import dev.mooner.starlight.agent.runtime.LiveRun
 import io.noties.markwon.AbstractMarkwonPlugin
+import io.noties.markwon.LinkResolver
 import io.noties.markwon.Markwon
+import io.noties.markwon.MarkwonConfiguration
 import io.noties.markwon.core.MarkwonTheme
 import java.util.Locale
 
 /** Small helpers the agent's screens share. */
 internal object AgentUi {
 
-    /** Markdown for model replies, in the agent's colors with monospace code; screens keep one each. */
-    fun markdown(context: Context): Markwon =
-        build(context)
+    /**
+     * Markdown for model replies, in the agent's colors with monospace code; screens keep one each. [linkResolver]
+     * opens tapped links, instead of an app for them.
+     */
+    fun markdown(context: Context, linkResolver: LinkResolver? = null): Markwon =
+        build(context, linkResolver)
 
-    private fun build(context: Context): Markwon {
+    private fun build(context: Context, linkResolver: LinkResolver?): Markwon {
         val mono = ResourcesCompat.getFont(context, R.font.jbmono_nl_regular)
         return Markwon.builder(context)
             .usePlugin(object : AbstractMarkwonPlugin() {
+                override fun configureConfiguration(builder: MarkwonConfiguration.Builder) {
+                    if (linkResolver != null)
+                        builder.linkResolver(linkResolver)
+                }
+
                 override fun configureTheme(builder: MarkwonTheme.Builder) {
                     builder
                         .codeTypeface(mono ?: android.graphics.Typeface.MONOSPACE)

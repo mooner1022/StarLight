@@ -7,6 +7,7 @@
 package dev.mooner.starlight.ui.settings.dev
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.res.Configuration
 import androidx.core.content.edit
@@ -27,6 +28,7 @@ import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.onSaveConfigAdapter
+import dev.mooner.starlight.ui.agent.docs.AgentDocsActivity
 import dev.mooner.starlight.utils.*
 import java.util.*
 
@@ -51,6 +53,16 @@ fun Context.startDevModeActivity() {
                         iconTintColor = color { "#87AAAA" }
                         setOnClickListener { view ->
                             view.context.startConfigDslPreview()
+                        }
+                    }
+                    button {
+                        id = "agent_docs"
+                        title = "StarLight AI 문서"
+                        description = "에이전트가 읽는 문서를 분류별로 확인해요"
+                        icon = Icon.FILE
+                        iconTintColor = color { "#87AAAA" }
+                        setOnClickListener { view ->
+                            view.context.startActivity(Intent(view.context, AgentDocsActivity::class.java))
                         }
                     }
                     toggle {

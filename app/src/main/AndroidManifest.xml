@@ -122,6 +122,12 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize"/>
         <activity
+            android:name=".ui.agent.docs.AgentDocsActivity"
+            android:exported="false"/>
+        <activity
+            android:name=".ui.agent.docs.AgentDocActivity"
+            android:exported="false"/>
+        <activity
             android:name=".ui.agent.AgentReturnActivity"
             android:excludeFromRecents="true"
             android:exported="true"

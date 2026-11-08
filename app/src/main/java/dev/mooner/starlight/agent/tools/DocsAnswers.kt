@@ -60,10 +60,10 @@ class DocsAnswers(private val renderer: DtsRenderer, private val guides: GuideLi
     private fun missingClass(name: String, e: Throwable) =
         ToolException("$name can't be described: its members refer to a class that isn't there ($e).")
 
-    /** The list of guides without an [id]; otherwise the guide or section it names. */
+    /** The list of guides without an [id], plugins' as `<plugin ID>:<id>`; otherwise the guide or section it names. */
     fun readGuide(id: String?): String {
         if (id.isNullOrBlank())
-            return guides.guides.joinToString("\n") { "${it.id}: ${it.title} — ${it.summary}" }
+            return guides.guides.joinToString("\n") { "${it.ref}: ${it.title} — ${it.summary}" }
         return guides.read(id) ?: throw ToolException("No guide $id. read_guide without an id lists them.")
     }
 
