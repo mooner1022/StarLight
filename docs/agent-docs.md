@@ -326,6 +326,7 @@ This table lives in one class, and it is the only place to change.
   - API facts are removed: the event object's members, MediaSharer and module syntax.
   - It points to the tools.
   - It names the guides that apply everywhere: `engines/neonjs`, `projects` and `events`.
+- **Developer mode:** "StarLight AI 문서" lists the guides, APIs, events and types, each grouped by the app or plugin they come from, with the types the agent sees without docs marked. It shows each one as the tools return it, built by `DocsIndex`, and `guide:` references in it open the guide.
 
 ## 8. Initial guides
 

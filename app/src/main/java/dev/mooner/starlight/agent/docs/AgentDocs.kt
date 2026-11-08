@@ -102,6 +102,12 @@ class AgentDocs(context: Context) {
     fun answers(): DocsAnswers =
         DocsAnswers(renderer(), guides)
 
+    /** Every document the tools give, for the docs viewer in developer mode. */
+    fun index(): DocsIndex {
+        val guides = guides
+        return DocsIndex(DtsRenderer(catalog(), guides), guides) { sourceOf(it) }
+    }
+
     companion object {
 
         const val ALL_EVENTS = "*"
