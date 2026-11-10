@@ -5,13 +5,18 @@ xmlns:app="http://schemas.android.com/apk/res-auto"
 xmlns:tools="http://schemas.android.com/tools"
 android:layout_width="match_parent"
 android:layout_height="match_parent"
+android:background="@color/background"
 tools:context=".ui.config.ConfigActivity">
+
+<!-- Dark mode: the main screen's night sky, behind the content, in place of the sunset art. -->
+<include
+    android:id="@+id/nightHeader"
+    layout="@layout/view_night_header"/>
 
 <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/background">
+        android:layout_height="match_parent">
 
     <LinearLayout
             android:layout_width="match_parent"
@@ -26,26 +31,23 @@ tools:context=".ui.config.ConfigActivity">
 
             <TextView
                     android:id="@+id/title"
+                    style="@style/PageTitle"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_marginStart="@dimen/title_margin_start"
-                    android:layout_marginTop="80dp"
-                    android:fontFamily="@font/nanumsquare_round_bold"
-                    android:text="TITLE"
-                    android:textColor="@color/text"
-                    android:textSize="28sp"/>
+                    android:layout_marginEnd="@dimen/page_title_margin_end"
+                    android:layout_marginTop="76dp"
+                    android:text="TITLE"/>
 
             <TextView
                     android:id="@+id/subTitle"
+                    style="@style/PageSubtitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/title_margin_start"
                     android:layout_marginBottom="30dp"
                     android:elevation="1dp"
-                    android:fontFamily="@font/nanumsquare_round_regular"
                     android:text="SUBTITLE"
-                    android:textColor="@color/text"
-                    android:textSize="14sp"
                     app:layout_collapseMode="parallax"/>
 
         </LinearLayout>
@@ -86,14 +88,8 @@ tools:context=".ui.config.ConfigActivity">
         android:maxHeight="200dp"
         app:srcCompat="@drawable/svg_top_title_sunset"/>
 
-<ImageView
+<ImageButton
         android:id="@+id/leave"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
-        android:src="@drawable/ic_round_arrow_left_24"
-        android:tint="@color/text"/>
+        style="@style/PageBackButton"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -24,7 +24,7 @@
             android:fitsSystemWindows="true"
             android:foregroundGravity="center_horizontal"
             android:theme="@style/Theme.StarLight.AppBarOverlay"
-            app:elevation="1dp"
+            app:elevation="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">

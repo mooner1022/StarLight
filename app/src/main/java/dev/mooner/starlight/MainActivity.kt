@@ -101,7 +101,6 @@ class MainActivity : AppCompatActivity() {
             val isNight = isNightMode()
             imageViewLogo.isVisible = !isNight
             nightHeader.root.isVisible = isNight
-            nightHeader.nightStars.density = 0.25f
             nightHeader.nightStars.brightness = 0.75f
 
             appBarLayout.addOnOffsetChangedListener(::handleOffsetUpdate)

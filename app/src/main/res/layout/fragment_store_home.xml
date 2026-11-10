@@ -483,7 +483,7 @@
             style="@style/StoreTopBarButton"
             android:layout_gravity="start|center_vertical"
             android:layout_marginStart="4dp"
-            android:contentDescription="@string/cancel"
+            android:contentDescription="@string/back"
             android:elevation="2dp"
             android:src="@drawable/ic_round_arrow_left_24"
             app:tint="@color/store_star"/>

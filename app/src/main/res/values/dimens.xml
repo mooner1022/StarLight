@@ -52,4 +52,6 @@
     <dimen name="editor_chip_height">32dp</dimen>
 
     <dimen name="md_bottomsheet_horizontal_margin">0dp</dimen>
+    <!-- The width the header art takes beside a page's title. -->
+    <dimen name="page_title_margin_end">135dp</dimen>
 </resources>

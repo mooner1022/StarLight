@@ -10,6 +10,7 @@ import android.content.pm.PackageInfo
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.pm.PackageInfoCompat
+import androidx.core.view.WindowCompat
 import com.mikepenz.aboutlibraries.LibsBuilder
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.adapters.ConfigAdapter
@@ -22,7 +23,7 @@ import dev.mooner.starlight.databinding.ActivityAppInfoBinding
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.utils.bindFadeImage
-import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.utils.fitPage
 import dev.mooner.starlight.utils.getPackageInfo
 import dev.mooner.starlight.utils.openWebUrl
 import dev.mooner.starlight.utils.peek
@@ -40,7 +41,10 @@ class AppInfoActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityAppInfoBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitSystemBars(binding.root)
+        fitPage(binding.root)
+        // The night header starts right below the status bar, so the bar takes its color and keeps light icons.
+        window.statusBarColor = getColor(R.color.night_header_top)
+        WindowCompat.getInsetsController(window, binding.root).isAppearanceLightStatusBars = false
 
         val pInfo: PackageInfo = getPackageInfo()
         val versionCode = PackageInfoCompat.getLongVersionCode(pInfo)
@@ -64,7 +68,7 @@ class AppInfoActivity : AppCompatActivity() {
             items {
                 info {
                     id = "name"
-                    title = "앱 버전"
+                    title = getString(R.string.app_info_version)
                     value = "v$versionName"
                     description = "build $versionCode"
                     copyable = true
@@ -73,7 +77,7 @@ class AppInfoActivity : AppCompatActivity() {
                 }
                 info {
                     id = "version"
-                    title = "PluginCore 버전"
+                    title = getString(R.string.app_info_plugincore_version)
                     value = "v${Info.PLUGINCORE_VERSION}"
                     copyable = true
                     icon = Icon.LAYERS
@@ -100,18 +104,18 @@ class AppInfoActivity : AppCompatActivity() {
                     iconTintColor = defaultColor
                     setOnClickListener { _ ->
                         if (isDevMode) {
-                            peek("이미 개발자 모드가 활성화되었습니다.")
+                            peek(getString(R.string.dev_mode_already_on))
                         } else {
                             devModeClicks++
                             when(devModeClicks) {
                                 in 4..7 -> {
-                                    peek("개발자 모드 활성화까지 ${8 - devModeClicks} 남았습니다.")
+                                    peek(getString(R.string.dev_mode_remaining, 8 - devModeClicks))
                                 }
                                 8 -> {
                                     GlobalConfig.edit {
                                         category("dev")["dev_mode"] = true
                                     }
-                                    peek("개발자 모드 활성화", PeekType.SUCCESS)
+                                    peek(getString(R.string.dev_mode_turned_on), PeekType.SUCCESS)
                                 }
                             }
                         }
@@ -127,7 +131,7 @@ class AppInfoActivity : AppCompatActivity() {
                 }
                 button {
                     id = "opensource_license"
-                    title = "오픈소스 라이센스"
+                    title = getString(R.string.app_info_licenses)
                     icon = Icon.DEVELOPER_MODE
                     iconTintColor = defaultColor
                     setOnClickListener { _ ->

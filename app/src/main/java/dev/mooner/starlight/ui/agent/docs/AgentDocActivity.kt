@@ -21,7 +21,7 @@ import dev.mooner.starlight.agent.docs.GuideLibrary
 import dev.mooner.starlight.databinding.ActivityAgentDocBinding
 import dev.mooner.starlight.ui.agent.AgentUi
 import dev.mooner.starlight.ui.agent.MarkdownRenderer
-import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.utils.fitPage
 import io.noties.markwon.LinkResolver
 import io.noties.markwon.LinkResolverDef
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +43,7 @@ class AgentDocActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityAgentDocBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitSystemBars(binding.root)
+        fitPage(binding.root)
 
         category = intent.getStringExtra(EXTRA_CATEGORY)
             ?.let { name -> Category.entries.firstOrNull { it.name == name } }

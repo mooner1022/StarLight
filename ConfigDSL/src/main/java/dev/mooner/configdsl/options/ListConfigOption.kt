@@ -18,6 +18,7 @@ import com.google.android.material.divider.MaterialDividerItemDecoration
 import dev.mooner.configdsl.*
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.adapters.ListRecyclerAdapter
+import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.configdsl.utils.PrimitiveTypedString
 import dev.mooner.configdsl.utils.toJsonElement
 import kotlinx.serialization.json.*
@@ -120,7 +121,14 @@ data class ListConfigOption(
                 title = context.getString(R.string.add),
                 content = recycler,
                 onConfirm = {
-                    if (configData.isNotEmpty()) {
+                    // The form closes on confirm, and a field nobody touched was never checked: check them all here.
+                    val problem = structure.filterIsInstance<StringConfigOption>().firstNotNullOfOrNull { option ->
+                        val value = (configData[option.id] as? JsonPrimitive)?.content ?: option.default
+                        option.require(value)
+                    }
+                    if (problem != null) {
+                        ConfigDSL.dialogProvider.peek(holder.itemView, problem, PeekType.ERROR)
+                    } else if (configData.isNotEmpty()) {
                         recyclerAdapter.data += JsonObject(transformData(configData))
                         recyclerAdapter.notifyItemInserted(recyclerAdapter.data.size)
                         notifyUpdated(recyclerAdapter.data)

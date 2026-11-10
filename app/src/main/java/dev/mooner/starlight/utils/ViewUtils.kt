@@ -6,6 +6,7 @@ import android.content.res.ColorStateList
 import android.content.res.Resources
 import android.util.DisplayMetrics
 import android.util.TypedValue
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup.LayoutParams
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -21,6 +22,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.core.widget.ImageViewCompat
 import androidx.core.widget.NestedScrollView
+import androidx.core.view.isVisible
+import dev.mooner.starlight.R
+import dev.mooner.starlight.databinding.ViewNightHeaderBinding
 import coil.ImageLoader
 import coil.imageLoader
 import coil.load
@@ -39,6 +43,22 @@ fun NestedScrollView.bindFadeImage(imageView: ImageView) {
             imageView.alpha = 0f
         }
     }
+}
+
+/**
+ * Gives a page the header the main screen has in each theme: the sunset [art] in light mode and the night sky
+ * ([nightHeader]) in dark mode. Whichever shows fades out as [scroll] moves the content over it.
+ */
+fun Context.bindPageHeader(scroll: NestedScrollView, art: ImageView, nightHeader: ViewNightHeaderBinding) {
+    val isNight = isNightMode()
+    art.isVisible = !isNight
+    nightHeader.root.isVisible = isNight
+    nightHeader.nightStars.brightness = 0.75f
+
+    val header: View = if (isNight) nightHeader.root else art
+    scroll.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, _ ->
+        header.alpha = (1f - scrollY / 200f).coerceIn(0f, 1f)
+    })
 }
 
 fun dpToPx(context: Context, dp: Float): Float {
@@ -129,6 +149,21 @@ fun ComponentActivity.applyEdgeToEdge(
         onApplyWindowInsets?.invoke(view, insets)
         WindowInsetsCompat.CONSUMED
     }
+}
+
+/**
+ * Lays a page out the way the main screen is: behind transparent system bars whose icons follow the theme,
+ * with [rootView] kept clear of them and the page's background reaching the edges of the screen.
+ * Without this a page gets the theme's grey status bar with white icons, and a black navigation bar.
+ */
+fun ComponentActivity.fitPage(rootView: View) {
+    enableEdgeToEdge()
+    // Below Android 8.1 the navigation bar's buttons are always white, so its own scrim has to stay.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1)
+        window.navigationBarColor = getColor(R.color.background)
+    if (rootView.background == null)
+        rootView.setBackgroundColor(getColor(R.color.background))
+    fitSystemBars(rootView)
 }
 
 /**

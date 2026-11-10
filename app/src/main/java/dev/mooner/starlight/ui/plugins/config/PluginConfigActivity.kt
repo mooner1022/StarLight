@@ -17,8 +17,10 @@ import dev.mooner.starlight.plugincore.config.data.FileConfig
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
-import dev.mooner.starlight.utils.bindFadeImage
-import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.R
+import dev.mooner.starlight.ui.common.confirmLeavingUnsaved
+import dev.mooner.starlight.utils.bindPageHeader
+import dev.mooner.starlight.utils.fitPage
 import dev.mooner.starlight.utils.peek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,7 +39,7 @@ class PluginConfigActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPluginConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitSystemBars(binding.root)
+        fitPage(binding.root)
 
         bindLogNotifier()
 
@@ -72,21 +74,23 @@ class PluginConfigActivity: AppCompatActivity() {
             lifecycleOwner(this@PluginConfigActivity)
         }.build()
 
-        fabProjectConfig.setOnClickListener {
+        val save: () -> Boolean = save@{
+            // The button stays: hidden, there would be no way to save once the setting is put right.
             if (configAdapter?.hasError == true) {
-                peek("올바르지 않은 설정값이 있습니다. 확인 후 다시 시도해주세요.", PeekType.ERROR)
-                fabProjectConfig.hide()
-                return@setOnClickListener
+                peek(getString(R.string.config_invalid), PeekType.ERROR)
+                return@save false
             }
             fileConfig.push()
             runPluginCall(pluginName) { plugin.onConfigUpdated(fileConfig, updatedIDs) }
-            peek("설정 저장 완료!", PeekType.SUCCESS)
+            peek(getString(R.string.config_saved), PeekType.SUCCESS)
             fabProjectConfig.hide()
+            true
         }
+        fabProjectConfig.setOnClickListener { save() }
 
-        binding.scroll.bindFadeImage(binding.imageViewLogo)
+        bindPageHeader(binding.scroll, binding.imageViewLogo, binding.nightHeader)
 
-        binding.leave.setOnClickListener { finish() }
+        confirmLeavingUnsaved(binding.leave, hasChanges = { fabProjectConfig.isOrWillBeShown }, save = save)
 
         binding.pluginName.text = pluginName
     }

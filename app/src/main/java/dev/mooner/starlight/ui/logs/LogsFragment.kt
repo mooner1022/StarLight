@@ -243,7 +243,7 @@ class LogsFragment : Fragment(), OnClickListener {
                     ?.also { v ->
                         if (("" in v) || v.any(String::isBlank)) {
                             binding.editTextTags.apply {
-                                error = "유효하지 않은 태그 값"
+                                error = getString(R.string.logs_filter_invalid_tag)
                                 requestFocus()
                             }
                             return@positive
@@ -257,7 +257,7 @@ class LogsFragment : Fragment(), OnClickListener {
                             Pattern.compile(v)
                         } catch (_: PatternSyntaxException) {
                             binding.editTextMessage.apply {
-                                error = "유효하지 않은 정규식"
+                                error = getString(R.string.logs_filter_invalid_regex)
                                 requestFocus()
                             }
                             return@positive
@@ -279,7 +279,7 @@ class LogsFragment : Fragment(), OnClickListener {
         var type: LogItem.ViewType = itemAdapter?.viewType ?: LogItem.ViewType.NORMAL
         context.showSheet {
             lifecycleOwner = lifecycle
-            title = "로그 표시 모드"
+            title = getString(R.string.logs_view_mode_title)
             icon = R.drawable.ic_round_view_day_24
 
             val items = listOf(

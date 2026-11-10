@@ -4,6 +4,8 @@ import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.animation.LinearInterpolator
@@ -11,6 +13,7 @@ import android.view.animation.OvershootInterpolator
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
 import androidx.core.view.marginBottom
 import androidx.fragment.app.commit
 import androidx.lifecycle.Lifecycle
@@ -41,6 +44,13 @@ class PluginStoreActivity : AppCompatActivity() {
         setContentView(binding.root)
         fitSystemBars(binding.root)
         window.statusBarColor = getColor(R.color.store_night)
+        // Under the night header the store is an ordinary page, so the navigation bar takes the page's color
+        // instead of the default black. Below Android 8.1 its buttons are always white, so it stays as it is.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            window.navigationBarColor = getColor(R.color.background)
+            WindowCompat.getInsetsController(window, binding.root).isAppearanceLightNavigationBars =
+                (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_YES
+        }
 
         if (savedInstanceState == null)
             supportFragmentManager.commit {

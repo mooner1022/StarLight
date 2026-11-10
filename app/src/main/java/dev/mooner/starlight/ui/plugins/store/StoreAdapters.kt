@@ -207,7 +207,6 @@ class StoreFeaturedAdapter(
         val (feature, plugin) = items[position]
         with(holder.binding) {
             mask.transitionName = "store_featured_${plugin.id}"
-            stars.seed = position * 31 + 5
             icon.loadStoreImage(plugin.icon)
             category.text = index?.categoryName(plugin.category)
             headline.text = feature.headline.get()

@@ -37,11 +37,12 @@ import dev.mooner.starlight.plugincore.api.ApiLevel
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.ui.common.confirmLeavingUnsaved
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.projects.events.EventCatalog
 import dev.mooner.starlight.ui.projects.events.showEventPicker
 import dev.mooner.starlight.utils.*
-import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.utils.fitPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -66,7 +67,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityProjectConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitSystemBars(binding.root)
+        fitPage(binding.root)
 
         bindLogNotifier()
 
@@ -107,11 +108,11 @@ class ProjectConfigActivity: AppCompatActivity() {
                 .injectApiLevels(project.info.apiLevels))
         }.build()
 
-        fabProjectConfig.setOnClickListener {
+        val save: () -> Boolean = save@{
+            // The button stays: hidden, there would be no way to save once the setting is put right.
             if (configAdapter?.hasError == true) {
-                peek("올바르지 않은 설정이 있습니다. 확인 후 다시 시도해주세요.", PeekType.ERROR)
-                fabProjectConfig.hide()
-                return@setOnClickListener
+                peek(getString(R.string.config_invalid), PeekType.ERROR)
+                return@save false
             }
 
             pendingEventIds?.let { ids ->
@@ -139,15 +140,17 @@ class ProjectConfigActivity: AppCompatActivity() {
             if (filtered.isNotEmpty())
                 project.getLanguage().onConfigUpdated(filtered)
 
-            createSuccessPeek("설정 저장 완료!", PeekAlert.Position.Bottom).peek()
+            createSuccessPeek(getString(R.string.config_saved), PeekAlert.Position.Bottom).peek()
             if (ApiLevels.hasListenerNameClash(project.info.apiLevels, project.info.languageId))
                 peek(getString(R.string.api_levels_clash_warning), PeekType.INFO)
             fabProjectConfig.hide()
+            true
         }
+        fabProjectConfig.setOnClickListener { save() }
 
-        binding.scroll.bindFadeImage(binding.imageViewLogo)
+        bindPageHeader(binding.scroll, binding.imageViewLogo, binding.nightHeader)
 
-        binding.leave.setOnClickListener { finish() }
+        confirmLeavingUnsaved(binding.leave, hasChanges = { fabProjectConfig.isOrWillBeShown }, save = save)
 
         val textViewConfigProjectName: TextView = findViewById(R.id.textViewConfigProjectName)
         textViewConfigProjectName.text = projectName
@@ -220,12 +223,12 @@ class ProjectConfigActivity: AppCompatActivity() {
         return config {
             category {
                 id = "general"
-                title = "일반"
+                title = getString(R.string.project_config_general_category)
                 textColor = getColor(R.color.main_bright)
                 items {
                     info {
                         id = "folder_location"
-                        title = "프로젝트 위치"
+                        title = getString(R.string.project_config_folder_location_title)
                         description = project.directory.path
                         copyable = true
                         icon = Icon.FOLDER
@@ -243,7 +246,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                     }
                     toggle {
                         id = "shutdown_on_error"
-                        title = "오류 발생시 비활성화"
+                        title = getString(R.string.project_config_shutdown_on_error_title)
                         defaultValue = true
                         icon = Icon.ERROR
                         iconTintColor = color { "#FF5C58" }
@@ -268,7 +271,7 @@ class ProjectConfigActivity: AppCompatActivity() {
             }
             category {
                 id = EVENTS_CATEGORY
-                title = "이벤트"
+                title = getString(R.string.project_config_events_category)
                 textColor = getColor(R.color.main_bright)
                 items {
                     button {
@@ -296,14 +299,14 @@ class ProjectConfigActivity: AppCompatActivity() {
             if (changeThreadPoolSize || addCustomButtons) {
                 category {
                     id = "beta_features"
-                    title = "실험적 기능"
+                    title = getString(R.string.project_config_beta_features_category)
                     textColor = getColor(R.color.main_bright)
                     items {
                         if (changeThreadPoolSize) {
                             seekbar {
                                 id = "thread_pool_size"
-                                title = "동시 실행 수"
-                                description = "앱의 공유 스레드에서 이 프로젝트의 이벤트를 동시에 몇 개까지 실행할지 정합니다."
+                                title = getString(R.string.project_config_thread_pool_size_title)
+                                description = getString(R.string.project_config_thread_pool_size_desc)
                                 min = 1
                                 max = 10
                                 defaultValue = project.getLanguage().defaultConcurrency
@@ -314,26 +317,26 @@ class ProjectConfigActivity: AppCompatActivity() {
                         if (addCustomButtons) {
                             list {
                                 id = "custom_buttons"
-                                title = "사용자 지정 버튼"
+                                title = getString(R.string.project_config_custom_buttons_title)
                                 icon = Icon.SETTINGS
                                 iconTintColor = color { "#57837B" }
                                 structure {
                                     string {
                                         id = "button_id"
                                         title = "id"
-                                        description = "버튼 이벤트 호출 시 사용될 ID"
+                                        description = getString(R.string.project_config_button_id_desc)
                                         icon = null
                                         require = { string ->
                                             if (string.isBlank())
-                                                "버튼 id를 입력하세요"
+                                                getString(R.string.project_config_button_id_blank)
                                             else if (string in projectButtonIDs)
-                                                "이미 존재하는 버튼 id"
+                                                getString(R.string.project_config_button_id_exists)
                                             else null
                                         }
                                     }
                                     spinner {
                                         id = "button_icon"
-                                        title = "아이콘"
+                                        title = getString(R.string.project_config_button_icon_title)
                                         icon = null
                                         defaultIndex = 0
                                         items = Icon.entries.map(Icon::name)
@@ -361,35 +364,35 @@ class ProjectConfigActivity: AppCompatActivity() {
             }
             category {
                 id = "cautious"
-                title = "위험"
+                title = getString(R.string.project_config_cautious_category)
                 textColor = color { "#FF865E" }
                 items {
                     button {
                         id = "reload_info"
-                        title = "프로젝트 정보 다시 로드"
-                        description = "프로젝트 정보를 파일에서 다시 불러옵니다. 이 옵션은 앱의 정상적인 작동을 방해할 수 있습니다."
+                        title = getString(R.string.project_config_reload_info_title)
+                        description = getString(R.string.project_config_reload_info_desc)
                         style = ButtonStyle.DANGER
-                        confirm("파일에서 프로젝트 정보를 다시 불러올까요? 저장하지 않은 변경 사항은 사라질 수 있어요.")
+                        confirm(getString(R.string.project_config_reload_info_confirm))
                         setOnClickListener { _ ->
                             project.loadInfo()
-                            peek("프로젝트 정보를 다시 불러왔어요.", PeekType.SUCCESS)
+                            peek(getString(R.string.project_config_reload_info_done), PeekType.SUCCESS)
                         }
                         icon = Icon.REFRESH
                         iconTintColor = color { "#FF5C58" }
                     }
                     button {
                         id = "interrupt_thread"
-                        title = "프로젝트 스레드 강제 종료"
+                        title = getString(R.string.project_config_interrupt_thread_title)
                         bindDescription(every = 1.seconds) {
-                            "${project.activeJobs()}개의 작업이 실행 중이고, ${project.queuedEvents()}개의 이벤트가 대기 중이에요."
+                            getString(R.string.project_config_interrupt_thread_desc, project.activeJobs(), project.queuedEvents())
                         }
                         style = ButtonStyle.DANGER
-                        confirm { "실행 중인 작업 ${project.activeJobs()}개를 강제 종료할까요?" }
+                        confirm { getString(R.string.project_config_interrupt_thread_confirm, project.activeJobs()) }
                         setOnClickListener { _ ->
                             val active = project.activeJobs()
                             val queued = project.queuedEvents()
                             project.stopAllJobs()
-                            peek("${active}개의 작업을 강제 종료하고 대기 중이던 이벤트 ${queued}개를 비웠어요.", PeekType.SUCCESS)
+                            peek(getString(R.string.project_config_interrupt_thread_done, active, queued), PeekType.SUCCESS)
                         }
                         icon = Icon.LAYERS_CLEAR
                         //backgroundColor = Color.parseColor("#B8DFD8")
@@ -397,10 +400,10 @@ class ProjectConfigActivity: AppCompatActivity() {
                     }
                     button {
                         id = "destroy_scope"
-                        title = "프로젝트 스코프 폐기"
-                        description = "프로젝트의 컴파일된 스코프를 폐기합니다. 이후 프로젝트를 사용하기 위해선 다시 컴파일 해야 합니다."
+                        title = getString(R.string.project_config_destroy_scope_title)
+                        description = getString(R.string.project_config_destroy_scope_desc)
                         style = ButtonStyle.DANGER
-                        confirm("스코프를 폐기하면 다시 컴파일하기 전까지 프로젝트가 동작하지 않아요. 계속할까요?")
+                        confirm(getString(R.string.project_config_destroy_scope_confirm))
                         setOnClickListener { _ ->
                             project.destroy(requestUpdate = isForeground())
                             finish()
@@ -411,19 +414,19 @@ class ProjectConfigActivity: AppCompatActivity() {
                     }
                     button {
                         id = "delete_project"
-                        title = "프로젝트 제거"
+                        title = getString(R.string.project_config_delete_project_title)
                         style = ButtonStyle.DANGER
                         setOnClickListener { _ ->
                             showSheet {
-                                title = "프로젝트를 정말로 제거할까요?"
-                                message = "주의: 프로젝트 제거시 복구가 불가합니다."
+                                title = getString(R.string.project_config_delete_project_confirm_title)
+                                message = getString(R.string.project_config_delete_project_confirm_message)
                                 icon = R.drawable.ic_round_delete_forever_24
                                 positive(R.string.delete) {
                                     projectManager.removeProject(
                                         project,
                                         removeFiles = true
                                     )
-                                    peek("프로젝트를 제거했어요.", PeekType.SUCCESS)
+                                    peek(getString(R.string.project_config_delete_project_done), PeekType.SUCCESS)
                                     finish()
                                 }
                                 negative(R.string.close)
@@ -459,7 +462,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                         items {
                             string {
                                 id = "name"
-                                title = "이름"
+                                title = getString(R.string.project_config_rename_name_title)
                                 icon = Icon.EDIT
                                 hint = translate {
                                     Locale.ENGLISH { "Enter name..." }
@@ -486,8 +489,8 @@ class ProjectConfigActivity: AppCompatActivity() {
                             }
                             toggle {
                                 id = "preserve_main_script"
-                                title = "메인 스크립트 이름 변경"
-                                description = "메인 스크립트의 이름을 같이 변경합니다."
+                                title = getString(R.string.project_config_rename_main_script_title)
+                                description = getString(R.string.project_config_rename_main_script_desc)
                                 defaultValue = true
                                 icon = Icon.FILE
                                 setOnValueChangedListener { _, toggle ->

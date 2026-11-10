@@ -94,13 +94,9 @@
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-    <ImageView
+    <ImageButton
         android:id="@+id/leave"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
-        android:src="@drawable/ic_round_arrow_left_24"/>
+        style="@style/PageBackButton"
+        app:tint="@color/main_bright"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -46,7 +46,6 @@ class AgentFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentAgentBinding.inflate(inflater, container, false)
         draftId = savedInstanceState?.getString(KEY_DRAFT)
-        binding.stars.density = 0.5f
         binding.stars.brightness = 0.85f
 
         composer = Composer(

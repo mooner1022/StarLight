@@ -16,11 +16,6 @@
         android:layout_height="match_parent"
         android:background="@drawable/bg_store_featured">
 
-        <dev.mooner.starlight.ui.plugins.store.StarFieldView
-            android:id="@+id/stars"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-
         <ImageView
             android:id="@+id/bigIcon"
             android:layout_width="130dp"

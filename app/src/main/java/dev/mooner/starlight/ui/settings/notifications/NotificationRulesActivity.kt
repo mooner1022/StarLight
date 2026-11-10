@@ -17,6 +17,7 @@ import dev.mooner.configdsl.options.list
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.string
 import dev.mooner.configdsl.options.toggle
+import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.R
@@ -26,8 +27,11 @@ import dev.mooner.starlight.listener.NotificationListener
 import dev.mooner.starlight.plugincore.chat.ParserSpecManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
-import dev.mooner.starlight.utils.createSimplePeek
-import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.ui.common.confirmLeavingUnsaved
+import dev.mooner.starlight.utils.createSuccessPeek
+import dev.mooner.starlight.utils.bindPageHeader
+import dev.mooner.starlight.utils.fitPage
+import dev.mooner.starlight.utils.peek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
@@ -51,9 +55,9 @@ class NotificationRulesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNotificationRulesBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitSystemBars(binding.root)
+        fitPage(binding.root)
+        bindPageHeader(binding.scroll, binding.imageViewLogo, binding.nightHeader)
 
-        binding.leave.setOnClickListener { finish() }
 
         val file = getStarLightDirectory().resolve(FILE_NAME)
         if (!file.exists() || !file.isFile || !file.canRead()) {
@@ -92,21 +96,20 @@ class NotificationRulesActivity : AppCompatActivity() {
             }
         }.build()
 
-        binding.fabSaveConfig.setOnClickListener {
-            //config.push()
+        val save: () -> Boolean = save@{
+            if (rules.any { it.packageName.isBlank() }) {
+                peek(getString(R.string.rule_package_required), PeekType.ERROR)
+                return@save false
+            }
             rules.let(json::encodeToString)
                 .let(file::writeText)
             binding.fabSaveConfig.hide()
-            createSimplePeek(
-                text = "정보 저장 성공!"
-            ) {
-                position = PeekAlert.Position.Bottom
-                iconRes = dev.mooner.configdsl.R.drawable.ic_round_check_24
-                iconTint(res = R.color.noctis_green)
-                backgroundColor(res = R.color.background_popup)
-            }.peek()
+            createSuccessPeek(getString(R.string.config_saved), PeekAlert.Position.Bottom).peek()
             NotificationListener.updateRules()
+            true
         }
+        binding.fabSaveConfig.setOnClickListener { save() }
+        confirmLeavingUnsaved(binding.leave, hasChanges = { binding.fabSaveConfig.isOrWillBeShown }, save = save)
     }
 
     /** Says which rules are in use: the saved ones don't count while rules are set automatically. */
@@ -154,36 +157,36 @@ class NotificationRulesActivity : AppCompatActivity() {
             items {
                 toggle {
                     id = "auto_rule"
-                    title = "규칙 자동 설정"
-                    description = "실행 환경에 따라 규칙을 자동으로 설정합니다."
+                    title = getString(R.string.rules_auto_title)
+                    description = getString(R.string.rules_auto_desc)
                     defaultValue = true
                     icon = Icon.LAUNCH
                     iconTintColor = color { "#7EAA92" }
                 }
                 list {
                     id = "rules"
-                    title = "규칙 목록"
-                    description = "맨 위에 위치한 규칙이 레거시 API 로직을 위한 기본 규칙으로 설정되며, 다른 규칙들은 레거시 API의 설정을 업데이트 하지 않습니다."
+                    title = getString(R.string.rules_list_title)
+                    description = getString(R.string.rules_list_desc)
                     icon = Icon.DEVELOPER_BOARD
                     iconTintColor = color { "#7EAA92" }
                     dependency = "!auto_rule"
                     structure {
                         string {
                             id = "package_name"
-                            title = "패키지명"
-                            description = "이 규칙이 적용될 패키지 명이에요. (ex) ${PACKAGE_KAKAO_TALK})"
+                            title = getString(R.string.rules_package_title)
+                            description = getString(R.string.rules_package_desc, PACKAGE_KAKAO_TALK)
                             icon = Icon.MARK_CHAT_READ
                             iconTintColor = color { "#82A284" }
                             require = { str ->
                                 if (str.isBlank())
-                                    "패키지명이 비어있으면 안되겠죠?"
+                                    getString(R.string.rules_package_empty)
                                 else
                                     null
                             }
                         }
                         spinner {
                             id = "parser_spec"
-                            title = "메세지 변환/분석 스펙"
+                            title = getString(R.string.rules_spec_title)
                             //description = ""
                             icon = Icon.BRANCH
                             iconTintColor = color { "#ACBCFF" }
@@ -192,21 +195,15 @@ class NotificationRulesActivity : AppCompatActivity() {
                         }
                         string {
                             id = "user_id"
-                            title = "유저 ID"
-                            description = """
-                                |이 규칙이 적용될 유저 ID 에요.
-                                |0: 기본 유저
-                                |10: 직장 프로필
-                                |11: 직장 프로필(샤오미)
-                                |95: 듀얼 메신저(삼성)
-                            """.trimMargin()
+                            title = getString(R.string.rules_user_id_title)
+                            description = getString(R.string.rules_user_id_desc)
                             icon = Icon.ACCOUNT_BOX
                             iconTintColor = color { "#DEB6AB" }
                             defaultValue = "0"
                             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
                             require = { str ->
                                 if (str.isBlank())
-                                    "유저 ID도 비어있으면 안되겠죠?"
+                                    getString(R.string.rules_user_id_empty)
                                 else
                                     null
                             }
@@ -223,7 +220,7 @@ class NotificationRulesActivity : AppCompatActivity() {
                             .let(CardSimpleListItemBinding::bind)
 
                         binding.title.text = data["package_name"]!!.jsonPrimitive.content
-                        binding.description.text = "유저 ID: ${data["user_id"]?.jsonPrimitive?.int ?: 0}"
+                        binding.description.text = getString(R.string.rules_item_user_id, data["user_id"]?.jsonPrimitive?.int ?: 0)
                         binding.icon.visibility = View.GONE
                     }
                 }

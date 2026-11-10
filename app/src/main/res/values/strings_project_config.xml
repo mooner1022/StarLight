@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Project settings -->
+    <string name="project_config_general_category">General</string>
+    <string name="project_config_folder_location_title">Project location</string>
+    <string name="project_config_shutdown_on_error_title">Turn off on error</string>
+    <string name="project_config_events_category">Events</string>
+    <string name="project_config_beta_features_category">Experimental features</string>
+    <string name="project_config_thread_pool_size_title">Concurrent runs</string>
+    <string name="project_config_thread_pool_size_desc">Sets how many of this project\'s events can run at once on the app\'s shared threads.</string>
+    <string name="project_config_custom_buttons_title">Custom buttons</string>
+    <string name="project_config_button_id_desc">ID used when the button event is called</string>
+    <string name="project_config_button_id_blank">Enter a button id</string>
+    <string name="project_config_button_id_exists">This button id already exists</string>
+    <string name="project_config_button_icon_title">Icon</string>
+    <string name="project_config_cautious_category">Danger</string>
+    <string name="project_config_reload_info_title">Reload project info</string>
+    <string name="project_config_reload_info_desc">Reloads the project info from its file. This option may interfere with the app\'s normal operation.</string>
+    <string name="project_config_reload_info_confirm">Reload the project info from its file? Unsaved changes may be lost.</string>
+    <string name="project_config_reload_info_done">Project info reloaded.</string>
+    <string name="project_config_interrupt_thread_title">Force stop project threads</string>
+    <string name="project_config_interrupt_thread_desc">Running jobs: %1$d · Waiting events: %2$d</string>
+    <string name="project_config_interrupt_thread_confirm">Running jobs: %1$d. Force stop them?</string>
+    <string name="project_config_interrupt_thread_done">Force stopped jobs: %1$d · Cleared waiting events: %2$d</string>
+    <string name="project_config_destroy_scope_title">Discard project scope</string>
+    <string name="project_config_destroy_scope_desc">Discards the project\'s compiled scope. The project must be compiled again before it can be used.</string>
+    <string name="project_config_destroy_scope_confirm">Once the scope is discarded, the project won\'t run until it is compiled again. Continue?</string>
+    <string name="project_config_delete_project_title">Delete project</string>
+    <string name="project_config_delete_project_confirm_title">Really delete this project?</string>
+    <string name="project_config_delete_project_confirm_message">Warning: a deleted project can\'t be recovered.</string>
+    <string name="project_config_delete_project_done">Project deleted.</string>
+    <string name="project_config_rename_name_title">Name</string>
+    <string name="project_config_rename_main_script_title">Rename main script</string>
+    <string name="project_config_rename_main_script_desc">Renames the main script as well.</string>
+
+    <!-- Project info -->
+    <string name="project_info_general_category">Basics</string>
+    <string name="project_info_general_name_title">Name</string>
+    <string name="project_info_main_script_title">Main script</string>
+    <string name="project_info_birth_title">Created</string>
+    <string name="project_info_listeners_title">Listeners</string>
+    <string name="project_info_listeners_empty">None</string>
+    <string name="project_info_packages_title">Packages</string>
+    <string name="project_info_packages_empty">None</string>
+    <string name="project_info_lang_category">Language</string>
+    <string name="project_info_lang_name_title">Language</string>
+    <string name="project_info_file_ext_title">File extension</string>
+    <string name="project_info_req_release_title">Requires release</string>
+    <string name="project_info_req_release_yes">Yes</string>
+    <string name="project_info_req_release_no">No</string>
+    <string name="project_info_state_category">Status</string>
+    <string name="project_info_thread_name_title">Thread</string>
+    <string name="project_info_thread_name_none">Not assigned</string>
+    <string name="project_info_jobs_title">Jobs</string>
+    <string name="project_info_jobs_value">Running %1$d · Waiting %2$d</string>
+    <string name="project_info_is_compiled_title">Compilation</string>
+    <string name="project_info_is_compiled_done">Done</string>
+    <string name="project_info_is_compiled_needed">Needed</string>
+    <string name="project_info_is_enabled_title">Enabled</string>
+    <string name="project_info_is_enabled_on">On</string>
+    <string name="project_info_is_enabled_off">Off</string>
+    <string name="project_info_file_category">File</string>
+    <string name="project_info_export_title">Export</string>
+    <string name="project_info_export_desc">Saves the project as a zip file. You can load it again with Import in the project list.</string>
+</resources>

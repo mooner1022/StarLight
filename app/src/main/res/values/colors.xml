@@ -139,4 +139,6 @@
     <color name="icon_violet">#9195F6</color>
     <color name="icon_sky">#7AB2D3</color>
     <color name="icon_navy">#4A628A</color>
+    <!-- Where gradient_night starts, for the status bar above it. -->
+    <color name="night_header_top">#020111</color>
 </resources>
