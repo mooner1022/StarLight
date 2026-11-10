@@ -39,6 +39,10 @@ object LogCollector {
 
     private val logFile: File
 
+    /** How many logs are kept in memory. */
+    val bufferSize: Int
+        get() = logBufferMaxSize
+
     private val mLogs: MutableList<LogData> = createDeque()
     val logs: List<LogData>
         get() = synchronized(mLogs) { mLogs.toList() }

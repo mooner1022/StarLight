@@ -43,7 +43,7 @@
                     android:layout_marginBottom="30dp"
                     android:elevation="1dp"
                     android:fontFamily="@font/nanumsquare_round_regular"
-                    android:text="@string/subtitle_notification_rules"
+                    tools:text="@string/subtitle_notification_rules_auto"
                     android:textColor="@color/text"
                     android:textSize="14sp" app:layout_collapseMode="parallax"/>
 

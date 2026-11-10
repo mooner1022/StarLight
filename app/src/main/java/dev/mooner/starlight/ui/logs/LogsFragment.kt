@@ -328,7 +328,7 @@ class LogsFragment : Fragment(), OnClickListener {
             return
 
         binding.recyclerViewLogs.post {
-            itemAdapter?.push(log, limit = 100)
+            itemAdapter?.push(log, limit = 100, capacity = LogCollector.bufferSize)
             if (autoScroll && itemAdapter != null)
                 binding.recyclerViewLogs.scrollToPosition(itemAdapter!!.itemCount - 1)
         }

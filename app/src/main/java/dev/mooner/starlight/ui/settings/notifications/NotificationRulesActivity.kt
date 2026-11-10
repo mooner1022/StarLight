@@ -39,6 +39,7 @@ class NotificationRulesActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNotificationRulesBinding
     private val specs = ParserSpecManager.getAllSpecs().values.toTypedArray()
     private var rules: Rules = arrayListOf()
+    private var isAutoRule: Boolean = true
 
     private val json = Json {
         encodeDefaults = true
@@ -62,7 +63,8 @@ class NotificationRulesActivity : AppCompatActivity() {
         rules = json.decodeFromString(file.readText())
         //config = FileConfig(file)
 
-        binding.subTitle.text = getString(R.string.subtitle_notification_rules).format(rules.size)
+        isAutoRule = GlobalConfig.category("noti_rules").getBoolean("auto_rule", true)
+        updateSubtitle()
 
         ConfigAdapter.Builder(this) {
             bind(binding.recyclerView)
@@ -76,6 +78,11 @@ class NotificationRulesActivity : AppCompatActivity() {
                     GlobalConfig.edit {
                         category("noti_rules").setRaw(id, jsonValue)
                     }
+                if (id == "auto_rule")
+                    isAutoRule = value as Boolean
+                withContext(Dispatchers.Main) {
+                    updateSubtitle()
+                }
 
                 if (binding.fabSaveConfig.isOrWillBeHidden) {
                     withContext(Dispatchers.Main) {
@@ -100,6 +107,14 @@ class NotificationRulesActivity : AppCompatActivity() {
             }.peek()
             NotificationListener.updateRules()
         }
+    }
+
+    /** Says which rules are in use: the saved ones don't count while rules are set automatically. */
+    private fun updateSubtitle() {
+        binding.subTitle.text = if (isAutoRule)
+            getString(R.string.subtitle_notification_rules_auto)
+        else
+            resources.getQuantityString(R.plurals.subtitle_notification_rules, rules.size, rules.size)
     }
 
     private fun wrapData(data: Rules): MutableDataMap {

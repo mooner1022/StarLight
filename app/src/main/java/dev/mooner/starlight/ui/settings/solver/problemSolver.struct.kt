@@ -57,6 +57,22 @@ internal fun getProblemSolverStruct() = config {
         id = "specInfo"
         title = "패키지 규칙 검사"
         items {
+            // With automatic rules on, the saved rules aren't in use: checking them would report rules nothing reads.
+            if (GlobalConfig.category("noti_rules").getBoolean("auto_rule", true)) {
+                info {
+                    id = "spec_auto"
+                    title = "규칙 자동 설정"
+                    description = buildString {
+                        append(PACKAGE_KAKAO_TALK).append("\n")
+                        append("유저 ID : 0").append("\n")
+                        append("파싱 스펙 : ${ParserSpecPolicy.specIdFor(Build.VERSION.SDK_INT, ApplicationSession.kakaoTalkVersion)}")
+                    }
+                    icon = Icon.CHECK
+                    status = OptionStatus.OK
+                    value = "정상"
+                }
+                return@items
+            }
             readNotificationRuleFile()
                 ?.let(::unwrapData)
                 ?.let { list ->

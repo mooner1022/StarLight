@@ -11,7 +11,10 @@
 
 
     <string name="title_notification_rules">패키지 규칙</string>
-    <string name="subtitle_notification_rules">%d개의 규칙이 있어요.</string>
+    <plurals name="subtitle_notification_rules">
+        <item quantity="other">%d개의 규칙이 있어요.</item>
+    </plurals>
+    <string name="subtitle_notification_rules_auto">카카오톡에 맞게 자동으로 설정돼요.</string>
 
     <string name="file">파일</string>
     <string name="directory">경로</string>

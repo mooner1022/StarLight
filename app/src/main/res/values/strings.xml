@@ -15,7 +15,11 @@
 
 
     <string name="title_notification_rules">Notification Rules</string>
-    <string name="subtitle_notification_rules">There are %d Rules.</string>
+    <plurals name="subtitle_notification_rules">
+        <item quantity="one">%d rule.</item>
+        <item quantity="other">%d rules.</item>
+    </plurals>
+    <string name="subtitle_notification_rules_auto">Set automatically for KakaoTalk.</string>
 
     <string name="file">File</string>
     <string name="directory">Directory</string>

@@ -18,7 +18,6 @@ import android.service.notification.StatusBarNotification
 import android.text.SpannableString
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import androidx.core.text.getSpans
 import dev.mooner.starlight.listener.chat.ChatRoomImpl
 import dev.mooner.starlight.plugincore.chat.ChatRoom
 import dev.mooner.starlight.plugincore.chat.ChatSender
@@ -84,9 +83,6 @@ open class AndroidRParserSpec: MessageParserSpec {
         //val image = extras.getBundle("android.wearable.EXTENSIONS")?.getParcelable("background")
         val profileBitmap = createBitmap.call(sender.icon!!) as Bitmap
         val hasMention = extras.getCharSequence(NotificationCompat.EXTRA_TEXT) is SpannableString
-
-        if (hasMention)
-            println((extras.getCharSequence(NotificationCompat.EXTRA_TEXT) as SpannableString).getSpans<Any>().joinToString { it.toString() })
 
         val chatLogId = extras.getLong("chatLogId")
 
