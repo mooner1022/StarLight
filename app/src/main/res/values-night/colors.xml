@@ -11,6 +11,13 @@
     <color name="background_chip_accent">#AD977A</color>
     <color name="background_popup">#2B2B2B</color>
     <color name="background_log_card">#212122</color>
+    <color name="log_card_stroke">#00000000</color>
+    <color name="log_info">#7ACA8A</color>
+    <color name="log_debug">#C39EC0</color>
+    <color name="log_warn">#FEC64C</color>
+    <color name="log_error">#FF6188</color>
+    <color name="log_critical">#FF3B3B</color>
+    <color name="log_verbose">#78DCE8</color>
 
     <color name="config_list_item_background">#202020</color>
 

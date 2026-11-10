@@ -20,7 +20,19 @@
     <color name="background_chip">#FFFFFF</color>
     <color name="background_chip_accent">#E8D9C4</color>
     <color name="background_popup">#fdfdfd</color>
-    <color name="background_log_card">#F4F4F7</color>
+    <!-- A log entry, on the white card that holds the list. By day it stays as light as that card and is set
+         apart by a thin outline: filled darker, the list turns grey and heavy. By night it is a lighter block
+         with no outline (values-night). -->
+    <color name="background_log_card">#FBFBFD</color>
+    <color name="log_card_stroke">#E3E3EA</color>
+    <!-- The colour of each kind of log. By day these are deeper tones of the night's colours, which are too
+         pale to read on a light card. -->
+    <color name="log_info">#378B48</color>
+    <color name="log_debug">#A2689D</color>
+    <color name="log_warn">#A67201</color>
+    <color name="log_error">#D6335C</color>
+    <color name="log_critical">#C62828</color>
+    <color name="log_verbose">#198794</color>
 
     <color name="config_list_item_background">#F0F0F0</color>
 
