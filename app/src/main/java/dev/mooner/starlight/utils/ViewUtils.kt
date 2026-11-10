@@ -20,6 +20,7 @@ import androidx.annotation.DrawableRes
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.core.widget.ImageViewCompat
@@ -35,16 +36,6 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import kotlin.reflect.full.primaryConstructor
 
 private val LOG = LoggerFactory.logger {  }
-
-fun NestedScrollView.bindFadeImage(imageView: ImageView) {
-    setOnScrollChangeListener { _, _, scrollY, _, _ ->
-        if (scrollY in 0..200) {
-            imageView.alpha = 1f - (scrollY / 200.0f)
-        } else {
-            imageView.alpha = 0f
-        }
-    }
-}
 
 /**
  * Gives a page the sky the main screen has behind its title: [header] fades out, and [alsoFading] with it, as
@@ -203,6 +194,18 @@ private fun ComponentActivity.showPageBehindSystemBars(rootView: View) {
  * Makes the sky taller by [topInset], the status bar's height, so that it runs up behind the status bar
  * while everything in it that is placed against the title keeps its place below that line.
  */
+/**
+ * Turns the sky into the backdrop of a page whose own mark is the emblem: the emblem stands upright in the
+ * middle, [sizeDp] across with its center [centerFromTopDp] below the status bar, and the sky gathers around
+ * it there and not at the header's end.
+ */
+fun ViewSkyHeaderBinding.showEmblemCentered(sizeDp: Float, centerFromTopDp: Float) {
+    val density = root.resources.displayMetrics.density
+    emblem.showCentered(sizeDp * density, centerFromTopDp * density, washSpread = 1.5f)
+    // The night's glow at the end of the header would sit to one side of a centered emblem.
+    nightGlow?.isVisible = false
+}
+
 fun ViewSkyHeaderBinding.extendBehindStatusBar(topInset: Int) {
     root.updateLayoutParams {
         height = root.resources.getDimensionPixelSize(R.dimen.sky_header_height) + topInset

@@ -8,6 +8,7 @@
     android:importantForAccessibility="noHideDescendants">
 
     <View
+        android:id="@+id/nightGlow"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/bg_night_header_glow"/>

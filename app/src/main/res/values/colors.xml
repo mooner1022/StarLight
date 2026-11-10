@@ -31,6 +31,11 @@
          so text takes this deeper tone of it; on the dark theme it is the accent itself (values-night). -->
     <color name="text_gold">#8D632C</color>
     <color name="text_gold_deep">@color/text_gold</color>
+    <!-- The app info page's name and icons. By night they are the accent gold. By day the name is the colour of
+         every other page's title and the icons are the muted gold: the deep gold of small labels is too heavy
+         at this size and beside the sunset. -->
+    <color name="app_info_title">@color/text</color>
+    <color name="app_info_icon">@color/main_dark</color>
 
     <color name="status_ok">#7ACA8A</color>
     <color name="status_warning">#F2B05E</color>
@@ -150,6 +155,4 @@
     <color name="icon_violet">#9195F6</color>
     <color name="icon_sky">#7AB2D3</color>
     <color name="icon_navy">#4A628A</color>
-    <!-- Where gradient_night starts, for the status bar above it. -->
-    <color name="night_header_top">#020111</color>
 </resources>

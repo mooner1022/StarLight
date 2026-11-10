@@ -83,7 +83,10 @@ class SkyEmblemView @JvmOverloads constructor(
             )
     }
 
-    /** In px: the emblem's size, how far its center is from the end, and from the top (unset: [CENTER_Y] of the height). */
+    /**
+     * In px: the emblem's size, how far its center is from the end, and how far below the status bar
+     * (unset: [CENTER_Y] of the height under it).
+     */
     private var emblemSize = dp(SIZE)
     private var centerFromEnd = dp(CENTER_FROM_END)
     private var centerFromTop = -1f
@@ -157,8 +160,25 @@ class SkyEmblemView @JvmOverloads constructor(
             invalidate()
         }
 
-    private val centerX get() = width - centerFromEnd
-    private val centerY get() = if (centerFromTop >= 0f) centerFromTop else topInset + (height - topInset) * CENTER_Y
+    /** Whether the emblem stands upright in the middle of the width, and not turned at the end of a header. */
+    private var isCentered = false
+
+    /**
+     * Shows the emblem as a page's own mark: upright in the middle of the width, [size] across, its center
+     * [centerFromTop] below the status bar, with the sunset's wash spread [washSpread] times as far as in a
+     * header. All in px, but the spread.
+     */
+    fun showCentered(size: Float, centerFromTop: Float, washSpread: Float) {
+        isCentered = true
+        emblemSize = size
+        this.centerFromTop = centerFromTop
+        this.washSpread = washSpread
+        rebuild()
+        invalidate()
+    }
+
+    private val centerX get() = if (isCentered) width / 2f else width - centerFromEnd
+    private val centerY get() = topInset + if (centerFromTop >= 0f) centerFromTop else (height - topInset) * CENTER_Y
 
     private fun loadPetals(): List<Petal> {
         val namespace = "http://schemas.android.com/apk/res/android"
@@ -300,7 +320,8 @@ class SkyEmblemView @JvmOverloads constructor(
         }
 
         canvas.save()
-        canvas.rotate(TILT, centerX, centerY)
+        if (!isCentered)
+            canvas.rotate(TILT, centerX, centerY)
         canvas.translate(centerX - size / 2f, centerY - size / 2f)
         canvas.scale(scale, scale)
 
