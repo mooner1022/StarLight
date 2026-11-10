@@ -173,6 +173,23 @@ abstract class ConfigOption<VH: BaseViewHolder, T: Any> {
         return requestViewUpdate()
     }
 
+    @Volatile
+    private var iconOverride: IconInfo? = null
+
+    val displayIcon: IconInfo
+        get() = iconOverride ?: icon
+
+    /** Shows [icon] in place of the one this option was built with, and redraws its row if it is on screen. */
+    fun updateIcon(icon: IconInfo): Boolean {
+        iconOverride = icon
+        return requestViewUpdate()
+    }
+
+    fun resetIcon(): Boolean {
+        iconOverride = null
+        return requestViewUpdate()
+    }
+
     internal val bindings: MutableList<OptionBinding> = arrayListOf()
 
     internal var visibleRule: ValueRule? = null
