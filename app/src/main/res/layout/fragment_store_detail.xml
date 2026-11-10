@@ -32,6 +32,11 @@
                     android:layout_height="match_parent"/>
 
                 <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_store_banner_wash"/>
+
+                <View
                     android:id="@+id/haloOuter"
                     android:layout_width="150dp"
                     android:layout_height="150dp"
@@ -276,7 +281,7 @@
             android:contentDescription="@string/back"
             android:elevation="2dp"
             android:src="@drawable/ic_round_arrow_left_24"
-            app:tint="@color/store_star"/>
+            app:tint="@color/store_hero_title"/>
 
         <TextView
             android:id="@+id/topTitle"
@@ -300,6 +305,6 @@
             android:contentDescription="@string/plugin_store_info_source"
             android:elevation="2dp"
             android:src="@drawable/ic_round_launch_24"
-            app:tint="@color/store_star"/>
+            app:tint="@color/store_hero_title"/>
     </FrameLayout>
 </FrameLayout>

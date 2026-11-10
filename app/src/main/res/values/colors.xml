@@ -120,6 +120,12 @@
     <color name="store_gold_bright">#F4E1BC</color>
     <color name="store_star">#FFF7E8</color>
     <color name="store_on_gold">#3A2F1F</color>
+    <!-- The store's hero, featured cards and plugin banner: a sunset on a light panel by day, the night sky by night. -->
+    <color name="store_hero_surface">@color/cardview</color>
+    <color name="store_hero_title">@color/text</color>
+    <color name="store_hero_accent">@color/store_gold_deep</color>
+    <color name="store_hero_pill">#A6FFFFFF</color>
+    <color name="store_hero_pill_stroke">#4DAD977A</color>
     <color name="store_gold_soft">#F3EADC</color>
     <color name="store_restart_button">#1B191B</color>
     <color name="store_skeleton">#ECE7DF</color>

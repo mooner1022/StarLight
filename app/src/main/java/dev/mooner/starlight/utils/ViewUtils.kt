@@ -22,9 +22,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.core.widget.ImageViewCompat
 import androidx.core.widget.NestedScrollView
-import androidx.core.view.isVisible
 import dev.mooner.starlight.R
-import dev.mooner.starlight.databinding.ViewNightHeaderBinding
+import dev.mooner.starlight.databinding.ViewSkyHeaderBinding
 import coil.ImageLoader
 import coil.imageLoader
 import coil.load
@@ -46,18 +45,17 @@ fun NestedScrollView.bindFadeImage(imageView: ImageView) {
 }
 
 /**
- * Gives a page the header the main screen has in each theme: the sunset [art] in light mode and the night sky
- * ([nightHeader]) in dark mode. Whichever shows fades out as [scroll] moves the content over it.
+ * Gives a page the sky the main screen has behind its title: [header] fades out, and [alsoFading] with it, as
+ * [scroll] moves the content over it.
  */
-fun Context.bindPageHeader(scroll: NestedScrollView, art: ImageView, nightHeader: ViewNightHeaderBinding) {
-    val isNight = isNightMode()
-    art.isVisible = !isNight
-    nightHeader.root.isVisible = isNight
-    nightHeader.nightStars.brightness = 0.75f
+fun bindPageHeader(scroll: NestedScrollView, header: ViewSkyHeaderBinding, vararg alsoFading: View) {
+    header.nightStars?.brightness = 0.75f
 
-    val header: View = if (isNight) nightHeader.root else art
     scroll.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, _ ->
-        header.alpha = (1f - scrollY / 200f).coerceIn(0f, 1f)
+        val alpha = (1f - scrollY / 200f).coerceIn(0f, 1f)
+        header.root.alpha = alpha
+        for (view in alsoFading)
+            view.alpha = alpha
     })
 }
 

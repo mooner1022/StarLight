@@ -207,13 +207,19 @@ class StarFieldView @JvmOverloads constructor(
         canvas.drawCircle(headX, headY, dp(1.6f), paint)
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        time = 0f
-        shooting = null
-        // An occasional one: every few seconds it pulls the eye away from what the screen is for.
-        nextShootingAt = 6f + Random.nextFloat() * 6f
-        animator.start()
+    override fun onVisibilityAggregated(isVisible: Boolean) {
+        super.onVisibilityAggregated(isVisible)
+        // Still while nobody sees it: hidden by day, or under another screen.
+        if (!isVisible) {
+            animator.cancel()
+        } else if (!animator.isStarted) {
+            // The animator counts from zero again each time it starts, so what is timed against it starts over.
+            time = 0f
+            shooting = null
+            // An occasional one: every few seconds it pulls the eye away from what the screen is for.
+            nextShootingAt = 6f + Random.nextFloat() * 6f
+            animator.start()
+        }
     }
 
     override fun onDetachedFromWindow() {

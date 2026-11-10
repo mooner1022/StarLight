@@ -8,10 +8,10 @@
     android:background="@color/background"
     tools:context=".ui.settings.notifications.NotificationRulesActivity">
 
-    <!-- Dark mode: the main screen's night sky, behind the content, in place of the sunset art. -->
+    <!-- The main screen\'s sky, behind the content. -->
     <include
-        android:id="@+id/nightHeader"
-        layout="@layout/view_night_header"/>
+        android:id="@+id/skyHeader"
+        layout="@layout/view_sky_header"/>
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll"
@@ -87,18 +87,6 @@
         app:tint="#FFFFFF"
         app:srcCompat="@drawable/ic_round_save_white_24" />
 
-    <ImageView
-        android:id="@+id/imageViewLogo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scaleType="fitEnd"
-        android:layout_alignParentEnd="true"
-        android:foregroundGravity="right"
-        app:layout_collapseMode="parallax"
-        android:adjustViewBounds="true"
-        android:layout_gravity="end"
-        android:maxHeight="200dp"
-        app:srcCompat="@drawable/svg_top_title_sunset"/>
 
     <ImageButton
         android:id="@+id/leave"

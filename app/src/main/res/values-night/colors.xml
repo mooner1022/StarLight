@@ -93,6 +93,11 @@
     <color name="orange_box_white">#ffffff</color>
 
     <color name="store_gold_soft">#2A251E</color>
+    <color name="store_hero_surface">@color/store_night</color>
+    <color name="store_hero_title">@color/store_star</color>
+    <color name="store_hero_accent">@color/store_gold</color>
+    <color name="store_hero_pill">#1FFFF7E8</color>
+    <color name="store_hero_pill_stroke">#33DFC199</color>
     <color name="store_restart_button">#3A3226</color>
     <color name="store_skeleton">#252321</color>
     <color name="store_shimmer">#1AFFFFFF</color>

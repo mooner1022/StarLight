@@ -43,7 +43,7 @@ class ConfigActivity : AppCompatActivity() {
         binding = ActivityConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
         fitPage(binding.root)
-        bindPageHeader(binding.scroll, binding.imageViewLogo, binding.nightHeader)
+        bindPageHeader(binding.scroll, binding.skyHeader, binding.title, binding.subTitle)
 
         bindLogNotifier()
 
@@ -56,16 +56,6 @@ class ConfigActivity : AppCompatActivity() {
 
         binding.title.text = title
         binding.subTitle.text = subTitle
-        binding.scroll.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-            val alpha = if (scrollY in 0..200) {
-                1f - (scrollY / 200.0f)
-            } else {
-                0f
-            }
-            binding.imageViewLogo.alpha = alpha
-            binding.title.alpha = alpha
-            binding.subTitle.alpha = alpha
-        }
 
         binding.leave.setOnClickListener { finish() }
 

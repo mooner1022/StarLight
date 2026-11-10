@@ -148,7 +148,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         }
         fabProjectConfig.setOnClickListener { save() }
 
-        bindPageHeader(binding.scroll, binding.imageViewLogo, binding.nightHeader)
+        bindPageHeader(binding.scroll, binding.skyHeader)
 
         confirmLeavingUnsaved(binding.leave, hasChanges = { fabProjectConfig.isOrWillBeShown }, save = save)
 

@@ -8,10 +8,10 @@ android:layout_height="match_parent"
 android:background="@color/background"
 tools:context=".ui.config.ConfigActivity">
 
-<!-- Dark mode: the main screen's night sky, behind the content, in place of the sunset art. -->
+<!-- The main screen\'s sky, behind the content. -->
 <include
-    android:id="@+id/nightHeader"
-    layout="@layout/view_night_header"/>
+    android:id="@+id/skyHeader"
+    layout="@layout/view_sky_header"/>
 
 <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll"
@@ -75,18 +75,6 @@ tools:context=".ui.config.ConfigActivity">
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
 
-<ImageView
-        android:id="@+id/imageViewLogo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scaleType="fitEnd"
-        android:layout_alignParentEnd="true"
-        android:foregroundGravity="right"
-        app:layout_collapseMode="parallax"
-        android:adjustViewBounds="true"
-        android:layout_gravity="end"
-        android:maxHeight="200dp"
-        app:srcCompat="@drawable/svg_top_title_sunset"/>
 
 <ImageButton
         android:id="@+id/leave"

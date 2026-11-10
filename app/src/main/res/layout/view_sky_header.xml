@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sky behind a page's title. This is the day's, a sunset; the night's is in layout-night/. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sky"
+    android:layout_width="match_parent"
+    android:layout_height="230dp"
+    android:importantForAccessibility="noHideDescendants">
+
+    <dev.mooner.starlight.ui.common.SkyEmblemView
+        android:id="@+id/emblem"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+</FrameLayout>

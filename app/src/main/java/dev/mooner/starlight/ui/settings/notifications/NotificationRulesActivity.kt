@@ -56,7 +56,7 @@ class NotificationRulesActivity : AppCompatActivity() {
         binding = ActivityNotificationRulesBinding.inflate(layoutInflater)
         setContentView(binding.root)
         fitPage(binding.root)
-        bindPageHeader(binding.scroll, binding.imageViewLogo, binding.nightHeader)
+        bindPageHeader(binding.scroll, binding.skyHeader)
 
 
         val file = getStarLightDirectory().resolve(FILE_NAME)

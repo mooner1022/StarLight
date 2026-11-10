@@ -198,7 +198,6 @@ class StoreFeaturedAdapter(
         binding.mask.setOnMaskChangedListener { mask ->
             binding.text.translationX = mask.left
             binding.text.alpha = 1f - (mask.left / fadeDistance).coerceIn(0f, 1f)
-            binding.bigIcon.translationX = -(binding.root.width - mask.right) * 0.6f
         }
         return Holder(binding)
     }

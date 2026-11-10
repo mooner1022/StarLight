@@ -4,7 +4,6 @@ import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -27,6 +26,7 @@ import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.createFailurePeek
 import dev.mooner.starlight.utils.createSimplePeek
 import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.utils.isNightMode
 import dev.mooner.starlight.utils.restartApplication
 import kotlinx.coroutines.launch
 
@@ -43,13 +43,16 @@ class PluginStoreActivity : AppCompatActivity() {
         binding = ActivityPluginStoreBinding.inflate(layoutInflater)
         setContentView(binding.root)
         fitSystemBars(binding.root)
-        window.statusBarColor = getColor(R.color.store_night)
-        // Under the night header the store is an ordinary page, so the navigation bar takes the page's color
-        // instead of the default black. Below Android 8.1 its buttons are always white, so it stays as it is.
+        // The status bar continues the hero under it: a light panel by day, the night sky by night.
+        val isNight = isNightMode()
+        val systemBars = WindowCompat.getInsetsController(window, binding.root)
+        window.statusBarColor = getColor(R.color.store_hero_surface)
+        systemBars.isAppearanceLightStatusBars = !isNight
+        // Under the hero the store is an ordinary page, so the navigation bar takes the page's color instead
+        // of the default black. Below Android 8.1 its buttons are always white, so it stays as it is.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             window.navigationBarColor = getColor(R.color.background)
-            WindowCompat.getInsetsController(window, binding.root).isAppearanceLightNavigationBars =
-                (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) != Configuration.UI_MODE_NIGHT_YES
+            systemBars.isAppearanceLightNavigationBars = !isNight
         }
 
         if (savedInstanceState == null)
