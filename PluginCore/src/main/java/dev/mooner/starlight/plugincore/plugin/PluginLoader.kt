@@ -70,7 +70,8 @@ class PluginLoader {
                     val plugin = loadPlugin(context, file, info)
 
                     Session.pluginManager.addPlugin(plugin)
-                    plugin.getListeners().forEach(EventListener::onEnable)
+                    // setEnabled(true) would call onEnable on the plugin only; loading enables every listener.
+                    plugin.enableOnLoad()
                     InstalledPlugin(file, info, PluginState.Loaded(plugin))
                 } catch (e: Throwable) {
                     logger.error(e)

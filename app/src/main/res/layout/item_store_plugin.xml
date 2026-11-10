@@ -95,7 +95,7 @@
             android:ellipsize="end"
             android:fontFamily="@font/nanumsquare_neo_bold"
             android:maxLines="1"
-            android:textColor="@color/store_gold_deep"
+            android:textColor="@color/text_gold_deep"
             android:textSize="11sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/install"

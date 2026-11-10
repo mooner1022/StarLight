@@ -1,5 +1,6 @@
 package dev.mooner.starlight.agent.runtime
 
+import dev.mooner.starlight.agent.model.CallResults
 import dev.mooner.starlight.agent.model.ChatMessage
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.model.Role
@@ -9,18 +10,11 @@ internal object History {
 
     /**
      * The latest assistant turn and those of its tool calls that have no result yet, or null when the model is to go
-     * on. Notices are skipped: they are for the user, not part of the turns.
+     * on. Notices are skipped: they are for the user, not part of the turns. The calls [CallResults.current] finds, so
+     * that closing them and running them agree on which they are.
      */
-    fun openCalls(messages: List<ChatMessage>): Pair<ChatMessage, List<Part.ToolCall>>? {
-        val turns = messages.filter(::takesPart)
-        val index = turns.indexOfLast { it.role != Role.TOOL }
-        val turn = turns.getOrNull(index)?.takeIf { it.role == Role.ASSISTANT && it.toolCalls.isNotEmpty() } ?: return null
-        val answered = turns.drop(index + 1).flatMapTo(HashSet()) { message ->
-            message.parts.filterIsInstance<Part.ToolResult>().map { it.callId }
-        }
-        val open = turn.toolCalls.filter { it.id !in answered }
-        return if (open.isEmpty()) null else turn to open
-    }
+    fun openCalls(messages: List<ChatMessage>): Pair<ChatMessage, List<Part.ToolCall>>? =
+        CallResults.current(messages)?.let { it.turn to it.calls }
 
     /**
      * Adds [results] for calls of the turn [turnId] to the tool message that answers it, or appends one made by
@@ -35,17 +29,8 @@ internal object History {
         val turn = messages.indexOfFirst { it.id == turnId }
         if (turn < 0)
             return messages
-        var answer = -1
-        for (index in turn + 1 until messages.size) {
-            val message = messages[index]
-            if (!takesPart(message))
-                continue
-            if (message.role == Role.TOOL)
-                answer = index
-            break
-        }
-        if (answer < 0)
-            return messages + newMessage()
+        val answer = CallResults.answerOf(messages, turn)
+            ?: return messages + newMessage()
         return messages.toMutableList().also { it[answer] = it[answer].copy(parts = it[answer].parts + results) }
     }
 
@@ -63,7 +48,4 @@ internal object History {
         }
         return project
     }
-
-    private fun takesPart(message: ChatMessage): Boolean =
-        message.parts.any { it !is Part.Notice }
 }

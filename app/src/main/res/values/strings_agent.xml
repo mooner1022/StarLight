@@ -199,7 +199,9 @@
     <string name="agent_tool_list_apis">Checked script APIs</string>
     <string name="agent_tool_project_logs">Read project logs</string>
     <string name="agent_tool_app_logs">Read app logs</string>
-    <string name="agent_tool_read_docs">Read the docs</string>
+    <string name="agent_tool_describe_api">Read a script API</string>
+    <string name="agent_tool_describe_event">Read an event</string>
+    <string name="agent_tool_read_guide">Read a guide</string>
     <string name="agent_tool_write_file">Wrote a file</string>
     <string name="agent_tool_edit_file">Edited a file</string>
     <string name="agent_tool_rename_file">Renamed a file</string>
@@ -320,4 +322,18 @@
     <string name="agent_save">Save</string>
     <string name="agent_auto_titles">Name conversations</string>
     <string name="agent_auto_titles_desc">After the first answer, one short request asks the model for a name. Off, the first line of your message stays.</string>
+
+    <!-- The docs viewer in developer mode. -->
+    <string name="agent_docs_title">StarLight AI docs</string>
+    <string name="agent_docs_subtitle">As the agent reads them with its docs tools</string>
+    <string name="agent_docs_guides">Guides</string>
+    <string name="agent_docs_apis">APIs</string>
+    <string name="agent_docs_events">Events</string>
+    <string name="agent_docs_types">Types</string>
+    <string name="agent_docs_category_count">%1$s %2$d</string>
+    <string name="agent_docs_empty">No documents here.</string>
+    <string name="agent_docs_failed">Couldn\'t load the docs: %1$s</string>
+    <string name="agent_docs_no_docs">No docs</string>
+    <string name="agent_docs_copy">Copy</string>
+    <string name="agent_docs_source_plugin">%1$s (%2$s)</string>
 </resources>

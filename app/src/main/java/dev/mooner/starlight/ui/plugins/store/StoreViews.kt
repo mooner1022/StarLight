@@ -77,7 +77,7 @@ class StarFieldView @JvmOverloads constructor(
 
     private var time = 0f
     private var shooting: ShootingStar? = null
-    private var nextShootingAt = 2.5f
+    private var nextShootingAt = 6f
 
     var parallax: Float = 0f
         set(value) {
@@ -91,7 +91,8 @@ class StarFieldView @JvmOverloads constructor(
             invalidate()
         }
 
-    var density: Float = 0.5f
+    /** How full the sky is. Kept low: a full one behind text reads as noise, the more so with several on a screen. */
+    var density: Float = 0.2f
         set(value) {
             if (field == value)
                 return
@@ -182,7 +183,7 @@ class StarFieldView @JvmOverloads constructor(
         val t = (time - star.startedAt) / life
         if (t !in 0f..<1f) {
             shooting = null
-            nextShootingAt = time + 4f + Random.nextFloat() * 5f
+            nextShootingAt = time + 12f + Random.nextFloat() * 12f
             return
         }
         val distance = dp(160f) * t
@@ -206,12 +207,19 @@ class StarFieldView @JvmOverloads constructor(
         canvas.drawCircle(headX, headY, dp(1.6f), paint)
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        time = 0f
-        shooting = null
-        nextShootingAt = 2f + Random.nextFloat() * 3f
-        animator.start()
+    override fun onVisibilityAggregated(isVisible: Boolean) {
+        super.onVisibilityAggregated(isVisible)
+        // Still while nobody sees it: hidden by day, or under another screen.
+        if (!isVisible) {
+            animator.cancel()
+        } else if (!animator.isStarted) {
+            // The animator counts from zero again each time it starts, so what is timed against it starts over.
+            time = 0f
+            shooting = null
+            // An occasional one: every few seconds it pulls the eye away from what the screen is for.
+            nextShootingAt = 6f + Random.nextFloat() * 6f
+            animator.start()
+        }
     }
 
     override fun onDetachedFromWindow() {

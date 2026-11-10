@@ -7,6 +7,7 @@
 package dev.mooner.starlight.ui.settings.dev
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.res.Configuration
 import androidx.core.content.edit
@@ -27,6 +28,7 @@ import dev.mooner.starlight.plugincore.Session.pluginManager
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.onSaveConfigAdapter
+import dev.mooner.starlight.ui.agent.docs.AgentDocsActivity
 import dev.mooner.starlight.utils.*
 import java.util.*
 
@@ -41,7 +43,7 @@ fun Context.startDevModeActivity() {
             category {
                 id = "dev_mode_config"
                 title = "개발자 모드"
-                textColor = getColor(R.color.main_bright)
+                textColor = getColor(R.color.text_gold)
                 items {
                     button {
                         id = "configdsl_preview"
@@ -51,6 +53,16 @@ fun Context.startDevModeActivity() {
                         iconTintColor = color { "#87AAAA" }
                         setOnClickListener { view ->
                             view.context.startConfigDslPreview()
+                        }
+                    }
+                    button {
+                        id = "agent_docs"
+                        title = "StarLight AI 문서"
+                        description = "에이전트가 읽는 문서를 분류별로 확인해요"
+                        icon = Icon.FILE
+                        iconTintColor = color { "#87AAAA" }
+                        setOnClickListener { view ->
+                            view.context.startActivity(Intent(view.context, AgentDocsActivity::class.java))
                         }
                     }
                     toggle {
@@ -108,7 +120,7 @@ fun Context.startDevModeActivity() {
             category {
                 id = "beta_features"
                 title = "실험적 기능"
-                textColor = getColor(R.color.main_bright)
+                textColor = getColor(R.color.text_gold)
                 items {
                     info {
                         id = "caution"
@@ -140,7 +152,7 @@ fun Context.startDevModeActivity() {
             category {
                 id = "debug_info"
                 title = "debug info"
-                textColor = getColor(R.color.main_bright)
+                textColor = getColor(R.color.text_gold)
                 items {
                     fun debugInfo(title: String, value: String) = info {
                         id = title

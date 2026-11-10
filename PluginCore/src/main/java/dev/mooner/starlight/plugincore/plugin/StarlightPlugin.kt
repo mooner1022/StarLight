@@ -29,12 +29,22 @@ import dev.mooner.starlight.plugincore.utils.infoTranslated
 import dev.mooner.starlight.plugincore.widget.Widget
 import dev.mooner.starlight.plugincore.widget.WidgetDefinition
 import java.io.File
+import java.util.Collections
+import java.util.IdentityHashMap
 
 private val logger = LoggerFactory.logger {  }
 
+/**
+ * A loaded plugin, as `Plugins.ofId(id)`, `Plugins.ofName(name)` and `Plugins.getAll()` return it.
+ *
+ * Scripts mostly check that one is loaded and read its `info`. The APIs it adds are globals of their own, not members
+ * of this. Its other public members are StarLight's own, and aren't listed here.
+ */
 @Suppress("unused")
 abstract class StarlightPlugin: Plugin, EventListener {
 
+    // A public field to Java, as a lateinit's is: hidden from scripts, which would otherwise see and set it.
+    @field:JvmSynthetic
     internal lateinit var originalFile: File
     private lateinit var internalDir: File
 
@@ -43,17 +53,23 @@ abstract class StarlightPlugin: Plugin, EventListener {
 
     private lateinit var classLoader: ClassLoader
     private lateinit var mInfo: PluginInfo
+    /**
+     * The plugin's ID, name, version and authors, from its package.
+     */
     override val info: PluginInfo
         get() = mInfo
 
     private var configCache: MutableConfig? = null
 
+    /** @suppress */
     val context: PluginContext by lazy {
         PluginContextImpl(info.id, info.name, getInternalDataDirectory().path)
     }
 
+    /** @suppress */
     val fileSize: Float
         get() = originalFile.getFileSize()
+    /** @suppress */
     val fileName: String
         get() = originalFile.name
 
@@ -77,12 +93,15 @@ abstract class StarlightPlugin: Plugin, EventListener {
         init(config, file, internalDir, classLoader!!)
     }
 
+    /** @suppress */
     override fun getConfigStructure(): ConfigStructure { return emptyList() }
 
+    /** @suppress */
     @CallSuper
     override fun onConfigUpdated(config: ConfigData, updated: Map<String, Set<String>>) =
         invalidateConfigCache()
 
+    /** @suppress */
     override fun onConfigValueUpdated(id: String, data: Any) {}
 
     /**
@@ -92,12 +111,14 @@ abstract class StarlightPlugin: Plugin, EventListener {
      * plugin list is drawn, so it must be cheap: read a field, don't do I/O. Return `true` only when
      * [getSetupStructure] has something to show. When this turns `true` while the plugin runs, such as
      * when a saved token is rejected, call [requestSetup] so the app notices without waiting for a redraw.
+     * @suppress
      */
     override fun isSetupRequired(): Boolean = false
 
     /**
      * Why the setup is needed, shown at the top of the setup dialog in place of the generic message,
      * e.g. that the saved token was rejected. `null` for the first setup. Same rules as [isSetupRequired].
+     * @suppress
      */
     override fun getSetupReason(): String? = null
 
@@ -118,6 +139,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
      *
      * This is separate from [getConfigStructure], and the app doesn't save what is entered here:
      * the values only reach [onSetup].
+     * @suppress
      */
     override fun getSetupStructure(): ConfigStructure = emptyList()
 
@@ -129,10 +151,45 @@ abstract class StarlightPlugin: Plugin, EventListener {
      * The app doesn't save [values]: keep what you need yourself, or call [saveToConfig].
      *
      * @return `null` when setup is done, or a message to show while the dialog stays open.
+     * @suppress
      */
     override suspend fun onSetup(values: ConfigData): String? = null
 
+    /**
+     * Whether the plugin is enabled, as every plugin is once it has loaded; scripts read it as `enabled`.
+     */
     override fun isEnabled(): Boolean = isEnabled
+
+    /**
+     * Calls `onEnable` on the plugin's listeners, itself included, and then marks it enabled.
+     *
+     * The flag is set last, so a plugin whose `onEnable` throws doesn't report itself enabled. A listener added during
+     * an `onEnable`, which [addListener] leaves alone until then, is enabled here once, after the ones before it.
+     */
+    internal fun enableOnLoad() {
+        val enabled: MutableSet<EventListener> = Collections.newSetFromMap(IdentityHashMap())
+        while (true) {
+            val next = getListeners().firstOrNull { it !in enabled } ?: break
+            enabled += next
+            next.onEnable()
+        }
+        isEnabled = true
+    }
+
+    /**
+     * Marks the plugin disabled as StarLight unloads it, and calls `onDisable` on every listener, as loading calls
+     * `onEnable` on them. A listener that throws is logged, and the rest are still disabled.
+     */
+    internal fun disableOnUnload() {
+        isEnabled = false
+        for (listener in getListeners()) {
+            try {
+                listener.onDisable()
+            } catch (e: Throwable) {
+                logger.error(e) { "Failed to disable a listener of plugin ${info.id}" }
+            }
+        }
+    }
 
     protected fun addListener(listener: EventListener) {
         listeners += listener
@@ -144,12 +201,14 @@ abstract class StarlightPlugin: Plugin, EventListener {
      * Returns all event listeners associated with this plugin, including the plugin itself.
      *
      * @return Set of event listeners
+     * @suppress
      */
     fun getListeners(): Set<EventListener> =
         listeners + this
 
     /**
      * Invalidate cached config data inside plugin instance
+     * @suppress
      */
     fun invalidateConfigCache() {
         configCache = null
@@ -190,20 +249,24 @@ abstract class StarlightPlugin: Plugin, EventListener {
         }
     }
 
+    /** @suppress */
     override fun getInternalDataDirectory(): File =
         internalDir
             .resolve("plugin_data")
             .resolve(info.id)
 
+    /** @suppress */
     override fun getExternalDataDirectory(): File =
         getStarLightDirectory()
             .resolve("plugins")
             .resolve("${info.name}(${info.id})")
 
+    /** @suppress */
     @Deprecated("Deprecated, use getExternalDataDirectory().", ReplaceWith("getExternalDataDirectory()"))
     override fun getDataFolder(): File =
         getExternalDataDirectory()
 
+    /** @suppress */
     override fun getAsset(path: String): File =
         context.getAsset(path)
 
@@ -220,6 +283,7 @@ abstract class StarlightPlugin: Plugin, EventListener {
     override fun hashCode(): Int =
         info.id.hashCode()
 
+    /** @suppress */
     final override fun init(
         info        : PluginInfo,
         internalDir : File,

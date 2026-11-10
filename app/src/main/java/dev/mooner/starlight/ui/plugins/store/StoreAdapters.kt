@@ -198,7 +198,6 @@ class StoreFeaturedAdapter(
         binding.mask.setOnMaskChangedListener { mask ->
             binding.text.translationX = mask.left
             binding.text.alpha = 1f - (mask.left / fadeDistance).coerceIn(0f, 1f)
-            binding.bigIcon.translationX = -(binding.root.width - mask.right) * 0.6f
         }
         return Holder(binding)
     }
@@ -207,7 +206,6 @@ class StoreFeaturedAdapter(
         val (feature, plugin) = items[position]
         with(holder.binding) {
             mask.transitionName = "store_featured_${plugin.id}"
-            stars.seed = position * 31 + 5
             icon.loadStoreImage(plugin.icon)
             category.text = index?.categoryName(plugin.category)
             headline.text = feature.headline.get()

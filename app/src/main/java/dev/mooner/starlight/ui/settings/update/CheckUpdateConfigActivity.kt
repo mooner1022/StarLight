@@ -16,6 +16,7 @@ import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
+import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
@@ -29,9 +30,11 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
 
     private var updater: AppUpdater? = null
 
-    override val title: String = "설정"
+    override val title: String
+        get() = GlobalApplication.requireContext().getString(R.string.title_settings)
 
-    override val subTitle: String = "업데이트 확인"
+    override val subTitle: String
+        get() = GlobalApplication.requireContext().getString(R.string.update_check_title)
 
     override fun onCreated(activity: ConfigActivity) {
         updater = AppUpdater(activity)
@@ -57,7 +60,7 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
                 items {
                     button {
                         id = "check_update"
-                        title = "업데이트 확인"
+                        title = activity.getString(R.string.update_check_title)
                         description = activity.lastUpdateCheckDescription()
                         icon = Icon.CLOUD_DOWNLOAD
                         iconTintColor = color("#748DA6")
@@ -73,21 +76,16 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
                 items {
                     toggle {
                         id = "auto_check"
-                        title = "업데이트 자동 확인"
-                        description = "앱을 시작할 때 새 버전이 있는지 확인하고, 있으면 알려줍니다."
+                        title = activity.getString(R.string.update_auto_title)
+                        description = activity.getString(R.string.update_auto_desc)
                         icon = Icon.REFRESH
                         iconTintColor = color("#9CB4CC")
                         defaultValue = true
                     }
                     spinner {
                         id = "channel"
-                        title = "업데이트 확인 채널"
-                        description = """
-                            최신 버전을 확인할 채널을 설정합니다.
-                            STABLE - 안정 채널
-                            BETA - 베타 채널
-                            SNAPSHOT - 개발 채널 (불안정)
-                        """.trimIndent()
+                        title = activity.getString(R.string.update_channel_title)
+                        description = activity.getString(R.string.update_channel_desc)
                         icon = Icon.BRANCH
                         iconTintColor = color("#F2D7D9")
                         items = VersionChecker.Channel.entries.map(VersionChecker.Channel::name)
@@ -96,12 +94,12 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
                     button {
                         val versionName = activity.getPackageInfo().versionName
                         id = "show_changelog"
-                        title = "현재 버전 변경 사항"
-                        description = "$versionName 변경 사항"
+                        title = activity.getString(R.string.update_changes_title)
+                        description = activity.getString(R.string.update_changes_desc, versionName)
                         icon = Icon.LIST_BULLETED
                         iconTintColor = color("#C1AEFC")
                         setOnClickListener { _ ->
-                            activity.showChangelogDialog("✦ $versionName 변경 사항")
+                            activity.showChangelogDialog(activity.getString(R.string.update_changes_dialog_title, versionName))
                         }
                     }
                 }
@@ -115,10 +113,10 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
     private fun Context.lastUpdateCheckDescription(): String {
         val lastCheck = lastUpdateCheckMillis()
         val formatted = if (lastCheck == 0L)
-            "없음"
+            getString(R.string.update_last_check_never)
         else
-            TimeUtils.formatMillis(lastCheck, "yyyy년 MM월 dd일 HH:mm")
-        return "마지막 확인: $formatted"
+            TimeUtils.formatMillis(lastCheck, getString(R.string.update_last_check_pattern))
+        return getString(R.string.update_last_check, formatted)
     }
 
     private suspend fun ConfigActivity.checkUpdate(): Boolean {

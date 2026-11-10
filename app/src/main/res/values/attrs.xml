@@ -8,5 +8,13 @@
         <attr name="showSwitch" format="boolean"/>
     </declare-styleable>
 
+    <declare-styleable name="SkyEmblemView">
+        <attr name="emblemSize" format="dimension"/>
+        <attr name="emblemCenterFromEnd" format="dimension"/>
+        <attr name="emblemCenterFromTop" format="dimension"/>
+        <attr name="emblemBackdrop" format="boolean"/>
+        <attr name="emblemWashSpread" format="float"/>
+    </declare-styleable>
+
     <integer name="layoutMode">0</integer>
 </resources>

@@ -2,6 +2,7 @@ package dev.mooner.starlight.agent
 
 import android.annotation.SuppressLint
 import android.content.Context
+import dev.mooner.starlight.agent.docs.AgentDocs
 import dev.mooner.starlight.agent.auth.ChatGptAuth
 import dev.mooner.starlight.agent.auth.SignInRequiredException
 import dev.mooner.starlight.agent.provider.AnthropicClient
@@ -14,7 +15,6 @@ import dev.mooner.starlight.agent.store.AgentStorage
 import dev.mooner.starlight.agent.store.AttachmentStore
 import dev.mooner.starlight.agent.store.CheckpointStore
 import dev.mooner.starlight.agent.store.ConversationStore
-import dev.mooner.starlight.agent.tools.DocsLibrary
 import dev.mooner.starlight.agent.tools.StarLightTools
 import java.io.File
 
@@ -29,7 +29,7 @@ class AgentHub private constructor(val context: Context) {
     val attachments = AttachmentStore(File(dataDir, AgentStorage.ATTACHMENTS))
     /** What the agent's tools changed in each turn, kept beside the attachments, for rewinding. */
     val checkpoints = CheckpointStore(File(dataDir, AgentStorage.ATTACHMENTS))
-    val docs = DocsLibrary(context.assets)
+    val docs = AgentDocs(context)
     val tools = StarLightTools(docs)
     val runtime = AgentRuntime(this)
 

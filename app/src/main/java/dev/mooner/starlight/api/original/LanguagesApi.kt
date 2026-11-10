@@ -16,12 +16,27 @@ import dev.mooner.starlight.plugincore.project.Project
 @Suppress("unused")
 class LanguagesApi: Api<LanguagesApi.Languages>() {
 
+    /**
+     * The script languages StarLight runs: this project's own, or any installed one by its ID.
+     *
+     * A language is a `Language` (`describe_api Language`); scripts usually read its `id` and `name`.
+     */
     class Languages(
         private val project: Project
     ) {
+        /**
+         * The language this project is written in.
+         *
+         * Its `id` is `js_neon` for NeonJS, `JS_RHINO` for Rhino, or the ID of a plugin's language.
+         */
         fun getSelf(): Language =
             project.getLanguage()
 
+        /**
+         * The installed language with the ID [id], or `null` if there is none.
+         *
+         * @param id The language's ID, compared exactly: `js_neon`, `JS_RHINO`, or the ID of a plugin's language.
+         */
         fun ofId(id: String): Language? =
             Session.languageManager.getLanguage(id)
     }

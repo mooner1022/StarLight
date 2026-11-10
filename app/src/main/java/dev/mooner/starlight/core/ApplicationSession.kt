@@ -15,21 +15,13 @@ import dev.mooner.starlight.CA_PLUGIN
 import dev.mooner.starlight.CF_SAFE_MODE
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.ApiLevels
-import dev.mooner.starlight.api.api2.AppApi
-import dev.mooner.starlight.api.api2.BotManagerApi
-import dev.mooner.starlight.api.api2.BroadcastApi
-import dev.mooner.starlight.api.api2.EventApi
-import dev.mooner.starlight.api.api2.HomeWidgetApi
-import dev.mooner.starlight.api.legacy.*
-import dev.mooner.starlight.api.node.EventEmitterApi
-import dev.mooner.starlight.api.original.*
+import dev.mooner.starlight.api.CoreApis
 import dev.mooner.starlight.languages.neonjs.JSNeon
 import dev.mooner.starlight.languages.rhino.JSRhino
-import dev.mooner.starlight.listener.event.*
 import dev.mooner.starlight.listener.specs.AndroidRParserSpec
+import dev.mooner.starlight.listener.specs.ConversationShortcutParserSpec
 import dev.mooner.starlight.listener.specs.DefaultParserSpec
 import dev.mooner.starlight.media.MediaSharing
-import dev.mooner.starlight.media.api.MediaSharerApi
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ParserSpecManager
@@ -115,7 +107,7 @@ object ApplicationSession {
         // Before plugins load: the built-in MediaSharer takes the name, and an installed Media Sharer plugin's Api is
         // then skipped as a duplicate.
         MediaSharing.init(context)
-        Session.apiManager.addApi(MediaSharerApi())
+        CoreApis.earlyApis().forEach { Session.apiManager.addApi(it) }
 
         if (!BuildConfig.DYNAMIC_PLUGINS) {
             logger.info { "Plugins aren't available in this build" }
@@ -138,38 +130,10 @@ object ApplicationSession {
         ParserSpecManager.apply {
             registerSpec(DefaultParserSpec())
             registerSpec(AndroidRParserSpec())
+            registerSpec(ConversationShortcutParserSpec())
         }
 
-        Session.apiManager.apply {
-            // Original Apis
-            addApi(LanguagesApi())
-            addApi(ProjectLoggerApi())
-            addApi(ProjectsApi())
-            addApi(PluginsApi())
-            //addApi(TimerApi())
-            addApi(NotificationApi())
-            addApi(EnvironmentApi())
-            addApi(PlatformApi())
-            addApi(JavaClassApi())
-
-            //Experimental Node.js Api implementation
-            addApi(EventEmitterApi())
-
-            // Legacy Apis
-            addApi(UtilsApi())
-            addApi(LegacyApi())
-            addApi(BridgeApi())
-            addApi(FileStreamApi())
-            addApi(DataBaseApi())
-            addApi(DeviceApi())
-
-            // Api2 Apis
-            addApi(AppApi())
-            addApi(BroadcastApi())
-            addApi(BotManagerApi())
-            addApi(EventApi())
-            addApi(HomeWidgetApi())
-        }
+        CoreApis.apis().forEach { Session.apiManager.addApi(it) }
 
         Session.widgetManager.apply {
             //val name = "기본 위젯"
@@ -189,24 +153,8 @@ object ApplicationSession {
         }
 
         registerProjectEvents(pContext) {
-            category("message") {
-                add<ProjectOnMessageEvent>()
-                add<ProjectOnMessageDeleteEvent>()
-                add<LegacyEvent>()
-            }
-            category("notification") {
-                add<OnNotificationPostedEvent>()
-            }
-            category("project") {
-                add<ProjectOnStartCompileEvent>()
-            }
-            category("api2") {
-                add<Api2MessageEvent>()
-                add<Api2CommandEvent>()
-                add<Api2NotificationPostedEvent>()
-                add<Api2NotificationRemovedEvent>()
-                add<Api2StartCompileEvent>()
-            }
+            for ((category, events) in CoreApis.events)
+                category(category) { events.forEach { plus(it) } }
         }
 
         // After the APIs and events, whose names the levels list; before the projects, whose events the levels gate.

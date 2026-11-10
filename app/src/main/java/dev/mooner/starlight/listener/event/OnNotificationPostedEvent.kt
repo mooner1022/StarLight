@@ -12,6 +12,18 @@ import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 
+/**
+ * An app posted a notification; calls the script's `onNotificationPosted(sbn)` while the app setting
+ * **onNotificationPosted 이벤트 사용** (use the onNotificationPosted event) is on.
+ *
+ * Every app's notifications count, except StarLight's own, chat messages included; an update to a notification counts
+ * as a new one. The setting is off by default. Called on the project's workers, in projects that are compiled and on.
+ * Unlike MessengerBot, StarLight passes no session manager as a second argument.
+ *
+ * @param sbn The notification, as Android's `StatusBarNotification`.
+ * @see guide:events#notification-events
+ * @see guide:app#settings
+ */
 class OnNotificationPostedEvent: ProjectEvent() {
 
     override val id: String = "post"

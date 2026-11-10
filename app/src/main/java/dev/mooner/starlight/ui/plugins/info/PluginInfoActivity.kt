@@ -44,7 +44,7 @@ fun Context.startPluginInfoActivity(
         ?.takeIf { pluginManager.changes[entry.key] == null && it.hasSetup() }
 
     val items = config {
-        val defaultColor = getColor(R.color.main_bright)
+        val defaultColor = getColor(R.color.text_gold)
         category {
             id = "general"
             title = translate {

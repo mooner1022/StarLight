@@ -24,6 +24,7 @@ import dev.mooner.starlight.plugincore.pipeline.SimplePipeline
 import dev.mooner.starlight.plugincore.pipeline.stage.PipelineStage
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
+import dev.mooner.starlight.plugincore.project.event.getInstance
 import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycle
 import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycleRegistry
 import dev.mooner.starlight.plugincore.translation.Locale
@@ -38,6 +39,8 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.concurrent.Semaphore
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
@@ -166,6 +169,26 @@ class ProjectImpl private constructor(
                     trySend(stage to percentage)
                 }
             }
+            // One compile of the project at a time, whoever started it (the app, a script, StarLight AI): two at once
+            // would each release and swap the scope the other is building. One stuck past the wait fails this one.
+            // Noted inside the block: cancelled just as the permit is taken, runInterruptible throws instead of returning
+            // it, and it is given back here.
+            var acquired = false
+            try {
+                runInterruptible { acquired = compilePermit.tryAcquire(COMPILE_WAIT_SECONDS, TimeUnit.SECONDS) }
+            } catch (e: Throwable) {
+                if (acquired)
+                    compilePermit.release()
+                throw e
+            }
+            if (!acquired) {
+                logger.e(tag, translate {
+                    Locale.ENGLISH { "A compile of ${info.name} that started earlier is still running" }
+                    Locale.KOREAN  { "먼저 시작된 ${info.name} 컴파일이 아직 진행 중이에요" }
+                })
+                throw IllegalStateException("A compile of ${info.name} that started earlier is still running " +
+                    "after $COMPILE_WAIT_SECONDS seconds")
+            }
             val orgLifecycleState = lifecycle.state
             try {
                 lifecycleRegistry.setCurrentState(ProjectLifecycle.State.COMPILING)
@@ -212,11 +235,15 @@ class ProjectImpl private constructor(
                 lifecycleRegistry.setCurrentState(orgLifecycleState)
                 throw e
             } finally {
+                compilePermit.release()
                 requestUpdate()
                 close()
             }
             awaitClose()
         }.flowOn(Dispatchers.IO)
+
+    /** Held while the project compiles; a semaphore, as the compile may go on on another thread than it started. */
+    private val compilePermit = Semaphore(1)
 
     override fun setEnabled(enabled: Boolean): Boolean {
         if (!isCompiled)
@@ -378,10 +405,7 @@ class ProjectImpl private constructor(
     private fun reloadAllowedEventIDs() {
         if (_allowedEventIDs.isNotEmpty())
             _allowedEventIDs.clear()
-        ProjectEventManager
-            .filterAllowedEvents(info.allowedEventIds)
-            .filter { Session.apiLevelManager.hasEvent(info.apiLevels, it) }
-            .forEach(_allowedEventIDs::add)
+        receivedEventIds(info).forEach(_allowedEventIDs::add)
     }
 
     companion object {
@@ -390,6 +414,9 @@ class ProjectImpl private constructor(
         private const val LOGS_FILE_NAME    = "logs.json"
 
         private const val DROP_WARNING_INTERVAL_MILLIS = 5_000L
+
+        /** How long a compile waits for one of the same project that is already running. */
+        private const val COMPILE_WAIT_SECONDS = 60L
 
         private val infoJson = Json {
             encodeDefaults = true
@@ -406,11 +433,21 @@ class ProjectImpl private constructor(
             File(folder.path, INFO_FILE_NAME)
                 .writeText(json.encodeToString(info), Charsets.UTF_8)
 
+            // Every event it receives, not only those with starting code: a wildcard such as starlight.* lets in events
+            // that call functions by name, which a listener's function mustn't take.
+            val received = receivedEventIds(info)
+                .mapNotNull { id -> ProjectEventManager.findFirst(id)?.let { runCatching { it.getInstance() }.getOrNull() } }
             File(folder.path, info.mainScript)
-                .writeText(getLanguage(info).formatDefaultCode(info.mainScript, events.values.toList()), Charsets.UTF_8)
+                .writeText(getLanguage(info).newProjectCode(info.mainScript, events.values.toList(), received), Charsets.UTF_8)
 
             return loadFrom(folder, info)
         }
+
+        /** The IDs of the registered events that [info]'s allowed-event entries let in and its API levels have. */
+        private fun receivedEventIds(info: ProjectInfo): List<String> =
+            ProjectEventManager
+                .filterAllowedEvents(info.allowedEventIds)
+                .filter { Session.apiLevelManager.hasEvent(info.apiLevels, it) }
 
         fun loadFrom(directory: File, info: ProjectInfo): Project {
             return ProjectImpl(directory, info)

@@ -114,7 +114,10 @@ class ProviderRequestTest {
                 put("input", buildJsonObject {})
             })
         }
-        val assistant = toolTurn.copy(raw = RawTurn(Protocol.ANTHROPIC.id, raw))
+        val assistant = toolTurn.copy(
+            parts = listOf(Part.Text("Looking"), Part.ToolCall("toolu_1", "list_projects", "{}")),
+            raw = RawTurn(Protocol.ANTHROPIC.id, raw),
+        )
         val results = ChatMessage("t1", Role.TOOL, listOf(Part.ToolResult("toolu_1", "list_projects", "[]")), 0)
         val messages = AnthropicClient("key").buildBody(request(listOf(user(Part.Text("hi")), assistant, results, user(Part.Text("next")))))["messages"]!!.jsonArray
         assertEquals(listOf("user", "assistant", "user"), messages.map { it.jsonObject["role"]!!.jsonPrimitive.content })
@@ -122,6 +125,23 @@ class ProviderRequestTest {
         assertEquals("sig", replayed[0].jsonObject["signature"]!!.jsonPrimitive.content)
         val last = messages[2].jsonObject["content"]!!.jsonArray
         assertEquals(listOf("tool_result", "text"), last.map { it.jsonObject["type"]!!.jsonPrimitive.content })
+    }
+
+    @Test
+    fun anthropicGetsEveryCallAnsweredEvenFromABrokenHistory() {
+        // As the ANR left it: two calls, one result saved, then the user's message.
+        val turn = ChatMessage("a1", Role.ASSISTANT, listOf(
+            Part.Text("Writing and compiling"),
+            Part.ToolCall("toolu_w", "write_file", "{}"),
+            Part.ToolCall("toolu_c", "compile_project", "{}"),
+        ), 0)
+        val saved = ChatMessage("t1", Role.TOOL, listOf(Part.ToolResult("toolu_w", "write_file", "ok")), 0)
+        val messages = AnthropicClient("key").buildBody(request(listOf(user(Part.Text("hi")), turn, saved, user(Part.Text("why did it stop?")))))["messages"]!!.jsonArray
+        assertEquals(listOf("user", "assistant", "user"), messages.map { it.jsonObject["role"]!!.jsonPrimitive.content })
+        val next = messages[2].jsonObject["content"]!!.jsonArray.map { it.jsonObject }
+        // every tool_use answered, the results first, then the user's text
+        assertEquals(listOf("tool_result", "tool_result", "text"), next.map { it["type"]!!.jsonPrimitive.content })
+        assertEquals(listOf("toolu_w", "toolu_c"), next.take(2).map { it["tool_use_id"]!!.jsonPrimitive.content })
     }
 
     @Test

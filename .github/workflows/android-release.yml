@@ -67,6 +67,22 @@ jobs:
           echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> $GITHUB_ENV
         fi
 
+    # PluginCore's API as this release ships it, kept in api/releases: slplugin learns from it which version added each
+    # member (docs/plugincore-compatibility.md). Forgetting it once would date everything added since to a later version.
+    - name: Check PluginCore's release API dump
+      run: |
+        version="$(sed -nE 's/^versionName = "([^"]+)"$/\1/p' gradle/libs.versions.toml)"
+        dump="PluginCore/api/releases/$version.api"
+        if [ ! -f "$dump" ]; then
+          echo "::error::$dump is missing. Copy PluginCore/api/PluginCore.api to it when releasing $version."
+          exit 1
+        fi
+        if ! cmp -s "$dump" PluginCore/api/PluginCore.api; then
+          echo "::error::$dump differs from PluginCore/api/PluginCore.api. Copy the current dump over it before releasing."
+          exit 1
+        fi
+        ./gradlew :PluginCore:checkKotlinAbi
+
     - name: Build release
       run: ./gradlew assembleFullRelease bundlePlayRelease
       env:

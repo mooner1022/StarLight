@@ -71,12 +71,12 @@ class PageConfigOption(
 
         require(title.isNotBlank()) { "Title is required for page option." }
         holder.description.text = getDesc()
-        icon.loadTo(holder.icon)
+        displayIcon.loadTo(holder.icon)
         holder.layout.setOnClickListener {
             if (sharedData != null) {
                 holder.itemView.context.startConfigActivity(
                     title = title,
-                    subTitle = description ?: "설정",
+                    subTitle = description ?: holder.itemView.context.getString(dev.mooner.starlight.R.string.title_settings),
                     struct = childOptions,
                     saved = sharedData.saved(),
                     onValueUpdated = sharedData.onValueUpdated,
@@ -85,7 +85,7 @@ class PageConfigOption(
             }
             holder.itemView.context.startConfigActivity(
                 title = title,
-                subTitle = description ?: "설정",
+                subTitle = description ?: holder.itemView.context.getString(dev.mooner.starlight.R.string.title_settings),
                 struct = childOptions,
                 saved = preprocessed,
                 onValueUpdated = { parentId, id, value, jsonValue ->

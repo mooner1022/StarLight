@@ -32,7 +32,7 @@
             android:ellipsize="end"
             android:fontFamily="@font/nanumsquare_round_bold"
             android:maxLines="1"
-            android:textColor="@color/main_dark"
+            android:textColor="@color/text_gold_deep"
             android:textSize="16sp"/>
 
         <TextView

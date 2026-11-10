@@ -38,14 +38,48 @@ class EventEmitterApi: Api<EventEmitterApi.EventEmitter>() {
     override fun getInstance(project: Project): Any =
         EventEmitter::class.java
 
+    /**
+     * An event emitter in the style of Node.js's `EventEmitter`: create one with `new EventEmitter()`, add listeners
+     * with `on`, and call them with `emit`.
+     *
+     * Unlike in Node.js, a listener receives one argument, a Java array of the values given to `emit`:
+     * ```js
+     * const bus = new EventEmitter();
+     * bus.on("greet", (args) => Log.i("Hello, " + args[0]));
+     * bus.emit("greet", "world");
+     * ```
+     * Listeners run at once, one after another in the order they were added, on the thread that calls `emit`. Adding a
+     * listener emits `newListener`, whose listeners get the event's name and the new listener. Each emitter is
+     * separate; nothing else emits on it.
+     *
+     * @see guide:engines/neonjs#java-access
+     */
     class EventEmitter {
 
         private val listeners: MutableMap<String, CallbackMap> = hashMapOf()
         private var maxListeners: Int = 0
 
+        /**
+         * Adds [listener] to be called each time [eventName] is emitted; the same as `on`.
+         *
+         * @param eventName The event's name.
+         * @param listener Called with one argument, a Java array of the values given to `emit`.
+         * @return This emitter, for chaining.
+         */
         fun addListener(eventName: String, listener: EventCallback): EventEmitter =
             on(eventName, listener)
 
+        /**
+         * Calls the listeners of [eventName] with [args], in the order they were added, before returning.
+         *
+         * Each listener receives one argument: a Java array of [args]. Listeners added with `once` are removed
+         * afterwards. Nothing happens when the event has no listeners. An error thrown by a listener skips the rest and
+         * reaches the caller. Adding or removing listeners of the same event from inside one of them can throw
+         * `ConcurrentModificationException`.
+         *
+         * @param eventName The event's name.
+         * @param args The values to hand the listeners, any number of them.
+         */
         fun emit(eventName: String, vararg args: Any) {
             if (eventName !in listeners)
                 return
@@ -61,18 +95,48 @@ class EventEmitterApi: Api<EventEmitterApi.EventEmitter>() {
             listeners[eventName]!!.removeAll(expired)
         }
 
+        /**
+         * The names of the events that listeners were added for.
+         *
+         * A name stays after its listeners are removed, until `removeAllListeners()` is called without one.
+         */
         fun eventNames(): Array<String> =
             listeners.keys.toTypedArray()
 
+        /**
+         * How many listeners an event may have before adding another logs a warning; `0`, the default, means no limit.
+         *
+         * The listener is added either way. Change it with `setMaxListeners(n)`.
+         */
         fun getMaxListeners(): Int =
             maxListeners
 
+        /**
+         * How many listeners [eventName] has, including those added with `once`.
+         *
+         * @param eventName The event's name.
+         */
         fun listenerCount(eventName: String): Int =
             listeners[eventName]?.size ?: 0
 
+        /**
+         * The listeners of [eventName], in the order they are called.
+         *
+         * @param eventName The event's name.
+         * @return The listeners; empty when there are none.
+         */
         fun listeners(eventName: String): Array<EventCallback> =
             listeners[eventName]?.map(CallbackData::callback)?.toTypedArray() ?: arrayOf()
 
+        /**
+         * Adds [listener] to be called each time [eventName] is emitted.
+         *
+         * It goes after the event's other listeners. A listener added twice is called twice.
+         *
+         * @param eventName The event's name.
+         * @param listener Called with one argument, a Java array of the values given to `emit`.
+         * @return This emitter, for chaining.
+         */
         fun on(eventName: String, listener: EventCallback): EventEmitter {
             listeners.putIfAbsent(eventName, arrayListOf())
             listeners[eventName]!!.checkLimit {
@@ -82,6 +146,17 @@ class EventEmitterApi: Api<EventEmitterApi.EventEmitter>() {
             return this
         }
 
+        /**
+         * Removes [listener] from the listeners of [eventName], or the most recently added one if [listener] is `null`.
+         *
+         * Listeners are compared as the Java objects they became when added. NeonJS makes a new one each time a JS
+         * function is passed, so passing the same function again may find nothing to remove;
+         * `removeAllListeners(eventName)` always works.
+         *
+         * @param eventName The event's name.
+         * @param listener The listener to remove, or `null` for the most recently added one.
+         * @return This emitter, for chaining.
+         */
         fun off(eventName: String, listener: EventCallback?): EventEmitter {
             if (eventName !in listeners)
                 return this
@@ -96,6 +171,13 @@ class EventEmitterApi: Api<EventEmitterApi.EventEmitter>() {
             return this
         }
 
+        /**
+         * Adds [listener] to be called the next time [eventName] is emitted, and then removed.
+         *
+         * @param eventName The event's name.
+         * @param listener Called with one argument, a Java array of the values given to `emit`.
+         * @return This emitter, for chaining.
+         */
         fun once(eventName: String, listener: EventCallback): EventEmitter {
             listeners.putIfAbsent(eventName, arrayListOf())
             listeners[eventName]!!.checkLimit {
@@ -105,6 +187,12 @@ class EventEmitterApi: Api<EventEmitterApi.EventEmitter>() {
             return this
         }
 
+        /**
+         * Adds [listener] before the other listeners of [eventName], to be called each time it is emitted.
+         *
+         * @param eventName The event's name.
+         * @param listener Called with one argument, a Java array of the values given to `emit`.
+         */
         fun prependListener(eventName: String, listener: EventCallback) {
             if (eventName !in listeners)
                 listeners[eventName] = arrayListOf(wrap(listener))
@@ -116,6 +204,15 @@ class EventEmitterApi: Api<EventEmitterApi.EventEmitter>() {
             emit(EVENT_NEW_LISTENER, eventName, listener)
         }
 
+        /**
+         * Adds [listener] before the other listeners of [eventName], to be called the next time it is emitted.
+         *
+         * If no listener was ever added for [eventName], it is added as an ordinary listener instead, and stays after
+         * its first call.
+         *
+         * @param eventName The event's name.
+         * @param listener Called with one argument, a Java array of the values given to `emit`.
+         */
         fun prependOnceListener(eventName: String, listener: EventCallback) {
             if (eventName !in listeners)
                 listeners[eventName] = arrayListOf(wrap(listener))
@@ -127,6 +224,11 @@ class EventEmitterApi: Api<EventEmitterApi.EventEmitter>() {
             emit(EVENT_NEW_LISTENER, eventName, listener)
         }
 
+        /**
+         * Removes every listener of [eventName], or of every event when it is left out or `null`.
+         *
+         * @param eventName The event's name, or `null` for every event.
+         */
         @JvmOverloads
         fun removeAllListeners(eventName: String? = null) {
             if (eventName == null) {
@@ -145,14 +247,32 @@ class EventEmitterApi: Api<EventEmitterApi.EventEmitter>() {
             }
         }
 
+        /**
+         * Removes [listener] from the listeners of [eventName]; the same as `off`.
+         *
+         * @param eventName The event's name.
+         * @param listener The listener to remove, or `null` for the most recently added one.
+         * @return This emitter, for chaining.
+         */
         fun removeListener(eventName: String, listener: EventCallback?) =
             off(eventName, listener)
 
+        /**
+         * Sets how many listeners an event may have before adding another logs a warning.
+         *
+         * @param n The number; `0` or `Infinity` for no limit. A fraction is cut to a whole number.
+         * @throws IllegalArgumentException If [n] is a negative whole number.
+         */
         fun setMaxListeners(n: Int) {
             require(n >= 0) { "Max listener size must be n >= 0" }
             maxListeners = n
         }
 
+        /**
+         * The overload NeonJS picks for `Infinity` and fractions; scripts call it as `setMaxListeners(n)` either way.
+         *
+         * @suppress
+         */
         fun setMaxListeners(n: Double) {
             maxListeners = if (n.isInfinite())
                 0
@@ -160,6 +280,11 @@ class EventEmitterApi: Api<EventEmitterApi.EventEmitter>() {
                 n.toInt()
         }
 
+        /**
+         * The listeners of [eventName]; the same as `listeners`.
+         *
+         * @param eventName The event's name.
+         */
         fun rawListeners(eventName: String): Array<EventCallback> =
             listeners(eventName)
 

@@ -1,24 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- By day the hero is a light panel that warms toward its foot; the sunset itself is drawn by the emblem
+     in it. The top stays the plain surface, which the status bar above continues. The night's is in
+     drawable-night/. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
             <corners android:bottomLeftRadius="32dp" android:bottomRightRadius="32dp"/>
-            <gradient
-                android:angle="270"
-                android:endColor="@color/store_night_light"
-                android:startColor="@color/store_night"/>
+            <solid android:color="@color/store_hero_surface"/>
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
             <corners android:bottomLeftRadius="32dp" android:bottomRightRadius="32dp"/>
             <gradient
-                android:centerX="0.85"
-                android:centerY="0.7"
-                android:endColor="#00DFC199"
-                android:gradientRadius="260dp"
-                android:startColor="#40DFC199"
-                android:type="radial"/>
+                android:angle="270"
+                android:centerColor="#14D47E97"
+                android:centerY="0.45"
+                android:endColor="#3DF9AE91"
+                android:startColor="#00D47E97"/>
         </shape>
     </item>
 </layer-list>

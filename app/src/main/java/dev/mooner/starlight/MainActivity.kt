@@ -9,11 +9,13 @@ package dev.mooner.starlight
 import android.os.Bundle
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.view.WindowCompat
-import androidx.core.view.isVisible
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -40,8 +42,7 @@ import dev.mooner.starlight.ui.settings.update.UpdateCheckResult
 import dev.mooner.starlight.ui.settings.update.checkForUpdate
 import dev.mooner.starlight.ui.settings.update.isAutoUpdateCheckEnabled
 import dev.mooner.starlight.utils.LAYOUT_TABLET
-import dev.mooner.starlight.utils.applyEdgeToEdge
-import dev.mooner.starlight.utils.isNightMode
+import dev.mooner.starlight.utils.extendBehindStatusBar
 import dev.mooner.starlight.utils.layoutMode
 import dev.mooner.starlight.utils.restartIfNotReady
 import dev.mooner.starlight.utils.showChangelogDialog
@@ -69,11 +70,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         onBackPressedDispatcher.addCallback(this, backToHome)
         updater = AppUpdater(this)
-        applyEdgeToEdge(binding.root) { _, _ ->
-            window.navigationBarColor = ContextCompat.getColor(this, R.color.cardview)
-        }
-
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        fitBehindSystemBars()
 
         bindLogNotifier { log ->
             !log.message.startsWith("ECOMF: ") && !(log.flags hasFlag LogData.FLAG_COMPILE_RESULT)
@@ -98,11 +95,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            val isNight = isNightMode()
-            imageViewLogo.isVisible = !isNight
-            nightHeader.root.isVisible = isNight
-            nightHeader.nightStars.density = 0.25f
-            nightHeader.nightStars.brightness = 0.75f
+            skyHeader.nightStars?.brightness = 0.75f
 
             appBarLayout.addOnOffsetChangedListener(::handleOffsetUpdate)
         }
@@ -174,7 +167,7 @@ class MainActivity : AppCompatActivity() {
             else              -> 0
         }
         binding.apply {
-            viewPager.setCurrentItem(index, true)
+            showPage(index)
             bottomMenu.setItemSelected(id, true)
         }
         onPageChanged(id)
@@ -208,8 +201,36 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_settings -> 5
             else              -> 0
         }
-        binding.viewPager.setCurrentItem(index, true)
+        showPage(index)
         onPageChanged(id)
+    }
+
+    // Slides only to a neighbouring page. Over several pages, a frame stalled by a tab being created makes the slide
+    // pass its page and stop on the last one, and the pager doesn't report where it stopped: the menu and the
+    // title would show one tab and the page another.
+    private fun showPage(index: Int) =
+        binding.viewPager.setCurrentItem(index, abs(index - binding.viewPager.currentItem) <= 1)
+
+    /**
+     * Draws behind the system bars. The sky runs up behind the status bar, and the app bar, which holds the
+     * title, starts under it; when it folds away that much of it stays, so the tabs' content never goes under
+     * the clock. The rest is kept clear of the bars, and this one listener is the only place the insets go:
+     * nothing below the root sees them.
+     */
+    private fun fitBehindSystemBars() {
+        enableEdgeToEdge()
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            val insets = windowInsets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.updatePadding(left = insets.left, top = 0, right = insets.right, bottom = insets.bottom)
+            binding.appBarLayout.updatePadding(top = insets.top)
+            // The side menu of the wide layout starts under the status bar too.
+            binding.constraintLayout2?.updatePadding(top = insets.top)
+            binding.skyHeader.extendBehindStatusBar(insets.top)
+            window.navigationBarColor = ContextCompat.getColor(this, R.color.cardview)
+            WindowInsetsCompat.CONSUMED
+        }
     }
 
     private fun handleOffsetUpdate(appBarLayout: AppBarLayout, verticalOffset: Int) {
@@ -219,9 +240,8 @@ class MainActivity : AppCompatActivity() {
         binding.apply {
             statusText.alpha = alpha
             titleText.alpha = alpha
-            imageViewLogo.alpha = alpha
-            nightHeader.root.alpha = alpha
-            nightHeader.nightStars.parallax = -verticalOffset * 0.3f
+            skyHeader.root.alpha = alpha
+            skyHeader.nightStars?.parallax = -verticalOffset * 0.3f
         }
     }
 

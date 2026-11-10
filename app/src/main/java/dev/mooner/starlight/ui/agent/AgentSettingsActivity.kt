@@ -91,7 +91,6 @@ class AgentSettingsActivity : AppCompatActivity() {
             binding.content.updatePadding(bottom = maxOf(bars.bottom, ime.bottom) + AgentUi.dp(this, 28))
             insets
         }
-        binding.stars.density = 0.4f
         binding.stars.brightness = 0.8f
         binding.back.setOnClickListener { finish() }
 

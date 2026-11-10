@@ -32,6 +32,11 @@
                     android:layout_height="match_parent"/>
 
                 <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_store_banner_wash"/>
+
+                <View
                     android:id="@+id/haloOuter"
                     android:layout_width="150dp"
                     android:layout_height="150dp"
@@ -95,7 +100,7 @@
                     android:layout_marginTop="6dp"
                     android:drawablePadding="5dp"
                     android:fontFamily="@font/nanumsquare_neo_bold"
-                    android:textColor="@color/store_gold_deep"
+                    android:textColor="@color/text_gold_deep"
                     android:textSize="13sp"
                     tools:text="mooner1022 · 메신저 연동"/>
 
@@ -200,7 +205,7 @@
                         android:fontFamily="@font/nanumsquare_neo_extrabold"
                         android:gravity="center_vertical"
                         android:text="@string/plugin_store_more"
-                        android:textColor="@color/store_gold_deep"
+                        android:textColor="@color/text_gold_deep"
                         android:textSize="13sp"/>
                 </LinearLayout>
 
@@ -226,7 +231,7 @@
                         android:drawablePadding="2dp"
                         android:fontFamily="@font/nanumsquare_neo_extrabold"
                         android:gravity="center_vertical"
-                        android:textColor="@color/store_gold_deep"
+                        android:textColor="@color/text_gold_deep"
                         android:textSize="13sp"
                         app:drawableEndCompat="@drawable/ic_round_keyboard_arrow_down_24"
                         app:drawableTint="@color/store_gold_deep"
@@ -273,10 +278,10 @@
             style="@style/StoreTopBarButton"
             android:layout_gravity="start|center_vertical"
             android:layout_marginStart="4dp"
-            android:contentDescription="@string/cancel"
+            android:contentDescription="@string/back"
             android:elevation="2dp"
             android:src="@drawable/ic_round_arrow_left_24"
-            app:tint="@color/store_star"/>
+            app:tint="@color/store_hero_title"/>
 
         <TextView
             android:id="@+id/topTitle"
@@ -300,6 +305,6 @@
             android:contentDescription="@string/plugin_store_info_source"
             android:elevation="2dp"
             android:src="@drawable/ic_round_launch_24"
-            app:tint="@color/store_star"/>
+            app:tint="@color/store_hero_title"/>
     </FrameLayout>
 </FrameLayout>

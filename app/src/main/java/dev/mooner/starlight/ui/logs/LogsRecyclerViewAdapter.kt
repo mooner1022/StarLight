@@ -27,7 +27,7 @@ import java.util.regex.Pattern
 class LogsRecyclerViewAdapter
     : RecyclerView.Adapter<LogsRecyclerViewAdapter.LogsViewHolder>() {
 
-    private val data: MutableList<LogData> = arrayListOf()
+    private val data: kotlin.collections.ArrayDeque<LogData> = kotlin.collections.ArrayDeque()
     private val visibleData: MutableList<LogData> = arrayListOf()
 
     var viewType: LogItem.ViewType = LogItem.ViewType.NORMAL
@@ -76,8 +76,16 @@ class LogsRecyclerViewAdapter
     fun getItems(): List<LogData> =
         data
 
-    fun push(log: LogData, limit: Int = 0) {
+    /**
+     * Adds [log]. Above [limit] shown logs the oldest one leaves the list, and above [capacity] kept logs
+     * the oldest one is forgotten, so a list left open doesn't grow for as long as the app runs. 0 is no bound.
+     */
+    fun push(log: LogData, limit: Int = 0, capacity: Int = 0) {
         data += log
+        if (capacity != 0) {
+            while (data.size > capacity)
+                data.removeFirst()
+        }
         if (filter != null && !filter!!.invoke(log))
             return
         if (limit != 0 && visibleData.size >= limit) {
@@ -153,12 +161,12 @@ class LogsRecyclerViewAdapter
 
             binding.setViewByType(viewType)
             val color = when(data.type) {
-                LogType.INFO -> R.color.code_string
-                LogType.DEBUG -> R.color.code_purple
-                LogType.WARN -> R.color.code_yellow
-                LogType.ERROR -> R.color.code_orange
-                LogType.CRITICAL -> R.color.code_error
-                LogType.VERBOSE -> R.color.monokai_pro_sky
+                LogType.INFO -> R.color.log_info
+                LogType.DEBUG -> R.color.log_debug
+                LogType.WARN -> R.color.log_warn
+                LogType.ERROR -> R.color.log_error
+                LogType.CRITICAL -> R.color.log_critical
+                LogType.VERBOSE -> R.color.log_verbose
             }.let(context::getColor)
             when(viewType) {
                 LogItem.ViewType.NORMAL ->

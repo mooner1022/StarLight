@@ -32,14 +32,16 @@
             tools:text="This is a dummy log content"/>
     </LinearLayout>
 
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/normalModeContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginBottom="6dp"
         app:cardBackgroundColor="@color/background_log_card"
-        app:cardCornerRadius="10dp"
+        app:cardCornerRadius="12dp"
         app:cardElevation="0dp"
+        app:strokeColor="@color/log_card_stroke"
+        app:strokeWidth="1dp"
         tools:visibility="visible">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -51,8 +53,8 @@
                 android:id="@+id/logTitleText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginTop="4dp"
+                android:layout_marginStart="14dp"
+                android:layout_marginTop="10dp"
                 android:ellipsize="end"
                 android:fontFamily="@font/nanumsquare_round_bold"
                 android:maxLines="1"
@@ -67,10 +69,10 @@
                 android:id="@+id/logContentText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
+                android:layout_marginStart="14dp"
                 android:layout_marginTop="4dp"
-                android:layout_marginEnd="12dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginEnd="14dp"
+                android:layout_marginBottom="10dp"
                 android:fontFamily="@font/nanumsquare_round_regular"
                 tools:text="TextView"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -82,12 +84,12 @@
                 android:id="@+id/logTimeStampText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
+                android:layout_marginEnd="14dp"
                 android:fontFamily="@font/nanumsquare_round_light"
                 app:layout_constraintBottom_toBottomOf="@+id/logTitleText"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="@+id/logTitleText"
                 tools:text="05/19 09:03:10"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 </LinearLayout>

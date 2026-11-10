@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sky behind a page's title. This is the night's; the day's is in layout/. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sky"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/sky_header_height"
+    android:importantForAccessibility="noHideDescendants">
+
+    <View
+        android:id="@+id/nightGlow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_night_header_glow"/>
+
+    <dev.mooner.starlight.ui.plugins.store.StarFieldView
+        android:id="@+id/nightStars"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <dev.mooner.starlight.ui.common.SkyEmblemView
+        android:id="@+id/emblem"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_night_header_fade"/>
+
+</FrameLayout>

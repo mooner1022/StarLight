@@ -13,7 +13,8 @@ import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.utils.*
-import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.utils.bindPageHeader
+import dev.mooner.starlight.utils.fitSkyPage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.filterIsInstance
@@ -41,7 +42,8 @@ class ConfigActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitSystemBars(binding.root)
+        fitSkyPage(binding.root, binding.skyHeader, binding.scroll, binding.leave)
+        bindPageHeader(binding.scroll, binding.skyHeader, binding.title, binding.subTitle)
 
         bindLogNotifier()
 
@@ -54,16 +56,6 @@ class ConfigActivity : AppCompatActivity() {
 
         binding.title.text = title
         binding.subTitle.text = subTitle
-        binding.scroll.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-            val alpha = if (scrollY in 0..200) {
-                1f - (scrollY / 200.0f)
-            } else {
-                0f
-            }
-            binding.imageViewLogo.alpha = alpha
-            binding.title.alpha = alpha
-            binding.subTitle.alpha = alpha
-        }
 
         binding.leave.setOnClickListener { finish() }
 

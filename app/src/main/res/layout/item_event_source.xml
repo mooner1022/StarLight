@@ -35,7 +35,7 @@
             android:ellipsize="end"
             android:fontFamily="@font/nanumsquare_round_extrabold"
             android:maxLines="1"
-            android:textColor="@color/main_bright"
+            android:textColor="@color/text_gold"
             android:textSize="13sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/count"

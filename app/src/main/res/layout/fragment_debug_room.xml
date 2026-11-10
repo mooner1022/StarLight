@@ -37,7 +37,7 @@
                 android:layout_height="44dp"
                 android:layout_marginStart="8dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/close"
+                android:contentDescription="@string/back"
                 android:padding="10dp"
                 android:src="@drawable/ic_round_arrow_left_24"
                 app:tint="@color/text" />

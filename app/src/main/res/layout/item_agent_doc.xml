@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:orientation="vertical"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:fontFamily="@font/wantedsans_medium"
+            android:maxLines="1"
+            android:textColor="@color/agent_text"
+            android:textSize="14.5sp"
+            tools:text="BotManager"/>
+
+        <TextView
+            android:id="@+id/noDocs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_agent_chip"
+            android:fontFamily="@font/wantedsans_medium"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:text="@string/agent_docs_no_docs"
+            android:textColor="@color/agent_dusk"
+            android:textSize="11sp"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/detail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:fontFamily="@font/jbmono_nl_regular"
+        android:maxLines="1"
+        android:textColor="@color/agent_text_faint"
+        android:textSize="11.5sp"
+        tools:text="object · api2"/>
+
+    <TextView
+        android:id="@+id/summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:ellipsize="end"
+        android:fontFamily="@font/wantedsans_regular"
+        android:maxLines="2"
+        android:textColor="@color/agent_text_muted"
+        android:textSize="12.5sp"
+        tools:text="The bots of this device's projects; a global in API2 projects."/>
+</LinearLayout>

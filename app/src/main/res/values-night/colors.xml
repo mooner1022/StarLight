@@ -11,12 +11,23 @@
     <color name="background_chip_accent">#AD977A</color>
     <color name="background_popup">#2B2B2B</color>
     <color name="background_log_card">#212122</color>
+    <color name="log_card_stroke">#00000000</color>
+    <color name="log_info">#7ACA8A</color>
+    <color name="log_debug">#C39EC0</color>
+    <color name="log_warn">#FEC64C</color>
+    <color name="log_error">#FF6188</color>
+    <color name="log_critical">#FF3B3B</color>
+    <color name="log_verbose">#78DCE8</color>
 
     <color name="config_list_item_background">#202020</color>
 
     <color name="text">#D5D5D5</color>
     <color name="text_clear">#FFFFFF</color>
     <color name="text_sub">#9E9E9E</color>
+    <color name="text_gold">#DFC199</color>
+    <color name="text_gold_deep">#AD977A</color>
+    <color name="app_info_title">#DFC199</color>
+    <color name="app_info_icon">#DFC199</color>
 
     <color name="switch_track">#868686</color>
     <color name="switch_track_disabled">#585858</color>
@@ -93,6 +104,11 @@
     <color name="orange_box_white">#ffffff</color>
 
     <color name="store_gold_soft">#2A251E</color>
+    <color name="store_hero_surface">@color/store_night</color>
+    <color name="store_hero_title">@color/store_star</color>
+    <color name="store_hero_accent">@color/store_gold</color>
+    <color name="store_hero_pill">#1FFFF7E8</color>
+    <color name="store_hero_pill_stroke">#33DFC199</color>
     <color name="store_restart_button">#3A3226</color>
     <color name="store_skeleton">#252321</color>
     <color name="store_shimmer">#1AFFFFFF</color>

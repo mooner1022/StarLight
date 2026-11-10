@@ -39,7 +39,7 @@
                 android:layout_height="48dp"
                 android:layout_marginTop="8dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/agent_cancel"
+                android:contentDescription="@string/back"
                 android:src="@drawable/ic_round_arrow_left_24"
                 app:tint="@color/agent_on_night"/>
 

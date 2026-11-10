@@ -16,22 +16,6 @@
         android:layout_height="match_parent"
         android:background="@drawable/bg_store_featured">
 
-        <dev.mooner.starlight.ui.plugins.store.StarFieldView
-            android:id="@+id/stars"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-
-        <ImageView
-            android:id="@+id/bigIcon"
-            android:layout_width="130dp"
-            android:layout_height="130dp"
-            android:layout_gravity="end|center_vertical"
-            android:layout_marginEnd="-14dp"
-            android:alpha="0.22"
-            android:importantForAccessibility="no"
-            android:rotation="-14"
-            android:src="@drawable/ic_logo_transparent"/>
-
         <LinearLayout
             android:id="@+id/text"
             android:layout_width="match_parent"
@@ -68,7 +52,7 @@
                     android:layout_marginStart="10dp"
                     android:fontFamily="@font/nanumsquare_neo_extrabold"
                     android:letterSpacing="0.1"
-                    android:textColor="@color/store_gold"
+                    android:textColor="@color/store_hero_accent"
                     android:textSize="11sp"
                     tools:text="메신저 연동"/>
             </LinearLayout>
@@ -80,7 +64,7 @@
                 android:layout_marginTop="12dp"
                 android:fontFamily="@font/nanumsquare_round_extrabold"
                 android:maxLines="2"
-                android:textColor="@color/store_star"
+                android:textColor="@color/store_hero_title"
                 android:textSize="20sp"
                 tools:text="카카오톡과 디스코드를 하나로"/>
 
@@ -93,7 +77,7 @@
                 android:ellipsize="end"
                 android:fontFamily="@font/nanumsquare_neo_regular"
                 android:maxLines="1"
-                android:textColor="@color/store_star"
+                android:textColor="@color/store_hero_title"
                 android:textSize="12sp"
                 tools:text="Discord 브릿지 · mooner1022"/>
         </LinearLayout>

@@ -74,7 +74,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:fontFamily="@font/nanumsquare_neo_bold"
-            android:textColor="@color/store_gold_deep"
+            android:textColor="@color/text_gold_deep"
             android:textSize="11sp"
             tools:text="API 0.3 · 3.8 MB"/>
 
@@ -87,7 +87,7 @@
             android:gravity="center"
             android:paddingHorizontal="8dp"
             android:text="@string/plugin_store_install_version"
-            android:textColor="@color/store_gold_deep"
+            android:textColor="@color/text_gold_deep"
             android:textSize="12sp"/>
     </LinearLayout>
 </LinearLayout>

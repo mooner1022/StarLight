@@ -11,31 +11,61 @@ import dev.mooner.starlight.plugincore.version.Version
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * A plugin's information, from its package: `plugin.info`.
+ */
 @Serializable
 data class PluginInfo(
+    /**
+     * The plugin's ID, such as `discord`: the prefix of its event IDs and what `Plugins.ofId` takes.
+     */
     val id                  : String,
+    /**
+     * The plugin's name, as the app shows it.
+     */
     val name                : String,
+    /** @suppress */
     @SerialName("main_class")
     val mainClass           : String,
+    /** @suppress */
     @SerialName("custom_classloader")
     val customClassLoader   : String? = null,
+    /**
+     * The plugin's version; `String(info.version)` gives it as text, such as `1.2.0`.
+     */
     val version             : Version,
+    /** @suppress */
     val assetRevision       : Int = 0,
+    /** @suppress */
     @SerialName("api_version")
     val apiVersion          : Version,
+    /** @suppress */
     val dependency          : List<PluginDependency> = listOf(),
+    /** @suppress */
     @SerialName("uses_native_lib")
     val usesNativeLibrary   : Boolean = false,
+    /**
+     * The plugin's authors.
+     */
     val authors             : List<String>,
+    /**
+     * What the plugin does, as its author wrote it.
+     */
     val description         : String,
+    /** @suppress */
     val category            : PluginCategory = PluginCategory.DEFAULT,
 ) {
 
+    /**
+     * The name and version together, such as `Discord v1.2.0`.
+     */
     val fullName = "$name v$version"
 
+    /** @suppress */
     val softDependency
         get() = dependency.filter(PluginDependency::isOptional)
 
+    /** @suppress */
     fun encode(): String = json.encodeToString(this)
 
     companion object {

@@ -15,69 +15,93 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import java.io.File
 
+/**
+ * A project: one bot, as `Projects.getSelf()`, `Projects.ofName(name)` and `Projects.ofId(id)` return it.
+ *
+ * Scripts mostly read its `info` and `compiled`, and call its functions with `callFunction`. Its other public members
+ * are StarLight's and plugins' own, and aren't listed here.
+ *
+ * @see guide:projects#calling-other-projects
+ */
 abstract class Project: CoroutineScope, ProjectLifecycleOwner {
 
     /**
-     * Root directory of project itself.
+     * The project's folder, with its `project.json`, scripts and `data` folder.
      */
     abstract val directory: File
 
     /**
-     * Information data of this project.
+     * The project's info, as its `project.json` holds it: `info.name`, `info.id` and the rest.
      */
     abstract val info: ProjectInfo
 
     /**
      * Project's dedicated config data, saved in project's local directory.
+     * @suppress
      */
     abstract val config: MutableConfig
 
     /**
      * Name of thread pool where scripts are being executed at.
+     * @suppress
      */
     abstract var threadPoolName: String?
 
     /**
-     * The state of project compilation, true if scope isn't null.
+     * Whether the project is compiled, so that its functions can be called; scripts read it as `compiled`.
      */
     abstract val isCompiled: Boolean
 
     /**
-     * Logger used for project event logging.
+     * The project's log: what its scripts reach as `Log`.
      */
     abstract val logger: ProjectLogger
 
     /**
-     * Calls a function with [name] and passes [args] as parameter.
+     * Calls the function [name] of the project's script with [args], on the project's workers, and returns at once.
      *
-     * @param name the name of function or event being called.
-     * @param args parameter values being passed to function.
-     * @param onException called when exception is occurred while calling.
+     * The function's result isn't returned: pass values back through another call, or `Broadcast` in API2 projects. All
+     * three arguments are needed; there is no shorter form. Nothing happens if the script has no such function.
+     *
+     * A project's top-level code runs before its compile finishes, so a call from there to its own project fails with
+     * `onException`: call the function directly instead.
+     *
+     * @param name The function's name. In NeonJS the function must be exported.
+     * @param args The arguments, as an array: a JS array works.
+     * @param onException Called with the error when the project isn't compiled, or when the function throws. A thrown
+     *   error is also logged and, as an event's error does, may unload that project: turned off, and not compiled
+     *   until it is compiled again (guide:projects#errors).
      */
     abstract fun callFunction(name: String, args: Array<out Any>, onException: (Throwable) -> Unit = {})
 
     /**
      * Runs [task] as one of the project's events: on its workers, among its other events, and with the same handling of
-     * an error as a called function gets, which may turn the project off.
+     * an error as a called function gets, which may unload the project.
+     * @suppress
      */
     abstract fun runEvent(task: () -> Unit, onException: (Throwable) -> Unit = {})
 
     /**
-     * Execute the compile pipeline of this project. Releases its original scope and context if present.
+     * Compiles the project, as its compile button does, and waits until that is done.
      *
-     * @param throwException if true, throws exception on compile failure.
+     * Compiling the project that runs the script replaces the code that is running.
+     *
+     * @param throwException Whether a failed compile throws its error rather than returning `false`.
+     * @return Whether it compiled.
      */
     abstract fun compile(throwException: Boolean = false): Boolean
 
     /**
      * Compiles the project with configured values.
+     * @suppress
      */
     abstract fun compileAsync(): Flow<Pair<PipelineStage<*, *>, Int>>
 
     /**
-     * Set project's enabled state
+     * Turns the project on or off, as its switch in the app does.
      *
-     * @param enabled the target state of project.
+     * @param enabled `true` to turn it on.
+     * @return `false`, with nothing changed, if the project isn't compiled.
      */
     abstract fun setEnabled(enabled: Boolean): Boolean
 
@@ -85,23 +109,24 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
      * Requests the application to update UI of the project.
      *
      * Ignored if application is on background.
+     * @suppress
      */
     abstract fun requestUpdate()
 
     /**
      * Save contents of [info] to a file.
+     * @suppress
      */
     abstract fun saveInfo()
 
     /**
      * Invalidate in-memory project info data and reload it from local file.
+     * @suppress
      */
     abstract fun loadInfo()
 
     /**
-     * Returns the language used in the project.
-     *
-     * @return language used in the project.
+     * The project's language: `getLanguage().id` is `js_neon` for NeonJS, `JS_RHINO` for Rhino.
      */
     abstract fun getLanguage(): Language
 
@@ -109,28 +134,29 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
      * Returns the scope instance if project is compiled, else null.
      *
      * @return scope returned on compile
+     * @suppress
      */
     abstract fun getScope(): Any?
 
     /**
-     * Count of jobs currently running in thread pool of this project.
-     *
-     * @return the size of running jobs.
+     * The number of events the project is running right now.
      */
     abstract fun activeJobs(): Int
 
     /**
-     * Returns the number of events waiting for the project to run them.
+     * The number of events waiting for the project's workers.
      */
     open fun queuedEvents(): Int = 0
 
     /**
      * Cancels all running jobs.
+     * @suppress
      */
     abstract fun stopAllJobs()
 
     /**
      * Cancels all running jobs and releases `langScope` if the project is compiled.
+     * @suppress
      */
     open fun destroy() =
         destroy(false)
@@ -139,6 +165,7 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
      * Cancels all running jobs and releases `langScope` if the project is compiled.
      *
      * @param requestUpdate if *true*, requests update of UI
+     * @suppress
      */
     abstract fun destroy(requestUpdate: Boolean = false)
 
@@ -146,6 +173,7 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
      * Update the name of project
      *
      * @param name you know what this is, right?
+     * @suppress
      */
     open fun rename(name: String) =
         rename(name, false)
@@ -155,11 +183,12 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
      *
      * @param name you know what this is, right?
      * @param preserveMainScript if false, the main script for the project will also be renamed.
+     * @suppress
      */
     abstract fun rename(name: String, preserveMainScript: Boolean)
 
     /**
-     * Get the directory where data of project should be saved in. ex) database files, user data, etc.
+     * The project's `data` folder, created when missing: the place for what its script saves, where `DataBase` writes.
      */
     abstract fun getDataDirectory(): File
 
@@ -167,6 +196,7 @@ abstract class Project: CoroutineScope, ProjectLifecycleOwner {
      * Check whether call of ProjectEvent with id [eventId] is allowed or not.
      *
      * @param eventId the event id to check if it's allowed to be called.
+     * @suppress
      */
     abstract fun isEventCallAllowed(eventId: String): Boolean
 

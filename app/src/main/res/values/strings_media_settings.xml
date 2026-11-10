@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_settings_page_title">Media sending</string>
+
+    <string name="media_settings_category_status">Status</string>
+    <string name="media_settings_kakao_status_title">KakaoTalk</string>
+    <string name="media_settings_kakao_status_installed">Installed</string>
+    <string name="media_settings_kakao_status_not_installed">Not installed</string>
+    <string name="media_settings_overlay_status_title">Display over other apps</string>
+    <string name="media_settings_overlay_status_desc">Needed to open KakaoTalk while StarLight is in the background. Tap to open the setting.</string>
+    <string name="media_settings_overlay_status_needed">Permission needed</string>
+    <string name="media_settings_status_allowed">Allowed</string>
+    <string name="media_settings_other_users_status_title">Dual Messenger KakaoTalk</string>
+    <string name="media_settings_other_users_status_desc">To send to a KakaoTalk room of another user (Dual Messenger) without the chooser, grant this permission:\nadb shell pm grant %1$s %2$s</string>
+    <string name="media_settings_other_users_status_chooser">Not granted: the chooser is shown</string>
+    <string name="media_settings_other_users_status_not_granted">Not granted</string>
+
+    <string name="media_settings_category_send">Sending</string>
+    <string name="media_settings_download_timeout_title">Download timeout (seconds)</string>
+    <string name="media_settings_download_timeout_desc">Applies to connecting and to each wait for data. A script\'s timeout option takes precedence.</string>
+    <string name="media_settings_max_file_size_title">Maximum file size</string>
+    <string name="media_settings_send_interval_title">Interval between sends (×0.1 seconds)</string>
+    <string name="media_settings_send_interval_desc">Increase this if files sent in a row go missing.</string>
+    <string name="media_settings_temp_retention_title">Temporary file retention (seconds)</string>
+    <string name="media_settings_temp_retention_desc">Downloaded or copied files are deleted this long after sending. Increase it for large videos.</string>
+    <string name="media_settings_after_send_title">After sending</string>
+    <string name="media_settings_after_send_desc">Applies when a script sets no leave option. No notifications arrive while the chat room is open, so a bot should leave.</string>
+    <string name="media_settings_after_send_stay">Stay in KakaoTalk</string>
+    <string name="media_settings_after_send_home">Go to the home screen</string>
+    <string name="media_settings_after_send_starlight">Return to StarLight</string>
+    <string name="media_settings_return_delay_title">Maximum time in KakaoTalk (seconds)</string>
+    <string name="media_settings_return_delay_desc">Leaves as soon as KakaoTalk reads the file, or after this time if no read is detected. Also applies to MediaSharer.leave() called without a delay.</string>
+    <string name="media_settings_leave_grace_title">Wait after the file is read (×0.1 seconds)</string>
+    <string name="media_settings_leave_grace_desc">Time for KakaoTalk to post the message. No notifications arrive while the chat room is open, so keep it short, and increase it if sends go missing.</string>
+    <string name="media_settings_log_sends_title">Log sends</string>
+    <string name="media_settings_log_sends_desc">Writes every send to the project log.</string>
+
+    <string name="media_settings_category_cache">Cache</string>
+    <string name="media_settings_cache_by_default_title">Use the cache by default</string>
+    <string name="media_settings_cache_by_default_desc">Keeps downloaded and decoded files, so sending them again needs no download. A script\'s cache option takes precedence.</string>
+    <string name="media_settings_cache_max_items_title">Maximum cached files</string>
+    <string name="media_settings_cache_max_size_title">Maximum cache size</string>
+    <string name="media_settings_clear_cache_title">Clear cache</string>
+    <string name="media_settings_clear_cache_confirm">Delete all cached files?</string>
+    <string name="media_settings_clear_cache_done">Files deleted: %1$d</string>
+    <string name="media_settings_cache_usage">Files: %1$d, %2$s</string>
+    <string name="media_settings_cache_usage_preparing">Getting ready…</string>
+
+    <string name="media_settings_category_rooms">Chat rooms</string>
+    <string name="media_settings_known_rooms_title">Known chat rooms</string>
+    <string name="media_settings_known_rooms_desc">Chat rooms that messages came from. Scripts can name a room instead of using its channel ID.</string>
+    <string name="media_settings_known_rooms_empty">No messages received yet</string>
+    <string name="media_settings_known_rooms_user">[user %1$d]</string>
+    <string name="media_settings_forget_rooms_title">Clear chat room list</string>
+    <string name="media_settings_forget_rooms_confirm">Remove all known chat rooms?</string>
+    <string name="media_settings_forget_rooms_done">Chat room list cleared</string>
+
+    <string name="media_settings_category_history">History</string>
+    <string name="media_settings_recent_sends_title">Recent sends</string>
+    <string name="media_settings_recent_sends_empty">No files sent yet</string>
+</resources>
