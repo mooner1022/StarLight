@@ -13,6 +13,7 @@ import dev.mooner.configdsl.options.OptionStatus
 import dev.mooner.configdsl.options.info
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.core.ApplicationSession
+import dev.mooner.starlight.listener.specs.ParserSpecPolicy
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
@@ -80,9 +81,7 @@ internal fun getProblemSolverStruct() = config {
                             if (ruleData.userId != 0)
                                 markAsError()
                             append("유저 ID : ").append(ruleData.userId).append("\n")
-                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && ruleData.parserSpecId == "android_r")
-                                markAsError()
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && ruleData.parserSpecId == "default")
+                            if (ruleData.parserSpecId != ParserSpecPolicy.specIdFor(Build.VERSION.SDK_INT, ApplicationSession.kakaoTalkVersion))
                                 markAsError()
                             append("파싱 스펙 : ${ruleData.parserSpecId}")
                         }

@@ -51,7 +51,8 @@ Chat messages come from messenger notifications. By default, with **규칙 자�
 reads KakaoTalk (`com.kakao.talk`) for the device's main user, which suits most users. KakaoTalk in a dual-messenger
 or work profile needs a rule added by hand in **설정 → 알림, 이벤트 → 패키지 규칙 설정**:
 - package `com.kakao.talk`;
-- parser `android_r` on Android 11 or later, `default` before;
+- parser `kakao_26_7` on Android 11 or later with KakaoTalk 26.7.0 or later, `android_r` with an older KakaoTalk,
+  `default` before Android 11;
 - user ID `0` for the main user, `10` for a work profile, `11` for a Xiaomi work profile, `95` for Samsung's dual
   messenger.
 

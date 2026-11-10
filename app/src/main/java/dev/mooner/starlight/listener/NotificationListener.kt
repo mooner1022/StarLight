@@ -28,6 +28,7 @@ import dev.mooner.starlight.listener.event.ProjectOnMessageDeleteEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.Replier
+import dev.mooner.starlight.listener.specs.ParserSpecPolicy
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ChatRoom
 import dev.mooner.starlight.plugincore.chat.DeletedMessage
@@ -43,9 +44,11 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.debugTranslated
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import dev.mooner.starlight.plugincore.version.Version
 import dev.mooner.starlight.ui.settings.notifications.NotificationRulesActivity
 import dev.mooner.starlight.ui.settings.notifications.RuleData
 import dev.mooner.starlight.utils.decodeIfNotBlank
+import dev.mooner.starlight.utils.getKakaoTalkVersion
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -79,7 +82,7 @@ class NotificationListener: NotificationListenerService() {
         LOG.debug { "Listener disconnected from system" }
     }
 
-    override fun onNotificationPosted(sbn: StatusBarNotification) {
+    override fun onNotificationPosted(sbn: StatusBarNotification, rankingMap: RankingMap?) {
         if (!isGlobalPowerOn || !ApplicationSession.isInitComplete || sbn.packageName == packageName) return
 
         if (useNPostedEvent) {
@@ -88,18 +91,20 @@ class NotificationListener: NotificationListenerService() {
         }
 
         sbn.notification.actions?.let { actions ->
-            handleMessage(sbn, actions)
+            handleMessage(sbn, actions, rankingMap)
         }
 
         Events.Notification.Post(sbn, applicationContext)
             .also(EventHandler::fireEventWithScope)
     }
 
-    private fun handleMessage(sbn: StatusBarNotification, actions: Array<Notification.Action>) {
+    private fun handleMessage(sbn: StatusBarNotification, actions: Array<Notification.Action>, rankingMap: RankingMap?) {
         val ts = System.currentTimeMillis()
         val pkgName = sbn.packageName
         val userId = sbn.userId
 
+        if (isAutoRule && pkgName == PACKAGE_KAKAO_TALK)
+            refreshAutoRule()
         if (rules.isEmpty()) return
         var idx = 0
         val appliedRule = rules.find { ++idx; it.packageName == pkgName && it.userId == userId }
@@ -109,8 +114,11 @@ class NotificationListener: NotificationListenerService() {
         for (act in actions) {
             if (act.remoteInputs != null && act.remoteInputs.isNotEmpty()) {
                 try {
+                    val ranking = rankingMap?.let { map ->
+                        Ranking().takeIf { map.getRanking(sbn.key, it) }
+                    }
                     val data = ParserSpecManager.getSpecById(appliedRule.parserSpecId)
-                        ?.parse(userId, applicationContext, sbn, actions)
+                        ?.parse(userId, applicationContext, sbn, actions, ranking)
                         ?: return
                     //val data = sbn.toMessage(this, ruleKey, act) ?: return
                     (data.room as ChatRoomImpl).setLastReceivedId(data.chatLogId)
@@ -223,6 +231,27 @@ class NotificationListener: NotificationListenerService() {
             .also(EventHandler::fireEventWithScope)
     }
 
+    /**
+     * Detects the rule again when KakaoTalk is not the version the rule was detected for.
+     * KakaoTalk updates while the listener keeps running, and may not have been looked up yet when it started.
+     */
+    private fun refreshAutoRule() {
+        // Below Android 11 every version reads the same.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+
+        // The package manager caches this, and drops it when the package changes.
+        val version = try {
+            getKakaoTalkVersion()
+        } catch (_: Exception) {
+            null
+        }
+        if (version == detectedKakaoTalkVersion) return
+
+        detectedKakaoTalkVersion = version
+        rules = listOf(detectRule(version))
+        LOG.verbose { "notificationRules(auto)= $rules" }
+    }
+
     private fun getOrCreateReplier(roomId: RoomID): Replier {
         return replierCache[roomId] ?: Replier { room, message, hideToast ->
             val chatRoom = room?.let(::getRoomByName) ?: chatRooms[roomId]
@@ -276,15 +305,19 @@ class NotificationListener: NotificationListenerService() {
         private val replierCache: MutableMap<RoomID, Replier> = ConcurrentHashMap()
         private var lastReceivedRoom: ChatRoom? = null
         private var rules: List<RuleData> = arrayListOf()
+        private var isAutoRule: Boolean = false
+        /** The KakaoTalk version name the automatic rule was detected for. */
+        private var detectedKakaoTalkVersion: String? = null
 
         fun notifySent() {
             currentChatLogId = -1
         }
 
         fun updateRules() {
-            if (GlobalConfig.category("noti_rules").getBoolean("auto_rule", true)) {
-                val rule = detectRule()
-                rules = listOf(rule)
+            isAutoRule = GlobalConfig.category("noti_rules").getBoolean("auto_rule", true)
+            if (isAutoRule) {
+                detectedKakaoTalkVersion = ApplicationSession.kakaoTalkVersion?.toString()
+                rules = listOf(detectRule(detectedKakaoTalkVersion))
                 LOG.verbose { "notificationRules(auto)= $rules" }
                 return
             }
@@ -303,26 +336,16 @@ class NotificationListener: NotificationListenerService() {
             LOG.verbose { "notificationRules= $rules" }
         }
 
-        private fun detectRule(): RuleData {
-            var specId = "default"
-
-            //val kakaoTalkVersion = ApplicationSession.kakaoTalkVersion
-            val androidVersion = Build.VERSION.SDK_INT
-
-            /*
-            if (kakaoTalkVersion != null &&
-                kakaoTalkVersion newerThan "9.7.0" &&
-                androidVersion >= Build.VERSION_CODES.R) {
-                specId = "android_r"
-            }
-             */
-            if (androidVersion >= Build.VERSION_CODES.R) // KakaoTalk < 10.2.0 Deprecated, only check android version...
-                specId = "android_r"
+        /** The rule for a KakaoTalk of [versionName], null when it could not be told. */
+        private fun detectRule(versionName: String?): RuleData {
+            val version = versionName
+                ?.takeIf(Version::check)
+                ?.let(Version::fromString)
 
             return RuleData(
                 packageName = PACKAGE_KAKAO_TALK,
                 userId = 0,
-                parserSpecId = specId
+                parserSpecId = ParserSpecPolicy.specIdFor(Build.VERSION.SDK_INT, version)
             )
         }
 

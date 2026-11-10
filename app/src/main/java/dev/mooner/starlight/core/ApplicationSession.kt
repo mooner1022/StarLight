@@ -19,6 +19,7 @@ import dev.mooner.starlight.api.CoreApis
 import dev.mooner.starlight.languages.neonjs.JSNeon
 import dev.mooner.starlight.languages.rhino.JSRhino
 import dev.mooner.starlight.listener.specs.AndroidRParserSpec
+import dev.mooner.starlight.listener.specs.ConversationShortcutParserSpec
 import dev.mooner.starlight.listener.specs.DefaultParserSpec
 import dev.mooner.starlight.media.MediaSharing
 import dev.mooner.starlight.plugincore.Info
@@ -129,6 +130,7 @@ object ApplicationSession {
         ParserSpecManager.apply {
             registerSpec(DefaultParserSpec())
             registerSpec(AndroidRParserSpec())
+            registerSpec(ConversationShortcutParserSpec())
         }
 
         CoreApis.apis().forEach { Session.apiManager.addApi(it) }
