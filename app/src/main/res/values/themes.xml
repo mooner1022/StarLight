@@ -24,7 +24,7 @@
 
         <item name="chipMinHeight">40dp</item>
         <item name="chipCornerRadius">15dp</item>
-        <item name="chipBackgroundColor">#fcfcff</item>
+        <item name="chipBackgroundColor">@color/background_chip</item>
     </style>
 
     <style name="Theme.StarLight.Editor" parent="Theme.StarLight">

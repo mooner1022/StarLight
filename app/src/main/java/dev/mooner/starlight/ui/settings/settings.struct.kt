@@ -125,7 +125,7 @@ internal fun SettingsFragment.getSettingsStruct() = config {
             category {
                 id = "project"
                 title = getString(R.string.settings_category_project)
-                textColor = requireContext().getColor(R.color.main_bright)
+                textColor = requireContext().getColor(R.color.text_gold)
                 items {
                     toggle {
                         id = "compile_animation"
@@ -159,7 +159,7 @@ internal fun SettingsFragment.getSettingsStruct() = config {
             category {
                 id = "plugin"
                 title = getString(R.string.settings_category_plugin)
-                textColor = requireContext().getColor(R.color.main_bright)
+                textColor = requireContext().getColor(R.color.text_gold)
                 items {
                     toggle {
                         id = "safe_mode"
@@ -185,7 +185,7 @@ internal fun SettingsFragment.getSettingsStruct() = config {
             category {
                 id = "event"
                 title = getString(R.string.settings_category_event)
-                textColor = requireContext().getColor(R.color.main_bright)
+                textColor = requireContext().getColor(R.color.text_gold)
                 items {
                     toggle {
                         id = "log_received_message"
@@ -200,7 +200,7 @@ internal fun SettingsFragment.getSettingsStruct() = config {
             category {
                 id = "noti"
                 title = getString(R.string.settings_category_noti)
-                textColor = requireContext().getColor(R.color.main_bright)
+                textColor = requireContext().getColor(R.color.text_gold)
                 items {
                     button {
                         id = "set_package_rules"
@@ -280,7 +280,7 @@ internal fun SettingsFragment.getSettingsStruct() = config {
     category {
         id = "info"
         title = getString(R.string.settings_category_info)
-        textColor = requireContext().getColor(R.color.main_bright)
+        textColor = requireContext().getColor(R.color.text_gold)
         items {
             // Play builds update only through Google Play.
             if (BuildConfig.SELF_UPDATE)

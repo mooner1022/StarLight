@@ -100,7 +100,7 @@
                     android:layout_marginTop="6dp"
                     android:drawablePadding="5dp"
                     android:fontFamily="@font/nanumsquare_neo_bold"
-                    android:textColor="@color/store_gold_deep"
+                    android:textColor="@color/text_gold_deep"
                     android:textSize="13sp"
                     tools:text="mooner1022 · 메신저 연동"/>
 
@@ -205,7 +205,7 @@
                         android:fontFamily="@font/nanumsquare_neo_extrabold"
                         android:gravity="center_vertical"
                         android:text="@string/plugin_store_more"
-                        android:textColor="@color/store_gold_deep"
+                        android:textColor="@color/text_gold_deep"
                         android:textSize="13sp"/>
                 </LinearLayout>
 
@@ -231,7 +231,7 @@
                         android:drawablePadding="2dp"
                         android:fontFamily="@font/nanumsquare_neo_extrabold"
                         android:gravity="center_vertical"
-                        android:textColor="@color/store_gold_deep"
+                        android:textColor="@color/text_gold_deep"
                         android:textSize="13sp"
                         app:drawableEndCompat="@drawable/ic_round_keyboard_arrow_down_24"
                         app:drawableTint="@color/store_gold_deep"

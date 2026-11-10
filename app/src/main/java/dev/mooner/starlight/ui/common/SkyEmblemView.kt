@@ -38,10 +38,11 @@ import kotlin.math.sin
  * The app's emblem as part of the sky a header shows, large and turned at the end of the header and running
  * off its edge.
  *
- * In dark mode it is a night sky: the petals are faint facets of gold light with thin edges, and a star
- * twinkles slowly at the tip of each. In light mode it is a sunset: the old header art's colours wash around
- * the emblem, whose petals are white facets. The wash is drawn here and not by a view of its own because it
- * is placed around the emblem, wherever a layout puts that.
+ * In dark mode it is a night sky: the petals are faint facets of gold light with thin edges. In light mode
+ * it is a sunset: the old header art's colours wash around the emblem, whose petals are white facets, and
+ * nothing else: no points or sparkles around it. In both a star twinkles slowly at the tip of each petal.
+ * The wash is drawn here and not by a view of its own because it is placed around the emblem, wherever a
+ * layout puts that.
  *
  * The petals are the paths of the emblem's own drawable, so the shape is the emblem's exactly.
  */
@@ -60,7 +61,6 @@ class SkyEmblemView @JvmOverloads constructor(
         val edge: Int, val edgeWidth: Float,
         val tip: Int, val tipAlpha: Int,
         val halo: Int, val haloAlpha: Int,
-        val twinkles: Boolean,
     )
 
     private val isNight = context.isNightMode()
@@ -73,7 +73,6 @@ class SkyEmblemView @JvmOverloads constructor(
                 edge = ColorUtils.setAlphaComponent(gold, 120), edgeWidth = 0.8f,
                 tip = context.getColor(R.color.store_star), tipAlpha = 238,
                 halo = gold, haloAlpha = 46,
-                twinkles = true,
             )
         else
             Look(
@@ -81,7 +80,6 @@ class SkyEmblemView @JvmOverloads constructor(
                 edge = ColorUtils.setAlphaComponent(Color.WHITE, 240), edgeWidth = 0.9f,
                 tip = Color.WHITE, tipAlpha = 255,
                 halo = Color.WHITE, haloAlpha = 80,
-                twinkles = false,
             )
     }
 
@@ -104,7 +102,6 @@ class SkyEmblemView @JvmOverloads constructor(
         color = look.edge
     }
     private val starPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val pointColor = ColorUtils.setAlphaComponent(context.getColor(R.color.main_dark), POINT_ALPHA)
     private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val washPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG)
 
@@ -299,10 +296,6 @@ class SkyEmblemView @JvmOverloads constructor(
                 canvas.drawCircle(centerX - unit(dp(10f)), centerY, size * 0.8f, glowPaint)
             } else {
                 wash?.let { canvas.drawBitmap(it, null, washBounds, washPaint) }
-                // A handful of still points, where the old art had its dots. Not a star field.
-                starPaint.color = pointColor
-                for (i in POINTS.indices step 3)
-                    canvas.drawCircle(centerX + unit(dp(POINTS[i])), centerY + unit(dp(POINTS[i + 1])), dp(POINTS[i + 2]), starPaint)
             }
         }
 
@@ -318,11 +311,8 @@ class SkyEmblemView @JvmOverloads constructor(
             canvas.drawPath(petal.path, edgePaint)
         }
         petals.forEachIndexed { index, petal ->
-            // At night each tip twinkles at its own slow pace, never going dark.
-            val twinkle = if (look.twinkles)
-                0.62f + 0.38f * (0.5f + 0.5f * sin(time * (0.45f + 0.11f * index) + index * 1.7f))
-            else
-                1f
+            // Each tip twinkles at its own slow pace, never going dark.
+            val twinkle = 0.62f + 0.38f * (0.5f + 0.5f * sin(time * (0.45f + 0.11f * index) + index * 1.7f))
             val radius = dp(TIP_SIZES[index % TIP_SIZES.size]) / scale
             starPaint.color = ColorUtils.setAlphaComponent(look.halo, (twinkle * look.haloAlpha).toInt())
             canvas.drawCircle(petal.tipX, petal.tipY, radius * 2.5f, starPaint)
@@ -335,7 +325,7 @@ class SkyEmblemView @JvmOverloads constructor(
     override fun onVisibilityAggregated(isVisible: Boolean) {
         super.onVisibilityAggregated(isVisible)
         // Still when nobody sees it, and when the system's animations are off.
-        if (look.twinkles && isVisible && ValueAnimator.areAnimatorsEnabled()) {
+        if (isVisible && ValueAnimator.areAnimatorsEnabled()) {
             if (!animator.isStarted) {
                 // The animator counts from zero again each time it starts.
                 lastDrawnAt = 0f
@@ -381,18 +371,6 @@ class SkyEmblemView @JvmOverloads constructor(
         /** In dp: how far down from the top edge the wash takes to reach its strength. */
         const val WASH_TOP_FADE = 52f
         const val WASH_DOWNSCALE = 4
-
-        /**
-         * The still points of light mode: in dp, each one's place from the emblem's center, and its radius.
-         * In a header they stay above and below the band the title is in.
-         */
-        val POINTS = floatArrayOf(
-            -176f, -72f, 1.5f,
-            -150f, 62f, 1.2f,
-            -112f, -83.5f, 1.1f,
-            -88f, 92.5f, 1.3f,
-        )
-        const val POINT_ALPHA = 120
 
         const val TIP_SAMPLES = 96
         const val FRAME_INTERVAL = 0.066f

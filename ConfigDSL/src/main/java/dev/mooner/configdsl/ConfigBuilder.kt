@@ -84,6 +84,10 @@ class ConfigBuilder {
                 _id = value
             }
         var title: String? = null
+        /**
+         * The title's colour. On the light theme a colour too pale to read against the page is shown in a
+         * darker tone of the same hue.
+         */
         @ColorInt
         var textColor: Int? = null
         var flags: Int = CategoryConfigOption.FLAG_NONE

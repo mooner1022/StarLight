@@ -15,6 +15,7 @@ import androidx.annotation.ColorInt
 import androidx.core.view.isVisible
 import dev.mooner.configdsl.*
 import dev.mooner.configdsl.utils.hasFlag
+import dev.mooner.configdsl.utils.legibleOnPage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -85,7 +86,8 @@ class CategoryConfigOption(
             holder.title.apply {
                 text = it
                 visibility = View.VISIBLE
-                setTextColor(textColor ?: context.getColor(R.color.text))
+                // Whatever colour the title was given, it has to be readable on the light theme too.
+                setTextColor(context.legibleOnPage(textColor ?: context.getColor(R.color.text)))
             }
         } ?: let {
             holder.title.visibility = View.GONE

@@ -17,6 +17,8 @@
     <color name="text">#D5D5D5</color>
     <color name="text_clear">#FFFFFF</color>
     <color name="text_sub">#9E9E9E</color>
+    <color name="text_gold">#DFC199</color>
+    <color name="text_gold_deep">#AD977A</color>
 
     <color name="switch_track">#868686</color>
     <color name="switch_track_disabled">#585858</color>

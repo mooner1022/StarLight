@@ -178,7 +178,7 @@
             android:fontFamily="@font/nanumsquare_neo_bold"
             android:minWidth="0dp"
             android:paddingHorizontal="12dp"
-            android:textColor="@color/main_bright"
+            android:textColor="@color/text_gold"
             android:textSize="13sp"
             tools:text="@string/plugin_restart"/>
     </LinearLayout>

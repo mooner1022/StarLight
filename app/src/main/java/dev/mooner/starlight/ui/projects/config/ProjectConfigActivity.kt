@@ -224,7 +224,7 @@ class ProjectConfigActivity: AppCompatActivity() {
             category {
                 id = "general"
                 title = getString(R.string.project_config_general_category)
-                textColor = getColor(R.color.main_bright)
+                textColor = getColor(R.color.text_gold)
                 items {
                     info {
                         id = "folder_location"
@@ -256,7 +256,7 @@ class ProjectConfigActivity: AppCompatActivity() {
             category {
                 id = API_CATEGORY
                 title = getString(R.string.api_levels_title)
-                textColor = getColor(R.color.main_bright)
+                textColor = getColor(R.color.text_gold)
                 items {
                     multiChoice {
                         id = API_LEVELS
@@ -272,7 +272,7 @@ class ProjectConfigActivity: AppCompatActivity() {
             category {
                 id = EVENTS_CATEGORY
                 title = getString(R.string.project_config_events_category)
-                textColor = getColor(R.color.main_bright)
+                textColor = getColor(R.color.text_gold)
                 items {
                     button {
                         id = ALLOWED_EVENTS
@@ -300,7 +300,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                 category {
                     id = "beta_features"
                     title = getString(R.string.project_config_beta_features_category)
-                    textColor = getColor(R.color.main_bright)
+                    textColor = getColor(R.color.text_gold)
                     items {
                         if (changeThreadPoolSize) {
                             seekbar {

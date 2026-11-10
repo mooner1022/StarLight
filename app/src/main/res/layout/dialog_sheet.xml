@@ -157,7 +157,7 @@
             android:fontFamily="@font/nanumsquare_neo_extrabold"
             android:gravity="center"
             android:paddingHorizontal="18dp"
-            android:textColor="@color/store_gold_deep"
+            android:textColor="@color/text_gold_deep"
             android:textSize="14sp"
             tools:text="취소"/>
 

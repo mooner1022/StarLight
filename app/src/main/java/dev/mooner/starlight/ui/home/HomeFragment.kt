@@ -251,7 +251,7 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
             category {
                 id = UUID.randomUUID().toString()
                 title = category
-                textColor = requireContext().getColorCompat(R.color.main_bright)
+                textColor = requireContext().getColorCompat(R.color.text_gold)
                 items {
                     for (info in infos) {
                         val definition = manager.getDefinition(info.id) ?: continue

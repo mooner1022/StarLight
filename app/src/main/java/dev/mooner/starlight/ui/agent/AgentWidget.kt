@@ -41,7 +41,7 @@ val AgentWidget = widget(WIDGET_AGENT) {
                 if (running.isNotEmpty())
                     binding.setSummary(context.getString(R.string.agent_widget_running, running.size), R.color.agent_meteor)
                 else
-                    binding.setSummary(context.getString(R.string.agent_widget_idle), R.color.main_bright)
+                    binding.setSummary(context.getString(R.string.agent_widget_idle), R.color.text_gold)
                 val target = running.firstOrNull()?.id
                 binding.root.setClickAction { view -> view.context.startActivity(AgentChatActivity.intent(view.context, target)) }
                 if (isCompact)

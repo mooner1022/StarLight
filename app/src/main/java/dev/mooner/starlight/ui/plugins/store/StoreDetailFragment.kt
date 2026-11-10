@@ -206,7 +206,7 @@ class StoreDetailFragment : Fragment() {
             parent.addView(TextView(requireContext()).apply {
                 text = "# $tag"
                 setBackgroundResource(R.drawable.bg_store_pill)
-                setTextColor(requireContext().getColor(R.color.store_gold_deep))
+                setTextColor(requireContext().getColor(R.color.text_gold_deep))
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
                 typeface = ResourcesCompat.getFont(requireContext(), R.font.nanumsquare_neo_bold)
                 val horizontal = dp(12f).toInt()

@@ -26,6 +26,10 @@
     <color name="text">#4c4c4c</color>
     <color name="text_clear">#4c4c4c</color>
     <color name="text_sub">#A3A3A3</color>
+    <!-- Gold where it is text. On the light theme the accent gold is far too pale to read (1.5:1 on the page),
+         so text takes this deeper tone of it; on the dark theme it is the accent itself (values-night). -->
+    <color name="text_gold">#8D632C</color>
+    <color name="text_gold_deep">@color/text_gold</color>
 
     <color name="switch_track">#D1D1D1</color>
 

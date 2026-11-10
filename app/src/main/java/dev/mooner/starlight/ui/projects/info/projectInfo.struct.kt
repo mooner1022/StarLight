@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.flow
 import kotlin.time.Duration.Companion.seconds
 
 fun Context.getProjectInfoItems(project: Project) = config {
-    val defaultColor = getColor(R.color.main_bright)
+    val defaultColor = getColor(R.color.text_gold)
     val info = project.info
     val lang = project.getLanguage()
     category {

@@ -43,7 +43,7 @@
             android:layout_gravity="center_horizontal"
             android:fontFamily="@font/nanumsquare_round_bold"
             android:text="Project StarLight"
-            android:textColor="@color/main_bright"
+            android:textColor="@color/text_gold"
             android:textSize="28sp" />
 
         <TextView

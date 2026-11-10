@@ -413,7 +413,7 @@
                             android:fontFamily="@font/nanumsquare_neo_bold"
                             android:paddingHorizontal="8dp"
                             android:paddingVertical="2dp"
-                            android:textColor="@color/store_gold_deep"
+                            android:textColor="@color/text_gold_deep"
                             android:textSize="11sp"
                             tools:text="8"/>
 
