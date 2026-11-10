@@ -42,7 +42,7 @@ import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.projects.events.EventCatalog
 import dev.mooner.starlight.ui.projects.events.showEventPicker
 import dev.mooner.starlight.utils.*
-import dev.mooner.starlight.utils.fitPage
+import dev.mooner.starlight.utils.fitSkyPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -67,7 +67,7 @@ class ProjectConfigActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityProjectConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitPage(binding.root)
+        fitSkyPage(binding.root, binding.skyHeader, binding.scroll, binding.leave)
 
         bindLogNotifier()
 

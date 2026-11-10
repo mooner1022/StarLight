@@ -20,7 +20,7 @@ import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.R
 import dev.mooner.starlight.ui.common.confirmLeavingUnsaved
 import dev.mooner.starlight.utils.bindPageHeader
-import dev.mooner.starlight.utils.fitPage
+import dev.mooner.starlight.utils.fitSkyPage
 import dev.mooner.starlight.utils.peek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -39,7 +39,7 @@ class PluginConfigActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPluginConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitPage(binding.root)
+        fitSkyPage(binding.root, binding.skyHeader, binding.scroll, binding.leave)
 
         bindLogNotifier()
 

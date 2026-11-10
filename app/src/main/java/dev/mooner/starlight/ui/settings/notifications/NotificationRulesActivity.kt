@@ -30,7 +30,7 @@ import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.ui.common.confirmLeavingUnsaved
 import dev.mooner.starlight.utils.createSuccessPeek
 import dev.mooner.starlight.utils.bindPageHeader
-import dev.mooner.starlight.utils.fitPage
+import dev.mooner.starlight.utils.fitSkyPage
 import dev.mooner.starlight.utils.peek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -55,7 +55,7 @@ class NotificationRulesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNotificationRulesBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitPage(binding.root)
+        fitSkyPage(binding.root, binding.skyHeader, binding.scroll, binding.leave)
         bindPageHeader(binding.scroll, binding.skyHeader)
 
 

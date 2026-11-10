@@ -9,10 +9,13 @@ package dev.mooner.starlight
 import android.os.Bundle
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.view.WindowCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -39,7 +42,7 @@ import dev.mooner.starlight.ui.settings.update.UpdateCheckResult
 import dev.mooner.starlight.ui.settings.update.checkForUpdate
 import dev.mooner.starlight.ui.settings.update.isAutoUpdateCheckEnabled
 import dev.mooner.starlight.utils.LAYOUT_TABLET
-import dev.mooner.starlight.utils.applyEdgeToEdge
+import dev.mooner.starlight.utils.extendBehindStatusBar
 import dev.mooner.starlight.utils.layoutMode
 import dev.mooner.starlight.utils.restartIfNotReady
 import dev.mooner.starlight.utils.showChangelogDialog
@@ -67,11 +70,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         onBackPressedDispatcher.addCallback(this, backToHome)
         updater = AppUpdater(this)
-        applyEdgeToEdge(binding.root) { _, _ ->
-            window.navigationBarColor = ContextCompat.getColor(this, R.color.cardview)
-        }
-
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        fitBehindSystemBars()
 
         bindLogNotifier { log ->
             !log.message.startsWith("ECOMF: ") && !(log.flags hasFlag LogData.FLAG_COMPILE_RESULT)
@@ -211,6 +210,28 @@ class MainActivity : AppCompatActivity() {
     // title would show one tab and the page another.
     private fun showPage(index: Int) =
         binding.viewPager.setCurrentItem(index, abs(index - binding.viewPager.currentItem) <= 1)
+
+    /**
+     * Draws behind the system bars. The sky runs up behind the status bar, and the app bar, which holds the
+     * title, starts under it; when it folds away that much of it stays, so the tabs' content never goes under
+     * the clock. The rest is kept clear of the bars, and this one listener is the only place the insets go:
+     * nothing below the root sees them.
+     */
+    private fun fitBehindSystemBars() {
+        enableEdgeToEdge()
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            val insets = windowInsets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.updatePadding(left = insets.left, top = 0, right = insets.right, bottom = insets.bottom)
+            binding.appBarLayout.updatePadding(top = insets.top)
+            // The side menu of the wide layout starts under the status bar too.
+            binding.constraintLayout2?.updatePadding(top = insets.top)
+            binding.skyHeader.extendBehindStatusBar(insets.top)
+            window.navigationBarColor = ContextCompat.getColor(this, R.color.cardview)
+            WindowInsetsCompat.CONSUMED
+        }
+    }
 
     private fun handleOffsetUpdate(appBarLayout: AppBarLayout, verticalOffset: Int) {
         val alpha = 1.0f - abs(

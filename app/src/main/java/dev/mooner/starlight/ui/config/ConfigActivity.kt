@@ -14,7 +14,7 @@ import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.utils.*
 import dev.mooner.starlight.utils.bindPageHeader
-import dev.mooner.starlight.utils.fitPage
+import dev.mooner.starlight.utils.fitSkyPage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.filterIsInstance
@@ -42,7 +42,7 @@ class ConfigActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitPage(binding.root)
+        fitSkyPage(binding.root, binding.skyHeader, binding.scroll, binding.leave)
         bindPageHeader(binding.scroll, binding.skyHeader, binding.title, binding.subTitle)
 
         bindLogNotifier()

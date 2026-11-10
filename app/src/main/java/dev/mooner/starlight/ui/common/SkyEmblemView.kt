@@ -147,8 +147,21 @@ class SkyEmblemView @JvmOverloads constructor(
     /** A length of the wash, which is as large as the emblem and then spread by [washSpread]. */
     private fun spread(value: Float) = unit(value) * washSpread
 
+    /**
+     * In px: how much of the top of this view is behind the status bar. The emblem keeps its place below
+     * that line, so a header reads the same on any device, and only the sky runs up through it.
+     */
+    var topInset: Int = 0
+        set(value) {
+            if (field == value)
+                return
+            field = value
+            rebuild()
+            invalidate()
+        }
+
     private val centerX get() = width - centerFromEnd
-    private val centerY get() = if (centerFromTop >= 0f) centerFromTop else height * CENTER_Y
+    private val centerY get() = if (centerFromTop >= 0f) centerFromTop else topInset + (height - topInset) * CENTER_Y
 
     private fun loadPetals(): List<Petal> {
         val namespace = "http://schemas.android.com/apk/res/android"
@@ -194,6 +207,13 @@ class SkyEmblemView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
+        rebuild()
+    }
+
+    /** Makes what is drawn from the view's size and the emblem's place in it. */
+    private fun rebuild() {
+        val w = width
+        val h = height
         val center = viewport / 2f
         fun facet(heart: Int, edge: Int) = RadialGradient(
             center, center, viewport * 0.52f,
@@ -223,8 +243,10 @@ class SkyEmblemView @JvmOverloads constructor(
     }
 
     /**
-     * The sunset as a soft ellipse of colour around the emblem, gone by the top edge so that it doesn't end
-     * in a line under the status bar. It is a blur, so it is drawn once and small, and stretched when shown.
+     * The sunset as a soft ellipse of colour around the emblem. Where the view starts under the status bar
+     * the wash is gone by the top edge, so that it doesn't end in a line there; where the view runs up behind
+     * the status bar it just thins out toward the top of the screen. It is a blur, so it is drawn once and
+     * small, and stretched when shown.
      */
     private fun renderWash(w: Int, h: Int): Bitmap {
         val scale = 1f / WASH_DOWNSCALE
@@ -255,12 +277,14 @@ class SkyEmblemView @JvmOverloads constructor(
         }
         canvas.drawPaint(paint)
 
-        paint.shader = LinearGradient(
-            0f, 0f, 0f, dp(WASH_TOP_FADE),
-            intArrayOf(0, ColorUtils.setAlphaComponent(Color.BLACK, 90), Color.BLACK), floatArrayOf(0f, 0.5f, 1f),
-            Shader.TileMode.CLAMP,
-        )
-        canvas.drawPaint(paint)
+        if (topInset == 0) {
+            paint.shader = LinearGradient(
+                0f, 0f, 0f, dp(WASH_TOP_FADE),
+                intArrayOf(0, ColorUtils.setAlphaComponent(Color.BLACK, 90), Color.BLACK), floatArrayOf(0f, 0.5f, 1f),
+                Shader.TileMode.CLAMP,
+            )
+            canvas.drawPaint(paint)
+        }
         return bitmap
     }
 
