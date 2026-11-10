@@ -92,7 +92,6 @@ class AgentChatActivity : AppCompatActivity() {
         planBoard.collapsed = savedInstanceState?.getBoolean(KEY_PLAN_COLLAPSED) == true
 
         setUpWindow()
-        binding.stars.density = 0.35f
         binding.stars.brightness = 0.8f
         binding.back.setOnClickListener { finish() }
         binding.titleArea.setOnClickListener { ModelSheet.show(this) }

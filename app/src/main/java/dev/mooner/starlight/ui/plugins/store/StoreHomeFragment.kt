@@ -1,9 +1,8 @@
 package dev.mooner.starlight.ui.plugins.store
 
 import android.animation.ArgbEvaluator
-import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
 import android.content.res.ColorStateList
+import android.graphics.Outline
 import android.os.Bundle
 import android.transition.AutoTransition
 import android.transition.TransitionManager
@@ -11,10 +10,10 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewOutlineProvider
 import android.view.animation.AnimationUtils
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.LayoutAnimationController
-import android.view.animation.LinearInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.getSystemService
@@ -38,6 +37,7 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.FragmentStoreHomeBinding
 import dev.mooner.starlight.databinding.ItemStoreInfoBinding
 import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.utils.isNightMode
 import dev.mooner.starlight.utils.restartApplication
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -57,7 +57,6 @@ class StoreHomeFragment : Fragment() {
 
     private var shownIndex: StoreIndex? = null
     private var featuredPosition = 0
-    private var logoAnimator: ObjectAnimator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -139,12 +138,17 @@ class StoreHomeFragment : Fragment() {
             scroll.setOnScrollChangeListener { _, _, scrollY, _, _ -> onScrolled(scrollY) }
         }
 
-        logoAnimator = ObjectAnimator.ofFloat(binding.heroLogo, View.ROTATION, 0f, 360f).apply {
-            duration = 60_000
-            repeatCount = ValueAnimator.INFINITE
-            interpolator = LinearInterpolator()
-            start()
+        // Stars are the night's. By day the hero is a sunset, which the emblem draws around itself.
+        binding.stars.isVisible = requireContext().isNightMode()
+        // What the hero holds stays inside its rounded bottom corners: the outline is the panel's shape,
+        // reaching above the top edge so that only the bottom corners are round.
+        binding.hero.outlineProvider = object : ViewOutlineProvider() {
+            override fun getOutline(view: View, outline: Outline) {
+                val radius = dp(32f)
+                outline.setRoundRect(0, -radius.toInt(), view.width, view.height, radius)
+            }
         }
+        binding.hero.clipToOutline = true
 
         listAdapter.installStates = viewModel.installStates.value
         render(viewModel.state.value)
@@ -403,7 +407,7 @@ class StoreHomeFragment : Fragment() {
             topTitle.alpha = ((progress - 0.7f) / 0.3f).coerceIn(0f, 1f)
             val tint = ArgbEvaluator().evaluate(
                 progress,
-                requireContext().getColor(R.color.store_star),
+                requireContext().getColor(R.color.store_hero_title),
                 requireContext().getColor(R.color.text),
             ) as Int
             back.imageTintList = ColorStateList.valueOf(tint)
@@ -411,7 +415,7 @@ class StoreHomeFragment : Fragment() {
             stars.parallax = scrollY * 0.6f
             heroText.translationY = scrollY * 0.35f
             heroText.alpha = 1f - (progress * 1.3f).coerceAtMost(1f)
-            heroLogo.translationY = scrollY * 0.2f
+            heroEmblem.translationY = scrollY * 0.2f
         }
     }
 
@@ -447,8 +451,6 @@ class StoreHomeFragment : Fragment() {
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics)
 
     override fun onDestroyView() {
-        logoAnimator?.cancel()
-        logoAnimator = null
         shownIndex = null
         super.onDestroyView()
         _binding = null

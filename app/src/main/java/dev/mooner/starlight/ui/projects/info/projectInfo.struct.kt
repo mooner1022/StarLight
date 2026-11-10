@@ -26,17 +26,17 @@ import kotlinx.coroutines.flow.flow
 import kotlin.time.Duration.Companion.seconds
 
 fun Context.getProjectInfoItems(project: Project) = config {
-    val defaultColor = getColor(R.color.main_bright)
+    val defaultColor = getColor(R.color.text_gold)
     val info = project.info
     val lang = project.getLanguage()
     category {
         id = "general"
-        title = "기본"
+        title = getString(R.string.project_info_general_category)
         textColor = defaultColor
         items {
             info {
                 id = "name"
-                title = "이름"
+                title = getString(R.string.project_info_general_name_title)
                 value = info.name
                 copyable = true
                 icon = Icon.PROJECTS
@@ -44,7 +44,7 @@ fun Context.getProjectInfoItems(project: Project) = config {
             }
             info {
                 id = "mainScript"
-                title = "메인 스크립트"
+                title = getString(R.string.project_info_main_script_title)
                 value = info.mainScript
                 copyable = true
                 icon = Icon.EXIT_TO_APP
@@ -52,28 +52,28 @@ fun Context.getProjectInfoItems(project: Project) = config {
             }
             info {
                 id = "birth"
-                title = "생성일"
+                title = getString(R.string.project_info_birth_title)
                 value = TimeUtils.formatMillis(info.createdMillis, "yyyy/MM/dd HH:mm:ss")
                 icon = Icon.ADD
                 iconTintColor = color { "#BEAEE2" }
             }
             textList {
                 id = "listeners"
-                title = "리스너"
+                title = getString(R.string.project_info_listeners_title)
                 lines = (project as ProjectImpl).allowedEventIDs.sorted()
                 monospace = true
                 copyable = true
-                emptyText = "없음"
+                emptyText = getString(R.string.project_info_listeners_empty)
                 icon = Icon.ARROW_LEFT
                 iconTintColor = color { "#98DDCA" }
             }
             textList {
                 id = "packages"
-                title = "패키지"
+                title = getString(R.string.project_info_packages_title)
                 lines = info.packages.toList()
                 monospace = true
                 copyable = true
-                emptyText = "없음"
+                emptyText = getString(R.string.project_info_packages_empty)
                 icon = Icon.DEVELOPER_BOARD
                 iconTintColor = color { "#ff9966" }
             }
@@ -81,12 +81,12 @@ fun Context.getProjectInfoItems(project: Project) = config {
     }
     category {
         id = "lang"
-        title = "언어"
+        title = getString(R.string.project_info_lang_category)
         textColor = defaultColor
         items {
             info {
                 id = "name"
-                title = "언어"
+                title = getString(R.string.project_info_lang_name_title)
                 description = lang.id
                 value = lang.name
                 icon = Icon.DEVELOPER_MODE
@@ -94,15 +94,15 @@ fun Context.getProjectInfoItems(project: Project) = config {
             }
             info {
                 id = "fileExt"
-                title = "파일 확장자"
+                title = getString(R.string.project_info_file_ext_title)
                 value = lang.fileExtension
                 icon = Icon.FOLDER
                 iconTintColor = color { "#7A69C7" }
             }
             info {
                 id = "reqRelease"
-                title = "릴리스 필요"
-                value = if (lang.requireRelease) "예" else "아니요"
+                title = getString(R.string.project_info_req_release_title)
+                value = getString(if (lang.requireRelease) R.string.project_info_req_release_yes else R.string.project_info_req_release_no)
                 icon = Icon.DELETE_SWEEP
                 iconTintColor = color { "#B06AB3" }
             }
@@ -110,43 +110,43 @@ fun Context.getProjectInfoItems(project: Project) = config {
     }
     category {
         id = "state"
-        title = "상태"
+        title = getString(R.string.project_info_state_category)
         textColor = defaultColor
         items {
             info {
                 id = "threadName"
-                title = "스레드"
-                value = project.threadPoolName ?: "할당되지 않음"
+                title = getString(R.string.project_info_thread_name_title)
+                value = project.threadPoolName ?: getString(R.string.project_info_thread_name_none)
                 icon = Icon.LAYERS
                 iconTintColor = color { "#3A1C71" }
             }
             info {
                 id = "jobs"
-                title = "작업"
+                title = getString(R.string.project_info_jobs_title)
                 icon = Icon.TIMER
                 iconTintColor = color { "#57837B" }
-                bindValue(every = 1.seconds) { "실행 ${project.activeJobs()} · 대기 ${project.queuedEvents()}" }
+                bindValue(every = 1.seconds) { getString(R.string.project_info_jobs_value, project.activeJobs(), project.queuedEvents()) }
             }
             info {
                 id = "isCompiled"
-                title = "컴파일"
+                title = getString(R.string.project_info_is_compiled_title)
                 icon = Icon.REFRESH
                 iconTintColor = color { "#D76D77" }
                 bind(flow {
                     while (true) {
-                        emit(if (project.isCompiled) InfoState("완료", OptionStatus.OK) else InfoState("필요", OptionStatus.WARNING))
+                        emit(if (project.isCompiled) InfoState(getString(R.string.project_info_is_compiled_done), OptionStatus.OK) else InfoState(getString(R.string.project_info_is_compiled_needed), OptionStatus.WARNING))
                         delay(1.seconds)
                     }
                 })
             }
             info {
                 id = "isEnabled"
-                title = "활성화"
+                title = getString(R.string.project_info_is_enabled_title)
                 icon = Icon.EDIT_ATTRIBUTES
                 iconTintColor = color { "#FFAF7B" }
                 bind(flow {
                     while (true) {
-                        emit(if (info.isEnabled) InfoState("켜짐", OptionStatus.OK) else InfoState("꺼짐", null))
+                        emit(if (info.isEnabled) InfoState(getString(R.string.project_info_is_enabled_on), OptionStatus.OK) else InfoState(getString(R.string.project_info_is_enabled_off), null))
                         delay(1.seconds)
                     }
                 })
@@ -155,13 +155,13 @@ fun Context.getProjectInfoItems(project: Project) = config {
     }
     category {
         id = "file"
-        title = "파일"
+        title = getString(R.string.project_info_file_category)
         textColor = defaultColor
         items {
             button {
                 id = "export"
-                title = "내보내기"
-                description = "프로젝트를 zip 파일로 저장해요. 프로젝트 목록의 가져오기로 다시 불러올 수 있어요."
+                title = getString(R.string.project_info_export_title)
+                description = getString(R.string.project_info_export_desc)
                 icon = Icon.ARCHIVE
                 iconTintColor = color { "#4568DC" }
                 action {

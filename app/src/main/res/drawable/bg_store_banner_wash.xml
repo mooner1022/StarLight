@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- By day, the sunset behind a plugin's icon. The night has its stars instead: drawable-night/ leaves this empty. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:centerColor="#40D47E97"
+                android:centerX="0.5"
+                android:centerY="0.56"
+                android:endColor="#006455A2"
+                android:gradientRadius="190dp"
+                android:startColor="#73F59193"
+                android:type="radial"/>
+        </shape>
+    </item>
+</layer-list>

@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/nanumsquare_neo_bold"
         android:letterSpacing="0.04"
-        android:textColor="@color/store_gold_deep"
+        android:textColor="@color/text_gold_deep"
         android:textSize="12sp"
         tools:text="연동"/>
 

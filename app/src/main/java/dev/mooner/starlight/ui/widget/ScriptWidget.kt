@@ -52,7 +52,7 @@ val ScriptWidget = widget(WIDGET_SCRIPT) {
                 return
             }
             if (isCompact) {
-                binding.setSummary("${latest.label} ${latest.value}", R.color.main_dark)
+                binding.setSummary("${latest.label} ${latest.value}", R.color.text_gold_deep)
                 return
             }
             val showProject = entries.distinctBy(ScriptWidgetEntries.Entry::projectId).size > 1

@@ -8,6 +8,6 @@
     android:layout_marginBottom="6dp"
     android:layout_marginStart="4dp"
     android:fontFamily="@font/nanumsquare_round_extrabold"
-    android:textColor="@color/main_bright"
+    android:textColor="@color/text_gold"
     android:textSize="13sp"
     tools:text="메신저봇 호환"/>

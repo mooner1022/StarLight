@@ -85,7 +85,7 @@
         android:paddingTop="8dp"
         android:paddingEnd="8dp"
         android:paddingBottom="2dp"
-        android:textColor="@color/main_bright"
+        android:textColor="@color/text_gold"
         android:textSize="13sp"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="@+id/title"

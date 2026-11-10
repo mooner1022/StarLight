@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The header of a page opened from a main tab: the tab's own title style, under a back button. -->
+    <!-- One line that shrinks to stay clear of the header art, which a long title would run under. -->
+    <style name="PageTitle">
+        <item name="android:fontFamily">@font/nanumsquare_neo_extrabold</item>
+        <item name="android:textColor">@color/text</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:gravity">bottom</item>
+        <item name="android:maxLines">1</item>
+        <item name="autoSizeTextType">uniform</item>
+        <item name="autoSizeMinTextSize">18sp</item>
+        <item name="autoSizeMaxTextSize">28sp</item>
+        <item name="autoSizeStepGranularity">1sp</item>
+    </style>
+
+    <style name="PageSubtitle">
+        <item name="android:fontFamily">@font/nanumsquare_neo_regular</item>
+        <item name="android:textColor">@color/text</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <!-- 48dp to touch, around a 28dp arrow. -->
+    <style name="PageBackButton">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:layout_marginStart">6dp</item>
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:contentDescription">@string/back</item>
+        <item name="android:padding">10dp</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:src">@drawable/ic_round_arrow_left_24</item>
+        <item name="tint">@color/text</item>
+    </style>
+</resources>

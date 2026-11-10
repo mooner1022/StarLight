@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The sky behind a page's title. This is the night's; the day's is in layout/. -->
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/nightSky"
+    android:id="@+id/sky"
     android:layout_width="match_parent"
-    android:layout_height="230dp"
-    android:importantForAccessibility="noHideDescendants"
-    android:visibility="gone">
+    android:layout_height="@dimen/sky_header_height"
+    android:importantForAccessibility="noHideDescendants">
 
     <View
+        android:id="@+id/nightGlow"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/bg_night_header_glow"/>
@@ -17,15 +18,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <ImageView
-        android:id="@+id/nightLogo"
-        android:layout_width="124dp"
-        android:layout_height="124dp"
-        android:layout_gravity="end|center_vertical"
-        android:layout_marginEnd="-28dp"
-        android:alpha="0.75"
-        android:rotation="12"
-        android:src="@drawable/ic_logo_transparent"/>
+    <dev.mooner.starlight.ui.common.SkyEmblemView
+        android:id="@+id/emblem"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
 
     <View
         android:layout_width="match_parent"

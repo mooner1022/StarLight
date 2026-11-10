@@ -46,12 +46,12 @@ class LogItem: AbstractBindingItem<CardLogBinding>() {
 
         binding.setViewByType(viewType)
         val color = when(data.type) {
-            LogType.INFO     -> R.color.code_string
-            LogType.DEBUG    -> R.color.code_purple
-            LogType.WARN     -> R.color.code_yellow
-            LogType.ERROR    -> R.color.code_orange
-            LogType.CRITICAL -> R.color.code_error
-            LogType.VERBOSE  -> R.color.monokai_pro_sky
+            LogType.INFO     -> R.color.log_info
+            LogType.DEBUG    -> R.color.log_debug
+            LogType.WARN     -> R.color.log_warn
+            LogType.ERROR    -> R.color.log_error
+            LogType.CRITICAL -> R.color.log_critical
+            LogType.VERBOSE  -> R.color.log_verbose
         }.let(context::getColor)
         when(viewType) {
             ViewType.NORMAL -> {

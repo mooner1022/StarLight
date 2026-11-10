@@ -14,6 +14,7 @@ import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.textList
 import dev.mooner.configdsl.options.toggle
 import dev.mooner.configdsl.utils.PeekType
+import dev.mooner.starlight.R
 import dev.mooner.starlight.media.MediaSettings
 import dev.mooner.starlight.media.MediaSharing
 import dev.mooner.starlight.media.send.KakaoShare
@@ -42,26 +43,26 @@ private const val TICKER_MILLIS = 3_000L
 /** Settings > Media sending: how `MediaSharer.send` and `room.sendMedia` send files. */
 internal fun ConfigBuilder.mediaPage(context: Context) = page {
     id = "media"
-    title = "미디어 전송"
+    title = context.getString(R.string.media_settings_page_title)
     icon = Icon.SEND
     iconTintColor = color { COLOR }
     shareData(GlobalConfig::getMutableData, GlobalConfig::onSaveConfigAdapter)
     structure {
         category {
             id = MediaSettings.CATEGORY_STATUS
-            title = "상태"
+            title = context.getString(R.string.media_settings_category_status)
             textColor = color { COLOR }
             items {
                 info {
                     id = "kakao_status"
-                    title = "카카오톡"
+                    title = context.getString(R.string.media_settings_kakao_status_title)
                     icon = Icon.SEND
                     bind(ticker { kakaoState(context) })
                 }
                 info {
                     id = "overlay_status"
-                    title = "다른 앱 위에 표시"
-                    description = "StarLight가 백그라운드에 있을 때 카카오톡을 열려면 필요해요. 눌러서 설정을 열어요."
+                    title = context.getString(R.string.media_settings_overlay_status_title)
+                    description = context.getString(R.string.media_settings_overlay_status_desc)
                     icon = Icon.LAYERS
                     bind(ticker { overlayState(context) })
                     setOnClickListener { view ->
@@ -72,9 +73,12 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
                 if (declaresOtherUsersPermission(context))
                     info {
                         id = "other_users_status"
-                        title = "듀얼 메신저 카카오톡"
-                        description = "다른 사용자(듀얼 메신저)의 카카오톡 방으로 선택창 없이 보내려면 권한을 부여해야 해요:\n" +
-                            "adb shell pm grant ${context.packageName} ${KakaoShare.INTERACT_ACROSS_USERS}"
+                        title = context.getString(R.string.media_settings_other_users_status_title)
+                        description = context.getString(
+                            R.string.media_settings_other_users_status_desc,
+                            context.packageName,
+                            KakaoShare.INTERACT_ACROSS_USERS,
+                        )
                         icon = Icon.ACCOUNT_BOX
                         bind(ticker { otherUsersState(context) })
                     }
@@ -82,13 +86,13 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
         }
         category {
             id = MediaSettings.CATEGORY_SEND
-            title = "전송"
+            title = context.getString(R.string.media_settings_category_send)
             textColor = color { COLOR_SUB }
             items {
                 seekbar {
                     id = MediaSettings.CONF_TIMEOUT
-                    title = "다운로드 제한 시간 (초)"
-                    description = "연결과 데이터 대기마다 적용돼요. 스크립트의 timeout 옵션이 우선해요."
+                    title = context.getString(R.string.media_settings_download_timeout_title)
+                    description = context.getString(R.string.media_settings_download_timeout_desc)
                     min = 5
                     max = 120
                     defaultValue = MediaSettings.DEF_TIMEOUT_SECONDS
@@ -97,7 +101,7 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
                 }
                 spinner {
                     id = MediaSettings.CONF_MAX_FILE
-                    title = "최대 파일 크기"
+                    title = context.getString(R.string.media_settings_max_file_size_title)
                     items = MediaSettings.FILE_LIMIT_LABELS
                     defaultIndex = MediaSettings.DEF_FILE_LIMIT
                     icon = Icon.FILE
@@ -105,8 +109,8 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
                 }
                 seekbar {
                     id = MediaSettings.CONF_INTERVAL
-                    title = "연속 전송 간격 (×0.1초)"
-                    description = "연달아 보낸 파일이 누락되면 늘려 보세요."
+                    title = context.getString(R.string.media_settings_send_interval_title)
+                    description = context.getString(R.string.media_settings_send_interval_desc)
                     min = 0
                     max = 50
                     defaultValue = 0
@@ -115,8 +119,8 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
                 }
                 seekbar {
                     id = MediaSettings.CONF_RETENTION
-                    title = "임시 파일 보관 시간 (초)"
-                    description = "다운로드하거나 복사한 파일은 전송 후 이 시간이 지나면 삭제돼요. 큰 동영상은 늘려 주세요."
+                    title = context.getString(R.string.media_settings_temp_retention_title)
+                    description = context.getString(R.string.media_settings_temp_retention_desc)
                     min = 10
                     max = 600
                     defaultValue = MediaSettings.DEF_RETENTION_SECONDS
@@ -125,20 +129,19 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
                 }
                 choice {
                     id = MediaSettings.CONF_AFTER_SEND
-                    title = "전송 후"
-                    description = "스크립트의 leave 옵션이 없을 때 적용돼요. 채팅방이 열려 있는 동안에는 알림이 오지 않으니 봇이라면 나가는 것이 좋아요."
-                    option(LeaveTo.KEY_STAY, "카카오톡에 머물기")
-                    option(LeaveTo.KEY_HOME, "홈 화면으로 이동")
-                    option(LeaveTo.KEY_STARLIGHT, "StarLight로 돌아가기")
+                    title = context.getString(R.string.media_settings_after_send_title)
+                    description = context.getString(R.string.media_settings_after_send_desc)
+                    option(LeaveTo.KEY_STAY, context.getString(R.string.media_settings_after_send_stay))
+                    option(LeaveTo.KEY_HOME, context.getString(R.string.media_settings_after_send_home))
+                    option(LeaveTo.KEY_STARLIGHT, context.getString(R.string.media_settings_after_send_starlight))
                     defaultKey = LeaveTo.KEY_STAY
                     icon = Icon.EXIT_TO_APP
                     iconTintColor = color { COLOR }
                 }
                 seekbar {
                     id = MediaSettings.CONF_RETURN_DELAY
-                    title = "카카오톡 최대 체류 시간 (초)"
-                    description = "카카오톡이 파일을 읽으면 바로 나가고, 읽는 것이 감지되지 않으면 이 시간 뒤에 나가요. " +
-                        "지연 없이 호출한 MediaSharer.leave()에도 적용돼요."
+                    title = context.getString(R.string.media_settings_return_delay_title)
+                    description = context.getString(R.string.media_settings_return_delay_desc)
                     min = 1
                     max = 30
                     defaultValue = MediaSettings.DEF_RETURN_DELAY_SECONDS
@@ -147,9 +150,8 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
                 }
                 seekbar {
                     id = MediaSettings.CONF_LEAVE_GRACE
-                    title = "파일을 읽은 뒤 대기 (×0.1초)"
-                    description = "카카오톡이 메시지를 올릴 시간이에요. 채팅방이 열려 있는 동안에는 알림이 오지 않으니 짧게 두고, " +
-                        "전송이 누락되면 늘려 주세요."
+                    title = context.getString(R.string.media_settings_leave_grace_title)
+                    description = context.getString(R.string.media_settings_leave_grace_desc)
                     min = 0
                     max = 30
                     defaultValue = MediaSettings.DEF_LEAVE_GRACE_TENTHS
@@ -158,8 +160,8 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
                 }
                 toggle {
                     id = MediaSettings.CONF_LOG_SENDS
-                    title = "전송 로그 남기기"
-                    description = "모든 전송을 프로젝트 로그에 남겨요."
+                    title = context.getString(R.string.media_settings_log_sends_title)
+                    description = context.getString(R.string.media_settings_log_sends_desc)
                     defaultValue = false
                     icon = Icon.LIST_BULLETED
                     iconTintColor = color { COLOR }
@@ -168,20 +170,20 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
         }
         category {
             id = MediaSettings.CATEGORY_CACHE
-            title = "캐시"
+            title = context.getString(R.string.media_settings_category_cache)
             textColor = color { COLOR_SUB }
             items {
                 toggle {
                     id = MediaSettings.CONF_CACHE_DEFAULT
-                    title = "기본으로 캐시 사용"
-                    description = "다운로드·디코딩한 파일을 보관해 다시 보낼 때 내려받지 않아요. 스크립트의 cache 옵션이 우선해요."
+                    title = context.getString(R.string.media_settings_cache_by_default_title)
+                    description = context.getString(R.string.media_settings_cache_by_default_desc)
                     defaultValue = false
                     icon = Icon.CLOUD_DOWNLOAD
                     iconTintColor = color { COLOR }
                 }
                 seekbar {
                     id = MediaSettings.CONF_CACHE_ITEMS
-                    title = "최대 캐시 파일 수"
+                    title = context.getString(R.string.media_settings_cache_max_items_title)
                     min = 10
                     max = 1000
                     defaultValue = MediaSettings.DEF_CACHE_ITEMS
@@ -190,7 +192,7 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
                 }
                 spinner {
                     id = MediaSettings.CONF_CACHE_SIZE
-                    title = "최대 캐시 크기"
+                    title = context.getString(R.string.media_settings_cache_max_size_title)
                     items = MediaSettings.CACHE_LIMIT_LABELS
                     defaultIndex = MediaSettings.DEF_CACHE_LIMIT
                     icon = Icon.ARCHIVE
@@ -198,60 +200,66 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
                 }
                 button {
                     id = "clear_cache"
-                    title = "캐시 비우기"
+                    title = context.getString(R.string.media_settings_clear_cache_title)
                     icon = Icon.DELETE
-                    bindDescription(ticker { cacheUsage() })
+                    bindDescription(ticker { cacheUsage(context) })
                     action {
                         val service = MediaSharing.service ?: return@action
-                        if (!confirm("캐시 비우기", "캐시된 파일을 모두 삭제할까요?"))
+                        if (!confirm(
+                                context.getString(R.string.media_settings_clear_cache_title),
+                                context.getString(R.string.media_settings_clear_cache_confirm),
+                            ))
                             return@action
                         val count = withContext(Dispatchers.IO) { service.cache.clear() }
-                        peek("파일 ${count}개를 삭제했어요", PeekType.SUCCESS)
+                        peek(context.getString(R.string.media_settings_clear_cache_done, count), PeekType.SUCCESS)
                     }
                 }
             }
         }
         category {
             id = MediaSettings.CATEGORY_ROOMS
-            title = "채팅방"
+            title = context.getString(R.string.media_settings_category_rooms)
             textColor = color { COLOR_SUB }
             items {
                 textList {
                     id = "known_rooms"
-                    title = "알려진 채팅방"
-                    description = "메시지를 받은 채팅방이에요. 스크립트에서 채널 ID 대신 방 이름으로 지정할 수 있어요."
+                    title = context.getString(R.string.media_settings_known_rooms_title)
+                    description = context.getString(R.string.media_settings_known_rooms_desc)
                     icon = Icon.LIST_BULLETED
                     copyable = true
-                    emptyText = "아직 받은 메시지가 없어요"
-                    lines = knownRooms()
-                    bind(serviceFlow { service -> service.rooms.version.map { knownRooms() } })
+                    emptyText = context.getString(R.string.media_settings_known_rooms_empty)
+                    lines = knownRooms(context)
+                    bind(serviceFlow { service -> service.rooms.version.map { knownRooms(context) } })
                 }
                 button {
                     id = "forget_rooms"
-                    title = "채팅방 목록 지우기"
+                    title = context.getString(R.string.media_settings_forget_rooms_title)
                     icon = Icon.DELETE_SWEEP
                     action {
                         val service = MediaSharing.service ?: return@action
-                        if (!confirm("채팅방 목록 지우기", "알려진 채팅방을 모두 지울까요?"))
+                        if (!confirm(
+                                context.getString(R.string.media_settings_forget_rooms_title),
+                                context.getString(R.string.media_settings_forget_rooms_confirm),
+                            ))
                             return@action
                         withContext(Dispatchers.IO) { service.rooms.clear() }
-                        peek("채팅방 목록을 지웠어요", PeekType.SUCCESS)
+                        peek(context.getString(R.string.media_settings_forget_rooms_done), PeekType.SUCCESS)
                     }
                 }
             }
         }
         category {
             id = MediaSettings.CATEGORY_HISTORY
-            title = "기록"
+            title = context.getString(R.string.media_settings_category_history)
             textColor = color { COLOR_SUB }
             items {
                 textList {
                     id = "recent_sends"
-                    title = "최근 전송"
+                    title = context.getString(R.string.media_settings_recent_sends_title)
                     icon = Icon.SEND
                     monospace = true
                     copyable = true
-                    emptyText = "아직 보낸 파일이 없어요"
+                    emptyText = context.getString(R.string.media_settings_recent_sends_empty)
                     lines = recentSends()
                     bind(serviceFlow { service -> service.history.version.map { recentSends() } })
                 }
@@ -262,26 +270,26 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
 
 private fun kakaoState(context: Context): InfoState =
     if (KakaoShare.isKakaoInstalled(context))
-        InfoState("설치됨", OptionStatus.OK)
+        InfoState(context.getString(R.string.media_settings_kakao_status_installed), OptionStatus.OK)
     else
-        InfoState("설치되지 않음", OptionStatus.ERROR)
+        InfoState(context.getString(R.string.media_settings_kakao_status_not_installed), OptionStatus.ERROR)
 
 private fun overlayState(context: Context): InfoState =
     if (KakaoShare.canDrawOverlays(context))
-        InfoState("허용됨", OptionStatus.OK)
+        InfoState(context.getString(R.string.media_settings_status_allowed), OptionStatus.OK)
     else
-        InfoState("허용 필요", OptionStatus.WARNING)
+        InfoState(context.getString(R.string.media_settings_overlay_status_needed), OptionStatus.WARNING)
 
 /** Granted, or a warning if a known room belongs to another user's KakaoTalk. */
 private fun otherUsersState(context: Context): InfoState {
     if (KakaoShare.canReachOtherUsers(context))
-        return InfoState("허용됨", OptionStatus.OK)
+        return InfoState(context.getString(R.string.media_settings_status_allowed), OptionStatus.OK)
     val myUserId = KakaoShare.myUserId()
     val hasOtherUserRooms = MediaSharing.service?.rooms?.list().orEmpty().any { it.userId != null && it.userId != myUserId }
     return if (hasOtherUserRooms)
-        InfoState("권한 없음: 선택창 표시", OptionStatus.WARNING)
+        InfoState(context.getString(R.string.media_settings_other_users_status_chooser), OptionStatus.WARNING)
     else
-        InfoState("권한 없음")
+        InfoState(context.getString(R.string.media_settings_other_users_status_not_granted))
 }
 
 private fun declaresOtherUsersPermission(context: Context): Boolean =
@@ -290,17 +298,18 @@ private fun declaresOtherUsersPermission(context: Context): Boolean =
             .requestedPermissions.orEmpty().contains(KakaoShare.INTERACT_ACROSS_USERS)
     }.getOrDefault(false)
 
-private fun cacheUsage(): String {
-    val usage = MediaSharing.service?.cache?.usage() ?: return "준비 중이에요"
-    return "파일 ${usage.items}개, ${formatBytes(usage.bytes)}"
+private fun cacheUsage(context: Context): String {
+    val usage = MediaSharing.service?.cache?.usage()
+        ?: return context.getString(R.string.media_settings_cache_usage_preparing)
+    return context.getString(R.string.media_settings_cache_usage, usage.items, formatBytes(usage.bytes))
 }
 
-private fun knownRooms(): List<String> {
+private fun knownRooms(context: Context): List<String> {
     val myUserId = KakaoShare.myUserId()
     return MediaSharing.service?.rooms?.list().orEmpty().map { room ->
         "${room.name} — ${room.id}" +
             (if (room.isGroupChat) "" else " (1:1)") +
-            (room.userId?.takeIf { it != myUserId }?.let { " [사용자 $it]" } ?: "")
+            (room.userId?.takeIf { it != myUserId }?.let { " " + context.getString(R.string.media_settings_known_rooms_user, it) } ?: "")
     }
 }
 

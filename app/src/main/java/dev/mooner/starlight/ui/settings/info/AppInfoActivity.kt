@@ -21,11 +21,12 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityAppInfoBinding
 import dev.mooner.starlight.plugincore.Info
 import dev.mooner.starlight.plugincore.config.GlobalConfig
-import dev.mooner.starlight.utils.bindFadeImage
-import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.utils.bindPageHeader
+import dev.mooner.starlight.utils.fitSkyPage
 import dev.mooner.starlight.utils.getPackageInfo
 import dev.mooner.starlight.utils.openWebUrl
 import dev.mooner.starlight.utils.peek
+import dev.mooner.starlight.utils.showEmblemCentered
 
 class AppInfoActivity : AppCompatActivity() {
 
@@ -40,7 +41,11 @@ class AppInfoActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityAppInfoBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitSystemBars(binding.root)
+        fitSkyPage(binding.root, binding.skyHeader, binding.scroll, binding.leave)
+        // The page keeps its own composition: the emblem in the middle with the name under it. The emblem
+        // is the sky's, in the place the layout leaves for it above the name.
+        binding.skyHeader.showEmblemCentered(sizeDp = 100f, centerFromTopDp = 74f)
+        bindPageHeader(binding.scroll, binding.skyHeader)
 
         val pInfo: PackageInfo = getPackageInfo()
         val versionCode = PackageInfoCompat.getLongVersionCode(pInfo)
@@ -53,18 +58,16 @@ class AppInfoActivity : AppCompatActivity() {
         }.build()
 
         binding.leave.setOnClickListener { finish() }
-
-        binding.scroll.bindFadeImage(binding.imageViewLogo)
     }
 
     private fun getConfig(versionName: String, versionCode: Number) = config {
-        val defaultColor = getColor(R.color.main_bright)
+        val defaultColor = getColor(R.color.app_info_icon)
         category {
             id = "general"
             items {
                 info {
                     id = "name"
-                    title = "앱 버전"
+                    title = getString(R.string.app_info_version)
                     value = "v$versionName"
                     description = "build $versionCode"
                     copyable = true
@@ -73,7 +76,7 @@ class AppInfoActivity : AppCompatActivity() {
                 }
                 info {
                     id = "version"
-                    title = "PluginCore 버전"
+                    title = getString(R.string.app_info_plugincore_version)
                     value = "v${Info.PLUGINCORE_VERSION}"
                     copyable = true
                     icon = Icon.LAYERS
@@ -82,6 +85,7 @@ class AppInfoActivity : AppCompatActivity() {
                 button {
                     id = "github"
                     title = "GitHub"
+                    description = "mooner1022/StarLight"
                     icon = Icon.GITHUB
                     setOnClickListener { _ ->
                         openWebUrl("https://github.com/mooner1022/StarLight")
@@ -100,18 +104,18 @@ class AppInfoActivity : AppCompatActivity() {
                     iconTintColor = defaultColor
                     setOnClickListener { _ ->
                         if (isDevMode) {
-                            peek("이미 개발자 모드가 활성화되었습니다.")
+                            peek(getString(R.string.dev_mode_already_on))
                         } else {
                             devModeClicks++
                             when(devModeClicks) {
                                 in 4..7 -> {
-                                    peek("개발자 모드 활성화까지 ${8 - devModeClicks} 남았습니다.")
+                                    peek(getString(R.string.dev_mode_remaining, 8 - devModeClicks))
                                 }
                                 8 -> {
                                     GlobalConfig.edit {
                                         category("dev")["dev_mode"] = true
                                     }
-                                    peek("개발자 모드 활성화", PeekType.SUCCESS)
+                                    peek(getString(R.string.dev_mode_turned_on), PeekType.SUCCESS)
                                 }
                             }
                         }
@@ -120,6 +124,7 @@ class AppInfoActivity : AppCompatActivity() {
                 button {
                     id = "github"
                     title = "GitHub"
+                    description = "@mooner1022"
                     icon = Icon.GITHUB
                     setOnClickListener { _ ->
                         openWebUrl("https://github.com/mooner1022")
@@ -127,7 +132,7 @@ class AppInfoActivity : AppCompatActivity() {
                 }
                 button {
                     id = "opensource_license"
-                    title = "오픈소스 라이센스"
+                    title = getString(R.string.app_info_licenses)
                     icon = Icon.DEVELOPER_MODE
                     iconTintColor = defaultColor
                     setOnClickListener { _ ->

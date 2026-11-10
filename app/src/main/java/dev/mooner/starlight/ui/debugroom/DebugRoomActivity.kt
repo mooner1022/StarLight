@@ -10,7 +10,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityDebugRoomBinding
-import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.utils.fitPage
 
 class DebugRoomActivity: AppCompatActivity() {
 
@@ -20,7 +20,7 @@ class DebugRoomActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDebugRoomBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitSystemBars(binding.root)
+        fitPage(binding.root)
 
         val projectName = intent.getStringExtra(EXTRA_PROJECT_NAME)!!
         val fragment = DebugRoomFragment.newInstance(

@@ -4,10 +4,10 @@
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="14dp"/>
-            <solid android:color="#1FFFF7E8"/>
+            <solid android:color="@color/store_hero_pill"/>
             <stroke
                 android:width="1dp"
-                android:color="#33DFC199"/>
+                android:color="@color/store_hero_pill_stroke"/>
         </shape>
     </item>
 </ripple>

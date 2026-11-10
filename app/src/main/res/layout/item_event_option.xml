@@ -48,7 +48,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:fontFamily="@font/wantedsans_medium"
-            android:textColor="@color/main_bright"
+            android:textColor="@color/text_gold"
             android:textSize="12sp"
             android:visibility="gone"
             tools:text="메신저봇 API2 방식에서 쓸 수 있어요"

@@ -25,7 +25,7 @@ import dev.mooner.starlight.databinding.ItemAgentDocBinding
 import dev.mooner.starlight.databinding.ItemAgentDocSectionBinding
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.ui.agent.AgentUi
-import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.utils.fitPage
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -50,7 +50,7 @@ class AgentDocsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityAgentDocsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fitSystemBars(binding.root)
+        fitPage(binding.root)
 
         binding.back.setOnClickListener { finish() }
         binding.list.layoutManager = LinearLayoutManager(this)

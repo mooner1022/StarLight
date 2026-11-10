@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- By day a featured card is a light card with the sunset in its corner. The night's is in drawable-night/. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
-            <gradient
-                android:angle="315"
-                android:endColor="@color/store_night_light"
-                android:startColor="@color/store_night"/>
+            <solid android:color="@color/store_hero_surface"/>
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
             <gradient
-                android:centerX="0.9"
-                android:centerY="0.1"
-                android:endColor="#00DFC199"
-                android:gradientRadius="220dp"
-                android:startColor="#59DFC199"
+                android:centerColor="#3DC073A0"
+                android:centerX="0.95"
+                android:centerY="0.12"
+                android:endColor="#006455A2"
+                android:gradientRadius="230dp"
+                android:startColor="#80F59193"
                 android:type="radial"/>
         </shape>
     </item>

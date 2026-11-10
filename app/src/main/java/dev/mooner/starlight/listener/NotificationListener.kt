@@ -176,27 +176,35 @@ class NotificationListener: NotificationListenerService() {
                     break
                     //stopSelf()
                 } catch (e: Exception) {
-                    e.printStackTrace()
-                    LOG.error {
-                        translate {
-                            Locale.ENGLISH { """
-                                |Failed to parse message content:
-                                |message : ${e.localizedMessage}
-                                |cause   : ${e.cause}
-                                |${e.stackTraceToString()}
-                            """.trimMargin() }
-                            Locale.KOREAN  { """
-                                |메세지 해석에 실패했습니다:
-                                |message : ${e.localizedMessage}
-                                |cause   : ${e.cause}
-                                |${e.stackTraceToString()}
-                            """.trimMargin() }
-                        }
-                    }
+                    logParseFailure(e)
+                } catch (e: LinkageError) {
+                    // A spec built against another version of the app or of Android: without this,
+                    // every message would end the app, and the crash guard would then keep it from starting.
+                    logParseFailure(e)
                 }
             }
         }
         LOG.verbose { "es = ${System.currentTimeMillis() - ts}" }
+    }
+
+    private fun logParseFailure(e: Throwable) {
+        e.printStackTrace()
+        LOG.error {
+            translate {
+                Locale.ENGLISH { """
+                    |Failed to parse message content:
+                    |message : ${e.localizedMessage}
+                    |cause   : ${e.cause}
+                    |${e.stackTraceToString()}
+                """.trimMargin() }
+                Locale.KOREAN  { """
+                    |메세지 해석에 실패했습니다:
+                    |message : ${e.localizedMessage}
+                    |cause   : ${e.cause}
+                    |${e.stackTraceToString()}
+                """.trimMargin() }
+            }
+        }
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {

@@ -11,7 +11,10 @@
 
 
     <string name="title_notification_rules">패키지 규칙</string>
-    <string name="subtitle_notification_rules">%d개의 규칙이 있어요.</string>
+    <plurals name="subtitle_notification_rules">
+        <item quantity="other">%d개의 규칙이 있어요.</item>
+    </plurals>
+    <string name="subtitle_notification_rules_auto">카카오톡에 맞게 자동으로 설정돼요.</string>
 
     <string name="file">파일</string>
     <string name="directory">경로</string>
@@ -19,6 +22,15 @@
     <string name="add">추가</string>
     <string name="open">열기</string>
     <string name="close">닫기</string>
+    <string name="back">뒤로</string>
+    <string name="unsaved_title">저장하지 않고 나갈까요?</string>
+    <string name="unsaved_message">바꾼 내용이 아직 저장되지 않았어요.</string>
+    <string name="unsaved_discard">저장 안 함</string>
+    <string name="config_saved">설정을 저장했어요.</string>
+    <string name="config_invalid">올바르지 않은 설정이 있어요. 확인한 뒤 다시 시도해 주세요.</string>
+    <string name="rule_package_required">규칙에는 패키지명이 필요해요.</string>
+    <string name="restart_confirm_title">앱을 재시작할까요?</string>
+    <string name="restart_confirm_message">실행 중인 프로젝트가 멈췄다가 앱과 함께 다시 시작돼요.</string>
     <string name="ok">확인</string>
     <string name="cancel">취소</string>
     <string name="delete">제거</string>

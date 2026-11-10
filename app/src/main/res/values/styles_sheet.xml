@@ -5,6 +5,11 @@
         <item name="android:windowAnimationStyle">@style/Animation.StarLight.None</item>
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:windowSoftInputMode">adjustResize</item>
+        <!-- The scrim reaches behind the status bar, and the sheet behind the navigation bar. Without these the
+             status bar stays an undimmed band with white icons, and the navigation bar is black. -->
+        <item name="enableEdgeToEdge">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
     <style name="Widget.StarLight.SlideBottomSheet" parent="Widget.MaterialComponents.BottomSheet.Modal">

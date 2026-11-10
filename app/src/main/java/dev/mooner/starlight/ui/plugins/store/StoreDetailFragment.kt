@@ -23,6 +23,7 @@ import androidx.core.content.getSystemService
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.children
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -40,6 +41,7 @@ import dev.mooner.starlight.databinding.ItemStoreStatBinding
 import dev.mooner.starlight.plugincore.plugin.ApiCompatibility
 import dev.mooner.starlight.plugincore.plugin.PluginDependency
 import dev.mooner.starlight.ui.plugins.apiCompatibilityText
+import dev.mooner.starlight.utils.isNightMode
 import dev.mooner.starlight.utils.restartApplication
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.launch
@@ -143,6 +145,8 @@ class StoreDetailFragment : Fragment() {
                 authors.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_store_sparkle_small, 0, 0, 0)
             pluginId.text = plugin.id
             stars.seed = plugin.id.hashCode()
+            // Stars are the night's. By day the banner is a sunset.
+            stars.isVisible = requireContext().isNightMode()
 
             requireContext().apiCompatibilityText(ApiCompatibility.of(plugin.latest.apiVersion))?.let { text ->
                 warning.visibility = View.VISIBLE
@@ -202,7 +206,7 @@ class StoreDetailFragment : Fragment() {
             parent.addView(TextView(requireContext()).apply {
                 text = "# $tag"
                 setBackgroundResource(R.drawable.bg_store_pill)
-                setTextColor(requireContext().getColor(R.color.store_gold_deep))
+                setTextColor(requireContext().getColor(R.color.text_gold_deep))
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
                 typeface = ResourcesCompat.getFont(requireContext(), R.font.nanumsquare_neo_bold)
                 val horizontal = dp(12f).toInt()
@@ -436,7 +440,7 @@ class StoreDetailFragment : Fragment() {
             topTitle.alpha = ((progress - 0.75f) / 0.25f).coerceIn(0f, 1f)
             val tint = ArgbEvaluator().evaluate(
                 progress,
-                requireContext().getColor(R.color.store_star),
+                requireContext().getColor(R.color.store_hero_title),
                 requireContext().getColor(R.color.text),
             ) as Int
             back.imageTintList = ColorStateList.valueOf(tint)

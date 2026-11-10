@@ -43,7 +43,7 @@ fun Context.startDevModeActivity() {
             category {
                 id = "dev_mode_config"
                 title = "개발자 모드"
-                textColor = getColor(R.color.main_bright)
+                textColor = getColor(R.color.text_gold)
                 items {
                     button {
                         id = "configdsl_preview"
@@ -120,7 +120,7 @@ fun Context.startDevModeActivity() {
             category {
                 id = "beta_features"
                 title = "실험적 기능"
-                textColor = getColor(R.color.main_bright)
+                textColor = getColor(R.color.text_gold)
                 items {
                     info {
                         id = "caution"
@@ -152,7 +152,7 @@ fun Context.startDevModeActivity() {
             category {
                 id = "debug_info"
                 title = "debug info"
-                textColor = getColor(R.color.main_bright)
+                textColor = getColor(R.color.text_gold)
                 items {
                     fun debugInfo(title: String, value: String) = info {
                         id = title

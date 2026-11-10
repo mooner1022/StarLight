@@ -30,16 +30,16 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"/>
 
-                <ImageView
-                    android:id="@+id/heroLogo"
-                    android:layout_width="170dp"
-                    android:layout_height="170dp"
-                    android:layout_gravity="end|bottom"
-                    android:layout_marginEnd="-36dp"
-                    android:layout_marginBottom="-30dp"
-                    android:alpha="0.85"
+                <!-- The sky of the theme around the emblem, as on the app's page headers. -->
+                <dev.mooner.starlight.ui.common.SkyEmblemView
+                    android:id="@+id/heroEmblem"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:importantForAccessibility="no"
-                    android:src="@drawable/ic_logo_transparent"/>
+                    app:emblemCenterFromEnd="49dp"
+                    app:emblemCenterFromTop="213dp"
+                    app:emblemSize="170dp"
+                    app:emblemWashSpread="1.7"/>
 
                 <LinearLayout
                     android:id="@+id/heroText"
@@ -57,7 +57,7 @@
                         android:fontFamily="@font/nanumsquare_neo_extrabold"
                         android:letterSpacing="0.3"
                         android:text="STARLIGHT"
-                        android:textColor="@color/store_gold"
+                        android:textColor="@color/store_hero_accent"
                         android:textSize="11sp"
                         tools:ignore="HardcodedText"/>
 
@@ -68,7 +68,7 @@
                         android:layout_marginTop="4dp"
                         android:fontFamily="@font/nanumsquare_round_extrabold"
                         android:text="@string/plugin_store_title"
-                        android:textColor="@color/store_star"
+                        android:textColor="@color/store_hero_title"
                         android:textSize="28sp"/>
 
                     <TextView
@@ -78,7 +78,7 @@
                         android:alpha="0.7"
                         android:fontFamily="@font/nanumsquare_neo_regular"
                         android:text="@string/plugin_store_subtitle"
-                        android:textColor="@color/store_star"
+                        android:textColor="@color/store_hero_title"
                         android:textSize="13sp"/>
 
                     <LinearLayout
@@ -98,7 +98,7 @@
                             android:layout_height="16dp"
                             android:importantForAccessibility="no"
                             android:src="@drawable/ic_github"
-                            app:tint="@color/store_gold"/>
+                            app:tint="@color/store_hero_accent"/>
 
                         <TextView
                             android:id="@+id/repositoryName"
@@ -108,7 +108,7 @@
                             android:ellipsize="end"
                             android:fontFamily="@font/nanumsquare_neo_bold"
                             android:maxLines="1"
-                            android:textColor="@color/store_star"
+                            android:textColor="@color/store_hero_title"
                             android:textSize="12sp"
                             tools:text="StarLight Plugins"/>
 
@@ -120,7 +120,7 @@
                             android:alpha="0.6"
                             android:fontFamily="@font/nanumsquare_neo_regular"
                             android:maxLines="1"
-                            android:textColor="@color/store_star"
+                            android:textColor="@color/store_hero_title"
                             android:textSize="11sp"
                             tools:text="3분 전 동기화"/>
 
@@ -130,7 +130,7 @@
                             android:layout_marginStart="2dp"
                             android:importantForAccessibility="no"
                             android:src="@drawable/ic_round_keyboard_arrow_right_24"
-                            app:tint="@color/store_star"/>
+                            app:tint="@color/store_hero_title"/>
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>
@@ -413,7 +413,7 @@
                             android:fontFamily="@font/nanumsquare_neo_bold"
                             android:paddingHorizontal="8dp"
                             android:paddingVertical="2dp"
-                            android:textColor="@color/store_gold_deep"
+                            android:textColor="@color/text_gold_deep"
                             android:textSize="11sp"
                             tools:text="8"/>
 
@@ -483,10 +483,10 @@
             style="@style/StoreTopBarButton"
             android:layout_gravity="start|center_vertical"
             android:layout_marginStart="4dp"
-            android:contentDescription="@string/cancel"
+            android:contentDescription="@string/back"
             android:elevation="2dp"
             android:src="@drawable/ic_round_arrow_left_24"
-            app:tint="@color/store_star"/>
+            app:tint="@color/store_hero_title"/>
 
         <TextView
             android:id="@+id/topTitle"
@@ -508,6 +508,6 @@
             android:contentDescription="@string/plugin_store_reload"
             android:elevation="2dp"
             android:src="@drawable/ic_round_refresh_24"
-            app:tint="@color/store_star"/>
+            app:tint="@color/store_hero_title"/>
     </FrameLayout>
 </FrameLayout>

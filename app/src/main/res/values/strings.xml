@@ -15,7 +15,11 @@
 
 
     <string name="title_notification_rules">Notification Rules</string>
-    <string name="subtitle_notification_rules">There are %d Rules.</string>
+    <plurals name="subtitle_notification_rules">
+        <item quantity="one">%d rule.</item>
+        <item quantity="other">%d rules.</item>
+    </plurals>
+    <string name="subtitle_notification_rules_auto">Set automatically for KakaoTalk.</string>
 
     <string name="file">File</string>
     <string name="directory">Directory</string>
@@ -23,6 +27,15 @@
     <string name="add">Add</string>
     <string name="open">Open</string>
     <string name="close">Close</string>
+    <string name="back">Back</string>
+    <string name="unsaved_title">Leave without saving?</string>
+    <string name="unsaved_message">Your changes haven\'t been saved yet.</string>
+    <string name="unsaved_discard">Don\'t save</string>
+    <string name="config_saved">Settings saved.</string>
+    <string name="config_invalid">Some settings aren\'t valid. Check them and try again.</string>
+    <string name="rule_package_required">A rule needs a package name.</string>
+    <string name="restart_confirm_title">Restart the app?</string>
+    <string name="restart_confirm_message">Running projects stop, and start again with the app.</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
