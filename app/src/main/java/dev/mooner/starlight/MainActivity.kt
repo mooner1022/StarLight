@@ -174,7 +174,7 @@ class MainActivity : AppCompatActivity() {
             else              -> 0
         }
         binding.apply {
-            viewPager.setCurrentItem(index, true)
+            showPage(index)
             bottomMenu.setItemSelected(id, true)
         }
         onPageChanged(id)
@@ -208,9 +208,15 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_settings -> 5
             else              -> 0
         }
-        binding.viewPager.setCurrentItem(index, true)
+        showPage(index)
         onPageChanged(id)
     }
+
+    // Slides only to a neighbouring page. Over several pages, a frame stalled by a tab being created makes the slide
+    // pass its page and stop on the last one, and the pager doesn't report where it stopped: the menu and the
+    // title would show one tab and the page another.
+    private fun showPage(index: Int) =
+        binding.viewPager.setCurrentItem(index, abs(index - binding.viewPager.currentItem) <= 1)
 
     private fun handleOffsetUpdate(appBarLayout: AppBarLayout, verticalOffset: Int) {
         val alpha = 1.0f - abs(
