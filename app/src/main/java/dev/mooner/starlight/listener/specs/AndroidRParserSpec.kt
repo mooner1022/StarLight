@@ -13,6 +13,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
+import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.text.SpannableString
 import androidx.annotation.RequiresApi
@@ -25,13 +26,13 @@ import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.chat.MessageParserSpec
 import kotlin.reflect.full.declaredFunctions
 
-class AndroidRParserSpec: MessageParserSpec {
+open class AndroidRParserSpec: MessageParserSpec {
 
     private val createBitmap = Icon::class.declaredFunctions.find { it.name == "getBitmap" }!!
 
     override val id: String = "android_r"
 
-    override val name: String = "안드로이드 11 이상, 카카오톡 9.7.0 이상 메세지 분석 스펙"
+    override val name: String = "안드로이드 11 이상, 카카오톡 9.7.0 ~ 26.6.x 메세지 분석 스펙"
 
     @RequiresApi(Build.VERSION_CODES.P)
     override fun parse(
@@ -39,6 +40,16 @@ class AndroidRParserSpec: MessageParserSpec {
         context: Context,
         sbn    : StatusBarNotification,
         actions: Array<Notification.Action>
+    ): Message? =
+        parse(userId, context, sbn, actions, null)
+
+    @RequiresApi(Build.VERSION_CODES.P)
+    override fun parse(
+        userId    : Int,
+        context   : Context,
+        sbn       : StatusBarNotification,
+        actions   : Array<Notification.Action>,
+        rankingMap: NotificationListenerService.RankingMap?
     ): Message? {
         val notification = sbn.notification
         val extras = notification.extras
@@ -68,13 +79,10 @@ class AndroidRParserSpec: MessageParserSpec {
         val senderId = sender.key
 
         val roomId = sbn.tag
-        val room = extras.getString(NotificationCompat.EXTRA_SUB_TEXT)
-            ?: extras.getString(NotificationCompat.EXTRA_SUMMARY_TEXT)
-            ?: senderName
+        val (room, isGroupChat) = resolveRoom(sbn, extras, senderName, rankingMap)
 
         //val image = extras.getBundle("android.wearable.EXTENSIONS")?.getParcelable("background")
         val profileBitmap = createBitmap.call(sender.icon!!) as Bitmap
-        val isGroupChat = room != senderName
         val hasMention = extras.getCharSequence(NotificationCompat.EXTRA_TEXT) is SpannableString
 
         if (hasMention)
@@ -114,5 +122,18 @@ class AndroidRParserSpec: MessageParserSpec {
             hasMention = hasMention,
             chatLogId = chatLogId
         )
+    }
+
+    /** The name of the room the notification is for, and whether it is a group chat. */
+    protected open fun resolveRoom(
+        sbn       : StatusBarNotification,
+        extras    : Bundle,
+        senderName: String,
+        rankingMap: NotificationListenerService.RankingMap?
+    ): Pair<String, Boolean> {
+        val room = extras.getString(NotificationCompat.EXTRA_SUB_TEXT)
+            ?: extras.getString(NotificationCompat.EXTRA_SUMMARY_TEXT)
+            ?: senderName
+        return room to (room != senderName)
     }
 }

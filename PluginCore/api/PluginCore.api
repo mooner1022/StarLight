@@ -325,6 +325,11 @@ public abstract interface class dev/mooner/starlight/plugincore/chat/MessagePars
 	public abstract fun getId ()Ljava/lang/String;
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun parse (ILandroid/content/Context;Landroid/service/notification/StatusBarNotification;[Landroid/app/Notification$Action;)Ldev/mooner/starlight/plugincore/chat/Message;
+	public fun parse (ILandroid/content/Context;Landroid/service/notification/StatusBarNotification;[Landroid/app/Notification$Action;Landroid/service/notification/NotificationListenerService$RankingMap;)Ldev/mooner/starlight/plugincore/chat/Message;
+}
+
+public final class dev/mooner/starlight/plugincore/chat/MessageParserSpec$DefaultImpls {
+	public static fun parse (Ldev/mooner/starlight/plugincore/chat/MessageParserSpec;ILandroid/content/Context;Landroid/service/notification/StatusBarNotification;[Landroid/app/Notification$Action;Landroid/service/notification/NotificationListenerService$RankingMap;)Ldev/mooner/starlight/plugincore/chat/Message;
 }
 
 public final class dev/mooner/starlight/plugincore/chat/ParserSpecManager {
