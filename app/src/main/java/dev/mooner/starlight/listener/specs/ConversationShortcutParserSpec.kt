@@ -6,17 +6,18 @@
 
 package dev.mooner.starlight.listener.specs
 
-import android.os.Build
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationCompat
 
 /**
  * Reads the room name KakaoTalk 26.7.0 took out of its chat notifications.
  *
  * Since that version a chat notification is a bare messaging style: no sub text, no conversation title,
- * only the sender. The room name is left on the conversation shortcut KakaoTalk publishes for the room,
- * which the system hands to listeners with the notification's ranking.
+ * only the sender. Nothing in the notification names the room. The name is left on the conversation shortcut
+ * KakaoTalk publishes for the room, which the system keeps in the notification's ranking: see
+ * [ConversationShortcuts] for how it is read.
  */
 class ConversationShortcutParserSpec: AndroidRParserSpec() {
 
@@ -25,14 +26,12 @@ class ConversationShortcutParserSpec: AndroidRParserSpec() {
     override val name: String = "안드로이드 11 이상, 카카오톡 26.7.0 이상 메세지 분석 스펙"
 
     override fun resolveRoom(
+        sbn       : StatusBarNotification,
         extras    : Bundle,
         senderName: String,
-        ranking   : NotificationListenerService.Ranking?
+        rankingMap: NotificationListenerService.RankingMap?
     ): Pair<String, Boolean> {
-        val shortcut = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            ranking?.conversationShortcutInfo
-        else
-            null
+        val shortcut = rankingMap?.let { ConversationShortcuts.of(it, sbn.key) }
 
         // The fields older versions fill stay in the list, for when the version could not be told.
         val room = ParserSpecPolicy.pickRoomName(

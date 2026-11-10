@@ -20,17 +20,17 @@ interface MessageParserSpec {
     fun parse(userId: Int, context: Context, sbn: StatusBarNotification, actions: Array<Notification.Action>): Message?
 
     /**
-     * Parses [sbn] along with the [ranking] the system gave for it, or null when it gave none.
-     * The ranking holds what the notification itself may not, such as its conversation shortcut.
+     * Parses [sbn] along with the [rankingMap] the system posted it with, or null when it gave none.
+     * The ranking of a notification holds what the notification itself may not, such as its conversation shortcut.
      *
      * @since 1.1.0
      */
     fun parse(
-        userId : Int,
-        context: Context,
-        sbn    : StatusBarNotification,
-        actions: Array<Notification.Action>,
-        ranking: NotificationListenerService.Ranking?
+        userId    : Int,
+        context   : Context,
+        sbn       : StatusBarNotification,
+        actions   : Array<Notification.Action>,
+        rankingMap: NotificationListenerService.RankingMap?
     ): Message? =
         parse(userId, context, sbn, actions)
 

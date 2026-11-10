@@ -45,11 +45,11 @@ open class AndroidRParserSpec: MessageParserSpec {
 
     @RequiresApi(Build.VERSION_CODES.P)
     override fun parse(
-        userId : Int,
-        context: Context,
-        sbn    : StatusBarNotification,
-        actions: Array<Notification.Action>,
-        ranking: NotificationListenerService.Ranking?
+        userId    : Int,
+        context   : Context,
+        sbn       : StatusBarNotification,
+        actions   : Array<Notification.Action>,
+        rankingMap: NotificationListenerService.RankingMap?
     ): Message? {
         val notification = sbn.notification
         val extras = notification.extras
@@ -79,7 +79,7 @@ open class AndroidRParserSpec: MessageParserSpec {
         val senderId = sender.key
 
         val roomId = sbn.tag
-        val (room, isGroupChat) = resolveRoom(extras, senderName, ranking)
+        val (room, isGroupChat) = resolveRoom(sbn, extras, senderName, rankingMap)
 
         //val image = extras.getBundle("android.wearable.EXTENSIONS")?.getParcelable("background")
         val profileBitmap = createBitmap.call(sender.icon!!) as Bitmap
@@ -126,9 +126,10 @@ open class AndroidRParserSpec: MessageParserSpec {
 
     /** The name of the room the notification is for, and whether it is a group chat. */
     protected open fun resolveRoom(
+        sbn       : StatusBarNotification,
         extras    : Bundle,
         senderName: String,
-        ranking   : NotificationListenerService.Ranking?
+        rankingMap: NotificationListenerService.RankingMap?
     ): Pair<String, Boolean> {
         val room = extras.getString(NotificationCompat.EXTRA_SUB_TEXT)
             ?: extras.getString(NotificationCompat.EXTRA_SUMMARY_TEXT)

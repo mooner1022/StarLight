@@ -114,11 +114,8 @@ class NotificationListener: NotificationListenerService() {
         for (act in actions) {
             if (act.remoteInputs != null && act.remoteInputs.isNotEmpty()) {
                 try {
-                    val ranking = rankingMap?.let { map ->
-                        Ranking().takeIf { map.getRanking(sbn.key, it) }
-                    }
                     val data = ParserSpecManager.getSpecById(appliedRule.parserSpecId)
-                        ?.parse(userId, applicationContext, sbn, actions, ranking)
+                        ?.parse(userId, applicationContext, sbn, actions, rankingMap)
                         ?: return
                     //val data = sbn.toMessage(this, ruleKey, act) ?: return
                     (data.room as ChatRoomImpl).setLastReceivedId(data.chatLogId)
