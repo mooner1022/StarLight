@@ -71,7 +71,7 @@ class PageConfigOption(
 
         require(title.isNotBlank()) { "Title is required for page option." }
         holder.description.text = getDesc()
-        icon.loadTo(holder.icon)
+        displayIcon.loadTo(holder.icon)
         holder.layout.setOnClickListener {
             if (sharedData != null) {
                 holder.itemView.context.startConfigActivity(

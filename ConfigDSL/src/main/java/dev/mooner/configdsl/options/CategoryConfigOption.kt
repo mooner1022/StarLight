@@ -163,7 +163,7 @@ class CategoryConfigOption(
             holder.title.text = option.displayTitle
             holder.description.text = option.displayDescription
             holder.description.visibility = if (option.displayDescription.isNullOrEmpty()) View.GONE else View.VISIBLE
-            option.icon.loadTo(holder.icon)
+            option.displayIcon.loadTo(holder.icon)
         }
 
         val value = values[option.id]

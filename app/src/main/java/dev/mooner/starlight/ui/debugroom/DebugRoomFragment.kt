@@ -31,8 +31,10 @@ import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.Icon
+import dev.mooner.configdsl.IconInfo
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.config
+import dev.mooner.configdsl.findOption
 import dev.mooner.configdsl.options.*
 import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
@@ -79,6 +81,12 @@ private const val ARG_FIXED_PAD    = "fixedPadding"
 
 private const val CHATS_FILE_NAME = "chats.json"
 
+private const val CATEGORY_BOT         = "d_bot"
+private const val CATEGORY_USER        = "d_user"
+private val PROFILE_CATEGORIES         = arrayOf(CATEGORY_BOT, CATEGORY_USER)
+private const val ID_SET_PROFILE_IMAGE = "set_profile_image"
+private const val KEY_PROFILE_IMAGE    = "profile_image_path"
+
 class DebugRoomFragment: Fragment() {
 
     private var _binding: FragmentDebugRoomBinding? = null
@@ -112,6 +120,8 @@ class DebugRoomFragment: Fragment() {
 
     private lateinit var project: Project
     private var configAdapter: ConfigAdapter? = null
+    /** What [configAdapter] shows; kept to reach an option whose look changes while the sheet is open. */
+    private var configStructure: ConfigStructure? = null
     private var imageHash: Int = 0
     private var roomId: String by notNull()
 
@@ -171,7 +181,7 @@ class DebugRoomFragment: Fragment() {
 
         updateConfig()
 
-        val selfProfilePath = GlobalConfig.category("d_user").getString("profile_image_path")
+        val selfProfilePath = GlobalConfig.category(CATEGORY_USER).getString(KEY_PROFILE_IMAGE)
         selfProfileBitmap = if (selfProfilePath == null) {
             loadBitmapFromResource(R.drawable.default_profile)
         } else {
@@ -180,7 +190,7 @@ class DebugRoomFragment: Fragment() {
             }.onFailure {
                 Toast.makeText(activity, "프로필 사진 '$selfProfilePath'를 찾을 수 없어 기본 프로필로 대체했어요.", Toast.LENGTH_LONG).show()
                 GlobalConfig.edit {
-                    category("d_user").remove("profile_image_path")
+                    category(CATEGORY_USER).remove(KEY_PROFILE_IMAGE)
                 }
             }.getOrElse {
                 loadBitmapFromResource(R.drawable.default_profile)
@@ -238,7 +248,7 @@ class DebugRoomFragment: Fragment() {
 
         configAdapter = ConfigAdapter.Builder(activity) {
             bind(binding.bottomSheet.configRecyclerView)
-            structure(::getStructure)
+            structure { getStructure().also { configStructure = it } }
             configData(GlobalConfig.getMutableData())
             onValueUpdated { parentId, id, value, jsonData ->
                 GlobalConfig.edit {
@@ -251,6 +261,8 @@ class DebugRoomFragment: Fragment() {
                 updateConfig()
             }
         }.build()
+        for (categoryId in PROFILE_CATEGORIES)
+            showProfileImage(categoryId)
 
         if (fixedPadding) {
             binding.bottomSheet.configRecyclerView.apply {
@@ -458,13 +470,14 @@ class DebugRoomFragment: Fragment() {
             context        = requireContext(),
             selfColor      = GlobalConfig.category("d_user").getInt("chat_color"),
             botColor       = GlobalConfig.category("d_bot").getInt("chat_color"),
-            botProfilePath = GlobalConfig.category("d_bot").getString("profile_image_path"),
+            botProfilePath = GlobalConfig.category(CATEGORY_BOT).getString(KEY_PROFILE_IMAGE),
         )
 
     override fun onDestroy() {
         userChatAdapter = null
         configAdapter?.destroy()
         configAdapter = null
+        configStructure = null
         super.onDestroy()
     }
 
@@ -521,7 +534,27 @@ class DebugRoomFragment: Fragment() {
         }.start(resultCode)
     }
 
-    private fun reloadConfig() = configAdapter?.redraw()
+    /** The image picked as the profile of [categoryId]; a path whose file is gone is forgotten. */
+    private fun profileImageFile(categoryId: String): File? {
+        val path = GlobalConfig.category(categoryId).getString(KEY_PROFILE_IMAGE) ?: return null
+        val file = File(path)
+        if (file.isFile)
+            return file
+        GlobalConfig.edit {
+            category(categoryId) -= KEY_PROFILE_IMAGE
+        }
+        return null
+    }
+
+    /** Shows the profile image of [categoryId] on its button in the settings, or the button's own icon without one. */
+    private fun showProfileImage(categoryId: String) {
+        val button = configStructure?.findOption(categoryId, ID_SET_PROFILE_IMAGE) ?: return
+        val image = profileImageFile(categoryId)
+        if (image != null)
+            button.updateIcon(IconInfo.fromFile(image, null))
+        else
+            button.resetIcon()
+    }
 
     private fun themeBubbleColor(categoryId: String): Int? =
         when (categoryId) {
@@ -600,25 +633,11 @@ class DebugRoomFragment: Fragment() {
                         }
                     }
                     button {
-                        id = "set_profile_image"
+                        id = ID_SET_PROFILE_IMAGE
                         title = "프로필 이미지 설정"
-                        val profileImagePath = GlobalConfig.category("d_bot").getString("profile_image_path")
-                        if (profileImagePath == null) {
-                            setIcon(icon = Icon.ACCOUNT_BOX)
-                            iconTintColor = defaultColor
-                        } else {
-                            val file = File(profileImagePath)
-                            if (file.exists() && file.isFile) {
-                                setIcon(iconFile = file)
-                                iconTintColor = null
-                            } else {
-                                GlobalConfig.edit {
-                                    category("d_bot") -= "profile_image_path"
-                                }
-                                setIcon(icon = Icon.ACCOUNT_BOX)
-                                iconTintColor = defaultColor
-                            }
-                        }
+                        // Without an image; one that was picked is shown over this (showProfileImage).
+                        icon = Icon.ACCOUNT_BOX
+                        iconTintColor = defaultColor
                         setOnClickListener { _ ->
                             openImagePicker(RESULT_BOT)
                         }
@@ -652,24 +671,10 @@ class DebugRoomFragment: Fragment() {
                         }
                     }
                     button {
-                        id = "set_profile_image"
+                        id = ID_SET_PROFILE_IMAGE
                         title = "프로필 이미지 설정"
+                        icon = Icon.ACCOUNT_BOX
                         iconTintColor = defaultColor
-                        val profileImagePath = GlobalConfig.category("d_user").getString("profile_image_path")
-                        if (profileImagePath == null) {
-                            setIcon(icon = Icon.ACCOUNT_BOX)
-                        } else {
-                            val file = File(profileImagePath)
-                            if (file.exists() && file.isFile) {
-                                setIcon(iconFile = file)
-                                iconTintColor = null
-                            } else {
-                                GlobalConfig.edit {
-                                    category("d_user") -= "profile_image_path"
-                                }
-                                setIcon(icon = Icon.ACCOUNT_BOX)
-                            }
-                        }
                         setOnClickListener { _ ->
                             openImagePicker(RESULT_USER)
                         }
@@ -721,24 +726,19 @@ class DebugRoomFragment: Fragment() {
         when (resultCode) {
             Activity.RESULT_OK -> {
                 val uri: Uri = data?.data!!
+                val categoryId = when (requestCode) {
+                    RESULT_BOT  -> CATEGORY_BOT
+                    RESULT_USER -> CATEGORY_USER
+                    else        -> return
+                }
                 GlobalConfig.edit {
-                    val category = when(requestCode) {
-                        RESULT_BOT -> category("d_bot")
-                        RESULT_USER -> category("d_user")
-                        else -> return@edit
-                    }
-                    category["profile_image_path"] = uri.path!!
+                    category(categoryId)[KEY_PROFILE_IMAGE] = uri.path!!
                 }
-                val bitmap = uri.toBitmap(requireContext())
-                when(requestCode) {
-                    //RESULT_BOT -> {
-                    //    botProfileBitmap = bitmap
-                    //}
-                    RESULT_USER -> {
-                        selfProfileBitmap = bitmap
-                    }
-                }
-                reloadConfig()
+                if (requestCode == RESULT_USER)
+                    selfProfileBitmap = uri.toBitmap(requireContext())
+                // Shown right away: on the button that was tapped and, for the bot, beside its messages.
+                showProfileImage(categoryId)
+                userChatAdapter?.style = chatStyle()
             }
             ImagePicker.RESULT_ERROR -> {
                 Toast.makeText(requireActivity(), ImagePicker.getError(data), Toast.LENGTH_SHORT).show()
