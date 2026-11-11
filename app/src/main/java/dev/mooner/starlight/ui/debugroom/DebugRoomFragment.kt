@@ -12,6 +12,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.AtomicFile
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -21,6 +22,8 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Toast
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
+import androidx.core.util.readText
+import androidx.core.util.writeText
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMarginsRelative
@@ -58,6 +61,7 @@ import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.fireEvent
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
+import dev.mooner.starlight.utils.PeekLevel
 import dev.mooner.starlight.utils.createSimplePeek
 import dev.mooner.starlight.utils.dp
 import dev.mooner.starlight.utils.hideFromGallery
@@ -80,6 +84,7 @@ private const val ARG_SHOW_LEAVE   = "showLeave"
 private const val ARG_FIXED_PAD    = "fixedPadding"
 
 private const val CHATS_FILE_NAME = "chats.json"
+private const val BROKEN_CHATS_FILE_NAME = "chats.broken.json"
 
 private const val CATEGORY_BOT         = "d_bot"
 private const val CATEGORY_USER        = "d_user"
@@ -197,11 +202,7 @@ class DebugRoomFragment: Fragment() {
             }
         }
 
-        val listFile = dir.resolve(CHATS_FILE_NAME)
-        chatList = if (listFile.exists() && listFile.isFile)
-            Session.json.decodeFromString(listFile.readText())
-        else
-            mutableListOf()
+        chatList = loadChats(dir.resolve(CHATS_FILE_NAME))
 
         userChatAdapter = DebugRoomChatAdapter(activity, dir, chatList, chatStyle())
         updateEmptyHint()
@@ -346,13 +347,10 @@ class DebugRoomFragment: Fragment() {
                 return@runOnUiThread
             activity.createSimplePeek(
                 title = project.info.name,
-                text = e.toString()
+                text = e.toString(),
+                level = PeekLevel.ERROR,
             ) {
-                paddingDp = 12
-                iconRes = R.drawable.ic_round_error_outline_24
-                backgroundColor(res = R.color.code_error)
                 action("자세히 보기") {
-                    textColor(res = R.color.black)
                     setOnActionListener { view ->
                         view.context.showSheet {
                             title = project.info.name + " 에러 로그"
@@ -364,9 +362,6 @@ class DebugRoomFragment: Fragment() {
                         }
                     }
                 }
-            }.apply {
-                setTitleColor(res = R.color.white)
-                setTextColor(res = R.color.white)
             }.peek()
         }
     }
@@ -452,10 +447,31 @@ class DebugRoomFragment: Fragment() {
         }
     }
 
+    /**
+     * The saved chat. A file that can't be read, as when the app was stopped while writing it, is moved aside and the
+     * chat starts empty: left in place, it would fail the room every time it is opened.
+     */
+    private fun loadChats(file: File): MutableList<DebugRoomMessage> {
+        if (!file.isFile)
+            return mutableListOf()
+        return runCatching<MutableList<DebugRoomMessage>> { Session.json.decodeFromString(AtomicFile(file).readText()) }
+            .getOrElse { e ->
+                logger.warn { "The debug room's chat of ${project.info.name} can't be read and starts empty: $e" }
+                val kept = file.resolveSibling(BROKEN_CHATS_FILE_NAME)
+                runCatching {
+                    file.copyTo(kept, overwrite = true)
+                    file.delete()
+                }
+                Toast.makeText(requireContext(), getString(R.string.debugroom_chat_unreadable, kept.name), Toast.LENGTH_LONG).show()
+                mutableListOf()
+            }
+    }
+
     private fun save() {
         val snapshot = synchronized(chatList) { chatList.toList() }
         CoroutineScope(saveDispatcher).launch {
-            File(dir, CHATS_FILE_NAME).writeText(Session.json.encodeToString(snapshot))
+            // Written whole or not at all: a write cut short would leave a chat that can't be read.
+            AtomicFile(File(dir, CHATS_FILE_NAME)).writeText(Session.json.encodeToString(snapshot))
         }
     }
 

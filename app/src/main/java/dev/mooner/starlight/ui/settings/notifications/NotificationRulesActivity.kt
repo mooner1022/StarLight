@@ -74,16 +74,14 @@ class NotificationRulesActivity : AppCompatActivity() {
             bind(binding.recyclerView)
             structure(::getStructure)
             configData(wrapData(rules))
-            onValueUpdated { _, id, value, jsonValue ->
+            onValueUpdated { _, id, value, _ ->
                 @Suppress("UNCHECKED_CAST")
-                if (id == "rules")
-                    rules = unwrapData(value as List<JsonObject>)
-                else
-                    GlobalConfig.edit {
-                        category("noti_rules").setRaw(id, jsonValue)
-                    }
-                if (id == "auto_rule")
-                    isAutoRule = value as Boolean
+                when (id) {
+                    "rules"     -> rules = unwrapData(value as List<JsonObject>)
+                    // Kept until the user saves, as the rules are. Written at once, leaving with "Don't save" would
+                    // still switch which rules the listener takes the next time it starts.
+                    "auto_rule" -> isAutoRule = value as Boolean
+                }
                 withContext(Dispatchers.Main) {
                     updateSubtitle()
                 }
@@ -101,8 +99,16 @@ class NotificationRulesActivity : AppCompatActivity() {
                 peek(getString(R.string.rule_package_required), PeekType.ERROR)
                 return@save false
             }
+            // Without automatic rules and without one of its own, the app would take no message at all.
+            if (!isAutoRule && rules.isEmpty()) {
+                peek(getString(R.string.rule_none_without_auto), PeekType.ERROR)
+                return@save false
+            }
             rules.let(json::encodeToString)
                 .let(file::writeText)
+            GlobalConfig.edit {
+                category("noti_rules")["auto_rule"] = isAutoRule
+            }
             binding.fabSaveConfig.hide()
             createSuccessPeek(getString(R.string.config_saved), PeekAlert.Position.Bottom).peek()
             NotificationListener.updateRules()

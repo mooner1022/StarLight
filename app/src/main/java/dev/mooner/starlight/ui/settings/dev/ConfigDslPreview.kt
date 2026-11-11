@@ -7,8 +7,12 @@ import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.*
 import dev.mooner.configdsl.utils.PeekType
+import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.utils.TimeUtils
+import dev.mooner.starlight.utils.PeekLevel
+import dev.mooner.starlight.utils.createSimplePeek
+import dev.mooner.starlight.utils.findActivity
 import dev.mooner.starlight.utils.getPackageInfo
 import dev.mooner.starlight.utils.peek
 import dev.mooner.starlight.utils.startConfigActivity
@@ -35,6 +39,67 @@ fun Context.startConfigDslPreview() {
 
 private fun Context.previewStructure(): ConfigStructure = config {
     val accent = getColor(R.color.main_bright)
+    category {
+        id = "peeks"
+        title = "알림 · peek"
+        textColor = accent
+        items {
+            button {
+                id = "peek_info"
+                title = "정보"
+                description = "방금 한 일에 대한 짧은 안내"
+                icon = Icon.INFO
+                action { peek("프로젝트 컴파일이 완료된 후 사용할 수 있어요.") }
+            }
+            button {
+                id = "peek_success"
+                title = "성공"
+                icon = Icon.CHECK_CIRCLE
+                action { peek("설정을 저장했어요.", PeekType.SUCCESS) }
+            }
+            button {
+                id = "peek_warning"
+                title = "경고"
+                description = "놓치면 안 되는 알림은 더 오래 떠 있어요"
+                icon = Icon.BATTERY_ALERT
+                action { context.peek("아직 프로젝트가 컴파일 되지 않았어요.", PeekLevel.WARNING) }
+            }
+            button {
+                id = "peek_error"
+                title = "오류"
+                icon = Icon.ERROR
+                action { peek("설정 값이 올바르지 않아요.", PeekType.ERROR) }
+            }
+            button {
+                id = "peek_titled"
+                title = "제목과 버튼이 있는 오류"
+                description = "컴파일 실패, 스크립트 오류"
+                icon = Icon.ERROR
+                action {
+                    context.findActivity()?.createSimplePeek(
+                        title = "example 컴파일 실패",
+                        text = "org.mozilla.javascript.EvaluatorException: missing ; before statement (example.js#12)",
+                        level = PeekLevel.ERROR,
+                    ) {
+                        action("자세히") { setOnActionListener { hide() } }
+                    }?.peek()
+                }
+            }
+            button {
+                id = "peek_deck"
+                title = "연달아 4개"
+                description = "가장 새 알림이 앞에, 이전 알림은 뒤로 겹쳐요"
+                icon = Icon.LAYERS
+                action {
+                    val levels = listOf(PeekLevel.INFO, PeekLevel.WARNING, PeekLevel.ERROR, PeekLevel.SUCCESS)
+                    for ((index, level) in levels.withIndex()) {
+                        context.peek("${index + 1}번째 알림", level, PeekAlert.Position.Top)
+                        delay(350.milliseconds)
+                    }
+                }
+            }
+        }
+    }
     category {
         id = "info"
         title = "정보 행 · info"

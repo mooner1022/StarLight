@@ -110,8 +110,15 @@ class AgentFragment : Fragment() {
         binding.model.text = summary
         binding.composer.root.isVisible = ready
         binding.connect.isVisible = !ready
-        binding.heroTitle.setText(if (ready) R.string.agent_hero_title else R.string.agent_setup_title)
-        binding.heroBody.setText(if (ready) R.string.agent_hero_body else R.string.agent_setup_body)
+        val lost = hub.settings.lostProvider
+        if (!ready && lost != null) {
+            // Not "connect an AI": one was connected and chosen, and others may still be.
+            binding.heroTitle.text = getString(R.string.agent_subtitle_lost, lost.displayName)
+            binding.heroBody.setText(R.string.agent_lost_body)
+        } else {
+            binding.heroTitle.setText(if (ready) R.string.agent_hero_title else R.string.agent_setup_title)
+            binding.heroBody.setText(if (ready) R.string.agent_hero_body else R.string.agent_setup_body)
+        }
         binding.suggestionsScroll.isVisible = ready
 
         val running = summaries.filter { it.id in live }

@@ -17,6 +17,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.progressindicator.LinearProgressIndicator
+import dev.mooner.configdsl.utils.PeekType
+import dev.mooner.peekalert.PeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.ApprovalPolicy
@@ -33,6 +35,7 @@ import dev.mooner.starlight.agent.runtime.LiveRun
 import dev.mooner.starlight.agent.store.Rewind
 import dev.mooner.starlight.databinding.ActivityAgentChatBinding
 import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.utils.peek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.combine
@@ -154,7 +157,9 @@ class AgentChatActivity : AppCompatActivity() {
         binding.resumeButton.setOnClickListener { hub.runtime.resume(conversationId) }
 
         observe()
-        if (hub.store.get(conversationId) == null)
+        if (hub.store.isUnreadable(conversationId))
+            peek(getString(R.string.agent_error_unreadable), PeekType.ERROR, PeekAlert.Position.Top)
+        else if (hub.store.get(conversationId) == null)
             composer.focus()
     }
 
@@ -339,10 +344,15 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     private fun updateSubtitle() {
-        binding.subtitle.text = AgentUi.modelSummary(this, hub) ?: getString(R.string.agent_subtitle_setup)
+        binding.subtitle.text = AgentUi.modelSummary(this, hub) ?: AgentUi.setupSummary(this, hub)
     }
 
     private fun send(text: String, attachments: List<Part.Attachment>): Boolean {
+        // Its file is there but can't be read: a message would start a new conversation in its place.
+        if (hub.store.isUnreadable(conversationId)) {
+            peek(getString(R.string.agent_error_unreadable), PeekType.ERROR, PeekAlert.Position.Top)
+            return false
+        }
         if (hub.settings.activeProvider() == null) {
             startActivity(Intent(this, AgentSettingsActivity::class.java))
             return false
@@ -542,11 +552,15 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     private fun confirmDelete() {
-        val conversation = hub.store.get(conversationId) ?: return finish()
+        val name = hub.store.get(conversationId)?.title
+            // One that can't be read is still there to delete; the list keeps its title.
+            ?: hub.store.summaries.value.firstOrNull { it.id == conversationId }?.title
+                ?.takeIf { hub.store.isUnreadable(conversationId) }
+            ?: return finish()
         showSheet {
             title = getString(R.string.agent_delete_conversation)
             icon = R.drawable.ic_agent_delete
-            message = getString(R.string.agent_delete_conversation_message, conversation.title)
+            message = getString(R.string.agent_delete_conversation_message, name)
             negative(R.string.agent_cancel)
             positive(R.string.agent_delete) {
                 hub.runtime.delete(conversationId)

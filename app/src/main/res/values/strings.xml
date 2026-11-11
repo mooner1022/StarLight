@@ -34,6 +34,7 @@
     <string name="config_saved">Settings saved.</string>
     <string name="config_invalid">Some settings aren\'t valid. Check them and try again.</string>
     <string name="rule_package_required">A rule needs a package name.</string>
+    <string name="rule_none_without_auto">There are no rules, so the app would take no message. Add a rule, or turn on \"Set rules automatically\".</string>
     <string name="restart_confirm_title">Restart the app?</string>
     <string name="restart_confirm_message">Running projects stop, and start again with the app.</string>
     <string name="ok">OK</string>
@@ -100,7 +101,7 @@
     <string name="no_projects">There are no projects yet! (⊙_⊙;)</string>
     <string name="no_plugins">There are no plugins yet! (⊙_⊙;)</string>
     <string name="project_import_from_file">Import from a zip file</string>
-    <string name="project_import_done">Imported %s.</string>
+    <string name="project_import_done">Imported %s. It is off: compile it and turn it on when you are ready.</string>
     <string name="project_import_failed">Couldn\'t import the project: %s</string>
     <string name="project_export_done">Exported %s.</string>
     <string name="project_export_failed">Couldn\'t export the project: %s</string>
@@ -117,6 +118,7 @@
     <string name="debugroom_subtitle_group">%1$s · Debug room · Group chat</string>
     <string name="debugroom_copied">Copied the message.</string>
     <string name="debugroom_file_missing">%1$s · File is gone</string>
+    <string name="debugroom_chat_unreadable">The saved chat couldn\'t be read, so the room starts empty. The old file is kept as %1$s.</string>
     <string name="color_picker_none">No color picked</string>
     <string name="color_picker_shades">Shades</string>
     <string name="color_picker_custom">Custom</string>

@@ -1,5 +1,8 @@
 package dev.mooner.starlight.ui.projects
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -36,5 +39,29 @@ class ProjectArchiveTest {
             generateSequence { zip.nextEntry?.name }.toSortedSet()
         }
         assertEquals(sortedSetOf("data/debugroom/keep.txt", "images/cat.png", "index.js", "project.json"), entries)
+    }
+
+    @Test
+    fun anImportedProjectIsTurnedOffAndKeepsTheRestOfItsInfo() {
+        val file = tmp.newFile("project.json")
+        file.writeText("""{"id": "4cac5884", "name": "bot", "isEnabled": true, "apiLevels": ["starlight"], "added_later": 3}""")
+
+        ProjectArchive.turnOff(file)
+
+        val info = Json.parseToJsonElement(file.readText()).jsonObject
+        assertEquals(JsonPrimitive(false), info["isEnabled"])
+        assertEquals(setOf("id", "name", "isEnabled", "apiLevels", "added_later"), info.keys)
+        assertEquals(JsonPrimitive(3), info["added_later"])
+    }
+
+    @Test
+    fun aProjectAlreadyOffIsLeftAsItIs() {
+        val file = tmp.newFile("project.json")
+        val text = """{"name": "bot",   "isEnabled": false}"""
+        file.writeText(text)
+
+        ProjectArchive.turnOff(file)
+
+        assertEquals(text, file.readText())
     }
 }

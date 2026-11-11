@@ -83,6 +83,15 @@ internal object AgentUi {
         return context.getString(R.string.agent_subtitle_ready, modelName(hub, kind, modelId), kind.displayName)
     }
 
+    /**
+     * What to show in place of [modelSummary] when it is null: that the chosen provider lost its sign-in or key, if
+     * that is why, so that it doesn't read as if no AI had ever been connected.
+     */
+    fun setupSummary(context: Context, hub: AgentHub): String =
+        hub.settings.lostProvider
+            ?.let { context.getString(R.string.agent_subtitle_lost, it.displayName) }
+            ?: context.getString(R.string.agent_subtitle_setup)
+
     fun modelName(hub: AgentHub, kind: ProviderKind, modelId: String): String =
         hub.settings.cachedModels(kind).firstOrNull { it.id == modelId }?.name ?: modelId
 
@@ -97,7 +106,7 @@ internal object AgentUi {
 internal fun Context.agentSubtitle(): String {
     val hub = AgentHub.get(this)
     if (hub.settings.activeProvider() == null)
-        return getString(R.string.agent_subtitle_setup)
+        return AgentUi.setupSummary(this, hub)
     val live = hub.runtime.live.value
     val waiting = live.values.count { it.phase == LiveRun.Phase.APPROVAL }
     val conversations = hub.store.summaries.value.size

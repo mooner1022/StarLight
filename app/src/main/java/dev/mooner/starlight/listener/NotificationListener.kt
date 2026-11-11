@@ -121,11 +121,10 @@ class NotificationListener: NotificationListenerService() {
                     (data.room as ChatRoomImpl).setLastReceivedId(data.chatLogId)
                     lastReceivedRoom = data.room
 
-                    if (data.chatLogId == currentChatLogId) {
+                    if (deduper.isRepeat(data.chatLogId, sbn.key, sbn.postTime)) {
                         LOG.verbose { "Detected multiple event listeners" }
                         return
                     }
-                    currentChatLogId = data.chatLogId
 
                     val roomName    = data.room.name
                     val roomID      = data.room.id
@@ -219,10 +218,10 @@ class NotificationListener: NotificationListenerService() {
 
         for (act in sbn.notification.actions) {
             if (act.remoteInputs != null && act.remoteInputs.isNotEmpty() && isGlobalPowerOn) {
-                LOG.verbose { "currentChatLogId= $currentChatLogId" }
+                LOG.verbose { "currentChatLogId= ${deduper.lastChatLogId}" }
 
                 sbn.toDeletedMessage()?.let { data ->
-                    if (reason == REASON_APP_CANCEL && data.chatLogId == currentChatLogId) {
+                    if (reason == REASON_APP_CANCEL && data.chatLogId == deduper.lastChatLogId) {
                         Session.projectManager.fireEvent<ProjectOnMessageDeleteEvent>(data) { project, e ->
                             e.printStackTrace()
                             LOG.verbose { "Failed to call event on '${project.info.name}': $e" }
@@ -304,7 +303,7 @@ class NotificationListener: NotificationListenerService() {
 
     companion object {
 
-        private var currentChatLogId: Long = -1
+        private val deduper = MessageDeduper()
         private val roomIdMap: MutableMap<RoomName, RoomID> = ConcurrentHashMap()
         private val chatRooms: MutableMap<RoomID, ChatRoom> = ConcurrentHashMap()
         private val replierCache: MutableMap<RoomID, Replier> = ConcurrentHashMap()
@@ -315,7 +314,7 @@ class NotificationListener: NotificationListenerService() {
         private var detectedKakaoTalkVersion: String? = null
 
         fun notifySent() {
-            currentChatLogId = -1
+            deduper.reset()
         }
 
         fun updateRules() {

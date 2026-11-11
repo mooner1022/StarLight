@@ -35,7 +35,7 @@ internal object AddSheet {
                 ?: activity.getString(R.string.agent_add_approval_default)
             binding.modelValue.text = hub.settings.activeProvider()
                 ?.let { kind -> hub.settings.model(kind)?.let { AgentUi.modelName(hub, kind, it) } ?: kind.displayName }
-                ?: activity.getString(R.string.agent_subtitle_setup)
+                ?: AgentUi.setupSummary(activity, hub)
         }
 
         binding.close.setOnClickListener { dialog.dismiss() }

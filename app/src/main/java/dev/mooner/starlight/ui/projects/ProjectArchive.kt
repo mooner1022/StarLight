@@ -5,6 +5,10 @@ import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.projectManager
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -20,6 +24,7 @@ import java.util.zip.ZipOutputStream
 internal object ProjectArchive {
 
     private const val INFO_FILE_NAME = "project.json"
+    private const val KEY_ENABLED = "isEnabled"
     private val SKIPPED_FILES = setOf("logs.json")
     /** The debug room's chats and the files bots sent there, which can be large and are only for testing. */
     private val SKIPPED_DIRS = setOf("debugroom")
@@ -44,8 +49,12 @@ internal object ProjectArchive {
     /**
      * Unpacks a zip made by [export], with its files at the root or in one folder, as a new project
      * and loads it. Refuses a project whose name or id is already taken.
+     *
+     * The project comes in turned off, however it was exported: one that was on would be compiled and answer real
+     * chats the moment it is imported, which the user didn't ask for. [keepEnabled] leaves it as it was, for putting
+     * back a project that was here.
      */
-    fun import(input: InputStream): Project {
+    fun import(input: InputStream, keepEnabled: Boolean = false): Project {
         val baseDir = getStarLightDirectory()
         val staging = baseDir.resolve(".project-import").apply {
             deleteRecursively()
@@ -57,6 +66,8 @@ internal object ProjectArchive {
                 ?: staging.listFiles()?.singleOrNull { it.isDirectory && it.resolve(INFO_FILE_NAME).isFile }
                 ?: throw IllegalArgumentException("$INFO_FILE_NAME not found")
 
+            if (!keepEnabled)
+                turnOff(root.resolve(INFO_FILE_NAME))
             val info = Session.projectLoader.readProjectInfo(root)
             val name = info.name
             require(name.isNotBlank() && name != "." && name != ".." && name.none { it == '/' || it == '\\' }) {
@@ -81,6 +92,14 @@ internal object ProjectArchive {
         } finally {
             staging.deleteRecursively()
         }
+    }
+
+    /** Sets the project in [infoFile] to off. Only that key changes: the rest of the file stays as it was exported. */
+    internal fun turnOff(infoFile: File) {
+        val info = Json.parseToJsonElement(infoFile.readText()).jsonObject
+        if (info[KEY_ENABLED] == JsonPrimitive(false))
+            return
+        infoFile.writeText(JsonObject(info + (KEY_ENABLED to JsonPrimitive(false))).toString())
     }
 
     private fun unzip(input: InputStream, dir: File) {

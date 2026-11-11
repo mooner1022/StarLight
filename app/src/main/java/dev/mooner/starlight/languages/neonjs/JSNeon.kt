@@ -18,6 +18,7 @@ import dev.mooner.neonjs.net.NetOptions
 import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.languages.ScriptHostPolicy
+import dev.mooner.starlight.languages.TimerDelay
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
@@ -228,9 +229,15 @@ class JSNeon: Language() {
                 ?.takeIf(NeonValue::isFunction)
                 ?: throw IllegalArgumentException("Callback is not a function")
             val mDelay = args.getOrNull(1)
-                ?.takeIf(NeonValue::isNumber)
-                ?.asDouble()
-                ?.toLong() ?: 0L
+                ?.let { arg ->
+                    when {
+                        arg.isNumber -> arg.asDouble()
+                        arg.isString -> arg.asString()
+                        else         -> null
+                    }
+                }
+                .let(TimerDelay::fromScript)
+                .let { TimerDelay.effective(it, repeat) }
             val params = args.drop(2).toTypedArray()
 
             val id = lastTimerId.incrementAndGet()
@@ -244,7 +251,7 @@ class JSNeon: Language() {
                     }.onFailure { e ->
                         project.logger.error("Exception on timer $id: $e")
                     }
-                } while (repeat)
+                } while (repeat && isActive)
             }.apply {
                 invokeOnCompletion { timers -= id }
             }

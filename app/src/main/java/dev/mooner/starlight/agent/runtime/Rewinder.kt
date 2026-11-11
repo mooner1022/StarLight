@@ -19,7 +19,8 @@ internal class Rewinder(private val hub: AgentHub) {
             Session.projectManager.removeProject(name, removeFiles = true)
 
         override fun restore(archive: File) {
-            archive.inputStream().use { ProjectArchive.import(it) }
+            // Put back as it was, on if it was on: this undoes a removal, it doesn't bring in something new.
+            archive.inputStream().use { ProjectArchive.import(it, keepEnabled = true) }
         }
 
         override fun setEvents(name: String, allowedEventIds: List<String>) =
