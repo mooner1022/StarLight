@@ -26,6 +26,7 @@ import dev.mooner.starlight.plugincore.event.EventHandler
 import dev.mooner.starlight.plugincore.event.on
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.ui.splash.intro.IntroActivity
+import dev.mooner.starlight.utils.PendingEntry
 import dev.mooner.starlight.utils.applyEdgeToEdge
 import dev.mooner.starlight.utils.checkPermissions
 import dev.mooner.starlight.utils.restartApplication
@@ -103,6 +104,8 @@ class SplashActivity : AppCompatActivity() {
 
         if (TEST_QUICK_START || isInitial || !isPermissionsGrant) {
             //ConfigDSL.registerAdapterImpl(::ParentConfigAdapterImpl)
+            // The runtime doesn't start from here: where the user was going is forgotten, not kept for another day.
+            PendingEntry.take()
             startActivity(Intent(this, IntroActivity::class.java)
                 .putExtra(IntroActivity.EXTRA_PERMISSIONS_ONLY, !TEST_QUICK_START && !isInitial))
             finish()
@@ -174,6 +177,11 @@ class SplashActivity : AppCompatActivity() {
 
     private fun startMainActivity(intent: Intent) = runOnUiThread {
         startActivity(intent)
+        // The screen that sent the user here because the runtime wasn't up yet, on top of the main one.
+        PendingEntry.take()?.let { entry ->
+            runCatching { startActivity(entry) }
+                .onFailure { LOG.warn { "Couldn't go on to ${entry.component?.shortClassName}: $it" } }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
             overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, android.R.anim.fade_in, android.R.anim.fade_out)
         else

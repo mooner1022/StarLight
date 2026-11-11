@@ -62,19 +62,42 @@ class PluginLoader {
                     .joinToString("\n") { "#${it.index} - ${it.value}" }
             }
 
+            /** The plugins that failed as they were loaded: the ones that need them aren't loaded either. */
+            val failed = hashSetOf<String>()
             for (id in resolution.order) {
                 val (file, info) = candidates[id]!!
                 emit(info.name)
 
+                // A plugin that needs one that just failed would run against something that isn't there. The
+                // order has each plugin after the ones it depends on.
+                val missing = info.dependency.firstOrNull { !it.isOptional && it.pluginId in failed }
+                if (missing != null) {
+                    val exclusion = PluginExclusion.ExcludedDependency(missing)
+                    logExclusion(info, exclusion)
+                    failed += info.id
+                    entries[file] = InstalledPlugin(file, info, exclusion.toState())
+                    continue
+                }
+
+                val before = RegistrationSnapshot.take()
+                var plugin: StarlightPlugin? = null
                 entries[file] = try {
-                    val plugin = loadPlugin(context, file, info)
+                    plugin = loadPlugin(context, file, info)
 
                     Session.pluginManager.addPlugin(plugin)
                     // setEnabled(true) would call onEnable on the plugin only; loading enables every listener.
                     plugin.enableOnLoad()
                     InstalledPlugin(file, info, PluginState.Loaded(plugin))
                 } catch (e: Throwable) {
-                    logger.error(e)
+                    failed += info.id
+                    unloadFailed(plugin, info, before)
+                    // Which plugin, and what was behind the error: the error alone, as it used to be logged,
+                    // said neither. One that isn't a plugin at all has been reported where it was found out.
+                    if (e !is InvalidPluginException)
+                        logger.error {
+                            "Failed to load plugin ${info.fullName} (${file.name}): $e" +
+                                generateSequence(e.cause) { it.cause }.take(MAX_CAUSES).joinToString("") { "\ncaused by: $it" }
+                        }
                     if (Info.DEBUG)
                         e.printStackTrace()
                     InstalledPlugin(file, info, PluginState.Failed(e))
@@ -139,6 +162,23 @@ class PluginLoader {
             PluginState.Disabled
         else
             PluginState.Excluded(this)
+
+    /**
+     * Undoes what loading [plugin] did before it failed. It is shown as failed, and nothing of it is left in use:
+     * it used to stay among the loaded plugins, called for network changes and links and handed to scripts, with
+     * whatever it had registered before it threw.
+     */
+    private fun unloadFailed(plugin: StarlightPlugin?, info: PluginInfo, before: RegistrationSnapshot) {
+        if (plugin != null) {
+            // Its listeners that were enabled are told it is over; each is guarded there.
+            runCatching { plugin.disableOnUnload() }
+            Session.pluginManager.dropFailed(plugin)
+        }
+        loaders.remove(info.id)
+        val removed = runCatching { before.removeNewer() }.getOrDefault(emptyList())
+        if (removed.isNotEmpty())
+            logger.info { "Took out what plugin ${info.fullName} registered before it failed: ${removed.joinToString()}" }
+    }
 
     private fun logExclusion(info: PluginInfo, exclusion: PluginExclusion) {
         when (exclusion) {
@@ -264,6 +304,19 @@ class PluginLoader {
             return libsDir
         }
 
+        // A plugin's own folder is kept in step with the plugin file: an update gets its new libraries. The folder
+        // the V8 plugin shares with the app keeps being filled as before, a file where there is none.
+        if (info.id != "v8") {
+            try {
+                if (PluginFiles.unpackNativeLibs(file, libsDir, pathPrefix))
+                    logger.verbose { "Unpacked the native libraries of plugin [${info.fullName}]" }
+            } catch (e: IOException) {
+                e.printStackTrace()
+                throw IllegalStateException("Failed to load native libraries: $e")
+            }
+            return libsDir
+        }
+
         var jar: JarFile? = null
         try {
             jar = JarFile(file)
@@ -302,55 +355,19 @@ class PluginLoader {
         return libsDir
     }
 
-    private fun loadAssets(file: File, plugin: StarlightPlugin, force: Boolean = false) {
-        var jar: JarFile? = null
+    /**
+     * Unpacks the plugin's assets into its data folder, again whenever the plugin file or its asset revision
+     * changed. They used to follow the revision alone, so a version whose author forgot to raise it kept the old
+     * assets, its icon among them, and one whose unpacking was cut short was never unpacked again.
+     */
+    private fun loadAssets(file: File, plugin: StarlightPlugin) {
         try {
-            val parent = plugin.getInternalDataDirectory()
-                .resolve("assets")
-                .also { it.mkdirs() }
-            val assetVersion = runCatching { parent.resolve(".VERSION").readText().toInt() }
-                .getOrDefault(-1)
-            if (plugin.info.assetRevision == assetVersion)
-                return
-            logger.debug { "Found new version of asset($assetVersion -> ${plugin.info.assetRevision}), loading assets..." }
-            parent.apply {
-                deleteRecursively()
-                mkdirs()
-                resolve(".VERSION")
-                    .writeText(plugin.info.assetRevision.toString())
-            }
-
-            jar = JarFile(file)
-            val entries = jar.entries()
-            while (entries.hasMoreElements()) {
-                val entry = entries.nextElement() ?: break
-                if (!entry.name.startsWith("assets/")) continue
-
-                val fileName = entry.name.split("assets/")
-                    .drop(1)
-                    .let {
-                        if (it.size == 1)
-                            it[0]
-                        else
-                            it.joinToString("assets/")
-                    }
-                File(parent, fileName).apply {
-                    if (force || !exists()) {
-                        val entStream = jar.getInputStream(entry)
-                        if (isDirectory) {
-                            deleteRecursively()
-                        }
-                        parentFile?.mkdirs()
-                        writeBytes(entStream.readBytes())
-                        logger.verbose { "Loaded asset [${fileName}] from plugin [${plugin.info.fullName}]" }
-                    }
-                }
-            }
+            val target = plugin.getInternalDataDirectory().resolve("assets")
+            if (PluginFiles.unpackAssets(file, target, plugin.info.assetRevision))
+                logger.debug { "Unpacked the assets of plugin [${plugin.info.fullName}]" }
         } catch (e: IOException) {
             e.printStackTrace()
             throw IllegalStateException("Failed to load asset: $e")
-        } finally {
-            jar?.close()
         }
     }
 
@@ -411,6 +428,9 @@ class PluginLoader {
     }
 
     companion object {
+        /** How many causes of a load failure its log names. */
+        private const val MAX_CAUSES = 4
+
         val SUPPORTED_EXT =
             arrayOf(/*"apk", "jar", "aar", */"slp")
 

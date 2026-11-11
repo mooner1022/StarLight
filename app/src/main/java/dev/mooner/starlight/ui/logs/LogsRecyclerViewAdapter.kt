@@ -22,7 +22,6 @@ import dev.mooner.starlight.plugincore.utils.isNightMode
 import dev.mooner.starlight.utils.peek
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.regex.Pattern
 
 class LogsRecyclerViewAdapter
     : RecyclerView.Adapter<LogsRecyclerViewAdapter.LogsViewHolder>() {
@@ -34,7 +33,11 @@ class LogsRecyclerViewAdapter
         private set
     private var copyOnLongClick: Boolean = true
 
-    private var filter: ((data: LogData) -> Boolean)? = null
+    private var filter: LogFilter = LogFilter()
+
+    /** Whether there are logs the filter keeps from showing. */
+    val hidesLogs: Boolean
+        get() = filter.isActive && visibleData.size < data.size
 
     fun withData(
         list: List<LogData>,
@@ -59,18 +62,18 @@ class LogsRecyclerViewAdapter
         holder.bind(viewData)
     }
 
-    fun set(list: List<LogData>, notify: Boolean = false) {
-        if (data.isNotEmpty()) {
-            val size = visibleData.size
-            data.clear()
-            visibleData.clear()
-            if (notify)
-                notifyItemRangeRemoved(0, size)
-        }
+    /**
+     * Shows [list] in place of what the adapter held, through the filter that is set. The list was shown whole and
+     * without telling the view of the change: coming back to the tab after the logs had moved on showed every log
+     * while a filter was set, with a row count the view didn't know of.
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    fun set(list: List<LogData>) {
+        data.clear()
         data.addAll(list)
-        visibleData.addAll(list)
-        if (notify)
-            notifyItemRangeInserted(0, list.size)
+        visibleData.clear()
+        visibleData.addAll(if (filter.isActive) list.filter(filter::matches) else list)
+        notifyDataSetChanged()
     }
 
     fun getItems(): List<LogData> =
@@ -86,7 +89,7 @@ class LogsRecyclerViewAdapter
             while (data.size > capacity)
                 data.removeFirst()
         }
-        if (filter != null && !filter!!.invoke(log))
+        if (!filter.matches(log))
             return
         if (limit != 0 && visibleData.size >= limit) {
             visibleData.removeAt(0)
@@ -104,25 +107,11 @@ class LogsRecyclerViewAdapter
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    fun setFilter(
-        types: List<LogType>,
-        tags: List<String>,
-        content: Pattern?,
-    ) {
-        filter = { data ->
-            if (types.isNotEmpty() && data.type !in types)
-                false
-            else if (tags.isNotEmpty() && data.tag !in tags)
-                false
-            else if (content != null && !content.matcher(data.message).matches())
-                false
-            else
-                true
-        }
-        val nData = data.filter(filter!!)
+    internal fun setFilter(filter: LogFilter) {
+        this.filter = filter
         visibleData.apply {
             clear()
-            addAll(nData)
+            addAll(if (filter.isActive) data.filter(filter::matches) else data)
         }
         notifyDataSetChanged()
     }

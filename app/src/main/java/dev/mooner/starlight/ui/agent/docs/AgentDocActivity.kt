@@ -22,6 +22,7 @@ import dev.mooner.starlight.databinding.ActivityAgentDocBinding
 import dev.mooner.starlight.ui.agent.AgentUi
 import dev.mooner.starlight.ui.agent.MarkdownRenderer
 import dev.mooner.starlight.utils.fitPage
+import dev.mooner.starlight.utils.restartIfNotReady
 import io.noties.markwon.LinkResolver
 import io.noties.markwon.LinkResolverDef
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +41,12 @@ class AgentDocActivity : AppCompatActivity() {
     private lateinit var key: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Brought back before the runtime started: start over from the splash, without restoring what needs it.
+        if (restartIfNotReady()) {
+            super.onCreate(null)
+            finish()
+            return
+        }
         super.onCreate(savedInstanceState)
         binding = ActivityAgentDocBinding.inflate(layoutInflater)
         setContentView(binding.root)

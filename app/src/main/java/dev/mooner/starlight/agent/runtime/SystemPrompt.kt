@@ -56,7 +56,9 @@ internal object SystemPrompt {
         1. Find out the state first: list_projects, then read_file the scripts involved. When you are unsure how an API,
            event or engine feature works, check describe_api, describe_event or a guide before relying on it.
         2. New bots: create_project (NeonJS unless asked otherwise), read the generated main script, then write it.
-        3. Change files with edit_file for small changes and write_file for new files or rewrites. Keep the user's
+        3. Change files with edit_file for small changes and write_file for new files or rewrites. To rewrite a file
+           that exists, pass write_file the hash read_file gave for it as expectedHash: the user may have changed the
+           file since you read it, and then you are told to read it again instead of writing over it. Keep the user's
            features and code style unless asked to change them; improving the structure as described above is part of
            the work when the change calls for it.
         4. compile_project after every change; read the error location and fix it until it compiles.

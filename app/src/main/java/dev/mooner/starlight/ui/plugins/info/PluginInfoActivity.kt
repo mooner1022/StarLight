@@ -24,6 +24,7 @@ import dev.mooner.starlight.ui.plugins.pluginStatus
 import dev.mooner.starlight.ui.plugins.setup.hasSetup
 import dev.mooner.starlight.ui.plugins.setup.showPluginSetupSheet
 import dev.mooner.starlight.utils.findActivity
+import dev.mooner.starlight.utils.showErrorLogDialog
 import dev.mooner.starlight.utils.startConfigActivity
 import java.text.DateFormat
 import java.util.Date
@@ -98,6 +99,12 @@ fun Context.startPluginInfoActivity(
                         is PluginState.Invalid -> state.error.message ?: state.error.toString()
                         else                   -> null
                     }
+                    // The error with its causes and where it was thrown, which is what its author is asked for.
+                    val error = (state as? PluginState.Failed)?.error ?: (state as? PluginState.Invalid)?.error
+                    if (error != null)
+                        setOnClickListener { view ->
+                            view.context.showErrorLogDialog(getString(R.string.plugin_error_details, entry.info?.name ?: entry.file.name), error)
+                        }
                 }
                 if (setupPlugin != null)
                     button {

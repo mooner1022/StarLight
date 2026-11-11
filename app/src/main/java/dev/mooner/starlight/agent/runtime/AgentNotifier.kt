@@ -211,6 +211,24 @@ internal object AgentNotifier {
             .build())
     }
 
+    /**
+     * The run stopped at its step limit and waits to be told to go on. Said whatever the setting for finished runs
+     * is, as a failure is: it isn't done, and nothing else would tell a user who is elsewhere.
+     */
+    fun paused(hub: AgentHub, conversationId: String, message: String) {
+        val context = hub.context
+        if (hub.runtime.visibleConversation == conversationId)
+            return
+        val title = hub.store.get(conversationId)?.title ?: return
+        notify(context, doneId(conversationId), base(context, CHANNEL_DONE)
+            .setContentTitle(context.getString(R.string.agent_notification_paused, title))
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setAutoCancel(true)
+            .setContentIntent(openChat(context, conversationId))
+            .build())
+    }
+
     fun failed(hub: AgentHub, conversationId: String, message: String) {
         val context = hub.context
         if (hub.runtime.visibleConversation == conversationId)

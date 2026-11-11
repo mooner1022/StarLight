@@ -9,6 +9,14 @@ import dev.mooner.starlight.plugincore.project.Project
 import java.io.File
 import kotlin.properties.Delegates.notNull
 
+/**
+ * The base of a code editor screen: it finds the project and its folder from the intent that opened it.
+ *
+ * When the project can't be found, the screen is finished in [onCreate] instead of failing. That happens when
+ * Android brings an editor back in a new process before the app has loaded its projects, and when the project was
+ * removed meanwhile. A subclass checks `isFinishing` after `super.onCreate` and stops there: the project, the base
+ * directory and the main file aren't set then.
+ */
 abstract class CodeEditorActivity: AppCompatActivity() {
 
     private var mBaseDirectory: File by notNull()
@@ -31,8 +39,9 @@ abstract class CodeEditorActivity: AppCompatActivity() {
         val projectName = intent.getStringExtra(KEY_PROJECT_NAME)
 
         if (!projectName.isNullOrBlank()) {
-            mProject = Session.projectManager.getProjectByName(projectName)
-                ?: error("Failed to find project with name '$projectName'")
+            // The project manager isn't there at all before the app's runtime has started.
+            mProject = runCatching { Session.projectManager.getProjectByName(projectName) }.getOrNull()
+                ?: return finish()
         }
     }
 

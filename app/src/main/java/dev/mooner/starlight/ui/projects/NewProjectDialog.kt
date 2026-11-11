@@ -23,6 +23,10 @@ import androidx.core.graphics.toColorInt
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import coil.load
 import coil.size.Scale
@@ -58,6 +62,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.serialization.json.JsonElement
 
 private val LOG = LoggerFactory.logger {  }
 
@@ -71,6 +76,62 @@ private const val STEP_ANIM_DURATION = 180L
 
 private enum class Step { NAME, API, LANGUAGE, EVENTS, CONFIG }
 
+/**
+ * What the user had filled in when the wizard was taken down together with its screen, as on a rotation or a switch
+ * to dark mode. A sheet can't outlive its screen, so the screen that comes in its place shows the wizard again from
+ * this, at the step it was on. Held by the activity, which is what lasts through such a change; it doesn't last
+ * through the end of the process.
+ */
+internal class NewProjectDraft : ViewModel() {
+
+    var isOpen = false
+        private set
+    var name = ""
+        private set
+    var stepName: String? = null
+        private set
+    var levelIds: Set<String> = emptySet()
+        private set
+    var languageId: String? = null
+        private set
+    var isLanguagePicked = false
+        private set
+    var eventEntries: AllowedEventEntries? = null
+        private set
+    var presets: Map<String, Map<String, JsonElement>> = emptyMap()
+        private set
+
+    fun keep(
+        name: String, stepName: String, levelIds: Set<String>, languageId: String?, isLanguagePicked: Boolean,
+        eventEntries: AllowedEventEntries, presets: Map<String, Map<String, JsonElement>>,
+    ) {
+        isOpen = true
+        this.name = name
+        this.stepName = stepName
+        this.levelIds = levelIds
+        this.languageId = languageId
+        this.isLanguagePicked = isLanguagePicked
+        this.eventEntries = eventEntries
+        this.presets = presets
+    }
+
+    fun clear() {
+        isOpen = false
+        name = ""
+        stepName = null
+        levelIds = emptySet()
+        languageId = null
+        isLanguagePicked = false
+        eventEntries = null
+        presets = emptyMap()
+    }
+
+    companion object {
+        fun of(fragment: Fragment): NewProjectDraft =
+            ViewModelProvider(fragment.requireActivity())[NewProjectDraft::class.java]
+    }
+}
+
 /** [onImport] adds a link on the first step that closes the dialog and imports a project zip instead. */
 @SuppressLint("CheckResult")
 internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
@@ -78,18 +139,28 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
     val binding = DialogNewProjectBinding.inflate(layoutInflater)
     val languages = Session.languageManager.getLanguages().sortedBy(Language::name)
     val eventSources = EventCatalog.load()
+    // The wizard as it was when its screen was taken down under it, if it was: it goes on from there.
+    val draft = NewProjectDraft.of(this)
+    val isRestored = draft.isOpen
     // Kept while the user goes back and forth, as the levels change which events show.
-    val eventEntries = AllowedEventEntries(DEFAULT_EVENT_IDS)
+    val eventEntries = draft.eventEntries ?: AllowedEventEntries(DEFAULT_EVENT_IDS)
 
     val lastLanguageId = getDefaultCategory().getString(CONFIG_LAST_LANGUAGE)
     val initialLanguage: Language? = languages.find { it.id == lastLanguageId } ?: languages.firstOrNull()
-    var selectedLanguage: Language? = initialLanguage
+    var selectedLanguage: Language? = languages.find { isRestored && it.id == draft.languageId } ?: initialLanguage
     // Once the user picks a language, the levels no longer choose one for them.
-    var isLanguagePicked = false
+    var isLanguagePicked = isRestored && draft.isLanguagePicked
     var step = Step.NAME
 
     val levels = Session.apiLevelManager.getLevels()
-    val selectedLevels: MutableSet<String> = linkedSetOf<String>().apply { addAll(Session.apiLevelManager.defaultLevelIds) }
+    val selectedLevels: MutableSet<String> = linkedSetOf<String>().apply {
+        addAll(if (isRestored) draft.levelIds else Session.apiLevelManager.defaultLevelIds)
+    }
+    val restoredStep = draft.stepName?.let { name -> Step.entries.find { it.name == name } }
+    val restoredName = draft.name
+    // The settings of the language's page, put back the first time that page is made.
+    var restoredPresets = draft.presets
+    draft.clear()
 
     fun isEventAvailable(item: EventItem): Boolean =
         EventCatalog.isAvailable(selectedLevels, item)
@@ -188,7 +259,8 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
             return
         configAdapter?.destroy()
         configData.clear()
-        configData[language.id] = ConcurrentHashMap()
+        configData[language.id] = ConcurrentHashMap(restoredPresets[language.id].orEmpty())
+        restoredPresets = emptyMap()
         configAdapter = ConfigAdapter.Builder(requireContext()) {
             bind(binding.pageConfig)
             structure { language.projectConfigStructure() }
@@ -409,13 +481,28 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
                 it.dismiss()
         }
         onShow {
-            showStep(Step.NAME, animate = false, showKeyboard = false)
+            showStep(restoredStep?.takeIf { it in steps() } ?: Step.NAME, animate = false, showKeyboard = false)
         }
         onDismiss {
             configAdapter?.destroy()
             configAdapter = null
         }
     }
+    // Android takes the screen down to make it anew, and the sheet with it: what was filled in is kept, to be shown
+    // again. Seen here and not when the sheet is dismissed, which the sheet tells of only after the screen is gone.
+    // Added after the sheet's own observer, so it comes first at the end, while the sheet is still up.
+    viewLifecycleOwner.lifecycle.addObserver(LifecycleEventObserver { _, event ->
+        if (event == Lifecycle.Event.ON_DESTROY && sheet.dialog.isShowing && activity?.isChangingConfigurations == true)
+            draft.keep(
+                name = nameInput.text.toString(),
+                stepName = step.name,
+                levelIds = selectedLevels.toSet(),
+                languageId = selectedLanguage?.id,
+                isLanguagePicked = isLanguagePicked,
+                eventEntries = eventEntries,
+                presets = configData.mapValues { (_, values) -> values.toMap() },
+            )
+    })
     // Back goes to the previous step. KEYCODE_BACK doesn't arrive with predictive back (targetSdk 36), so
     // this goes through the dispatcher. It is enabled past the first step only, after the sheet registered
     // its own back callback, so it comes first; on the first step the sheet closes as usual.
@@ -427,6 +514,8 @@ internal fun Fragment.showNewProjectDialog(onImport: (() -> Unit)? = null) {
         onImport?.invoke()
     }
 
+    if (isRestored)
+        nameInput.setText(restoredName)
     updateNameHelper()
     updateButtons()
 }

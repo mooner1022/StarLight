@@ -160,6 +160,9 @@
     <string name="editor_edit_file_name">변경된 이름</string>
 
     <string name="log_foreground_started">포그라운드 서비스 등록 성공!</string>
+    <string name="logs_filter_active">로그 필터 · %d</string>
+    <string name="logs_filter_no_match">필터에 맞는 로그가 없어요.</string>
+    <string name="logs_filter_clear">필터 지우기</string>
     <string name="log_filter_settings">로그 필터</string>
     <string name="log_filter_auto_scroll">자동 스크롤</string>
     <string name="log_filter_types">타입</string>
@@ -234,6 +237,7 @@
     <string name="plugin_category_devtools">개발 도구</string>
     <string name="plugin_category_other">기타</string>
     <string name="plugin_status_failed">로드 실패: %s</string>
+    <string name="plugin_error_details">%s 로드 오류</string>
     <string name="plugin_status_requires_newer_app">앱 업데이트 필요 (PluginCore %1$s)</string>
     <string name="plugin_status_outdated_api">플러그인 업데이트 필요 (PluginCore %1$s)</string>
     <string name="plugin_status_missing_dependency">필요한 플러그인 없음: %s</string>

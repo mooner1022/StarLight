@@ -23,6 +23,7 @@ import dev.mooner.starlight.agent.runtime.LiveRun
 import dev.mooner.starlight.agent.store.ConversationSummary
 import dev.mooner.starlight.databinding.FragmentAgentBinding
 import dev.mooner.starlight.databinding.ItemAgentConversationBinding
+import dev.mooner.starlight.databinding.ItemAgentMoreBinding
 import dev.mooner.starlight.ui.common.showSheet
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -39,6 +40,8 @@ class AgentFragment : Fragment() {
     private var composer: Composer? = null
     /** Attachments picked here go to the conversation the next message starts. */
     private var draftId: String? = null
+    /** How many conversations that aren't working are listed; the last row shows more. */
+    private var shownCount = ConversationListing.PAGE
 
     private val pickImages = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(5)) { composer?.onPicked(it) }
     private val pickFiles = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { composer?.onPicked(it) }
@@ -46,6 +49,7 @@ class AgentFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentAgentBinding.inflate(inflater, container, false)
         draftId = savedInstanceState?.getString(KEY_DRAFT)
+        shownCount = savedInstanceState?.getInt(KEY_SHOWN, ConversationListing.PAGE) ?: ConversationListing.PAGE
         binding.stars.brightness = 0.85f
 
         composer = Composer(
@@ -70,6 +74,7 @@ class AgentFragment : Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(KEY_DRAFT, draftId)
+        outState.putInt(KEY_SHOWN, shownCount)
     }
 
     override fun onDestroyView() {
@@ -121,17 +126,25 @@ class AgentFragment : Fragment() {
         }
         binding.suggestionsScroll.isVisible = ready
 
-        val running = summaries.filter { it.id in live }
-        binding.runningTitle.isVisible = running.isNotEmpty()
-        binding.running.isVisible = running.isNotEmpty()
+        val page = ConversationListing.page(summaries, live.keys, shownCount)
+        binding.runningTitle.isVisible = page.running.isNotEmpty()
+        binding.running.isVisible = page.running.isNotEmpty()
         binding.running.removeAllViews()
-        for (item in running)
+        for (item in page.running)
             addRow(binding.running, item, live[item.id])
 
-        val others = summaries.filter { it.id !in live }.take(MAX_LISTED)
         binding.conversations.removeAllViews()
-        for (item in others)
+        for (item in page.others)
             addRow(binding.conversations, item, null)
+        // The older ones are kept and counted in the header; this is the way to them.
+        if (page.more > 0)
+            ItemAgentMoreBinding.inflate(layoutInflater, binding.conversations, true).root.apply {
+                text = resources.getQuantityString(R.plurals.agent_list_more, page.more, page.more)
+                setOnClickListener {
+                    shownCount += ConversationListing.PAGE
+                    render(summaries, live)
+                }
+            }
         binding.empty.isVisible = summaries.isEmpty()
     }
 
@@ -146,6 +159,8 @@ class AgentFragment : Fragment() {
             run != null                                                                     -> R.string.agent_state_running to R.color.agent_meteor
             item.state == RunState.INTERRUPTED                                              -> R.string.agent_state_interrupted to R.color.agent_dusk
             item.state == RunState.ERROR                                                    -> R.string.agent_state_error to R.color.agent_error
+            // Stopped at the step limit: not finished, though nothing is working on it.
+            item.paused                                                                     -> R.string.agent_state_paused to R.color.agent_dusk
             else                                                                            -> null to null
         }
         row.state.isVisible = label != null
@@ -239,7 +254,7 @@ class AgentFragment : Fragment() {
 
     private companion object {
         const val KEY_DRAFT = "draft"
-        const val MAX_LISTED = 40
+        const val KEY_SHOWN = "shown"
         const val MENU_RENAME = 1
         const val MENU_DELETE = 2
     }

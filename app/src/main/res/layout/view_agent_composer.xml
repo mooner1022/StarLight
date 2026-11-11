@@ -179,6 +179,20 @@
                 tools:progress="72"/>
         </FrameLayout>
 
+        <!-- Stops the run. Its own button, there for as long as the agent works: the send button sends, also then. -->
+        <ImageButton
+            android:id="@+id/stop"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="2dp"
+            android:background="@drawable/bg_agent_stop"
+            android:contentDescription="@string/agent_stop"
+            android:src="@drawable/ic_agent_stop"
+            android:visibility="gone"
+            app:tint="@color/agent_text"
+            tools:visibility="visible"/>
+
         <ImageButton
             android:id="@+id/send"
             android:layout_width="40dp"

@@ -140,9 +140,11 @@ class TabViewAdapter(
             selectedIndex = fromPos
     }
 
-    fun destroy() {
+    /** [keepSessions]: the list goes on being used, by the adapter of the screen that replaces this one. */
+    fun destroy(keepSessions: Boolean = false) {
         eventJob.cancel()
-        sessions.clear()
+        if (!keepSessions)
+            sessions.clear()
         mRecyclerView = null
     }
 

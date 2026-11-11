@@ -10,7 +10,6 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
-import dev.mooner.neonjs.NeonContext
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.original.NotificationApi
 import dev.mooner.starlight.core.GlobalApplication
@@ -20,6 +19,8 @@ import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
+import dev.mooner.starlight.languages.neonjs.compileForScript
+import dev.mooner.starlight.languages.neonjs.whileWaitingForAnotherThread
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
@@ -84,7 +85,7 @@ class LegacyApi: Api<LegacyApi.Api>() {
          *
          * Every project is compiled, whatever its language and whether it is on, the calling one included. Compiling a
          * project that is already compiled stops its running jobs first; a failed compile is logged in the project's
-         * log and leaves the version that was running in place.
+         * log and stops the project until it compiles again.
          *
          * @param throwOnError Whether to throw the first compile error. The projects after it then aren't compiled.
          * @return `true` if at least one project compiled.
@@ -93,7 +94,7 @@ class LegacyApi: Api<LegacyApi.Api>() {
         fun reload(throwOnError: Boolean = false): Boolean {
             var res = false
             for (project in projectManager.getProjects()) {
-                val cRes = project.compile(throwOnError)
+                val cRes = project.compileForScript(throwOnError)
                 if (!res && cRes)
                     res = true
             }
@@ -104,8 +105,8 @@ class LegacyApi: Api<LegacyApi.Api>() {
          * Compiles the project named [scriptName] and says whether it compiled.
          *
          * Compiling a project that is already compiled stops its running jobs first, so this applies to the calling
-         * project too. A failed compile is logged in the project's log and leaves the version that was running in
-         * place.
+         * project too. A failed compile is logged in the project's log and stops the project until it compiles
+         * again.
          *
          * @param scriptName The project's name, matched exactly.
          * @param throwOnError Whether to throw the compile error instead of returning `false`.
@@ -117,7 +118,7 @@ class LegacyApi: Api<LegacyApi.Api>() {
                 project
             else
                 projectManager.getProjectByName(scriptName)?: return false
-            return mProject.compile(throwException = throwOnError)
+            return mProject.compileForScript(throwException = throwOnError)
         }
 
         /**
@@ -158,7 +159,7 @@ class LegacyApi: Api<LegacyApi.Api>() {
                 ?: return STATE_PROJECT_NOT_FOUND
             if (project.isCompiled)
                 return STATE_ALREADY_COMPILED
-            project.compile(throwException = true)
+            project.compileForScript(throwException = true)
             return STATE_COMPILE_SUCCESS
         }
 
@@ -462,10 +463,8 @@ class LegacyApi: Api<LegacyApi.Api>() {
          * Runs [block], which waits for the main thread, letting a NeonJS script's context go meanwhile: the main
          * thread calling `func` needs it, and would otherwise wait for this thread forever. Rhino has no such lock.
          */
-        private fun <R> whileWaiting(block: () -> R): R {
-            val context = NeonContext.current() ?: return block()
-            return context.releasing(block)
-        }
+        private fun <R> whileWaiting(block: () -> R): R =
+            whileWaitingForAnotherThread(block)
 
         /**
          * The number of event jobs the calling project is running right now.

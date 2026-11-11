@@ -64,6 +64,11 @@ class ApiLevelManager {
         return owners.isEmpty() || owners.any { it.id in levelIds }
     }
 
+    /** Takes the level [id] out again, as when the plugin that registered it failed to load. */
+    internal fun remove(id: String) {
+        synchronized(levels) { levels.remove(id) }
+    }
+
     internal fun purge() =
         synchronized(levels) { levels.clear() }
 }

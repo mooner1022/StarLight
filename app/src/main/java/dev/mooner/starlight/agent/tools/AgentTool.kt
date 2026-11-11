@@ -80,8 +80,27 @@ class AgentTool(
     val describe: (JsonObject) -> String,
     /** What the call would change in a file, as a diff the approval prompt shows; null when it can't tell. */
     val preview: ((JsonObject) -> String?)? = null,
+    /**
+     * The risk of one call, where it depends on what the call is about: compiling a project that is on changes
+     * what answers real chats, compiling one that is off doesn't. Null for a tool whose calls all have [risk].
+     */
+    val riskOf: ((JsonObject) -> ToolRisk)? = null,
+    /**
+     * What "always allow" covers, for a call the user said it to: the project, or the site. Null covers every call
+     * of the tool. One yes then doesn't allow the same tool on everything else for the rest of the conversation.
+     */
+    val scopeOf: ((JsonObject) -> String?)? = null,
     val run: suspend ToolContext.(JsonObject) -> ToolOutput,
 ) {
+
+    /** [risk], or what [riskOf] says of this call; [risk] when that can't tell, as for a project that isn't there. */
+    fun riskFor(args: JsonObject): ToolRisk =
+        riskOf?.let { runCatching { it(args) }.getOrNull() } ?: risk
+
+    /** The name "always allow" is remembered under for this call: the tool's, with its scope if it has one. */
+    fun allowKey(args: JsonObject): String =
+        scopeOf?.let { runCatching { it(args) }.getOrNull() }?.let { "$name:${it.lowercase()}" } ?: name
+
     val spec: ToolSpec
         get() = ToolSpec(name, description, parameters)
 }

@@ -3,6 +3,7 @@ package dev.mooner.starlight.ui.agent
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewTreeObserver
 import android.view.inputmethod.InputMethodManager
@@ -21,6 +22,7 @@ import coil.transform.RoundedCornersTransformation
 import dev.mooner.starlight.R
 import dev.mooner.starlight.agent.AgentHub
 import dev.mooner.starlight.agent.ApprovalPolicy
+import dev.mooner.starlight.agent.model.AgentJson
 import dev.mooner.starlight.agent.model.AttachmentKind
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.databinding.ItemAgentAttachmentChipBinding
@@ -28,6 +30,7 @@ import dev.mooner.starlight.databinding.ViewAgentComposerBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.builtins.ListSerializer
 
 /**
  * The message field with its attachments and send button, used by the AI tab and the chat. Attachments are copied
@@ -123,12 +126,9 @@ class Composer(
         binding.contextMeter.setOnClickListener { onContext() }
         binding.input.doAfterTextChanged { updateSend() }
         ViewCompat.setOnReceiveContentListener(binding.input, RECEIVED_TYPES) { _, payload -> receive(payload) }
+        binding.stop.setOnClickListener { onStop() }
         binding.send.setOnClickListener {
-            // While a run goes on, a written message joins it; an empty field stops it.
-            if (isRunning && !canSend()) {
-                onStop()
-                return@setOnClickListener
-            }
+            // While a run goes on, a written message joins it.
             if (!canSend())
                 return@setOnClickListener
             if (onSend(text, attachments.toList()))
@@ -216,6 +216,31 @@ class Composer(
         project = previous
     }
 
+    /**
+     * Writes what the field holds beyond its text, which the field keeps by itself: the attachments and the message
+     * being rewritten. Without it a screen made anew, as on a rotation, comes back with the text alone, and a
+     * rewrite would be sent as a new message.
+     */
+    fun saveState(out: Bundle) {
+        if (attachments.isNotEmpty())
+            out.putString(STATE_ATTACHMENTS,
+                AgentJson.encodeToString(ListSerializer(Part.Attachment.serializer()), attachments.toList()))
+        out.putString(STATE_EDITING, editingMessage)
+        out.putString(STATE_PROJECT_BEFORE_EDIT, projectBeforeEdit)
+    }
+
+    /** Takes back what [saveState] wrote. The attachments are files of the conversation and are still there. */
+    fun restoreState(state: Bundle) {
+        state.getString(STATE_ATTACHMENTS)
+            ?.let { runCatching { AgentJson.decodeFromString(ListSerializer(Part.Attachment.serializer()), it) }.getOrNull() }
+            ?.filter { hub.attachments.file(it) != null }
+            ?.forEach(::addChip)
+        editingMessage = state.getString(STATE_EDITING)
+        projectBeforeEdit = state.getString(STATE_PROJECT_BEFORE_EDIT)
+        binding.editBar.isVisible = editingMessage != null
+        updateSend()
+    }
+
     /** Takes the result of either picker. */
     fun onPicked(uris: List<Uri>) = attach(uris)
 
@@ -298,10 +323,10 @@ class Composer(
         importing == 0 && (text.isNotBlank() || attachments.isNotEmpty())
 
     private fun updateSend() {
-        val stops = isRunning && !canSend()
-        binding.send.setImageResource(if (stops) R.drawable.ic_agent_stop else R.drawable.ic_agent_send)
-        binding.send.contentDescription = context.getString(if (stops) R.string.agent_stop else R.string.agent_send)
-        val enabled = isRunning || canSend()
+        // Stopping has its own button: the send button doubling as it only while the field was empty meant that
+        // typing took the way to stop away, and that a tap meant to send could stop instead.
+        binding.stop.isVisible = isRunning
+        val enabled = canSend()
         binding.send.isEnabled = enabled
         binding.send.alpha = if (enabled) 1f else 0.4f
     }
@@ -312,6 +337,9 @@ class Composer(
  * suggestion of one copied recently, and their GIFs and stickers. Pasted and dropped files are taken whatever their type.
  */
 private val RECEIVED_TYPES = arrayOf("image/*")
+private const val STATE_ATTACHMENTS = "composer_attachments"
+private const val STATE_EDITING = "composer_editing"
+private const val STATE_PROJECT_BEFORE_EDIT = "composer_project_before_edit"
 
 /** The share from which the context gauge turns gold, and the one at which a conversation is summarized. */
 private const val WARN_AT = 0.6f

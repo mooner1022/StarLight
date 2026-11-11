@@ -10,6 +10,7 @@ import dev.mooner.configdsl.options.seekbar
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
 import dev.mooner.starlight.BuildConfig
+import dev.mooner.starlight.languages.EntryPoints
 import dev.mooner.starlight.languages.ScriptHostPolicy
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
@@ -20,9 +21,11 @@ import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
+import dev.mooner.starlight.utils.callPlugin
 import dev.mooner.starlight.utils.toURI
 import org.mozilla.javascript.*
 import org.mozilla.javascript.Function
@@ -122,8 +125,14 @@ class JSRhino: Language() {
                     InstanceType.OBJECT -> {
                         if (project == null)
                             continue
-                        val instance = api.getInstance(project)
-                        scope.put(api.name, scope, instance)
+                        // An API that fails to make its object, as one of a plugin, is left out; the script
+                        // compiles without it, and one that uses it fails on the name, with this in the log.
+                        callPlugin({ project.logger.e(translate {
+                                Locale.ENGLISH { "API '${api.name}' couldn't be loaded and is left out: $it" }
+                                Locale.KOREAN  { "API '${api.name}'을(를) 불러오지 못해 빼고 컴파일해요: $it" }
+                            }) }) {
+                            scope.put(api.name, scope, api.getInstance(project))
+                        }
                     }
                 }
             }
@@ -142,6 +151,8 @@ class JSRhino: Language() {
             }
 
             context.evaluateString(scope, code, project?.info?.name ?: name, 1, null)
+            if (project != null)
+                EntryPoints.report(project, code, exportsOnly = false) { name -> scope.get(name, scope) is Function }
             scope
         }
 

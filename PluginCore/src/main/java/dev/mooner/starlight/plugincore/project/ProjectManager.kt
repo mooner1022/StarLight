@@ -112,7 +112,10 @@ class ProjectManager(
 
     /** Stops every project as the app shuts down; the ones that are on stay on for the next start. */
     internal fun purge() =
-        projects.forEach { (_, project) -> (project as? ProjectImpl)?.shutdown() ?: project.destroy(requestUpdate = false) }
+        projects.forEach { (_, project) ->
+            // Each by itself: one that fails to stop must not leave the rest running.
+            runCatching { (project as? ProjectImpl)?.shutdown() ?: project.destroy(requestUpdate = false) }
+        }
 }
 
 @Suppress("UNCHECKED_CAST")

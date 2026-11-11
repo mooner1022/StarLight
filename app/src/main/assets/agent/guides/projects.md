@@ -74,6 +74,9 @@ receives.
 - Projects that are on compile when the app starts; one that fails to compile then is turned off.
 - Compiling again replaces the running code; NeonJS projects' timers, sockets and listeners from before go away.
   Turning a project off stops new events but not timers it set; compile again to stop those.
+- A compile that fails stops the project: the version that was running is unloaded, since its timers and listeners
+  were already ended for the new code. It keeps its on/off switch and runs again once a compile succeeds. Only when
+  the main script can't be read does the running version stay as it is.
 
 ## Errors
 

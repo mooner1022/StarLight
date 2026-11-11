@@ -96,4 +96,29 @@ class AgentStorageTest {
         assertFalse(attachments.resolve("c1").exists())
         assertFalse(tmp.root.resolve("staging").exists())
     }
+    @Test
+    fun importedConversationsComeWithoutTheirCheckpoints() {
+        val from = tmp.newFolder("from")
+        write(from, conversation("c1"), "att_1")
+        // What the agent changed on the device the conversation comes from, kept for a rewind there.
+        from.resolve("attachments/c1/checkpoints/m1").mkdirs()
+        from.resolve("attachments/c1/checkpoints/m1/manifest.json").writeText("{}")
+        from.resolve("attachments/c1/checkpoints/m1/b0").writeText("main.js as it was over there")
+
+        val zip = ByteArrayOutputStream()
+        ConversationArchive.export(from, zip)
+
+        val attachments = tmp.newFolder("to", "attachments")
+        val result = ConversationArchive.import(
+            input = ByteArrayInputStream(zip.toByteArray()),
+            staging = tmp.root.resolve("staging"),
+            attachmentsDir = attachments,
+            exists = { false },
+            add = {},
+        )
+        assertEquals(1, result.imported)
+        assertTrue(attachments.resolve("c1/att_1").isFile)
+        // A rewind here would write them over this device's project of the same name.
+        assertFalse(attachments.resolve("c1/checkpoints").exists())
+    }
 }

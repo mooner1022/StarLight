@@ -17,6 +17,8 @@ import dev.mooner.neonjs.net.NetExtension
 import dev.mooner.neonjs.net.NetOptions
 import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.core.GlobalApplication
+import dev.mooner.starlight.languages.EntryPoints
+import dev.mooner.starlight.languages.ScriptErrors
 import dev.mooner.starlight.languages.ScriptHostPolicy
 import dev.mooner.starlight.languages.TimerDelay
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
@@ -30,9 +32,11 @@ import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
+import dev.mooner.starlight.utils.callPlugin
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -111,7 +115,14 @@ class JSNeon: Language() {
                         InstanceType.OBJECT -> {
                             if (project == null)
                                 continue
-                            context[api.name] = api.getInstance(project)
+                            // An API that fails to make its object, as one of a plugin, is left out; the script
+                            // compiles without it, and one that uses it fails on the name, with this in the log.
+                            callPlugin({ project.logger.e(translate {
+                                Locale.ENGLISH { "API '${api.name}' couldn't be loaded and is left out: $it" }
+                                Locale.KOREAN  { "API '${api.name}'을(를) 불러오지 못해 빼고 컴파일해요: $it" }
+                            }) }) {
+                                context[api.name] = api.getInstance(project)
+                            }
                         }
                     }
                 }
@@ -134,9 +145,11 @@ class JSNeon: Language() {
                 if (project != null) {
                     context.setUncaughtErrorHandler { error, rejection ->
                         val type = if (rejection) "Unhandled promise rejection" else "Uncaught exception"
-                        project.logger.error("$type: ${error.message}${error.jsStack?.let { "\n$it" }.orEmpty()}")
+                        project.logger.error("$type: ${ScriptErrors.describe(error, project.directory)}")
                     }
                     eventLoops[context] = EventLoop(context, project).apply { start() }
+                    // The app reaches only what the module exports.
+                    EntryPoints.report(project, code, exportsOnly = true) { name -> module.getMember(name).isFunction }
                 }
                 module
             }
@@ -249,7 +262,7 @@ class JSNeon: Language() {
                             callback.call(*params)
                         }
                     }.onFailure { e ->
-                        project.logger.error("Exception on timer $id: $e")
+                        project.logger.error("Exception on timer $id: ${ScriptErrors.describe(e, project.directory)}")
                     }
                 } while (repeat && isActive)
             }.apply {
@@ -311,7 +324,9 @@ class JSNeon: Language() {
                 paths
 
             val file = bases.firstNotNullOfOrNull { it.resolve(specifier).findModule() }
-                ?: throw IllegalArgumentException("Cannot find module '$specifier'")
+                // Which file asked for it is what tells where to look when several import the same name.
+                ?: throw IllegalArgumentException("Cannot find module '$specifier'" +
+                    referrer?.let { " imported from ${File(it).name}" }.orEmpty())
             if (isSandboxed && paths.none { file.startsWith(it.canonicalFile) })
                 throw SecurityException("Module '$specifier' is outside of module paths")
             return file.path
@@ -358,8 +373,13 @@ class JSNeon: Language() {
                     withClassLoader(null) { context.runEventLoop(0) }
                 } catch (e: Exception) {
                     if (e !is NeonInterruptedException && e !is IllegalStateException)
-                        project.logger.error("Exception on event loop: $e")
+                        project.logger.error("Exception on event loop: ${ScriptErrors.describe(e, project.directory)}")
                 }
+            }.invokeOnCompletion { cause ->
+                // Cancelled before it ran, as when the project's jobs are stopped: with the flag left set, nothing
+                // the engine has ready would be run again.
+                if (cause != null)
+                    isScheduled.set(false)
             }
         }
     }

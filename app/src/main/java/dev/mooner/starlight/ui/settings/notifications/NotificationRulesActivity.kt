@@ -32,6 +32,7 @@ import dev.mooner.starlight.utils.createSuccessPeek
 import dev.mooner.starlight.utils.bindPageHeader
 import dev.mooner.starlight.utils.fitSkyPage
 import dev.mooner.starlight.utils.peek
+import dev.mooner.starlight.utils.restartIfNotReady
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
@@ -52,6 +53,12 @@ class NotificationRulesActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Brought back before the runtime started: start over from the splash, without restoring what needs it.
+        if (restartIfNotReady()) {
+            super.onCreate(null)
+            finish()
+            return
+        }
         super.onCreate(savedInstanceState)
         binding = ActivityNotificationRulesBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -68,12 +75,20 @@ class NotificationRulesActivity : AppCompatActivity() {
         //config = FileConfig(file)
 
         isAutoRule = GlobalConfig.category("noti_rules").getBoolean("auto_rule", true)
+        // What was changed and not saved when the screen was last taken down, as on a rotation. Nothing is written
+        // by this: the rules and the switch still only reach the listener on save.
+        val unsaved = savedInstanceState?.takeIf { it.getBoolean(STATE_UNSAVED) }
+        if (unsaved != null) {
+            runCatching { json.decodeFromString<Rules>(unsaved.getString(STATE_RULES).orEmpty()) }
+                .onSuccess { rules = it }
+            isAutoRule = unsaved.getBoolean(STATE_AUTO_RULE, isAutoRule)
+        }
         updateSubtitle()
 
         ConfigAdapter.Builder(this) {
             bind(binding.recyclerView)
             structure(::getStructure)
-            configData(wrapData(rules))
+            configData(wrapData(rules, isAutoRule))
             onValueUpdated { _, id, value, _ ->
                 @Suppress("UNCHECKED_CAST")
                 when (id) {
@@ -116,6 +131,17 @@ class NotificationRulesActivity : AppCompatActivity() {
         }
         binding.fabSaveConfig.setOnClickListener { save() }
         confirmLeavingUnsaved(binding.leave, hasChanges = { binding.fabSaveConfig.isOrWillBeShown }, save = save)
+        if (unsaved != null)
+            binding.fabSaveConfig.show()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        if (!binding.fabSaveConfig.isOrWillBeShown)
+            return
+        outState.putBoolean(STATE_UNSAVED, true)
+        outState.putString(STATE_RULES, json.encodeToString(rules))
+        outState.putBoolean(STATE_AUTO_RULE, isAutoRule)
     }
 
     /** Says which rules are in use: the saved ones don't count while rules are set automatically. */
@@ -126,7 +152,7 @@ class NotificationRulesActivity : AppCompatActivity() {
             resources.getQuantityString(R.plurals.subtitle_notification_rules, rules.size, rules.size)
     }
 
-    private fun wrapData(data: Rules): MutableDataMap {
+    private fun wrapData(data: Rules, isAutoRule: Boolean): MutableDataMap {
         val encoded = JsonArray(data.map(json::encodeToJsonElement).map { elem ->
             val mutable = elem.jsonObject.toMutableMap()
             val specID  = mutable["parser_spec_id"]?.jsonPrimitive?.content
@@ -136,10 +162,7 @@ class NotificationRulesActivity : AppCompatActivity() {
         return mutableMapOf(
             "notification_rules" to mutableMapOf(
                 "rules" to encoded,
-                "auto_rule" to GlobalConfig
-                    .category("noti_rules")
-                    .getBoolean("auto_rule", true)
-                    .let(::JsonPrimitive)
+                "auto_rule" to JsonPrimitive(isAutoRule)
             )
         )
     }
@@ -236,5 +259,8 @@ class NotificationRulesActivity : AppCompatActivity() {
 
     companion object {
         const val FILE_NAME = "notification_rules_v2.json"
+        private const val STATE_UNSAVED = "unsaved"
+        private const val STATE_RULES = "rules"
+        private const val STATE_AUTO_RULE = "auto_rule"
     }
 }

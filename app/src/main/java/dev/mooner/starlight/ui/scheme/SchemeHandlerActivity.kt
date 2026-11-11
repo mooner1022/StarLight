@@ -19,10 +19,8 @@ import dev.mooner.starlight.plugincore.plugin.StarlightPlugin
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.warnTranslated
 import dev.mooner.starlight.utils.fitSystemBars
+import dev.mooner.starlight.utils.restartIfNotReady
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -33,6 +31,13 @@ class SchemeHandlerActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySchemeHandlerBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // A link opened while the app wasn't running: its plugins aren't loaded yet. The splash comes back here once
+        // they are, with the same link.
+        if (restartIfNotReady(carryOn = true)) {
+            super.onCreate(null)
+            finish()
+            return
+        }
         super.onCreate(savedInstanceState)
         binding = ActivitySchemeHandlerBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -88,10 +93,16 @@ class SchemeHandlerActivity : AppCompatActivity() {
                 }
 
         lifecycleScope.launch {
-            listeners.asFlow()
-                .onEach {
-                    it.onSchemeAction(this@SchemeHandlerActivity, false, params) }
-                .collect()
+            // Any app or web page can open such a link: one plugin failing on it must not take the app down, nor
+            // keep the link from the plugins after it.
+            for (listener in listeners)
+                try {
+                    listener.onSchemeAction(this@SchemeHandlerActivity, isGlobal, params)
+                } catch (e: Exception) {
+                    logger.error { "A plugin failed to handle the link (plugin $pluginId): $e" }
+                } catch (e: LinkageError) {
+                    logger.error { "A plugin failed to handle the link (plugin $pluginId): $e" }
+                }
             EventHandler.fireEvent(
                 Events.Scheme.SchemeOpenEvent(params)
             )

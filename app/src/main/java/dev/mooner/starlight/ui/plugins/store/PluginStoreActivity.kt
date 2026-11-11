@@ -28,6 +28,7 @@ import dev.mooner.starlight.utils.createSimplePeek
 import dev.mooner.starlight.utils.fitSystemBars
 import dev.mooner.starlight.utils.isNightMode
 import dev.mooner.starlight.utils.restartApplication
+import dev.mooner.starlight.utils.restartIfNotReady
 import kotlinx.coroutines.launch
 
 class PluginStoreActivity : AppCompatActivity() {
@@ -39,6 +40,12 @@ class PluginStoreActivity : AppCompatActivity() {
     private var isRestartBarShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Brought back before the runtime started: start over from the splash, without restoring what needs it.
+        if (restartIfNotReady()) {
+            super.onCreate(null)
+            finish()
+            return
+        }
         super.onCreate(savedInstanceState)
         binding = ActivityPluginStoreBinding.inflate(layoutInflater)
         setContentView(binding.root)

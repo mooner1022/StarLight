@@ -4,6 +4,7 @@ import dev.mooner.starlight.agent.store.CheckpointStore
 import dev.mooner.starlight.agent.store.Rewind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -33,6 +34,8 @@ class CheckpointTest {
             project("restored")
         }
         override fun setEvents(name: String, allowedEventIds: List<String>) { events[name] = allowedEventIds }
+        override fun info(name: String): CheckpointStore.SavedInfo? =
+            directory(name)?.let { CheckpointStore.SavedInfo(events[name].orEmpty(), isEnabled = false) }
     }
 
     @Test
@@ -130,5 +133,84 @@ class CheckpointTest {
         store.discard("c1", listOf("m2"))
         assertEquals(listOf("bot/a.js"), store.changes("c1", listOf("m1", "m2")).map { Rewind.describe(it.entry) })
         assertTrue(store.changes("c2", listOf("m1")).isEmpty())
+    }
+    @Test
+    fun aRewindCanBeUndone() {
+        val projects = FakeProjects()
+        val bot = projects.project("bot")
+        File(bot, "main.js").writeText("before the agent")
+        val turn = store.recorder("c1", "m1")
+        turn.file("bot", bot, "main.js")
+        turn.file("bot", bot, "added.js")
+        File(bot, "main.js").writeText("the agent's, then edited by hand")
+        File(bot, "added.js").writeText("added by the agent")
+
+        val changes = store.changes("c1", listOf("m1"))
+        Rewind.keepPresent(changes, projects, store.undoRecorder("c1")) { _, _ -> }
+        Rewind.apply(changes, projects)
+        store.discard("c1", listOf("m1"))
+        assertEquals("before the agent", File(bot, "main.js").readText())
+        assertFalse(File(bot, "added.js").exists())
+
+        // What the rewind wrote over, the user's own edit included, comes back.
+        val undone = Rewind.apply(store.undoChanges("c1"), projects)
+        store.discardUndo("c1")
+
+        assertTrue(undone.failed.isEmpty())
+        assertEquals("the agent's, then edited by hand", File(bot, "main.js").readText())
+        assertEquals("added by the agent", File(bot, "added.js").readText())
+        assertTrue(store.undoChanges("c1").isEmpty())
+    }
+
+    @Test
+    fun undoingBringsBackAProjectTheRewindRemoved() {
+        val projects = FakeProjects()
+        // Created by the agent: the checkpoint says it wasn't there before.
+        store.recorder("c1", "m1").project("made")
+        val made = projects.project("made")
+        File(made, "main.js").writeText("the agent's work")
+
+        val changes = store.changes("c1", listOf("m1"))
+        Rewind.keepPresent(changes, projects, store.undoRecorder("c1")) { dir, output ->
+            output.write(File(dir, "main.js").readBytes())
+        }
+        Rewind.apply(changes, projects)
+        assertNull(projects.directory("made"))
+
+        Rewind.apply(store.undoChanges("c1"), projects)
+        // The fake restores from the archive it is handed: the project as it was when the rewind took it away.
+        assertEquals(listOf("the agent's work"), projects.restoredArchives)
+    }
+
+    @Test
+    fun aNewRewindReplacesTheOneThatCouldBeUndone() {
+        val projects = FakeProjects()
+        val bot = projects.project("bot")
+        File(bot, "a.js").writeText("a")
+        store.recorder("c1", "m1").file("bot", bot, "a.js")
+        Rewind.keepPresent(store.changes("c1", listOf("m1")), projects, store.undoRecorder("c1")) { _, _ -> }
+        assertEquals(1, store.undoChanges("c1").size)
+
+        File(bot, "b.js").writeText("b")
+        store.recorder("c1", "m2").file("bot", bot, "b.js")
+        Rewind.keepPresent(store.changes("c1", listOf("m2")), projects, store.undoRecorder("c1")) { _, _ -> }
+
+        assertEquals(listOf("b.js"), store.undoChanges("c1").map { it.entry.path })
+    }
+
+    @Test
+    fun whatCouldNotBePutBackStaysToBeTriedAgain() {
+        val projects = FakeProjects()
+        val bot = projects.project("bot")
+        File(bot, "kept.js").writeText("v1")
+        val turn = store.recorder("c1", "m1")
+        turn.file("bot", bot, "kept.js")
+        turn.file("gone", File(projects.root, "gone"), "main.js")
+
+        val result = Rewind.apply(store.changes("c1", listOf("m1")), projects)
+        assertEquals(1, result.failedKeys.size)
+        store.discard("c1", listOf("m1"), keep = result.failedKeys)
+
+        assertEquals(listOf("gone"), store.changes("c1", listOf("m1")).map { it.entry.project })
     }
 }

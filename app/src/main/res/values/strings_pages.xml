@@ -22,6 +22,16 @@
     <string name="solver_rule_user_id">User ID : %1$d</string>
     <string name="solver_rule_spec">Parser spec : %1$s</string>
     <string name="solver_ok">OK</string>
+    <string name="solver_category_drops">Message notifications not taken</string>
+    <string name="solver_drop_no_rule">No package rule covers this app.</string>
+    <string name="solver_drop_other_user">The rule for this app is for another user of the device. A dual app or a work profile needs a rule of its own.</string>
+    <string name="solver_drop_unknown_spec">The rule names a parser spec that isn\'t registered.</string>
+    <string name="solver_drop_not_a_message">The parser spec didn\'t take the notification as a message.</string>
+    <string name="solver_drop_failed">Handling the notification failed. The first failure is in the logs.</string>
+    <plurals name="solver_drop_times">
+        <item quantity="one">%d time</item>
+        <item quantity="other">%d times</item>
+    </plurals>
     <string name="solver_check_needed">Needs a look</string>
     <string name="solver_no_rules_title">There are no package rules.</string>
     <string name="solver_no_rules_desc">Without a package rule, notifications aren\'t parsed and no events fire. Add a valid rule.</string>

@@ -337,6 +337,25 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         return result
     }
 
+    /** Whether the conversation's last rewind can still be undone. */
+    fun canUndoRewind(conversationId: String): Boolean =
+        rewinder.canUndo(conversationId)
+
+    /**
+     * Puts the projects back as they were just before the conversation's last rewind: what the agent had changed,
+     * and what the user had changed in those files by hand, is there again. The conversation itself stays as the
+     * rewind left it. The agent is told, as it is of the rewind.
+     */
+    suspend fun undoRewind(conversationId: String): Rewind.Result {
+        check(!isRunning(conversationId)) { "The conversation is still running" }
+        val result = rewinder.undo(conversationId)
+        val current = hub.store.get(conversationId)
+        if (current != null && result.restored.isNotEmpty())
+            hub.store.save(current.copy(pendingNote = "The user undid their last rewind. These are again as they were " +
+                "just before it: ${listed(result.restored)}. Read files again before you edit them."))
+        return result
+    }
+
     /**
      * What part of the model's context window the conversation's last request filled, or null when the window isn't
      * known or nothing was asked since the last summary.
@@ -363,9 +382,15 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     suspend fun compactNow(conversationId: String): Boolean {
         check(!isRunning(conversationId)) { "The conversation is still running" }
         val conversation = hub.store.get(conversationId) ?: return false
+        // Counted as running while the summary is asked for. It covers the messages there are now and is added
+        // after them: one sent meanwhile would be neither in the summary nor after it, and so never reach the
+        // model. As for a run, the message stays in the field, an edit or a rewind waits, and stopping ends it.
+        val job = currentCoroutineContext().job
+        jobs[conversationId] = job
         return try {
             withContext(Dispatchers.IO) { compact(conversationId, conversation.messages.size) }
         } finally {
+            jobs.remove(conversationId, job)
             // No run follows to take the summary's live state away.
             if (!isRunning(conversationId))
                 mLive.update { it - conversationId }
@@ -575,9 +600,11 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
     fun resolveApproval(conversationId: String, callId: String, allow: Boolean, always: Boolean = false) {
         if (allow && always) {
             val conversation = hub.store.get(conversationId)
-            val name = conversation?.messages?.lastOrNull { it.role == Role.ASSISTANT }?.toolCalls?.firstOrNull { it.id == callId }?.name
-            if (name != null)
-                alwaysAllowed.getOrPut(conversationId) { ConcurrentHashMap.newKeySet() } += name
+            val call = conversation?.messages?.lastOrNull { it.role == Role.ASSISTANT }?.toolCalls?.firstOrNull { it.id == callId }
+            // For the tool as far as its scope goes: the project of a delete, the site of a web page.
+            val key = call?.let { hub.tools.find(it.name)?.allowKey(RequestContent.parseArguments(it.arguments) ?: JsonObject(emptyMap())) ?: it.name }
+            if (key != null)
+                alwaysAllowed.getOrPut(conversationId) { ConcurrentHashMap.newKeySet() } += key
         }
         approvals.remove(approvalKey(conversationId, callId))?.complete(allow)
     }
@@ -657,6 +684,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
                         if (steps >= maxSteps) {
                             appendNotice(id, NoticeKind.PAUSED, string(R.string.agent_notice_paused, maxSteps))
                             updateConversation(id) { it.copy(state = RunState.IDLE) }
+                            AgentNotifier.paused(hub, id, string(R.string.agent_notice_paused, maxSteps))
                             return
                         }
                         // The run going on stays as it is; what came before it is summarized.
@@ -867,9 +895,11 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         val args: JsonObject = RequestContent.parseArguments(call.arguments)
             ?: return Part.ToolResult(call.id, call.name, RequestContent.invalidJsonResult(call.arguments), isError = true,
                 summary = "Invalid arguments")
-        if (tool.risk != ToolRisk.READ && tool.risk != ToolRisk.NETWORK && approvalOf(id) == ApprovalPolicy.PLAN)
+        // Of this call: what a tool risks can depend on what it is called on.
+        val risk = tool.riskFor(args)
+        if (risk != ToolRisk.READ && risk != ToolRisk.NETWORK && approvalOf(id) == ApprovalPolicy.PLAN)
             return Part.ToolResult(call.id, call.name, PLAN_MODE_REFUSAL, isError = true, summary = "Plan mode")
-        if (needsApproval(id, tool.risk, tool.name)) {
+        if (needsApproval(id, risk, tool.allowKey(args))) {
             val description = runCatching { tool.describe(args) }.getOrDefault(tool.name)
             val preview = tool.preview?.let { preview -> withContext(Dispatchers.IO) { runCatching { preview(args) }.getOrNull() } }
             val key = approvalKey(id, call.id)
@@ -919,8 +949,8 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
             output.diff)
     }
 
-    private fun needsApproval(id: String, risk: ToolRisk, name: String): Boolean {
-        if (alwaysAllowed[id]?.contains(name) == true)
+    private fun needsApproval(id: String, risk: ToolRisk, allowKey: String): Boolean {
+        if (alwaysAllowed[id]?.contains(allowKey) == true)
             return false
         return when (approvalOf(id)) {
             ApprovalPolicy.AUTO            -> false

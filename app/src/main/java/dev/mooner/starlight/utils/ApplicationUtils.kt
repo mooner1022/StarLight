@@ -40,15 +40,41 @@ inline fun <reified T: Activity> Context.startActivity() {
  * For screens that need the runtime. Android brings a screen back in a new process after the app crashed or was
  * killed, and it can come back before the runtime started; then the app starts over from the splash, which waits for
  * it. When this returns true, the caller calls `super.onCreate(null)` and `finish()` and stops there.
+ *
+ * With [carryOn], the splash goes on to this screen once the runtime is up. That is for a screen the user was sent
+ * to from outside the app, a notification or a link, whose intent says all it needs: one brought back from the
+ * recent apps had state that is gone.
  */
-fun Activity.restartIfNotReady(): Boolean {
+fun Activity.restartIfNotReady(carryOn: Boolean = false): Boolean {
     if (ApplicationSession.isInitComplete)
         return false
     // When the start was aborted, the crash report is on top and the user decides from there.
-    if (!GlobalApplication.isStartupAborted)
+    if (!GlobalApplication.isStartupAborted) {
+        if (carryOn)
+            PendingEntry.set(Intent(intent).setClass(this, javaClass))
         startActivity(Intent(this, SplashActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+    }
     return true
+}
+
+/**
+ * Where the user was going when the app had to start over first, see [restartIfNotReady]. Held in memory and never
+ * read from an intent: the splash can be started by any app, and must not be made to open a screen of another's
+ * choosing.
+ */
+internal object PendingEntry {
+
+    @Volatile
+    private var intent: Intent? = null
+
+    fun set(intent: Intent) {
+        this.intent = intent
+    }
+
+    /** The screen to go on to, once: asking again gives nothing. */
+    fun take(): Intent? =
+        intent.also { intent = null }
 }
 
 fun Context.restartApplication() {

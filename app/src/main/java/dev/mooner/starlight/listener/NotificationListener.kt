@@ -108,21 +108,46 @@ class NotificationListener: NotificationListenerService() {
         if (rules.isEmpty()) return
         var idx = 0
         val appliedRule = rules.find { ++idx; it.packageName == pkgName && it.userId == userId }
-            ?: return
+            ?: return noteUncovered(pkgName, userId, actions)
         val isDefaultRule = idx == 1
 
         for (act in actions) {
             if (act.remoteInputs != null && act.remoteInputs.isNotEmpty()) {
                 try {
-                    val data = ParserSpecManager.getSpecById(appliedRule.parserSpecId)
-                        ?.parse(userId, applicationContext, sbn, actions, rankingMap)
-                        ?: return
+                    val spec = ParserSpecManager.getSpecById(appliedRule.parserSpecId)
+                    if (spec == null) {
+                        // The rule can't work at all: said once, loudly enough to be seen.
+                        if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.UNKNOWN_SPEC, pkgName, userId, appliedRule.parserSpecId), ts))
+                            LOG.warn {
+                                val registered = ParserSpecManager.getAllSpecs().keys.joinToString()
+                                translate {
+                                    Locale.ENGLISH { "The rule for $pkgName names the parser spec '${appliedRule.parserSpecId}', which " +
+                                        "isn't registered, so its messages are ignored. Registered: $registered" }
+                                    Locale.KOREAN  { "$pkgName 규칙의 파서 스펙 '${appliedRule.parserSpecId}'이(가) 등록되어 있지 않아 " +
+                                        "메시지를 받지 않아요. 등록된 스펙: $registered" }
+                                }
+                            }
+                        return
+                    }
+                    val data = spec.parse(userId, applicationContext, sbn, actions, rankingMap)
+                    if (data == null) {
+                        if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.NOT_A_MESSAGE, pkgName, userId, appliedRule.parserSpecId), ts))
+                            LOG.debug {
+                                translate {
+                                    Locale.ENGLISH { "The parser spec '${appliedRule.parserSpecId}' didn't take a notification from " +
+                                        "$pkgName as a message. Said once; the problem solver counts the rest." }
+                                    Locale.KOREAN  { "파서 스펙 '${appliedRule.parserSpecId}'이(가) $pkgName 알림을 메시지로 받아들이지 " +
+                                        "않았어요. 한 번만 기록하고, 횟수는 문제 해결 도우미에서 볼 수 있어요." }
+                                }
+                            }
+                        return
+                    }
                     //val data = sbn.toMessage(this, ruleKey, act) ?: return
                     (data.room as ChatRoomImpl).setLastReceivedId(data.chatLogId)
                     lastReceivedRoom = data.room
 
                     if (deduper.isRepeat(data.chatLogId, sbn.key, sbn.postTime)) {
-                        LOG.verbose { "Detected multiple event listeners" }
+                        LOG.verbose { "The same message was delivered again; ignored" }
                         return
                     }
 
@@ -160,44 +185,77 @@ class NotificationListener: NotificationListenerService() {
                         val imageDB = ImageDB(data.sender.profileBitmap)
                         val replier = getOrCreateReplier(roomID)
 
-                        Session.projectManager.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB, pkgName) { project, e ->
-                            e.printStackTrace()
-                            LOG.error {
-                                translate {
-                                    Locale.ENGLISH { "Failed to call event on '${project.info.name}': $e" }
-                                    Locale.KOREAN  { "프로젝트 '${project.info.name}'의 이벤트 호출 실패: $e" }
-                                }
-                            }
-                        }
+                        Session.projectManager.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB, pkgName,
+                            onFailure = ::logEventFailure)
                     }
 
                     EventHandler.fireEventWithScope(Events.Message.Create(data))
                     break
                     //stopSelf()
                 } catch (e: Exception) {
-                    logParseFailure(e)
+                    logParseFailure(e, pkgName, userId, appliedRule.parserSpecId)
                 } catch (e: LinkageError) {
                     // A spec built against another version of the app or of Android: without this,
                     // every message would end the app, and the crash guard would then keep it from starting.
-                    logParseFailure(e)
+                    logParseFailure(e, pkgName, userId, appliedRule.parserSpecId)
                 }
             }
         }
         LOG.verbose { "es = ${System.currentTimeMillis() - ts}" }
     }
 
-    private fun logParseFailure(e: Throwable) {
+    /**
+     * A notification of an app no rule covers. Only one that can be replied to counts: that is what a chat message
+     * looks like, and what a user who wonders why the bot is silent in that app would have expected to be taken.
+     * Written once per app, below the level that raises an alert: most such apps were never meant to be covered.
+     */
+    private fun noteUncovered(pkgName: String, userId: Int, actions: Array<Notification.Action>) {
+        if (actions.none { it.remoteInputs?.isNotEmpty() == true })
+            return
+        val now = System.currentTimeMillis()
+        val otherUser = rules.firstOrNull { it.packageName == pkgName }
+        if (otherUser != null) {
+            if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.OTHER_USER, pkgName, userId), now))
+                LOG.debug {
+                    translate {
+                        Locale.ENGLISH { "Ignored a message notification from $pkgName of user $userId: its rule is for user " +
+                            "${otherUser.userId}. A dual app or a work profile runs as another user and needs a rule of its own." }
+                        Locale.KOREAN  { "$pkgName 의 사용자 $userId 메시지 알림을 받지 않았어요. 규칙이 사용자 ${otherUser.userId}용이에요. " +
+                            "듀얼 앱이나 업무 프로필은 다른 사용자로 실행되어 규칙이 따로 필요해요." }
+                    }
+                }
+        } else if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.NO_RULE, pkgName, userId), now)) {
+            LOG.debug {
+                translate {
+                    Locale.ENGLISH { "Ignored a message notification from $pkgName (user $userId): no package rule covers it." }
+                    Locale.KOREAN  { "$pkgName (사용자 $userId)의 메시지 알림을 받지 않았어요. 이 앱을 다루는 패키지 규칙이 없어요." }
+                }
+            }
+        }
+    }
+
+    /**
+     * The spec, or handing the message on, failed. In full the first time a failure of its kind is seen, with the
+     * app, the user and the spec that tell which rule to look at. A spec that doesn't fit its messenger fails the
+     * same way on every message: the same error and stack each time filled the log and raised an alert per message.
+     */
+    private fun logParseFailure(e: Throwable, pkgName: String, userId: Int, specId: String) {
+        val key = NotificationDrops.Key(NotificationDrops.Reason.FAILED, pkgName, userId, specId, NotificationDrops.signatureOf(e))
+        if (!drops.note(key, System.currentTimeMillis()))
+            return
         e.printStackTrace()
         LOG.error {
             translate {
                 Locale.ENGLISH { """
-                    |Failed to parse message content:
+                    |Failed to handle a message notification from $pkgName (user $userId, parser spec '$specId').
+                    |The same failure isn't logged again; the problem solver counts it.
                     |message : ${e.localizedMessage}
                     |cause   : ${e.cause}
                     |${e.stackTraceToString()}
                 """.trimMargin() }
                 Locale.KOREAN  { """
-                    |메세지 해석에 실패했습니다:
+                    |$pkgName 의 메시지 알림을 처리하지 못했어요 (사용자 $userId, 파서 스펙 '$specId').
+                    |같은 실패는 다시 기록하지 않고, 문제 해결 도우미에서 횟수를 보여줘요.
                     |message : ${e.localizedMessage}
                     |cause   : ${e.cause}
                     |${e.stackTraceToString()}
@@ -304,6 +362,8 @@ class NotificationListener: NotificationListenerService() {
     companion object {
 
         private val deduper = MessageDeduper()
+        /** What was dropped and why, for the problem solver. */
+        internal val drops = NotificationDrops()
         private val roomIdMap: MutableMap<RoomName, RoomID> = ConcurrentHashMap()
         private val chatRooms: MutableMap<RoomID, ChatRoom> = ConcurrentHashMap()
         private val replierCache: MutableMap<RoomID, Replier> = ConcurrentHashMap()
@@ -318,6 +378,7 @@ class NotificationListener: NotificationListenerService() {
         }
 
         fun updateRules() {
+            drops.reset()
             isAutoRule = GlobalConfig.category("noti_rules").getBoolean("auto_rule", true)
             if (isAutoRule) {
                 detectedKakaoTalkVersion = ApplicationSession.kakaoTalkVersion?.toString()
@@ -387,7 +448,8 @@ class NotificationListener: NotificationListenerService() {
 
     private fun logEventFailure(project: Project, e: Throwable) {
         e.printStackTrace()
-        LOG.error {
+        // The project has logged the error under its own name, with where it happened: this one is for the app's log.
+        LOG.debug {
             translate {
                 Locale.ENGLISH { "Failed to call event on '${project.info.name}': $e" }
                 Locale.KOREAN  { "프로젝트 '${project.info.name}'의 이벤트 호출 실패: $e" }

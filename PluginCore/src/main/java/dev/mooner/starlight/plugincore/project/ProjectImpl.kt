@@ -81,6 +81,8 @@ class ProjectImpl private constructor(
     override val isCompiled: Boolean
         get() = langScope != null
 
+    // Written by a compile and by a destroy, read by the threads that run events.
+    @Volatile
     private var langScope: Any? = null
 
     private val lang: Language =
@@ -106,12 +108,15 @@ class ProjectImpl private constructor(
 
     override fun callFunction(name: String, args: Array<out Any>, onException: (Throwable) -> Unit) =
         runEvent({
+            // The scope as it is when the call runs: one queued before a compile is for the new code.
+            val scope = langScope
+                ?: throw IllegalStateException("Project should be in compiled state before calling function.")
             try {
-                lang.callFunction(langScope!!, name, args)
+                lang.callFunction(scope, name, args)
             } finally {
                 // Only a called function leaves the language's scope entered on this thread.
-                if (isCompiled && lang.requireRelease)
-                    lang.release(langScope!!)
+                if (lang.requireRelease)
+                    lang.release(scope)
             }
         }, onException)
 
@@ -121,30 +126,39 @@ class ProjectImpl private constructor(
             return
         }
 
-        fun onError(e: Throwable) {
-            logger.e(tag, translate {
-                Locale.ENGLISH { "Error while running: $e" }
-                Locale.KOREAN  { "실행 중 에러 발생: $e" }
-            })
+        /** [scope] is the version the event ran in: the one there was when it started, not when it was sent. */
+        fun onError(e: Throwable, scope: Any?) {
+            // The version this event was for is gone: a compile replaced it, or took it down by failing. Its
+            // error, often the engine stopping it, says nothing about the version that runs now, which stays.
+            if (langScope !== scope) {
+                logger.d(tag, translate {
+                    Locale.ENGLISH { "An event of the version that ran before the last compile ended with: $e" }
+                    Locale.KOREAN  { "마지막 컴파일 전 버전의 이벤트가 오류로 끝났어요: $e" }
+                })
+                onException(e)
+                return
+            }
             val shutdownOnError = config
                 .category("general")
                 .getBoolean("shutdown_on_error", true)
-
-            if (shutdownOnError) {
-                logger.e(info.name, translate {
-                    Locale.ENGLISH { "Destroying project '${info.name}'..." }
-                    Locale.KOREAN  { "프로젝트 '${info.name}' 종료중..." }
-                })
+            // One entry: what went wrong, where, and what was done about it. It used to be two errors here and a
+            // third from whoever sent the event, each an alert of its own saying the same.
+            val what = ScriptErrorText.of(e, directory)
+            logger.e(tag, translate {
+                Locale.ENGLISH { "Error while running: $what" + if (shutdownOnError) "\nThe project was turned off, as its setting for errors says." else "" }
+                Locale.KOREAN  { "실행 중 에러 발생: $what" + if (shutdownOnError) "\n'오류 발생시 비활성화' 설정에 따라 프로젝트를 껐어요." else "" }
+            })
+            if (shutdownOnError)
                 destroy(requestUpdate = true)
-            }
             e.printStackTrace()
             onException(e)
         }
 
         obtainExecutor().post {
             JobLocker.withLock(threadPoolName!!) {
+                val scope = langScope
                 runCatching(task)
-                    .onFailure(::onError)
+                    .onFailure { onError(it, scope) }
             }
         }
     }
@@ -190,36 +204,41 @@ class ProjectImpl private constructor(
                     "after $COMPILE_WAIT_SECONDS seconds")
             }
             val orgLifecycleState = lifecycle.state
+            // Whether the version that was running has been touched: from then on a failure can't leave it as it was.
+            var tornDown = false
             try {
-                lifecycleRegistry.setCurrentState(ProjectLifecycle.State.COMPILING)
+                // Read before anything is taken down, so a script that can't be read leaves the project as it is.
                 val code = directory.resolve(info.mainScript)
                     .require(File::isFile) { "Main script ${info.mainScript} is not a file." }
                     .runCatching(File::readText)
                     .getOrElse(::error)
 
-                /*
-                val rawCode: String = (directory.listFiles()?.find { it.isFile && it.name == info.mainScript }?: throw IllegalArgumentException(
-                    "Cannot find main script ${info.mainScript} for project ${info.name}"
-                )).readText(Charsets.UTF_8)
-                 */
-                // Destroyed once the new one is in place, so a failed compile leaves the old version running.
+                tornDown = true
+                // Observers end what the running version registered: API2 listeners, broadcast receivers.
+                lifecycleRegistry.setCurrentState(ProjectLifecycle.State.COMPILING)
                 val previousScope = langScope
-                if (isCompiled) {
+                if (previousScope != null) {
                     if ("starlight.project.compile" in allowedEventIDs)
-                        runCatching {
-                            lang.callFunction(langScope!!, "onStartCompile", emptyArray())
-                        }
+                        runCatching { lang.callFunction(previousScope, "onStartCompile", emptyArray()) }
+                            // Logged and no more: a script that fails to save its state must still be replaceable.
+                            .onFailure {
+                                val what = ScriptErrorText.of(it, directory)
+                                logger.e(tag, translate {
+                                    Locale.ENGLISH { "onStartCompile failed; the compile goes on: $what" }
+                                    Locale.KOREAN  { "onStartCompile에서 오류가 났어요. 컴파일은 계속해요: $what" }
+                                })
+                            }
                     if (lang.requireRelease) {
-                        lang.release(langScope!!)
+                        lang.release(previousScope)
                         logger.v(tag, "engine released")
                     }
-                    stopAllJobs()
                 }
+                // The running version's timers and queued events, and what a compile that failed part-way left.
+                stopAllJobs()
                 logger.i(translate {
                     Locale.ENGLISH { "Compiling project ${info.name}..." }
                     Locale.KOREAN  { "프로젝트 ${info.name} 컴파일 중..." }
                 })
-                //setClassLoader()
                 langScope = pipeline.run(this@ProjectImpl to code)
                 // Releasing alone keeps what a scope holds: NeonJS keeps its engine, event loop and open sockets.
                 previousScope?.takeIf { it !== langScope }?.let { scope ->
@@ -227,12 +246,16 @@ class ProjectImpl private constructor(
                         .onFailure { logger.w(tag, "Failed to destroy the previous scope: $it") }
                 }
                 EventHandler.fireEvent(Events.Project.Compile(project = this@ProjectImpl))
-                lifecycleRegistry.setCurrentState(ProjectLifecycle.State.DISABLED)
-                //projectManager.onStateChanged(this)
-            } catch (e: Exception) {
+                // A project that is on runs from here; observers hear of it as they do when it is switched on.
+                lifecycleRegistry.setCurrentState(
+                    if (info.isEnabled) ProjectLifecycle.State.ENABLED else ProjectLifecycle.State.DISABLED)
+            } catch (e: Throwable) {
                 e.printStackTrace()
-                logger.e(tag, "ECOMF: $e")
-                lifecycleRegistry.setCurrentState(orgLifecycleState)
+                logger.e(tag, "ECOMF: ${ScriptErrorText.of(e, directory)}")
+                if (tornDown)
+                    unloadAfterFailedCompile()
+                else
+                    lifecycleRegistry.setCurrentState(orgLifecycleState)
                 throw e
             } finally {
                 compilePermit.release()
@@ -241,6 +264,30 @@ class ProjectImpl private constructor(
             }
             awaitClose()
         }.flowOn(Dispatchers.IO)
+
+    /**
+     * A compile failed after the running version was taken down for it: its listeners and timers were ended before
+     * the new code ran, so what is left of it is not a bot that works. The project is unloaded, as one that was never
+     * compiled, with what the failed code started (timers, listeners it added before it threw) ended too. It stays
+     * switched on: not compiled, it counts as off, and the next compile that succeeds brings it back.
+     */
+    private fun unloadAfterFailedCompile() {
+        val wasRunning = langScope != null
+        runCatching { stopAllJobs() }
+        langScope?.let { scope ->
+            langScope = null
+            runCatching { lang.destroy(scope) }
+                .onFailure { logger.w(tag, "Failed to destroy the previous scope: $it") }
+        }
+        // Observers clear what the failed code registered, as they do for a project that is destroyed.
+        lifecycleRegistry.setCurrentState(ProjectLifecycle.State.DESTROYED)
+        // Not a warning of its own: the failure is already reported, with its cause, by whoever compiled.
+        if (wasRunning)
+            logger.i(tag, translate {
+                Locale.ENGLISH { "The compile failed, so ${info.name} is stopped until it compiles again." }
+                Locale.KOREAN  { "컴파일에 실패해 ${info.name}의 실행을 멈췄어요. 다시 컴파일되면 실행돼요." }
+            })
+    }
 
     /** Held while the project compiles; a semaphore, as the compile may go on on another thread than it started. */
     private val compilePermit = Semaphore(1)
@@ -326,10 +373,14 @@ class ProjectImpl private constructor(
         logger.v("Destroying project [${info.name}]...")
         stopAllJobs()
         langScope?.let { scope ->
-            if (lang.requireRelease)
-                lang.release(scope)
-            lang.destroy(scope)
+            // Gone whatever the language does with it: one of a plugin that throws here would otherwise leave the
+            // project half stopped, and take down the thread that stops it.
             langScope = null
+            if (lang.requireRelease)
+                runCatching { lang.release(scope) }
+                    .onFailure { logger.w(tag, "Failed to release the scope: $it") }
+            runCatching { lang.destroy(scope) }
+                .onFailure { logger.w(tag, "Failed to destroy the scope: $it") }
         }
     }
 
