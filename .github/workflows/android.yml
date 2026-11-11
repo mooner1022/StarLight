@@ -3,12 +3,16 @@ name: Android CI
 on:
   push:
     branches: [ "nightly" ]
+    # Only the repository's own docs: Markdown under app/ ships in the APK (the changelog, the AI's guides).
     paths-ignore:
-      - "**.md"
+      - "*.md"
+      - "docs/**"
   pull_request:
     branches: [ "nightly" ]
+    # Only the repository's own docs: Markdown under app/ ships in the APK (the changelog, the AI's guides).
     paths-ignore:
-      - "**.md"
+      - "*.md"
+      - "docs/**"
 
 jobs:
   build:
@@ -41,6 +45,9 @@ jobs:
     - name: Build debug
       run: ./gradlew assembleFullDebug
 
+    - name: Run unit tests
+      run: ./gradlew testFullDebugUnitTest :docs-processor:test
+
     # Plugins build against PluginCore's public API: a change to it must be deliberate, with updateKotlinAbi.
     - name: Check PluginCore's public API against its dump
       run: ./gradlew :PluginCore:checkKotlinAbi
@@ -62,6 +69,8 @@ jobs:
 
   snapshot:
     name: Publish StarLight snapshot
+    # Only what passed the tests and checks above reaches the self-update channel.
+    needs: build
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
