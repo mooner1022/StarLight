@@ -39,7 +39,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import org.commonmark.node.SoftLineBreak
 import java.io.Reader
-import java.lang.ref.WeakReference
 import kotlin.properties.Delegates.notNull
 
 typealias ConfirmCallback = (confirm: Boolean) -> Unit
@@ -276,14 +275,15 @@ fun Context.findActivity(): Activity? =
         .filterIsInstance<Activity>()
         .firstOrNull()
 
-private var lastPeek: WeakReference<PeekAlert>? = null
-
+/**
+ * Shows [text] as a short alert at the top or bottom of the screen. One shown while others are up joins them: the
+ * newest is in front and the earlier ones are tucked behind it, see PeekAlert.
+ */
 fun Context.peek(text: String, type: PeekType = PeekType.INFO, position: PeekAlert.Position = PeekAlert.Position.Bottom) {
     val activity = findActivity()
         ?: return Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
     if (activity.isFinishing || activity.isDestroyed)
         return
-    lastPeek?.get()?.hide()
     val peek = when (type) {
         PeekType.SUCCESS -> activity.createSuccessPeek(text, position)
         PeekType.ERROR   -> activity.createFailurePeek(text, position)
@@ -294,7 +294,6 @@ fun Context.peek(text: String, type: PeekType = PeekType.INFO, position: PeekAle
             backgroundColor(res = R.color.background_popup)
         }
     }
-    lastPeek = WeakReference(peek)
     peek.peek()
 }
 

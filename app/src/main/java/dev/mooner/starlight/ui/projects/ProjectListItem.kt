@@ -8,7 +8,6 @@ package dev.mooner.starlight.ui.projects
 
 import android.content.Context
 import android.content.res.ColorStateList
-import android.os.Build
 import android.transition.AutoTransition
 import android.transition.TransitionManager
 import android.transition.TransitionSet
@@ -17,7 +16,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.ViewGroup
-import android.view.WindowInsets
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
@@ -225,12 +223,7 @@ class ProjectListItem(
                         (parent.get() ?: return@withContext).createSuccessPeek(translate {
                             Locale.ENGLISH { "Successfully compiled ${project.info.name} (${compileTime}ms)" }
                             Locale.KOREAN  { "${project.info.name} 컴파일 완료! (${compileTime}ms)" }
-                        }, PeekAlert.Position.Bottom).also {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-                                view.rootWindowInsets?.let { insets ->
-                                    it.setMargin(vertical = insets.getInsets(WindowInsets.Type.systemBars()).bottom)
-                                }
-                        }.peek()
+                        }, PeekAlert.Position.Bottom).peek()
                         tryUpdateView()
                     }
                 }

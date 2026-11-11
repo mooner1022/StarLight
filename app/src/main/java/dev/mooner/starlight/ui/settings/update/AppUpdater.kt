@@ -4,10 +4,8 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.provider.Settings
-import android.view.WindowInsets
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -138,7 +136,7 @@ class AppUpdater(private val activity: ComponentActivity) {
             iconTint(res = R.color.main_bright)
             backgroundColor(res = R.color.background_popup)
             autoHideMillis = null
-        }.also { it.peekAboveBars() }
+        }.also { it.peek() }
 
         downloadFile(version.downloadUrl, dest)
             .onEach { status ->
@@ -149,7 +147,7 @@ class AppUpdater(private val activity: ComponentActivity) {
                             setIconTint(R.color.noctis_green)
                             setText("파일을 성공적으로 다운로드 했어요! (뿌듯)")
                             setAutoHide(3000L)
-                        }.peekAboveBars()
+                        }.peek()
                         if (!ensureInstallPermission()) {
                             Toast.makeText(activity, "앱 설치 권한이 없어 업데이트를 설치할 수 없어요.", Toast.LENGTH_LONG).show()
                             return@onEach
@@ -162,19 +160,11 @@ class AppUpdater(private val activity: ComponentActivity) {
                             setIconTint(R.color.code_error)
                             setText("파일 다운로드에 실패했어요.")
                             setAutoHide(3000L)
-                        }.peekAboveBars()
+                        }.peek()
                     }
                 }
             }
             .launchIn(activity.lifecycleScope)
-    }
-
-    private fun PeekAlert.peekAboveBars() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            activity.window.decorView.rootWindowInsets?.let { insets ->
-                setMargin(vertical = insets.getInsets(WindowInsets.Type.systemBars()).bottom)
-            }
-        peek()
     }
 
     private suspend fun ensureInstallPermission(): Boolean {
