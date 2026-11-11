@@ -94,9 +94,25 @@ class AgentSettings internal constructor(context: Context) {
     fun configuredProviders(): List<ProviderKind> =
         ProviderKind.entries.filter(::isConfigured)
 
-    /** The provider in use, if it is set up; otherwise the first one that is. */
+    /**
+     * The provider requests go to: the one the user chose if it is set up, or the first one that is when none was
+     * chosen. Null when a chosen one isn't set up any more, see [resolveProvider].
+     */
     fun activeProvider(): ProviderKind? =
-        provider?.takeIf(::isConfigured) ?: configuredProviders().firstOrNull()
+        resolveProvider(provider, configuredProviders())
+
+    /** The provider the user chose, when it is no longer set up: its sign-in expired, or its key is gone. */
+    val lostProvider: ProviderKind?
+        get() = provider?.takeUnless(::isConfigured)
+
+    /**
+     * Forgets that [kind] was chosen, for when the user disconnects it themselves: another one that is set up is
+     * used then, as before they chose.
+     */
+    fun unchoose(kind: ProviderKind) {
+        if (provider == kind)
+            provider = null
+    }
 
     fun cachedModels(kind: ProviderKind): List<ModelInfo> {
         val json = prefs.getString("models.${kind.id}", null) ?: return kind.defaultModels
@@ -212,3 +228,15 @@ class AgentSettings internal constructor(context: Context) {
         const val DEFAULT_MAX_STEPS = 60
     }
 }
+
+/**
+ * The provider to use, given the one the user [chosen] and those that are [configured].
+ *
+ * A chosen one that lost its sign-in or its key is not replaced by another: a sign-in that expired in the middle of a
+ * conversation would otherwise carry it on with another provider's key, at that key's cost, without a word.
+ */
+internal fun resolveProvider(chosen: ProviderKind?, configured: List<ProviderKind>): ProviderKind? =
+    if (chosen != null)
+        chosen.takeIf { it in configured }
+    else
+        configured.firstOrNull()

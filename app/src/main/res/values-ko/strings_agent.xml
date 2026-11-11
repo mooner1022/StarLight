@@ -4,6 +4,8 @@
     <string name="agent_title">StarLight AI</string>
     <string name="agent_subtitle_ready">%1$s · %2$s</string>
     <string name="agent_subtitle_setup">AI를 연결하고 시작해 보세요</string>
+    <string name="agent_subtitle_lost">%s 연결이 끊겼어요</string>
+    <string name="agent_lost_body">다시 연결하거나, 설정에서 다른 AI를 선택해 주세요.</string>
     <string name="agent_subtitle_ready_empty">에이전트가 준비됐어요.</string>
     <plurals name="agent_subtitle_conversations">
         <item quantity="other">%d개의 대화가 있어요.</item>
@@ -89,6 +91,7 @@
     <string name="agent_notice_refusal">모델이 이 요청을 거절했어요.</string>
     <string name="agent_notice_refusal_reason">모델이 이 요청을 거절했어요 (%s).</string>
     <string name="agent_error_setup">먼저 AI 설정에서 AI를 연결해 주세요.</string>
+    <string name="agent_error_reconnect">%s 연결이 끊겼어요. AI 설정에서 다시 연결하거나 다른 AI를 선택해 주세요.</string>
     <string name="agent_error_model">먼저 %s의 모델을 골라 주세요.</string>
     <string name="agent_error_auth">인증에 실패했어요 (HTTP %1$d): %2$s</string>
     <string name="agent_error_limit">요청 한도나 사용량 한도에 도달했어요: %s</string>

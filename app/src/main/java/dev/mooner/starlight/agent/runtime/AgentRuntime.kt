@@ -506,7 +506,7 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
      * instead of the agent's prompt, tools and history, at the lowest effort. Its tokens count towards the conversation.
      */
     private suspend fun requestTitle(conversation: Conversation): String? {
-        val kind = hub.settings.activeProvider() ?: throw SignInRequiredException(string(R.string.agent_error_setup))
+        val kind = requireProvider()
         val model = hub.settings.model(kind) ?: throw SignInRequiredException(string(R.string.agent_error_model, kind.displayName))
         val request = LlmRequest(
             // Kept apart from the conversation's own prompt cache.
@@ -747,10 +747,17 @@ class AgentRuntime internal constructor(private val hub: AgentHub) {
         }
     }
 
+    /** The provider in use; says which one to connect again when the chosen one lost its sign-in or key. */
+    private fun requireProvider(): ProviderKind =
+        hub.settings.activeProvider() ?: throw SignInRequiredException(
+            hub.settings.provider
+                ?.let { string(R.string.agent_error_reconnect, it.displayName) }
+                ?: string(R.string.agent_error_setup)
+        )
+
     /** Sends the conversation to the model, retrying overloads and network failures. */
     private suspend fun callModel(id: String): LlmResult {
-        val kind = hub.settings.activeProvider()
-            ?: throw SignInRequiredException(string(R.string.agent_error_setup))
+        val kind = requireProvider()
         val model = hub.settings.model(kind) ?: throw SignInRequiredException(string(R.string.agent_error_model, kind.displayName))
         val client = hub.client(kind)
         var attempt = 0

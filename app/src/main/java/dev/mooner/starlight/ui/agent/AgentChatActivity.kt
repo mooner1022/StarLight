@@ -339,7 +339,7 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     private fun updateSubtitle() {
-        binding.subtitle.text = AgentUi.modelSummary(this, hub) ?: getString(R.string.agent_subtitle_setup)
+        binding.subtitle.text = AgentUi.modelSummary(this, hub) ?: AgentUi.setupSummary(this, hub)
     }
 
     private fun send(text: String, attachments: List<Part.Attachment>): Boolean {
