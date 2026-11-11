@@ -32,6 +32,7 @@ import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
@@ -116,7 +117,10 @@ class JSNeon: Language() {
                                 continue
                             // An API that fails to make its object, as one of a plugin, is left out; the script
                             // compiles without it, and one that uses it fails on the name, with this in the log.
-                            callPlugin({ project.logger.e("API '${api.name}' couldn't be loaded and is left out: $it") }) {
+                            callPlugin({ project.logger.e(translate {
+                                Locale.ENGLISH { "API '${api.name}' couldn't be loaded and is left out: $it" }
+                                Locale.KOREAN  { "API '${api.name}'을(를) 불러오지 못해 빼고 컴파일해요: $it" }
+                            }) }) {
                                 context[api.name] = api.getInstance(project)
                             }
                         }

@@ -221,7 +221,13 @@ class ProjectImpl private constructor(
                     if ("starlight.project.compile" in allowedEventIDs)
                         runCatching { lang.callFunction(previousScope, "onStartCompile", emptyArray()) }
                             // Logged and no more: a script that fails to save its state must still be replaceable.
-                            .onFailure { logger.e(tag, "onStartCompile failed: $it") }
+                            .onFailure {
+                                val what = ScriptErrorText.of(it, directory)
+                                logger.e(tag, translate {
+                                    Locale.ENGLISH { "onStartCompile failed; the compile goes on: $what" }
+                                    Locale.KOREAN  { "onStartCompile에서 오류가 났어요. 컴파일은 계속해요: $what" }
+                                })
+                            }
                     if (lang.requireRelease) {
                         lang.release(previousScope)
                         logger.v(tag, "engine released")

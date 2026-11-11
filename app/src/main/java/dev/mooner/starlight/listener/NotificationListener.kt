@@ -119,8 +119,13 @@ class NotificationListener: NotificationListenerService() {
                         // The rule can't work at all: said once, loudly enough to be seen.
                         if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.UNKNOWN_SPEC, pkgName, userId, appliedRule.parserSpecId), ts))
                             LOG.warn {
-                                "The rule for $pkgName names the parser spec '${appliedRule.parserSpecId}', which isn't " +
-                                    "registered, so its messages are ignored. Registered: ${ParserSpecManager.getAllSpecs().keys.joinToString()}"
+                                val registered = ParserSpecManager.getAllSpecs().keys.joinToString()
+                                translate {
+                                    Locale.ENGLISH { "The rule for $pkgName names the parser spec '${appliedRule.parserSpecId}', which " +
+                                        "isn't registered, so its messages are ignored. Registered: $registered" }
+                                    Locale.KOREAN  { "$pkgName 규칙의 파서 스펙 '${appliedRule.parserSpecId}'이(가) 등록되어 있지 않아 " +
+                                        "메시지를 받지 않아요. 등록된 스펙: $registered" }
+                                }
                             }
                         return
                     }
@@ -128,8 +133,12 @@ class NotificationListener: NotificationListenerService() {
                     if (data == null) {
                         if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.NOT_A_MESSAGE, pkgName, userId, appliedRule.parserSpecId), ts))
                             LOG.debug {
-                                "The parser spec '${appliedRule.parserSpecId}' didn't take a notification from $pkgName as a " +
-                                    "message. Said once; the problem solver counts the rest."
+                                translate {
+                                    Locale.ENGLISH { "The parser spec '${appliedRule.parserSpecId}' didn't take a notification from " +
+                                        "$pkgName as a message. Said once; the problem solver counts the rest." }
+                                    Locale.KOREAN  { "파서 스펙 '${appliedRule.parserSpecId}'이(가) $pkgName 알림을 메시지로 받아들이지 " +
+                                        "않았어요. 한 번만 기록하고, 횟수는 문제 해결 도우미에서 볼 수 있어요." }
+                                }
                             }
                         return
                     }
@@ -208,11 +217,20 @@ class NotificationListener: NotificationListenerService() {
         if (otherUser != null) {
             if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.OTHER_USER, pkgName, userId), now))
                 LOG.debug {
-                    "Ignored a message notification from $pkgName of user $userId: its rule is for user " +
-                        "${otherUser.userId}. A dual app or a work profile runs as another user and needs a rule of its own."
+                    translate {
+                        Locale.ENGLISH { "Ignored a message notification from $pkgName of user $userId: its rule is for user " +
+                            "${otherUser.userId}. A dual app or a work profile runs as another user and needs a rule of its own." }
+                        Locale.KOREAN  { "$pkgName 의 사용자 $userId 메시지 알림을 받지 않았어요. 규칙이 사용자 ${otherUser.userId}용이에요. " +
+                            "듀얼 앱이나 업무 프로필은 다른 사용자로 실행되어 규칙이 따로 필요해요." }
+                    }
                 }
         } else if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.NO_RULE, pkgName, userId), now)) {
-            LOG.debug { "Ignored a message notification from $pkgName (user $userId): no package rule covers it." }
+            LOG.debug {
+                translate {
+                    Locale.ENGLISH { "Ignored a message notification from $pkgName (user $userId): no package rule covers it." }
+                    Locale.KOREAN  { "$pkgName (사용자 $userId)의 메시지 알림을 받지 않았어요. 이 앱을 다루는 패키지 규칙이 없어요." }
+                }
+            }
         }
     }
 

@@ -9,6 +9,8 @@ package dev.mooner.starlight.languages
 import dev.mooner.starlight.api.api2.BotManagerApi
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.event.AllowedEventEntries
+import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.ui.projects.events.EventCatalog
 
 /**
@@ -38,13 +40,22 @@ internal object EntryPoints {
         val unexported = source?.let { text -> expected.filter { declares(text, it) } }.orEmpty()
         if (unexported.isNotEmpty()) {
             val name = unexported.first()
-            return Notice("'$name' is defined but not exported, so StarLight can't call it and the project won't " +
-                "answer. Write 'export function $name' (or 'export { $name }').", isMistake = true)
+            return Notice(translate {
+                Locale.ENGLISH { "'$name' is defined but not exported, so StarLight can't call it and the project won't " +
+                    "answer. Write 'export function $name' (or 'export { $name }')." }
+                Locale.KOREAN  { "'$name' 함수가 있지만 export되지 않아 StarLight가 호출할 수 없고, 프로젝트가 응답하지 않아요. " +
+                    "'export function $name'(또는 'export { $name }')으로 바꿔 주세요." }
+            }, isMistake = true)
         }
         val names = expected.take(MAX_NAMED).joinToString() + if (expected.size > MAX_NAMED) ", …" else ""
-        return Notice("Nothing in this project is called by StarLight: it has none of the functions of the events it " +
-            "receives ($names)${if (source != null) " exported" else ""}, and added no listener. That is as it should " +
-            "be for a project that other projects call or that only runs timers.", isMistake = false)
+        return Notice(translate {
+            Locale.ENGLISH { "Nothing in this project is called by StarLight: it has none of the functions of the events it " +
+                "receives ($names)${if (source != null) " exported" else ""}, and added no listener. That is as it should " +
+                "be for a project that other projects call or that only runs timers." }
+            Locale.KOREAN  { "이 프로젝트에는 StarLight가 호출할 것이 없어요. 받는 이벤트의 함수($names)가 " +
+                "${if (source != null) "export되어 있지 않고" else "없고"} 리스너도 추가되지 않았어요. 다른 프로젝트가 불러 쓰거나 " +
+                "타이머만 돌리는 프로젝트라면 정상이에요." }
+        }, isMistake = false)
     }
 
     /** Whether [source] declares a function or a variable named [name] at the start of a line. */
