@@ -95,6 +95,7 @@
     <string name="agent_error_setup">Connect an AI in the agent settings first.</string>
     <string name="agent_error_reconnect">%s is no longer connected. Connect it again in the agent settings, or choose another AI there.</string>
     <string name="agent_error_model">Choose a model for %s first.</string>
+    <string name="agent_error_unreadable">This conversation can\'t be read; a newer version of the app may have written it. It is kept as it is, and messages can\'t be sent here.</string>
     <string name="agent_error_auth">Authentication failed (HTTP %1$d): %2$s</string>
     <string name="agent_error_limit">Rate or usage limit reached: %s</string>
     <string name="agent_error_http">HTTP %1$d: %2$s</string>

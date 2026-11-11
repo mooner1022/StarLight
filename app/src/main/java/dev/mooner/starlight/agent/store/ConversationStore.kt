@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import java.io.File
+import java.io.IOException
 
 private val LOG = LoggerFactory.logger("AgentStore")
 
@@ -44,6 +45,8 @@ class ConversationStore(root: File) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Conversation>?) = size > MAX_CACHED
     }
     private val lock = Any()
+    /** Unreadable files already reported in the log, so each is reported once. */
+    private val reportedUnreadable: MutableSet<String> = hashSetOf()
 
     private val mSummaries = MutableStateFlow(loadIndex())
     /** Newest first. */
@@ -58,8 +61,19 @@ class ConversationStore(root: File) {
             cached(id) ?: read(id)?.also(::remember)
         }
 
+    /**
+     * Whether [id]'s file is there but can't be read, such as one written by a newer version of the app. It is kept
+     * as it is: [get] gives null for it as for a conversation that isn't there, but [save] won't write over it.
+     */
+    fun isUnreadable(id: String): Boolean =
+        synchronized(lock) {
+            cached(id) == null && fileOf(id).isFile && read(id) == null
+        }
+
     fun save(conversation: Conversation) {
         synchronized(lock) {
+            if (isUnreadable(conversation.id))
+                throw IOException("Conversation ${conversation.id} can't be read and is left as it is")
             val file = AtomicFile(fileOf(conversation.id))
             val out = file.startWrite()
             try {
@@ -125,7 +139,12 @@ class ConversationStore(root: File) {
         val file = fileOf(id)
         if (!file.isFile)
             return null
-        return runCatching { AgentJson.decodeFromString<Conversation>(AtomicFile(file).readFully().decodeToString()) }.getOrNull()
+        return runCatching { AgentJson.decodeFromString<Conversation>(AtomicFile(file).readFully().decodeToString()) }
+            .onFailure { e ->
+                if (synchronized(reportedUnreadable) { reportedUnreadable.add(id) })
+                    LOG.warn { "Conversation $id can't be read, so it is left as it is: $e" }
+            }
+            .getOrNull()
     }
 
     private fun fileOf(id: String): File {
