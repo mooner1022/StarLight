@@ -74,6 +74,28 @@ object ProjectEventManager {
             recursiveRegister(path, cursor + 1, mNode, event)
     }
 
+    /** The ids of every event registered. */
+    internal fun registeredIds(): Set<String> =
+        getAllIDWithChildren(rootNode)
+
+    /** Takes the event [id] out again, as when the plugin that registered it failed to load. */
+    internal fun unregister(id: String) {
+        val path = id.split(PATH_DELIMITER)
+        // The nodes down to the event's, to clear it and then drop the ones left with nothing in them.
+        val nodes = mutableListOf(rootNode)
+        for (name in path)
+            nodes += nodes.last().tree[name] ?: return
+        val removed = nodes.last().child ?: return
+        nodes.last().child = null
+        classCache.remove(removed)
+        for (depth in path.indices.reversed()) {
+            val node = nodes[depth + 1]
+            if (node.child != null || node.tree.isNotEmpty())
+                break
+            nodes[depth].tree.remove(path[depth])
+        }
+    }
+
     fun isIdUsed(id: String): Boolean {
         return findFirst(id) != null
     }

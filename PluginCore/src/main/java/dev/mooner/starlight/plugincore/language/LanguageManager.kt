@@ -42,6 +42,13 @@ class LanguageManager {
         return languages.toTypedArray()
     }
 
+    /** Takes [lang] out again, as when the plugin that added it failed to load. */
+    internal fun remove(lang: Language) {
+        languages -= lang
+        if (languages.none { it.id == lang.id })
+            languageAssetPaths -= lang.id
+    }
+
     internal fun purge() {
         languages.clear()
         languageAssetPaths.clear()

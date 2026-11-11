@@ -26,10 +26,14 @@ class PluginInstaller(
         val temp = pluginsDir.resolve(".${target.name}.tmp")
         try {
             source.copyTo(temp, overwrite = true)
-            if (target.exists() && !target.delete())
-                throw IOException("Failed to replace $target")
-            if (!temp.renameTo(target))
-                throw IOException("Failed to move $temp to $target")
+            // Moved over the installed file in one step. Deleting that first, as this did, left no plugin at all
+            // when the move then failed. Only where a file can't be moved onto another is the old one removed.
+            if (!temp.renameTo(target)) {
+                if (target.exists() && !target.delete())
+                    throw IOException("Failed to replace $target")
+                if (!temp.renameTo(target))
+                    throw IOException("Failed to move $temp to $target")
+            }
         } finally {
             temp.delete()
         }

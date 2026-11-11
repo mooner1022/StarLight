@@ -58,6 +58,12 @@ class WidgetManager {
     fun getAllWidgetInfo(): Map<String, WidgetInfo> =
         widgetInfo
 
+    /** Takes the widget [id] out again, as when the plugin that added it failed to load. */
+    internal fun remove(id: String) {
+        definitions -= id
+        widgetInfo -= id
+    }
+
     internal fun purge() {
         definitions.clear()
         widgetInfo.clear()
