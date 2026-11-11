@@ -29,6 +29,7 @@
     <string name="config_saved">설정을 저장했어요.</string>
     <string name="config_invalid">올바르지 않은 설정이 있어요. 확인한 뒤 다시 시도해 주세요.</string>
     <string name="rule_package_required">규칙에는 패키지명이 필요해요.</string>
+    <string name="rule_none_without_auto">규칙이 없어 메시지를 하나도 받지 못해요. 규칙을 추가하거나 \'규칙 자동 설정\'을 켜 주세요.</string>
     <string name="restart_confirm_title">앱을 재시작할까요?</string>
     <string name="restart_confirm_message">실행 중인 프로젝트가 멈췄다가 앱과 함께 다시 시작돼요.</string>
     <string name="ok">확인</string>
@@ -111,8 +112,8 @@
     <string name="debugroom_subtitle_group">%1$s · 디버그 룸 · 그룹 채팅</string>
     <string name="debugroom_copied">메시지를 복사했어요.</string>
     <string name="debugroom_file_missing">%1$s · 파일이 없어요</string>
-    <string name="color_picker_none">고른 색 없음</string>
     <string name="debugroom_chat_unreadable">저장된 대화를 읽을 수 없어 빈 방으로 시작했어요. 이전 파일은 %1$s(으)로 남겨 두었어요.</string>
+    <string name="color_picker_none">고른 색 없음</string>
     <string name="color_picker_shades">음영</string>
     <string name="color_picker_custom">직접 고르기</string>
     <string name="color_picker_palette">팔레트</string>
