@@ -190,16 +190,18 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         if (getProject() != null && layoutMode == LAYOUT_TABLET) {
             // Left drawer (Debug Chat)
             //binding.debugChat!!.leave.visibility = View.INVISIBLE
-            supportFragmentManager.beginTransaction().apply {
-                replace(
-                    R.id.fragment_container_debug_room,
-                    DebugRoomFragment.newInstance(
-                        projectName = getProject()!!.info.name,
-                        showLeave = false,
-                        fixedPadding = true
+            // Made anew, the editor already has its debug room back, with what was being typed in it.
+            if (supportFragmentManager.findFragmentById(R.id.fragment_container_debug_room) == null)
+                supportFragmentManager.beginTransaction().apply {
+                    replace(
+                        R.id.fragment_container_debug_room,
+                        DebugRoomFragment.newInstance(
+                            projectName = getProject()!!.info.name,
+                            showLeave = false,
+                            fixedPadding = true
+                        )
                     )
-                )
-            }.commit()
+                }.commit()
 
             binding.buttonCloseDebugChat!!.setOnClickListener {
                 binding.root.closeDrawer(GravityCompat.END, true)

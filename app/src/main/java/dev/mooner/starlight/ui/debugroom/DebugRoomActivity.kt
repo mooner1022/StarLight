@@ -29,6 +29,10 @@ class DebugRoomActivity: AppCompatActivity() {
         setContentView(binding.root)
         fitPage(binding.root)
 
+        // Made anew, as on a rotation, the screen already has its room back, with what was being typed in it:
+        // putting a new one in its place would throw that away.
+        if (supportFragmentManager.findFragmentById(R.id.fragment_container_debug_room) != null)
+            return
         val projectName = intent.getStringExtra(EXTRA_PROJECT_NAME)!!
         val fragment = DebugRoomFragment.newInstance(
             projectName = projectName,

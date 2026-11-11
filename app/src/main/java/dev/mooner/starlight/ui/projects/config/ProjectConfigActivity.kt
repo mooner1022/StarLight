@@ -88,6 +88,12 @@ class ProjectConfigActivity: AppCompatActivity() {
             .map { it.first }
             .toSet()
 
+        // What was changed and not saved when the screen was last taken down, as on a rotation.
+        savedInstanceState?.let { state ->
+            changedData.putAll(ConfigDrafts.decode(state.getString(STATE_CHANGED)))
+            pendingEventIds = state.getStringArrayList(STATE_EVENTS)
+        }
+
         configAdapter = ConfigAdapter.Builder(this) {
             lifecycleOwner(this@ProjectConfigActivity)
             bind(binding.configRecyclerView)
@@ -109,9 +115,11 @@ class ProjectConfigActivity: AppCompatActivity() {
             structure {
                 getStruct(project).also { structure = it }
             }
-            @Suppress("UNCHECKED_CAST")
-            configData((project.config.getData() as MutableDataMap)
-                .injectApiLevels(project.info.apiLevels))
+            // A copy: the screen changes what it is given as the user edits, and what isn't saved must not stay in
+            // the project's settings.
+            configData(ConfigDrafts.editableCopy(project.config.getData())
+                .injectApiLevels(project.info.apiLevels)
+                .let { ConfigDrafts.overlay(it, changedData) })
         }.build()
 
         val save: () -> Boolean = save@{
@@ -148,6 +156,8 @@ class ProjectConfigActivity: AppCompatActivity() {
                     project.getLanguage().onConfigUpdated(filtered)
             }
 
+            changedData.clear()
+
             createSuccessPeek(getString(R.string.config_saved), PeekAlert.Position.Bottom).peek()
             if (ApiLevels.hasListenerNameClash(project.info.apiLevels, project.info.languageId))
                 peek(getString(R.string.api_levels_clash_warning), PeekType.INFO)
@@ -162,7 +172,20 @@ class ProjectConfigActivity: AppCompatActivity() {
 
         val textViewConfigProjectName: TextView = findViewById(R.id.textViewConfigProjectName)
         textViewConfigProjectName.text = projectName
-        fabProjectConfig.hide()
+        if (hasUnsaved())
+            fabProjectConfig.show()
+        else
+            fabProjectConfig.hide()
+    }
+
+    private fun hasUnsaved(): Boolean =
+        changedData.isNotEmpty() || pendingEventIds != null
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        if (changedData.isNotEmpty())
+            outState.putString(STATE_CHANGED, ConfigDrafts.encode(changedData))
+        pendingEventIds?.let { outState.putStringArrayList(STATE_EVENTS, ArrayList(it)) }
     }
 
     /** A call into the project's language, which a plugin may have written: its failure is logged, not thrown. */
@@ -549,3 +572,5 @@ private const val API_CATEGORY = "api"
 private const val EVENTS_CATEGORY = "events"
 private const val ALLOWED_EVENTS = "allowed_events"
 private const val API_LEVELS = "levels"
+private const val STATE_CHANGED = "changed"
+private const val STATE_EVENTS = "pending_events"

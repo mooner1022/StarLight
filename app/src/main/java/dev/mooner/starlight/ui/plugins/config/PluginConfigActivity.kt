@@ -8,6 +8,7 @@ package dev.mooner.starlight.ui.plugins.config
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.utils.PeekType
 import dev.mooner.starlight.databinding.ActivityPluginConfigBinding
@@ -19,6 +20,7 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.R
 import dev.mooner.starlight.ui.common.confirmLeavingUnsaved
+import dev.mooner.starlight.utils.ConfigDrafts
 import dev.mooner.starlight.utils.bindPageHeader
 import dev.mooner.starlight.utils.fitSkyPage
 import dev.mooner.starlight.utils.peek
@@ -32,6 +34,8 @@ private val LOG = LoggerFactory.logger {  }
 class PluginConfigActivity: AppCompatActivity() {
 
     private val updatedIDs    : MutableMap<String, MutableSet<String>> = hashMapOf()
+    /** The values changed and not saved yet, kept through the screen's own end as [updatedIDs] can't be. */
+    private val changedData   : MutableDataMap = hashMapOf()
     private var configAdapter : ConfigAdapter? = null
 
     private lateinit var binding: ActivityPluginConfigBinding
@@ -65,10 +69,19 @@ class PluginConfigActivity: AppCompatActivity() {
             return
         }
 
+        // What was changed and not saved when the screen was last taken down, as on a rotation: put back into the
+        // settings read from the file, which is where the screen keeps what isn't saved yet.
+        changedData.putAll(ConfigDrafts.decode(savedInstanceState?.getString(STATE_CHANGED)))
+        for ((category, values) in changedData) {
+            updatedIDs.computeIfAbsent(category) { hashSetOf() } += values.keys
+            values.forEach(fileConfig.category(category)::setRaw)
+        }
+
         configAdapter = ConfigAdapter.Builder(this) {
             bind(binding.configRecyclerView)
             onValueUpdated { parentId, id, value, jsonValue ->
                 updatedIDs.computeIfAbsent(parentId) { hashSetOf() } += id
+                changedData.getOrPut(parentId) { hashMapOf() }[id] = jsonValue
                 if (!fabProjectConfig.isShown)
                     withContext(Dispatchers.Main) {
                         fabProjectConfig.show()
@@ -89,6 +102,7 @@ class PluginConfigActivity: AppCompatActivity() {
             }
             fileConfig.push()
             runPluginCall(pluginName) { plugin.onConfigUpdated(fileConfig, updatedIDs) }
+            changedData.clear()
             peek(getString(R.string.config_saved), PeekType.SUCCESS)
             fabProjectConfig.hide()
             true
@@ -100,6 +114,14 @@ class PluginConfigActivity: AppCompatActivity() {
         confirmLeavingUnsaved(binding.leave, hasChanges = { fabProjectConfig.isOrWillBeShown }, save = save)
 
         binding.pluginName.text = pluginName
+        if (changedData.isNotEmpty())
+            fabProjectConfig.show()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        if (changedData.isNotEmpty())
+            outState.putString(STATE_CHANGED, ConfigDrafts.encode(changedData))
     }
 
     private inline fun <T> runPluginCall(pluginName: String, block: () -> T): T? =
@@ -125,5 +147,6 @@ class PluginConfigActivity: AppCompatActivity() {
         const val EXTRA_PLUGIN_NAME               = "pluginName"
         const val EXTRA_PLUGIN_ID                 = "pluginId"
         private const val PLUGIN_CONFIG_FILE_NAME = "config-plugin.json"
+        private const val STATE_CHANGED           = "changed"
     }
 }

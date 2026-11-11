@@ -124,6 +124,11 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
         submitList()
 
+        // The new project wizard was open when the screen was taken down, as on a rotation: it goes on.
+        binding.root.post {
+            if (_binding != null && isAdded && NewProjectDraft.of(this).isOpen)
+                showNewProject()
+        }
         return binding.root
     }
 
@@ -132,9 +137,7 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             R.id.align_project -> showProjectAlignDialog()
             R.id.search_project -> setSearchVisible(binding.searchBar.visibility != View.VISIBLE)
             R.id.searchClose -> setSearchVisible(false)
-            R.id.new_project -> showNewProjectDialog(onImport = {
-                pickProjectArchive.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
-            })
+            R.id.new_project -> showNewProject()
         }
     }
 
@@ -224,6 +227,11 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
             }
         }
     }
+
+    private fun showNewProject() =
+        showNewProjectDialog(onImport = {
+            pickProjectArchive.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
+        })
 
     private fun updateTitle(projects: List<Project>) {
         val activity = activity as? MainActivity ?: return

@@ -161,6 +161,7 @@ class AgentChatActivity : AppCompatActivity() {
             composer.approval = savedInstanceState.getString(KEY_APPROVAL)?.let(ApprovalPolicy::of)
             sessionLoaded = true
         }
+        savedInstanceState?.let(composer::restoreState)
         binding.resumeButton.setOnClickListener { hub.runtime.resume(conversationId) }
 
         observe()
@@ -197,6 +198,7 @@ class AgentChatActivity : AppCompatActivity() {
         outState.putString(EXTRA_CONVERSATION, conversationId)
         outState.putString(KEY_PENDING_SAVE, pendingSave)
         outState.putBoolean(KEY_PLAN_COLLAPSED, planBoard.collapsed)
+        composer.saveState(outState)
         if (sessionLoaded) {
             outState.putBoolean(KEY_SESSION, true)
             outState.putString(KEY_PROJECT, composer.project)
