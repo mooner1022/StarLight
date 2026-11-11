@@ -17,6 +17,7 @@ import dev.mooner.starlight.MainActivity
 import dev.mooner.starlight.PREF_IS_INITIAL
 import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.core.GlobalApplication
+import dev.mooner.starlight.ui.crash.FatalErrorActivity
 import dev.mooner.starlight.databinding.ActivitySplashBinding
 import dev.mooner.starlight.event.ApplicationEvent
 import dev.mooner.starlight.logging.bindLogNotifier
@@ -43,6 +44,16 @@ class SplashActivity : AppCompatActivity() {
         if (intent.getBooleanExtra(EXTRA_RESTART, false)) {
             super.onCreate(null)
             restartApplication()
+            return
+        }
+        // The start was blocked after repeated crashes and nothing is coming for the splash to wait for. The report
+        // that offers a way on was closed, or never shown if the process came up in the background: show it again.
+        GlobalApplication.blockedReport?.let { report ->
+            super.onCreate(null)
+            // The one the process opened as it started is used again if it is still there, not covered by a second.
+            startActivity(FatalErrorActivity.intent(this, report, blocked = true)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP))
+            finish()
             return
         }
         super.onCreate(savedInstanceState)
