@@ -121,13 +121,13 @@ class ProjectImpl private constructor(
         }, onException)
 
     override fun runEvent(task: () -> Unit, onException: (Throwable) -> Unit) {
-        val scope = langScope
-        if (scope == null) {
+        if (langScope == null) {
             onException(IllegalStateException("Project should be in compiled state before calling function."))
             return
         }
 
-        fun onError(e: Throwable) {
+        /** [scope] is the version the event ran in: the one there was when it started, not when it was sent. */
+        fun onError(e: Throwable, scope: Any?) {
             // The version this event was for is gone: a compile replaced it, or took it down by failing. Its
             // error, often the engine stopping it, says nothing about the version that runs now, which stays.
             if (langScope !== scope) {
@@ -156,8 +156,9 @@ class ProjectImpl private constructor(
 
         obtainExecutor().post {
             JobLocker.withLock(threadPoolName!!) {
+                val scope = langScope
                 runCatching(task)
-                    .onFailure(::onError)
+                    .onFailure { onError(it, scope) }
             }
         }
     }
