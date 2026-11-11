@@ -21,6 +21,7 @@ import androidx.activity.addCallback
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.*
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -90,11 +91,14 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
     private var mainScriptName : String by notNull()
     private var mainLanguage   : Language by notNull()
-    private val sessions       : MutableList<EditorSession> = arrayListOf()
+    /** Holds the editor page and the tabs through the screen being made anew, see [EditorKeeper]. */
+    private val keeper         : EditorKeeper by lazy { ViewModelProvider(this)[EditorKeeper::class.java] }
+    private val sessions       : MutableList<EditorSession> get() = keeper.sessions
     private val isCodeUpdated  : Boolean get() = sessions.any { it.isUpdated }
     private var bottomInsetDp  : Int = 0
-    @Volatile
-    private var isEditorReady  : Boolean = false
+    private var isEditorReady  : Boolean
+        get() = keeper.isEditorReady
+        set(value) { keeper.isEditorReady = value }
 
     private var tabAdapter     : TabViewAdapter? = null
     private var configAdapter  : ConfigAdapter? = null
@@ -266,16 +270,20 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                 ?.filter { getBaseDirectory().resolve(it).isFile }
                 ?: emptyList()
 
-        addSession(fileName, lang, code)
-        for (tab in savedTabs) {
-            val language = getLanguageFromFileName(tab, Language.PLAIN_TEXT)
-            addSession(tab, language)
+        // The page of the screen this one replaces, as on a rotation, with its tabs and all that was typed in them;
+        // none when the editor was just opened.
+        val keptPage = keeper.webView
+        if (keptPage == null) {
+            addSession(fileName, lang, code)
+            for (tab in savedTabs) {
+                val language = getLanguageFromFileName(tab, Language.PLAIN_TEXT)
+                addSession(tab, language)
+            }
         }
 
         tabAdapter = setupTabAdapter()
 
-        codeView = WebView(applicationContext)
-        with(codeView!!) {
+        codeView = keptPage ?: WebView(applicationContext).apply {
             settings.apply {
                 builtInZoomControls = false
                 javaScriptEnabled = true
@@ -286,6 +294,12 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                 setSupportZoom(false)
                 cacheMode = WebSettings.LOAD_CACHE_ONLY
             }
+            // The page calls the keeper's bridge, not this screen, which it would hold on to past its end.
+            addJavascriptInterface(keeper.bridge, "WebviewCallback")
+            keeper.webView = this
+        }
+        with(codeView!!) {
+            // Set by each screen: they open links and log through it.
             webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(message: ConsoleMessage): Boolean {
                     if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR)
@@ -303,10 +317,17 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                     return true
                 }
             }
-            addJavascriptInterface(this@DefaultEditorActivity, "WebviewCallback")
-            loadUrl(ENTRY_POINT)
         }
+        (codeView!!.parent as? ViewGroup)?.removeView(codeView)
         binding.webviewContainer.addView(codeView)
+        keeper.bridge.attach(this)
+        if (keptPage == null) {
+            codeView!!.loadUrl(ENTRY_POINT)
+        } else if (isEditorReady) {
+            // The page is as it was; this screen's tab strip and colors are new.
+            tabAdapter!!.setSelected(keeper.selectedFile?.takeIf { name -> sessions.any { it.fileName == name } } ?: mainScriptName)
+            setTheme(theme)
+        }
 
         setHotKeyVisibility(isHotKeyShown)
         updateColor()
@@ -346,11 +367,18 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             }
         }
 
+        // The page isn't ended here: it goes on to the screen that replaces this one, and the keeper ends it when
+        // the editor is closed. It only lets go of this screen.
+        keeper.selectedFile = tabAdapter?.selectedSession?.fileName
+        keeper.bridge.detach(this)
         binding.webviewContainer.removeAllViews()
-        codeView?.destroy()
+        codeView?.apply {
+            webChromeClient = null
+            webViewClient = WebViewClient()
+        }
         codeView = null
 
-        tabAdapter?.destroy()
+        tabAdapter?.destroy(keepSessions = isChangingConfigurations)
         tabAdapter = null
 
         configAdapter?.destroy()
@@ -950,10 +978,24 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         }
 
     private suspend fun saveAll(sessionIds: List<Int>? = null, silent: Boolean = false): Boolean {
-        val targets = collectDirty(sessionIds).mapNotNull { (id, code) ->
+        val collected = collectDirty(sessionIds).mapNotNull { (id, code) ->
             sessions.find { it.sessionId.toString() == id }?.let { it to code }
         }
-        val failed = withContext(Dispatchers.IO) {
+        // Files something else wrote since their tab read them: saving would put this tab's older text over that.
+        val conflicts = collected.filter { (session, _) -> isChangedOnDisk(session) }.map { (session, _) -> session }
+        val choice = if (conflicts.isEmpty()) null else askAboutChangedFiles(conflicts)
+        val targets = when {
+            conflicts.isEmpty()         -> collected
+            choice == DiskConflict.MINE -> collected
+            else                        -> collected.filterNot { (session, _) -> session in conflicts }
+        }
+        when (choice) {
+            DiskConflict.THEIRS -> conflicts.forEach(::reloadFromDisk)
+            // Asked and not answered: the page counted them as saved when it handed their text over.
+            null                -> conflicts.forEach { markDirty(it.sessionId) }
+            DiskConflict.MINE   -> {}
+        }
+        val failed = keeper.write {
             targets
                 .filterNot { (session, code) -> saveCode(session.fileName, code) }
                 .map { (session, _) -> session }
@@ -962,9 +1004,15 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             val index = sessions.indexOf(session)
             if (session in failed)
                 markDirty(session.sessionId)
-            else if (index != -1)
-                tabAdapter?.setSessionContentUpdated(index, false)
+            else {
+                session.diskStamp = diskStampOf(session.fileName)
+                if (index != -1)
+                    tabAdapter?.setSessionContentUpdated(index, false)
+            }
         }
+        // Left unsaved by the user's choice: whoever asked for the save, as leaving the editor does, doesn't go on.
+        if (conflicts.isNotEmpty() && choice == null)
+            return false
 
         if (failed.isNotEmpty()) {
             createSimplePeek(level = PeekLevel.ERROR, text = translate {
@@ -982,6 +1030,82 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             Locale.KOREAN  { if (savedCount == 0) "저장할 변경사항이 없어요" else "${savedCount}개 파일 저장 완료" }
         }).peek()
         return true
+    }
+
+    private enum class DiskConflict { MINE, THEIRS }
+
+    private fun diskStampOf(fileName: String): Long {
+        val file = getBaseDirectory().resolve(fileName)
+        return if (file.isFile) file.lastModified() * 31 + file.length() else EditorSession.NO_STAMP
+    }
+
+    /** Whether the file was written by something else since [session] read or wrote it. One that is gone isn't. */
+    private fun isChangedOnDisk(session: EditorSession): Boolean {
+        if (session.diskStamp == EditorSession.NO_STAMP)
+            return false
+        val now = diskStampOf(session.fileName)
+        return now != EditorSession.NO_STAMP && now != session.diskStamp
+    }
+
+    /** Shows the file as it is on disk in [session]'s tab, in place of what the tab held. */
+    private fun reloadFromDisk(session: EditorSession) {
+        session.isLoaded = false
+        session.code = null
+        closeSession(session.sessionId)
+        val index = sessions.indexOf(session)
+        if (index != -1)
+            tabAdapter?.setSessionContentUpdated(index, false)
+        if (tabAdapter?.selectedSession == session)
+            setSession(session)
+    }
+
+    /**
+     * Asks what to do with [changed], files that have unsaved edits here and were written by something else
+     * meanwhile. Null when the user closes the question without choosing.
+     */
+    private suspend fun askAboutChangedFiles(changed: List<EditorSession>): DiskConflict? =
+        suspendCancellableCoroutine { cont ->
+            var choice: DiskConflict? = null
+            val names = changed.joinToString { it.fileName }
+            showSheet {
+                title = translate {
+                    Locale.ENGLISH { "Changed outside the editor" }
+                    Locale.KOREAN  { "편집기 밖에서 바뀐 파일" }
+                }
+                message = translate {
+                    Locale.ENGLISH { "$names changed on disk after you opened it here, as when StarLight AI edits it. " +
+                        "Saving yours replaces that change." }
+                    Locale.KOREAN  { "$names 파일이 여기서 연 뒤에 바뀌었어요. StarLight AI가 고친 경우가 그래요. " +
+                        "내 내용으로 저장하면 그 변경이 덮어써져요." }
+                }
+                icon = R.drawable.ic_round_save_24
+                positive(translate {
+                    Locale.ENGLISH { "Save mine" }
+                    Locale.KOREAN  { "내 내용으로 저장" }
+                }) { choice = DiskConflict.MINE }
+                negative(R.string.cancel)
+                neutral(translate {
+                    Locale.ENGLISH { "Load from disk" }
+                    Locale.KOREAN  { "바뀐 내용 불러오기" }
+                }) { choice = DiskConflict.THEIRS }
+                onDismiss {
+                    if (cont.isActive)
+                        cont.resume(choice)
+                }
+            }
+        }
+
+    /**
+     * Back on screen: a tab with nothing unsaved shows its file as it is now, if something else wrote it meanwhile.
+     * A tab with unsaved edits keeps them; saving it asks.
+     */
+    override fun onResume() {
+        super.onResume()
+        if (!isEditorReady)
+            return
+        for (session in sessions.toList())
+            if (session.isLoaded && !session.isUpdated && isChangedOnDisk(session))
+                reloadFromDisk(session)
     }
 
     private fun showUnsavedDialog(title: String, message: String, onSave: () -> Unit, onDiscard: () -> Unit) {
@@ -1060,6 +1184,8 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         if (!isEditorReady)
             return
         val code = if (session.isLoaded) null else session.code ?: readCode(session.fileName) ?: ""
+        if (!session.isLoaded)
+            session.diskStamp = diskStampOf(session.fileName)
         session.isLoaded = true
         session.code = null
         val codeArg = code?.let(::JsonPrimitive) ?: "null"
