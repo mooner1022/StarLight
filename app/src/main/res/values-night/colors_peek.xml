@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- By night a shadow doesn't show: the card is lighter than anything it can be over, and its outline lighter yet. -->
+    <color name="peek_surface">#2C2C30</color>
+    <color name="peek_stroke">#46464C</color>
+    <color name="peek_text_sub">#A6A6AD</color>
+    <color name="peek_icon">#9C9CA4</color>
+</resources>

@@ -31,9 +31,6 @@ import dev.mooner.configdsl.options.seekbar
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
 import dev.mooner.neonjs.NeonSyntaxException
-import dev.mooner.peekalert.PeekAlert
-import dev.mooner.peekalert.PeekAlertBuilder
-import dev.mooner.peekalert.createPeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityDefaultEditorBinding
 import dev.mooner.starlight.logging.bindLogNotifier
@@ -580,12 +577,8 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                 Locale.KOREAN  { "프로젝트 [${project.info.name}] 컴파일 중..." }
             }
         ) {
-            //backgroundColor(value = color { "#424242" })
             autoHideMillis = null
             iconRes = R.drawable.ic_round_developer_mode_24
-            iconTint(R.color.text_clear)
-        }.apply {
-            setTextColor(R.color.text_clear)
         }
         peek.peek()
 
@@ -598,15 +591,10 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                         return@onCompletion
                     peek.hide()
                     delay(300L)
-                    peek.apply {
-                        setAutoHide(3000L)
-                        setIcon(dev.mooner.configdsl.R.drawable.ic_round_check_24)
-                        setText(translate {
-                            Locale.ENGLISH { "Successfully compiled [${project.info.name}]!" }
-                            Locale.KOREAN  { "프로젝트 [${project.info.name}] 컴파일 완료!" }
-                        })
-                        setBackgroundColor(res = R.color.noctis_green)
-                    }.peek()
+                    peek.look(this@DefaultEditorActivity, PeekLevel.SUCCESS, translate {
+                        Locale.ENGLISH { "Successfully compiled [${project.info.name}]!" }
+                        Locale.KOREAN  { "프로젝트 [${project.info.name}] 컴파일 완료!" }
+                    }).peek()
                 }
                 .catch { e ->
                     e.sourcePosition()?.let { (line, column) ->
@@ -615,31 +603,21 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                     }
                     peek.hide()
                     delay(300L)
-                    peek.apply {
-                        setPaddingDp(12)
-                        setAutoHide(4000L)
-                        setIcon(R.drawable.ic_round_error_outline_24)
-                        setTitleColor(R.color.white)
-                        setTitle(translate {
+                    peek.look(
+                        this@DefaultEditorActivity, PeekLevel.ERROR,
+                        title = translate {
                             Locale.ENGLISH { "Failed to compile [${project.info.name}]" }
                             Locale.KOREAN  { "[${project.info.name}] 컴파일 실패" }
-                        })
-                        setTitleTypeface(getTypeface(this@DefaultEditorActivity, R.font.nanumsquare_neo_regular)!!)
-                        setTitleSize(10f)
-                        setTextColor(R.color.white)
-                        setText(e.toString())
-                        setTextTypeface(getTypeface(this@DefaultEditorActivity, R.font.nanumsquare_neo_bold)!!)
-                        setTextSize(12f)
-                        setAction(translate {
-                            Locale.ENGLISH { "Details" }
-                            Locale.KOREAN  { "자세히" }
-                        }, textColorRes = R.color.text) {
-                            binding.root.context.showErrorLogDialog(translate {
-                                Locale.ENGLISH { "${project.info.name} error log" }
-                                Locale.KOREAN  { "${project.info.name} 에러 로그" }
-                            }, e)
-                        }
-                        setBackgroundColor(res = R.color.code_error)
+                        },
+                        text = e.toString(),
+                    ).setAction(translate {
+                        Locale.ENGLISH { "Details" }
+                        Locale.KOREAN  { "자세히" }
+                    }) {
+                        binding.root.context.showErrorLogDialog(translate {
+                            Locale.ENGLISH { "${project.info.name} error log" }
+                            Locale.KOREAN  { "${project.info.name} 에러 로그" }
+                        }, e)
                     }.peek()
                 }
                 .collect()
@@ -674,23 +652,6 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     private fun openDebugRoomDrawer() {
         binding.root.openDrawer(GravityCompat.END, true)
         //binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, GravityCompat.END)
-    }
-
-    private fun createPeek(text: String, builder: PeekAlertBuilder.() -> Unit): PeekAlert {
-        return createPeekAlert(this) {
-            //paddingDp = 16
-            position = PeekAlert.Position.Top
-            width = ViewGroup.LayoutParams.WRAP_CONTENT
-            cornerRadius = dp(14).toFloat()
-            autoHideMillis = 3000L
-            draggable = true
-            iconTint(res = R.color.white)
-            text(text) {
-                textSize = 14f
-                typeface = getTypeface(this@DefaultEditorActivity, R.font.nanumsquare_round_bold)
-            }
-            this.apply(builder)
-        }
     }
 
     private fun updateColor() {
@@ -992,30 +953,20 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         }
 
         if (failed.isNotEmpty()) {
-            createPeek(translate {
+            createSimplePeek(level = PeekLevel.ERROR, text = translate {
                 Locale.ENGLISH { "Failed to save ${failed.joinToString { it.fileName }}" }
                 Locale.KOREAN  { "${failed.joinToString { it.fileName }} 저장 실패" }
-            }) {
-                iconRes = R.drawable.ic_round_error_outline_24
-                backgroundColor(R.color.code_error)
-            }.apply {
-                setTextColor(R.color.white)
-            }.peek()
+            }).peek()
             return false
         }
         if (silent)
             return true
 
         val savedCount = targets.size
-        createPeek(translate {
+        createSimplePeek(level = if (savedCount == 0) PeekLevel.INFO else PeekLevel.SUCCESS, text = translate {
             Locale.ENGLISH { if (savedCount == 0) "No changes to save" else "Saved $savedCount file(s)" }
             Locale.KOREAN  { if (savedCount == 0) "저장할 변경사항이 없어요" else "${savedCount}개 파일 저장 완료" }
-        }) {
-            iconRes = dev.mooner.configdsl.R.drawable.ic_round_check_24
-            iconTint(R.color.noctis_green)
-        }.apply {
-            setTextColor(R.color.text_clear)
-        }.peek()
+        }).peek()
         return true
     }
 
@@ -1209,15 +1160,10 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
             R.id.menu_debug_room -> {
                 val project = getProject() ?: return false
                 if (!project.isCompiled) {
-                    createPeek(translate {
+                    createSimplePeek(level = PeekLevel.WARNING, text = translate {
                         Locale.ENGLISH { "Project isn't compiled yet." }
                         Locale.KOREAN  { "아직 프로젝트가 컴파일 되지 않았어요." }
-                    }) {
-                        iconRes = dev.mooner.configdsl.R.drawable.ic_round_close_24
-                        backgroundColor(R.color.orange)
-                    }.apply {
-                        setTextColor(R.color.white)
-                    }.peek()
+                    }).peek()
                 } else {
                     when(layoutMode) {
                         LAYOUT_TABLET -> openDebugRoomDrawer()

@@ -144,10 +144,8 @@ class PluginStoreActivity : AppCompatActivity() {
 
     fun showPeek(text: String) =
         createSimplePeek(text = text) {
-            position = PeekAlert.Position.Top
             iconRes = R.drawable.ic_store_sparkle
-            iconTint(res = R.color.store_gold)
-            backgroundColor(res = R.color.background_popup)
+            iconTint(res = R.color.peek_accent)
         }.peek()
 
     private fun updateRestartBar(count: Int) {

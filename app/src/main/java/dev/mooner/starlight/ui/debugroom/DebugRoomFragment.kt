@@ -61,6 +61,7 @@ import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
 import dev.mooner.starlight.utils.createSimplePeek
 import dev.mooner.starlight.utils.dp
 import dev.mooner.starlight.utils.hideFromGallery
+import dev.mooner.starlight.utils.PeekLevel
 import dev.mooner.starlight.utils.peek
 import dev.mooner.starlight.utils.toBitmap
 import kotlinx.coroutines.CoroutineScope
@@ -346,13 +347,10 @@ class DebugRoomFragment: Fragment() {
                 return@runOnUiThread
             activity.createSimplePeek(
                 title = project.info.name,
-                text = e.toString()
+                text = e.toString(),
+                level = PeekLevel.ERROR,
             ) {
-                paddingDp = 12
-                iconRes = R.drawable.ic_round_error_outline_24
-                backgroundColor(res = R.color.code_error)
                 action("자세히 보기") {
-                    textColor(res = R.color.black)
                     setOnActionListener { view ->
                         view.context.showSheet {
                             title = project.info.name + " 에러 로그"
@@ -364,9 +362,6 @@ class DebugRoomFragment: Fragment() {
                         }
                     }
                 }
-            }.apply {
-                setTitleColor(res = R.color.white)
-                setTextColor(res = R.color.white)
             }.peek()
         }
     }

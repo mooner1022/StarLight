@@ -6,8 +6,6 @@ import android.content.ContextWrapper
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import android.widget.Toast
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -16,10 +14,6 @@ import dev.mooner.configdsl.ConfigStructure
 import dev.mooner.configdsl.MutableDataMap
 import dev.mooner.configdsl.adapters.ConfigAdapter
 import dev.mooner.configdsl.adapters.OnValueUpdatedListener
-import dev.mooner.configdsl.utils.PeekType
-import dev.mooner.peekalert.PeekAlert
-import dev.mooner.peekalert.PeekAlertBuilder
-import dev.mooner.peekalert.createPeekAlert
 import dev.mooner.starlight.R
 import dev.mooner.starlight.logging.LogCollector
 import dev.mooner.starlight.plugincore.config.GlobalConfig
@@ -195,133 +189,7 @@ class DialogConfigStructBuilder {
     }
 }
 
-fun Fragment.createSimplePeek(title: String? = null, text: String, builder: PeekAlertBuilder.() -> Unit): PeekAlert {
-    return createPeekAlert(this) {
-        setup(requireContext(), title, text)
-        this.apply(builder)
-    }
-}
-
-fun ViewGroup.createSimplePeek(title: String? = null, text: String, builder: PeekAlertBuilder.() -> Unit): PeekAlert {
-    return createPeekAlert(this) {
-        setup(context, title, text)
-        this.apply(builder)
-    }
-}
-
-fun Activity.createSimplePeek(title: String? = null, text: String, builder: PeekAlertBuilder.() -> Unit): PeekAlert {
-    return createPeekAlert(this) {
-        setup(this@createSimplePeek, title, text)
-        this.apply(builder)
-    }
-}
-
-fun Fragment.createSuccessPeek(title: String, position: PeekAlert.Position): PeekAlert {
-    return createSimplePeek(text = title) {
-        this.position = position
-        iconRes = dev.mooner.configdsl.R.drawable.ic_round_check_24
-        iconTint(res = R.color.noctis_green)
-        backgroundColor(res = R.color.background_popup)
-    }
-}
-
-fun ViewGroup.createSuccessPeek(title: String, position: PeekAlert.Position): PeekAlert {
-    return createSimplePeek(text = title) {
-        this.position = position
-        iconRes = dev.mooner.configdsl.R.drawable.ic_round_check_24
-        iconTint(res = R.color.noctis_green)
-        backgroundColor(res = R.color.background_popup)
-    }
-}
-
-fun Activity.createSuccessPeek(title: String, position: PeekAlert.Position): PeekAlert {
-    return createSimplePeek(text = title) {
-        this.position = position
-        iconRes = dev.mooner.configdsl.R.drawable.ic_round_check_24
-        iconTint(res = R.color.noctis_green)
-        backgroundColor(res = R.color.background_popup)
-    }
-}
-
-fun Fragment.createFailurePeek(title: String, position: PeekAlert.Position): PeekAlert {
-    return createSimplePeek(text = title) {
-        this.position = position
-        iconRes = dev.mooner.configdsl.R.drawable.ic_round_close_24
-        iconTint(res = R.color.code_error)
-        backgroundColor(res = R.color.background_popup)
-    }
-}
-
-fun ViewGroup.createFailurePeek(title: String, position: PeekAlert.Position): PeekAlert {
-    return createSimplePeek(text = title) {
-        this.position = position
-        iconRes = dev.mooner.configdsl.R.drawable.ic_round_close_24
-        iconTint(res = R.color.code_error)
-        backgroundColor(res = R.color.background_popup)
-    }
-}
-
-fun Activity.createFailurePeek(title: String, position: PeekAlert.Position): PeekAlert {
-    return createSimplePeek(text = title) {
-        this.position = position
-        iconRes = dev.mooner.configdsl.R.drawable.ic_round_close_24
-        iconTint(res = R.color.code_error)
-        backgroundColor(res = R.color.background_popup)
-    }
-}
-
 fun Context.findActivity(): Activity? =
     generateSequence(this) { (it as? ContextWrapper)?.baseContext }
         .filterIsInstance<Activity>()
         .firstOrNull()
-
-/**
- * Shows [text] as a short alert at the top or bottom of the screen. One shown while others are up joins them: the
- * newest is in front and the earlier ones are tucked behind it, see PeekAlert.
- */
-fun Context.peek(text: String, type: PeekType = PeekType.INFO, position: PeekAlert.Position = PeekAlert.Position.Bottom) {
-    val activity = findActivity()
-        ?: return Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
-    if (activity.isFinishing || activity.isDestroyed)
-        return
-    val peek = when (type) {
-        PeekType.SUCCESS -> activity.createSuccessPeek(text, position)
-        PeekType.ERROR   -> activity.createFailurePeek(text, position)
-        PeekType.INFO    -> activity.createSimplePeek(text = text) {
-            this.position = position
-            iconRes = dev.mooner.configdsl.R.drawable.ic_round_info_24
-            iconTint(res = R.color.main_bright)
-            backgroundColor(res = R.color.background_popup)
-        }
-    }
-    peek.peek()
-}
-
-private fun PeekAlertBuilder.setup(context: Context, title: String?, text: String) {
-    position = PeekAlert.Position.Top
-    width = ViewGroup.LayoutParams.WRAP_CONTENT
-    cornerRadius = dp(14).toFloat()
-    autoHideMillis = 3000L
-    draggable = true
-    iconTint(res = R.color.white)
-
-    if (title == null) {
-        text(text) {
-            textColor(R.color.text)
-            textSize = 14f
-            typeface = getTypeface(context, R.font.nanumsquare_round_bold)
-        }
-    } else {
-        //paddingDp = 17
-        title(title) {
-            textColor(R.color.text)
-            textSize = 10f
-            typeface = getTypeface(context, R.font.nanumsquare_neo_regular)
-        }
-        text(text) {
-            textColor(R.color.text)
-            textSize = 12f
-            typeface = getTypeface(context, R.font.nanumsquare_neo_bold)
-        }
-    }
-}

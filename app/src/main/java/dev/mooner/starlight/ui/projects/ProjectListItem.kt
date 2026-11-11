@@ -246,14 +246,14 @@ class ProjectListItem(
                 withContext(Dispatchers.Main) {
                     (parent.get() ?: return@withContext).createSimplePeek(
                         title = title,
-                        text = e.toString()
+                        text = e.toString(),
+                        level = PeekLevel.ERROR,
                     ) {
-                        paddingDp = 12
                         position = PeekAlert.Position.Bottom
-                        iconRes = R.drawable.ic_round_error_outline_24
-                        backgroundColor(res = R.color.code_error)
-                        action("자세히") {
-                            textColor(res = R.color.black)
+                        action(translate {
+                            Locale.ENGLISH { "Details" }
+                            Locale.KOREAN  { "자세히" }
+                        }) {
                             setOnActionListener {
                                 view.context.showErrorLogDialog(
                                     translate {
@@ -263,9 +263,6 @@ class ProjectListItem(
                                 )
                             }
                         }
-                    }.apply {
-                        setTitleColor(res = R.color.white)
-                        setTextColor(res = R.color.white)
                     }.peek()
                     tryUpdateView()
                 }

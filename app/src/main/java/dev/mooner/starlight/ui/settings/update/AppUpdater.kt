@@ -19,10 +19,12 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.plugincore.config.GlobalConfig
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.utils.PeekLevel
 import dev.mooner.starlight.utils.VersionChecker
 import dev.mooner.starlight.utils.createSimplePeek
 import dev.mooner.starlight.utils.getAppVersionCode
 import dev.mooner.starlight.utils.getPackageInfo
+import dev.mooner.starlight.utils.look
 import io.noties.markwon.AbstractMarkwonPlugin
 import io.noties.markwon.Markwon
 import io.noties.markwon.MarkwonVisitor
@@ -133,8 +135,6 @@ class AppUpdater(private val activity: ComponentActivity) {
         val alert = activity.createSimplePeek(text = "다운로드중...") {
             position = PeekAlert.Position.Bottom
             iconRes = dev.mooner.configdsl.R.drawable.ic_round_download_24
-            iconTint(res = R.color.main_bright)
-            backgroundColor(res = R.color.background_popup)
             autoHideMillis = null
         }.also { it.peek() }
 
@@ -142,12 +142,7 @@ class AppUpdater(private val activity: ComponentActivity) {
             .onEach { status ->
                 when (status) {
                     DownloadManager.STATUS_SUCCESSFUL -> {
-                        alert.apply {
-                            setIcon(dev.mooner.configdsl.R.drawable.ic_round_check_24)
-                            setIconTint(R.color.noctis_green)
-                            setText("파일을 성공적으로 다운로드 했어요! (뿌듯)")
-                            setAutoHide(3000L)
-                        }.peek()
+                        alert.look(activity, PeekLevel.SUCCESS, "파일을 성공적으로 다운로드 했어요! (뿌듯)").peek()
                         if (!ensureInstallPermission()) {
                             Toast.makeText(activity, "앱 설치 권한이 없어 업데이트를 설치할 수 없어요.", Toast.LENGTH_LONG).show()
                             return@onEach
@@ -155,12 +150,7 @@ class AppUpdater(private val activity: ComponentActivity) {
                         requestInstall(FileProvider.getUriForFile(activity, "dev.mooner.starlight.provider", dest))
                     }
                     DownloadManager.STATUS_FAILED -> {
-                        alert.apply {
-                            setIcon(dev.mooner.configdsl.R.drawable.ic_round_close_24)
-                            setIconTint(R.color.code_error)
-                            setText("파일 다운로드에 실패했어요.")
-                            setAutoHide(3000L)
-                        }.peek()
+                        alert.look(activity, PeekLevel.ERROR, "파일 다운로드에 실패했어요.").peek()
                     }
                 }
             }
