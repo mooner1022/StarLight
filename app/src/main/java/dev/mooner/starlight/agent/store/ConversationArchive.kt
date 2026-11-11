@@ -67,8 +67,13 @@ internal object ConversationArchive {
                         return@runCatching false
                     val attachments = File(staging, "${AgentStorage.ATTACHMENTS}/${conversation.id}")
                     val target = File(attachmentsDir, conversation.id)
-                    if (attachments.isDirectory && !target.exists())
+                    if (attachments.isDirectory && !target.exists()) {
                         attachments.copyRecursively(target)
+                        // What the agent changed where the conversation came from, kept there to undo it. Here
+                        // a rewind would put those files over this device's project of the same name, or remove
+                        // it: the conversation comes in without them, and can't be rewound past this point.
+                        File(target, CheckpointStore.DIR).deleteRecursively()
+                    }
                     // A run exported while it went on, closed as one the app's end interrupted (ConversationStore.markInterrupted).
                     add(if (!conversation.state.isActive) conversation else conversation.copy(
                         state = RunState.INTERRUPTED,

@@ -28,6 +28,7 @@ import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.NoticeKind
 import dev.mooner.starlight.agent.model.Part
 import dev.mooner.starlight.agent.model.Plan
+import dev.mooner.starlight.agent.model.ResumeReason
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
 import dev.mooner.starlight.agent.runtime.History
@@ -35,8 +36,11 @@ import dev.mooner.starlight.agent.runtime.LiveRun
 import dev.mooner.starlight.agent.store.Rewind
 import dev.mooner.starlight.databinding.ActivityAgentChatBinding
 import dev.mooner.starlight.ui.common.showSheet
+import dev.mooner.starlight.utils.PeekLevel
+import dev.mooner.starlight.utils.createSimplePeek
 import dev.mooner.starlight.utils.peek
 import dev.mooner.starlight.utils.restartIfNotReady
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.combine
@@ -137,6 +141,10 @@ class AgentChatActivity : AppCompatActivity() {
 
             override fun onAnswer(callId: String, answers: List<String>?) {
                 hub.runtime.answer(conversationId, callId, answers)
+            }
+
+            override fun onStop() {
+                hub.runtime.stop(conversationId)
             }
         })
         binding.messages.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
@@ -327,30 +335,16 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     /** Why the conversation stopped before the model answered, or null when continuing has nothing to offer. */
-    private fun resumeReason(conversation: Conversation): String? {
-        val messages = conversation.messages
-        val lastTurn = messages.indexOfLast { message -> message.compaction == null && message.parts.any { it !is Part.Notice } }
-        val last = messages.getOrNull(lastTurn) ?: return null
-        if (last.role == Role.ASSISTANT && last.toolCalls.isEmpty())
-            return null
-        // The notices after the last turn say how the run ended.
-        val notices = messages.drop(lastTurn + 1).flatMap { it.parts }.filterIsInstance<Part.Notice>().map { it.kind }
-        return when {
-            NoticeKind.TIME_LIMIT in notices           -> getString(R.string.agent_resume_time_limit)
-            // The error itself is in the chat right above.
-            conversation.state == RunState.ERROR       -> getString(R.string.agent_resume_error)
-            conversation.state == RunState.INTERRUPTED -> getString(R.string.agent_resume_interrupted)
-            // Asking again would end the same way; the notice says so, and the user can write instead.
-            NoticeKind.NO_REPLY in notices || NoticeKind.REFUSAL in notices -> null
-            NoticeKind.STOPPED in notices              -> getString(R.string.agent_resume_stopped)
-            // Before the step limit had its own kind, its notice was an INFO one.
-            NoticeKind.PAUSED in notices || NoticeKind.INFO in notices -> getString(R.string.agent_resume_step_limit)
-            // The agent put its plan right after its reply, as the app asked; that ends a run.
-            notices.isEmpty() && Plan.endsOnUpdate(messages) -> null
-            // Ended on tool results with nothing said, as older versions did when the model gave an empty answer.
-            else                                       -> getString(R.string.agent_resume_no_reply)
+    private fun resumeReason(conversation: Conversation): String? =
+        when (ResumeReason.of(conversation)) {
+            ResumeReason.TIME_LIMIT  -> getString(R.string.agent_resume_time_limit)
+            ResumeReason.ERROR       -> getString(R.string.agent_resume_error)
+            ResumeReason.INTERRUPTED -> getString(R.string.agent_resume_interrupted)
+            ResumeReason.STOPPED     -> getString(R.string.agent_resume_stopped)
+            ResumeReason.STEP_LIMIT  -> getString(R.string.agent_resume_step_limit)
+            ResumeReason.NO_REPLY    -> getString(R.string.agent_resume_no_reply)
+            null                     -> null
         }
-    }
 
     private fun updateSubtitle() {
         binding.subtitle.text = AgentUi.modelSummary(this, hub) ?: AgentUi.setupSummary(this, hub)
@@ -378,7 +372,7 @@ class AgentChatActivity : AppCompatActivity() {
             val changes = hub.runtime.rewindable(conversationId, editing)
             if (changes.isNotEmpty()) {
                 // The field keeps the message until the user picks.
-                confirmEditRewind(editing, text, attachments, changes.size)
+                confirmEditRewind(editing, text, attachments, changes)
                 return false
             }
             hub.runtime.resend(conversationId, editing, text, attachments, composer.project, composer.approval)
@@ -397,13 +391,14 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     /** Rewriting a message the agent changed things after: asks whether to put them back too. */
-    private fun confirmEditRewind(messageId: String, text: String, attachments: List<Part.Attachment>, changes: Int) {
+    private fun confirmEditRewind(messageId: String, text: String, attachments: List<Part.Attachment>, changes: List<String>) {
         val project = composer.project
         val approval = composer.approval
         showSheet {
             title = getString(R.string.agent_edit_rewind_title)
             icon = R.drawable.ic_agent_rewind
-            message = getString(R.string.agent_edit_rewind_message, changes)
+            // Named, as the other rewind names them: a count doesn't say which files would be written over.
+            message = getString(R.string.agent_edit_rewind_message, changes.size) + "\n\n" + listChanges(changes)
             note = getString(R.string.agent_rewind_note)
             neutral(getString(R.string.agent_cancel))
             negative(R.string.agent_edit_rewind_no) {
@@ -429,18 +424,21 @@ class AgentChatActivity : AppCompatActivity() {
         val message = hub.store.get(conversationId)?.messages?.firstOrNull { it.id == messageId }
         if (changes.isEmpty() || message == null)
             return
-        val listed = changes.take(REWIND_LISTED).joinToString("\n") { "· $it" } +
-            if (changes.size > REWIND_LISTED) "\n" + getString(R.string.agent_rewind_more, changes.size - REWIND_LISTED) else ""
         showSheet {
             title = getString(R.string.agent_rewind_title)
             icon = R.drawable.ic_agent_rewind
-            this.message = getString(R.string.agent_rewind_message, changes.size) + "\n\n" + listed
+            this.message = getString(R.string.agent_rewind_message, changes.size) + "\n\n" + listChanges(changes)
             note = getString(R.string.agent_rewind_note)
             neutral(getString(R.string.agent_cancel))
             negative(R.string.agent_rewind_files) { rewind(message, conversationToo = false) }
             positive(R.string.agent_rewind_both) { rewind(message, conversationToo = true) }
         }
     }
+
+    /** The first few of what a rewind would put back, one a line, and how many more there are. */
+    private fun listChanges(changes: List<String>): String =
+        changes.take(REWIND_LISTED).joinToString("\n") { "· $it" } +
+            if (changes.size > REWIND_LISTED) "\n" + getString(R.string.agent_rewind_more, changes.size - REWIND_LISTED) else ""
 
     private fun rewind(message: ChatMessage, conversationToo: Boolean) {
         lifecycleScope.launch {
@@ -456,10 +454,41 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     private fun reportRewind(result: Rewind.Result) {
-        if (result.failed.isEmpty())
-            Toast.makeText(this, getString(R.string.agent_rewind_done, result.restored.size), Toast.LENGTH_SHORT).show()
+        val text = if (result.failed.isEmpty())
+            getString(R.string.agent_rewind_done, result.restored.size)
         else
-            toastLong(getString(R.string.agent_rewind_partly, result.restored.size, result.failed.joinToString()))
+            getString(R.string.agent_rewind_partly, result.restored.size, result.failed.joinToString())
+        if (!hub.runtime.canUndoRewind(conversationId)) {
+            toastLong(text)
+            return
+        }
+        // A rewind writes over whatever the files hold now, the user's own edits included: for a while, it says how
+        // to take it back.
+        createSimplePeek(text = text, level = if (result.failed.isEmpty()) PeekLevel.SUCCESS else PeekLevel.WARNING) {
+            position = PeekAlert.Position.Top
+            autoHideMillis = REWIND_UNDO_MILLIS
+            action(getString(R.string.agent_rewind_undo)) {
+                setOnActionListener {
+                    hide()
+                    undoRewind()
+                }
+            }
+        }.peek()
+    }
+
+    private fun undoRewind() {
+        if (hub.runtime.isRunning(conversationId))
+            return
+        lifecycleScope.launch {
+            runCatching { hub.runtime.undoRewind(conversationId) }
+                .onSuccess { result ->
+                    if (result.failed.isEmpty())
+                        peek(getString(R.string.agent_rewind_undone, result.restored.size), PeekType.SUCCESS, PeekAlert.Position.Top)
+                    else
+                        toastLong(getString(R.string.agent_rewind_partly, result.restored.size, result.failed.joinToString()))
+                }
+                .onFailure { e -> toastLong(getString(R.string.agent_rewind_failed, e.message ?: e.toString())) }
+        }
     }
 
     private fun toastLong(text: String) =
@@ -542,7 +571,8 @@ class AgentChatActivity : AppCompatActivity() {
         lifecycleScope.launch {
             runCatching { hub.runtime.compactNow(conversationId) }
                 .onSuccess { done -> if (!done) Toast.makeText(this@AgentChatActivity, R.string.agent_compact_nothing, Toast.LENGTH_SHORT).show() }
-                .onFailure { e -> toastLong(getString(R.string.agent_compact_failed, hub.runtime.describe(e))) }
+                // Stopped by the user, or the screen went: not a failure to tell of.
+                .onFailure { e -> if (e !is CancellationException) toastLong(getString(R.string.agent_compact_failed, hub.runtime.describe(e))) }
         }
     }
 
@@ -591,6 +621,8 @@ class AgentChatActivity : AppCompatActivity() {
         private const val MAX_PICK = 5
         /** How many changes the rewind sheet lists by name. */
         private const val REWIND_LISTED = 8
+        /** How long the result of a rewind stays up with its way to undo it. */
+        private const val REWIND_UNDO_MILLIS = 8000L
         private const val MENU_USAGE = 1
         private const val MENU_SETTINGS = 2
         private const val MENU_DELETE = 3

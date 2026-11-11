@@ -231,6 +231,8 @@ interface ChatActions {
     fun onRewind(messageId: String)
     /** The user answered the questions of the call [callId], one answer each, or skipped them (null). */
     fun onAnswer(callId: String, answers: List<String>?)
+    /** The user stops the run from the question it is waiting on. */
+    fun onStop()
 }
 
 class ChatAdapter(
@@ -635,6 +637,7 @@ class ChatAdapter(
             questionStates.remove(question.callId)
             actions.onAnswer(question.callId, null)
         }
+        binding.stop.setOnClickListener { actions.onStop() }
     }
 
     /** The selection look of the app's option sheets: a gold outline and tint when picked. */

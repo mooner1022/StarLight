@@ -5,6 +5,7 @@ import dev.mooner.starlight.agent.model.AgentJson
 import dev.mooner.starlight.agent.model.CallResults
 import dev.mooner.starlight.agent.model.Conversation
 import dev.mooner.starlight.agent.model.Part
+import dev.mooner.starlight.agent.model.ResumeReason
 import dev.mooner.starlight.agent.model.Role
 import dev.mooner.starlight.agent.model.RunState
 import dev.mooner.starlight.agent.model.plainPreview
@@ -30,6 +31,11 @@ data class ConversationSummary(
     val preview: String = "",
     val provider: String? = null,
     val model: String? = null,
+    /**
+     * The run reached its step limit and waits to be told to go on. Its state is idle, as of one that answered, so
+     * the list would otherwise show it as finished.
+     */
+    val paused: Boolean = false,
 )
 
 /**
@@ -192,6 +198,7 @@ class ConversationStore(root: File) {
             preview = preview.plainPreview().take(PREVIEW_LENGTH),
             provider = conversation.provider,
             model = conversation.model,
+            paused = !conversation.state.isActive && ResumeReason.of(conversation) == ResumeReason.STEP_LIMIT,
         )
     }
 

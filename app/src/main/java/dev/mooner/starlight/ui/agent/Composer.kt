@@ -126,12 +126,9 @@ class Composer(
         binding.contextMeter.setOnClickListener { onContext() }
         binding.input.doAfterTextChanged { updateSend() }
         ViewCompat.setOnReceiveContentListener(binding.input, RECEIVED_TYPES) { _, payload -> receive(payload) }
+        binding.stop.setOnClickListener { onStop() }
         binding.send.setOnClickListener {
-            // While a run goes on, a written message joins it; an empty field stops it.
-            if (isRunning && !canSend()) {
-                onStop()
-                return@setOnClickListener
-            }
+            // While a run goes on, a written message joins it.
             if (!canSend())
                 return@setOnClickListener
             if (onSend(text, attachments.toList()))
@@ -326,10 +323,10 @@ class Composer(
         importing == 0 && (text.isNotBlank() || attachments.isNotEmpty())
 
     private fun updateSend() {
-        val stops = isRunning && !canSend()
-        binding.send.setImageResource(if (stops) R.drawable.ic_agent_stop else R.drawable.ic_agent_send)
-        binding.send.contentDescription = context.getString(if (stops) R.string.agent_stop else R.string.agent_send)
-        val enabled = isRunning || canSend()
+        // Stopping has its own button: the send button doubling as it only while the field was empty meant that
+        // typing took the way to stop away, and that a tap meant to send could stop instead.
+        binding.stop.isVisible = isRunning
+        val enabled = canSend()
         binding.send.isEnabled = enabled
         binding.send.alpha = if (enabled) 1f else 0.4f
     }

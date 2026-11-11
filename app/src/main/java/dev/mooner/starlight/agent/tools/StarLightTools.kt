@@ -373,6 +373,7 @@ class StarLightTools(private val docs: AgentDocs) {
         tool(
             "write_file",
             "Creates or overwrites a text file of a project with the whole content. Prefer edit_file for small changes. " +
+                "Overwriting a file that exists needs expectedHash, the hash read_file gave for it. " +
                 "Compile the project afterwards to apply script changes.",
             ToolRisk.WRITE,
             params = {
@@ -389,9 +390,10 @@ class StarLightTools(private val docs: AgentDocs) {
             val content = args.requireString("content")
             val files = ProjectFiles(project.directory)
             val target = files.resolve(path)
+            refuseProjectInfo(files, target)
             val before = textOf(target)
-            keep(project, files, target)
-            val file = files.write(path, content, args.stringArg("expectedHash"))
+            // Kept for a rewind only once the write is sure to happen: a refused one must not list the file.
+            val file = files.write(path, content, args.stringArg("expectedHash")) { keep(project, files, it) }
             ToolOutput("Wrote ${content.lines().size} lines to $path [hash ${ProjectFiles.sha256(file.readBytes())}]", summary = path,
                 diff = before?.let { TextDiff.unified(it, content) })
         },
@@ -414,9 +416,11 @@ class StarLightTools(private val docs: AgentDocs) {
             val path = args.requireString("path")
             val files = ProjectFiles(project.directory)
             val target = files.resolve(path)
+            refuseProjectInfo(files, target)
             val before = textOf(target)
-            keep(project, files, target)
-            val file = files.edit(path, args.requireString("old"), args.requireString("new"), args.stringArg("expectedHash"))
+            val file = files.edit(path, args.requireString("old"), args.requireString("new"), args.stringArg("expectedHash")) {
+                keep(project, files, it)
+            }
             ToolOutput("Edited $path [hash ${ProjectFiles.sha256(file.readBytes())}]", summary = path,
                 diff = before?.let { TextDiff.unified(it, file.readText()) })
         },
@@ -458,7 +462,12 @@ class StarLightTools(private val docs: AgentDocs) {
                 project()
                 string("path", "File path relative to the project directory.")
             },
-            describe = { "Delete ${it.stringArg("path")} from ${it.stringArg("project")}" },
+            describe = { args ->
+                "Delete ${args.stringArg("path")} from ${args.stringArg("project")}" +
+                    // Said while the user can still say no: a rewind can't bring back what no copy was kept of.
+                    if (isTooLargeToKeep(args)) ". It is too large to keep a copy of, so a rewind can't bring it back" else ""
+            },
+            scopeOf = ::projectScope,
             preview = { args -> changeIn(args) { "" } },
         ) { args ->
             val project = findProject(args)
@@ -481,7 +490,16 @@ class StarLightTools(private val docs: AgentDocs) {
                 "error with its location if it fails, plus the logs written meanwhile.",
             ToolRisk.WRITE,
             params = { project() },
-            describe = { "Compile ${it.stringArg("project")}" },
+            describe = { args ->
+                val name = args.stringArg("project")
+                // Why this compile asks when others don't.
+                if (isOn(args)) "Compile $name, which is on: the new code answers real chats as soon as it compiles, " +
+                    "and a compile that fails stops the bot until it compiles again"
+                else "Compile $name"
+            },
+            // A project that is on runs the new code in real chats at once; one that is off only in the debug room.
+            riskOf = { args -> if (isOn(args)) ToolRisk.DESTRUCTIVE else ToolRisk.WRITE },
+            scopeOf = ::projectScope,
         ) { args ->
             val project = findProject(args)
             compile(project)
@@ -576,6 +594,7 @@ class StarLightTools(private val docs: AgentDocs) {
                 boolean("enabled", "true to turn the project on, false to turn it off.")
             },
             describe = { "Turn ${it.stringArg("project")} ${if (it.booleanArg("enabled") == true) "on" else "off"}" },
+            scopeOf = ::projectScope,
         ) { args ->
             val project = findProject(args)
             val enabled = args.booleanArg("enabled") ?: throw ToolException("Missing argument: enabled (a boolean)")
@@ -595,7 +614,11 @@ class StarLightTools(private val docs: AgentDocs) {
             "Deletes a project and all of its files. Do it only when the user asked for it.",
             ToolRisk.DESTRUCTIVE,
             params = { project() },
-            describe = { "Delete the project ${it.stringArg("project")} and its files" },
+            describe = { args ->
+                "Delete the project ${args.stringArg("project")} and its files" +
+                    if (isProjectTooLargeToKeep(args)) ". It is too large to keep a copy of, so a rewind can't bring it back" else ""
+            },
+            scopeOf = ::projectScope,
         ) { args ->
             val project = findProject(args)
             val directory = project.directory
@@ -671,6 +694,8 @@ class StarLightTools(private val docs: AgentDocs) {
                 integer("offset", "Where to go on reading a long page, in characters (default 0).", optional = true)
             },
             describe = { "Read ${it.stringArg("url")}" },
+            // One site, not the whole web: a page can carry instructions to read another.
+            scopeOf = { args -> runCatching { java.net.URI(args.stringArg("url").orEmpty()).host }.getOrNull() },
         ) { args ->
             val page = try {
                 WebPages.fetch(args.requireString("url"))
@@ -742,6 +767,7 @@ class StarLightTools(private val docs: AgentDocs) {
             val target = files.resolve(path)
             if (target.isDirectory)
                 throw ToolException("Is a directory: $path")
+            refuseProjectInfo(files, target)
             keep(project, files, target)
             target.parentFile?.mkdirs()
             source.copyTo(target, overwrite = true)
@@ -818,6 +844,17 @@ class StarLightTools(private val docs: AgentDocs) {
      * Whether [relative] is project.json or the main script, which hold the project together. Compared without case,
      * as shared storage doesn't tell `Main.js` from `main.js`.
      */
+    /**
+     * project.json isn't written as a file. It says whether the project is on, which events it takes and which
+     * script it runs: written directly, it would turn a bot on in real chats without the question that turning it
+     * on asks, and the app, which holds the project's info in memory, would write over it anyway.
+     */
+    private fun refuseProjectInfo(files: ProjectFiles, target: File) {
+        if (files.relative(target).equals(PROJECT_INFO_FILE, ignoreCase = true))
+            throw ToolException("$PROJECT_INFO_FILE is written by StarLight and can't be changed as a file. Use " +
+                "set_project_events for the events it receives and set_project_enabled to turn it on or off.")
+    }
+
     private fun isProjectFile(project: Project, relative: String): Boolean =
         relative.equals(project.info.mainScript.removePrefix("./"), ignoreCase = true) ||
             relative.equals(PROJECT_INFO_FILE, ignoreCase = true)
@@ -828,6 +865,24 @@ class StarLightTools(private val docs: AgentDocs) {
             return source.removePrefix("./")
         return runCatching { ProjectFiles(project.directory).relative(file.canonicalFile) }.getOrDefault(source)
     }
+
+    /** Whether the project a call names is switched on, so that what the call changes reaches real chats. */
+    private fun isOn(args: JsonObject): Boolean =
+        runCatching { findProject(args).info.isEnabled }.getOrDefault(false)
+
+    /** Whether the file a delete names is past what a checkpoint keeps a copy of. */
+    private fun isTooLargeToKeep(args: JsonObject): Boolean = runCatching {
+        val project = findProject(args)
+        ProjectFiles(project.directory).resolve(args.requireString("path")).length() > CheckpointStore.MAX_FILE_BYTES
+    }.getOrDefault(false)
+
+    private fun isProjectTooLargeToKeep(args: JsonObject): Boolean = runCatching {
+        findProject(args).directory.walkTopDown().filter { it.isFile }.sumOf { it.length() } > CheckpointStore.MAX_PROJECT_BYTES
+    }.getOrDefault(false)
+
+    /** The project a call names, as what an "always allow" of the call covers. */
+    private fun projectScope(args: JsonObject): String? =
+        runCatching { findProject(args).info.name }.getOrNull() ?: args.stringArg("project")
 
     private fun findProject(args: JsonObject): Project {
         val key = args.requireString("project")
@@ -996,16 +1051,19 @@ class StarLightTools(private val docs: AgentDocs) {
         params: ParamsBuilder.() -> Unit = {},
         describe: (JsonObject) -> String,
         preview: ((JsonObject) -> String?)? = null,
+        riskOf: ((JsonObject) -> ToolRisk)? = null,
+        scopeOf: ((JsonObject) -> String?)? = null,
         run: suspend ToolContext.(JsonObject) -> ToolOutput,
     ): AgentTool =
-        AgentTool(name, description, risk, ParamsBuilder().apply(params).build(), describe, preview) { args ->
+        AgentTool(name, description, risk, ParamsBuilder().apply(params).build(), describe, preview, riskOf, scopeOf) { args ->
             // File work blocks, and compiling waits for the script engine.
             withContext(Dispatchers.IO) { run(args) }
         }
 
     private fun ParamsBuilder.expectedHash() =
-        string("expectedHash", "Hash from reading the file; if the file changed since, nothing is written. An empty " +
-            "string writes only if the file doesn't exist.", optional = true)
+        string("expectedHash", "The hash on the last line of read_file's result for this file, or the one a write or " +
+            "edit of it returned; if the file changed since, nothing is written. write_file needs it to overwrite a " +
+            "file that exists. An empty string writes only if the file doesn't exist.", optional = true)
 
     /** Compiles [compile] started, by project ID, until they end; one stuck stays here. */
     private val compiles = ConcurrentHashMap<Any, RunningCompile>()

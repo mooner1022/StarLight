@@ -11,6 +11,10 @@
         <item quantity="one">%d conversation.</item>
         <item quantity="other">%d conversations.</item>
     </plurals>
+    <plurals name="agent_list_more">
+        <item quantity="one">Show %d earlier conversation</item>
+        <item quantity="other">Show %d earlier conversations</item>
+    </plurals>
     <plurals name="agent_subtitle_running">
         <item quantity="one">%d task running.</item>
         <item quantity="other">%d tasks running.</item>
@@ -52,6 +56,7 @@
     <string name="agent_state_running">Working</string>
     <string name="agent_state_approval">Needs your OK</string>
     <string name="agent_state_interrupted">Interrupted</string>
+    <string name="agent_state_paused">Paused</string>
     <string name="agent_state_error">Failed</string>
 
     <string name="agent_phase_waiting">Waiting for the model…</string>
@@ -186,6 +191,7 @@
     <string name="agent_notification_approval">The AI agent needs your OK</string>
     <string name="agent_notification_done">Done.</string>
     <string name="agent_notification_failed">Failed: %s</string>
+    <string name="agent_notification_paused">Paused: %s</string>
 
     <string name="agent_project_action">AI</string>
     <string name="agent_project_prompt_hint">What should the agent do with %s?</string>
@@ -228,12 +234,14 @@
     <string name="agent_rewind_title">Rewind to before this message</string>
     <string name="agent_rewind_message">What the agent changed from this message on goes back to how it was (%d):</string>
     <string name="agent_rewind_more">and %d more</string>
-    <string name="agent_rewind_note">Only what the agent\'s tools changed goes back; files a bot writes while it runs stay. Projects that run are compiled again.</string>
+    <string name="agent_rewind_note">Only what the agent\'s tools changed goes back; files a bot writes while it runs stay. A file listed here goes back whole, so what you changed in it yourself since then is replaced too. You can undo the rewind right after it. Projects that run are compiled again.</string>
     <string name="agent_rewind_files">Files only</string>
     <string name="agent_rewind_both">Files and chat</string>
     <string name="agent_rewind_done">Rewound %d changes.</string>
     <string name="agent_rewind_partly">Rewound %1$d changes. Couldn\'t rewind: %2$s</string>
     <string name="agent_rewind_failed">Couldn\'t rewind: %s</string>
+    <string name="agent_rewind_undo">Undo</string>
+    <string name="agent_rewind_undone">Undid the rewind: %d changes are back.</string>
     <string name="agent_edit_rewind_title">Undo what came after too?</string>
     <string name="agent_edit_rewind_message">After this message the agent changed %d things. Put them back as you rewrite it?</string>
     <string name="agent_edit_rewind_yes">Undo and send</string>
