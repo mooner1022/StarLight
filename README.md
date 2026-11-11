@@ -1,4 +1,4 @@
-# <h1 align="center"><img src="./images/logo_transparent.svg" style="width:100px;height:100px;"/><br>Project StarLight</h1>
+# <h1 align="center"><img src="./images/logo_transparent.svg" width="100" height="100"/><br>Project StarLight</h1>
 
 <p align="center">
 !! Project StarLight is still in development, any bugs can appear !!
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-`Project StarLight 🌟` is a Messenger auto-reply application that supports<br>
+<code>Project StarLight 🌟</code> is a Messenger auto-reply application that supports<br>
 a variety of script languages and a plugin platform
 </p>
 
@@ -20,12 +20,20 @@ a variety of script languages and a plugin platform
     ✔ Any PRs are welcome, Watch <a href="https://github.com/mooner1022/StarLight/tree/nightly">nightly</a> branch for recent updates!
 </p>
 
-### Screenshots (WIP)
+### Screenshots
 <p align="center">
-    <img src="./images/screenshot_wip_1.png" width="24%">
-    <img src="./images/screenshot_wip_2.png" width="24%">
-    <img src="./images/screenshot_wip_3.png" width="24%">
-    <img src="./images/screenshot_wip_4.png" width="24%">
+    <img src="./images/screenshot_home.png" width="32%" alt="Home dashboard with widgets">
+    <img src="./images/screenshot_projects.png" width="32%" alt="Project list">
+    <img src="./images/screenshot_ai.png" width="32%" alt="StarLight AI">
+    <br>
+    <sub>Home · Projects · StarLight AI</sub>
+</p>
+<p align="center">
+    <img src="./images/screenshot_plugins.png" width="32%" alt="Installed plugins">
+    <img src="./images/screenshot_editor.png" width="32%" alt="Code editor">
+    <img src="./images/screenshot_debugroom.png" width="32%" alt="Debug room">
+    <br>
+    <sub>Plugins · Code editor · Debug room</sub>
 </p>
 
 # License
