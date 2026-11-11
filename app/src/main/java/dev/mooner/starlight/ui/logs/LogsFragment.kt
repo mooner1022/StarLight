@@ -14,6 +14,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -54,6 +55,16 @@ class LogsFragment : Fragment(), OnClickListener {
     private var tags        : List<String> = emptyList()
     private var msgRegex    : Pattern? = null
 
+    private val logFilter: LogFilter
+        get() = LogFilter(types, tags, msgRegex)
+
+    /** Keeps the empty state right as logs come, go and are filtered. */
+    private val listObserver = object : RecyclerView.AdapterDataObserver() {
+        override fun onChanged() = updateEmptyState()
+        override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = updateEmptyState()
+        override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) = updateEmptyState()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -87,16 +98,10 @@ class LogsFragment : Fragment(), OnClickListener {
         autoScroll = cat.getBoolean("auto_scroll", autoScroll)
         types      = cat.getString("types", "[]").let(Session.json::decodeFromString)
         tags       = cat.getString("tags", "[]").let(Session.json::decodeFromString)
-        msgRegex   = cat.getString("message_regex")?.let(Pattern::compile)
+        msgRegex   = cat.getString("message_regex")?.let { runCatching { LogFilter.messagePattern(it) }.getOrNull() }
 
         val logs = LogCollector.logs
-        if (logs.isEmpty()) {
-            binding.textViewNoLogsYet.visibility = View.VISIBLE
-            binding.recyclerViewLogs.visibility = View.GONE
-        } else {
-            binding.textViewNoLogsYet.visibility = View.GONE
-            binding.recyclerViewLogs.visibility = View.VISIBLE
-        }
+        binding.clearFilter.setOnClickListener { clearFilter() }
 
         binding.logSettings.setOnClickListener(this)
         binding.logFilter.setOnClickListener(this)
@@ -113,9 +118,9 @@ class LogsFragment : Fragment(), OnClickListener {
         }
 
         createAdapter(binding.recyclerViewLogs, logs)
-        binding.recyclerViewLogs.post {
-            itemAdapter?.setFilter(types, tags, msgRegex)
-        }
+        itemAdapter?.setFilter(logFilter)
+        updateFilterChip()
+        updateEmptyState()
 
         EventHandler.on(lifecycleScope, ::onLogCreated)
         setLastHash()
@@ -149,14 +154,60 @@ class LogsFragment : Fragment(), OnClickListener {
             .getString("view_type")
             ?.let(LogItem.ViewType::valueOf)
             ?: LogItem.ViewType.TEXT
-        itemAdapter = LogsRecyclerViewAdapter().withData(data, type)
+        itemAdapter = LogsRecyclerViewAdapter().withData(data, type).also {
+            it.setFilter(logFilter)
+            it.registerAdapterDataObserver(listObserver)
+        }
         recyclerView.init(itemAdapter!!)
+    }
+
+    /** Shows on the filter chip that a filter is set, and how many of its conditions: a list cut short says why. */
+    private fun updateFilterChip() {
+        val binding = _binding ?: return
+        val filter = logFilter
+        binding.logFilter.text = if (filter.isActive)
+            getString(R.string.logs_filter_active, filter.conditions)
+        else
+            getString(R.string.logs_filter)
+        binding.logFilter.chipStrokeWidth = if (filter.isActive) dp(1.5f) else 0f
+        binding.logFilter.setChipStrokeColorResource(R.color.text_gold)
+    }
+
+    /**
+     * With nothing in the list, says why: there are no logs yet, or there are and the filter shows none of them,
+     * with the button that clears it. A filter set days ago used to leave an empty card with no word of it.
+     */
+    private fun updateEmptyState() {
+        val binding = _binding ?: return
+        val adapter = itemAdapter ?: return
+        val isEmpty = adapter.itemCount == 0
+        binding.emptyState.isVisible = isEmpty
+        binding.recyclerViewLogs.isVisible = !isEmpty
+        if (!isEmpty)
+            return
+        val filtered = adapter.hidesLogs
+        binding.textViewNoLogsYet.setText(if (filtered) R.string.logs_filter_no_match else R.string.widget_logs_empty)
+        binding.clearFilter.isVisible = filtered
+    }
+
+    private fun clearFilter() {
+        types = emptyList()
+        tags = emptyList()
+        msgRegex = null
+        itemAdapter?.setFilter(logFilter)
+        updateFilterChip()
+        GlobalConfig.edit {
+            category("logs").apply {
+                remove("types")
+                remove("tags")
+                remove("message_regex")
+            }
+        }
     }
 
     private fun RecyclerView.init(adapter: RecyclerView.Adapter<*>) {
         layoutManager = initLayoutManager(context)
         this.adapter = adapter
-        visibility = View.VISIBLE
     }
 
     private fun initLayoutManager(context: Context): RecyclerView.LayoutManager =
@@ -195,21 +246,8 @@ class LogsFragment : Fragment(), OnClickListener {
             content(binding.root)
 
             binding.cardViewClearFilter.setOnClickListener {
-                autoScroll = true
-                types = emptyList()
-                tags = emptyList()
-                msgRegex = null
-                _binding!!.recyclerViewLogs.post {
-                    itemAdapter?.setFilter(types, tags, null)
-                }
-                GlobalConfig.edit {
-                    category("logs").apply {
-                        remove("auto_scroll")
-                        remove("types")
-                        remove("tags")
-                        remove("message_regex")
-                    }
-                }
+                // The filter only: auto scroll has its own chip, which this used to switch behind its back.
+                clearFilter()
                 sheet.dismiss()
             }
 
@@ -254,7 +292,7 @@ class LogsFragment : Fragment(), OnClickListener {
                     .ifBlank { null }
                     ?.let { v ->
                         try {
-                            Pattern.compile(v)
+                            LogFilter.messagePattern(v)
                         } catch (_: PatternSyntaxException) {
                             binding.editTextMessage.apply {
                                 error = getString(R.string.logs_filter_invalid_regex)
@@ -264,9 +302,8 @@ class LogsFragment : Fragment(), OnClickListener {
                         }
                     }
 
-                _binding!!.recyclerViewLogs.post {
-                    itemAdapter?.setFilter(types, tags, msgRegex)
-                }
+                itemAdapter?.setFilter(logFilter)
+                updateFilterChip()
                 saveLogFilterConfig()
                 it.dismiss()
             }

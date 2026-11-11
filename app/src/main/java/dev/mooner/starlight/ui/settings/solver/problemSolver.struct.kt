@@ -16,6 +16,8 @@ import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.R
 import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.core.GlobalApplication
+import dev.mooner.starlight.listener.NotificationDrops
+import dev.mooner.starlight.listener.NotificationListener
 import dev.mooner.starlight.listener.specs.ParserSpecPolicy
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.config.GlobalConfig
@@ -118,7 +120,42 @@ internal fun getProblemSolverStruct(context: Context = GlobalApplication.require
                 }
         }
     }
+    // What the listener saw and handed to no project since the app started or the rules changed: where "the bot
+    // doesn't answer in this messenger" is answered. Absent while there is nothing to tell.
+    val drops = NotificationListener.drops.snapshot().take(MAX_DROPS_SHOWN)
+    if (drops.isNotEmpty())
+        category {
+            id = "drops"
+            title = context.getString(R.string.solver_category_drops)
+            items {
+                for ((index, drop) in drops.withIndex()) {
+                    val (key, count) = drop
+                    info {
+                        id = "drop_$index"
+                        title = key.packageName
+                        description = buildString {
+                            append(context.getString(when (key.reason) {
+                                NotificationDrops.Reason.NO_RULE       -> R.string.solver_drop_no_rule
+                                NotificationDrops.Reason.OTHER_USER    -> R.string.solver_drop_other_user
+                                NotificationDrops.Reason.UNKNOWN_SPEC  -> R.string.solver_drop_unknown_spec
+                                NotificationDrops.Reason.NOT_A_MESSAGE -> R.string.solver_drop_not_a_message
+                                NotificationDrops.Reason.FAILED        -> R.string.solver_drop_failed
+                            })).append("\n")
+                            append(context.getString(R.string.solver_rule_user_id, key.userId))
+                            key.specId?.let { append("\n").append(context.getString(R.string.solver_rule_spec, it)) }
+                        }
+                        value = context.resources.getQuantityString(R.plurals.solver_drop_times, count.times, count.times)
+                        // An app with no rule is most often one the user never meant to cover: told, not flagged.
+                        val isFault = key.reason != NotificationDrops.Reason.NO_RULE && key.reason != NotificationDrops.Reason.NOT_A_MESSAGE
+                        icon = if (isFault) Icon.ERROR else Icon.INFO
+                        status = if (isFault) OptionStatus.WARNING else null
+                    }
+                }
+            }
+        }
 }
+
+private const val MAX_DROPS_SHOWN = 8
 
 internal fun readNotificationRuleFile(): String? {
     val file = getStarLightDirectory().resolve(NotificationRulesActivity.FILE_NAME)

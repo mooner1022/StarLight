@@ -63,23 +63,24 @@ class PluginClassLoader(
             val mainClass: Class<*>
             try {
                 mainClass = Class.forName(pluginInfo.mainClass, false, this)
-            } catch (_: ClassNotFoundException) {
-                throw InvalidPluginException("Unable to find main class: ${pluginInfo.mainClass}")
+            } catch (e: ClassNotFoundException) {
+                // The cause says why: a class the main one needs may be what is missing, not the main class.
+                throw InvalidPluginException("Unable to find main class: ${pluginInfo.mainClass}").apply { initCause(e) }
             }
 
             val pluginClass: Class<out StarlightPlugin>
             try {
                 pluginClass = mainClass.asSubclass(StarlightPlugin::class.java)
-            } catch (_: ClassCastException) {
-                throw InvalidPluginException("Main class '${pluginInfo.mainClass}' does not extend StarlightPlugin")
+            } catch (e: ClassCastException) {
+                throw InvalidPluginException("Main class '${pluginInfo.mainClass}' does not extend StarlightPlugin").apply { initCause(e) }
             }
             internalDir = context.filesDir
 
             plugin = pluginClass.newInstance()
-        } catch (_: IllegalAccessException) {
-            throw InvalidPluginException("No public constructor")
-        } catch (_: InstantiationException) {
-            throw InvalidPluginException("Abnormal plugin type")
+        } catch (e: IllegalAccessException) {
+            throw InvalidPluginException("No public constructor").apply { initCause(e) }
+        } catch (e: InstantiationException) {
+            throw InvalidPluginException("Abnormal plugin type").apply { initCause(e) }
         }
     }
 }

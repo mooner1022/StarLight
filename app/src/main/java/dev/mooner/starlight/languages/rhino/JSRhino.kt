@@ -10,6 +10,7 @@ import dev.mooner.configdsl.options.seekbar
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
 import dev.mooner.starlight.BuildConfig
+import dev.mooner.starlight.languages.EntryPoints
 import dev.mooner.starlight.languages.ScriptHostPolicy
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
@@ -146,6 +147,8 @@ class JSRhino: Language() {
             }
 
             context.evaluateString(scope, code, project?.info?.name ?: name, 1, null)
+            if (project != null)
+                EntryPoints.report(project, code, exportsOnly = false) { name -> scope.get(name, scope) is Function }
             scope
         }
 

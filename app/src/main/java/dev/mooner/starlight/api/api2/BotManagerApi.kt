@@ -237,6 +237,10 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
 
         private val listeners: MutableMap<String, MutableList<Registered>> = ConcurrentHashMap()
 
+        /** How many listeners the script has added, of any event. */
+        internal val listenerCount: Int
+            get() = listeners.values.sumOf { it.size }
+
         /** A listener and what identifies the script function behind it, for [off]. */
         private class Registered(val listener: Api2Listener) {
             val identity: Any = identityOf(listener)

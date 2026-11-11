@@ -166,6 +166,9 @@
     <string name="editor_edit_file_name">Name to be changed</string>
 
     <string name="log_foreground_started">Successfully started foreground task!</string>
+    <string name="logs_filter_active">Filter · %d</string>
+    <string name="logs_filter_no_match">No logs match the filter.</string>
+    <string name="logs_filter_clear">Clear filter</string>
     <string name="log_filter_settings">Log filter</string>
     <string name="log_filter_auto_scroll">Auto scroll</string>
     <string name="log_filter_types">Types</string>
@@ -240,6 +243,7 @@
     <string name="plugin_category_devtools">Developer tools</string>
     <string name="plugin_category_other">Other</string>
     <string name="plugin_status_failed">Failed to load: %s</string>
+    <string name="plugin_error_details">%s: load error</string>
     <string name="plugin_status_requires_newer_app">Needs a newer app (PluginCore %1$s)</string>
     <string name="plugin_status_outdated_api">Needs a plugin update (PluginCore %1$s)</string>
     <string name="plugin_status_missing_dependency">Requires %s</string>

@@ -138,21 +138,18 @@ class ProjectImpl private constructor(
                 onException(e)
                 return
             }
-            logger.e(tag, translate {
-                Locale.ENGLISH { "Error while running: $e" }
-                Locale.KOREAN  { "실행 중 에러 발생: $e" }
-            })
             val shutdownOnError = config
                 .category("general")
                 .getBoolean("shutdown_on_error", true)
-
-            if (shutdownOnError) {
-                logger.e(info.name, translate {
-                    Locale.ENGLISH { "Destroying project '${info.name}'..." }
-                    Locale.KOREAN  { "프로젝트 '${info.name}' 종료중..." }
-                })
+            // One entry: what went wrong, where, and what was done about it. It used to be two errors here and a
+            // third from whoever sent the event, each an alert of its own saying the same.
+            val what = ScriptErrorText.of(e, directory)
+            logger.e(tag, translate {
+                Locale.ENGLISH { "Error while running: $what" + if (shutdownOnError) "\nThe project was turned off, as its setting for errors says." else "" }
+                Locale.KOREAN  { "실행 중 에러 발생: $what" + if (shutdownOnError) "\n'오류 발생시 비활성화' 설정에 따라 프로젝트를 껐어요." else "" }
+            })
+            if (shutdownOnError)
                 destroy(requestUpdate = true)
-            }
             e.printStackTrace()
             onException(e)
         }
@@ -247,7 +244,7 @@ class ProjectImpl private constructor(
                     if (info.isEnabled) ProjectLifecycle.State.ENABLED else ProjectLifecycle.State.DISABLED)
             } catch (e: Throwable) {
                 e.printStackTrace()
-                logger.e(tag, "ECOMF: $e")
+                logger.e(tag, "ECOMF: ${ScriptErrorText.of(e, directory)}")
                 if (tornDown)
                     unloadAfterFailedCompile()
                 else

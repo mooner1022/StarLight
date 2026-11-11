@@ -74,7 +74,13 @@ class PluginLoader {
                     plugin.enableOnLoad()
                     InstalledPlugin(file, info, PluginState.Loaded(plugin))
                 } catch (e: Throwable) {
-                    logger.error(e)
+                    // Which plugin, and what was behind the error: the error alone, as it used to be logged,
+                    // said neither. One that isn't a plugin at all has been reported where it was found out.
+                    if (e !is InvalidPluginException)
+                        logger.error {
+                            "Failed to load plugin ${info.fullName} (${file.name}): $e" +
+                                generateSequence(e.cause) { it.cause }.take(MAX_CAUSES).joinToString("") { "\ncaused by: $it" }
+                        }
                     if (Info.DEBUG)
                         e.printStackTrace()
                     InstalledPlugin(file, info, PluginState.Failed(e))
@@ -411,6 +417,9 @@ class PluginLoader {
     }
 
     companion object {
+        /** How many causes of a load failure its log names. */
+        private const val MAX_CAUSES = 4
+
         val SUPPORTED_EXT =
             arrayOf(/*"apk", "jar", "aar", */"slp")
 

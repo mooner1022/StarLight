@@ -8,6 +8,7 @@ import dev.mooner.starlight.agent.model.Questions
 import dev.mooner.starlight.agent.store.AttachmentStore
 import dev.mooner.starlight.agent.store.CheckpointStore
 import dev.mooner.starlight.api.ApiLevels
+import dev.mooner.starlight.languages.ScriptErrors
 import dev.mooner.starlight.listener.event.Api2MessageEvent
 import dev.mooner.starlight.listener.event.LegacyEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent

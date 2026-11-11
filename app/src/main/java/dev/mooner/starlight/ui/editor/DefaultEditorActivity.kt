@@ -31,9 +31,9 @@ import dev.mooner.configdsl.config
 import dev.mooner.configdsl.options.seekbar
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
-import dev.mooner.neonjs.NeonSyntaxException
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityDefaultEditorBinding
+import dev.mooner.starlight.languages.ScriptErrors
 import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.Session.json
@@ -74,7 +74,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
-import org.mozilla.javascript.RhinoException
 import java.io.File
 import kotlin.coroutines.resume
 import kotlin.properties.Delegates.notNull
@@ -639,9 +638,15 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
                     }).peek()
                 }
                 .catch { e ->
-                    e.sourcePosition()?.let { (line, column) ->
-                        tabAdapter?.setSelected(mainScriptName)
-                        markError(line - 1, column, e.message ?: e.toString())
+                    ScriptErrors.locate(e)?.let { at ->
+                        // The mark goes into the file the error is in: one the main script imports gets its tab.
+                        // It used to go to the main script whatever the file, at that line number of the wrong one.
+                        val file = ScriptErrors.fileOf(at, getBaseDirectory())
+                        if (file != null)
+                            openFile(file)
+                        else
+                            tabAdapter?.setSelected(mainScriptName)
+                        markError(at.line - 1, at.column ?: 0, e.message ?: e.toString())
                     }
                     peek.hide()
                     delay(300L)
@@ -1233,15 +1238,6 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
     private fun markError(row: Int, column: Int, text: String) =
         executeScript("markError($row, $column, ${JsonPrimitive(text)})")
-
-    private fun Throwable.sourcePosition(): Pair<Int, Int>? =
-        generateSequence(this, Throwable::cause).firstNotNullOfOrNull { e ->
-            when (e) {
-                is NeonSyntaxException -> e.line to e.column
-                is RhinoException      -> e.lineNumber() to e.columnNumber()
-                else                   -> null
-            }
-        }?.takeIf { (line, _) -> line > 0 }
 
     // Only what the project's API levels give its scripts.
     private fun buildApiCompletions(): String =
