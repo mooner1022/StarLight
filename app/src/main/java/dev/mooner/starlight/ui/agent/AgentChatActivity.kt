@@ -36,6 +36,7 @@ import dev.mooner.starlight.agent.store.Rewind
 import dev.mooner.starlight.databinding.ActivityAgentChatBinding
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.peek
+import dev.mooner.starlight.utils.restartIfNotReady
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.combine
@@ -83,6 +84,12 @@ class AgentChatActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Brought back before the runtime started: start over from the splash, without restoring what needs it.
+        if (restartIfNotReady(carryOn = true)) {
+            super.onCreate(null)
+            finish()
+            return
+        }
         super.onCreate(savedInstanceState)
         binding = ActivityAgentChatBinding.inflate(layoutInflater)
         setContentView(binding.root)

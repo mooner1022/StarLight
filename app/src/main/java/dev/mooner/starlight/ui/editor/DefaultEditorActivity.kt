@@ -117,7 +117,14 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
 
     @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        // Brought back before the runtime started: start over from the splash. The base class finishes by itself when
+        // it can't find the project; without the saved state, the drawer's fragments, which need it too, stay away.
+        val notReady = restartIfNotReady()
+        super.onCreate(if (notReady) null else savedInstanceState)
+        if (notReady || isFinishing) {
+            finish()
+            return
+        }
         binding = ActivityDefaultEditorBinding.inflate(layoutInflater)
         setContentView(binding.root)
         onBackPressedDispatcher.addCallback(this) { handleBack() }
@@ -325,6 +332,11 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
     }
 
     override fun onDestroy() {
+        // Finished in onCreate, before anything was set up.
+        if (!::binding.isInitialized) {
+            super.onDestroy()
+            return
+        }
         getProject()?.let { proj ->
             proj.config.edit {
                 val tabs = if (rememberTabs) sessions.map { it.fileName } else emptyList()

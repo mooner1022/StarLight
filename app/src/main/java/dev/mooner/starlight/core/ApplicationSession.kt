@@ -40,6 +40,7 @@ import dev.mooner.starlight.stats.ScriptWidgetEntries
 import dev.mooner.starlight.ui.agent.AgentWidget
 import dev.mooner.starlight.ui.debugroom.DebugRoomFragment
 import dev.mooner.starlight.ui.widget.*
+import dev.mooner.starlight.utils.callPlugin
 import dev.mooner.starlight.utils.getKakaoTalkVersion
 import dev.mooner.starlight.utils.hideFromGallery
 import kotlinx.coroutines.Dispatchers
@@ -194,14 +195,13 @@ object ApplicationSession {
     private fun setNetworkHandler(context: Context) {
         NetworkUtil.registerNetworkStatusListener(context)
         NetworkUtil.addOnNetworkStateChangedListener { state ->
-            for (plugin in Session.pluginManager.plugins) {
-                try {
-                    for (listener in plugin.getListeners())
+            // Each listener by itself: this runs on the system's connectivity thread, where one that throws would
+            // take the app down, and would keep the change from the listeners after it.
+            for (plugin in Session.pluginManager.plugins)
+                for (listener in plugin.getListeners())
+                    callPlugin({ logger.error { "Failed to call network event for plugin '${plugin.info.id}': $it" } }) {
                         listener.onNetworkStateChanged(state)
-                } catch (e: Error) {
-                    logger.error { "Failed to call network event for plugin '${plugin.info.id}': $e" }
-                }
-            }
+                    }
         }
     }
 

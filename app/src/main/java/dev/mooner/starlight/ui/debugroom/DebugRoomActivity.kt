@@ -11,12 +11,19 @@ import androidx.appcompat.app.AppCompatActivity
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityDebugRoomBinding
 import dev.mooner.starlight.utils.fitPage
+import dev.mooner.starlight.utils.restartIfNotReady
 
 class DebugRoomActivity: AppCompatActivity() {
 
     private lateinit var binding: ActivityDebugRoomBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Brought back before the runtime started: start over from the splash, without restoring what needs it.
+        if (restartIfNotReady()) {
+            super.onCreate(null)
+            finish()
+            return
+        }
         super.onCreate(savedInstanceState)
         binding = ActivityDebugRoomBinding.inflate(layoutInflater)
         setContentView(binding.root)

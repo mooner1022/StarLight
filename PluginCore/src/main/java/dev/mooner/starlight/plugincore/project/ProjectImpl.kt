@@ -369,10 +369,14 @@ class ProjectImpl private constructor(
         logger.v("Destroying project [${info.name}]...")
         stopAllJobs()
         langScope?.let { scope ->
-            if (lang.requireRelease)
-                lang.release(scope)
-            lang.destroy(scope)
+            // Gone whatever the language does with it: one of a plugin that throws here would otherwise leave the
+            // project half stopped, and take down the thread that stops it.
             langScope = null
+            if (lang.requireRelease)
+                runCatching { lang.release(scope) }
+                    .onFailure { logger.w(tag, "Failed to release the scope: $it") }
+            runCatching { lang.destroy(scope) }
+                .onFailure { logger.w(tag, "Failed to destroy the scope: $it") }
         }
     }
 

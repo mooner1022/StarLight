@@ -64,6 +64,12 @@ class ProjectConfigActivity: AppCompatActivity() {
     private var projectButtonIDs: Set<String> by notNull()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Brought back before the runtime started: start over from the splash, without restoring what needs it.
+        if (restartIfNotReady()) {
+            super.onCreate(null)
+            finish()
+            return
+        }
         super.onCreate(savedInstanceState)
         binding = ActivityProjectConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -95,7 +101,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                         fabProjectConfig.show()
                 }
                 if (parentId == project.getLanguage().id)
-                    project.getLanguage().onConfigChanged(id, data)
+                    languageCall { project.getLanguage().onConfigChanged(id, data) }
                 // The levels decide which of the allowed events the project receives.
                 if (parentId == API_CATEGORY)
                     withContext(Dispatchers.Main) { updateEventSummary() }
@@ -135,10 +141,12 @@ class ProjectConfigActivity: AppCompatActivity() {
                 }
             }
 
-            val langConfIds = project.getLanguage().configStructure.map { it.id }
-            val filtered = changedData.filter { it.key in langConfIds }
-            if (filtered.isNotEmpty())
-                project.getLanguage().onConfigUpdated(filtered)
+            languageCall {
+                val langConfIds = project.getLanguage().configStructure.map { it.id }
+                val filtered = changedData.filter { it.key in langConfIds }
+                if (filtered.isNotEmpty())
+                    project.getLanguage().onConfigUpdated(filtered)
+            }
 
             createSuccessPeek(getString(R.string.config_saved), PeekAlert.Position.Bottom).peek()
             if (ApiLevels.hasListenerNameClash(project.info.apiLevels, project.info.languageId))
@@ -155,6 +163,11 @@ class ProjectConfigActivity: AppCompatActivity() {
         val textViewConfigProjectName: TextView = findViewById(R.id.textViewConfigProjectName)
         textViewConfigProjectName.text = projectName
         fabProjectConfig.hide()
+    }
+
+    /** A call into the project's language, which a plugin may have written: its failure is logged, not thrown. */
+    private inline fun languageCall(block: () -> Unit) {
+        callPlugin({ project.logger.e("The language failed on a settings change: $it") }, block)
     }
 
     override fun onDestroy() {

@@ -32,6 +32,7 @@ import dev.mooner.starlight.utils.createSuccessPeek
 import dev.mooner.starlight.utils.bindPageHeader
 import dev.mooner.starlight.utils.fitSkyPage
 import dev.mooner.starlight.utils.peek
+import dev.mooner.starlight.utils.restartIfNotReady
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
@@ -52,6 +53,12 @@ class NotificationRulesActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Brought back before the runtime started: start over from the splash, without restoring what needs it.
+        if (restartIfNotReady()) {
+            super.onCreate(null)
+            finish()
+            return
+        }
         super.onCreate(savedInstanceState)
         binding = ActivityNotificationRulesBinding.inflate(layoutInflater)
         setContentView(binding.root)

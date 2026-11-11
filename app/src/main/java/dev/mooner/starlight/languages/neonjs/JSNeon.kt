@@ -33,6 +33,7 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
+import dev.mooner.starlight.utils.callPlugin
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -111,7 +112,11 @@ class JSNeon: Language() {
                         InstanceType.OBJECT -> {
                             if (project == null)
                                 continue
-                            context[api.name] = api.getInstance(project)
+                            // An API that fails to make its object, as one of a plugin, is left out; the script
+                            // compiles without it, and one that uses it fails on the name, with this in the log.
+                            callPlugin({ project.logger.e("API '${api.name}' couldn't be loaded and is left out: $it") }) {
+                                context[api.name] = api.getInstance(project)
+                            }
                         }
                     }
                 }

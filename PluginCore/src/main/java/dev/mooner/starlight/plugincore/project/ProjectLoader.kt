@@ -46,9 +46,11 @@ class ProjectLoader(
                         continue
                     }
                     projects[info.name] = project
-                } catch (e: IllegalStateException) {
+                } catch (e: Exception) {
+                    // Whatever went wrong with one project, a language of a plugin that fails to make itself
+                    // included, the others load; this one is left out, as one whose language is missing.
                     Logger.e(T, "Failed to load project '${folder.name}': $e")
-                } catch (e: IllegalArgumentException) {
+                } catch (e: LinkageError) {
                     Logger.e(T, "Failed to load project '${folder.name}': $e")
                 }
             }
@@ -77,7 +79,11 @@ class ProjectLoader(
         return project
     }
 
-    /** Compiles an enabled project so it runs right away, or disables it if that fails. */
+    /**
+     * Compiles an enabled project so it runs right away, or disables it if that fails. One that fails because its
+     * language's code or native library didn't load stays on: that is the app's or a plugin's fault and not the
+     * script's, and may be gone at the next start.
+     */
     private fun precompile(project: Project) {
         try {
             project.compile(true)
@@ -85,6 +91,8 @@ class ProjectLoader(
             Logger.w(T, "Failed to pre-compile project ${project.info.name}: $e")
             project.info.isEnabled = false
             project.saveInfo()
+        } catch (e: LinkageError) {
+            Logger.w(T, "Failed to pre-compile project ${project.info.name}, which stays on for the next start: $e")
         }
     }
 

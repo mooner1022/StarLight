@@ -23,6 +23,7 @@ import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
+import dev.mooner.starlight.utils.callPlugin
 import dev.mooner.starlight.utils.toURI
 import org.mozilla.javascript.*
 import org.mozilla.javascript.Function
@@ -122,8 +123,11 @@ class JSRhino: Language() {
                     InstanceType.OBJECT -> {
                         if (project == null)
                             continue
-                        val instance = api.getInstance(project)
-                        scope.put(api.name, scope, instance)
+                        // An API that fails to make its object, as one of a plugin, is left out; the script
+                        // compiles without it, and one that uses it fails on the name, with this in the log.
+                        callPlugin({ project.logger.e("API '${api.name}' couldn't be loaded and is left out: $it") }) {
+                            scope.put(api.name, scope, api.getInstance(project))
+                        }
                     }
                 }
             }

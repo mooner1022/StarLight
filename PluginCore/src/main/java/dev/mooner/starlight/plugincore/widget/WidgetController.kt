@@ -82,9 +82,12 @@ internal class DslWidgetController(
         val content = content ?: return
         scope?.dispose()
         container.removeAllViews()
-        val widgetSettings = definition.settingsOf(settings)
-        scope = WidgetScope(container, span, isPreview, widgetSettings, this, ::reportError).also { scope ->
-            guard { content(scope) }
+        // The widget's own code reads its settings: guarded as its content is.
+        guard {
+            val widgetSettings = definition.settingsOf(settings)
+            scope = WidgetScope(container, span, isPreview, widgetSettings, this, ::reportError).also { scope ->
+                guard { content(scope) }
+            }
         }
     }
 
