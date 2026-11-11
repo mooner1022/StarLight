@@ -15,6 +15,7 @@ import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.chat.ChatRoom
 import dev.mooner.starlight.plugincore.chat.Message
+import dev.mooner.starlight.languages.neonjs.compileForScript
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.ProjectID
 import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycleObserver
@@ -131,7 +132,7 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
          */
         @JvmOverloads
         fun compile(botName: String, throwOnError: Boolean = false): Boolean =
-            projectOf(botName)?.compile(throwOnError) == true
+            projectOf(botName)?.compileForScript(throwOnError) == true
 
         /**
          * Compiles every project, one after another, and waits until that is done.
@@ -141,7 +142,7 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
          */
         fun compileAll() {
             for (project in Session.projectManager.getProjects())
-                project.compile()
+                project.compileForScript()
         }
 
         /**
@@ -206,7 +207,7 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
                 return 0
             if (project.isCompiled)
                 return 2
-            return runCatching { project.compile(throwOnError) }
+            return runCatching { project.compileForScript(throwOnError) }
                 .getOrElse { if (throwOnError) throw it else false }
                 .let { if (it) 1 else 0 }
         }
@@ -343,7 +344,7 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
          * @see guide:projects#compiling-and-turning-on
          */
         fun compile() =
-            project.compile(throwException = true)
+            project.compileForScript(throwException = true)
 
         /**
          * Unloads the bot's project: stops what it is running, discards its compiled code and turns it off.

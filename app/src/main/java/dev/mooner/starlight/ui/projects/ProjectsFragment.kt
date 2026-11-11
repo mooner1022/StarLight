@@ -227,6 +227,9 @@ class ProjectsFragment : Fragment(), View.OnClickListener {
 
     private fun updateTitle(projects: List<Project>) {
         val activity = activity as? MainActivity ?: return
+        // The header belongs to the tab that is showing: a compile in the background must not write over another's.
+        if (!isResumed)
+            return
 
         val count = projects.count { it.info.isEnabled }
         activity.binding.statusText.text = getString(R.string.subtitle_projects).format(count)

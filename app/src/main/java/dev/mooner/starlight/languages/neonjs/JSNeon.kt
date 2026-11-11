@@ -360,6 +360,11 @@ class JSNeon: Language() {
                     if (e !is NeonInterruptedException && e !is IllegalStateException)
                         project.logger.error("Exception on event loop: $e")
                 }
+            }.invokeOnCompletion { cause ->
+                // Cancelled before it ran, as when the project's jobs are stopped: with the flag left set, nothing
+                // the engine has ready would be run again.
+                if (cause != null)
+                    isScheduled.set(false)
             }
         }
     }
