@@ -100,7 +100,7 @@
     <string name="no_projects">There are no projects yet! (⊙_⊙;)</string>
     <string name="no_plugins">There are no plugins yet! (⊙_⊙;)</string>
     <string name="project_import_from_file">Import from a zip file</string>
-    <string name="project_import_done">Imported %s.</string>
+    <string name="project_import_done">Imported %s. It is off: compile it and turn it on when you are ready.</string>
     <string name="project_import_failed">Couldn\'t import the project: %s</string>
     <string name="project_export_done">Exported %s.</string>
     <string name="project_export_failed">Couldn\'t export the project: %s</string>

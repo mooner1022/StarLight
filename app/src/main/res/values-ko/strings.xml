@@ -94,7 +94,7 @@
     <string name="no_projects">아직 프로젝트가 없는 것 같아요! (⊙_⊙;)</string>
     <string name="no_plugins">아직 플러그인이 없는 것 같아요! (⊙_⊙;)</string>
     <string name="project_import_from_file">zip 파일에서 가져오기</string>
-    <string name="project_import_done">%s 프로젝트를 가져왔어요.</string>
+    <string name="project_import_done">%s 프로젝트를 꺼진 상태로 가져왔어요. 준비되면 컴파일한 뒤 켜 주세요.</string>
     <string name="project_import_failed">프로젝트를 가져오지 못했어요: %s</string>
     <string name="project_export_done">%s 프로젝트를 내보냈어요.</string>
     <string name="project_export_failed">프로젝트를 내보내지 못했어요: %s</string>
