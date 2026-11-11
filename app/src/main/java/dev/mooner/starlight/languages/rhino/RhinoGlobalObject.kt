@@ -8,6 +8,7 @@ package dev.mooner.starlight.languages.rhino
 
 import android.widget.Toast
 import dev.mooner.starlight.core.GlobalApplication
+import dev.mooner.starlight.languages.TimerDelay
 import dev.mooner.starlight.plugincore.project.Project
 import kotlinx.coroutines.*
 import org.mozilla.javascript.Context
@@ -43,11 +44,11 @@ class RhinoGlobalObject(
     @JSFunction
     fun setInterval(callback: Function, delay: Any?): TimeoutID {
         //val key = JobLocker.withProject(project).requestLock()
-        val mDelay = delay.getOrThrow<Long>()
+        val mDelay = TimerDelay.effective(delay.getOrThrow<Long>(), repeat = true)
 
         val id = generateID()
         val job = project.launch(start = CoroutineStart.LAZY) {
-            while (true) {
+            while (isActive) {
                 delay(mDelay)
                 withContext { context ->
                     val scope = this@RhinoGlobalObject
@@ -71,7 +72,7 @@ class RhinoGlobalObject(
     @JSFunction
     fun setTimeout(callback: Function, delay: Any?): TimeoutID {
         //val key = JobLocker.withProject(project).requestLock()
-        val mDelay = delay.getOrThrow<Long>()
+        val mDelay = TimerDelay.effective(delay.getOrThrow<Long>(), repeat = false)
 
         val id = generateID()
         val job = project.launch(start = CoroutineStart.LAZY) {
