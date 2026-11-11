@@ -37,10 +37,10 @@ class PluginInstallerTest {
         return file
     }
 
-    private fun manifest(id: String, version: String = "1.0.0") = """
+    private fun manifest(id: String, version: String = "1.0.0", name: String = "Name-$id") = """
         {
           "id": "$id",
-          "name": "Name-$id",
+          "name": "$name",
           "main_class": "$id.Main",
           "version": "$version",
           "api_version": "0.3.2",
@@ -73,6 +73,13 @@ class PluginInstallerTest {
     fun rejectsPreservedAndIllegalIds() {
         assertThrows(InvalidPluginException::class.java) { installer.inspect(pluginFile("a.slp", manifest("System"))) }
         assertThrows(InvalidPluginException::class.java) { installer.inspect(pluginFile("b.slp", manifest("../evil"))) }
+    }
+
+    @Test
+    fun rejectsIdsThatNameAFolderAbove() {
+        assertThrows(InvalidPluginException::class.java) { installer.inspect(pluginFile("a.slp", manifest("."))) }
+        assertThrows(InvalidPluginException::class.java) { installer.inspect(pluginFile("b.slp", manifest(".."))) }
+        assertEquals("a..b", installer.inspect(pluginFile("c.slp", manifest("a..b"))).id)
     }
 
     @Test
@@ -116,5 +123,16 @@ class PluginInstallerTest {
         installer.uninstall(installer.fileOf("sample"), info, keepData = false)
         assertFalse(internal.exists())
         assertFalse(external.exists())
+    }
+
+    @Test
+    fun uninstallLeavesFoldersOutsideThePluginsAlone() {
+        val info = installer.install(pluginFile("a.slp", manifest("sample", name = "../outside")))
+        val outside = pluginsDir.resolve(PluginInstaller.dataDirNameOf(info)).apply { resolve("kept").mkdirs() }
+        assertEquals(temp.root.canonicalFile, outside.canonicalFile.parentFile)
+
+        installer.uninstall(installer.fileOf("sample"), info, keepData = false)
+        assertFalse(installer.fileOf("sample").exists())
+        assertTrue(outside.resolve("kept").exists())
     }
 }
