@@ -33,6 +33,8 @@ With the default language version (ES6, in the project's Rhino settings):
   API2 listener apart, as the starting code does when a new project receives both events (`onApi2Message`).
 - StarLight's `Java` API in Rhino is its own object: `Java.type()` returns a `java.lang.Class`, not something to
   `new`. `describe_api Java` describes it.
+- A top-level `onUncaughtError` gets every error with `origin` `"uncaughtException"`: Rhino doesn't report rejected
+  Promises (guide:events#uncaught-errors).
 - Rhino code can't be stopped while it runs. A loop that never ends keeps one of the project's workers, and its
   thread, busy until StarLight restarts: compiling again gives the project fresh workers, but doesn't end the loop.
 

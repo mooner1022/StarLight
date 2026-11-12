@@ -10,6 +10,7 @@ import android.widget.Toast
 import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.languages.TimerDelay
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.script.errors.UncaughtErrors
 import kotlinx.coroutines.*
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
@@ -55,6 +56,9 @@ class RhinoGlobalObject(
                     callback.call(context, scope, scope, emptyArray())
                 }?.also { e ->
                     project.logger.error("Exception on interval $id: $e")
+                    // Not when a compile replaced this version since.
+                    if (project.getScope() === this@RhinoGlobalObject)
+                        UncaughtErrors.report(project.info.id, e, UncaughtErrors.Origin.EXCEPTION, "setInterval")
                 }
             }
         }.apply {
@@ -82,6 +86,8 @@ class RhinoGlobalObject(
                 callback.call(context, scope, scope, emptyArray())
             }?.also { e ->
                 project.logger.error("Exception on timeout $id: $e")
+                if (project.getScope() === this@RhinoGlobalObject)
+                    UncaughtErrors.report(project.info.id, e, UncaughtErrors.Origin.EXCEPTION, "setTimeout")
             }
         }.apply {
             invokeOnCompletion {

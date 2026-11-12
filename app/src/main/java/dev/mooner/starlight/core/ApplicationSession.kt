@@ -17,7 +17,9 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.api.CoreApis
 import dev.mooner.starlight.plugincore.project.ProjectCallGate
+import dev.mooner.starlight.plugincore.project.ProjectErrorListener
 import dev.mooner.starlight.script.chat.ChatWaits
+import dev.mooner.starlight.script.errors.UncaughtErrors
 import dev.mooner.starlight.script.schedule.ScheduleAlarms
 import dev.mooner.starlight.languages.neonjs.JSNeon
 import dev.mooner.starlight.languages.rhino.JSRhino
@@ -117,6 +119,7 @@ object ApplicationSession {
         CoreApis.earlyApis().forEach { Session.apiManager.addApi(it) }
         // Before any project compiles: a message a script waits for with Chat.waitFor is held back from the others.
         ProjectCallGate.current = ChatWaits
+        ProjectErrorListener.current = UncaughtErrors.listener
         // Before any project compiles, as compiling scripts schedule their tasks (Schedule).
         ScheduleAlarms.init(context)
 

@@ -109,6 +109,10 @@ receives.
   again (`compile_project`), and turned on again for real chats.
 - A compile error names the file and line. `get_project_logs` shows the logs, stack traces included.
 - An error in a timer or in a Promise nobody handles is logged and doesn't unload the project.
+- A script that defines `onUncaughtError(error, origin, detail)` is told of each of these errors after it is logged,
+  to answer in the room or tidy up (guide:events#uncaught-errors). That doesn't change what happens to the project:
+  the setting above still unloads it. An error of the handler itself is handled as an event function's, so with the
+  setting on it unloads the project even when the handler was called for a timer's error.
 
 ## Calling other projects
 

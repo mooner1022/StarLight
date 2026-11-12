@@ -70,6 +70,7 @@ class DocsAnswers(private val renderer: DtsRenderer, private val guides: GuideLi
     companion object {
         const val FUNCTIONS_NOTE = "Not an event: onProjectButtonClicked(buttonId), called in a compiled project when " +
             "the user taps one of its custom buttons, whatever its API levels and allowed events " +
-            "(guide:events#event-functions)."
+            "(guide:events#event-functions); and onUncaughtError(error, origin, detail), called with the errors of the " +
+            "project's code that nothing caught (guide:events#uncaught-errors)."
     }
 }

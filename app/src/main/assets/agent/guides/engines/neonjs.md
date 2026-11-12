@@ -43,6 +43,7 @@ strict mode. Pick it for new projects unless the user asks for Rhino.
   is discarded. Wait with `await` or timers, never in a loop, and split heavy work with `setTimeout`.
 - An uncaught error in an event-loop task is logged as `Uncaught exception: …`, a rejected Promise nobody handles as
   `Unhandled promise rejection: …`, both with a JS stack trace.
+- An exported `onUncaughtError` is then called with them too (guide:events#uncaught-errors).
 
 ## Timers
 

@@ -117,6 +117,9 @@ class ProjectImpl private constructor(
         reloadAllowedEventIDs()
     }
 
+    /** The function this worker thread is calling, for [ProjectErrorListener]; cleared once its event ends. */
+    private val currentCall = ThreadLocal<Pair<String, Array<out Any>>?>()
+
     override fun callFunction(name: String, args: Array<out Any>, onException: (Throwable) -> Unit) =
         runEvent({
             // The scope as it is when the call runs: one queued before a compile is for the new code.
@@ -126,6 +129,7 @@ class ProjectImpl private constructor(
             if (!isCallAllowed(name, args))
                 return@runEvent
             runs.label(name)
+            currentCall.set(name to args)
             try {
                 lang.callFunction(scope, name, args)
             } finally {
@@ -174,6 +178,9 @@ class ProjectImpl private constructor(
                 Locale.ENGLISH { "Error while running: $what" + if (shutdownOnError) "\nThe project was turned off, as its setting for errors says." else "" }
                 Locale.KOREAN  { "실행 중 에러 발생: $what" + if (shutdownOnError) "\n'오류 발생시 비활성화' 설정에 따라 프로젝트를 껐어요." else "" }
             })
+            // After the log, which keeps the error whatever the listener does; before the setting unloads the version.
+            if (scope != null)
+                tellErrorListener(e, scope)
             if (shutdownOnError)
                 destroy(requestUpdate = true)
             e.printStackTrace()
@@ -183,9 +190,24 @@ class ProjectImpl private constructor(
         obtainExecutor().post {
             JobLocker.withLock(threadPoolName!!) {
                 val scope = langScope
-                runCatching(task)
-                    .onFailure { onError(it, scope) }
+                try {
+                    runCatching(task)
+                        .onFailure { onError(it, scope) }
+                } finally {
+                    currentCall.remove()
+                }
             }
+        }
+    }
+
+    private fun tellErrorListener(e: Throwable, scope: Any) {
+        val listener = ProjectErrorListener.current
+            ?: return
+        val call = currentCall.get()
+        try {
+            listener.onEventError(this, scope, e, call?.first, call?.second)
+        } catch (error: Exception) {
+            Logger.w(tag, "The error listener failed on an error of ${info.name}: $error")
         }
     }
 

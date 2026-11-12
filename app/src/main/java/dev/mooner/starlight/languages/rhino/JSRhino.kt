@@ -13,6 +13,7 @@ import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.languages.EntryPoints
 import dev.mooner.starlight.languages.ScriptHostPolicy
 import dev.mooner.starlight.languages.ScriptJson
+import dev.mooner.starlight.script.errors.UncaughtErrors
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
@@ -166,8 +167,10 @@ class JSRhino: Language() {
             }
 
             context.evaluateString(scope, code, project?.info?.name ?: name, 1, null)
-            if (project != null)
+            if (project != null) {
                 EntryPoints.report(project, code, exportsOnly = false) { name -> scope.get(name, scope) is Function }
+                UncaughtErrors.watch(project, rhinoUncaughtHandler(scope, ::enterContext))
+            }
             scope
         }
 
@@ -394,4 +397,44 @@ class JSRhino: Language() {
             }
         }
     }
+}
+
+/**
+ * The handler that calls the script's top-level `onUncaughtError`, or null when it has none. It enters a context with
+ * [enter] for each call, as the thread that reports may have none. Rhino doesn't report rejected Promises, and what the
+ * function returns isn't looked at.
+ */
+internal fun rhinoUncaughtHandler(scope: Scriptable, enter: () -> Context): UncaughtErrors.Handler? {
+    val function = scope.get(UncaughtErrors.FUNCTION, scope) as? Function
+        ?: return null
+    return UncaughtErrors.Handler { error, origin, source, args ->
+        val cx = enter()
+        try {
+            val detail = cx.newObject(scope)
+            ScriptableObject.putProperty(detail, "source", source)
+            ScriptableObject.putProperty(detail, "args",
+                cx.newArray(scope, Array<Any?>(args.size) { Context.javaToJS(args[it], scope) }))
+            function.call(cx, scope, scope, arrayOf(scriptErrorOf(cx, scope, error), origin, detail))
+        } finally {
+            Context.exit()
+        }
+        true
+    }
+}
+
+/** [error] as the script would have caught it: the value it threw, a JS error for Rhino's own, or the Java exception. */
+private fun scriptErrorOf(cx: Context, scope: Scriptable, error: Throwable): Any? {
+    val thrown = generateSequence(error) { it.cause.takeIf { cause -> cause !== it } }
+        .take(8)
+        .firstOrNull { it is JavaScriptException || it is EcmaError || it is WrappedException }
+    val value: Any? = when (thrown) {
+        is JavaScriptException -> thrown.value
+        is EcmaError -> {
+            val name = thrown.name.takeIf { ScriptableObject.getProperty(scope, it) is Function } ?: "Error"
+            cx.newObject(scope, name, arrayOf(thrown.errorMessage))
+        }
+        is WrappedException -> thrown.wrappedException
+        else -> error
+    }
+    return Context.javaToJS(value, scope)
 }
