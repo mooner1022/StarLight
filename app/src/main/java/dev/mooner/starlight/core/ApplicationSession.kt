@@ -17,10 +17,14 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.api.CoreApis
 import dev.mooner.starlight.plugincore.project.ProjectCallGate
+import dev.mooner.starlight.plugincore.project.ProjectErrorListener
 import dev.mooner.starlight.script.chat.ChatWaits
+import dev.mooner.starlight.script.errors.UncaughtErrors
 import dev.mooner.starlight.script.schedule.ScheduleAlarms
 import dev.mooner.starlight.languages.neonjs.JSNeon
 import dev.mooner.starlight.languages.rhino.JSRhino
+import dev.mooner.starlight.listener.NotificationListener
+import dev.mooner.starlight.listener.RoomRestore
 import dev.mooner.starlight.listener.specs.AndroidRParserSpec
 import dev.mooner.starlight.listener.specs.ConversationShortcutParserSpec
 import dev.mooner.starlight.listener.specs.DefaultParserSpec
@@ -62,6 +66,8 @@ object ApplicationSession {
         private set
 
     @JvmStatic
+    // Read by the notification listener's thread as the app starts.
+    @Volatile
     var initState: Session.InitState = Session.InitState.None
         private set
 
@@ -73,6 +79,7 @@ object ApplicationSession {
             logger.warn { "Rejecting re-init of ApplicationSession" }
             return@flow
         }
+        RoomRestore.appStarted()
         initState = Session.InitState.Processing
 
         setExceptionHandler(context)
@@ -114,6 +121,7 @@ object ApplicationSession {
         CoreApis.earlyApis().forEach { Session.apiManager.addApi(it) }
         // Before any project compiles: a message a script waits for with Chat.waitFor is held back from the others.
         ProjectCallGate.current = ChatWaits
+        ProjectErrorListener.current = UncaughtErrors.listener
         // Before any project compiles, as compiling scripts schedule their tasks (Schedule).
         ScheduleAlarms.init(context)
 
@@ -179,6 +187,7 @@ object ApplicationSession {
         setNetworkHandler(context)
 
         initState = Session.InitState.Done
+        NotificationListener.onAppReady()
         initMillis = System.currentTimeMillis()
         CrashGuard.startFinished()
     }

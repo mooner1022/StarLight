@@ -51,7 +51,12 @@ internal object SystemPrompt {
           calls so a failed request doesn't end as an unhandled rejection. read_guide engines/neonjs#async-code has more.
           For the user's next message, as a question's answer, await `Chat.waitFor` (read_guide events#waiting-for-an-answer)
           rather than keeping per-user state between events; for times of day, use `Schedule` (read_guide
-          events#scheduled-tasks) rather than long timers.
+          events#scheduled-tasks) rather than long timers, with `Schedule.at` for a reminder set while the bot runs,
+          which outlives compiles and restarts.
+        - Errors: to answer in the room or report when code fails, export `onUncaughtError(error, origin, detail)`
+          (read_guide events#uncaught-errors) rather than wrapping every event function in try/catch.
+        - Text: for grouped numbers, dates, durations and Korean particles (을/를), use `Format` (describe_api Format);
+          NeonJS has no `Intl`.
         - Proportion: a few lines of reply logic can stay in one file; split once there are several features, shared
           state or code that would otherwise repeat. When you restructure an existing project, keep its behavior,
           compile and test it afterwards, and tell the user briefly what moved where.

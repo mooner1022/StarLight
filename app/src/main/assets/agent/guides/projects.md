@@ -18,7 +18,8 @@ layout in an app-only folder (guide:play-build#data-folder).
 ├─ config.json      the project's settings, its language settings included
 ├─ logs.json        its recent logs
 ├─ data/            a usual place for what the script saves
-│  └─ store/        the files of `Store` (below)
+│  ├─ store/        the files of `Store` (below)
+│  └─ schedule/     the tasks `Schedule.at` keeps (guide:events#scheduled-tasks)
 └─ debugroom/       the debug room's chat history
 ```
 
@@ -49,7 +50,7 @@ levels share is given once. Plugins' APIs and events belong to every project, wh
 
 | Level | Globals | Events |
 |---|---|---|
-| StarLight original (`starlight`) | `Log`, `Store`, `Chat`, `Schedule`, `Projects`, `Plugins`, `Languages`, `Platform`, `Env`, `Java`, `Notification`, `HomeWidget`, `MediaSharer`, `EventEmitter` | `onMessage`, `onMessageDeleted`, `onNotificationPosted`, `onStartCompile` |
+| StarLight original (`starlight`) | `Log`, `Store`, `Chat`, `Schedule`, `Format`, `Projects`, `Plugins`, `Languages`, `Platform`, `Env`, `Java`, `Notification`, `HomeWidget`, `MediaSharer`, `EventEmitter` | `onMessage`, `onMessageDeleted`, `onNotificationPosted`, `onStartCompile` |
 | MessengerBot API2 (`msgbot.api2`) | `Log`, `BotManager`, `Event`, `Broadcast`, `App`, `Device`, `FileStream` | listeners added with `bot.on(Event.…)` |
 | MessengerBot legacy (`msgbot.legacy`) | `Log`, `Api`, `Utils`, `DataBase`, `Bridge`, `Device`, `FileStream` | `response`, `onNotificationPosted`, `onStartCompile` |
 
@@ -108,6 +109,10 @@ receives.
   again (`compile_project`), and turned on again for real chats.
 - A compile error names the file and line. `get_project_logs` shows the logs, stack traces included.
 - An error in a timer or in a Promise nobody handles is logged and doesn't unload the project.
+- A script that defines `onUncaughtError(error, origin, detail)` is told of each of these errors after it is logged,
+  to answer in the room or tidy up (guide:events#uncaught-errors). That doesn't change what happens to the project:
+  the setting above still unloads it. An error of the handler itself is handled as an event function's, so with the
+  setting on it unloads the project even when the handler was called for a timer's error.
 
 ## Calling other projects
 

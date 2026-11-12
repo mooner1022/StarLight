@@ -48,6 +48,10 @@ internal object Schedules {
         /** The task's name in a warning about a run that takes long: `Schedule.daily` and so on. */
         val name: String,
         val callback: (Run) -> Unit,
+        /** One of `Schedule.at`, kept in the project's file: not counted in [MAX_TASKS], and kept while the project is off. */
+        val stored: Boolean = false,
+        /** Whether it may run yet, asked when it is due; looked at again a second later while it says no. */
+        val gate: (() -> Boolean)? = null,
     ) {
         /** When it runs next, in milliseconds since 1970; null once it is done or cancelled. */
         @Volatile
@@ -82,16 +86,24 @@ internal object Schedules {
     /**
      * Adds a task of [owner]'s, its first run worked out now.
      *
-     * @throws IllegalStateException When [owner] has [MAX_TASKS] already.
+     * @throws IllegalStateException When [owner] has [MAX_TASKS] already, not counting [stored] ones.
      * @throws IllegalArgumentException When [spec] never runs.
      */
-    fun add(owner: Owner, spec: ScheduleSpec, name: String, callback: (Run) -> Unit): Task {
-        check(tasks.count { it.owner.id == owner.id } < MAX_TASKS) {
-            "A project can have $MAX_TASKS scheduled tasks at once: cancel some first"
-        }
+    fun add(
+        owner: Owner,
+        spec: ScheduleSpec,
+        name: String,
+        stored: Boolean = false,
+        gate: (() -> Boolean)? = null,
+        callback: (Run) -> Unit,
+    ): Task {
+        if (!stored)
+            check(tasks.count { it.owner.id == owner.id && !it.stored } < MAX_TASKS) {
+                "A project can have $MAX_TASKS scheduled tasks at once: cancel some first"
+            }
         val first = spec.first(Instant.ofEpochMilli(clock()), zone())
             ?: throw IllegalArgumentException("'${spec.description}' never runs")
-        val task = Task(owner, spec, name, callback)
+        val task = Task(owner, spec, name, callback, stored, gate)
         task.next = first.toEpochMilli()
         tasks += task
         driver?.poke()
@@ -107,9 +119,9 @@ internal object Schedules {
         return wasActive
     }
 
-    /** Cancels every task of the project [id]; how many there were. */
-    fun cancelAll(id: ProjectID): Int {
-        val owned = tasks.filter { it.owner.id == id }
+    /** Cancels every task of the project [id], or all but the [Task.stored] ones; how many there were. */
+    fun cancelAll(id: ProjectID, keepStored: Boolean = false): Int {
+        val owned = tasks.filter { it.owner.id == id && !(keepStored && it.stored) }
         owned.forEach { it.next = null }
         tasks.removeAll(owned.toSet())
         if (owned.isNotEmpty())
@@ -133,13 +145,21 @@ internal object Schedules {
                 consider(at)
                 continue
             }
+            if (task.gate?.invoke() == false) {
+                consider(now + COMPILE_RETRY_MILLIS)
+                continue
+            }
             when (task.owner.readiness()) {
                 Readiness.WAIT -> {
                     consider(now + COMPILE_RETRY_MILLIS)
                     continue
                 }
-                Readiness.SKIP ->
+                Readiness.SKIP -> {
+                    // Kept for when the project is on again, which looks at the tasks then: no alarm meanwhile.
+                    if (task.stored)
+                        continue
                     task.owner.note("Skipped ${task.spec.description}: the project is off")
+                }
                 Readiness.RUN -> {
                     if (task.running)
                         task.owner.note("Skipped ${task.spec.description}: its last run hasn't ended")

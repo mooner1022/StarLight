@@ -6,8 +6,9 @@
 
 package dev.mooner.starlight.api.original
 
-import dev.mooner.neonjs.NeonValue
-import dev.mooner.starlight.media.script.ScriptValues
+import dev.mooner.starlight.languages.ScriptJson
+import dev.mooner.starlight.languages.rhino.JSRhino
+import dev.mooner.starlight.listener.RoomRestore
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
@@ -17,18 +18,15 @@ import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycle
 import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycleObserver
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.script.ScriptTimes
 import dev.mooner.starlight.script.runCallback
 import dev.mooner.starlight.script.schedule.CronExpression
 import dev.mooner.starlight.script.schedule.ScheduleSpec
 import dev.mooner.starlight.script.schedule.Schedules
+import dev.mooner.starlight.script.schedule.StoredSchedule
+import dev.mooner.starlight.script.schedule.StoredTasks
 import org.mozilla.javascript.Context
-import org.mozilla.javascript.Scriptable
 import java.time.Instant
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeParseException
-import java.util.Date
 
 class ScheduleApi: Api<ScheduleApi.Schedule>() {
 
@@ -54,13 +52,38 @@ class ScheduleApi: Api<ScheduleApi.Schedule>() {
      * - A callback runs as one of the project's tasks, as a timer's does: an error it throws is logged and doesn't
      *   unload the project.
      *
+     * `Schedule.at` keeps a task in the project's folder instead, so that it outlives compiles and restarts, as for a
+     * reminder set while the bot runs. Its handler is a function registered by name with `Schedule.on` in the top-level
+     * code, which runs on each compile:
+     *
+     * ```js
+     * Schedule.on("remind", (data, run) => Chat.findRoom(data.room)?.send(data.text));
+     * export function onMessage(event) {
+     *     if (event.message === "!remind")
+     *         Schedule.at(Date.now() + 3600_000, "remind", { room: event.room.name, text: "An hour passed" });
+     * }
+     * ```
+     *
      * @see guide:events#scheduled-tasks
      */
     class Schedule internal constructor(
         private val project: Project,
+        private val json: ScriptJson,
     ) {
 
         private val owner = ProjectOwner(project)
+
+        private val stored = StoredSchedule(owner, StoredTasks.of(project), workerJson(), RoomRestore::isSettled)
+
+        /**
+         * [json] that also works on the project's workers, where a kept task's data is read before its handler is
+         * called: Rhino's JSON needs a context, which a worker enters only once the script's function is called.
+         */
+        private fun workerJson(): ScriptJson {
+            val rhino = project.getLanguage() as? JSRhino
+                ?: return json
+            return json.enteringRhino(rhino::enterContext)
+        }
 
         /**
          * Runs [callback] every day at [time], in the device's time zone.
@@ -110,49 +133,92 @@ class ScheduleApi: Api<ScheduleApi.Schedule>() {
         fun once(time: Any, callback: (run: ScheduleRun) -> Unit): ScheduledTask =
             add(ScheduleSpec.Once(instantOf(time)), "Schedule.once", callback)
 
-        /** The project's tasks still to run, as an array. */
+        /** The project's tasks from `daily`, `cron` and `once` still to run, as an array; not those of `Schedule.at`. */
         fun getTasks(): Array<ScheduledTask> =
-            Schedules.tasksOf(project.info.id).map(::ScheduledTask).toTypedArray()
+            Schedules.tasksOf(project.info.id).filterNot { it.stored }.map(::ScheduledTask).toTypedArray()
 
         /**
-         * Cancels every task of the project.
+         * Cancels every task of the project from `daily`, `cron` and `once`. Those of `Schedule.at` stay: cancel them
+         * with `Schedule.cancel(name)` or their own `cancel()`.
          *
          * @return How many were cancelled.
          */
         fun cancelAll(): Int =
-            Schedules.cancelAll(project.info.id)
+            Schedules.cancelAll(project.info.id, keepStored = true)
+
+        /**
+         * Registers [handler] for the tasks `Schedule.at` keeps under [name], in place of an earlier one. Call it in
+         * the top-level code: the handlers of a compiled version go with it, and a task waits, kept, until a version
+         * registers its name.
+         *
+         * @param name As given to `Schedule.at`.
+         * @param handler Given the task's data, as the engine's own value, and its `ScheduleRun`.
+         * @throws IllegalArgumentException When [name] can't be a task's name.
+         */
+        fun on(name: String, handler: (data: Any?, run: ScheduleRun) -> Unit) =
+            stored.on(name) { data, run -> handler(data, ScheduleRun(run.scheduledAt, run.lateMillis)) }
+
+        /**
+         * Keeps a task named [name] to run at [time], without data; see the form with data.
+         *
+         * @param time A `Date`, milliseconds since 1970 as `Date.now()` gives them, or ISO 8601 text.
+         * @param name Up to 64 letters, digits, `_`, `.` or `-`; the handler `Schedule.on` registered for it runs.
+         * @return The kept task.
+         * @throws IllegalArgumentException When [time] or [name] isn't one.
+         * @throws IllegalStateException When the project keeps 100 tasks of `Schedule.at` already.
+         */
+        fun at(time: Any, name: String): StoredTask =
+            at(time, name, null)
+
+        /**
+         * Keeps a task named [name] to run at [time], with [data], in `data/schedule/stored.json` in the project's
+         * folder: it outlives compiles and restarts, unlike the other tasks.
+         *
+         * - At [time] the handler `Schedule.on` registered for [name] is called with the data and the run's
+         *   `ScheduleRun`. A time already past runs at once.
+         * - It runs only while the project is compiled and on. One that came due meanwhile, as while StarLight wasn't
+         *   running or the project was off, runs once when the project is compiled and on again, however late:
+         *   `run.lateMillis` tells how late, for the handler to pass over one too old.
+         * - It runs at most once: it is taken out of the file before the handler is called, so one whose run ends with
+         *   the app isn't made again.
+         * - After StarLight starts, a task waits up to 10 seconds for the rooms to be restored, so that
+         *   `Chat.findRoom` finds them.
+         * - A task whose name has no handler stays kept until one is registered.
+         * - `cancelAll()` and `getTasks()` leave these tasks out: see `getStored()` and `cancel(name)`.
+         *
+         * @param time A `Date`, milliseconds since 1970 as `Date.now()` gives them, or ISO 8601 text: `"2026-12-25T09:00"`
+         * is in the device's time zone, `"2026-12-25T09:00+09:00"` and `"2026-12-25T00:00Z"` name theirs.
+         * @param name Up to 64 letters, digits, `_`, `.` or `-`; the handler `Schedule.on` registered for it runs.
+         * @param data What `JSON.stringify` can write, up to 16 KiB as JSON; the handler gets a copy. NeonJS keeps
+         * `undefined` and functions as `null`; Rhino hands `undefined` over as the text `"undefined"`.
+         * @return The kept task.
+         * @throws IllegalArgumentException When [time] or [name] isn't one, or [data] is too large.
+         * @throws IllegalStateException When the project keeps 100 tasks of `Schedule.at` already.
+         */
+        fun at(time: Any, name: String, data: Any?): StoredTask {
+            val instant = ScriptTimes.instantOf(time) ?: throw IllegalArgumentException(
+                "Schedule.at takes a Date, milliseconds since 1970 or ISO 8601 text, as \"2026-12-25T09:00\"")
+            return StoredTask(stored, stored.at(instant, name, data), json)
+        }
+
+        /** The tasks `Schedule.at` keeps for the project, as an array, those still waiting for a handler included. */
+        fun getStored(): Array<StoredTask> =
+            stored.list().map { StoredTask(stored, it, json) }.toTypedArray()
+
+        /**
+         * Cancels every task `Schedule.at` keeps under [name].
+         *
+         * @return How many were cancelled.
+         */
+        fun cancel(name: String): Int =
+            stored.cancel(name)
 
         private fun add(spec: ScheduleSpec, name: String, callback: (run: ScheduleRun) -> Unit): ScheduledTask =
             ScheduledTask(Schedules.add(owner, spec, name) { run -> callback(ScheduleRun(run.scheduledAt, run.lateMillis)) })
 
-        private fun instantOf(time: Any): Instant {
-            val value = ScriptValues.unwrap(time)
-            return when {
-                value is NeonValue && value.isObject -> runCatching { value.asInstant() }.getOrNull()
-                value is Scriptable && value.className == "Date" -> Instant.ofEpochMilli(Context.toNumber(value).toLong())
-                value is Number       -> Instant.ofEpochMilli(value.toLong())
-                value is Date         -> value.toInstant()
-                value is Instant      -> value
-                value is CharSequence -> parseTime(value.toString())
-                else                  -> null
-            } ?: throw IllegalArgumentException(
+        private fun instantOf(time: Any): Instant =
+            ScriptTimes.instantOf(time) ?: throw IllegalArgumentException(
                 "Schedule.once takes a Date, milliseconds since 1970 or ISO 8601 text, as \"2026-12-25T09:00\"")
-        }
-
-        private fun parseTime(text: String): Instant? =
-            try {
-                Instant.parse(text)
-            } catch (_: DateTimeParseException) {
-                try {
-                    OffsetDateTime.parse(text).toInstant()
-                } catch (_: DateTimeParseException) {
-                    try {
-                        LocalDateTime.parse(text).atZone(ZoneId.systemDefault()).toInstant()
-                    } catch (_: DateTimeParseException) {
-                        null
-                    }
-                }
-            }
 
         private val canceller = object : ProjectLifecycleObserver.ExplicitObserver {
             // Before the new code runs, which sets up its own.
@@ -164,6 +230,11 @@ class ScheduleApi: Api<ScheduleApi.Schedule>() {
             override fun onDestroy(project: Project) {
                 Schedules.cancelAll(project.info.id)
                 project.getLifecycle().unregisterObserver(this)
+            }
+
+            // A kept task that came due while the project was off runs now.
+            override fun onEnable(project: Project) {
+                Schedules.driver?.poke()
             }
         }
 
@@ -199,6 +270,45 @@ class ScheduleApi: Api<ScheduleApi.Schedule>() {
 
         override fun toString(): String =
             "ScheduledTask(${task.spec.description})"
+    }
+
+    /** A task kept by `Schedule.at`. */
+    class StoredTask internal constructor(
+        private val schedule: StoredSchedule,
+        private val entry: StoredTasks.Entry,
+        private val json: ScriptJson,
+    ) {
+
+        /** Its ID, 8 hexadecimal digits. */
+        val id: String
+            get() = entry.id
+
+        /** The name its handler is registered under. */
+        val name: String
+            get() = entry.name
+
+        /** When it is due, in milliseconds since 1970 (`new Date(task.time)`). */
+        val time: Long
+            get() = entry.at
+
+        /** Its data, as the engine's own value: a new copy each time it is read. */
+        val data: Any?
+            get() = json.parse(entry.dataText)
+
+        /** Whether it is still kept: `false` once it has run or was cancelled. */
+        val active: Boolean
+            get() = schedule.isActive(entry)
+
+        /**
+         * Cancels the task; a run already going on finishes.
+         *
+         * @return Whether it was still kept.
+         */
+        fun cancel(): Boolean =
+            schedule.cancel(entry)
+
+        override fun toString(): String =
+            "StoredTask(${entry.name} at ${Instant.ofEpochMilli(entry.at)})"
     }
 
     /** What a scheduled callback is told about its run. */
@@ -246,5 +356,22 @@ class ScheduleApi: Api<ScheduleApi.Schedule>() {
         InstanceType.OBJECT
 
     override fun getInstance(project: Project): Any =
-        Schedule(project)
+        Schedule(project, ScriptJson.current())
+}
+
+/** This JSON, with a Rhino context entered by [enter] around [ScriptJson.parse] on a thread that has none. */
+internal fun ScriptJson.enteringRhino(enter: () -> Context): ScriptJson {
+    val json = this
+    return object : ScriptJson by json {
+        override fun parse(json: String): Any? {
+            if (Context.getCurrentContext() != null)
+                return this@enteringRhino.parse(json)
+            enter()
+            try {
+                return this@enteringRhino.parse(json)
+            } finally {
+                Context.exit()
+            }
+        }
+    }
 }

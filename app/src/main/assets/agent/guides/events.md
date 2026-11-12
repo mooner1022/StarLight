@@ -18,6 +18,7 @@ StarLight calls a function with the event's name, with the event's arguments:
 | `onNotificationPosted(sbn)` | `starlight.notification.post` | Any app posts a notification (see below). |
 | `onStartCompile()` | `starlight.project.compile` | Right before a compiled project compiles again, after API2 `startCompile` listeners. |
 | `onProjectButtonClicked(buttonId)` | — | The user taps a custom button on the project's card. |
+| `onUncaughtError(error, origin, detail)` | — | The project's code throws an error nothing caught (see Uncaught errors below). |
 
 - In NeonJS the function must be exported; in Rhino it is a top-level function.
 - A project with both StarLight original and MessengerBot legacy gets `onMessage` and then `response` for each message.
@@ -73,7 +74,7 @@ export async function onMessage(event) {
 - In the debug room, messages come from its one sender, so the next one answers. `send_debug_message` reports a reply
   the waiting code sends through the first message's room as one of that message's (`earlierReplies`).
 - `Chat.findRoom(name)` and `Chat.getRooms()` give rooms to send to without an event: rooms a message came from since
-  StarLight started.
+  StarLight started, or whose message notification was still shown when it started.
 
 ## Scheduled tasks
 
@@ -92,9 +93,35 @@ reminder.cancel();
   StarLight wasn't running is skipped too.
 - While the device sleeps, Android may let a run come late, as it batches alarms; the callback's `run.lateMillis`
   says how late. Use `setTimeout` or `setInterval` for short delays.
-- Sending to a room needs a room StarLight has received a message from since it started: `Chat.findRoom` gives
-  `null` before that.
+- Sending to a room needs a room StarLight has received a message from since it started, or whose message
+  notification was still shown when it started: `Chat.findRoom` gives `null` before that.
 - A callback's error is logged, as a timer's, and doesn't unload the project.
+
+`Schedule.at` keeps a task in the project's folder instead (`data/schedule/stored.json`), so that it outlives compiles
+and restarts, as for a reminder set while the bot runs. Its handler is registered by name with `Schedule.on`:
+
+```js
+Schedule.on("remind", (data, run) => {
+    if (run.lateMillis > 3600_000) return;   // came due over an hour ago, as while StarLight was off
+    Chat.findRoom(data.room)?.send(data.text);
+});
+export function onMessage(event) {
+    if (event.message !== "!remind") return;
+    Schedule.at(Date.now() + 10 * 60_000, "remind", { room: event.room.name, text: "10 minutes passed" });
+}
+```
+
+- Call `Schedule.on` in the top-level code, as each compile drops the handlers, and `Schedule.at` while the bot runs.
+  A task whose name has no handler stays kept until one is registered.
+- A kept task runs when its time comes while the project is compiled and on. One that came due while StarLight wasn't
+  running or the project was off runs once the project is compiled and on again, however late: `run.lateMillis` says
+  how late, so pass over old ones (`if (run.lateMillis > 3600_000) return;`).
+- It runs at most once: it leaves the file before the handler is called.
+- `data` is a JSON value of up to 16 KiB, given to the handler as a copy. A project keeps up to 100 such tasks.
+- After StarLight starts, kept tasks wait up to 10 seconds for the rooms of the notifications still shown to be
+  restored, so that `Chat.findRoom` finds them.
+- `Schedule.cancel(name)` or the task's `cancel()` removes one, and `Schedule.getStored()` lists them.
+  `Schedule.cancelAll()` and `Schedule.getTasks()` leave them out.
 
 ## Workers and order
 
@@ -116,6 +143,48 @@ Code that holds a worker longer than the project setting **느린 실행 경고 
 default, 0 turns it off) is warned about in the project's log: what runs (the event function, `setTimeout`,
 `Schedule.daily`, or NeonJS's code after an `await`) and how many events wait; again at a minute, and when it ends.
 It is usually a loop that doesn't end or a call that blocks, such as `Thread.sleep`, `Utils.getWebText` or `join()`.
+
+## Uncaught errors
+
+A script may define `onUncaughtError(error, origin, detail)`, as Node's `process.on("uncaughtException")`: StarLight
+calls it with each error of the project's code that nothing caught, after logging it. Exported in NeonJS, a top-level
+function in Rhino.
+
+```js
+export function onUncaughtError(error, origin, detail) {
+    // origin: "uncaughtException" or "unhandledRejection"; detail: { source, args }
+    detail.args[0]?.room?.send("Something went wrong.");
+}
+```
+
+| Where the error came from | `origin` | `detail.source` | `detail.args` | What else happens |
+|---|---|---|---|---|
+| An event function, while it runs | `uncaughtException` | its name, as `onMessage` | its arguments | logged; unloads the project while **오류 발생시 비활성화** is on |
+| An API2 listener | `uncaughtException` | `listener` | empty | as an event function's |
+| An `async` event function (NeonJS), once its Promise rejects | `unhandledRejection` | its name, as `onMessage` | its arguments | logged |
+| Another Promise nobody handles (NeonJS) | `unhandledRejection` | `promise` | empty | logged |
+| Other code of NeonJS's event loop, logged as `Uncaught exception` | `uncaughtException` | `promise` | empty | logged |
+| A `setTimeout` or `setInterval` callback | `uncaughtException` | `setTimeout`, `setInterval` | empty | logged |
+| A callback of `Schedule` or `Chat.waitFor` | `uncaughtException` | its name, as `Schedule.daily` | empty | logged |
+
+- `error` is what the code threw: the script's own value (`error instanceof Error`, `error.message`). A Java exception
+  arrives as the Java object: `error.message` reads, but it isn't an `Error`.
+- The handler doesn't keep the project on: with **오류 발생시 비활성화** on, an event function's error still unloads it
+  right after the handler returns. Only what the handler does before its first `await` is sure to run, so send the
+  reply there.
+- An `async` event function's error comes as `unhandledRejection`, with the function's name and arguments as a plain
+  one's, so the handler can answer in the room. It doesn't unload the project. A Promise the function started without
+  awaiting it comes from `promise`, with `detail.args` empty.
+- An error the handler throws, or a rejection of a Promise it returns, isn't handed to it again. It is logged, and it
+  unloads the project as an event function's error does while the setting is on, even when the error the handler was
+  given was a timer's.
+- The handler is called at most 10 times a minute; past that, errors are only logged for a while, which the log says
+  once. After failing 3 times in a row, it isn't called until the project compiles again.
+- It isn't called for errors of the top-level code while compiling, which fail the compile, for errors of a version a
+  compile has replaced, or for code the engine stops as the project compiles again. Every error is still logged as
+  before.
+- Rhino: `origin` is always `uncaughtException`, as Rhino doesn't report rejected Promises, and a Promise the handler
+  returns isn't followed. A Rhino runtime error arrives as a new error of its kind (`TypeError`) with its message.
 
 ## Notification events
 

@@ -127,18 +127,21 @@ class ChatApi: Api<ChatApi.Chat>() {
         }
 
         /**
-         * The room named [nameOrId], or with that ID, among those a message came from since StarLight started; `null`
-         * when there is none.
+         * The room named [nameOrId], or with that ID, among those a message came from since StarLight started, or
+         * whose message notification was still shown when it started; `null` when there is none.
          *
-         * Sending works only to a room whose notification the bot has received since StarLight started, as replying
-         * to a notification is how it sends.
+         * Sending works only to a room whose notification the bot has received since StarLight started, or that was
+         * still shown when it started, as replying to a notification is how it sends.
          *
          * @param nameOrId A room's name, or its ID as text.
          */
         fun findRoom(nameOrId: String): ChatRoom? =
             NotificationListener.getRoom(nameOrId)
 
-        /** The rooms messages came from since StarLight started, which the bot can send to. */
+        /**
+         * The rooms messages came from since StarLight started, or whose message notifications were still shown when it
+         * started, which the bot can send to.
+         */
         fun getRooms(): Array<ChatRoom> =
             NotificationListener.getRooms().toTypedArray()
 
