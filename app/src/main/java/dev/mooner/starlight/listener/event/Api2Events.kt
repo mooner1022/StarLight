@@ -19,6 +19,7 @@ import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import kotlin.reflect.KClass
+import dev.mooner.starlight.script.chat.ChatWaits
 
 /** The names of MessengerBot R's API2 events, which scripts listen for with `bot.on(…)`. */
 object Api2Events {
@@ -54,10 +55,17 @@ abstract class Api2Event: ProjectEvent() {
     /** Calls [deliver] with the project's bot, on its workers, if the script has a bot. */
     override fun dispatch(project: Project, args: Array<out Any>, onFailure: (Throwable) -> Unit) {
         val bot = Bot.find(project) ?: return
-        project.runEvent({ deliver(bot, args) }, onFailure)
+        project.runEvent({
+            // Decided as it is about to run, as the call gate decides for onMessage.
+            if (!isHeldBack(project, args))
+                deliver(bot, args)
+        }, onFailure)
     }
 
     protected abstract fun deliver(bot: Bot, args: Array<out Any>)
+
+    /** Whether the event is kept from the listeners: a message a script waits for as an answer (`Chat.waitFor`). */
+    protected open fun isHeldBack(project: Project, args: Array<out Any>): Boolean = false
 
     // onApi2Message beside StarLight's onMessage: in Rhino, a top-level function of an event's name is called as that
     // event, so the listener would run twice.
@@ -110,6 +118,9 @@ class Api2MessageEvent: Api2Event() {
 
     override fun deliver(bot: Bot, args: Array<out Any>) =
         bot.deliverMessage(args[0] as Message)
+
+    override fun isHeldBack(project: Project, args: Array<out Any>): Boolean =
+        ChatWaits.claim(project, args[0] as Message)
 }
 
 /**
@@ -139,6 +150,9 @@ class Api2CommandEvent: Api2Event() {
 
     override fun deliver(bot: Bot, args: Array<out Any>) =
         bot.deliverCommand(args[0] as Message)
+
+    override fun isHeldBack(project: Project, args: Array<out Any>): Boolean =
+        ChatWaits.claim(project, args[0] as Message)
 }
 
 /**

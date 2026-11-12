@@ -153,6 +153,10 @@
         <receiver
             android:name=".agent.runtime.AgentActionReceiver"
             android:exported="false"/>
+        <!-- Scripts' scheduled tasks (Schedule): wakes the device for the next one. -->
+        <receiver
+            android:name=".script.schedule.ScheduleAlarms$Receiver"
+            android:exported="false"/>
 
         <provider
             android:name="androidx.core.content.FileProvider"

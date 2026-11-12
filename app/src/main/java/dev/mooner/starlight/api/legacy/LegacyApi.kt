@@ -22,6 +22,7 @@ import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.languages.neonjs.compileForScript
 import dev.mooner.starlight.languages.neonjs.whileWaitingForAnotherThread
 import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycle
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import kotlinx.coroutines.Dispatchers
@@ -262,13 +263,18 @@ class LegacyApi: Api<LegacyApi.Api>() {
         }
 
         /**
-         * Whether the project named [scriptName] is compiling; always `false`, as StarLight doesn't track this yet.
+         * Whether the project named [scriptName] is compiling right now, its compile button's or a script's compile.
          *
-         * @param scriptName Not used.
+         * A project's own top-level code runs while it compiles, so this is `true` when a script asks it about its own
+         * project from there.
+         *
+         * @param scriptName The project's name, matched exactly.
+         * @return `false` also when no project has that name.
          */
         fun isCompiling(scriptName: String): Boolean {
-            /* TODO implement feature */
-            return false
+            val project = projectManager.getProjectByName(scriptName)
+                ?: return false
+            return project.getLifecycle().state == ProjectLifecycle.State.COMPILING
         }
 
         /**

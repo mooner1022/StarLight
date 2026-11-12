@@ -12,6 +12,7 @@ import dev.mooner.configdsl.options.toggle
 import dev.mooner.starlight.BuildConfig
 import dev.mooner.starlight.languages.EntryPoints
 import dev.mooner.starlight.languages.ScriptHostPolicy
+import dev.mooner.starlight.languages.ScriptJson
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
@@ -113,25 +114,39 @@ class JSRhino: Language() {
                 context.initStandardObjects(ImporterTopLevel(context))
 
             var importLines: StringBuilder? = null
-            for(api in apis) {
-                when(api.instanceType) {
-                    InstanceType.CLASS -> {
-                        val line = "const ${api.name} = Packages.${api.instanceClass.name};\n"
-                        if (importLines == null)
-                            importLines = StringBuilder(line)
-                        else
-                            importLines.append(line)
+            val ownConsts = if (project != null) topLevelConsts(code, context.languageVersion) else emptySet()
+            // API objects that keep script data take the scope's own JSON as they are made.
+            ScriptJson.providing(RhinoJson(scope)) {
+                for (api in apis) {
+                    // Rhino refuses a top-level `const` of a name the global already has ("redeclaration of var"). The
+                    // script's own wins, as a `var` or `let` of the name would, so a script that names something after
+                    // an API added later still compiles.
+                    if (api.instanceType == InstanceType.OBJECT && api.name in ownConsts) {
+                        project?.logger?.d(translate {
+                            Locale.ENGLISH { "The script declares its own const ${api.name}, so the API of that name is left out" }
+                            Locale.KOREAN  { "스크립트가 const ${api.name}을(를) 직접 선언해서 같은 이름의 API는 넣지 않았어요" }
+                        })
+                        continue
                     }
-                    InstanceType.OBJECT -> {
-                        if (project == null)
-                            continue
-                        // An API that fails to make its object, as one of a plugin, is left out; the script
-                        // compiles without it, and one that uses it fails on the name, with this in the log.
-                        callPlugin({ project.logger.e(translate {
-                                Locale.ENGLISH { "API '${api.name}' couldn't be loaded and is left out: $it" }
-                                Locale.KOREAN  { "API '${api.name}'을(를) 불러오지 못해 빼고 컴파일해요: $it" }
-                            }) }) {
-                            scope.put(api.name, scope, api.getInstance(project))
+                    when (api.instanceType) {
+                        InstanceType.CLASS -> {
+                            val line = "const ${api.name} = Packages.${api.instanceClass.name};\n"
+                            if (importLines == null)
+                                importLines = StringBuilder(line)
+                            else
+                                importLines!!.append(line)
+                        }
+                        InstanceType.OBJECT -> {
+                            if (project == null)
+                                continue
+                            // An API that fails to make its object, as one of a plugin, is left out; the script
+                            // compiles without it, and one that uses it fails on the name, with this in the log.
+                            callPlugin({ project.logger.e(translate {
+                                    Locale.ENGLISH { "API '${api.name}' couldn't be loaded and is left out: $it" }
+                                    Locale.KOREAN  { "API '${api.name}'을(를) 불러오지 못해 빼고 컴파일해요: $it" }
+                                }) }) {
+                                scope.put(api.name, scope, api.getInstance(project))
+                            }
                         }
                     }
                 }

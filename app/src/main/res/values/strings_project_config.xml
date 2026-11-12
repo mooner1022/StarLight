@@ -4,6 +4,8 @@
     <string name="project_config_general_category">General</string>
     <string name="project_config_folder_location_title">Project location</string>
     <string name="project_config_shutdown_on_error_title">Turn off on error</string>
+    <string name="project_config_slow_run_title">Slow run warning (s)</string>
+    <string name="project_config_slow_run_desc">Warns in the log when an event, timer or other code of this project runs longer than this without ending. 0 turns it off.</string>
     <string name="project_config_events_category">Events</string>
     <string name="project_config_beta_features_category">Experimental features</string>
     <string name="project_config_thread_pool_size_title">Concurrent runs</string>

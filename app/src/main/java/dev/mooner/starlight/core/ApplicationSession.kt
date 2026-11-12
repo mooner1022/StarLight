@@ -16,6 +16,9 @@ import dev.mooner.starlight.CF_SAFE_MODE
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.api.CoreApis
+import dev.mooner.starlight.plugincore.project.ProjectCallGate
+import dev.mooner.starlight.script.chat.ChatWaits
+import dev.mooner.starlight.script.schedule.ScheduleAlarms
 import dev.mooner.starlight.languages.neonjs.JSNeon
 import dev.mooner.starlight.languages.rhino.JSRhino
 import dev.mooner.starlight.listener.specs.AndroidRParserSpec
@@ -109,6 +112,10 @@ object ApplicationSession {
         // then skipped as a duplicate.
         MediaSharing.init(context)
         CoreApis.earlyApis().forEach { Session.apiManager.addApi(it) }
+        // Before any project compiles: a message a script waits for with Chat.waitFor is held back from the others.
+        ProjectCallGate.current = ChatWaits
+        // Before any project compiles, as compiling scripts schedule their tasks (Schedule).
+        ScheduleAlarms.init(context)
 
         if (!BuildConfig.DYNAMIC_PLUGINS) {
             logger.info { "Plugins aren't available in this build" }

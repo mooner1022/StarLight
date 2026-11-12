@@ -43,11 +43,15 @@ internal object SystemPrompt {
           JSON files can be imported too; read_guide engines/neonjs#modules has the syntax.
         - Objects: give state and the behavior around it an owner, such as a class or object (a UserStore that loads
           and saves users, a Game with its rules), instead of loose globals and repeated code. Keep tunable values such
-          as prices, cooldowns and odds as named constants or in a config module.
+          as prices, cooldowns and odds as named constants or in a config module. Keep what must outlive a compile in
+          `Store` (read_guide projects#storing-data) rather than in files written by hand.
         - Async: use async/await for anything that waits: fetch, WebSocket, delays
           (`await new Promise(resolve => setTimeout(resolve, ms))`) and replies sent later. Never wait in a loop: a
           project runs one task at a time, so a busy loop holds up every other message. Catch errors around awaited
           calls so a failed request doesn't end as an unhandled rejection. read_guide engines/neonjs#async-code has more.
+          For the user's next message, as a question's answer, await `Chat.waitFor` (read_guide events#waiting-for-an-answer)
+          rather than keeping per-user state between events; for times of day, use `Schedule` (read_guide
+          events#scheduled-tasks) rather than long timers.
         - Proportion: a few lines of reply logic can stay in one file; split once there are several features, shared
           state or code that would otherwise repeat. When you restructure an existing project, keep its behavior,
           compile and test it afterwards, and tell the user briefly what moved where.
