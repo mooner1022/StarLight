@@ -73,7 +73,7 @@ export async function onMessage(event) {
 - In the debug room, messages come from its one sender, so the next one answers. `send_debug_message` reports a reply
   the waiting code sends through the first message's room as one of that message's (`earlierReplies`).
 - `Chat.findRoom(name)` and `Chat.getRooms()` give rooms to send to without an event: rooms a message came from since
-  StarLight started.
+  StarLight started, or whose message notification was still shown when it started.
 
 ## Scheduled tasks
 
@@ -92,8 +92,8 @@ reminder.cancel();
   StarLight wasn't running is skipped too.
 - While the device sleeps, Android may let a run come late, as it batches alarms; the callback's `run.lateMillis`
   says how late. Use `setTimeout` or `setInterval` for short delays.
-- Sending to a room needs a room StarLight has received a message from since it started: `Chat.findRoom` gives
-  `null` before that.
+- Sending to a room needs a room StarLight has received a message from since it started, or whose message
+  notification was still shown when it started: `Chat.findRoom` gives `null` before that.
 - A callback's error is logged, as a timer's, and doesn't unload the project.
 
 ## Workers and order

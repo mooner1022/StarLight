@@ -70,17 +70,65 @@ class NotificationListener: NotificationListenerService() {
 
     override fun onListenerConnected() {
         super.onListenerConnected()
+        connected = this
         updateConfig()
         eventReceiverScope.launch {
             EventHandler.on(this, ::onGlobalConfigUpdated)
         }
         LOG.debug { "Listener connected" }
+        // Before the app is ready, the rules and specs may not be there yet: onAppReady restores then.
+        if (ApplicationSession.isInitComplete)
+            restoreRooms()
     }
 
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
+        if (connected === this)
+            connected = null
         eventReceiverScope.coroutineContext.cancelChildren()
         LOG.debug { "Listener disconnected from system" }
+    }
+
+    /**
+     * Registers the rooms of the message notifications still shown, as the first rule's messages register theirs, so
+     * that scripts can send to them before a new message comes. Nothing else a message does happens: no events, and
+     * rooms already known are kept as they are.
+     */
+    private fun restoreRooms() {
+        eventReceiverScope.launch(Dispatchers.Default) {
+            var shown = 0
+            var restored = 0
+            try {
+                // As in handleMessage: only messages of the first rule register their rooms.
+                val rule = rules.firstOrNull()
+                    ?: return@launch
+                val notifications = activeNotifications.orEmpty().filter { sbn ->
+                    sbn.packageName == rule.packageName && sbn.userId == rule.userId &&
+                        sbn.notification.actions?.any { it.remoteInputs?.isNotEmpty() == true } == true
+                }
+                shown = notifications.size
+                val spec = ParserSpecManager.getSpecById(rule.parserSpecId)
+                    ?: return@launch
+                val ranking = runCatching { currentRanking }.getOrNull()
+                val rooms = RoomRestore.pick(
+                    shown = notifications,
+                    postTime = StatusBarNotification::getPostTime,
+                    parse = { sbn -> spec.parse(sbn.userId, applicationContext, sbn, sbn.notification.actions, ranking)?.room },
+                    isKnown = chatRooms::containsKey,
+                )
+                for (room in rooms)
+                    if (chatRooms.putIfAbsent(room.id, room) == null) {
+                        // A room of the same name that a message came from keeps the name.
+                        roomIdMap.putIfAbsent(room.name, room.id)
+                        restored++
+                    }
+            } catch (e: Exception) {
+                LOG.debug { "Couldn't restore rooms from the notifications shown: $e" }
+            } finally {
+                RoomRestore.markAttempted()
+                LOG.debug { "Restored $restored rooms from $shown notifications" }
+            }
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification, rankingMap: RankingMap?) {
@@ -374,6 +422,14 @@ class NotificationListener: NotificationListenerService() {
         private var isAutoRule: Boolean = false
         /** The KakaoTalk version name the automatic rule was detected for. */
         private var detectedKakaoTalkVersion: String? = null
+        /** The listener the system has connected, while it is. */
+        @Volatile
+        private var connected: NotificationListener? = null
+
+        /** Called once the app is initialized: restores rooms, if the listener connected before that. */
+        fun onAppReady() {
+            connected?.restoreRooms()
+        }
 
         fun notifySent() {
             deduper.reset()

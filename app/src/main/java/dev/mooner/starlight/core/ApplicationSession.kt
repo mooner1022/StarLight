@@ -21,6 +21,8 @@ import dev.mooner.starlight.script.chat.ChatWaits
 import dev.mooner.starlight.script.schedule.ScheduleAlarms
 import dev.mooner.starlight.languages.neonjs.JSNeon
 import dev.mooner.starlight.languages.rhino.JSRhino
+import dev.mooner.starlight.listener.NotificationListener
+import dev.mooner.starlight.listener.RoomRestore
 import dev.mooner.starlight.listener.specs.AndroidRParserSpec
 import dev.mooner.starlight.listener.specs.ConversationShortcutParserSpec
 import dev.mooner.starlight.listener.specs.DefaultParserSpec
@@ -73,6 +75,7 @@ object ApplicationSession {
             logger.warn { "Rejecting re-init of ApplicationSession" }
             return@flow
         }
+        RoomRestore.appStarted()
         initState = Session.InitState.Processing
 
         setExceptionHandler(context)
@@ -179,6 +182,7 @@ object ApplicationSession {
         setNetworkHandler(context)
 
         initState = Session.InitState.Done
+        NotificationListener.onAppReady()
         initMillis = System.currentTimeMillis()
         CrashGuard.startFinished()
     }
