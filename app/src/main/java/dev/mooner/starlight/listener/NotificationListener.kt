@@ -51,6 +51,7 @@ import dev.mooner.starlight.utils.decodeIfNotBlank
 import dev.mooner.starlight.utils.getKakaoTalkVersion
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
+import dev.mooner.starlight.script.chat.ChatWaits
 
 private val LOG = LoggerFactory.logger {  }
 
@@ -176,12 +177,13 @@ class NotificationListener: NotificationListenerService() {
                         }
                     }
 
-                    Session.projectManager.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::logEventFailure)
-                    Session.projectManager.fireEvent<Api2MessageEvent>(data, onFailure = ::logEventFailure)
-                    Session.projectManager.fireEvent<Api2CommandEvent>(data, onFailure = ::logEventFailure)
+                    // One message, as several events: a script waiting for it as an answer holds back all of them.
+                    ChatWaits.delivering(data) {
+                        Session.projectManager.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::logEventFailure)
+                        Session.projectManager.fireEvent<Api2MessageEvent>(data, onFailure = ::logEventFailure)
+                        Session.projectManager.fireEvent<Api2CommandEvent>(data, onFailure = ::logEventFailure)
 
-                    // Each project's levels decide whether it gets this one.
-                    run {
+                        // Each project's levels decide whether it gets this one.
                         val imageDB = ImageDB(data.sender.profileBitmap)
                         val replier = getOrCreateReplier(roomID)
 

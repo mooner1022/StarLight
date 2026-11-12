@@ -49,6 +49,32 @@ bot.on(Event.COMMAND, (msg) => msg.reply(`command ${msg.command} ${Array.from(ms
 - API2's objects follow MessengerBot R's documented API2; `describe_api BotManager` and `describe_event` show what
   StarLight implements and where it differs.
 
+## Waiting for an answer
+
+`Chat.waitFor` waits for the next message from the same sender in the same room (given a message) or from anyone in
+a room (given a room), for a question-and-answer flow without keeping state between events:
+
+```js
+export async function onMessage(event) {
+    if (event.message !== "!join") return;
+    event.room.send("What's your nickname?");
+    const answer = await Chat.waitFor(event, 30_000);   // null when none comes in 30 s
+    event.room.send(answer ? `Welcome, ${answer.message}!` : "Time's up.");
+}
+```
+
+- The answer goes to the waiting code only: the project's `onMessage`, `response` and API2 listeners don't get it.
+  Other projects do.
+- The message that started the wait never answers it. A second `!join` from the same person ends the first wait with
+  `null`.
+- Rhino has no `await`: pass a callback, `Chat.waitFor(event, 30000, function (answer) { … })`. `join()` on the
+  returned future works too, but holds one of the project's workers meanwhile.
+- Compiling again ends every wait without an answer.
+- In the debug room, messages come from its one sender, so the next one answers. `send_debug_message` reports a reply
+  the waiting code sends through the first message's room as one of that message's (`earlierReplies`).
+- `Chat.findRoom(name)` and `Chat.getRooms()` give rooms to send to without an event: rooms a message came from since
+  StarLight started.
+
 ## Workers and order
 
 An event reaches a project only when all of these hold:

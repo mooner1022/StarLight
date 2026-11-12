@@ -12,6 +12,8 @@ import dev.mooner.starlight.plugincore.language.CodeGenerator
 import dev.mooner.starlight.plugincore.project.event.ProjectEvent
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.plugincore.project.Project
+import dev.mooner.starlight.script.chat.ChatWaits
 
 /**
  * A chat message arrived, in a room of an app the notification rules cover; MessengerBot's legacy `response` form.
@@ -60,4 +62,10 @@ class LegacyEvent: ProjectEvent() {
             "imageDB"     typedAs ImageDB::class,
             "packageName" typedAs String::class,
         )
+
+    // Its arguments don't carry the message, which a script waiting for it as an answer needs to hold it back.
+    override fun dispatch(project: Project, args: Array<out Any>, onFailure: (Throwable) -> Unit) {
+        ChatWaits.noteLegacyCall(project.info.id, args)
+        super.dispatch(project, args, onFailure)
+    }
 }

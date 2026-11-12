@@ -122,6 +122,9 @@ class ProjectImpl private constructor(
             // The scope as it is when the call runs: one queued before a compile is for the new code.
             val scope = langScope
                 ?: throw IllegalStateException("Project should be in compiled state before calling function.")
+            // Held back, as a message a script waits for as an answer: decided here, as the call is about to run.
+            if (!isCallAllowed(name, args))
+                return@runEvent
             runs.label(name)
             try {
                 lang.callFunction(scope, name, args)
@@ -131,6 +134,17 @@ class ProjectImpl private constructor(
                     lang.release(scope)
             }
         }, onException)
+
+    private fun isCallAllowed(name: String, args: Array<out Any>): Boolean {
+        val gate = ProjectCallGate.current
+            ?: return true
+        return try {
+            gate.allows(this, name, args)
+        } catch (e: Exception) {
+            Logger.w(tag, "The call gate failed on $name of ${info.name}, so the call runs: $e")
+            true
+        }
+    }
 
     override fun runEvent(task: () -> Unit, onException: (Throwable) -> Unit) {
         if (langScope == null) {

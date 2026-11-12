@@ -74,6 +74,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.util.*
 import kotlin.properties.Delegates.notNull
+import dev.mooner.starlight.script.chat.ChatWaits
 
 private val logger = LoggerFactory.logger {  }
 
@@ -331,13 +332,16 @@ class DebugRoomFragment: Fragment() {
             chatLogId = -1L
         )
 
-        project.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::showErrorPeek)
+        // One message, as several events: a script waiting for it as an answer holds back all of them.
+        ChatWaits.delivering(data) {
+            project.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::showErrorPeek)
 
-        // Called only if the project's levels and allowed events include it.
-        project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, replier, ImageDB(selfProfileBitmap),
-            sentPackage, onFailure = ::showErrorPeek)
-        project.fireEvent<Api2MessageEvent>(data, onFailure = ::showErrorPeek)
-        project.fireEvent<Api2CommandEvent>(data, onFailure = ::showErrorPeek)
+            // Called only if the project's levels and allowed events include it.
+            project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, replier, ImageDB(selfProfileBitmap),
+                sentPackage, onFailure = ::showErrorPeek)
+            project.fireEvent<Api2MessageEvent>(data, onFailure = ::showErrorPeek)
+            project.fireEvent<Api2CommandEvent>(data, onFailure = ::showErrorPeek)
+        }
     }
 
     private fun showErrorPeek(e: Throwable) {

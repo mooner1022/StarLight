@@ -21,6 +21,7 @@ import dev.mooner.starlight.api.original.PluginsApi
 import dev.mooner.starlight.api.original.ProjectLoggerApi
 import dev.mooner.starlight.api.original.ProjectsApi
 import dev.mooner.starlight.api.original.StoreApi
+import dev.mooner.starlight.api.original.ChatApi
 import dev.mooner.starlight.listener.event.Api2CommandEvent
 import dev.mooner.starlight.listener.event.Api2MessageEvent
 import dev.mooner.starlight.listener.event.Api2NotificationPostedEvent
@@ -58,6 +59,7 @@ object CoreApis {
         PlatformApi(),
         JavaClassApi(),
         StoreApi(),
+        ChatApi(),
         // Experimental Node.js API
         EventEmitterApi(),
         // MessengerBot legacy

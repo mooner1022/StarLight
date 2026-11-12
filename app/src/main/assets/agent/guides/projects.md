@@ -49,7 +49,7 @@ levels share is given once. Plugins' APIs and events belong to every project, wh
 
 | Level | Globals | Events |
 |---|---|---|
-| StarLight original (`starlight`) | `Log`, `Store`, `Projects`, `Plugins`, `Languages`, `Platform`, `Env`, `Java`, `Notification`, `HomeWidget`, `MediaSharer`, `EventEmitter` | `onMessage`, `onMessageDeleted`, `onNotificationPosted`, `onStartCompile` |
+| StarLight original (`starlight`) | `Log`, `Store`, `Chat`, `Projects`, `Plugins`, `Languages`, `Platform`, `Env`, `Java`, `Notification`, `HomeWidget`, `MediaSharer`, `EventEmitter` | `onMessage`, `onMessageDeleted`, `onNotificationPosted`, `onStartCompile` |
 | MessengerBot API2 (`msgbot.api2`) | `Log`, `BotManager`, `Event`, `Broadcast`, `App`, `Device`, `FileStream` | listeners added with `bot.on(Event.…)` |
 | MessengerBot legacy (`msgbot.legacy`) | `Log`, `Api`, `Utils`, `DataBase`, `Bridge`, `Device`, `FileStream` | `response`, `onNotificationPosted`, `onStartCompile` |
 
