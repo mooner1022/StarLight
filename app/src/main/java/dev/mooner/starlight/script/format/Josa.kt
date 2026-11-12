@@ -13,7 +13,7 @@ internal object Josa {
     private val PAIRS = listOf("은" to "는", "이" to "가", "을" to "를", "과" to "와", "아" to "야")
 
     /** Passed over at the end of a word: spaces, closing brackets and quotes, and punctuation. */
-    private const val SKIPPED = ")]}\"'」』〉》.,!?~…"
+    private const val SKIPPED = ")]}\"'”’」』〉》）.,!?~…"
 
     private const val HANGUL_FIRST = 0xAC00
     private const val HANGUL_LAST = 0xD7A3

@@ -20,19 +20,26 @@ import java.util.Date
 /** Times as scripts give them, for the APIs that take one: `Schedule.once`, `Schedule.at` and `Format.date`. */
 internal object ScriptTimes {
 
-    /** A script's time value as an instant: a JS Date, milliseconds since 1970, a java.util.Date, an Instant, or ISO 8601 text. Null when it is none of these. */
+    /**
+     * A script's time value as an instant: a JS Date, milliseconds since 1970, a java.util.Date, an Instant, or ISO 8601
+     * text. Null when it is none of these, or a number or Date that names no time (`NaN`, `new Date("x")`).
+     */
     fun instantOf(time: Any?): Instant? {
         val value = ScriptValues.unwrap(time)
         return when {
             value is NeonValue && value.isObject -> runCatching { value.asInstant() }.getOrNull()
-            value is Scriptable && value.className == "Date" -> Instant.ofEpochMilli(Context.toNumber(value).toLong())
-            value is Number       -> Instant.ofEpochMilli(value.toLong())
+            value is Scriptable && value.className == "Date" -> ofMillis(Context.toNumber(value))
+            value is Number       -> ofMillis(value.toDouble())
             value is Date         -> value.toInstant()
             value is Instant      -> value
             value is CharSequence -> parseTime(value.toString())
             else                  -> null
         }
     }
+
+    /** NaN and the infinities would otherwise read as 1970 or the ends of time. */
+    private fun ofMillis(millis: Double): Instant? =
+        if (millis.isFinite()) Instant.ofEpochMilli(millis.toLong()) else null
 
     private fun parseTime(text: String): Instant? =
         try {

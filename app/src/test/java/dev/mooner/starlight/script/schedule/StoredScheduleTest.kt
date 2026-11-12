@@ -272,7 +272,7 @@ class StoredScheduleTest {
         schedule.at(at, "알림_1.x-y", null)
         schedule.at(at, "x".repeat(64), null)
         // Schedule.at refuses what ScriptTimes can't read as a time.
-        for (time in listOf<Any?>(Any(), "tomorrow", null, true))
+        for (time in listOf<Any?>(Any(), "tomorrow", null, true, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY))
             assertNull("$time", ScriptTimes.instantOf(time))
     }
 

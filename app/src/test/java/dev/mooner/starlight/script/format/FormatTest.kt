@@ -122,6 +122,9 @@ class FormatTest {
             Triple("user", "이/가", "user가"),
             Triple("mail", "으로/로", "mail로"),
             Triple("\"사과\"", "을/를", "\"사과\"를"),
+            Triple("“사과”", "을/를", "“사과”를"),
+            Triple("‘책’", "을/를", "‘책’을"),
+            Triple("（서울）", "으로/로", "（서울）로"),
             Triple("", "은/는", "는"),
             Triple("민수", "아/야", "민수야"),
             Triple("영철", "아/야", "영철아"),
@@ -140,6 +143,12 @@ class FormatTest {
             engines.both("Format.date(new Date(0), \"yyyy-MM-dd\", \"UTC\")", "1970-01-01")
             engines.both("Format.duration(3725000)", "1시간 2분 5초")
             engines.both("Format.josa(\"사과\", \"을/를\")", "사과를")
+            // A time that is none, which would otherwise read as 1970.
+            for (time in listOf("NaN", "new Date('x')", "Infinity")) {
+                val (neon, rhino) = engines.errors("Format.date($time, \"yyyy\")")
+                assertTrue("$time: $neon", "Format.date" in neon)
+                assertTrue("$time: $rhino", "Format.date" in rhino)
+            }
         }
     }
 }
