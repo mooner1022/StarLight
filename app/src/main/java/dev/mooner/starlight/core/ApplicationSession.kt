@@ -66,6 +66,8 @@ object ApplicationSession {
         private set
 
     @JvmStatic
+    // Read by the notification listener's thread as the app starts.
+    @Volatile
     var initState: Session.InitState = Session.InitState.None
         private set
 
