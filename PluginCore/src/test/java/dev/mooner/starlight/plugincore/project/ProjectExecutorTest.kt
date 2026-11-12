@@ -7,11 +7,35 @@ import java.util.Collections
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.launch
 
 class ProjectExecutorTest {
 
     private fun executor(concurrency: Int, dropped: AtomicInteger = AtomicInteger()) =
-        ProjectExecutor("test", concurrency) { dropped.incrementAndGet() }
+        ProjectExecutor("test", concurrency, ProjectRuns({ 0L }) {}) { dropped.incrementAndGet() }
+
+    @Test
+    fun namesARunAfterItsCoroutineAndTimesEvents() {
+        val labels = Collections.synchronizedList(ArrayList<String?>())
+        val runs = ProjectRuns({ 1L }) { report -> if (report is ProjectRuns.Report.Slow) labels += report.label }
+        val executor = ProjectExecutor("test", 1, runs) {}
+        val later = { System.nanoTime() + TimeUnit.SECONDS.toNanos(5) }
+        val done = CountDownLatch(2)
+        executor.scope.launch(CoroutineName("setTimeout")) {
+            runs.check(later())
+            done.countDown()
+        }
+        executor.post {
+            runs.check(later())
+            done.countDown()
+        }
+        assertTrue(done.await(10, TimeUnit.SECONDS))
+        // A coroutine's own name; none for an event, whose function names it when it calls one.
+        assertEquals(2, labels.size)
+        assertEquals(setOf("setTimeout", null), labels.toSet())
+        executor.shutdown()
+    }
 
     @Test
     fun runsEventsOneAtATimeInArrivalOrder() {

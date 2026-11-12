@@ -47,7 +47,7 @@ class RhinoGlobalObject(
         val mDelay = TimerDelay.effective(delay.getOrThrow<Long>(), repeat = true)
 
         val id = generateID()
-        val job = project.launch(start = CoroutineStart.LAZY) {
+        val job = project.launch(CoroutineName("setInterval"), start = CoroutineStart.LAZY) {
             while (isActive) {
                 delay(mDelay)
                 withContext { context ->
@@ -75,7 +75,7 @@ class RhinoGlobalObject(
         val mDelay = TimerDelay.effective(delay.getOrThrow<Long>(), repeat = false)
 
         val id = generateID()
-        val job = project.launch(start = CoroutineStart.LAZY) {
+        val job = project.launch(CoroutineName("setTimeout"), start = CoroutineStart.LAZY) {
             delay(mDelay)
             withContext { context ->
                 val scope = this@RhinoGlobalObject

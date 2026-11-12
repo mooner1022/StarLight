@@ -287,6 +287,17 @@ class ProjectConfigActivity: AppCompatActivity() {
                         icon = Icon.ERROR
                         iconTintColor = color { "#FF5C58" }
                     }
+                    // Read by PluginCore's ProjectImpl, which warns about a run that holds a worker this long.
+                    seekbar {
+                        id = "slow_run_seconds"
+                        title = getString(R.string.project_config_slow_run_title)
+                        description = getString(R.string.project_config_slow_run_desc)
+                        min = 0
+                        max = 120
+                        defaultValue = 10
+                        icon = Icon.TIMER
+                        iconTintColor = color { "#E0A458" }
+                    }
                 }
             }
             category {

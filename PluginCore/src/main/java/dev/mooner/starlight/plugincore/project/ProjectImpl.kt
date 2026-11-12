@@ -66,6 +66,17 @@ class ProjectImpl private constructor(
 
     private val lastDropWarning = AtomicLong()
 
+    /** How long the project's code holds its workers, across its executors; see [reportRun]. */
+    private val runs = ProjectRuns(
+        thresholdMillis = {
+            config.category(GENERAL_CATEGORY).getInt(SLOW_RUN_SECONDS, DEFAULT_SLOW_RUN_SECONDS) * 1_000L
+        },
+        report = ::reportRun,
+    )
+
+    /** When a run last got a warning, which shows an alert: later ones within [SLOW_ALERT_INTERVAL_MILLIS] don't. */
+    private val lastSlowAlert = AtomicLong()
+
     private val infoWriteScope = CoroutineScope(Dispatchers.IO.limitedParallelism(1))
 
     private val lifecycle = ProjectLifecycleRegistry(this)
@@ -111,6 +122,7 @@ class ProjectImpl private constructor(
             // The scope as it is when the call runs: one queued before a compile is for the new code.
             val scope = langScope
                 ?: throw IllegalStateException("Project should be in compiled state before calling function.")
+            runs.label(name)
             try {
                 lang.callFunction(scope, name, args)
             } finally {
@@ -424,7 +436,7 @@ class ProjectImpl private constructor(
 
     private fun obtainExecutor(): ProjectExecutor =
         executor ?: synchronized(this) {
-            executor ?: ProjectExecutor("$tag-worker", getConcurrency(), ::onEventDropped).also {
+            executor ?: ProjectExecutor("$tag-worker", getConcurrency(), runs, ::onEventDropped).also {
                 threadPoolName = it.name
                 executor = it
                 Logger.v(tag, "Allocated ${it.name} (concurrency ${it.concurrency}) to project ${info.name}")
@@ -435,6 +447,51 @@ class ProjectImpl private constructor(
         config.category("beta_features")
             .getInt("thread_pool_size", lang.defaultConcurrency)
             .coerceAtLeast(1)
+
+    /**
+     * Tells the project's log about a run that holds a worker long. The first warning about a run is a warning, which
+     * shows an alert, unless another did within [SLOW_ALERT_INTERVAL_MILLIS]: a bot that waits on every message would
+     * otherwise alert on each. The rest are info.
+     */
+    private fun reportRun(report: ProjectRuns.Report) {
+        val seconds = report.elapsedMillis / 1_000
+        val label = report.label
+        val what = translate {
+            Locale.ENGLISH { if (label != null) "'$label'" else "A task of ${info.name}" }
+            Locale.KOREAN  { if (label != null) "'$label' 실행" else "${info.name}의 작업" }
+        }
+        val message = when (report) {
+            is ProjectRuns.Report.Slow -> {
+                val queued = queuedEvents()
+                if (report.first)
+                    translate {
+                        Locale.ENGLISH { "$what has been running for $seconds s, with $queued events waiting. Check it for a " +
+                            "loop that doesn't end or a call that waits long, and compile the project again once it's fixed." }
+                        Locale.KOREAN  { "${what}이 ${seconds}초째 끝나지 않았어요. 기다리는 이벤트 ${queued}개. 끝나지 않는 " +
+                            "반복문이나 오래 기다리는 호출이 없는지 확인하고, 고친 뒤 다시 컴파일하세요." }
+                    }
+                else
+                    translate {
+                        Locale.ENGLISH { "$what is still running after $seconds s, with $queued events waiting." }
+                        Locale.KOREAN  { "${what}이 ${seconds}초가 지나도록 끝나지 않았어요. 기다리는 이벤트 ${queued}개." }
+                    }
+            }
+            is ProjectRuns.Report.Ended -> translate {
+                Locale.ENGLISH { "$what ended after $seconds s." }
+                Locale.KOREAN  { "${what}이 ${seconds}초 만에 끝났어요." }
+            }
+        }
+        if (report is ProjectRuns.Report.Slow && takeSlowAlert())
+            logger.w(tag, message)
+        else
+            logger.i(tag, message)
+    }
+
+    private fun takeSlowAlert(): Boolean {
+        val now = System.currentTimeMillis()
+        val last = lastSlowAlert.get()
+        return now - last >= SLOW_ALERT_INTERVAL_MILLIS && lastSlowAlert.compareAndSet(last, now)
+    }
 
     private fun onEventDropped() {
         val now = System.currentTimeMillis()
@@ -465,6 +522,11 @@ class ProjectImpl private constructor(
         private const val LOGS_FILE_NAME    = "logs.json"
 
         private const val DROP_WARNING_INTERVAL_MILLIS = 5_000L
+        private const val GENERAL_CATEGORY = "general"
+        /** The project setting: seconds a run may hold a worker before it is warned about; 0 turns it off. */
+        private const val SLOW_RUN_SECONDS = "slow_run_seconds"
+        private const val DEFAULT_SLOW_RUN_SECONDS = 10
+        private const val SLOW_ALERT_INTERVAL_MILLIS = 10 * 60_000L
 
         /** How long a compile waits for one of the same project that is already running. */
         private const val COMPILE_WAIT_SECONDS = 60L
@@ -514,13 +576,30 @@ class ProjectImpl private constructor(
  * A project's share of the app's workers ([Dispatchers.IO]): its events wait in a bounded buffer and run on the shared
  * threads, at most [concurrency] at once, in arrival order when that is 1. What is launched in [scope] (timers,
  * plugins) runs under the same limit, between events.
+ *
+ * Each stretch a worker runs is timed by [runs]. A coroutine launched in [scope] with a [CoroutineName] of its own, as a
+ * timer's, is named so in the warning about a run that takes long.
  */
 internal class ProjectExecutor(
     val name: String,
     val concurrency: Int,
+    private val runs: ProjectRuns,
     private val onDropped: () -> Unit,
 ) {
-    val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(concurrency) + CoroutineName(name))
+    val scope = CoroutineScope(
+        SupervisorJob() + TimedDispatcher(Dispatchers.IO.limitedParallelism(concurrency)) + CoroutineName(name))
+
+    /** Runs what [delegate] would, each block as one of the project's runs. */
+    private inner class TimedDispatcher(private val delegate: CoroutineDispatcher) : CoroutineDispatcher() {
+
+        override fun isDispatchNeeded(context: CoroutineContext): Boolean =
+            delegate.isDispatchNeeded(context)
+
+        override fun dispatch(context: CoroutineContext, block: Runnable) {
+            val label = context[CoroutineName]?.name?.takeIf { it != name }
+            delegate.dispatch(context, Runnable { runs.track(label, block::run) })
+        }
+    }
 
     @Volatile
     private var closed = false

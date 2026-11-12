@@ -65,6 +65,11 @@ arrival order. A full queue (256 events)
 drops the oldest. An error thrown out of an event unloads the project, so it has to be compiled again, unless its
 **오류 발생시 비활성화** (disable on error) setting is off (guide:projects#errors).
 
+Code that holds a worker longer than the project setting **느린 실행 경고 (초)** (slow run warning, 10 seconds by
+default, 0 turns it off) is warned about in the project's log: what runs (the event function, `setTimeout`,
+`Schedule.daily`, or NeonJS's code after an `await`) and how many events wait; again at a minute, and when it ends.
+It is usually a loop that doesn't end or a call that blocks, such as `Thread.sleep`, `Utils.getWebText` or `join()`.
+
 ## Notification events
 
 `onNotificationPosted` and the API2 notification events get every app's notifications, as Android's

@@ -258,7 +258,8 @@ class JSNeon: Language() {
             val params = args.drop(2).toTypedArray()
 
             val id = lastTimerId.incrementAndGet()
-            val job = project.launch(start = CoroutineStart.LAZY) {
+            // Named in the warning about a callback that runs long.
+            val job = project.launch(CoroutineName(if (repeat) "setInterval" else "setTimeout"), start = CoroutineStart.LAZY) {
                 do {
                     delay(mDelay.milliseconds)
                     runCatching {
@@ -371,7 +372,7 @@ class JSNeon: Language() {
         private fun schedule() {
             if (!isScheduled.compareAndSet(false, true))
                 return
-            project.launch {
+            project.launch(CoroutineName(ASYNC_TASK_NAME)) {
                 isScheduled.set(false)
                 try {
                     withClassLoader(null) { context.runEventLoop(0) }
@@ -411,6 +412,13 @@ class JSNeon: Language() {
 
 
         private val hostAccess: HostAccess = buildHostAccess(ScriptHostPolicy.isEnabled)
+
+        /** What the event loop runs, as a warning about a run that takes long names it. */
+        private val ASYNC_TASK_NAME: String
+            get() = translate {
+                Locale.ENGLISH { "code after await" }
+                Locale.KOREAN  { "await 이후 코드" }
+            }
 
         private val configs = config {
             category {
