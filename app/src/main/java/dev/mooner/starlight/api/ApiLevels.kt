@@ -62,7 +62,7 @@ object ApiLevels {
                 ProjectLoggerApi::class, EnvironmentApi::class, JavaClassApi::class, LanguagesApi::class,
                 NotificationApi::class, PlatformApi::class, PluginsApi::class, ProjectsApi::class,
                 HomeWidgetApi::class, EventEmitterApi::class, MediaSharerApi::class, StoreApi::class,
-                ChatApi::class, ScheduleApi::class,
+                ChatApi::class, ScheduleApi::class, FormatApi::class,
             ),
             events = setOf(
                 ProjectOnMessageEvent::class, ProjectOnMessageDeleteEvent::class,

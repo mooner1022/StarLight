@@ -99,7 +99,8 @@ strict mode. Pick it for new projects unless the user asks for Rhino.
 ## What NeonJS lacks
 
 - `Intl`: `toLocaleString()` ignores locales. Format numbers and dates yourself or with Java's `NumberFormat` and
-  `DateTimeFormatter`.
+  `DateTimeFormatter`; in StarLight original projects, `Format` (`describe_api Format`) writes numbers, dates,
+  durations and Korean particles.
 - Node.js: no `require`, `process`, `Buffer` or `node:` modules. Bytes are `Uint8Array`.
 - DOM: no `window` or `document`.
 - Rhino's Java syntax: no `Packages`, `java.lang...`, `importClass()`, `importPackage()` or `JavaAdapter`.

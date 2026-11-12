@@ -6,8 +6,6 @@
 
 package dev.mooner.starlight.api.original
 
-import dev.mooner.neonjs.NeonValue
-import dev.mooner.starlight.media.script.ScriptValues
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
@@ -17,18 +15,12 @@ import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycle
 import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycleObserver
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
+import dev.mooner.starlight.script.ScriptTimes
 import dev.mooner.starlight.script.runCallback
 import dev.mooner.starlight.script.schedule.CronExpression
 import dev.mooner.starlight.script.schedule.ScheduleSpec
 import dev.mooner.starlight.script.schedule.Schedules
-import org.mozilla.javascript.Context
-import org.mozilla.javascript.Scriptable
 import java.time.Instant
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeParseException
-import java.util.Date
 
 class ScheduleApi: Api<ScheduleApi.Schedule>() {
 
@@ -125,34 +117,9 @@ class ScheduleApi: Api<ScheduleApi.Schedule>() {
         private fun add(spec: ScheduleSpec, name: String, callback: (run: ScheduleRun) -> Unit): ScheduledTask =
             ScheduledTask(Schedules.add(owner, spec, name) { run -> callback(ScheduleRun(run.scheduledAt, run.lateMillis)) })
 
-        private fun instantOf(time: Any): Instant {
-            val value = ScriptValues.unwrap(time)
-            return when {
-                value is NeonValue && value.isObject -> runCatching { value.asInstant() }.getOrNull()
-                value is Scriptable && value.className == "Date" -> Instant.ofEpochMilli(Context.toNumber(value).toLong())
-                value is Number       -> Instant.ofEpochMilli(value.toLong())
-                value is Date         -> value.toInstant()
-                value is Instant      -> value
-                value is CharSequence -> parseTime(value.toString())
-                else                  -> null
-            } ?: throw IllegalArgumentException(
+        private fun instantOf(time: Any): Instant =
+            ScriptTimes.instantOf(time) ?: throw IllegalArgumentException(
                 "Schedule.once takes a Date, milliseconds since 1970 or ISO 8601 text, as \"2026-12-25T09:00\"")
-        }
-
-        private fun parseTime(text: String): Instant? =
-            try {
-                Instant.parse(text)
-            } catch (_: DateTimeParseException) {
-                try {
-                    OffsetDateTime.parse(text).toInstant()
-                } catch (_: DateTimeParseException) {
-                    try {
-                        LocalDateTime.parse(text).atZone(ZoneId.systemDefault()).toInstant()
-                    } catch (_: DateTimeParseException) {
-                        null
-                    }
-                }
-            }
 
         private val canceller = object : ProjectLifecycleObserver.ExplicitObserver {
             // Before the new code runs, which sets up its own.
