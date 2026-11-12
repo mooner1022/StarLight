@@ -10,6 +10,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import dev.mooner.starlight.R
 import dev.mooner.starlight.databinding.ActivityDebugRoomBinding
+import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.utils.fitPage
 import dev.mooner.starlight.utils.restartIfNotReady
 
@@ -28,6 +29,7 @@ class DebugRoomActivity: AppCompatActivity() {
         binding = ActivityDebugRoomBinding.inflate(layoutInflater)
         setContentView(binding.root)
         fitPage(binding.root)
+        bindLogNotifier()
 
         // Made anew, as on a rotation, the screen already has its room back, with what was being typed in it:
         // putting a new one in its place would throw that away.

@@ -49,7 +49,6 @@ import dev.mooner.starlight.listener.event.LegacyEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.Replier
-import dev.mooner.starlight.logging.bindLogNotifier
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
@@ -175,8 +174,8 @@ class DebugRoomFragment: Fragment() {
     ): View {
         _binding = FragmentDebugRoomBinding.inflate(inflater, container, false)
 
+        // Logs are alerted by the screen that holds the room, once: the editor has its own notifier.
         val activity = requireActivity()
-        activity.bindLogNotifier()
 
         binding.roomTitle.text = if (roomName == "undefined") projectName else roomName
 
