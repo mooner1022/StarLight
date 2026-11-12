@@ -83,9 +83,10 @@ await build({
     legalComments: "none",
 });
 
-const jshint = await transform(readFileSync(join(root, "node_modules/jshint/dist/jshint.js"), "utf8"), {
+// Kept apart from the editor's bundle: it is loaded after the editor is up (src/lint.js).
+const eslint = await transform(readFileSync(join(root, "node_modules/eslint-linter-browserify/linter.min.js"), "utf8"), {
     minify: true,
     target: "chrome90",
     legalComments: "none",
 });
-writeFileSync(join(out, "jshint.js"), jshint.code);
+writeFileSync(join(out, "eslint.js"), eslint.code);
