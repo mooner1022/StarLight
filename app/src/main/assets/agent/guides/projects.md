@@ -18,7 +18,8 @@ layout in an app-only folder (guide:play-build#data-folder).
 ├─ config.json      the project's settings, its language settings included
 ├─ logs.json        its recent logs
 ├─ data/            a usual place for what the script saves
-│  └─ store/        the files of `Store` (below)
+│  ├─ store/        the files of `Store` (below)
+│  └─ schedule/     the tasks `Schedule.at` keeps (guide:events#scheduled-tasks)
 └─ debugroom/       the debug room's chat history
 ```
 

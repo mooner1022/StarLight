@@ -96,6 +96,32 @@ reminder.cancel();
   notification was still shown when it started: `Chat.findRoom` gives `null` before that.
 - A callback's error is logged, as a timer's, and doesn't unload the project.
 
+`Schedule.at` keeps a task in the project's folder instead (`data/schedule/stored.json`), so that it outlives compiles
+and restarts, as for a reminder set while the bot runs. Its handler is registered by name with `Schedule.on`:
+
+```js
+Schedule.on("remind", (data, run) => {
+    if (run.lateMillis > 3600_000) return;   // came due over an hour ago, as while StarLight was off
+    Chat.findRoom(data.room)?.send(data.text);
+});
+export function onMessage(event) {
+    if (event.message !== "!remind") return;
+    Schedule.at(Date.now() + 10 * 60_000, "remind", { room: event.room.name, text: "10 minutes passed" });
+}
+```
+
+- Call `Schedule.on` in the top-level code, as each compile drops the handlers, and `Schedule.at` while the bot runs.
+  A task whose name has no handler stays kept until one is registered.
+- A kept task runs when its time comes while the project is compiled and on. One that came due while StarLight wasn't
+  running or the project was off runs once the project is compiled and on again, however late: `run.lateMillis` says
+  how late, so pass over old ones (`if (run.lateMillis > 3600_000) return;`).
+- It runs at most once: it leaves the file before the handler is called.
+- `data` is a JSON value of up to 16 KiB, given to the handler as a copy. A project keeps up to 100 such tasks.
+- After StarLight starts, kept tasks wait up to 10 seconds for the rooms of the notifications still shown to be
+  restored, so that `Chat.findRoom` finds them.
+- `Schedule.cancel(name)` or the task's `cancel()` removes one, and `Schedule.getStored()` lists them.
+  `Schedule.cancelAll()` and `Schedule.getTasks()` leave them out.
+
 ## Workers and order
 
 An event reaches a project only when all of these hold:
