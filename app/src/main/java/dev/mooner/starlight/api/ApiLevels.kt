@@ -61,7 +61,7 @@ object ApiLevels {
             apis = setOf(
                 ProjectLoggerApi::class, EnvironmentApi::class, JavaClassApi::class, LanguagesApi::class,
                 NotificationApi::class, PlatformApi::class, PluginsApi::class, ProjectsApi::class,
-                HomeWidgetApi::class, EventEmitterApi::class, MediaSharerApi::class,
+                HomeWidgetApi::class, EventEmitterApi::class, MediaSharerApi::class, StoreApi::class,
             ),
             events = setOf(
                 ProjectOnMessageEvent::class, ProjectOnMessageDeleteEvent::class,

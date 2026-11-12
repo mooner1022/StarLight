@@ -20,6 +20,7 @@ import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.languages.EntryPoints
 import dev.mooner.starlight.languages.ScriptErrors
 import dev.mooner.starlight.languages.ScriptHostPolicy
+import dev.mooner.starlight.languages.ScriptJson
 import dev.mooner.starlight.languages.TimerDelay
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
@@ -108,20 +109,23 @@ class JSNeon: Language() {
         val context = engine.newContext()
         return try {
             withClassLoader(classLoader) {
-                for (api in apis) {
-                    when (api.instanceType) {
-                        InstanceType.CLASS ->
-                            context.exposeClass(api.name, api.instanceClass)
-                        InstanceType.OBJECT -> {
-                            if (project == null)
-                                continue
-                            // An API that fails to make its object, as one of a plugin, is left out; the script
-                            // compiles without it, and one that uses it fails on the name, with this in the log.
-                            callPlugin({ project.logger.e(translate {
-                                Locale.ENGLISH { "API '${api.name}' couldn't be loaded and is left out: $it" }
-                                Locale.KOREAN  { "API '${api.name}'을(를) 불러오지 못해 빼고 컴파일해요: $it" }
-                            }) }) {
-                                context[api.name] = api.getInstance(project)
+                // API objects that keep script data take the context's own JSON as they are made.
+                ScriptJson.providing(NeonJson(context)) {
+                    for (api in apis) {
+                        when (api.instanceType) {
+                            InstanceType.CLASS ->
+                                context.exposeClass(api.name, api.instanceClass)
+                            InstanceType.OBJECT -> {
+                                if (project == null)
+                                    continue
+                                // An API that fails to make its object, as one of a plugin, is left out; the script
+                                // compiles without it, and one that uses it fails on the name, with this in the log.
+                                callPlugin({ project.logger.e(translate {
+                                    Locale.ENGLISH { "API '${api.name}' couldn't be loaded and is left out: $it" }
+                                    Locale.KOREAN  { "API '${api.name}'을(를) 불러오지 못해 빼고 컴파일해요: $it" }
+                                }) }) {
+                                    context[api.name] = api.getInstance(project)
+                                }
                             }
                         }
                     }
