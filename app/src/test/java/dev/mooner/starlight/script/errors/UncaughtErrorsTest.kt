@@ -6,6 +6,7 @@ import dev.mooner.neonjs.NeonEngine
 import dev.mooner.neonjs.NeonInterruptedException
 import dev.mooner.neonjs.NeonValue
 import dev.mooner.neonjs.SandboxPolicy
+import dev.mooner.starlight.languages.neonjs.NeonEventGuard
 import dev.mooner.starlight.languages.neonjs.buildHostAccess
 import dev.mooner.starlight.languages.neonjs.neonUncaughtHandler
 import dev.mooner.starlight.languages.rhino.PrimitiveWrapFactory
@@ -396,6 +397,51 @@ class UncaughtErrorsTest {
         assertEquals("unhandledRejection promise r", context.read("calls.join('|')"))
         assertTrue(runCatching { module.getMember("boom").call() }.isFailure)
         assertEquals("1", context.read("calls.length"))
+    }
+
+    @Test
+    fun `an async event function's rejection reaches the handler once, with the function and its arguments`() {
+        for ((label, hostAccess) in listOf("open" to null, "Play" to buildHostAccess(restricted = true))) {
+            val context = if (hostAccess == null) neon() else neon(hostAccess)
+            val owner = owner()
+            val unhandled = CopyOnWriteArrayList<String>()
+            context.setUncaughtErrorHandler { error, _ -> unhandled += error.toString() }
+            val module = context.evalModule("""
+                globalThis.calls = [];
+                export function onUncaughtError(e, origin, detail) {
+                    globalThis.calls.push([origin, detail.source, detail.args.join(","), e instanceof TypeError, e.message].join(" "));
+                }
+                export async function now(a, b) { throw new TypeError("at once"); }
+                export async function later(a) { await null; await null; throw new TypeError("later"); }
+                export async function fine(a) { await null; return a + 1; }
+                export function plain(a) { return a + 1; }
+                export function boom() { throw new Error("thrown"); }
+            """.trimIndent(), "main.js")
+            UncaughtErrors.install(owner, neonHandler(context, module))
+            val described = CopyOnWriteArrayList<String>()
+            val guard = NeonEventGuard(context) { functionName, args, error ->
+                described += "$error|${error.jsStack?.lineSequence()?.first()}"
+                UncaughtErrors.report(owner.id, error, UncaughtErrors.Origin.REJECTION, functionName, args)
+            }
+            fun call(name: String, vararg args: Any) = guard.call(module.getMember(name), name, args)
+
+            call("now", "x", 2)
+            assertEquals(label, "unhandledRejection now x,2 true at once", context.read("calls.join('|')"))
+            call("later", "y")
+            assertEquals(label, "unhandledRejection later y true later", context.read("calls[1]"))
+            // What the function returns comes back as it does without the guard.
+            assertEquals(label, 3, call("plain", 2).asInt())
+            call("fine", 1)
+            // One it throws at once is thrown, as without the guard: the project's error path reports that one.
+            assertTrue(label, runCatching { call("boom") }.isFailure)
+            assertEquals(label, "2", context.read("calls.length"))
+            assertEquals(label, emptyList<String>(), unhandled.toList())
+            // The log's text: the error as the script names it, and its stack.
+            assertEquals(label, 2, described.size)
+            assertTrue("$label: $described", described[0].startsWith("TypeError: at once|"))
+            // The wrapper leaves no global behind.
+            assertEquals(label, "undefined undefined", context.read("typeof sink + ' ' + typeof fn"))
+        }
     }
 
     // ---- Rhino --------------------------------------------------------------------------------------------------

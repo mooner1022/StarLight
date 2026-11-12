@@ -161,7 +161,8 @@ export function onUncaughtError(error, origin, detail) {
 |---|---|---|---|---|
 | An event function, while it runs | `uncaughtException` | its name, as `onMessage` | its arguments | logged; unloads the project while **오류 발생시 비활성화** is on |
 | An API2 listener | `uncaughtException` | `listener` | empty | as an event function's |
-| A Promise nobody handles (NeonJS), `async` event functions' included | `unhandledRejection` | `promise` | empty | logged |
+| An `async` event function (NeonJS), once its Promise rejects | `unhandledRejection` | its name, as `onMessage` | its arguments | logged |
+| Another Promise nobody handles (NeonJS) | `unhandledRejection` | `promise` | empty | logged |
 | Other code of NeonJS's event loop, logged as `Uncaught exception` | `uncaughtException` | `promise` | empty | logged |
 | A `setTimeout` or `setInterval` callback | `uncaughtException` | `setTimeout`, `setInterval` | empty | logged |
 | A callback of `Schedule` or `Chat.waitFor` | `uncaughtException` | its name, as `Schedule.daily` | empty | logged |
@@ -171,8 +172,9 @@ export function onUncaughtError(error, origin, detail) {
 - The handler doesn't keep the project on: with **오류 발생시 비활성화** on, an event function's error still unloads it
   right after the handler returns. Only what the handler does before its first `await` is sure to run, so send the
   reply there.
-- An `async` event function's error comes as `unhandledRejection` from `promise`, with `detail.args` empty: to answer
-  in the room, catch it inside the function.
+- An `async` event function's error comes as `unhandledRejection`, with the function's name and arguments as a plain
+  one's, so the handler can answer in the room. It doesn't unload the project. A Promise the function started without
+  awaiting it comes from `promise`, with `detail.args` empty.
 - An error the handler throws, or a rejection of a Promise it returns, isn't handed to it again. It is logged, and it
   unloads the project as an event function's error does while the setting is on, even when the error the handler was
   given was a timer's.
