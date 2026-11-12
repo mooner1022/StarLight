@@ -1,6 +1,6 @@
 ---
 title: Events
-summary: How events reach scripts: event functions and API2 listeners, the conditions for a call, workers and ordering, notification events and plugins' events.
+summary: How events reach scripts: event functions and API2 listeners, waiting for an answer with Chat.waitFor, scheduled tasks, the conditions for a call, workers and ordering, notification events and plugins' events.
 ---
 
 `list_events` lists every event with how a script receives it, and `describe_event` shows its arguments as
@@ -74,6 +74,27 @@ export async function onMessage(event) {
   the waiting code sends through the first message's room as one of that message's (`earlierReplies`).
 - `Chat.findRoom(name)` and `Chat.getRooms()` give rooms to send to without an event: rooms a message came from since
   StarLight started.
+
+## Scheduled tasks
+
+`Schedule` runs code at times of the day, by the device's clock and time zone:
+
+```js
+Schedule.daily("09:00", () => Chat.findRoom("Family")?.send("Good morning!"));
+Schedule.cron("0 */2 * * MON-FRI", (run) => Log.i("tick", `late by ${run.lateMillis} ms`));
+const reminder = Schedule.once(Date.now() + 10 * 60_000, () => Log.i("reminder", "10 minutes passed"));
+reminder.cancel();
+```
+
+- Set tasks up in the top-level code. Compiling again cancels the version's tasks, and StarLight compiles the projects
+  that are on when it starts, so they are set up again then.
+- A task runs only while the project is compiled and on: one due while it is off is skipped. A run missed while
+  StarLight wasn't running is skipped too.
+- While the device sleeps, Android may let a run come late, as it batches alarms; the callback's `run.lateMillis`
+  says how late. Use `setTimeout` or `setInterval` for short delays.
+- Sending to a room needs a room StarLight has received a message from since it started: `Chat.findRoom` gives
+  `null` before that.
+- A callback's error is logged, as a timer's, and doesn't unload the project.
 
 ## Workers and order
 

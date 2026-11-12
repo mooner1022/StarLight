@@ -1,6 +1,6 @@
 ---
 title: Projects
-summary: What a project is: its files and project.json, the API levels that decide its globals and events, allowed-event entries, compiling and turning on, errors, and calling other projects.
+summary: What a project is: its files and project.json, the API levels that decide its globals and events, storing data with Store, allowed-event entries, compiling and turning on, errors, and calling other projects.
 ---
 
 A project is one bot: a folder with its info, a main script and any other files, in one language that can't change
@@ -49,7 +49,7 @@ levels share is given once. Plugins' APIs and events belong to every project, wh
 
 | Level | Globals | Events |
 |---|---|---|
-| StarLight original (`starlight`) | `Log`, `Store`, `Chat`, `Projects`, `Plugins`, `Languages`, `Platform`, `Env`, `Java`, `Notification`, `HomeWidget`, `MediaSharer`, `EventEmitter` | `onMessage`, `onMessageDeleted`, `onNotificationPosted`, `onStartCompile` |
+| StarLight original (`starlight`) | `Log`, `Store`, `Chat`, `Schedule`, `Projects`, `Plugins`, `Languages`, `Platform`, `Env`, `Java`, `Notification`, `HomeWidget`, `MediaSharer`, `EventEmitter` | `onMessage`, `onMessageDeleted`, `onNotificationPosted`, `onStartCompile` |
 | MessengerBot API2 (`msgbot.api2`) | `Log`, `BotManager`, `Event`, `Broadcast`, `App`, `Device`, `FileStream` | listeners added with `bot.on(Event.…)` |
 | MessengerBot legacy (`msgbot.legacy`) | `Log`, `Api`, `Utils`, `DataBase`, `Bridge`, `Device`, `FileStream` | `response`, `onNotificationPosted`, `onStartCompile` |
 
