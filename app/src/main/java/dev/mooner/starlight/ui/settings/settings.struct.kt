@@ -101,15 +101,17 @@ internal fun SettingsFragment.getSettingsStruct() = config {
                 description = getString(R.string.settings_restart_application_desc)
                 icon = Icon.REFRESH
                 iconTintColor = requireContext().getColor(R.color.code_orange)
-                setOnClickListener { ->
-                    val activity = requireActivity()
+                setOnClickListener { view ->
+                    // The page this button is on is a screen of its own, over the one with this fragment: a sheet
+                    // of the fragment's screen would be behind it, and show only once the page is left.
+                    val context = view.context
                     showConfirmDialog(
-                        activity,
-                        title = activity.getString(R.string.restart_confirm_title),
-                        message = activity.getString(R.string.restart_confirm_message)
+                        context,
+                        title = context.getString(R.string.restart_confirm_title),
+                        message = context.getString(R.string.restart_confirm_message)
                     ) { confirm ->
                         if (confirm)
-                            activity.restartApplication()
+                            context.restartApplication()
                     }
                 }
             }
