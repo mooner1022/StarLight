@@ -38,7 +38,13 @@ internal class EditorKeeper : ViewModel() {
     /** The file of the tab that was showing when the last screen went. */
     var selectedFile: String? = null
 
-    val bridge = Bridge()
+    /** The app's own checks of the page's scripts, for the languages that have a linter. */
+    val lint = EditorLint(reply = { requestId, json ->
+        // Text of another origin never reaches the script: the findings are JSON, and the ID a number.
+        webView?.let { view -> view.post { webView?.evaluateJavascript("onNativeLint($requestId, ${json ?: "null"})", null) } }
+    })
+
+    val bridge = Bridge(lint)
 
     /**
      * Runs [block], which writes files, to its end even if the screen that asked goes meanwhile. The page has
@@ -49,6 +55,7 @@ internal class EditorKeeper : ViewModel() {
         viewModelScope.async(Dispatchers.IO) { block() }.await()
 
     override fun onCleared() {
+        lint.close()
         webView?.let { view ->
             (view.parent as? ViewGroup)?.removeView(view)
             view.destroy()
@@ -60,7 +67,7 @@ internal class EditorKeeper : ViewModel() {
      * What the editor page calls. The page outlives each screen, so it calls this, which passes the call on to the
      * screen there is, and keeps for the next one what arrives while there is none.
      */
-    class Bridge {
+    class Bridge(private val lint: EditorLint) {
 
         private var target: WebviewCallback? = null
         private val pending = ArrayList<(WebviewCallback) -> Unit>()
@@ -100,5 +107,15 @@ internal class EditorKeeper : ViewModel() {
 
         @JavascriptInterface
         fun onEditorBackground(color: String) = pass { it.onEditorBackground(color) }
+
+        // Answered here, not by a screen: checks go on while there is none, and need none.
+
+        /** Whether the app checks the scripts of the project that is open, rather than the page. */
+        @JavascriptInterface
+        fun lintsNatively(): Boolean = lint.handles()
+
+        /** Asks for a check of [code], which the page is told of with `onNativeLint(requestId, findings)`. */
+        @JavascriptInterface
+        fun requestLint(requestId: Int, sessionId: String, code: String) = lint.request(requestId, sessionId, code)
     }
 }

@@ -74,7 +74,7 @@ class JSRhino: Language() {
     }
 
     // Overrides the helper to set classloader as RuntimeClassLoader
-    private fun configuredLanguageVersion(): Int =
+    internal fun configuredLanguageVersion(): Int =
         getLanguageConfig().getInt(CONF_LANG_VERSION)?.let(::indexToVersion) ?: LANG_DEF_VERSION
 
     private fun createAndroidHelper(): RhinoAndroidHelper {
