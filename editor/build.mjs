@@ -1,4 +1,4 @@
-import { build, transform } from "esbuild";
+import { build } from "esbuild";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -82,11 +82,3 @@ await build({
     outfile: join(out, "editor.js"),
     legalComments: "none",
 });
-
-// Kept apart from the editor's bundle: it is loaded after the editor is up (src/lint.js).
-const eslint = await transform(readFileSync(join(root, "node_modules/eslint-linter-browserify/linter.min.js"), "utf8"), {
-    minify: true,
-    target: "chrome90",
-    legalComments: "none",
-});
-writeFileSync(join(out, "eslint.js"), eslint.code);

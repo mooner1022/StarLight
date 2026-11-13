@@ -20,6 +20,7 @@ import dev.mooner.starlight.plugincore.project.ProjectCallGate
 import dev.mooner.starlight.plugincore.project.ProjectErrorListener
 import dev.mooner.starlight.script.chat.ChatWaits
 import dev.mooner.starlight.script.errors.UncaughtErrors
+import dev.mooner.starlight.script.lint.EngineLinters
 import dev.mooner.starlight.script.schedule.ScheduleAlarms
 import dev.mooner.starlight.languages.neonjs.JSNeon
 import dev.mooner.starlight.languages.rhino.JSRhino
@@ -122,6 +123,8 @@ object ApplicationSession {
         // Before any project compiles: a message a script waits for with Chat.waitFor is held back from the others.
         ProjectCallGate.current = ChatWaits
         ProjectErrorListener.current = UncaughtErrors.listener
+        // The editor asks these for what it marks in a script as one types.
+        EngineLinters.install()
         // Before any project compiles, as compiling scripts schedule their tasks (Schedule).
         ScheduleAlarms.init(context)
 

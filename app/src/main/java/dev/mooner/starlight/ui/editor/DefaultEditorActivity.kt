@@ -319,6 +319,7 @@ class DefaultEditorActivity : CodeEditorActivity(), WebviewCallback {
         }
         (codeView!!.parent as? ViewGroup)?.removeView(codeView)
         binding.webviewContainer.addView(codeView)
+        keeper.lint.open(getProject())
         keeper.bridge.attach(this)
         if (keptPage == null) {
             codeView!!.loadUrl(ENTRY_POINT)
