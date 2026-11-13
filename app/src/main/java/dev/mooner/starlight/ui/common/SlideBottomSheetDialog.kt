@@ -64,22 +64,49 @@ open class SlideBottomSheetDialog(context: Context) : BottomSheetDialog(context,
             return
         val sheet = sheet
         if (sheet == null || !sheet.isLaidOut || !isShowing || behavior.state == BottomSheetBehavior.STATE_HIDDEN) {
-            super.dismiss()
+            removeWindow()
             return
         }
         isDismissing = true
         animateSheet(sheet, sheet.height.toFloat(), EXIT_DURATION, AccelerateInterpolator(1.6f)) {
-            super.dismiss()
+            removeWindow()
             isDismissing = false
         }
     }
 
     fun dismissImmediately() {
+        stopSliding()
+        if (isShowing)
+            removeWindow()
+    }
+
+    /**
+     * The window is gone: this dialog took it away, or its screen did, as one that is destroyed takes the windows of
+     * its dialogs with it. A slide that was going on has nothing left to move, and what it was to do at its end,
+     * taking the window away, has been done.
+     */
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        stopSliding()
+    }
+
+    private fun stopSliding() {
         sheetAnimator?.removeAllListeners()
         sheetAnimator?.cancel()
         isDismissing = false
-        if (isShowing)
+    }
+
+    /**
+     * Ends the dialog. Where its window was taken away meanwhile and the dialog not told, as by a screen that was
+     * destroyed while the app was left, the window manager has nothing to remove and says so with an exception; the
+     * dialog has still put itself in order by then.
+     */
+    private fun removeWindow() {
+        try {
             super.dismiss()
+        } catch (_: IllegalArgumentException) {
+            // "View not attached to window manager": the window went with its screen.
+        }
     }
 
     private fun animateSheet(sheet: View, target: Float, duration: Long, interpolator: TimeInterpolator, onEnd: (() -> Unit)? = null) {
