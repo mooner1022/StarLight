@@ -21,14 +21,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 private val LOG = LoggerFactory.logger {  }
 
 /**
- * Checks the editor page's scripts with the app's own linters ([ScriptLint]) instead of the page's: the page asks
- * whether there is one for what it shows, sends the text, and is told the findings.
+ * Checks the editor page's scripts with the app's linters ([ScriptLint]): the page sends the text of a script it shows,
+ * and is told the findings.
  *
  * The page's calls come on its bridge's thread, the check runs on a thread of this, and [reply] is called from that
  * thread. A check of a tab is given up when the tab asks again, as its text has changed.
  *
  * @param reply Tells the page the outcome of request [requestId]: the findings as a JSON array, or null when the
- * check couldn't be made, for which the page checks the text itself.
+ * check couldn't be made, for which the page marks nothing.
  */
 internal class EditorLint(
     private val reply: (requestId: Int, json: String?) -> Unit,
@@ -58,10 +58,6 @@ internal class EditorLint(
     private fun linter(): ScriptLint.Linter? =
         ScriptLint.linterFor(languageId)
 
-    /** Whether the scripts of the project the editor is open on are checked here. */
-    fun handles(): Boolean =
-        linter() != null
-
     /** Checks [code], the text of the tab [sessionId], and replies to [requestId]. */
     fun request(requestId: Int, sessionId: String, code: String) {
         val linter = linter()
@@ -75,8 +71,8 @@ internal class EditorLint(
                 val json = if (cancelled.get()) null else try {
                     encode(linter.lint(ScriptLint.Request(code, project, cancelled::get)), code.length)
                 } catch (e: Throwable) {
-                    // Whatever a linter does on text that is half typed, the editor goes on: the page checks instead.
-                    runCatching { LOG.warn { "The linter failed, so the editor's own checks this text: $e" } }
+                    // Whatever a linter does on text that is half typed, the editor goes on, with nothing marked.
+                    runCatching { LOG.warn { "The linter failed, so this text isn't checked: $e" } }
                     null
                 }
                 running.remove(sessionId, cancelled)

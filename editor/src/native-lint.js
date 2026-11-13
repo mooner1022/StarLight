@@ -1,6 +1,5 @@
-// Checks by the app's own linter, for the languages that have one, in place of this page's: the page sends the text
-// over the bridge and is told the findings. The app says whether it has a linter for the project that is open; when it
-// has none, or a check can't be made, `null` comes back and the page checks the text itself.
+// Checks by the app's linter: the page sends a script's text over the bridge and is told the findings. When a check
+// can't be made, `null` comes back.
 
 // How long the app is waited for. Its linter runs off this page's thread, so a slow one doesn't hold the editor up;
 // one that never answers must not leave the text unchecked.
@@ -10,14 +9,6 @@ const pending = new Map();
 let lastId = 0;
 
 const bridge = () => (typeof WebviewCallback === "undefined" ? null : WebviewCallback);
-
-export const nativeLintAvailable = () => {
-    try {
-        return bridge()?.lintsNatively?.() === true;
-    } catch (_) {
-        return false;
-    }
-};
 
 const settle = (id, value) => {
     const request = pending.get(id);
@@ -33,7 +24,7 @@ const toDiagnostics = (list, doc) => list.map((item) => {
     return { from, to, severity: item.severity === "error" ? "error" : "warning", message: String(item.message ?? "") };
 });
 
-// The findings of the app's linter for the text `view` shows, or null when the page is to check it itself.
+// The findings of the app's linter for the text `view` shows, or null when it gave none.
 export const nativeLint = (view, sessionId) => new Promise((resolve) => {
     const doc = view.state.doc;
     const session = String(sessionId ?? "");

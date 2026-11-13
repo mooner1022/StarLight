@@ -110,10 +110,6 @@ internal class EditorKeeper : ViewModel() {
 
         // Answered here, not by a screen: checks go on while there is none, and need none.
 
-        /** Whether the app checks the scripts of the project that is open, rather than the page. */
-        @JavascriptInterface
-        fun lintsNatively(): Boolean = lint.handles()
-
         /** Asks for a check of [code], which the page is told of with `onNativeLint(requestId, findings)`. */
         @JavascriptInterface
         fun requestLint(requestId: Int, sessionId: String, code: String) = lint.request(requestId, sessionId, code)

@@ -1,118 +1,98 @@
-// Run with `npm test`: checks src/lint.js against the ESLint build the app ships, without a browser.
+// Run with `npm test`: the page's side of the app's linter, with the bridge played by the test.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { EditorState } from "@codemirror/state";
 import { javascript } from "@codemirror/lang-javascript";
 
-new Function(readFileSync(new URL("../node_modules/eslint-linter-browserify/linter.min.js", import.meta.url), "utf8")).call(globalThis);
-// The linter is loaded by a script element: here it is there already.
-globalThis.document = { createElement: () => ({}), head: { appendChild: (script) => script.onload() } };
+globalThis.window = globalThis;
+
+const sent = [];
+const app = { requestLint: (id, session, code) => sent.push({ id, session, code }) };
+globalThis.WebviewCallback = app;
+
 const { lintSource } = await import("../src/lint.js");
+const { dropNativeLint } = await import("../src/native-lint.js");
 
-/** What the editor marks in `code`, as `L<line> <e|w> <message>` in the order of the lines. */
-const marks = async (code, mode = "javascript") => {
-    const state = EditorState.create({ doc: code, extensions: [javascript({ jsx: mode === "jsx" })] });
-    const diagnostics = await lintSource(mode)({ state });
-    return diagnostics.map((d) => `L${state.doc.lineAt(d.from).number} ${d.severity[0]} ${d.message}`);
+const stateOf = (code) => EditorState.create({ doc: code, extensions: [javascript()] });
+const check = (code, session = "1", mode = "javascript") => {
+    const state = stateOf(code);
+    return { state, result: Promise.resolve(lintSource(mode, () => session)({ state })) };
 };
+const brief = (diagnostics) => diagnostics.map((d) => `${d.from}-${d.to} ${d.severity} ${d.message}`);
 
-const CONSTANT = "L%d e 'k' is constant.";
-const constant = (line) => CONSTANT.replace("%d", line);
-
-test("syntax newer than ES2020 isn't marked", async () => {
-    assert.deepEqual(await marks(`
-        class A { #x = 1; static y = 3600_000; static { A.z = 1; } #m() { return this.#x; } has(o) { return #x in o; } }
-        let v; v ??= await f(); v ||= 1n;
-        { using r = open(); }
-        export function onMessage(event) { event.room.send(v?.a ?? ""); }
-    `), []);
-});
-
-test("a legacy script that is no module isn't marked", async () => {
-    assert.deepEqual(await marks("function response(room, msg) { with (Math) { var package = floor(1.5); } replier.reply(msg); }"), []);
-});
-
-test("mistakes that are valid code are told", async () => {
-    assert.deepEqual(await marks([
-        "const k = 1; k = 2;",
-        "let v; if (v = 1) {}",
-        "function f(x) { return 1; f(); }",
-        "function g(x) { switch (x) { case 1: f(); case 2: f(); } }",
-        "const o = { a: 1, a: 2 };",
-        "if (v === NaN) {}",
-        "if (typeof v === 'strnig') {}",
-        "debugger;",
-        "late = 1; let late;",
-    ].join("\n")), [
-        constant(1),
-        "L2 w Expected a conditional expression and instead saw an assignment.",
-        "L3 w Unreachable code.",
-        "L4 w Expected a 'break' statement before 'case'.",
-        "L5 w Duplicate key 'a'.",
-        "L6 w Use the isNaN function to compare with NaN.",
-        "L7 w Invalid typeof comparison value.",
-        "L8 w Unexpected 'debugger' statement.",
-        "L9 e 'late' was used before it was defined.",
+test("the app's findings are shown, with the text as it was sent", async () => {
+    sent.length = 0;
+    const code = "let 가 = '😀';\nconst k = 1; k = 2;";
+    const { result } = check(code, "7");
+    assert.deepEqual(sent.map((s) => [s.session, s.code]), [["7", code]]);
+    window.onNativeLint(sent[0].id, [
+        { start: 27, end: 28, severity: "error", message: "'k' is constant.", code: "const-assign" },
+        { start: 4, end: 5, severity: "warning", message: "이름" },
     ]);
+    assert.deepEqual(brief(await result), ["27-28 error 'k' is constant.", "4-5 warning 이름"]);
 });
 
-test("style, and names the script doesn't define, aren't told", async () => {
-    assert.deepEqual(await marks("let a = 1\nconst o = {}; o['a'] = new Date;;\nLog.i(fizz);\n"), []);
-});
-
-test("one syntax error doesn't hide the others, nor what the rules find", async () => {
-    assert.deepEqual(await marks([
-        "export function onMessage(event) {",
-        "    let a = 0;",
-        "    const k = 1;",
-        "    k = 2;",
-        "    const a = 1;",
-        "    new Test().#foo();",
-        "}",
-        "class Test { #foo() {} }",
-    ].join("\n")), [
-        constant(4),
-        "L5 e Identifier 'a' has already been declared",
-        "L6 e Private field '#foo' must be declared in an enclosing class",
+test("findings outside the text are brought inside it", async () => {
+    sent.length = 0;
+    const { result } = check("abc");
+    window.onNativeLint(sent[0].id, [
+        { start: -5, end: 99, severity: "error", message: "a" },
+        { start: 2, end: 1, severity: "weird", message: "b" },
+        { start: "x", severity: "error" },
     ]);
+    assert.deepEqual(brief(await result), ["0-3 error a", "2-2 warning b", "0-0 error "]);
 });
 
-test("each broken statement is told, and the code after them is still checked", async () => {
-    const cases = {
-        "function f() {\n  let a = ;\n  let b = 1;\n  let c = ;\n  const k = 1; k = 2;\n}\n":
-            ["L2 e Unexpected token ;", "L4 e Unexpected token ;", constant(5)],
-        "function f() {\n  if (a {\n    g();\n  }\n  if (b {\n    g();\n  }\n}\nconst k = 1; k = 2;\n":
-            ["L2 e Unexpected token {", "L5 e Unexpected token {", constant(9)],
-        "let a = 1;\n) ;\nlet b = 2 +;\nconst k = 1; k = 2;\n":
-            ["L2 e Unexpected token )", "L3 e Unexpected token ;", constant(4)],
-        "let a = \"abc;\nlet b = 1;\nconst k = 1; k = 2;\n":
-            ["L1 e Unterminated string constant", constant(3)],
-        // Told at what follows the open parameter list: the member with the list is the one left out.
-        "class A {\n  foo( { }\n  bar() { const k = 1; k = 2; }\n  #x = ;\n}\n":
-            ["L3 e Unexpected token bar", constant(3), "L4 e Unexpected token ;"],
-        "function f(a, {\n  g();\n}\nfunction h() { const k = 1; k = 2; }\n":
-            ["L2 e Unexpected token (", constant(4)],
-        // Only the line is left out, not the object around it.
-        "const o = {\n  a: 1\n  b: 2,\n};\nconst k = 1; k = 2;\n":
-            ["L3 e Unexpected token b", constant(5)],
-        "function f() {\n  if (a) { g(); }\n  else if { h(); }\n  const k = 1; k = 2;\n}\n":
-            ["L3 e Unexpected token {", constant(4)],
-        "export function a() {}\nexport function a() {}\nconst k = 1; k = 2;\n":
-            ["L2 e Identifier 'a' has already been declared", constant(3)],
-        "function response(room, msg) {\n  with (Math) { var x = ; }\n  const k = 1; k = 2;\n}\n":
-            ["L2 e Unexpected token ;", constant(3)],
-    };
-    for (const [code, expected] of Object.entries(cases))
-        assert.deepEqual(await marks(code), expected, code);
+test("nothing is marked when the app answers null, throws, or isn't there", async () => {
+    const code = "const k = 1; k = 2;";
+    sent.length = 0;
+    const { result } = check(code);
+    window.onNativeLint(sent[0].id, null);
+    assert.deepEqual(await result, []);
+
+    const request = app.requestLint;
+    app.requestLint = () => { throw new Error("gone"); };
+    assert.deepEqual(await check(code).result, []);
+    app.requestLint = request;
+
+    delete globalThis.WebviewCallback;
+    assert.deepEqual(await check(code).result, []);
+    globalThis.WebviewCallback = app;
 });
 
-test("code that is all errors ends, with at most 10 of them", async () => {
-    assert.ok((await marks("}}}} ((( ]]] === ;;; +++\n@@@ ### $$$\n")).length >= 1);
-    const many = await marks("let z = ;\n".repeat(30));
-    assert.ok(many.length >= 1 && many.length <= 10, String(many.length));
+test("an app that never answers is waited for 4 seconds, then nothing is marked", async (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    sent.length = 0;
+    const { result } = check("const k = 1; k = 2;");
+    t.mock.timers.tick(3999);
+    let done = false;
+    result.then(() => { done = true; });
+    await Promise.resolve();
+    assert.equal(done, false);
+    t.mock.timers.tick(1);
+    assert.deepEqual(await result, []);
+    // An answer that comes after all is passed over.
+    window.onNativeLint(sent[0].id, [{ start: 0, end: 1, severity: "error", message: "late" }]);
 });
 
-test("JSX is read in a jsx file", async () => {
-    assert.deepEqual(await marks("const a = <div>{1}</div>;\nconst k = 1; k = 2;\n", "jsx"), [constant(2)]);
+test("a tab's earlier request ends when it asks again or closes, another tab's doesn't", async () => {
+    sent.length = 0;
+    const first = check("let a = 1;", "1");
+    const other = check("let b = 1;", "2");
+    const second = check("let a = 12;", "1");
+    assert.deepEqual(await first.result, []);
+    window.onNativeLint(sent[0].id, [{ start: 0, end: 1, severity: "error", message: "old" }]);
+    window.onNativeLint(sent[2].id, [{ start: 0, end: 3, severity: "error", message: "new" }]);
+    assert.deepEqual(brief(await second.result), ["0-3 error new"]);
+    dropNativeLint("2");
+    assert.deepEqual(await other.result, []);
+});
+
+test("only a script is sent to the app: JSON is checked here, other files not at all", async () => {
+    sent.length = 0;
+    assert.deepEqual(await check("{ \"a\": 1 }", "1", "json").result, []);
+    assert.equal((await check("{ \"a\": }", "1", "json").result).length, 1);
+    assert.deepEqual(await check("const a = <b/>;", "1", "jsx").result, []);
+    assert.deepEqual(await check("print(1)", "1", "python").result, []);
+    assert.equal(sent.length, 0);
 });

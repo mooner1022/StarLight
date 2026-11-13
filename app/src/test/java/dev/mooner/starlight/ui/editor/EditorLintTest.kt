@@ -24,21 +24,32 @@ class EditorLintTest {
     private fun next(): Pair<Int, String?> =
         replies.poll(5, TimeUnit.SECONDS) ?: error("no reply")
 
+    private val defaultBefore = ScriptLint.default
+
     @After
     fun tearDown() {
         ScriptLint.unregister(language)
+        ScriptLint.default = defaultBefore
         lint.close()
     }
 
     @Test
-    fun `a language with no linter isn't handled, and a request for it is answered with null`() {
-        assertFalse(lint.handles())
+    fun `a language's own linter checks its scripts, the default one the others' and a file of no project`() {
+        ScriptLint.default = null
         lint.request(1, "a", "let a;")
         assertEquals(1 to null, next())
-        ScriptLint.register(language) { emptyList() }
-        assertTrue(lint.handles())
+
+        ScriptLint.default = ScriptLint.Linter { listOf(ScriptLint.Diagnostic(0, 1, ScriptLint.Severity.WARNING, "default")) }
+        lint.request(2, "a", "let a;")
+        assertTrue("default" in next().second!!)
+
+        ScriptLint.register(language) { listOf(ScriptLint.Diagnostic(0, 1, ScriptLint.Severity.WARNING, "own")) }
+        lint.request(3, "a", "let a;")
+        assertTrue("own" in next().second!!)
+
         lint.languageId = null
-        assertFalse(lint.handles())
+        lint.request(4, "a", "let a;")
+        assertTrue("default" in next().second!!)
     }
 
     @Test

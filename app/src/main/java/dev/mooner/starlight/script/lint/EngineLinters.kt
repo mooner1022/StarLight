@@ -24,22 +24,22 @@ import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
 
 /**
- * The linters of the app's two JavaScript engines, both NeonJS's linter (`neonjs-lint`): it reads past syntax errors,
- * knows the names a project's scripts are given, and tells of mistakes that are valid code. This file is the only one
- * that knows that library.
+ * The linters of the editor's JavaScript, all NeonJS's linter (`neonjs-lint`): it reads past syntax errors, knows the
+ * names a project's scripts are given, and tells of mistakes that are valid code. This file is the only one that knows
+ * that library.
  *
- * - NeonJS: the linter reads with the engine's own parser, so what it accepts compiles.
- * - Rhino: the same rules, as a script; but what is a syntax error is Rhino's own parser's to say ([RhinoSyntax]),
- *   which reads less than NeonJS and a few things NeonJS doesn't.
+ * - Rhino: the rules as a script; but what is a syntax error is Rhino's own parser's to say ([RhinoSyntax]), which
+ *   reads less than NeonJS and a few things NeonJS doesn't.
+ * - Every other JavaScript, NeonJS's and a plugin's engine's as V8: a module of the language as its standard has it.
+ *   For NeonJS the linter reads with the engine's own parser, so what it accepts compiles.
  */
 internal object EngineLinters {
 
-    const val NEON_ID = "js_neon"
     const val RHINO_ID = "JS_RHINO"
 
     fun install() {
-        ScriptLint.register(NEON_ID) { request ->
-            lintNeon(request.source, request.project?.let(::apiNames).orEmpty(), request.isCancelled)
+        ScriptLint.default = ScriptLint.Linter { request ->
+            lintNeon(request.source, request.project?.let(::apiNames), request.isCancelled)
         }
         ScriptLint.register(RHINO_ID) { request ->
             val project = request.project
@@ -60,14 +60,15 @@ internal object EngineLinters {
         EngineGlobals.of(console = true, webGlobals = true, java = true, net = true) + Globals.of(listOf("toast"))
 
     /**
-     * A NeonJS project's file, which is a module.
+     * A file of a project that isn't Rhino's, which is a module.
      *
-     * @param apis The names of the API objects the project's levels give its scripts.
+     * @param apis The names of the API objects the project's levels give its scripts; null for a file of no project,
+     * which turns the check of names off.
      */
-    fun lintNeon(source: String, apis: Collection<String>, isCancelled: () -> Boolean = { false }): List<ScriptLint.Diagnostic> =
+    fun lintNeon(source: String, apis: Collection<String>?, isCancelled: () -> Boolean = { false }): List<ScriptLint.Diagnostic> =
         NeonLint.lint(source, LintOptions(
             sourceType = SourceType.MODULE,
-            globals = neonGlobals + Globals.of(apis),
+            globals = apis?.let { neonGlobals + Globals.of(it) },
             isCancelled = isCancelled,
         )).diagnostics.map(::convert)
 

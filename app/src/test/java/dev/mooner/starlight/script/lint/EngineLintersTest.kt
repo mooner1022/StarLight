@@ -129,6 +129,12 @@ class EngineLintersTest {
         """.trimIndent()))
     }
 
+    @Test
+    fun `a file of no project is checked as a module, but for the names it uses`() {
+        val source = "export function onMessage(event) { const k = 1; k = 2; Whatever.send(event, k); }"
+        assertEquals(listOf("L1 e const-assign"), brief(source, EngineLinters.lintNeon(source, null)))
+    }
+
     // ---- Rhino --------------------------------------------------------------------------------------------------
 
     @Test

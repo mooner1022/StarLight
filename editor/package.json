@@ -28,7 +28,6 @@
     "@codemirror/state": "6.7.6",
     "@codemirror/view": "6.43.15",
     "@lezer/highlight": "1.2.5",
-    "eslint-linter-browserify": "10.14.0",
     "js-beautify": "2.0.3"
   },
   "devDependencies": {

@@ -10,9 +10,8 @@ import dev.mooner.starlight.plugincore.project.Project
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Checks of a script's text before it runs, as the editor shows while typing: what a language's own linter finds, in
- * the app's terms. A linter is registered for a language's ID; a language with none is checked by the editor's page
- * itself.
+ * Checks of a script's text before it runs, as the editor shows while typing: what a linter finds, in the app's terms.
+ * A linter is registered for a language's ID; the scripts of a language with none are checked by [default].
  *
  * The types here are the app's own, so that what uses the results never sees a linter library's: only the linter
  * registered for a language knows the library behind it.
@@ -66,7 +65,11 @@ object ScriptLint {
         linters -= languageId
     }
 
-    /** The linter for the language [languageId]; null when it has none. */
+    /** The linter for the scripts of a language that has none of its own, and of a file of no project. */
+    @Volatile
+    var default: Linter? = null
+
+    /** The linter for the language [languageId]: its own, or [default]. */
     fun linterFor(languageId: String?): Linter? =
-        languageId?.let(linters::get)
+        languageId?.let(linters::get) ?: default
 }
