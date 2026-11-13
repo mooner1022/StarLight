@@ -17,6 +17,7 @@ import { forEachDiagnostic, lintGutter, linter, setDiagnostics, setDiagnosticsEf
 import { languageFor } from "./languages.js";
 import { themeFor } from "./themes.js";
 import { lintSource } from "./lint.js";
+import { dropNativeLint } from "./native-lint.js";
 import { beautify } from "./beautify.js";
 import { tapToShowDiagnostics } from "./diagnostics.js";
 import { keepFirstTouchSelection } from "./touch.js";
@@ -122,7 +123,7 @@ const createState = (code, mode) => {
             EditorView.contentAttributes.of({ autocorrect: "off", autocapitalize: "off", spellcheck: "false" }),
             keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...foldKeymap, ...completionKeymap, indentWithTab]),
             languageCompartment.of(languageFor(mode)),
-            linter(lintSource(mode), { delay: 500 }),
+            linter(lintSource(mode, () => currentId), { delay: 500 }),
             themeCompartment.of(themeFor(settings.theme)),
             fontCompartment.of(fontTheme(settings.fontSize)),
             wrapCompartment.of(settings.wrap ? EditorView.lineWrapping : []),
@@ -179,6 +180,7 @@ window.setSession = (id, mode, code) => {
 
 window.closeSession = (id) => {
     sessions.delete(id);
+    dropNativeLint(id);
     if (id === currentId) currentId = null;
 };
 
