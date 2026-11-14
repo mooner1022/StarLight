@@ -1,83 +1,169 @@
 package dev.mooner.starlight.api.legacy
 
+import dev.mooner.starlight.api.msgbot.ScriptArgs
+import dev.mooner.starlight.languages.ScriptJson
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
 import dev.mooner.starlight.plugincore.project.Project
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import java.io.File
 
 @Suppress("unused")
 class DataBaseApi: Api<DataBaseApi.DataBase>() {
 
     /**
-     * The `DataBase` global of legacy projects: text files in the project's own `data` folder.
+     * The `DataBase` global of legacy projects: text files in a folder, by default the project's own `data` folder.
      *
-     * A file name is resolved in the `data` folder inside the project's folder, which is created when needed; each
-     * project has its own. A name may contain subfolders, but they aren't created. Files are read and written as UTF-8.
+     * A file name without a dot gets `.txt`: `"scores"` is `scores.txt`, while `"scores.json"` stays as it is. A name
+     * that has no `.txt` file but matches a file without extension, as written by older StarLight versions, uses that
+     * one. A name may contain subfolders, which writing creates. Files are read and written as UTF-8.
      *
-     * Of MessengerBot's `DataBase`, only these four methods exist; `exists`, `listFiles`, `clearDataBase`,
-     * `getDataBaseDir` and the others are missing.
+     * Each project has its own `data` folder inside the project's folder, created when needed; MessengerBot shares one
+     * folder between all scripts. `setDatabaseDir` points this project to another folder, also one outside the
+     * project, until the project compiles again.
      *
      * @see guide:projects#files
      * @see guide:play-build#data-folder
      */
-    class DataBase(
-        private val project: Project
+    class DataBase internal constructor(
+        private val project: Project,
+        private val json: ScriptJson,
     ) {
 
-        private fun getFile(fileName: String): File = project.getDataDirectory().resolve(fileName)
+        private val folder = DatabaseFolder(project.getDataDirectory())
 
         /**
-         * The text of the file [fileName] in the project's `data` folder.
+         * The text of the file [fileName].
          *
-         * Unlike `FileStream.read`, a missing file throws rather than giving `null`.
-         *
-         * @param fileName The file's name in the `data` folder.
-         * @throws java.io.IOException When the file doesn't exist or can't be read.
+         * @param fileName The file's name; `.txt` is added when it has no dot.
+         * @return The whole text, or `null` when the file doesn't exist or is a folder.
+         * @throws IllegalArgumentException When [fileName] isn't a string.
+         * @throws RuntimeException `Failed to read database file '<name>': <message>` when it can't be read.
          */
-        fun getDataBase(fileName: String): String = getFile(fileName).readText()
+        fun getDataBase(fileName: Any?): String? =
+            folder.read(nameOf(fileName))
 
         /**
-         * Writes [data] to the file [fileName] in the project's `data` folder, replacing what it held.
+         * Writes [data] to the file [fileName], replacing what it held.
          *
-         * The file is created if needed, but not the subfolders in [fileName].
+         * The file and the folders in its name are created when needed. `null` and `undefined` write nothing, leaving
+         * an empty file; other values are written as their text (`5` as `5`).
          *
-         * @param fileName The file's name in the `data` folder.
+         * @param fileName The file's name; `.txt` is added when it has no dot.
          * @param data The text to write.
-         * @return [data].
-         * @throws java.io.IOException When the file can't be written.
+         * @return The text now in the file.
+         * @throws IllegalArgumentException When [fileName] isn't a string.
+         * @throws RuntimeException `Failed to set database file '<name>': <message>` when it can't be written.
          */
-        fun setDataBase(fileName: String, data: String): String {
-            getFile(fileName).writeText(data)
-            return data
+        fun setDataBase(fileName: Any?, data: Any?): String =
+            folder.write(nameOf(fileName), dataOf(data))
+
+        /**
+         * Adds [data] to the end of the file [fileName], creating the file and its folders when needed.
+         *
+         * @param fileName The file's name; `.txt` is added when it has no dot.
+         * @param data The text to add; `null` and `undefined` add nothing.
+         * @return The text now in the file.
+         * @throws IllegalArgumentException When [fileName] isn't a string.
+         * @throws RuntimeException `Failed to append to database file '<name>': <message>` when it can't be written.
+         */
+        fun appendDataBase(fileName: Any?, data: Any?): String =
+            folder.append(nameOf(fileName), dataOf(data))
+
+        /**
+         * Empties the file [fileName], creating it when it doesn't exist.
+         *
+         * @param fileName The file's name; `.txt` is added when it has no dot.
+         * @return The text now in the file, an empty string.
+         * @throws IllegalArgumentException When [fileName] isn't a string.
+         */
+        fun clearDataBase(fileName: Any?): String =
+            setDataBase(fileName, "")
+
+        /**
+         * Whether the file or folder [fileName] exists.
+         *
+         * @param fileName The file's name; `.txt` is added when it has no dot.
+         * @throws IllegalArgumentException When [fileName] isn't a string.
+         */
+        fun exists(fileName: Any?): Boolean =
+            folder.exists(nameOf(fileName))
+
+        /**
+         * The size of the file [fileName] in bytes.
+         *
+         * @param fileName The file's name; `.txt` is added when it has no dot.
+         * @return The size, or `-1` when it doesn't exist.
+         * @throws IllegalArgumentException When [fileName] isn't a string.
+         */
+        fun getFileSize(fileName: Any?): Long =
+            folder.size(nameOf(fileName))
+
+        /**
+         * The names of the files and folders in the database folder, backups (`.bak`) included.
+         *
+         * @return An array of names, without paths and sorted; empty when the folder doesn't exist.
+         */
+        fun listFiles(): Any? =
+            json.parse(JsonArray(folder.list().map(::JsonPrimitive)).toString())
+
+        /**
+         * Deletes the file [fileName] and says whether it was deleted.
+         *
+         * A copy is kept first, next to the file with `.bak` added to its name (`scores.txt.bak`), replacing an older
+         * copy. A copy that can't be made doesn't stop the deletion.
+         *
+         * @param fileName The file's name; `.txt` is added when it has no dot.
+         * @return `false` when the file doesn't exist or can't be deleted.
+         * @throws IllegalArgumentException When [fileName] isn't a string.
+         */
+        fun removeDataBase(fileName: Any?): Boolean =
+            folder.remove(nameOf(fileName), backup = true)
+
+        /**
+         * The path of the folder the files are in.
+         *
+         * By default it is the project's `data` folder.
+         */
+        fun getDatabaseDir(): String =
+            folder.dir.absolutePath
+
+        /**
+         * Same as [getDatabaseDir].
+         */
+        fun getDataBaseDir(): String =
+            getDatabaseDir()
+
+        /**
+         * Points the database to the folder [newDir] for this project, until it compiles again.
+         *
+         * The folder isn't checked or created now; writing creates it. A path that isn't absolute is taken inside the
+         * project's `data` folder.
+         *
+         * @param newDir The folder's path.
+         * @throws IllegalArgumentException When [newDir] isn't a string.
+         */
+        fun setDatabaseDir(newDir: Any?) {
+            val dir = File(ScriptArgs.string(newDir, "newDir"))
+            folder.dir = if (dir.isAbsolute) dir else project.getDataDirectory().resolve(dir)
         }
 
         /**
-         * Adds [data] to the end of the file [fileName] in the project's `data` folder and returns its new text.
+         * Same as [setDatabaseDir].
          *
-         * Unlike [setDataBase], it doesn't create the file: it throws when the file doesn't exist.
-         *
-         * @param fileName The file's name in the `data` folder.
-         * @param data The text to add.
-         * @return The file's text after the change.
-         * @throws java.io.IOException When the file doesn't exist or can't be read or written.
+         * @param newDir The folder's path.
          */
-        fun appendDataBase(fileName: String, data: String) = with(getFile(fileName)) {
-            val org = readText()
-            val appended = org + data
-            writeText(appended)
-            appended
+        fun setDataBaseDir(newDir: Any?) {
+            setDatabaseDir(newDir)
         }
 
-        /**
-         * Deletes the file [fileName] in the project's `data` folder and says whether it was deleted.
-         *
-         * No backup is kept, unlike MessengerBot's optional `.bak` copy.
-         *
-         * @param fileName The file's name in the `data` folder.
-         * @return `false` also when the file doesn't exist.
-         */
-        fun removeDataBase(fileName: String): Boolean = getFile(fileName).delete()
+        private fun nameOf(value: Any?): String =
+            ScriptArgs.string(value, "fileName")
+
+        private fun dataOf(value: Any?): String =
+            if (ScriptArgs.isMissing(value)) "" else ScriptArgs.stringify(value)
     }
 
     override val name: String = "DataBase"
@@ -90,18 +176,53 @@ class DataBaseApi: Api<DataBaseApi.DataBase>() {
         },
         function {
             name = "setDataBase"
-            args = arrayOf(String::class.java, String::class.java)
+            args = arrayOf(String::class.java, Any::class.java)
             returns = String::class.java
         },
         function {
             name = "appendDataBase"
-            args = arrayOf(String::class.java, String::class.java)
+            args = arrayOf(String::class.java, Any::class.java)
             returns = String::class.java
         },
         function {
-            name = "removeDataBase"
-            args = arrayOf(String::class.java, String::class.java)
+            name = "clearDataBase"
+            args = arrayOf(String::class.java)
+            returns = String::class.java
+        },
+        function {
+            name = "exists"
+            args = arrayOf(String::class.java)
             returns = Boolean::class.java
+        },
+        function {
+            name = "getFileSize"
+            args = arrayOf(String::class.java)
+            returns = Long::class.java
+        },
+        function {
+            name = "listFiles"
+            returns = Any::class.java
+        },
+        function {
+            name = "removeDataBase"
+            args = arrayOf(String::class.java)
+            returns = Boolean::class.java
+        },
+        function {
+            name = "getDatabaseDir"
+            returns = String::class.java
+        },
+        function {
+            name = "getDataBaseDir"
+            returns = String::class.java
+        },
+        function {
+            name = "setDatabaseDir"
+            args = arrayOf(String::class.java)
+        },
+        function {
+            name = "setDataBaseDir"
+            args = arrayOf(String::class.java)
         }
     )
 
@@ -109,5 +230,5 @@ class DataBaseApi: Api<DataBaseApi.DataBase>() {
 
     override val instanceType: InstanceType = InstanceType.OBJECT
 
-    override fun getInstance(project: Project): Any = DataBase(project)
+    override fun getInstance(project: Project): Any = DataBase(project, ScriptJson.current())
 }

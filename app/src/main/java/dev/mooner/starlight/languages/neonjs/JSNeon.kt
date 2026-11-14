@@ -16,6 +16,7 @@ import dev.mooner.neonjs.*
 import dev.mooner.neonjs.net.NetExtension
 import dev.mooner.neonjs.net.NetOptions
 import dev.mooner.starlight.BuildConfig
+import dev.mooner.starlight.api.msgbot.GlobalArgs
 import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.languages.EntryPoints
 import dev.mooner.starlight.languages.ScriptErrors
@@ -272,24 +273,18 @@ class JSNeon: Language() {
         val lastTimerId = AtomicInteger()
 
         fun startTimer(args: Array<NeonValue>, repeat: Boolean): Int {
-            val callback = args.getOrNull(0)
-                ?.takeIf(NeonValue::isFunction)
-                ?: throw IllegalArgumentException("Callback is not a function")
-            val mDelay = args.getOrNull(1)
-                ?.let { arg ->
-                    when {
-                        arg.isNumber -> arg.asDouble()
-                        arg.isString -> arg.asString()
-                        else         -> null
-                    }
-                }
-                .let(TimerDelay::fromScript)
-                .let { TimerDelay.effective(it, repeat) }
+            val kind = if (repeat) "setInterval" else "setTimeout"
+            if (args.isEmpty())
+                throw IllegalArgumentException("$kind requires at least 2 arguments")
+            val callback = args[0]
+                .takeIf(NeonValue::isFunction)
+                ?: throw IllegalArgumentException("First argument must be a function")
+            val mDelay = TimerDelay.effective(GlobalArgs.convertToInt(args.getOrNull(1)).toLong(), repeat)
             val params = args.drop(2).toTypedArray()
 
             val id = lastTimerId.incrementAndGet()
             // Named in the warning about a callback that runs long.
-            val job = project.launch(CoroutineName(if (repeat) "setInterval" else "setTimeout"), start = CoroutineStart.LAZY) {
+            val job = project.launch(CoroutineName(kind), start = CoroutineStart.LAZY) {
                 do {
                     delay(mDelay.milliseconds)
                     runCatching {
@@ -299,8 +294,7 @@ class JSNeon: Language() {
                     }.onFailure { e ->
                         project.logger.error("Exception on timer $id: ${ScriptErrors.describe(e, project.directory)}")
                         if (project.runs(this@defineGlobals))
-                            UncaughtErrors.report(project.info.id, e, UncaughtErrors.Origin.EXCEPTION,
-                                if (repeat) "setInterval" else "setTimeout")
+                            UncaughtErrors.report(project.info.id, e, UncaughtErrors.Origin.EXCEPTION, kind)
                     }
                 } while (repeat && isActive)
             }.apply {
@@ -312,27 +306,66 @@ class JSNeon: Language() {
         }
 
         fun clearTimer(args: Array<NeonValue>) {
-            val id = args.getOrNull(0)
-                ?.takeIf(NeonValue::isNumber)
-                ?.asDouble()
-                ?.toInt() ?: return
+            val id = GlobalArgs.convertToInt(args.getOrNull(0))
             timers.remove(id)?.cancel()
+        }
+
+        // Makes the array `repeat` gives back, which is the engine's own.
+        val arrayOfResults = eval("(function () { return Array.prototype.slice.call(arguments); })", "repeat-helper.js")
+
+        fun repeatCall(args: Array<NeonValue>): Any? {
+            if (args.size < 2)
+                return null
+            val function = args[0].takeIf(NeonValue::isFunction)
+                ?: return null
+            val count = GlobalArgs.convertToInt(args[1])
+            if (count <= 0)
+                return null
+            val spread: Array<Any?> = args.getOrNull(2).let { extra ->
+                when {
+                    extra == null  -> if (args.size > 2) arrayOf<Any?>(null) else emptyArray<Any?>()
+                    extra.isArray  -> Array(extra.arraySize.toInt()) { i -> extra.getElement(i.toLong()) }
+                    else           -> arrayOf<Any?>(extra)
+                }
+            }
+            return try {
+                val results = ArrayList<Any?>(count.coerceAtMost(1024))
+                for (n in 0 until count) {
+                    results += try {
+                        withClassLoader(null) { function.call(*spread) }
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                arrayOfResults.call(*results.toTypedArray())
+            } catch (e: Exception) {
+                null
+            }
         }
 
         setFunction("setTimeout") { startTimer(it, repeat = false) }
         setFunction("setInterval") { startTimer(it, repeat = true) }
         setFunction("clearTimeout") { clearTimer(it); null }
         setFunction("clearInterval") { clearTimer(it); null }
+        setFunction("repeat") { repeatCall(it) }
         setFunction("toast") { args ->
-            val message = args.getOrNull(0)?.toString() ?: ""
-            val duration = args.getOrNull(1)
-                ?.takeIf(NeonValue::isNumber)
-                ?.asInt() ?: Toast.LENGTH_LONG
+            val first = args.getOrNull(0)
+            val message = when {
+                first == null  -> "null"
+                first.isString -> first.asString()
+                else           -> first.toString()
+            }
+            val duration = GlobalArgs.convertToInt(args.getOrNull(1))
 
             CoroutineScope(Dispatchers.Main).launch {
                 Toast.makeText(GlobalApplication.requireContext(), message, duration).show()
             }
             null
+        }
+
+        // NeonJS's console has no clear; it empties the project's log, as Log.clear() does.
+        runCatching {
+            this["console"].putMember("clear", createFunction("clear") { project.logger.clear(); null })
         }
     }
 

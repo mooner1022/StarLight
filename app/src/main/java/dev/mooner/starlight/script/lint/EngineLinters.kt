@@ -57,7 +57,7 @@ internal object EngineLinters {
 
     /** As JSNeon builds its engines: the web globals, `fetch` and `WebSocket`, `Java`; and what it adds itself. */
     private val neonGlobals: Globals =
-        EngineGlobals.of(console = true, webGlobals = true, java = true, net = true) + Globals.of(listOf("toast"))
+        EngineGlobals.of(console = true, webGlobals = true, java = true, net = true) + Globals.of(listOf("toast", "repeat"))
 
     /**
      * A file of a project that isn't Rhino's, which is a module.
@@ -161,7 +161,8 @@ internal object EngineLinters {
     /** For when the scope can't be asked: enough that common scripts aren't told of the engine's own names. */
     private val RHINO_FALLBACK = EngineGlobals.ECMASCRIPT + RHINO_EXTRA + setOf(
         "Packages", "java", "javax", "org", "com", "edu", "net", "android", "JavaImporter", "JavaAdapter", "importClass",
-        "importPackage", "getClass", "toast", "setTimeout", "setInterval", "clearTimeout", "clearInterval",
+        "importPackage", "getClass", "toast", "setTimeout", "setInterval", "clearTimeout", "clearInterval", "repeat",
+        "console",
     )
 
     // ---- Shared -------------------------------------------------------------------------------------------------

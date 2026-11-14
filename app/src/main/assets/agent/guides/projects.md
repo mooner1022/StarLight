@@ -51,8 +51,8 @@ levels share is given once. Plugins' APIs and events belong to every project, wh
 | Level | Globals | Events |
 |---|---|---|
 | StarLight original (`starlight`) | `Log`, `Store`, `Chat`, `Schedule`, `Format`, `Projects`, `Plugins`, `Languages`, `Platform`, `Env`, `Java`, `Notification`, `HomeWidget`, `MediaSharer`, `EventEmitter` | `onMessage`, `onMessageDeleted`, `onNotificationPosted`, `onStartCompile` |
-| MessengerBot API2 (`msgbot.api2`) | `Log`, `BotManager`, `Event`, `Broadcast`, `App`, `Device`, `FileStream` | listeners added with `bot.on(Event.…)` |
-| MessengerBot legacy (`msgbot.legacy`) | `Log`, `Api`, `Utils`, `DataBase`, `Bridge`, `Device`, `FileStream` | `response`, `onNotificationPosted`, `onStartCompile` |
+| MessengerBot API2 (`msgbot.api2`) | `Log`, `BotManager`, `Event`, `App`, `Database`, `Device`, `FileStream`, `Broadcast`, `AppData`, `GlobalLog`, `Http`, `Security` | listeners added with `bot.on(Event.…)` |
+| MessengerBot legacy (`msgbot.legacy`) | `Log`, `Api`, `Utils`, `DataBase`, `Bridge`, `Device`, `FileStream`, `Broadcast`, `AppData`, `GlobalLog`, `Http`, `Security` | `response`, `onNotificationPosted`, `onNotificationRemoved`, `onStartCompile` |
 
 `list_apis` with the project lists exactly what it gets, and `list_projects` shows each project's levels. New projects
 start with StarLight original; NeonJS suits it and API2 best. Changing levels takes effect on the next compile.
@@ -132,6 +132,9 @@ if (other) other.callFunction("addReminder", ["room", "text"], (e) => Log.e("sch
 - The other project's function must be exported if it is a NeonJS project.
 - `describe_api Project` shows what else a project has, such as `info.id` and `getDataDirectory()`.
 
-Legacy Rhino projects also have `Bridge.getScopeOf(name)`: another compiled Rhino project's global object, whose
-variables and functions read as properties (`Bridge.getScopeOf("other").count`). It throws while that project isn't
-compiled, as during its first compile.
+Legacy projects also have MessengerBot's `Bridge`, which reaches into another compiled project directly and returns
+what it gives: `Bridge.callFunctionOf("other", "greet", "hi")` calls a function and returns its result,
+`getVariableOf`, `hasVariableOf`, `setVariableOf` and `getMemberNamesOf` read and write its variables,
+`evalInScript` runs code in it, and `getScopeOf(name)` gives a Rhino project's global object, whose variables and
+functions read as properties (`Bridge.getScopeOf("other").count`). For a NeonJS project these see its exports, which
+can't be assigned. They give `null` (or `false`) while that project isn't compiled, as during its first compile.

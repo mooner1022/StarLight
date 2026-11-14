@@ -14,12 +14,15 @@ StarLight calls a function with the event's name, with the event's arguments:
 |---|---|---|
 | `onMessage(event)` | `starlight.message.create` | A chat message arrives. |
 | `onMessageDeleted(event)` | `starlight.message.delete` | The latest message received in a KakaoTalk room is deleted. |
-| `response(room, msg, sender, isGroupChat, replier, imageDB, packageName)` | `starlight.message.legacy` | A chat message arrives (MessengerBot legacy). |
-| `onNotificationPosted(sbn)` | `starlight.notification.post` | Any app posts a notification (see below). |
+| `response(room, msg, sender, isGroupChat, replier, imageDB, packageName, isMention, logId, channelId, userHash)` | `starlight.message.legacy` | A chat message arrives (MessengerBot legacy). |
+| `onNotificationPosted(sbn)` (legacy: `onNotificationPosted(sbn, sessionManager)`) | `starlight.notification.post` | Any app posts a notification (see below). |
+| `onNotificationRemoved(sbn, rankingMap, reason)` | `starlight.notification.removed` | A notification is removed (MessengerBot legacy; gated like `onNotificationPosted`). |
 | `onStartCompile()` | `starlight.project.compile` | Right before a compiled project compiles again, after API2 `startCompile` listeners. |
 | `onProjectButtonClicked(buttonId)` | — | The user taps a custom button on the project's card. |
 | `onUncaughtError(error, origin, detail)` | — | The project's code throws an error nothing caught (see Uncaught errors below). |
 
+- In the legacy `response`, `logId` and `channelId` are BigInt (0 when unknown), `userHash` is `""` when unknown, and
+  in the debug room `logId` and `channelId` are 0 and `userHash` is `"DEBUG ROOM"`.
 - In NeonJS the function must be exported; in Rhino it is a top-level function.
 - A project with both StarLight original and MessengerBot legacy gets `onMessage` and then `response` for each message.
 
@@ -33,20 +36,20 @@ bot.addListener(Event.MESSAGE, (msg) => {
     if (msg.content === "/hi") msg.reply("hello");
 });
 bot.setCommandPrefix("/");
-// args is a Java array: Array.from makes a JS array of it, for array methods. Rhino can't spread it.
+// args is a Java list: Array.from makes a JS array of it, for array methods. Rhino can't spread it.
 bot.on(Event.COMMAND, (msg) => msg.reply(`command ${msg.command} ${Array.from(msg.args).join(" ")}`));
 ```
 
 | `Event.` | Event ID |
 |---|---|
 | `MESSAGE` | `starlight.api2.message` |
-| `COMMAND` | `starlight.api2.command`, for messages starting with the bot's command prefix |
+| `COMMAND` | `starlight.api2.command`, for messages starting with the bot's command prefix, which is `""` by default, so every message is a command until `bot.setCommandPrefix` sets one |
 | `NOTIFICATION_POSTED` | `starlight.api2.notification_posted` |
 | `NOTIFICATION_REMOVED` | `starlight.api2.notification_removed` |
 | `START_COMPILE` | `starlight.api2.start_compile` |
 
 - Listeners added at the top level stay for the life of the compiled code; compiling again starts with none.
-- `Event.TICK`, `Event.BATTERY_LEVEL_CHANGED` and `Event.Activity.*` exist, but StarLight never fires them.
+- `Event.TICK` and `Event.Activity.*` exist, but StarLight never fires them.
 - API2's objects follow MessengerBot R's documented API2; `describe_api BotManager` and `describe_event` show what
   StarLight implements and where it differs.
 
@@ -188,7 +191,7 @@ export function onUncaughtError(error, origin, detail) {
 
 ## Notification events
 
-`onNotificationPosted` and the API2 notification events get every app's notifications, as Android's
+`onNotificationPosted`, `onNotificationRemoved` and the API2 notification events get every app's notifications, as Android's
 `StatusBarNotification`, only while the app setting **onNotificationPosted 이벤트 사용** is on. It is off by default
 and costs battery: tell the user to turn it on when a bot needs it. Chat messages don't need it; they come from the
 notification rules (guide:app#notification-rules).

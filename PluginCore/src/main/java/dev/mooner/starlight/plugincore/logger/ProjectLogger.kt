@@ -21,11 +21,11 @@ import java.util.concurrent.atomic.AtomicInteger
 private typealias ListenerCallback = (log: LogData) -> Unit
 
 /**
- * The project's log, a global named `Log` in every API level: `Log.i(message)` or `Log.i(tag, message)`.
+ * The project's log, kept as [logs]; scripts reach it as the `Log` global, whose methods also take MessengerBot's
+ * `Log.i(data, showToast)`: with a boolean second argument it shows a toast, and `Log.e` shows one by default.
  *
- * There is a method for each level, by letter and by name: `v`/`verbose`, `d`/`debug`, `i`/`info`, `w`/`warn`,
- * `e`/`error`, and `wtf` (critical). Each takes a message, or a tag and a message; unlike MessengerBot's
- * `Log.i(data, showToast)`, the second argument is the message, not a toast switch.
+ * Kotlin and Java callers use the methods here. Each takes a message, or a tag and a message, at a level, by letter and
+ * by name: `v`/`verbose`, `d`/`debug`, `i`/`info`, `w`/`warn`, `e`/`error`, and `wtf` (critical).
  *
  * Where an entry goes:
  * - Android's logcat, at every level.
@@ -35,8 +35,7 @@ private typealias ListenerCallback = (log: LogData) -> Unit
  *   `get_project_logs`. It keeps about the latest 50 entries, across restarts.
  * - While the app is open, warnings, errors and critical entries also pop up as an alert.
  *
- * Messages and tags must be strings: in NeonJS, a number or an object throws a TypeError, so pass `String(x)` or
- * `JSON.stringify(x)`. NeonJS's `console` writes to this log too, without a tag.
+ * NeonJS's `console` writes to this log too, without a tag.
  *
  * @see guide:engines/neonjs#console
  */

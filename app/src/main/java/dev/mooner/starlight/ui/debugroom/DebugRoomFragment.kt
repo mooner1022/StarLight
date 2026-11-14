@@ -33,6 +33,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import dev.mooner.configdsl.ConfigStructure
+import java.math.BigInteger
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.IconInfo
 import dev.mooner.configdsl.adapters.ConfigAdapter
@@ -48,7 +49,10 @@ import dev.mooner.starlight.listener.event.Api2MessageEvent
 import dev.mooner.starlight.listener.event.LegacyEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
+import dev.mooner.starlight.listener.chat.RoomKey
+import dev.mooner.starlight.listener.legacy.DebugRoomLinks
 import dev.mooner.starlight.listener.legacy.Replier
+import dev.mooner.starlight.listener.legacy.ReplierOrigin
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
@@ -137,9 +141,24 @@ class DebugRoomFragment: Fragment() {
             DebugRoomChatAdapter.CHAT_BOT
         addMessage(botName, msg, viewType, false)
     }
-    private val replier = Replier { _, msg, _ ->
-        onSend(msg)
-        true
+    /** This screen as the project's open debug room, so `Api.replyRoom` and the like naming it write here. */
+    private var debugLink: DebugRoomLinks.Link? = null
+
+    /** The replier of a legacy `response` call from here: its own room is this screen. */
+    private fun debugReplier(): Replier =
+        Replier(ReplierOrigin(roomName, RoomKey(roomName, BigInteger.ZERO), sentPackage, isDebug = true, projectId = if (::project.isInitialized) project.info.id else null)) { _, msg, _ ->
+            onSend(msg)
+            true
+        }
+
+    /** Registers this screen under the current room name and ID, in place of the link it had before. */
+    private fun registerDebugLink() {
+        if (!::project.isInitialized)
+            return
+        val projectId = project.info.id
+        debugLink?.let { DebugRoomLinks.unregister(projectId, it) }
+        debugLink = DebugRoomLinks.Link(roomName, roomId.toBigIntegerOrNull(), onSend)
+            .also { DebugRoomLinks.register(projectId, it) }
     }
     private val onSendMedia: (media: List<MediaFile>) -> Unit = { media ->
         // The files are only there until this returns, so each is copied before it is shown.
@@ -336,8 +355,8 @@ class DebugRoomFragment: Fragment() {
             project.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::showErrorPeek)
 
             // Called only if the project's levels and allowed events include it.
-            project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, replier, ImageDB(selfProfileBitmap),
-                sentPackage, onFailure = ::showErrorPeek)
+            project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, debugReplier(), ImageDB(selfProfileBitmap),
+                sentPackage, hasMention, BigInteger.ZERO, BigInteger.ZERO, "DEBUG ROOM", onFailure = ::showErrorPeek)
             project.fireEvent<Api2MessageEvent>(data, onFailure = ::showErrorPeek)
             project.fireEvent<Api2CommandEvent>(data, onFailure = ::showErrorPeek)
         }
@@ -493,6 +512,8 @@ class DebugRoomFragment: Fragment() {
         )
 
     override fun onDestroy() {
+        debugLink?.let { link -> if (::project.isInitialized) DebugRoomLinks.unregister(project.info.id, link) }
+        debugLink = null
         userChatAdapter = null
         configAdapter?.destroy()
         configAdapter = null
@@ -515,6 +536,7 @@ class DebugRoomFragment: Fragment() {
         sentPackage     = GlobalConfig.category("d_room").getString("package", PACKAGE_KAKAO_TALK)
         isGroupChat     = GlobalConfig.category("d_room").getBoolean("is_group_chat", false)
         sendOnEnter     = GlobalConfig.category("d_room").getBoolean("send_with_enter", false)
+        registerDebugLink()
 
         requireActivity().runOnUiThread {
             binding.roomTitle.text = roomName

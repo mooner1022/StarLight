@@ -109,10 +109,13 @@ class JSRhino: Language() {
 
     override fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any =
         enterContext().use { context ->
-            val scope = if (project != null)
-                context.initStandardObjects(RhinoGlobalObject(context, project))
+            val global = project?.let { RhinoGlobalObject(context, it) }
+            val scope = if (global != null)
+                context.initStandardObjects(global)
             else
                 context.initStandardObjects(ImporterTopLevel(context))
+            // setTimeout, toast, repeat, console and the rest, once the standard objects they build on exist.
+            global?.installGlobals()
 
             var importLines: StringBuilder? = null
             val ownConsts = if (project != null) topLevelConsts(code, context.languageVersion) else emptySet()

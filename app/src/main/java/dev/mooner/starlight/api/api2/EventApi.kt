@@ -34,8 +34,8 @@ class EventApi: Api<EventApi.Event>() {
      * projects.
      *
      * Each constant is the event's name as a string, such as `"message"`. A listener is called only when the project
-     * also receives the event's ID, such as `starlight.api2.message`. `TICK`, `BATTERY_LEVEL_CHANGED` and
-     * `Activity.*` are here for scripts that name them, but never fire.
+     * also receives the event's ID, such as `starlight.api2.message`. `TICK` and `Activity.*` are here for
+     * scripts that name them, but never fire.
      *
      * @see guide:events#api2-listeners
      */
@@ -53,7 +53,9 @@ class EventApi: Api<EventApi.Event>() {
          * `"notificationPosted"`: an app posted a notification; listeners get `(sbn, sessionManager)` (event ID
          * `starlight.api2.notification_posted`).
          *
-         * `sessionManager` is always `null`. Fired only while the app setting **onNotificationPosted 이벤트 사용** is on.
+         * `sessionManager` is a `SessionManager` made for this notification: its reply and mark-as-read actions, and
+         * `bindSession` to make a room of it replyable. Fired only while the app setting **onNotificationPosted 이벤트 사용**
+         * is on.
          */
         @JvmField val NOTIFICATION_POSTED = "notificationPosted"
         /**
@@ -70,8 +72,6 @@ class EventApi: Api<EventApi.Event>() {
         @JvmField val START_COMPILE = "startCompile"
         /** `"tick"`, an event StarLight never fires. */
         @JvmField val TICK = "tick"
-        /** `"batteryLevelChanged"`, an event StarLight never fires; MessengerBot R doesn't either. */
-        @JvmField val BATTERY_LEVEL_CHANGED = "batteryLevelChanged"
         /**
          * The names of the activity events, such as `Event.Activity.CREATE`; StarLight has no script activity, so they
          * never fire.

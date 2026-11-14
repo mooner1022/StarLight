@@ -2,11 +2,7 @@ package dev.mooner.starlight.listener.chat
 
 import android.app.Notification
 import android.app.PendingIntent
-import android.app.RemoteInput
 import android.content.Context
-import android.content.Intent
-import android.os.Bundle
-import dev.mooner.starlight.listener.NotificationListener
 import dev.mooner.starlight.plugincore.chat.ChatRoom
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 
@@ -19,10 +15,21 @@ data class ChatRoomImpl(
     override val isDebugRoom: Boolean = false,
     val sendSession: Notification.Action,
     val readSession: Notification.Action,
-    private val context: Context,
+    internal val context: Context,
 ): ChatRoom {
 
     private var lastReceivedId: Long = 0
+
+    /**
+     * The Android user the room's notification belongs to: `0` for the device's owner, another for a dual messenger,
+     * secure folder or work profile copy of the app. Set once the notification is parsed.
+     */
+    @Volatile
+    var userId: Int = 0
+
+    /** Whether the room's notification came from another Android user than the owner, as API2's `isMultiChat` says. */
+    val isMultiChat: Boolean
+        get() = userId != 0
 
     fun setLastReceivedId(id: Long) {
         lastReceivedId = id
@@ -30,13 +37,7 @@ data class ChatRoomImpl(
 
     override fun send(message: String): Boolean {
         return try {
-            val sendIntent = Intent()
-            val msg = Bundle()
-            for (input in sendSession.remoteInputs)
-                msg.putCharSequence(input.resultKey, message)
-            NotificationListener.notifySent()
-            RemoteInput.addResultsToIntent(sendSession.remoteInputs, sendIntent, msg)
-            sendSession.actionIntent.send(context, 0, sendIntent)
+            SessionSend.text(context, sendSession, message)
             LOG.verbose { "send() success: $message" }
             true
         } catch (e: PendingIntent.CanceledException) {
@@ -47,10 +48,14 @@ data class ChatRoomImpl(
 
     override fun markAsRead(): Boolean {
         try {
-            readSession.actionIntent.send(context, 1, null)
+            SessionSend.read(context, readSession)
         } catch (_: PendingIntent.CanceledException) {
             return false
         }
         return true
     }
 }
+
+/** Whether [this] room's notification came from another Android user than the owner; `false` for any other room. */
+fun ChatRoom.isMultiChat(): Boolean =
+    (this as? ChatRoomImpl)?.isMultiChat == true
