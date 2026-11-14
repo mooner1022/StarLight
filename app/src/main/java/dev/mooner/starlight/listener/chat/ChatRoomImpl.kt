@@ -48,7 +48,7 @@ data class ChatRoomImpl(
 
     override fun markAsRead(): Boolean {
         try {
-            SessionSend.read(context, readSession)
+            SessionSend.read(context, readSession, id)
         } catch (_: PendingIntent.CanceledException) {
             return false
         }

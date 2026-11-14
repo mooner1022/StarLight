@@ -16,8 +16,11 @@ import dev.mooner.starlight.plugincore.translation.translate
  * The latest KakaoTalk message StarLight received was deleted; calls the script's `onMessageDeleted(event)`.
  *
  * StarLight notices a deletion when KakaoTalk itself removes that message's notification, so only the latest message
- * counts, only in KakaoTalk, and a removal for another reason looks the same. After a bot sends to any KakaoTalk room,
- * nothing counts until the next message arrives. Called on the project's workers, in projects that are compiled and on.
+ * counts, only in KakaoTalk, and a removal for another reason, as someone reading the room on this device, looks the
+ * same. A deleted message that isn't the room's latest unread one isn't noticed. After a bot sends to any KakaoTalk
+ * room, nothing counts until the next message arrives, and a room StarLight had read, by "mark as read" or by a share
+ * that opens it, doesn't count for a few seconds. Called on the project's workers, in projects that are compiled and
+ * on.
  *
  * @param event The deleted message: its text, sender's name, room and chat log ID. Its `room` is `null` when no
  *   message from that room has arrived since StarLight started.

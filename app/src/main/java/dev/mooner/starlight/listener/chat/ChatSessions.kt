@@ -43,11 +43,14 @@ internal object SessionSend {
     }
 
     /**
-     * Fires [action] as a "mark as read".
+     * Fires [action] as a "mark as read" for the room [roomId] (`null` when it isn't known).
+     *
+     * KakaoTalk then takes the room's notification away, which [OwnReads] keeps from counting as a deletion.
      *
      * @throws PendingIntent.CanceledException when the messenger no longer takes it.
      */
-    fun read(context: Context, action: Notification.Action) {
+    fun read(context: Context, action: Notification.Action, roomId: String?) {
+        OwnReads.shared.note(roomId, OwnReads.READ_MILLIS)
         action.actionIntent.send(context, 1, null)
     }
 }
@@ -87,7 +90,7 @@ class SessionChatRoom(
     override fun markAsRead(): Boolean {
         val action = readAction ?: return false
         return try {
-            SessionSend.read(GlobalApplication.requireContext(), action)
+            SessionSend.read(GlobalApplication.requireContext(), action, null)
             true
         } catch (_: PendingIntent.CanceledException) {
             false
@@ -183,7 +186,7 @@ object ChatSessions {
             if (packageName == null)
                 sent = true
             try {
-                SessionSend.read(GlobalApplication.requireContext(), action)
+                SessionSend.read(GlobalApplication.requireContext(), action, key.id.takeIf { it.signum() != 0 }?.toString())
                 sent = true
             } catch (_: PendingIntent.CanceledException) {
                 // Another package's session may still take it.
