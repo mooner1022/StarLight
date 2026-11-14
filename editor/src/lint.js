@@ -1,42 +1,8 @@
-const JSHINT_OPTIONS = {
-    esversion: 11,
-    undef: false,
-    unused: false,
-    expr: true,
-    laxbreak: true,
-    laxcomma: true,
-    lastsemic: true,
-    multistr: true,
-    loopfunc: true,
-    evil: true,
-    devel: true,
-    browser: true,
-    maxerr: 100,
-};
+import { nativeLint } from "./native-lint.js";
 
-const IGNORED = new Set(["W117"]);
-
-const SEVERITY = { E: "error", W: "warning", I: "info" };
-
-const lintJavaScript = (view) => {
-    if (typeof JSHINT === "undefined") return [];
-    const doc = view.state.doc;
-    const code = doc.toString();
-    JSHINT(code, { ...JSHINT_OPTIONS, module: /^\s*(import|export)\b/m.test(code) });
-    const diagnostics = [];
-    for (const error of JSHINT.errors) {
-        if (!error || !error.line || error.line > doc.lines || IGNORED.has(error.code)) continue;
-        const line = doc.line(error.line);
-        const from = Math.min(line.from + Math.max((error.character ?? 1) - 1, 0), line.to);
-        diagnostics.push({
-            from,
-            to: from,
-            severity: SEVERITY[error.code?.[0]] ?? "warning",
-            message: error.reason,
-        });
-    }
-    return diagnostics;
-};
+// A script is checked by the app (native-lint.js), which knows what the project's engine reads and what its scripts
+// are given. When the app gives no answer, nothing is marked.
+const lintJavaScript = (sessionId) => async (view) => (await nativeLint(view, sessionId?.())) ?? [];
 
 const lintJson = (view) => {
     const code = view.state.doc.toString();
@@ -51,11 +17,11 @@ const lintJson = (view) => {
     }
 };
 
-export const lintSource = (mode) => {
+// `sessionId` gives the tab the editor shows, for the app's linter to tell tabs apart.
+export const lintSource = (mode, sessionId) => {
     switch (mode) {
         case "javascript":
-        case "jsx":
-            return lintJavaScript;
+            return lintJavaScript(sessionId);
         case "json":
             return lintJson;
         default:

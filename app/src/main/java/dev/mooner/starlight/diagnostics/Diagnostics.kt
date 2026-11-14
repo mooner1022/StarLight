@@ -78,7 +78,13 @@ object Diagnostics {
                 ?.let(::unwrapData)
                 ?.size
                 ?: 0
-            if (count > 0)
+            // With automatic rules on, the saved rules aren't in use: there is nothing to add.
+            if (GlobalConfig.category("noti_rules").getBoolean("auto_rule", true))
+                ok {
+                    Locale.ENGLISH { "Automatic" }
+                    Locale.KOREAN  { "자동 설정" }
+                }
+            else if (count > 0)
                 ok {
                     Locale.ENGLISH { "$count rules" }
                     Locale.KOREAN  { "${count}개" }

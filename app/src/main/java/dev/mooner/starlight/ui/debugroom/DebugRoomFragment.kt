@@ -12,6 +12,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.AtomicFile
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -21,6 +22,8 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Toast
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
+import androidx.core.util.readText
+import androidx.core.util.writeText
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMarginsRelative
@@ -30,6 +33,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.github.dhaval2404.imagepicker.ImagePicker
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import dev.mooner.configdsl.ConfigStructure
+import java.math.BigInteger
 import dev.mooner.configdsl.Icon
 import dev.mooner.configdsl.IconInfo
 import dev.mooner.configdsl.adapters.ConfigAdapter
@@ -45,8 +49,10 @@ import dev.mooner.starlight.listener.event.Api2MessageEvent
 import dev.mooner.starlight.listener.event.LegacyEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
+import dev.mooner.starlight.listener.chat.RoomKey
+import dev.mooner.starlight.listener.legacy.DebugRoomLinks
 import dev.mooner.starlight.listener.legacy.Replier
-import dev.mooner.starlight.logging.bindLogNotifier
+import dev.mooner.starlight.listener.legacy.ReplierOrigin
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ChatSender
 import dev.mooner.starlight.plugincore.chat.DebugChatRoom
@@ -58,6 +64,7 @@ import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.utils.fireEvent
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.ui.debugroom.models.DebugRoomMessage
+import dev.mooner.starlight.utils.PeekLevel
 import dev.mooner.starlight.utils.createSimplePeek
 import dev.mooner.starlight.utils.dp
 import dev.mooner.starlight.utils.hideFromGallery
@@ -70,6 +77,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.util.*
 import kotlin.properties.Delegates.notNull
+import dev.mooner.starlight.script.chat.ChatWaits
 
 private val logger = LoggerFactory.logger {  }
 
@@ -80,6 +88,7 @@ private const val ARG_SHOW_LEAVE   = "showLeave"
 private const val ARG_FIXED_PAD    = "fixedPadding"
 
 private const val CHATS_FILE_NAME = "chats.json"
+private const val BROKEN_CHATS_FILE_NAME = "chats.broken.json"
 
 private const val CATEGORY_BOT         = "d_bot"
 private const val CATEGORY_USER        = "d_user"
@@ -132,9 +141,24 @@ class DebugRoomFragment: Fragment() {
             DebugRoomChatAdapter.CHAT_BOT
         addMessage(botName, msg, viewType, false)
     }
-    private val replier = Replier { _, msg, _ ->
-        onSend(msg)
-        true
+    /** This screen as the project's open debug room, so `Api.replyRoom` and the like naming it write here. */
+    private var debugLink: DebugRoomLinks.Link? = null
+
+    /** The replier of a legacy `response` call from here: its own room is this screen. */
+    private fun debugReplier(): Replier =
+        Replier(ReplierOrigin(roomName, RoomKey(roomName, BigInteger.ZERO), sentPackage, isDebug = true, projectId = if (::project.isInitialized) project.info.id else null)) { _, msg, _ ->
+            onSend(msg)
+            true
+        }
+
+    /** Registers this screen under the current room name and ID, in place of the link it had before. */
+    private fun registerDebugLink() {
+        if (!::project.isInitialized)
+            return
+        val projectId = project.info.id
+        debugLink?.let { DebugRoomLinks.unregister(projectId, it) }
+        debugLink = DebugRoomLinks.Link(roomName, roomId.toBigIntegerOrNull(), onSend)
+            .also { DebugRoomLinks.register(projectId, it) }
     }
     private val onSendMedia: (media: List<MediaFile>) -> Unit = { media ->
         // The files are only there until this returns, so each is copied before it is shown.
@@ -169,8 +193,8 @@ class DebugRoomFragment: Fragment() {
     ): View {
         _binding = FragmentDebugRoomBinding.inflate(inflater, container, false)
 
+        // Logs are alerted by the screen that holds the room, once: the editor has its own notifier.
         val activity = requireActivity()
-        activity.bindLogNotifier()
 
         binding.roomTitle.text = if (roomName == "undefined") projectName else roomName
 
@@ -197,11 +221,7 @@ class DebugRoomFragment: Fragment() {
             }
         }
 
-        val listFile = dir.resolve(CHATS_FILE_NAME)
-        chatList = if (listFile.exists() && listFile.isFile)
-            Session.json.decodeFromString(listFile.readText())
-        else
-            mutableListOf()
+        chatList = loadChats(dir.resolve(CHATS_FILE_NAME))
 
         userChatAdapter = DebugRoomChatAdapter(activity, dir, chatList, chatStyle())
         updateEmptyHint()
@@ -330,13 +350,16 @@ class DebugRoomFragment: Fragment() {
             chatLogId = -1L
         )
 
-        project.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::showErrorPeek)
+        // One message, as several events: a script waiting for it as an answer holds back all of them.
+        ChatWaits.delivering(data) {
+            project.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::showErrorPeek)
 
-        // Called only if the project's levels and allowed events include it.
-        project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, replier, ImageDB(selfProfileBitmap),
-            sentPackage, onFailure = ::showErrorPeek)
-        project.fireEvent<Api2MessageEvent>(data, onFailure = ::showErrorPeek)
-        project.fireEvent<Api2CommandEvent>(data, onFailure = ::showErrorPeek)
+            // Called only if the project's levels and allowed events include it.
+            project.fireEvent<LegacyEvent>(roomName, actualMessage, sender, isGroupChat, debugReplier(), ImageDB(selfProfileBitmap),
+                sentPackage, hasMention, BigInteger.ZERO, BigInteger.ZERO, "DEBUG ROOM", onFailure = ::showErrorPeek)
+            project.fireEvent<Api2MessageEvent>(data, onFailure = ::showErrorPeek)
+            project.fireEvent<Api2CommandEvent>(data, onFailure = ::showErrorPeek)
+        }
     }
 
     private fun showErrorPeek(e: Throwable) {
@@ -346,13 +369,10 @@ class DebugRoomFragment: Fragment() {
                 return@runOnUiThread
             activity.createSimplePeek(
                 title = project.info.name,
-                text = e.toString()
+                text = e.toString(),
+                level = PeekLevel.ERROR,
             ) {
-                paddingDp = 12
-                iconRes = R.drawable.ic_round_error_outline_24
-                backgroundColor(res = R.color.code_error)
                 action("자세히 보기") {
-                    textColor(res = R.color.black)
                     setOnActionListener { view ->
                         view.context.showSheet {
                             title = project.info.name + " 에러 로그"
@@ -364,9 +384,6 @@ class DebugRoomFragment: Fragment() {
                         }
                     }
                 }
-            }.apply {
-                setTitleColor(res = R.color.white)
-                setTextColor(res = R.color.white)
             }.peek()
         }
     }
@@ -452,10 +469,31 @@ class DebugRoomFragment: Fragment() {
         }
     }
 
+    /**
+     * The saved chat. A file that can't be read, as when the app was stopped while writing it, is moved aside and the
+     * chat starts empty: left in place, it would fail the room every time it is opened.
+     */
+    private fun loadChats(file: File): MutableList<DebugRoomMessage> {
+        if (!file.isFile)
+            return mutableListOf()
+        return runCatching<MutableList<DebugRoomMessage>> { Session.json.decodeFromString(AtomicFile(file).readText()) }
+            .getOrElse { e ->
+                logger.warn { "The debug room's chat of ${project.info.name} can't be read and starts empty: $e" }
+                val kept = file.resolveSibling(BROKEN_CHATS_FILE_NAME)
+                runCatching {
+                    file.copyTo(kept, overwrite = true)
+                    file.delete()
+                }
+                Toast.makeText(requireContext(), getString(R.string.debugroom_chat_unreadable, kept.name), Toast.LENGTH_LONG).show()
+                mutableListOf()
+            }
+    }
+
     private fun save() {
         val snapshot = synchronized(chatList) { chatList.toList() }
         CoroutineScope(saveDispatcher).launch {
-            File(dir, CHATS_FILE_NAME).writeText(Session.json.encodeToString(snapshot))
+            // Written whole or not at all: a write cut short would leave a chat that can't be read.
+            AtomicFile(File(dir, CHATS_FILE_NAME)).writeText(Session.json.encodeToString(snapshot))
         }
     }
 
@@ -474,6 +512,8 @@ class DebugRoomFragment: Fragment() {
         )
 
     override fun onDestroy() {
+        debugLink?.let { link -> if (::project.isInitialized) DebugRoomLinks.unregister(project.info.id, link) }
+        debugLink = null
         userChatAdapter = null
         configAdapter?.destroy()
         configAdapter = null
@@ -496,6 +536,7 @@ class DebugRoomFragment: Fragment() {
         sentPackage     = GlobalConfig.category("d_room").getString("package", PACKAGE_KAKAO_TALK)
         isGroupChat     = GlobalConfig.category("d_room").getBoolean("is_group_chat", false)
         sendOnEnter     = GlobalConfig.category("d_room").getBoolean("send_with_enter", false)
+        registerDebugLink()
 
         requireActivity().runOnUiThread {
             binding.roomTitle.text = roomName

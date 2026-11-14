@@ -9,13 +9,11 @@ package dev.mooner.starlight.ui.plugins
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowInsets
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
@@ -203,11 +201,11 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
             key,
             onRemoved = { name ->
                 onPluginsChanged()
-                createSuccessPeek(getString(R.string.plugin_remove_done, name), PeekAlert.Position.Bottom).peekAboveBars()
+                createSuccessPeek(getString(R.string.plugin_remove_done, name), PeekAlert.Position.Bottom).peek()
             },
             onFailure = { e ->
                 onPluginsChanged()
-                createFailurePeek(e.message ?: e.toString(), PeekAlert.Position.Bottom).peekAboveBars()
+                createFailurePeek(e.message ?: e.toString(), PeekAlert.Position.Bottom).peek()
             }
         )
     }
@@ -222,13 +220,13 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
             val file = runCatching {
                 withContext(Dispatchers.IO) { copyToCache(uri) }
             }.getOrElse { e ->
-                createFailurePeek(getString(R.string.plugin_install_failed, e.message ?: e.toString()), PeekAlert.Position.Bottom).peekAboveBars()
+                createFailurePeek(getString(R.string.plugin_install_failed, e.message ?: e.toString()), PeekAlert.Position.Bottom).peek()
                 return@launch
             }
             val info = runCatching { context.pluginInstaller().inspect(file) }
                 .getOrElse { e ->
                     file.delete()
-                    createFailurePeek(getString(R.string.plugin_install_invalid, e.message ?: e.toString()), PeekAlert.Position.Bottom).peekAboveBars()
+                    createFailurePeek(getString(R.string.plugin_install_invalid, e.message ?: e.toString()), PeekAlert.Position.Bottom).peek()
                     return@launch
                 }
             showInstallDialog(file, info)
@@ -299,11 +297,11 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
                     onPluginsChanged()
                     result
                         .onSuccess {
-                            createSuccessPeek(getString(R.string.plugin_install_done, info.name), PeekAlert.Position.Bottom).peekAboveBars()
+                            createSuccessPeek(getString(R.string.plugin_install_done, info.name), PeekAlert.Position.Bottom).peek()
                             scrollTo(info.id)
                         }
                         .onFailure { e ->
-                            createFailurePeek(getString(R.string.plugin_install_failed, e.message ?: e.toString()), PeekAlert.Position.Bottom).peekAboveBars()
+                            createFailurePeek(getString(R.string.plugin_install_failed, e.message ?: e.toString()), PeekAlert.Position.Bottom).peek()
                         }
                 }
             }
@@ -313,14 +311,6 @@ class PluginsFragment : Fragment(), View.OnClickListener, PluginListItem.Callbac
                     file.delete()
             }
         }
-    }
-
-    private fun PeekAlert.peekAboveBars() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            view?.rootWindowInsets?.let { insets ->
-                setMargin(vertical = insets.getInsets(WindowInsets.Type.systemBars()).bottom)
-            }
-        peek()
     }
 
     private fun onPluginsChanged() {

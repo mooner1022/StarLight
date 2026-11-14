@@ -3,8 +3,8 @@
 compileSdk = "37"
 minSdk = "26"
 targetSdk = "33"
-versionCode = "12"
-versionName = "1.1.0"
+versionCode = "13"
+versionName = "1.2.0"
 buildTools = "35.0.0"
 androidGradlePlugin = "8.13.2"
 kotlin = "2.4.20"
@@ -35,7 +35,7 @@ markwon = "4.6.2"
 dalvik-dx = "16.0.1"
 ketch = "2.0.5"
 cascade = "2.3.0"
-neonjs = "0.1.7"
+neonjs = "0.1.8"
 junit = "4.13.2"
 ksp = "2.3.13"
 
@@ -84,6 +84,7 @@ ketch = { group = "com.github.khushpanchal", name = "Ketch", version.ref = "ketc
 neonjs-core = { group = "dev.mooner.neonjs", name = "neonjs-core", version.ref = "neonjs" }
 neonjs-android = { group = "dev.mooner.neonjs", name = "neonjs-android", version.ref = "neonjs" }
 neonjs-net = { group = "dev.mooner.neonjs", name = "neonjs-net", version.ref = "neonjs" }
+neonjs-lint = { group = "dev.mooner.neonjs", name = "neonjs-lint", version.ref = "neonjs" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
 

@@ -10,7 +10,10 @@ import dev.mooner.configdsl.options.seekbar
 import dev.mooner.configdsl.options.spinner
 import dev.mooner.configdsl.options.toggle
 import dev.mooner.starlight.BuildConfig
+import dev.mooner.starlight.languages.EntryPoints
 import dev.mooner.starlight.languages.ScriptHostPolicy
+import dev.mooner.starlight.languages.ScriptJson
+import dev.mooner.starlight.script.errors.UncaughtErrors
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
@@ -20,9 +23,11 @@ import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
+import dev.mooner.starlight.utils.callPlugin
 import dev.mooner.starlight.utils.toURI
 import org.mozilla.javascript.*
 import org.mozilla.javascript.Function
@@ -69,7 +74,7 @@ class JSRhino: Language() {
     }
 
     // Overrides the helper to set classloader as RuntimeClassLoader
-    private fun configuredLanguageVersion(): Int =
+    internal fun configuredLanguageVersion(): Int =
         getLanguageConfig().getInt(CONF_LANG_VERSION)?.let(::indexToVersion) ?: LANG_DEF_VERSION
 
     private fun createAndroidHelper(): RhinoAndroidHelper {
@@ -104,26 +109,49 @@ class JSRhino: Language() {
 
     override fun compile(code: String, apis: List<Api<*>>, project: Project?, classLoader: ClassLoader?): Any =
         enterContext().use { context ->
-            val scope = if (project != null)
-                context.initStandardObjects(RhinoGlobalObject(context, project))
+            val global = project?.let { RhinoGlobalObject(context, it) }
+            val scope = if (global != null)
+                context.initStandardObjects(global)
             else
                 context.initStandardObjects(ImporterTopLevel(context))
+            // setTimeout, toast, repeat, console and the rest, once the standard objects they build on exist.
+            global?.installGlobals()
 
             var importLines: StringBuilder? = null
-            for(api in apis) {
-                when(api.instanceType) {
-                    InstanceType.CLASS -> {
-                        val line = "const ${api.name} = Packages.${api.instanceClass.name};\n"
-                        if (importLines == null)
-                            importLines = StringBuilder(line)
-                        else
-                            importLines.append(line)
+            val ownConsts = if (project != null) topLevelConsts(code, context.languageVersion) else emptySet()
+            // API objects that keep script data take the scope's own JSON as they are made.
+            ScriptJson.providing(RhinoJson(scope)) {
+                for (api in apis) {
+                    // Rhino refuses a top-level `const` of a name the global already has ("redeclaration of var"). The
+                    // script's own wins, as a `var` or `let` of the name would, so a script that names something after
+                    // an API added later still compiles.
+                    if (api.instanceType == InstanceType.OBJECT && api.name in ownConsts) {
+                        project?.logger?.d(translate {
+                            Locale.ENGLISH { "The script declares its own const ${api.name}, so the API of that name is left out" }
+                            Locale.KOREAN  { "스크립트가 const ${api.name}을(를) 직접 선언해서 같은 이름의 API는 넣지 않았어요" }
+                        })
+                        continue
                     }
-                    InstanceType.OBJECT -> {
-                        if (project == null)
-                            continue
-                        val instance = api.getInstance(project)
-                        scope.put(api.name, scope, instance)
+                    when (api.instanceType) {
+                        InstanceType.CLASS -> {
+                            val line = "const ${api.name} = Packages.${api.instanceClass.name};\n"
+                            if (importLines == null)
+                                importLines = StringBuilder(line)
+                            else
+                                importLines!!.append(line)
+                        }
+                        InstanceType.OBJECT -> {
+                            if (project == null)
+                                continue
+                            // An API that fails to make its object, as one of a plugin, is left out; the script
+                            // compiles without it, and one that uses it fails on the name, with this in the log.
+                            callPlugin({ project.logger.e(translate {
+                                    Locale.ENGLISH { "API '${api.name}' couldn't be loaded and is left out: $it" }
+                                    Locale.KOREAN  { "API '${api.name}'을(를) 불러오지 못해 빼고 컴파일해요: $it" }
+                                }) }) {
+                                scope.put(api.name, scope, api.getInstance(project))
+                            }
+                        }
                     }
                 }
             }
@@ -142,6 +170,10 @@ class JSRhino: Language() {
             }
 
             context.evaluateString(scope, code, project?.info?.name ?: name, 1, null)
+            if (project != null) {
+                EntryPoints.report(project, code, exportsOnly = false) { name -> scope.get(name, scope) is Function }
+                UncaughtErrors.watch(project, rhinoUncaughtHandler(scope, ::enterContext))
+            }
             scope
         }
 
@@ -368,4 +400,44 @@ class JSRhino: Language() {
             }
         }
     }
+}
+
+/**
+ * The handler that calls the script's top-level `onUncaughtError`, or null when it has none. It enters a context with
+ * [enter] for each call, as the thread that reports may have none. Rhino doesn't report rejected Promises, and what the
+ * function returns isn't looked at.
+ */
+internal fun rhinoUncaughtHandler(scope: Scriptable, enter: () -> Context): UncaughtErrors.Handler? {
+    val function = scope.get(UncaughtErrors.FUNCTION, scope) as? Function
+        ?: return null
+    return UncaughtErrors.Handler { error, origin, source, args ->
+        val cx = enter()
+        try {
+            val detail = cx.newObject(scope)
+            ScriptableObject.putProperty(detail, "source", source)
+            ScriptableObject.putProperty(detail, "args",
+                cx.newArray(scope, Array<Any?>(args.size) { Context.javaToJS(args[it], scope) }))
+            function.call(cx, scope, scope, arrayOf(scriptErrorOf(cx, scope, error), origin, detail))
+        } finally {
+            Context.exit()
+        }
+        true
+    }
+}
+
+/** [error] as the script would have caught it: the value it threw, a JS error for Rhino's own, or the Java exception. */
+private fun scriptErrorOf(cx: Context, scope: Scriptable, error: Throwable): Any? {
+    val thrown = generateSequence(error) { it.cause.takeIf { cause -> cause !== it } }
+        .take(8)
+        .firstOrNull { it is JavaScriptException || it is EcmaError || it is WrappedException }
+    val value: Any? = when (thrown) {
+        is JavaScriptException -> thrown.value
+        is EcmaError -> {
+            val name = thrown.name.takeIf { ScriptableObject.getProperty(scope, it) is Function } ?: "Error"
+            cx.newObject(scope, name, arrayOf(thrown.errorMessage))
+        }
+        is WrappedException -> thrown.wrappedException
+        else -> error
+    }
+    return Context.javaToJS(value, scope)
 }

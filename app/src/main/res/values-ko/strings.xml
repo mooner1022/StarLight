@@ -29,6 +29,7 @@
     <string name="config_saved">설정을 저장했어요.</string>
     <string name="config_invalid">올바르지 않은 설정이 있어요. 확인한 뒤 다시 시도해 주세요.</string>
     <string name="rule_package_required">규칙에는 패키지명이 필요해요.</string>
+    <string name="rule_none_without_auto">규칙이 없어 메시지를 하나도 받지 못해요. 규칙을 추가하거나 \'규칙 자동 설정\'을 켜 주세요.</string>
     <string name="restart_confirm_title">앱을 재시작할까요?</string>
     <string name="restart_confirm_message">실행 중인 프로젝트가 멈췄다가 앱과 함께 다시 시작돼요.</string>
     <string name="ok">확인</string>
@@ -94,7 +95,7 @@
     <string name="no_projects">아직 프로젝트가 없는 것 같아요! (⊙_⊙;)</string>
     <string name="no_plugins">아직 플러그인이 없는 것 같아요! (⊙_⊙;)</string>
     <string name="project_import_from_file">zip 파일에서 가져오기</string>
-    <string name="project_import_done">%s 프로젝트를 가져왔어요.</string>
+    <string name="project_import_done">%s 프로젝트를 꺼진 상태로 가져왔어요. 준비되면 컴파일한 뒤 켜 주세요.</string>
     <string name="project_import_failed">프로젝트를 가져오지 못했어요: %s</string>
     <string name="project_export_done">%s 프로젝트를 내보냈어요.</string>
     <string name="project_export_failed">프로젝트를 내보내지 못했어요: %s</string>
@@ -111,6 +112,7 @@
     <string name="debugroom_subtitle_group">%1$s · 디버그 룸 · 그룹 채팅</string>
     <string name="debugroom_copied">메시지를 복사했어요.</string>
     <string name="debugroom_file_missing">%1$s · 파일이 없어요</string>
+    <string name="debugroom_chat_unreadable">저장된 대화를 읽을 수 없어 빈 방으로 시작했어요. 이전 파일은 %1$s(으)로 남겨 두었어요.</string>
     <string name="color_picker_none">고른 색 없음</string>
     <string name="color_picker_shades">음영</string>
     <string name="color_picker_custom">직접 고르기</string>
@@ -158,6 +160,9 @@
     <string name="editor_edit_file_name">변경된 이름</string>
 
     <string name="log_foreground_started">포그라운드 서비스 등록 성공!</string>
+    <string name="logs_filter_active">로그 필터 · %d</string>
+    <string name="logs_filter_no_match">필터에 맞는 로그가 없어요.</string>
+    <string name="logs_filter_clear">필터 지우기</string>
     <string name="log_filter_settings">로그 필터</string>
     <string name="log_filter_auto_scroll">자동 스크롤</string>
     <string name="log_filter_types">타입</string>
@@ -232,6 +237,7 @@
     <string name="plugin_category_devtools">개발 도구</string>
     <string name="plugin_category_other">기타</string>
     <string name="plugin_status_failed">로드 실패: %s</string>
+    <string name="plugin_error_details">%s 로드 오류</string>
     <string name="plugin_status_requires_newer_app">앱 업데이트 필요 (PluginCore %1$s)</string>
     <string name="plugin_status_outdated_api">플러그인 업데이트 필요 (PluginCore %1$s)</string>
     <string name="plugin_status_missing_dependency">필요한 플러그인 없음: %s</string>

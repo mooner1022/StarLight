@@ -26,10 +26,14 @@ class PluginInstaller(
         val temp = pluginsDir.resolve(".${target.name}.tmp")
         try {
             source.copyTo(temp, overwrite = true)
-            if (target.exists() && !target.delete())
-                throw IOException("Failed to replace $target")
-            if (!temp.renameTo(target))
-                throw IOException("Failed to move $temp to $target")
+            // Moved over the installed file in one step. Deleting that first, as this did, left no plugin at all
+            // when the move then failed. Only where a file can't be moved onto another is the old one removed.
+            if (!temp.renameTo(target)) {
+                if (target.exists() && !target.delete())
+                    throw IOException("Failed to replace $target")
+                if (!temp.renameTo(target))
+                    throw IOException("Failed to move $temp to $target")
+            }
         } finally {
             temp.delete()
         }
@@ -66,15 +70,22 @@ class PluginInstaller(
         if (info == null)
             return
         originFileOf(info.id).delete()
-        val internal = internalDir.resolve("plugin_data").resolve(info.id)
+        val internal = childOf(internalDir.resolve("plugin_data"), info.id)
         if (keepData) {
-            internal.resolve("assets").deleteRecursively()
-            internal.resolve("libs").deleteRecursively()
+            internal?.resolve("assets")?.deleteRecursively()
+            internal?.resolve("libs")?.deleteRecursively()
         } else {
-            internal.deleteRecursively()
-            pluginsDir.resolve(dataDirNameOf(info)).deleteRecursively()
+            internal?.deleteRecursively()
+            childOf(pluginsDir, dataDirNameOf(info))?.deleteRecursively()
         }
     }
+
+    /**
+     * [name] in [parent], or null unless that is an entry right in it. The name comes from a plugin's manifest, and
+     * what is found here is deleted with all it holds: `..` or a path in it must not lead anywhere else.
+     */
+    private fun childOf(parent: File, name: String): File? =
+        parent.resolve(name).takeIf { it.canonicalFile.parentFile == parent.canonicalFile }
 
     private fun installedFiles(id: String): List<File> =
         pluginsDir.listFiles { file -> file.isFile && file.extension in PluginLoader.SUPPORTED_EXT }
@@ -112,7 +123,8 @@ class PluginInstaller(
             } catch (e: IllegalArgumentException) {
                 throw InvalidPluginException("Malformed starlight.json: ${e.message}")
             }
-            if (!info.id.matches(ID_REGEX))
+            // "." and ".." pass the pattern, but as a folder name they are the plugins' own folder and the one above it.
+            if (!info.id.matches(ID_REGEX) || info.id.all { it == '.' })
                 throw InvalidPluginException("Illegal plugin id: ${info.id}")
             if (info.id.lowercase() in PluginLoader.PRESERVED_IDS)
                 throw InvalidPluginException("Preserved or unusable plugin id: ${info.id}")

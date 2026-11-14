@@ -4,6 +4,8 @@
     <string name="project_config_general_category">일반</string>
     <string name="project_config_folder_location_title">프로젝트 위치</string>
     <string name="project_config_shutdown_on_error_title">오류 발생시 비활성화</string>
+    <string name="project_config_slow_run_title">느린 실행 경고 (초)</string>
+    <string name="project_config_slow_run_desc">이벤트나 타이머 등 이 프로젝트의 코드가 이 시간보다 오래 끝나지 않으면 로그에 경고해요. 0이면 끕니다.</string>
     <string name="project_config_events_category">이벤트</string>
     <string name="project_config_beta_features_category">실험적 기능</string>
     <string name="project_config_thread_pool_size_title">동시 실행 수</string>

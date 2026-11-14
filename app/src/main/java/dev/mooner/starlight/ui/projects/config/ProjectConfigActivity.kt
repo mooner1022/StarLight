@@ -64,6 +64,12 @@ class ProjectConfigActivity: AppCompatActivity() {
     private var projectButtonIDs: Set<String> by notNull()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Brought back before the runtime started: start over from the splash, without restoring what needs it.
+        if (restartIfNotReady()) {
+            super.onCreate(null)
+            finish()
+            return
+        }
         super.onCreate(savedInstanceState)
         binding = ActivityProjectConfigBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -82,6 +88,12 @@ class ProjectConfigActivity: AppCompatActivity() {
             .map { it.first }
             .toSet()
 
+        // What was changed and not saved when the screen was last taken down, as on a rotation.
+        savedInstanceState?.let { state ->
+            changedData.putAll(ConfigDrafts.decode(state.getString(STATE_CHANGED)))
+            pendingEventIds = state.getStringArrayList(STATE_EVENTS)
+        }
+
         configAdapter = ConfigAdapter.Builder(this) {
             lifecycleOwner(this@ProjectConfigActivity)
             bind(binding.configRecyclerView)
@@ -95,7 +107,7 @@ class ProjectConfigActivity: AppCompatActivity() {
                         fabProjectConfig.show()
                 }
                 if (parentId == project.getLanguage().id)
-                    project.getLanguage().onConfigChanged(id, data)
+                    languageCall { project.getLanguage().onConfigChanged(id, data) }
                 // The levels decide which of the allowed events the project receives.
                 if (parentId == API_CATEGORY)
                     withContext(Dispatchers.Main) { updateEventSummary() }
@@ -103,9 +115,11 @@ class ProjectConfigActivity: AppCompatActivity() {
             structure {
                 getStruct(project).also { structure = it }
             }
-            @Suppress("UNCHECKED_CAST")
-            configData((project.config.getData() as MutableDataMap)
-                .injectApiLevels(project.info.apiLevels))
+            // A copy: the screen changes what it is given as the user edits, and what isn't saved must not stay in
+            // the project's settings.
+            configData(ConfigDrafts.editableCopy(project.config.getData())
+                .injectApiLevels(project.info.apiLevels)
+                .let { ConfigDrafts.overlay(it, changedData) })
         }.build()
 
         val save: () -> Boolean = save@{
@@ -135,10 +149,14 @@ class ProjectConfigActivity: AppCompatActivity() {
                 }
             }
 
-            val langConfIds = project.getLanguage().configStructure.map { it.id }
-            val filtered = changedData.filter { it.key in langConfIds }
-            if (filtered.isNotEmpty())
-                project.getLanguage().onConfigUpdated(filtered)
+            languageCall {
+                val langConfIds = project.getLanguage().configStructure.map { it.id }
+                val filtered = changedData.filter { it.key in langConfIds }
+                if (filtered.isNotEmpty())
+                    project.getLanguage().onConfigUpdated(filtered)
+            }
+
+            changedData.clear()
 
             createSuccessPeek(getString(R.string.config_saved), PeekAlert.Position.Bottom).peek()
             if (ApiLevels.hasListenerNameClash(project.info.apiLevels, project.info.languageId))
@@ -154,7 +172,25 @@ class ProjectConfigActivity: AppCompatActivity() {
 
         val textViewConfigProjectName: TextView = findViewById(R.id.textViewConfigProjectName)
         textViewConfigProjectName.text = projectName
-        fabProjectConfig.hide()
+        if (hasUnsaved())
+            fabProjectConfig.show()
+        else
+            fabProjectConfig.hide()
+    }
+
+    private fun hasUnsaved(): Boolean =
+        changedData.isNotEmpty() || pendingEventIds != null
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        if (changedData.isNotEmpty())
+            outState.putString(STATE_CHANGED, ConfigDrafts.encode(changedData))
+        pendingEventIds?.let { outState.putStringArrayList(STATE_EVENTS, ArrayList(it)) }
+    }
+
+    /** A call into the project's language, which a plugin may have written: its failure is logged, not thrown. */
+    private inline fun languageCall(block: () -> Unit) {
+        callPlugin({ project.logger.e("The language failed on a settings change: $it") }, block)
     }
 
     override fun onDestroy() {
@@ -250,6 +286,17 @@ class ProjectConfigActivity: AppCompatActivity() {
                         defaultValue = true
                         icon = Icon.ERROR
                         iconTintColor = color { "#FF5C58" }
+                    }
+                    // Read by PluginCore's ProjectImpl, which warns about a run that holds a worker this long.
+                    seekbar {
+                        id = "slow_run_seconds"
+                        title = getString(R.string.project_config_slow_run_title)
+                        description = getString(R.string.project_config_slow_run_desc)
+                        min = 0
+                        max = 120
+                        defaultValue = 10
+                        icon = Icon.TIMER
+                        iconTintColor = color { "#E0A458" }
                     }
                 }
             }
@@ -536,3 +583,5 @@ private const val API_CATEGORY = "api"
 private const val EVENTS_CATEGORY = "events"
 private const val ALLOWED_EVENTS = "allowed_events"
 private const val API_LEVELS = "levels"
+private const val STATE_CHANGED = "changed"
+private const val STATE_EVENTS = "pending_events"

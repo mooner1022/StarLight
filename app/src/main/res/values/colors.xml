@@ -19,7 +19,6 @@
     <color name="background_card">#FFFFFF</color>
     <color name="background_chip">#FFFFFF</color>
     <color name="background_chip_accent">#E8D9C4</color>
-    <color name="background_popup">#fdfdfd</color>
     <!-- A log entry, on the white card that holds the list. By day it stays as light as that card and is set
          apart by a thin outline: filled darker, the list turns grey and heavy. By night it is a lighter block
          with no outline (values-night). -->

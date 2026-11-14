@@ -16,8 +16,13 @@ import dev.mooner.neonjs.*
 import dev.mooner.neonjs.net.NetExtension
 import dev.mooner.neonjs.net.NetOptions
 import dev.mooner.starlight.BuildConfig
+import dev.mooner.starlight.api.msgbot.GlobalArgs
 import dev.mooner.starlight.core.GlobalApplication
+import dev.mooner.starlight.languages.EntryPoints
+import dev.mooner.starlight.languages.ScriptErrors
 import dev.mooner.starlight.languages.ScriptHostPolicy
+import dev.mooner.starlight.languages.ScriptJson
+import dev.mooner.starlight.languages.TimerDelay
 import dev.mooner.starlight.plugincore.RuntimeClassLoader
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.api.Api
@@ -29,9 +34,12 @@ import dev.mooner.starlight.plugincore.language.Language
 import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.translation.Locale
+import dev.mooner.starlight.plugincore.translation.translate
 import dev.mooner.starlight.plugincore.utils.currentThread
 import dev.mooner.starlight.plugincore.utils.getStarLightDirectory
 import dev.mooner.starlight.plugincore.utils.verboseTranslated
+import dev.mooner.starlight.script.errors.UncaughtErrors
+import dev.mooner.starlight.utils.callPlugin
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -62,6 +70,9 @@ class JSNeon: Language() {
     override val nativeGlobals: Set<String> = setOf("Java")
 
     private val eventLoops: MutableMap<NeonContext, EventLoop> = ConcurrentHashMap()
+
+    /** The guards of the versions that have an `onUncaughtError`, each by its context. */
+    private val eventGuards: MutableMap<NeonContext, NeonEventGuard> = ConcurrentHashMap()
 
     override fun compile(
         code: String,
@@ -103,14 +114,24 @@ class JSNeon: Language() {
         val context = engine.newContext()
         return try {
             withClassLoader(classLoader) {
-                for (api in apis) {
-                    when (api.instanceType) {
-                        InstanceType.CLASS ->
-                            context.exposeClass(api.name, api.instanceClass)
-                        InstanceType.OBJECT -> {
-                            if (project == null)
-                                continue
-                            context[api.name] = api.getInstance(project)
+                // API objects that keep script data take the context's own JSON as they are made.
+                ScriptJson.providing(NeonJson(context)) {
+                    for (api in apis) {
+                        when (api.instanceType) {
+                            InstanceType.CLASS ->
+                                context.exposeClass(api.name, api.instanceClass)
+                            InstanceType.OBJECT -> {
+                                if (project == null)
+                                    continue
+                                // An API that fails to make its object, as one of a plugin, is left out; the script
+                                // compiles without it, and one that uses it fails on the name, with this in the log.
+                                callPlugin({ project.logger.e(translate {
+                                    Locale.ENGLISH { "API '${api.name}' couldn't be loaded and is left out: $it" }
+                                    Locale.KOREAN  { "API '${api.name}'을(를) 불러오지 못해 빼고 컴파일해요: $it" }
+                                }) }) {
+                                    context[api.name] = api.getInstance(project)
+                                }
+                            }
                         }
                     }
                 }
@@ -133,22 +154,48 @@ class JSNeon: Language() {
                 if (project != null) {
                     context.setUncaughtErrorHandler { error, rejection ->
                         val type = if (rejection) "Unhandled promise rejection" else "Uncaught exception"
-                        project.logger.error("$type: ${error.message}${error.jsStack?.let { "\n$it" }.orEmpty()}")
+                        project.logger.error("$type: ${ScriptErrors.describe(error, project.directory)}")
+                        if (project.runs(context))
+                            UncaughtErrors.report(project.info.id, error,
+                                if (rejection) UncaughtErrors.Origin.REJECTION else UncaughtErrors.Origin.EXCEPTION, "promise")
                     }
                     eventLoops[context] = EventLoop(context, project).apply { start() }
+                    // The app reaches only what the module exports.
+                    EntryPoints.report(project, code, exportsOnly = true) { name -> module.getMember(name).isFunction }
+                    val projectId = project.info.id
+                    val handler = neonUncaughtHandler(context, module,
+                        succeeded = { handler -> UncaughtErrors.handlerSucceededLater(projectId, handler) },
+                        failed = { handler, error -> UncaughtErrors.handlerFailedLater(projectId, handler, error) })
+                    // Only a version with a handler has its event functions called through the guard, which gives the
+                    // handler the function and the arguments of an async one that rejects.
+                    if (handler != null)
+                        eventGuards[context] = NeonEventGuard(context) { functionName, args, error ->
+                            // As the engine words one it reports itself, which this one no longer is.
+                            project.logger.error("Unhandled promise rejection: ${ScriptErrors.describe(error, project.directory)}")
+                            if (project.runs(context))
+                                UncaughtErrors.report(projectId, error, UncaughtErrors.Origin.REJECTION, functionName, args)
+                        }
+                    UncaughtErrors.watch(project, handler)
                 }
                 module
             }
         } catch (e: Throwable) {
             eventLoops -= context
+            eventGuards -= context
+            project?.let { UncaughtErrors.clear(it.info.id) }
             context.close()
             throw e
         }
     }
 
+    /** Whether [context] is the one of the version that runs now: errors of one replaced since aren't its handler's. */
+    private fun Project.runs(context: NeonContext): Boolean =
+        (getScope() as? NeonValue)?.context === context
+
     override fun destroy(scope: Any) {
         val context = (scope as NeonValue).context
         eventLoops.remove(context)?.stop()
+        eventGuards -= context
         context.interrupt()
         context.close()
         context.engine.close()
@@ -168,8 +215,10 @@ class JSNeon: Language() {
             }
             return null
         }
+        val guard = eventGuards[module.context]
+            ?.takeIf { functionName != UncaughtErrors.FUNCTION }
         return withClassLoader(null) {
-            function.call(*args)
+            guard?.call(function, functionName, args) ?: function.call(*args)
         }.`as`(Any::class.java)
     }
 
@@ -224,17 +273,18 @@ class JSNeon: Language() {
         val lastTimerId = AtomicInteger()
 
         fun startTimer(args: Array<NeonValue>, repeat: Boolean): Int {
-            val callback = args.getOrNull(0)
-                ?.takeIf(NeonValue::isFunction)
-                ?: throw IllegalArgumentException("Callback is not a function")
-            val mDelay = args.getOrNull(1)
-                ?.takeIf(NeonValue::isNumber)
-                ?.asDouble()
-                ?.toLong() ?: 0L
+            val kind = if (repeat) "setInterval" else "setTimeout"
+            if (args.isEmpty())
+                throw IllegalArgumentException("$kind requires at least 2 arguments")
+            val callback = args[0]
+                .takeIf(NeonValue::isFunction)
+                ?: throw IllegalArgumentException("First argument must be a function")
+            val mDelay = TimerDelay.effective(GlobalArgs.convertToInt(args.getOrNull(1)).toLong(), repeat)
             val params = args.drop(2).toTypedArray()
 
             val id = lastTimerId.incrementAndGet()
-            val job = project.launch(start = CoroutineStart.LAZY) {
+            // Named in the warning about a callback that runs long.
+            val job = project.launch(CoroutineName(kind), start = CoroutineStart.LAZY) {
                 do {
                     delay(mDelay.milliseconds)
                     runCatching {
@@ -242,9 +292,11 @@ class JSNeon: Language() {
                             callback.call(*params)
                         }
                     }.onFailure { e ->
-                        project.logger.error("Exception on timer $id: $e")
+                        project.logger.error("Exception on timer $id: ${ScriptErrors.describe(e, project.directory)}")
+                        if (project.runs(this@defineGlobals))
+                            UncaughtErrors.report(project.info.id, e, UncaughtErrors.Origin.EXCEPTION, kind)
                     }
-                } while (repeat)
+                } while (repeat && isActive)
             }.apply {
                 invokeOnCompletion { timers -= id }
             }
@@ -254,27 +306,66 @@ class JSNeon: Language() {
         }
 
         fun clearTimer(args: Array<NeonValue>) {
-            val id = args.getOrNull(0)
-                ?.takeIf(NeonValue::isNumber)
-                ?.asDouble()
-                ?.toInt() ?: return
+            val id = GlobalArgs.convertToInt(args.getOrNull(0))
             timers.remove(id)?.cancel()
+        }
+
+        // Makes the array `repeat` gives back, which is the engine's own.
+        val arrayOfResults = eval("(function () { return Array.prototype.slice.call(arguments); })", "repeat-helper.js")
+
+        fun repeatCall(args: Array<NeonValue>): Any? {
+            if (args.size < 2)
+                return null
+            val function = args[0].takeIf(NeonValue::isFunction)
+                ?: return null
+            val count = GlobalArgs.convertToInt(args[1])
+            if (count <= 0)
+                return null
+            val spread: Array<Any?> = args.getOrNull(2).let { extra ->
+                when {
+                    extra == null  -> if (args.size > 2) arrayOf<Any?>(null) else emptyArray<Any?>()
+                    extra.isArray  -> Array(extra.arraySize.toInt()) { i -> extra.getElement(i.toLong()) }
+                    else           -> arrayOf<Any?>(extra)
+                }
+            }
+            return try {
+                val results = ArrayList<Any?>(count.coerceAtMost(1024))
+                for (n in 0 until count) {
+                    results += try {
+                        withClassLoader(null) { function.call(*spread) }
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                arrayOfResults.call(*results.toTypedArray())
+            } catch (e: Exception) {
+                null
+            }
         }
 
         setFunction("setTimeout") { startTimer(it, repeat = false) }
         setFunction("setInterval") { startTimer(it, repeat = true) }
         setFunction("clearTimeout") { clearTimer(it); null }
         setFunction("clearInterval") { clearTimer(it); null }
+        setFunction("repeat") { repeatCall(it) }
         setFunction("toast") { args ->
-            val message = args.getOrNull(0)?.toString() ?: ""
-            val duration = args.getOrNull(1)
-                ?.takeIf(NeonValue::isNumber)
-                ?.asInt() ?: Toast.LENGTH_LONG
+            val first = args.getOrNull(0)
+            val message = when {
+                first == null  -> "null"
+                first.isString -> first.asString()
+                else           -> first.toString()
+            }
+            val duration = GlobalArgs.convertToInt(args.getOrNull(1))
 
             CoroutineScope(Dispatchers.Main).launch {
                 Toast.makeText(GlobalApplication.requireContext(), message, duration).show()
             }
             null
+        }
+
+        // NeonJS's console has no clear; it empties the project's log, as Log.clear() does.
+        runCatching {
+            this["console"].putMember("clear", createFunction("clear") { project.logger.clear(); null })
         }
     }
 
@@ -304,7 +395,9 @@ class JSNeon: Language() {
                 paths
 
             val file = bases.firstNotNullOfOrNull { it.resolve(specifier).findModule() }
-                ?: throw IllegalArgumentException("Cannot find module '$specifier'")
+                // Which file asked for it is what tells where to look when several import the same name.
+                ?: throw IllegalArgumentException("Cannot find module '$specifier'" +
+                    referrer?.let { " imported from ${File(it).name}" }.orEmpty())
             if (isSandboxed && paths.none { file.startsWith(it.canonicalFile) })
                 throw SecurityException("Module '$specifier' is outside of module paths")
             return file.path
@@ -345,14 +438,19 @@ class JSNeon: Language() {
         private fun schedule() {
             if (!isScheduled.compareAndSet(false, true))
                 return
-            project.launch {
+            project.launch(CoroutineName(ASYNC_TASK_NAME)) {
                 isScheduled.set(false)
                 try {
                     withClassLoader(null) { context.runEventLoop(0) }
                 } catch (e: Exception) {
                     if (e !is NeonInterruptedException && e !is IllegalStateException)
-                        project.logger.error("Exception on event loop: $e")
+                        project.logger.error("Exception on event loop: ${ScriptErrors.describe(e, project.directory)}")
                 }
+            }.invokeOnCompletion { cause ->
+                // Cancelled before it ran, as when the project's jobs are stopped: with the flag left set, nothing
+                // the engine has ready would be run again.
+                if (cause != null)
+                    isScheduled.set(false)
             }
         }
     }
@@ -380,6 +478,13 @@ class JSNeon: Language() {
 
 
         private val hostAccess: HostAccess = buildHostAccess(ScriptHostPolicy.isEnabled)
+
+        /** What the event loop runs, as a warning about a run that takes long names it. */
+        private val ASYNC_TASK_NAME: String
+            get() = translate {
+                Locale.ENGLISH { "code after await" }
+                Locale.KOREAN  { "await 이후 코드" }
+            }
 
         private val configs = config {
             category {
@@ -433,6 +538,109 @@ class JSNeon: Language() {
             }
         }
     }
+}
+
+/**
+ * Wraps a script's `onUncaughtError` so that a Promise it returns is followed from inside the context: one handled by
+ * the wrapper isn't reported as unhandled. Leaves no global behind. The wrapper returns whether the call ended.
+ */
+private const val UNCAUGHT_GUARD = "(function (fn, sink) { return function () { var r = fn.apply(undefined, arguments); " +
+    "if (r && typeof r.then === 'function') { r.then(function () { sink.done(); }, function (e) { sink.failed(e); }); " +
+    "return false; } return true; }; })"
+
+/**
+ * Wraps an event function for one call, so that a Promise it returns is followed from inside the context: its rejection
+ * goes to the sink, with the call it came from, instead of being reported as an unhandled one with no call to name.
+ * What the function returns or throws is passed on as it is.
+ */
+private const val EVENT_GUARD = "(function (fn, sink) { return function () { var r = fn.apply(undefined, arguments); " +
+    "if (r && typeof r.then === 'function') r.then(undefined, function (e) { sink.failed(e); }); return r; }; })"
+
+/** What an event function's Promise was rejected with: the script's own value, which `onUncaughtError` is given. */
+internal class ScriptRejection(val value: NeonValue) : RuntimeException() {
+
+    private val text = runCatching { value.toString() }.getOrDefault("a rejected Promise")
+
+    /** The script's stack, read as the engine's exceptions give theirs (`ScriptErrors.describe`). */
+    val jsStack: String? = runCatching {
+        value.takeIf { it.isObject }?.getMember("stack")?.takeIf { it.isString }?.asString()
+    }.getOrNull()
+
+    override val message: String
+        get() = text
+
+    override fun toString(): String =
+        text
+}
+
+/** What the wrapper of one call of an event function tells of the Promise it returned; the script's engine calls it. */
+internal class EventCallSink(
+    private val functionName: String,
+    private val args: Array<out Any>,
+    private val onRejected: (functionName: String, args: Array<out Any>, error: ScriptRejection) -> Unit,
+) {
+    fun failed(error: NeonValue) =
+        onRejected(functionName, args, ScriptRejection(error))
+}
+
+/**
+ * Calls the event functions of a version that has an `onUncaughtError`: an `async` one that rejects is told to
+ * [onRejected] with its name and arguments, on the context's thread. Leaves no global behind.
+ */
+internal class NeonEventGuard(
+    context: NeonContext,
+    private val onRejected: (functionName: String, args: Array<out Any>, error: ScriptRejection) -> Unit,
+) {
+    private val wrap = context.eval(EVENT_GUARD, "event-guard.js")
+
+    fun call(function: NeonValue, functionName: String, args: Array<out Any>): NeonValue =
+        wrap.call(function, EventCallSink(functionName, args, onRejected)).call(*args)
+}
+
+/** Makes the handler's `detail`, with `args` as a JS array. */
+private const val UNCAUGHT_DETAIL = "(function (source, args) { return { source: source, args: Array.from(args) }; })"
+
+/** What the wrapper around `onUncaughtError` tells of the Promise the function returned; the script's engine calls it. */
+internal class UncaughtHandlerSink(
+    private val onFulfilled: () -> Unit,
+    private val onRejected: (Throwable) -> Unit,
+) {
+    fun done() =
+        onFulfilled()
+
+    fun failed(error: NeonValue) =
+        // Read here, on the context's thread.
+        onRejected(RuntimeException(runCatching { error.toString() }.getOrDefault("a rejected Promise")))
+}
+
+/**
+ * The handler that calls [module]'s exported `onUncaughtError` in [context], or null when it exports none. The error
+ * the script threw reaches it as the script's own value; another as the Java exception. A Promise it returns is told
+ * of through [succeeded] or [failed] once it settles.
+ */
+internal fun neonUncaughtHandler(
+    context: NeonContext,
+    module: NeonValue,
+    succeeded: (UncaughtErrors.Handler) -> Unit,
+    failed: (UncaughtErrors.Handler, Throwable) -> Unit,
+): UncaughtErrors.Handler? {
+    val function = module.getMember(UncaughtErrors.FUNCTION)
+    if (!function.isFunction)
+        return null
+    lateinit var handler: UncaughtErrors.Handler
+    val sink = UncaughtHandlerSink({ succeeded(handler) }, { error -> failed(handler, error) })
+    val guarded = context.eval(UNCAUGHT_GUARD, "onUncaughtError-guard.js").call(function, sink)
+    val detail = context.eval(UNCAUGHT_DETAIL, "onUncaughtError-detail.js")
+    handler = UncaughtErrors.Handler { error, origin, source, args ->
+        val value: Any = generateSequence(error) { it.cause.takeIf { cause -> cause !== it } }
+            .take(8)
+            .firstNotNullOfOrNull { (it as? ScriptRejection)?.value ?: (it as? NeonException)?.guestValue }
+            ?: error
+        withClassLoader(null) {
+            guarded.call(value, origin, detail.call(source, args)).asBoolean()
+        }
+    }
+    return handler
 }
 
 private inline fun <T> withClassLoader(classLoader: ClassLoader?, block: () -> T): T {

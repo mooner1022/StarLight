@@ -13,6 +13,8 @@ object Rewind {
         /** Loads the project saved in the zip [archive]. */
         fun restore(archive: File)
         fun setEvents(name: String, allowedEventIds: List<String>)
+        /** The events and switch of the project [name] as they are now, or null if there is no such project. */
+        fun info(name: String): CheckpointStore.SavedInfo?
     }
 
     class Result(
@@ -24,13 +26,54 @@ object Rewind {
         val touched: Set<String>,
         /** Each project's switch as it was, to set once it is compiled again. */
         val enabled: Map<String, Boolean>,
+        /** The [CheckpointStore.Entry.key]s of what couldn't be put back, which stays to be tried again. */
+        val failedKeys: Set<String> = emptySet(),
     )
+
+    /**
+     * Records, with [recorder], how each thing [changes] would put back is now, so that putting them back can be
+     * undone. A rewind writes the files as they were over whatever they hold, the user's own edits since then
+     * included, and removes a project the agent created with all that was added to it: this is the way back.
+     * [archive] writes a project's folder as the zip [Projects.restore] reads.
+     */
+    fun keepPresent(
+        changes: List<CheckpointStore.Change>,
+        projects: Projects,
+        recorder: CheckpointStore.Recorder,
+        archive: (directory: File, output: java.io.OutputStream) -> Unit,
+    ) {
+        // Whole projects first, as apply() handles them first: one kept whole needs none of its files kept.
+        val whole = hashSetOf<String>()
+        for (change in changes.filter { it.entry.kind == Kind.PROJECT && !it.entry.skipped }) {
+            val name = change.entry.project
+            val directory = projects.directory(name)
+            if (directory == null) {
+                recorder.project(name)
+            } else {
+                val bytes = directory.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+                recorder.project(name, bytes) { output -> archive(directory, output) }
+            }
+            whole += name
+        }
+        for (change in changes.filter { it.entry.kind != Kind.PROJECT && !it.entry.skipped }) {
+            val entry = change.entry
+            if (entry.project in whole)
+                continue
+            val directory = projects.directory(entry.project) ?: continue
+            when (entry.kind) {
+                Kind.FILE    -> entry.path?.let { recorder.file(entry.project, directory, it) }
+                Kind.INFO    -> projects.info(entry.project)?.let { recorder.info(entry.project, it) }
+                Kind.PROJECT -> {}
+            }
+        }
+    }
 
     fun apply(changes: List<CheckpointStore.Change>, projects: Projects): Result {
         val restored = mutableListOf<String>()
         val failed = mutableListOf<String>()
         val touched = linkedSetOf<String>()
         val enabled = linkedMapOf<String, Boolean>()
+        val failedKeys = linkedSetOf<String>()
         /** Projects that didn't exist before; their files go with them. */
         val removed = hashSetOf<String>()
 
@@ -49,7 +92,10 @@ object Rewind {
                     touched += name
                 }
                 restored += describe(change.entry)
-            }.onFailure { failed += "${describe(change.entry)}: ${it.message}" }
+            }.onFailure {
+                failed += "${describe(change.entry)}: ${it.message}"
+                failedKeys += change.entry.key
+            }
         }
         for (change in changes.filter { it.entry.kind == Kind.FILE }) {
             val entry = change.entry
@@ -69,7 +115,10 @@ object Rewind {
                 }
                 touched += entry.project
                 restored += describe(entry)
-            }.onFailure { failed += "${describe(entry)}: ${it.message}" }
+            }.onFailure {
+                failed += "${describe(entry)}: ${it.message}"
+                failedKeys += entry.key
+            }
         }
         for (change in changes.filter { it.entry.kind == Kind.INFO }) {
             val entry = change.entry
@@ -81,9 +130,12 @@ object Rewind {
                 enabled[entry.project] = info.isEnabled
                 touched += entry.project
                 restored += describe(entry)
-            }.onFailure { failed += "${describe(entry)}: ${it.message}" }
+            }.onFailure {
+                failed += "${describe(entry)}: ${it.message}"
+                failedKeys += entry.key
+            }
         }
-        return Result(restored, failed, touched, enabled)
+        return Result(restored, failed, touched, enabled, failedKeys)
     }
 
     /** One line for a change, for the user and for the agent. */

@@ -16,7 +16,7 @@ import dev.mooner.starlight.plugincore.translation.translate
  *
  * Only a project that is already compiled calls it, so a first compile, as when the app starts, doesn't. It runs on the
  * thread doing the compile, not on the project's workers, and the compile waits for it to return: keep it short, such
- * as saving state. An error it throws is ignored, without being logged. If it is `async`, its Promise isn't awaited.
+ * as saving state. An error it throws is logged and the compile goes on. If it is `async`, its Promise isn't awaited.
  *
  * @see guide:projects#compiling-and-turning-on
  */

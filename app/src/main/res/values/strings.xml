@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" translatable="false">StarLight</string>
-    <string name="app_version" translatable="false">v1.1.0 ✦</string>
+    <string name="app_version" translatable="false">v1.2.0 ✦</string>
     <string name="nav_header_title" translatable="false">Project StarLight 🌟</string>
     <string name="nav_header_subtitle" translatable="false">@string/app_version</string>
     <string name="nav_header_desc">Project StarLight Logo</string>
@@ -34,6 +34,7 @@
     <string name="config_saved">Settings saved.</string>
     <string name="config_invalid">Some settings aren\'t valid. Check them and try again.</string>
     <string name="rule_package_required">A rule needs a package name.</string>
+    <string name="rule_none_without_auto">There are no rules, so the app would take no message. Add a rule, or turn on \"Set rules automatically\".</string>
     <string name="restart_confirm_title">Restart the app?</string>
     <string name="restart_confirm_message">Running projects stop, and start again with the app.</string>
     <string name="ok">OK</string>
@@ -100,7 +101,7 @@
     <string name="no_projects">There are no projects yet! (⊙_⊙;)</string>
     <string name="no_plugins">There are no plugins yet! (⊙_⊙;)</string>
     <string name="project_import_from_file">Import from a zip file</string>
-    <string name="project_import_done">Imported %s.</string>
+    <string name="project_import_done">Imported %s. It is off: compile it and turn it on when you are ready.</string>
     <string name="project_import_failed">Couldn\'t import the project: %s</string>
     <string name="project_export_done">Exported %s.</string>
     <string name="project_export_failed">Couldn\'t export the project: %s</string>
@@ -117,6 +118,7 @@
     <string name="debugroom_subtitle_group">%1$s · Debug room · Group chat</string>
     <string name="debugroom_copied">Copied the message.</string>
     <string name="debugroom_file_missing">%1$s · File is gone</string>
+    <string name="debugroom_chat_unreadable">The saved chat couldn\'t be read, so the room starts empty. The old file is kept as %1$s.</string>
     <string name="color_picker_none">No color picked</string>
     <string name="color_picker_shades">Shades</string>
     <string name="color_picker_custom">Custom</string>
@@ -164,6 +166,9 @@
     <string name="editor_edit_file_name">Name to be changed</string>
 
     <string name="log_foreground_started">Successfully started foreground task!</string>
+    <string name="logs_filter_active">Filter · %d</string>
+    <string name="logs_filter_no_match">No logs match the filter.</string>
+    <string name="logs_filter_clear">Clear filter</string>
     <string name="log_filter_settings">Log filter</string>
     <string name="log_filter_auto_scroll">Auto scroll</string>
     <string name="log_filter_types">Types</string>
@@ -238,6 +243,7 @@
     <string name="plugin_category_devtools">Developer tools</string>
     <string name="plugin_category_other">Other</string>
     <string name="plugin_status_failed">Failed to load: %s</string>
+    <string name="plugin_error_details">%s: load error</string>
     <string name="plugin_status_requires_newer_app">Needs a newer app (PluginCore %1$s)</string>
     <string name="plugin_status_outdated_api">Needs a plugin update (PluginCore %1$s)</string>
     <string name="plugin_status_missing_dependency">Requires %s</string>

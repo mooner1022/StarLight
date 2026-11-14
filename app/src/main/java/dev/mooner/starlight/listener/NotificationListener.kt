@@ -18,16 +18,22 @@ import androidx.core.app.NotificationCompat.EXTRA_TITLE
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.listener.chat.ChatRoomImpl
+import dev.mooner.starlight.listener.chat.ChatSessions
+import dev.mooner.starlight.listener.chat.OwnReads
+import dev.mooner.starlight.listener.chat.RoomKey
+import dev.mooner.starlight.listener.chat.SessionManager
 import dev.mooner.starlight.listener.event.Api2CommandEvent
 import dev.mooner.starlight.listener.event.Api2MessageEvent
 import dev.mooner.starlight.listener.event.Api2NotificationPostedEvent
 import dev.mooner.starlight.listener.event.Api2NotificationRemovedEvent
 import dev.mooner.starlight.listener.event.LegacyEvent
 import dev.mooner.starlight.listener.event.OnNotificationPostedEvent
+import dev.mooner.starlight.listener.event.OnNotificationRemovedEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageDeleteEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.Replier
+import dev.mooner.starlight.listener.legacy.ReplierOrigin
 import dev.mooner.starlight.listener.specs.ParserSpecPolicy
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ChatRoom
@@ -50,12 +56,17 @@ import dev.mooner.starlight.ui.settings.notifications.RuleData
 import dev.mooner.starlight.utils.decodeIfNotBlank
 import dev.mooner.starlight.utils.getKakaoTalkVersion
 import kotlinx.coroutines.*
+import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
+import dev.mooner.starlight.script.chat.ChatWaits
 
 private val LOG = LoggerFactory.logger {  }
 
 private typealias RoomID   = String
 private typealias RoomName = String
+
+/** The userHash of the legacy `response` in the debug room is "DEBUG ROOM"; here, for a message without a sender ID. */
+private const val NO_USER_HASH = ""
 
 @Suppress("DEPRECATION")
 class NotificationListener: NotificationListenerService() {
@@ -69,25 +80,75 @@ class NotificationListener: NotificationListenerService() {
 
     override fun onListenerConnected() {
         super.onListenerConnected()
+        connected = this
         updateConfig()
         eventReceiverScope.launch {
             EventHandler.on(this, ::onGlobalConfigUpdated)
         }
         LOG.debug { "Listener connected" }
+        // Before the app is ready, the rules and specs may not be there yet: onAppReady restores then.
+        if (ApplicationSession.isInitComplete)
+            restoreRooms()
     }
 
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
+        if (connected === this)
+            connected = null
         eventReceiverScope.coroutineContext.cancelChildren()
         LOG.debug { "Listener disconnected from system" }
+    }
+
+    /**
+     * Registers the rooms of the message notifications still shown, as the messages of every rule register theirs, so
+     * that scripts can send to them before a new message comes. Nothing else a message does happens: no events, and
+     * rooms already known are kept as they are.
+     */
+    private fun restoreRooms() {
+        eventReceiverScope.launch(Dispatchers.Default) {
+            var shown = 0
+            var restored = 0
+            try {
+                val ranking = runCatching { currentRanking }.getOrNull()
+                val all = activeNotifications.orEmpty()
+                for (rule in rules.distinctBy { it.packageName to it.userId }) {
+                    val notifications = all.filter { sbn ->
+                        sbn.packageName == rule.packageName && sbn.userId == rule.userId &&
+                            sbn.notification.actions?.any { it.remoteInputs?.isNotEmpty() == true } == true
+                    }
+                    shown += notifications.size
+                    val spec = ParserSpecManager.getSpecById(rule.parserSpecId)
+                        ?: continue
+                    val rooms = RoomRestore.pick(
+                        shown = notifications,
+                        postTime = StatusBarNotification::getPostTime,
+                        parse = { sbn ->
+                            spec.parse(sbn.userId, applicationContext, sbn, sbn.notification.actions, ranking)?.room
+                                ?.also { room -> (room as? ChatRoomImpl)?.userId = sbn.userId }
+                        },
+                        isKnown = ChatSessions.registry::hasRawId,
+                    )
+                    for (room in rooms)
+                        if (room is ChatRoomImpl && ChatSessions.registerIfAbsent(rule.packageName, room))
+                            restored++
+                }
+            } catch (e: Exception) {
+                LOG.debug { "Couldn't restore rooms from the notifications shown: $e" }
+            } finally {
+                RoomRestore.markAttempted()
+                LOG.debug { "Restored $restored rooms from $shown notifications" }
+            }
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification, rankingMap: RankingMap?) {
         if (!isGlobalPowerOn || !ApplicationSession.isInitComplete || sbn.packageName == packageName) return
 
         if (useNPostedEvent) {
-            Session.projectManager.fireEvent<OnNotificationPostedEvent>(sbn, onFailure = ::logEventFailure)
-            Session.projectManager.fireEvent<Api2NotificationPostedEvent>(sbn, onFailure = ::logEventFailure)
+            // One session manager per notification, as every project's listener gets the same one.
+            val sessionManager = SessionManager.of(sbn)
+            Session.projectManager.fireEvent<OnNotificationPostedEvent>(sbn, sessionManager, onFailure = ::logEventFailure)
+            Session.projectManager.fireEvent<Api2NotificationPostedEvent>(sbn, sessionManager, onFailure = ::logEventFailure)
         }
 
         sbn.notification.actions?.let { actions ->
@@ -106,26 +167,49 @@ class NotificationListener: NotificationListenerService() {
         if (isAutoRule && pkgName == PACKAGE_KAKAO_TALK)
             refreshAutoRule()
         if (rules.isEmpty()) return
-        var idx = 0
-        val appliedRule = rules.find { ++idx; it.packageName == pkgName && it.userId == userId }
-            ?: return
-        val isDefaultRule = idx == 1
+        val appliedRule = rules.find { it.packageName == pkgName && it.userId == userId }
+            ?: return noteUncovered(pkgName, userId, actions)
 
         for (act in actions) {
             if (act.remoteInputs != null && act.remoteInputs.isNotEmpty()) {
                 try {
-                    val data = ParserSpecManager.getSpecById(appliedRule.parserSpecId)
-                        ?.parse(userId, applicationContext, sbn, actions, rankingMap)
-                        ?: return
-                    //val data = sbn.toMessage(this, ruleKey, act) ?: return
-                    (data.room as ChatRoomImpl).setLastReceivedId(data.chatLogId)
-                    lastReceivedRoom = data.room
-
-                    if (data.chatLogId == currentChatLogId) {
-                        LOG.verbose { "Detected multiple event listeners" }
+                    val spec = ParserSpecManager.getSpecById(appliedRule.parserSpecId)
+                    if (spec == null) {
+                        // The rule can't work at all: said once, loudly enough to be seen.
+                        if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.UNKNOWN_SPEC, pkgName, userId, appliedRule.parserSpecId), ts))
+                            LOG.warn {
+                                val registered = ParserSpecManager.getAllSpecs().keys.joinToString()
+                                translate {
+                                    Locale.ENGLISH { "The rule for $pkgName names the parser spec '${appliedRule.parserSpecId}', which " +
+                                        "isn't registered, so its messages are ignored. Registered: $registered" }
+                                    Locale.KOREAN  { "$pkgName 규칙의 파서 스펙 '${appliedRule.parserSpecId}'이(가) 등록되어 있지 않아 " +
+                                        "메시지를 받지 않아요. 등록된 스펙: $registered" }
+                                }
+                            }
                         return
                     }
-                    currentChatLogId = data.chatLogId
+                    val data = spec.parse(userId, applicationContext, sbn, actions, rankingMap)
+                    if (data == null) {
+                        if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.NOT_A_MESSAGE, pkgName, userId, appliedRule.parserSpecId), ts))
+                            LOG.debug {
+                                translate {
+                                    Locale.ENGLISH { "The parser spec '${appliedRule.parserSpecId}' didn't take a notification from " +
+                                        "$pkgName as a message. Said once; the problem solver counts the rest." }
+                                    Locale.KOREAN  { "파서 스펙 '${appliedRule.parserSpecId}'이(가) $pkgName 알림을 메시지로 받아들이지 " +
+                                        "않았어요. 한 번만 기록하고, 횟수는 문제 해결 도우미에서 볼 수 있어요." }
+                                }
+                            }
+                        return
+                    }
+                    //val data = sbn.toMessage(this, ruleKey, act) ?: return
+                    (data.room as ChatRoomImpl).setLastReceivedId(data.chatLogId)
+                    (data.room as ChatRoomImpl).userId = userId
+                    lastReceivedRoom = data.room
+
+                    if (deduper.isRepeat(data.chatLogId, sbn.key, sbn.postTime)) {
+                        LOG.verbose { "The same message was delivered again; ignored" }
+                        return
+                    }
 
                     val roomName    = data.room.name
                     val roomID      = data.room.id
@@ -134,10 +218,9 @@ class NotificationListener: NotificationListenerService() {
                     val senderId    = data.sender.id
                     val isGroupChat = data.room.isGroupChat
 
-                    if (isDefaultRule) {
-                        roomIdMap[roomName] = roomID
-                        chatRooms[roomID] = data.room
-                    }
+                    // A message with nothing in it names no room worth keeping.
+                    if (roomName.isNotEmpty() || sender.isNotEmpty() || message.isNotEmpty())
+                        ChatSessions.register(pkgName, data.room as ChatRoomImpl)
 
                     if (logRecMessage) {
                         LOG.info {
@@ -152,53 +235,89 @@ class NotificationListener: NotificationListenerService() {
                         }
                     }
 
-                    Session.projectManager.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::logEventFailure)
-                    Session.projectManager.fireEvent<Api2MessageEvent>(data, onFailure = ::logEventFailure)
-                    Session.projectManager.fireEvent<Api2CommandEvent>(data, onFailure = ::logEventFailure)
+                    // One message, as several events: a script waiting for it as an answer holds back all of them.
+                    ChatWaits.delivering(data) {
+                        Session.projectManager.fireEvent<ProjectOnMessageEvent>(data, onFailure = ::logEventFailure)
+                        Session.projectManager.fireEvent<Api2MessageEvent>(data, onFailure = ::logEventFailure)
+                        Session.projectManager.fireEvent<Api2CommandEvent>(data, onFailure = ::logEventFailure)
 
-                    // Each project's levels decide whether it gets this one.
-                    run {
-                        val imageDB = ImageDB(data.sender.profileBitmap)
-                        val replier = getOrCreateReplier(roomID)
+                        // Each project's levels decide whether it gets this one.
+                        val imageDB = ImageDB(data.sender.profileBitmap, data.image)
+                        val replier = getOrCreateReplier(roomName, roomID, pkgName)
 
-                        Session.projectManager.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB, pkgName) { project, e ->
-                            e.printStackTrace()
-                            LOG.error {
-                                translate {
-                                    Locale.ENGLISH { "Failed to call event on '${project.info.name}': $e" }
-                                    Locale.KOREAN  { "프로젝트 '${project.info.name}'의 이벤트 호출 실패: $e" }
-                                }
-                            }
-                        }
+                        // All eleven arguments, the same array end to end, as ChatWaits matches the call by it.
+                        Session.projectManager.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB, pkgName,
+                            data.hasMention, BigInteger.valueOf(data.chatLogId), RoomKey.idOf(roomID), data.sender.id ?: NO_USER_HASH,
+                            onFailure = ::logEventFailure)
                     }
 
                     EventHandler.fireEventWithScope(Events.Message.Create(data))
                     break
                     //stopSelf()
                 } catch (e: Exception) {
-                    logParseFailure(e)
+                    logParseFailure(e, pkgName, userId, appliedRule.parserSpecId)
                 } catch (e: LinkageError) {
                     // A spec built against another version of the app or of Android: without this,
                     // every message would end the app, and the crash guard would then keep it from starting.
-                    logParseFailure(e)
+                    logParseFailure(e, pkgName, userId, appliedRule.parserSpecId)
                 }
             }
         }
         LOG.verbose { "es = ${System.currentTimeMillis() - ts}" }
     }
 
-    private fun logParseFailure(e: Throwable) {
+    /**
+     * A notification of an app no rule covers. Only one that can be replied to counts: that is what a chat message
+     * looks like, and what a user who wonders why the bot is silent in that app would have expected to be taken.
+     * Written once per app, below the level that raises an alert: most such apps were never meant to be covered.
+     */
+    private fun noteUncovered(pkgName: String, userId: Int, actions: Array<Notification.Action>) {
+        if (actions.none { it.remoteInputs?.isNotEmpty() == true })
+            return
+        val now = System.currentTimeMillis()
+        val otherUser = rules.firstOrNull { it.packageName == pkgName }
+        if (otherUser != null) {
+            if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.OTHER_USER, pkgName, userId), now))
+                LOG.debug {
+                    translate {
+                        Locale.ENGLISH { "Ignored a message notification from $pkgName of user $userId: its rule is for user " +
+                            "${otherUser.userId}. A dual app or a work profile runs as another user and needs a rule of its own." }
+                        Locale.KOREAN  { "$pkgName 의 사용자 $userId 메시지 알림을 받지 않았어요. 규칙이 사용자 ${otherUser.userId}용이에요. " +
+                            "듀얼 앱이나 업무 프로필은 다른 사용자로 실행되어 규칙이 따로 필요해요." }
+                    }
+                }
+        } else if (drops.note(NotificationDrops.Key(NotificationDrops.Reason.NO_RULE, pkgName, userId), now)) {
+            LOG.debug {
+                translate {
+                    Locale.ENGLISH { "Ignored a message notification from $pkgName (user $userId): no package rule covers it." }
+                    Locale.KOREAN  { "$pkgName (사용자 $userId)의 메시지 알림을 받지 않았어요. 이 앱을 다루는 패키지 규칙이 없어요." }
+                }
+            }
+        }
+    }
+
+    /**
+     * The spec, or handing the message on, failed. In full the first time a failure of its kind is seen, with the
+     * app, the user and the spec that tell which rule to look at. A spec that doesn't fit its messenger fails the
+     * same way on every message: the same error and stack each time filled the log and raised an alert per message.
+     */
+    private fun logParseFailure(e: Throwable, pkgName: String, userId: Int, specId: String) {
+        val key = NotificationDrops.Key(NotificationDrops.Reason.FAILED, pkgName, userId, specId, NotificationDrops.signatureOf(e))
+        if (!drops.note(key, System.currentTimeMillis()))
+            return
         e.printStackTrace()
         LOG.error {
             translate {
                 Locale.ENGLISH { """
-                    |Failed to parse message content:
+                    |Failed to handle a message notification from $pkgName (user $userId, parser spec '$specId').
+                    |The same failure isn't logged again; the problem solver counts it.
                     |message : ${e.localizedMessage}
                     |cause   : ${e.cause}
                     |${e.stackTraceToString()}
                 """.trimMargin() }
                 Locale.KOREAN  { """
-                    |메세지 해석에 실패했습니다:
+                    |$pkgName 의 메시지 알림을 처리하지 못했어요 (사용자 $userId, 파서 스펙 '$specId').
+                    |같은 실패는 다시 기록하지 않고, 문제 해결 도우미에서 횟수를 보여줘요.
                     |message : ${e.localizedMessage}
                     |cause   : ${e.cause}
                     |${e.stackTraceToString()}
@@ -209,8 +328,10 @@ class NotificationListener: NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
         super.onNotificationRemoved(sbn, rankingMap, reason)
-        if (useNPostedEvent && isGlobalPowerOn && ApplicationSession.isInitComplete && sbn.packageName != packageName)
+        if (useNPostedEvent && isGlobalPowerOn && ApplicationSession.isInitComplete && sbn.packageName != packageName) {
+            Session.projectManager.fireEvent<OnNotificationRemovedEvent>(sbn, rankingMap, reason, onFailure = ::logEventFailure)
             Session.projectManager.fireEvent<Api2NotificationRemovedEvent>(sbn, rankingMap, reason, onFailure = ::logEventFailure)
+        }
         if (sbn.packageName != PACKAGE_KAKAO_TALK)
             return
         LOG.verbose { "Notification removed with reason $reason" }
@@ -219,14 +340,19 @@ class NotificationListener: NotificationListenerService() {
 
         for (act in sbn.notification.actions) {
             if (act.remoteInputs != null && act.remoteInputs.isNotEmpty() && isGlobalPowerOn) {
-                LOG.verbose { "currentChatLogId= $currentChatLogId" }
+                LOG.verbose { "currentChatLogId= ${deduper.lastChatLogId}" }
 
                 sbn.toDeletedMessage()?.let { data ->
-                    if (reason == REASON_APP_CANCEL && data.chatLogId == currentChatLogId) {
-                        Session.projectManager.fireEvent<ProjectOnMessageDeleteEvent>(data) { project, e ->
-                            e.printStackTrace()
-                            LOG.verbose { "Failed to call event on '${project.info.name}': $e" }
-                        }
+                    if (reason != REASON_APP_CANCEL || data.chatLogId != deduper.lastChatLogId)
+                        return@let
+                    // KakaoTalk takes a notification away alike when StarLight had the room read.
+                    if (OwnReads.shared.explains(sbn.tag)) {
+                        LOG.debug { "The notification of room ${sbn.tag} went after StarLight had it read: not a deletion" }
+                        return@let
+                    }
+                    Session.projectManager.fireEvent<ProjectOnMessageDeleteEvent>(data) { project, e ->
+                        e.printStackTrace()
+                        LOG.verbose { "Failed to call event on '${project.info.name}': $e" }
                     }
                 }
             }
@@ -257,21 +383,14 @@ class NotificationListener: NotificationListenerService() {
         LOG.verbose { "notificationRules(auto)= $rules" }
     }
 
-    private fun getOrCreateReplier(roomId: RoomID): Replier {
-        return replierCache[roomId] ?: Replier { room, message, hideToast ->
-            val chatRoom = room?.let(::getRoomByName) ?: chatRooms[roomId]
-            if (chatRoom == null) {
-                if (!hideToast) {
-                    Handler(Looper.getMainLooper()).post {
-                        Toast.makeText(applicationContext, "메세지가 수신되지 않은 방 '$room' 에 메세지를 보낼 수 없습니다.", Toast.LENGTH_LONG).show()
-                    }
-                }
-                false
-            } else {
-                chatRoom.send(message)
+    /** The replier of a room, kept per room and messenger; its own room is the session, wherever it was named. */
+    private fun getOrCreateReplier(roomName: String, roomId: RoomID, packageName: String): Replier {
+        val key = "$packageName\u0000$roomId"
+        return replierCache.getOrPut(key) {
+            val origin = ReplierOrigin(roomName, RoomKey(roomName, RoomKey.idOf(roomId)), packageName, isDebug = false)
+            Replier(origin) { _, message, _ ->
+                ChatSessions.registry.chatRoomByRawId(roomId)?.send(message) ?: false
             }
-        }.also {
-            replierCache[roomId] = it
         }
     }
 
@@ -287,7 +406,7 @@ class NotificationListener: NotificationListenerService() {
 
         val chatLogId = extras.getLong("chatLogId")
 
-        val chatRoom: ChatRoom? = chatRooms[roomId]
+        val chatRoom: ChatRoom? = roomId?.let(ChatSessions.registry::chatRoomByRawId)
 
         return DeletedMessage(
             message = message,
@@ -304,21 +423,30 @@ class NotificationListener: NotificationListenerService() {
 
     companion object {
 
-        private var currentChatLogId: Long = -1
-        private val roomIdMap: MutableMap<RoomName, RoomID> = ConcurrentHashMap()
-        private val chatRooms: MutableMap<RoomID, ChatRoom> = ConcurrentHashMap()
-        private val replierCache: MutableMap<RoomID, Replier> = ConcurrentHashMap()
+        private val deduper = MessageDeduper()
+        /** What was dropped and why, for the problem solver. */
+        internal val drops = NotificationDrops()
+        private val replierCache: MutableMap<String, Replier> = ConcurrentHashMap()
         private var lastReceivedRoom: ChatRoom? = null
         private var rules: List<RuleData> = arrayListOf()
         private var isAutoRule: Boolean = false
         /** The KakaoTalk version name the automatic rule was detected for. */
         private var detectedKakaoTalkVersion: String? = null
+        /** The listener the system has connected, while it is. */
+        @Volatile
+        private var connected: NotificationListener? = null
+
+        /** Called once the app is initialized: restores rooms, if the listener connected before that. */
+        fun onAppReady() {
+            connected?.restoreRooms()
+        }
 
         fun notifySent() {
-            currentChatLogId = -1
+            deduper.reset()
         }
 
         fun updateRules() {
+            drops.reset()
             isAutoRule = GlobalConfig.category("noti_rules").getBoolean("auto_rule", true)
             if (isAutoRule) {
                 detectedKakaoTalkVersion = ApplicationSession.kakaoTalkVersion?.toString()
@@ -355,40 +483,47 @@ class NotificationListener: NotificationListenerService() {
         }
 
         private fun getRoomByName(roomName: RoomName): ChatRoom? =
-            roomIdMap[roomName]?.let(chatRooms::get)
+            ChatSessions.registry.byName(roomName)?.let(ChatSessions.registry::chatRoom)
 
-        /** The rooms messages came from so far. */
+        /** The rooms messages came from so far, and those scripts bound a session to; of every package. */
         fun getRooms(): Collection<ChatRoom> =
-            chatRooms.values
+            ChatSessions.registry.chatRooms()
 
         /** The room named [nameOrId], or with that ID. */
         fun getRoom(nameOrId: String): ChatRoom? =
-            getRoomByName(nameOrId) ?: chatRooms[nameOrId]
+            getRoomByName(nameOrId) ?: getRoomByID(nameOrId)
+
+        private fun getRoomByID(roomId: RoomID): ChatRoom? =
+            ChatSessions.registry.chatRoomByRawId(roomId)
+                ?: roomId.trim().toBigIntegerOrNull()
+                    ?.let(ChatSessions.registry::byId)
+                    ?.let(ChatSessions.registry::chatRoom)
 
         fun getRoomNames(): Set<String> =
-            roomIdMap.keys
+            ChatSessions.registry.names()
 
         fun hasRoom(roomName: String): Boolean =
-            roomName in roomIdMap
+            ChatSessions.registry.hasName(roomName)
 
         fun send(message: String): Boolean =
             lastReceivedRoom?.send(message) ?: false
         fun sendTo(roomName: String, message: String): Boolean =
             getRoomByName(roomName)?.send(message) ?: false
         fun sendToID(roomId: RoomID, message: String): Boolean =
-            chatRooms[roomId]?.send(message) ?: false
+            getRoomByID(roomId)?.send(message) ?: false
 
         fun markAsRead(): Boolean =
             lastReceivedRoom?.markAsRead() ?: false
         fun markAsRead(roomName: String): Boolean =
             getRoomByName(roomName)?.markAsRead() ?: false
         fun markAsReadByID(roomID: RoomID): Boolean =
-            chatRooms[roomID]?.markAsRead() ?: false
+            getRoomByID(roomID)?.markAsRead() ?: false
     }
 
     private fun logEventFailure(project: Project, e: Throwable) {
         e.printStackTrace()
-        LOG.error {
+        // The project has logged the error under its own name, with where it happened: this one is for the app's log.
+        LOG.debug {
             translate {
                 Locale.ENGLISH { "Failed to call event on '${project.info.name}': $e" }
                 Locale.KOREAN  { "프로젝트 '${project.info.name}'의 이벤트 호출 실패: $e" }

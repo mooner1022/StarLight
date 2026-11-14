@@ -103,6 +103,11 @@ object LogCollector {
         return files.size to files.sumOf(File::length)
     }
 
+    /** Forgets the logs kept in memory, the ones the app's log screen lists; the files stay. */
+    fun clearBuffer() {
+        synchronized(mLogs) { mLogs.clear() }
+    }
+
     fun clearLogFiles() {
         logDirectory.listFiles()?.forEach { file ->
             if (file != logFile.parentFile)

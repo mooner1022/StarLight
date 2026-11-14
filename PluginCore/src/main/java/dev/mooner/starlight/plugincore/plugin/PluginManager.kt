@@ -120,6 +120,11 @@ class PluginManager {
         _plugins += plugin
     }
 
+    /** Takes [plugin] out of the loaded ones again: it failed as it was enabled, and isn't one. */
+    internal fun dropFailed(plugin: StarlightPlugin) {
+        _plugins -= plugin
+    }
+
     internal fun setInstalled(installed: List<InstalledPlugin>) {
         _installed = installed
     }

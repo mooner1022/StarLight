@@ -3,6 +3,7 @@ package dev.mooner.starlight.api
 import dev.mooner.starlight.api.api2.AppApi
 import dev.mooner.starlight.api.api2.BotManagerApi
 import dev.mooner.starlight.api.api2.BroadcastApi
+import dev.mooner.starlight.api.api2.DatabaseApi
 import dev.mooner.starlight.api.api2.EventApi
 import dev.mooner.starlight.api.api2.HomeWidgetApi
 import dev.mooner.starlight.api.legacy.BridgeApi
@@ -11,6 +12,10 @@ import dev.mooner.starlight.api.legacy.DeviceApi
 import dev.mooner.starlight.api.legacy.FileStreamApi
 import dev.mooner.starlight.api.legacy.LegacyApi
 import dev.mooner.starlight.api.legacy.UtilsApi
+import dev.mooner.starlight.api.msgbot.AppDataApi
+import dev.mooner.starlight.api.msgbot.GlobalLogApi
+import dev.mooner.starlight.api.msgbot.HttpApi
+import dev.mooner.starlight.api.msgbot.SecurityApi
 import dev.mooner.starlight.api.node.EventEmitterApi
 import dev.mooner.starlight.api.original.EnvironmentApi
 import dev.mooner.starlight.api.original.JavaClassApi
@@ -20,6 +25,10 @@ import dev.mooner.starlight.api.original.PlatformApi
 import dev.mooner.starlight.api.original.PluginsApi
 import dev.mooner.starlight.api.original.ProjectLoggerApi
 import dev.mooner.starlight.api.original.ProjectsApi
+import dev.mooner.starlight.api.original.StoreApi
+import dev.mooner.starlight.api.original.ChatApi
+import dev.mooner.starlight.api.original.ScheduleApi
+import dev.mooner.starlight.api.original.FormatApi
 import dev.mooner.starlight.listener.event.Api2CommandEvent
 import dev.mooner.starlight.listener.event.Api2MessageEvent
 import dev.mooner.starlight.listener.event.Api2NotificationPostedEvent
@@ -27,6 +36,7 @@ import dev.mooner.starlight.listener.event.Api2NotificationRemovedEvent
 import dev.mooner.starlight.listener.event.Api2StartCompileEvent
 import dev.mooner.starlight.listener.event.LegacyEvent
 import dev.mooner.starlight.listener.event.OnNotificationPostedEvent
+import dev.mooner.starlight.listener.event.OnNotificationRemovedEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageDeleteEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.event.ProjectOnStartCompileEvent
@@ -56,6 +66,10 @@ object CoreApis {
         EnvironmentApi(),
         PlatformApi(),
         JavaClassApi(),
+        StoreApi(),
+        ChatApi(),
+        ScheduleApi(),
+        FormatApi(),
         // Experimental Node.js API
         EventEmitterApi(),
         // MessengerBot legacy
@@ -65,18 +79,24 @@ object CoreApis {
         FileStreamApi(),
         DataBaseApi(),
         DeviceApi(),
+        // MessengerBot, in both its legacy and API2 scripts
+        AppDataApi(),
+        GlobalLogApi(),
+        HttpApi(),
+        SecurityApi(),
         // MessengerBot API2
         AppApi(),
         BroadcastApi(),
         BotManagerApi(),
         EventApi(),
+        DatabaseApi(),
         HomeWidgetApi(),
     )
 
     /** By category; each is registered as `starlight.<category>.<event id>`. */
     val events: Map<String, List<ProjectEventClass>> = linkedMapOf(
         "message" to listOf(ProjectOnMessageEvent::class, ProjectOnMessageDeleteEvent::class, LegacyEvent::class),
-        "notification" to listOf(OnNotificationPostedEvent::class),
+        "notification" to listOf(OnNotificationPostedEvent::class, OnNotificationRemovedEvent::class),
         "project" to listOf(ProjectOnStartCompileEvent::class),
         "api2" to listOf(
             Api2MessageEvent::class,

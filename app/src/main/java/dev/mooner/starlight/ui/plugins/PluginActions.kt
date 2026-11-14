@@ -86,7 +86,8 @@ internal fun Context.pluginStatus(entry: InstalledPlugin?, change: PluginChange?
             PluginStatus(exclusionText(state.exclusion), R.color.orange, isProblem = true)
         is PluginState.Failed ->
             PluginStatus(
-                getString(R.string.plugin_status_failed, state.error.message ?: state.error.javaClass.simpleName),
+                // The whole error when it has no message: the class name alone ("NullPointerException") says too little.
+                getString(R.string.plugin_status_failed, state.error.message ?: state.error.toString()),
                 R.color.code_error,
                 isProblem = true
             )

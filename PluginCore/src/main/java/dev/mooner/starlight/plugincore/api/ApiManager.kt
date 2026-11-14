@@ -53,6 +53,11 @@ class ApiManager {
     fun getApis(project: Project): List<Api<*>> =
         getApis(project.info.apiLevels, runCatching { project.getLanguage() }.getOrNull())
 
+    /** Takes [api] out again, as when the plugin that added it failed to load. */
+    internal fun remove(api: Api<*>) {
+        synchronized(mApis) { mApis.removeAll { it === api } }
+    }
+
     internal fun purge() {
         mApis.clear()
     }

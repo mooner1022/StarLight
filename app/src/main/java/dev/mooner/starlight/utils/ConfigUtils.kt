@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonElement
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 
 private val LOG = LoggerFactory.logger {  }
 
@@ -23,8 +22,12 @@ const val EXTRA_TITLE = "title"
 const val EXTRA_SUBTITLE = "subTitle"
 const val EXTRA_ACTIVITY_ID = "activityId"
 
+/**
+ * What a settings screen is made of, which an intent can't carry: the structure and the callbacks of whoever opened
+ * it. It is kept here, by the screen's id, from the time the screen is asked for until it is closed for good, so
+ * that the screen finds it again each time Android makes it anew (a rotation, a switch to dark mode, a fold).
+ */
 data class DataHolder(
-    var isPaused          : Boolean = false,
     val onCreatedListener : ConfigActivity.() -> Unit = {},
     val structBlock       : ConfigActivity.() -> ConfigStructure,
     val saved             : MutableDataMap,
@@ -32,11 +35,9 @@ data class DataHolder(
     val flow              : Flow<ApplicationEvent.ConfigActivity>
 )
 
-//private var instanceCount: Int = 0
-private val instanceCount: AtomicInteger = AtomicInteger(0)
 private val holders: MutableMap<String, DataHolder> = hashMapOf()
-//private var lastDestroyed: String? = null
 
+/** The first settings screen of the ones open now: the ones opened from it go when it goes. */
 private var rootActivityId: String? = null
 
 fun Context.startConfigActivity(configActivity: dev.mooner.starlight.utils.ConfigActivity) {
@@ -74,9 +75,9 @@ fun Context.startConfigActivity(
     onDestroyed    : () -> Unit = {}
 ) {
     if (this is Activity && this !is ConfigActivity) {
-        holders.keys.forEach(::finishConfigActivity)
+        holders.keys.toList().forEach(::finishConfigActivity)
         holders.clear()
-        instanceCount.set(0)
+        rootActivityId = null
     }
 
     val activityId = uuid ?: UUID.randomUUID().toString()
@@ -98,7 +99,7 @@ fun Context.startConfigActivity(
             }
         }
 
-    holders[activityId] = DataHolder(false, onCreated, structBlock, saved, publisher, flow)
+    holders[activityId] = DataHolder(onCreated, structBlock, saved, publisher, flow)
     val intent = Intent(this, ConfigActivity::class.java).apply {
         putExtra(EXTRA_TITLE, title)
         putExtra(EXTRA_SUBTITLE, subTitle)
@@ -120,32 +121,29 @@ fun finishConfigActivity(id: String): Boolean {
     return true
 }
 
+/**
+ * Whether the screen with this id can still be shown. It can't once the process that opened it is gone: Android
+ * brings the screen back, but what it showed was never saved anywhere.
+ */
+internal fun hasConfigHolder(activityId: String): Boolean =
+    activityId in holders
+
 internal fun ConfigActivity.initAdapter() {
     activityId = intent.getStringExtra(EXTRA_ACTIVITY_ID)!!
     holder = holders[activityId] ?: error("Failed to find holder with id $activityId")
-    // Bypass instance count increment if activity was paused
-    if (holder.isPaused) {
-        instanceCount.getAndDecrement()
-        holder.isPaused = false
-    } else {
-        holder.flow
-            .onCompletion { LOG.verbose { "HandlerFlow completed" } }
-            //.flowWithLifecycle(lifecycle, Lifecycle.State.CREATED)
-            .launchIn(eventHandlerScope)
+    // In this instance's scope, each time: the ones of an instance Android replaced ended with it, and a screen left
+    // without them looks the same but no longer tells anyone of a change.
+    holder.flow
+        .onCompletion { LOG.verbose { "HandlerFlow completed" } }
+        .launchIn(eventHandlerScope)
 
-        EventHandler.eventFlow
-            //.flowWithLifecycle(lifecycle, Lifecycle.State.CREATED)
-            .buffer(Channel.UNLIMITED)
-            .filterIsInstance<ApplicationEvent.ConfigActivity>()
-            .filter { it.uuid == activityId }
-            .onEach(holder.publisher::emit)
-            .onCompletion { LOG.verbose { "EventFlow completed" } }
-            .launchIn(eventHandlerScope)
-
-        instanceCount.getAndIncrement()
-    }
-
-    LOG.verbose { "Initialized, instanceCount= ${instanceCount.get()}" }
+    EventHandler.eventFlow
+        .buffer(Channel.UNLIMITED)
+        .filterIsInstance<ApplicationEvent.ConfigActivity>()
+        .filter { it.uuid == activityId }
+        .onEach(holder.publisher::emit)
+        .onCompletion { LOG.verbose { "EventFlow completed" } }
+        .launchIn(eventHandlerScope)
 
     if (rootActivityId == null) {
         rootActivityId = activityId
@@ -155,27 +153,17 @@ internal fun ConfigActivity.initAdapter() {
     holder.onCreatedListener.invoke(this)
 }
 
-internal fun ConfigActivity.onPaused() {
-    instanceCount.getAndIncrement()
-    holders[activityId]?.isPaused = true
-    LOG.verbose { "Paused, instanceCount= ${instanceCount.get()}" }
-}
-
-internal fun ConfigActivity.onDestroyed() {
-    instanceCount.getAndDecrement()
-    LOG.verbose { "Destroyed, instanceCount= ${instanceCount.get()}" }
-    if (holders[activityId]?.isPaused == true) {
-        instanceCount.getAndDecrement()
-        LOG.verbose { "Decrementing paused instance, instanceCount= ${instanceCount.get()}" }
-    }
-    if (instanceCount.get() <= 0 || rootActivityId == activityId) {
+/**
+ * The screen was closed for good, not taken down to be made anew: what it was made of is let go. With the first
+ * screen go the ones opened from it.
+ */
+internal fun ConfigActivity.onClosed() {
+    if (rootActivityId == activityId) {
         holders.clear()
-        instanceCount.set(0)
         rootActivityId = null
         LOG.verbose { "Cleared holder data map" }
-
-        if (instanceCount.get() < 0)
-            instanceCount.set(0)
+    } else {
+        holders -= activityId
     }
 }
 

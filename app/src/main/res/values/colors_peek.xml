@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Alerts (utils/Peeks.kt). Every alert is the same card, whatever it says: what tells one kind from another
+         is its icon. The card is set apart from the page by its outline and its shadow, not by a color of its own. -->
+    <color name="peek_surface">#FFFFFF</color>
+    <color name="peek_stroke">#DCDCE3</color>
+    <color name="peek_text">@color/text</color>
+    <!-- What an alert says under its title. -->
+    <color name="peek_text_sub">#6E6E76</color>
+    <!-- The icon of an alert that only tells something. -->
+    <color name="peek_icon">#85858D</color>
+    <!-- The icons of the other kinds. These are the logs' colors, which have a deeper tone by day. -->
+    <color name="peek_success">@color/log_info</color>
+    <color name="peek_warning">@color/log_warn</color>
+    <color name="peek_error">@color/log_error</color>
+    <!-- The gold, for the icon of the few alerts that speak for a script or the store. -->
+    <color name="peek_accent">@color/text_gold</color>
+</resources>

@@ -16,8 +16,16 @@ import dev.mooner.starlight.CF_SAFE_MODE
 import dev.mooner.starlight.R
 import dev.mooner.starlight.api.ApiLevels
 import dev.mooner.starlight.api.CoreApis
+import dev.mooner.starlight.plugincore.project.ProjectCallGate
+import dev.mooner.starlight.plugincore.project.ProjectErrorListener
+import dev.mooner.starlight.script.chat.ChatWaits
+import dev.mooner.starlight.script.errors.UncaughtErrors
+import dev.mooner.starlight.script.lint.EngineLinters
+import dev.mooner.starlight.script.schedule.ScheduleAlarms
 import dev.mooner.starlight.languages.neonjs.JSNeon
 import dev.mooner.starlight.languages.rhino.JSRhino
+import dev.mooner.starlight.listener.NotificationListener
+import dev.mooner.starlight.listener.RoomRestore
 import dev.mooner.starlight.listener.specs.AndroidRParserSpec
 import dev.mooner.starlight.listener.specs.ConversationShortcutParserSpec
 import dev.mooner.starlight.listener.specs.DefaultParserSpec
@@ -40,6 +48,7 @@ import dev.mooner.starlight.stats.ScriptWidgetEntries
 import dev.mooner.starlight.ui.agent.AgentWidget
 import dev.mooner.starlight.ui.debugroom.DebugRoomFragment
 import dev.mooner.starlight.ui.widget.*
+import dev.mooner.starlight.utils.callPlugin
 import dev.mooner.starlight.utils.getKakaoTalkVersion
 import dev.mooner.starlight.utils.hideFromGallery
 import kotlinx.coroutines.Dispatchers
@@ -58,6 +67,8 @@ object ApplicationSession {
         private set
 
     @JvmStatic
+    // Read by the notification listener's thread as the app starts.
+    @Volatile
     var initState: Session.InitState = Session.InitState.None
         private set
 
@@ -69,6 +80,7 @@ object ApplicationSession {
             logger.warn { "Rejecting re-init of ApplicationSession" }
             return@flow
         }
+        RoomRestore.appStarted()
         initState = Session.InitState.Processing
 
         setExceptionHandler(context)
@@ -108,6 +120,13 @@ object ApplicationSession {
         // then skipped as a duplicate.
         MediaSharing.init(context)
         CoreApis.earlyApis().forEach { Session.apiManager.addApi(it) }
+        // Before any project compiles: a message a script waits for with Chat.waitFor is held back from the others.
+        ProjectCallGate.current = ChatWaits
+        ProjectErrorListener.current = UncaughtErrors.listener
+        // The editor asks these for what it marks in a script as one types.
+        EngineLinters.install()
+        // Before any project compiles, as compiling scripts schedule their tasks (Schedule).
+        ScheduleAlarms.init(context)
 
         if (!BuildConfig.DYNAMIC_PLUGINS) {
             logger.info { "Plugins aren't available in this build" }
@@ -171,6 +190,7 @@ object ApplicationSession {
         setNetworkHandler(context)
 
         initState = Session.InitState.Done
+        NotificationListener.onAppReady()
         initMillis = System.currentTimeMillis()
         CrashGuard.startFinished()
     }
@@ -194,14 +214,13 @@ object ApplicationSession {
     private fun setNetworkHandler(context: Context) {
         NetworkUtil.registerNetworkStatusListener(context)
         NetworkUtil.addOnNetworkStateChangedListener { state ->
-            for (plugin in Session.pluginManager.plugins) {
-                try {
-                    for (listener in plugin.getListeners())
+            // Each listener by itself: this runs on the system's connectivity thread, where one that throws would
+            // take the app down, and would keep the change from the listeners after it.
+            for (plugin in Session.pluginManager.plugins)
+                for (listener in plugin.getListeners())
+                    callPlugin({ logger.error { "Failed to call network event for plugin '${plugin.info.id}': $it" } }) {
                         listener.onNetworkStateChanged(state)
-                } catch (e: Error) {
-                    logger.error { "Failed to call network event for plugin '${plugin.info.id}': $e" }
-                }
-            }
+                    }
         }
     }
 

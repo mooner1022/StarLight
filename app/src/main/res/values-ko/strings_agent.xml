@@ -4,9 +4,14 @@
     <string name="agent_title">StarLight AI</string>
     <string name="agent_subtitle_ready">%1$s · %2$s</string>
     <string name="agent_subtitle_setup">AI를 연결하고 시작해 보세요</string>
+    <string name="agent_subtitle_lost">%s 연결이 끊겼어요</string>
+    <string name="agent_lost_body">다시 연결하거나, 설정에서 다른 AI를 선택해 주세요.</string>
     <string name="agent_subtitle_ready_empty">에이전트가 준비됐어요.</string>
     <plurals name="agent_subtitle_conversations">
         <item quantity="other">%d개의 대화가 있어요.</item>
+    </plurals>
+    <plurals name="agent_list_more">
+        <item quantity="other">이전 대화 %d개 더 보기</item>
     </plurals>
     <plurals name="agent_subtitle_running">
         <item quantity="other">%d개의 작업을 진행하고 있어요.</item>
@@ -48,6 +53,7 @@
     <string name="agent_state_running">작업 중</string>
     <string name="agent_state_approval">확인 필요</string>
     <string name="agent_state_interrupted">중단됨</string>
+    <string name="agent_state_paused">일시 멈춤</string>
     <string name="agent_state_error">실패</string>
 
     <string name="agent_phase_waiting">모델의 응답을 기다리는 중…</string>
@@ -89,7 +95,9 @@
     <string name="agent_notice_refusal">모델이 이 요청을 거절했어요.</string>
     <string name="agent_notice_refusal_reason">모델이 이 요청을 거절했어요 (%s).</string>
     <string name="agent_error_setup">먼저 AI 설정에서 AI를 연결해 주세요.</string>
+    <string name="agent_error_reconnect">%s 연결이 끊겼어요. AI 설정에서 다시 연결하거나 다른 AI를 선택해 주세요.</string>
     <string name="agent_error_model">먼저 %s의 모델을 골라 주세요.</string>
+    <string name="agent_error_unreadable">이 대화를 읽을 수 없어요. 더 새로운 버전의 앱에서 만든 대화일 수 있어요. 대화는 그대로 두었고, 여기에서는 메시지를 보낼 수 없어요.</string>
     <string name="agent_error_auth">인증에 실패했어요 (HTTP %1$d): %2$s</string>
     <string name="agent_error_limit">요청 한도나 사용량 한도에 도달했어요: %s</string>
     <string name="agent_error_http">HTTP %1$d: %2$s</string>
@@ -180,6 +188,7 @@
     <string name="agent_notification_approval">AI 에이전트가 확인을 기다려요</string>
     <string name="agent_notification_done">작업을 마쳤어요.</string>
     <string name="agent_notification_failed">실패: %s</string>
+    <string name="agent_notification_paused">일시 멈춤: %s</string>
 
     <string name="agent_project_action">AI</string>
     <string name="agent_project_prompt_hint">%s에서 무엇을 할까요?</string>
@@ -222,12 +231,14 @@
     <string name="agent_rewind_title">이 메시지 전으로 되돌리기</string>
     <string name="agent_rewind_message">이 메시지부터 에이전트가 바꾼 %d곳을 그 전으로 되돌려요.</string>
     <string name="agent_rewind_more">외 %d곳</string>
-    <string name="agent_rewind_note">에이전트의 도구가 바꾼 것만 되돌려요. 봇이 실행 중에 쓴 파일은 그대로예요. 실행 중인 프로젝트는 다시 컴파일해요.</string>
+    <string name="agent_rewind_note">에이전트의 도구가 바꾼 것만 되돌려요. 봇이 실행 중에 쓴 파일은 그대로예요. 목록에 있는 파일은 통째로 돌아가서, 그 뒤에 직접 고친 내용도 함께 바뀌어요. 되돌린 직후에는 취소할 수 있어요. 실행 중인 프로젝트는 다시 컴파일해요.</string>
     <string name="agent_rewind_files">파일만</string>
     <string name="agent_rewind_both">파일과 대화</string>
     <string name="agent_rewind_done">%d곳을 되돌렸어요.</string>
     <string name="agent_rewind_partly">%1$d곳을 되돌렸어요. 되돌리지 못한 것: %2$s</string>
     <string name="agent_rewind_failed">되돌리지 못했어요: %s</string>
+    <string name="agent_rewind_undo">되돌리기 취소</string>
+    <string name="agent_rewind_undone">되돌리기를 취소했어요. 변경 %d개가 다시 적용됐어요.</string>
     <string name="agent_edit_rewind_title">이후 변경도 되돌릴까요?</string>
     <string name="agent_edit_rewind_message">이 메시지 이후 에이전트가 %d곳을 바꿨어요. 메시지를 고치면서 그 변경도 되돌릴까요?</string>
     <string name="agent_edit_rewind_yes">되돌리고 보내기</string>

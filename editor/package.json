@@ -2,7 +2,8 @@
   "name": "starlight-editor",
   "private": true,
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.4",
@@ -27,11 +28,11 @@
     "@codemirror/state": "6.7.6",
     "@codemirror/view": "6.43.15",
     "@lezer/highlight": "1.2.5",
-    "js-beautify": "2.0.3",
-    "jshint": "2.13.6"
+    "js-beautify": "2.0.3"
   },
   "devDependencies": {
     "ace-builds": "1.45.2",
     "esbuild": "0.28.2"
-  }
+  },
+  "type": "module"
 }

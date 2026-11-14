@@ -26,13 +26,17 @@ With the default language version (ES6, in the project's Rhino settings):
 | Concurrency | Up to three events run at once by default, so shared state needs care | One task at a time |
 | Strictness | Sloppy mode: assigning an undeclared name creates a global | Strict mode |
 | Java | `Packages.java.util.ArrayList`, `java.lang.Math`, `importClass()`, `importPackage()`, `JavaAdapter` | `Java.type()`, `Java.extend()` |
-| `console` | Not there; use `Log` | Logs to the project |
+| `console` | Logs to the project, in MessengerBot's format: `log`, `info`, `debug`, `warn`, `error`, `clear`, `time`, `timeEnd`, `timeLog`, `count`, `countReset`, `assert`, `table` (no format specifiers, `group`, `dir` or `trace`) | Logs to the project, with more members |
 
 - Because every top-level function is visible, a Rhino project with both the StarLight original and MessengerBot API2
   levels gets a top-level `onMessage` called as StarLight's event too, so one message can reach it twice. Name an
   API2 listener apart, as the starting code does when a new project receives both events (`onApi2Message`).
 - StarLight's `Java` API in Rhino is its own object: `Java.type()` returns a `java.lang.Class`, not something to
   `new`. `describe_api Java` describes it.
+- A top-level `onUncaughtError` gets every error with `origin` `"uncaughtException"`: Rhino doesn't report rejected
+  Promises (guide:events#uncaught-errors).
+- Rhino code can't be stopped while it runs. A loop that never ends keeps one of the project's workers, and its
+  thread, busy until StarLight restarts: compiling again gives the project fresh workers, but doesn't end the loop.
 
 ## Java values
 

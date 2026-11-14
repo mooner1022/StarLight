@@ -79,7 +79,7 @@ class BotManager(private val project: Project) {
      * @since 1.0.1
      */
     @JvmOverloads
-    fun getRooms(packageName: String? = null): Array<Api2Room> = …
+    fun getRooms(packageName: Any? = null): Array<Api2Room> = …
 }
 ```
 
@@ -227,7 +227,7 @@ declare const BotManager: {
   /** The bot of the project running this script. */
   getCurrentBot(): Bot;
   /** The rooms bots can send to, from the messages received so far. */
-  getRooms(packageName?: string | null): JavaList<Api2Room>;
+  getRooms(packageName?: any): JavaList<Api2Room>;
 };
 
 interface Bot {

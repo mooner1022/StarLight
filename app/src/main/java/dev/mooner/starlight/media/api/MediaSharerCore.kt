@@ -12,6 +12,7 @@ import dev.mooner.starlight.media.room.RoomRegistry
 import dev.mooner.starlight.media.room.directRoomOf
 import dev.mooner.starlight.media.script.ScriptValues
 import dev.mooner.starlight.media.script.SendOptions
+import dev.mooner.starlight.media.script.TextOptions
 import dev.mooner.starlight.media.send.KakaoShare
 import dev.mooner.starlight.media.send.LeaveTiming
 import dev.mooner.starlight.media.send.LeaveTo
@@ -70,6 +71,30 @@ internal class MediaSharerCore(private val project: Project?) {
                 failure(label, (error as? CompletionException)?.cause ?: error)
             else
                 MediaSendResult(true, label, outcome.sent, outcome.failures.size, null, outcome.failures, outcome.via)
+        }
+    }
+
+    /** Sends [text] to [room], or to the memo chat (나와의 채팅) when [toMemo], as [options] say. */
+    fun sendText(room: Any?, text: Any?, options: Any?, toMemo: Boolean): CompletableFuture<MediaSendResult> {
+        val label = if (toMemo) MEMO_CHAT_LABEL else labelOf(room)
+        val sending = try {
+            val content = ScriptValues.toText(text)
+                ?: throw IllegalArgumentException("text must be text")
+            val options = TextOptions.read(options)
+            val attachment = options.attachmentFor(content).toJson()
+            val service = service()
+            val target = if (toMemo) null else directRoomOf(room) ?: service.resolver.resolve(room)
+            if (target !is DirectRoom)
+                warnIfNoOverlayPermission()
+            service.sendText(target, content, attachment, options.leaveTo, log)
+        } catch (e: Throwable) {
+            return CompletableFuture.completedFuture(failure(label, e))
+        }
+        return sending.handle { outcome, error ->
+            if (error != null)
+                failure(label, (error as? CompletionException)?.cause ?: error)
+            else
+                MediaSendResult(true, label, outcome.sent, 0, null, emptyList(), outcome.via)
         }
     }
 
@@ -166,5 +191,6 @@ internal class MediaSharerCore(private val project: Project?) {
 
     private companion object {
         const val TAG = "[MediaSharer]"
+        const val MEMO_CHAT_LABEL = "나와의 채팅"
     }
 }

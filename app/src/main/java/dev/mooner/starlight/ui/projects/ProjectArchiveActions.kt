@@ -45,7 +45,7 @@ internal fun LifecycleOwner.importProject(context: Context, uri: Uri) {
     lifecycleScope.launch {
         runCatching {
             withContext(Dispatchers.IO) {
-                context.contentResolver.openInputStream(uri)!!.use(ProjectArchive::import)
+                context.contentResolver.openInputStream(uri)!!.use { ProjectArchive.import(it) }
             }
         }
             .onSuccess { project -> context.peek(context.getString(R.string.project_import_done, project.info.name), PeekType.SUCCESS) }

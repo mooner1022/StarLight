@@ -47,6 +47,7 @@ internal object ProviderSheet {
             binding.chatGptSignIn.setOnClickListener {
                 if (hub.chatGpt.isSignedIn) {
                     hub.chatGpt.signOut()
+                    hub.settings.unchoose(kind)
                     renderChatGpt(host, hub, binding)
                     return@setOnClickListener
                 }
@@ -100,6 +101,7 @@ internal object ProviderSheet {
                         hub.settings.setApiKey(kind, null)
                         if (kind == ProviderKind.CUSTOM)
                             hub.settings.setBaseUrl(kind, "")
+                        hub.settings.unchoose(kind)
                     }
             } else {
                 positive(R.string.agent_done)

@@ -134,7 +134,7 @@ internal fun ConfigBuilder.mediaPage(context: Context) = page {
                     option(LeaveTo.KEY_STAY, context.getString(R.string.media_settings_after_send_stay))
                     option(LeaveTo.KEY_HOME, context.getString(R.string.media_settings_after_send_home))
                     option(LeaveTo.KEY_STARLIGHT, context.getString(R.string.media_settings_after_send_starlight))
-                    defaultKey = LeaveTo.KEY_STAY
+                    defaultKey = LeaveTo.KEY_HOME
                     icon = Icon.EXIT_TO_APP
                     iconTintColor = color { COLOR }
                 }

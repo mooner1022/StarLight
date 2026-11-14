@@ -123,29 +123,15 @@ class CheckUpdateConfigActivity: dev.mooner.starlight.utils.ConfigActivity() {
         val result = checkForUpdate()
         when (result) {
             UpdateCheckResult.Failed ->
-                createSimplePeek(
-                    text = translate {
-                        Locale.ENGLISH { "Failed to parse or fetch version info from server. Please try again later." }
-                        Locale.KOREAN  { "서버로부터 버전 정보를 불러오는 데 실패했어요. 나중에 다시 시도해주세요." }
-                    }
-                ) {
-                    position = PeekAlert.Position.Bottom
-                    iconRes = dev.mooner.configdsl.R.drawable.ic_round_close_24
-                    iconTint(res = R.color.code_error)
-                    backgroundColor(res = R.color.background_popup)
-                }.peek()
+                createFailurePeek(translate {
+                    Locale.ENGLISH { "Failed to parse or fetch version info from server. Please try again later." }
+                    Locale.KOREAN  { "서버로부터 버전 정보를 불러오는 데 실패했어요. 나중에 다시 시도해주세요." }
+                }, PeekAlert.Position.Bottom).peek()
             UpdateCheckResult.UpToDate ->
-                createSimplePeek(
-                    text = translate {
-                        Locale.ENGLISH { "App is already on the newest version." }
-                        Locale.KOREAN  { "앱이 이미 최신 버전이에요." }
-                    }
-                ) {
-                    position = PeekAlert.Position.Bottom
-                    iconRes = dev.mooner.configdsl.R.drawable.ic_round_check_24
-                    iconTint(res = R.color.noctis_green)
-                    backgroundColor(res = R.color.background_popup)
-                }.peek()
+                createSuccessPeek(translate {
+                    Locale.ENGLISH { "App is already on the newest version." }
+                    Locale.KOREAN  { "앱이 이미 최신 버전이에요." }
+                }, PeekAlert.Position.Bottom).peek()
             is UpdateCheckResult.Available ->
                 updater?.showUpdateDialog(result)
         }

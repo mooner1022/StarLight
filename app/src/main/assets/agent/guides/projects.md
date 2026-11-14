@@ -1,6 +1,6 @@
 ---
 title: Projects
-summary: What a project is: its files and project.json, the API levels that decide its globals and events, allowed-event entries, compiling and turning on, errors, and calling other projects.
+summary: What a project is: its files and project.json, the API levels that decide its globals and events, storing data with Store, allowed-event entries, compiling and turning on, errors, and calling other projects.
 ---
 
 A project is one bot: a folder with its info, a main script and any other files, in one language that can't change
@@ -18,6 +18,8 @@ layout in an app-only folder (guide:play-build#data-folder).
 ├─ config.json      the project's settings, its language settings included
 ├─ logs.json        its recent logs
 ├─ data/            a usual place for what the script saves
+│  ├─ store/        the files of `Store` (below)
+│  └─ schedule/     the tasks `Schedule.at` keeps (guide:events#scheduled-tasks)
 └─ debugroom/       the debug room's chat history
 ```
 
@@ -48,12 +50,33 @@ levels share is given once. Plugins' APIs and events belong to every project, wh
 
 | Level | Globals | Events |
 |---|---|---|
-| StarLight original (`starlight`) | `Log`, `Projects`, `Plugins`, `Languages`, `Platform`, `Env`, `Java`, `Notification`, `HomeWidget`, `MediaSharer`, `EventEmitter` | `onMessage`, `onMessageDeleted`, `onNotificationPosted`, `onStartCompile` |
-| MessengerBot API2 (`msgbot.api2`) | `Log`, `BotManager`, `Event`, `Broadcast`, `App`, `Device`, `FileStream` | listeners added with `bot.on(Event.…)` |
-| MessengerBot legacy (`msgbot.legacy`) | `Log`, `Api`, `Utils`, `DataBase`, `Bridge`, `Device`, `FileStream` | `response`, `onNotificationPosted`, `onStartCompile` |
+| StarLight original (`starlight`) | `Log`, `Store`, `Chat`, `Schedule`, `Format`, `Projects`, `Plugins`, `Languages`, `Platform`, `Env`, `Java`, `Notification`, `HomeWidget`, `MediaSharer`, `EventEmitter` | `onMessage`, `onMessageDeleted`, `onNotificationPosted`, `onStartCompile` |
+| MessengerBot API2 (`msgbot.api2`) | `Log`, `BotManager`, `Event`, `App`, `Database`, `Device`, `FileStream`, `Broadcast`, `AppData`, `GlobalLog`, `Http`, `Security` | listeners added with `bot.on(Event.…)` |
+| MessengerBot legacy (`msgbot.legacy`) | `Log`, `Api`, `Utils`, `DataBase`, `Bridge`, `Device`, `FileStream`, `Broadcast`, `AppData`, `GlobalLog`, `Http`, `Security` | `response`, `onNotificationPosted`, `onNotificationRemoved`, `onStartCompile` |
 
 `list_apis` with the project lists exactly what it gets, and `list_projects` shows each project's levels. New projects
 start with StarLight original; NeonJS suits it and API2 best. Changing levels takes effect on the next compile.
+
+## Storing data
+
+`Store` keeps values across compiles and restarts, in JSON files under `data/store/`. Prefer it to writing files by
+hand: values come back as the engine's own objects and arrays, saves can't leave a half-written file, and Rhino's
+concurrent events can change a value safely with `update`.
+
+```js
+const settings = Store.open("settings");        // data/store/settings.json
+const prefix = settings.get("prefix", "!");     // a default while it has none
+settings.set("prefix", "/");
+const count = settings.update("uses", (n) => (n ?? 0) + 1);
+```
+
+- Values are what `JSON.stringify` writes, kept as copies: change an object you got, then `set` it again. Keep Java
+  objects' fields, not the objects, and 64-bit IDs as text.
+- Changes are saved within a second, and when the project compiles again or is turned off; `save()` saves at once.
+- A store's file may be edited while the project runs: the edit is read when the store is opened again, as after a
+  compile, and kept under the script's own changes. A file that isn't a JSON object makes `open` throw and is left
+  for fixing.
+- `describe_api Store` has the details. `DataBase` and `FileStream` (MessengerBot legacy) write plain text files.
 
 ## Allowed events
 
@@ -74,6 +97,9 @@ receives.
 - Projects that are on compile when the app starts; one that fails to compile then is turned off.
 - Compiling again replaces the running code; NeonJS projects' timers, sockets and listeners from before go away.
   Turning a project off stops new events but not timers it set; compile again to stop those.
+- A compile that fails stops the project: the version that was running is unloaded, since its timers and listeners
+  were already ended for the new code. It keeps its on/off switch and runs again once a compile succeeds. Only when
+  the main script can't be read does the running version stay as it is.
 
 ## Errors
 
@@ -83,6 +109,10 @@ receives.
   again (`compile_project`), and turned on again for real chats.
 - A compile error names the file and line. `get_project_logs` shows the logs, stack traces included.
 - An error in a timer or in a Promise nobody handles is logged and doesn't unload the project.
+- A script that defines `onUncaughtError(error, origin, detail)` is told of each of these errors after it is logged,
+  to answer in the room or tidy up (guide:events#uncaught-errors). That doesn't change what happens to the project:
+  the setting above still unloads it. An error of the handler itself is handled as an event function's, so with the
+  setting on it unloads the project even when the handler was called for a timer's error.
 
 ## Calling other projects
 
@@ -102,6 +132,9 @@ if (other) other.callFunction("addReminder", ["room", "text"], (e) => Log.e("sch
 - The other project's function must be exported if it is a NeonJS project.
 - `describe_api Project` shows what else a project has, such as `info.id` and `getDataDirectory()`.
 
-Legacy Rhino projects also have `Bridge.getScopeOf(name)`: another compiled Rhino project's global object, whose
-variables and functions read as properties (`Bridge.getScopeOf("other").count`). It throws while that project isn't
-compiled, as during its first compile.
+Legacy projects also have MessengerBot's `Bridge`, which reaches into another compiled project directly and returns
+what it gives: `Bridge.callFunctionOf("other", "greet", "hi")` calls a function and returns its result,
+`getVariableOf`, `hasVariableOf`, `setVariableOf` and `getMemberNamesOf` read and write its variables,
+`evalInScript` runs code in it, and `getScopeOf(name)` gives a Rhino project's global object, whose variables and
+functions read as properties (`Bridge.getScopeOf("other").count`). For a NeonJS project these see its exports, which
+can't be assigned. They give `null` (or `false`) while that project isn't compiled, as during its first compile.

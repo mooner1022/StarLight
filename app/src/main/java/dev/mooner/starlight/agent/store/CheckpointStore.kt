@@ -73,10 +73,41 @@ class CheckpointStore(private val root: File) {
         return changes
     }
 
-    /** Forgets the changes of [messageIds], once they are put back or are to stay. */
-    fun discard(conversationId: String, messageIds: List<String>) {
-        for (id in messageIds)
-            dir(conversationId, id).deleteRecursively()
+    /**
+     * Forgets the changes of [messageIds], once they are put back or are to stay. The ones in [keep], by
+     * [Entry.key], stay: what a rewind couldn't put back can be tried again.
+     */
+    fun discard(conversationId: String, messageIds: List<String>, keep: Set<String> = emptySet()) {
+        for (id in messageIds) {
+            val dir = dir(conversationId, id)
+            val kept = if (keep.isEmpty()) emptyList() else read(dir).entries.filter { it.key in keep }
+            if (kept.isEmpty()) {
+                dir.deleteRecursively()
+                continue
+            }
+            val blobs = kept.mapNotNullTo(hashSetOf()) { it.blob }
+            dir.listFiles()?.filter { it.name != MANIFEST && it.name !in blobs }?.forEach { it.deleteRecursively() }
+            write(dir, Manifest(kept))
+        }
+    }
+
+    /**
+     * Records how things are just before a rewind changes them, so the rewind can be undone; see
+     * [Rewind.keepPresent]. One is kept per conversation: a new rewind takes the place of the last one's.
+     */
+    fun undoRecorder(conversationId: String): Recorder {
+        discardUndo(conversationId)
+        return Recorder(dir(conversationId, UNDO))
+    }
+
+    /** What undoing the last rewind puts back; nothing when there is none to undo. */
+    fun undoChanges(conversationId: String): List<Change> {
+        val dir = dir(conversationId, UNDO)
+        return read(dir).entries.map { Change(dir, it) }
+    }
+
+    fun discardUndo(conversationId: String) {
+        dir(conversationId, UNDO).deleteRecursively()
     }
 
     private fun dir(conversationId: String, messageId: String): File =
@@ -132,6 +163,8 @@ class CheckpointStore(private val root: File) {
 
     companion object {
         const val DIR = "checkpoints"
+        /** The folder of the rewind that can be undone, beside the ones named after messages, whose ids start with "m". */
+        private const val UNDO = "_undo"
         private const val MANIFEST = "manifest.json"
         /** Scripts and their data; a larger file is likely a download the bot keeps, not something to rewind. */
         const val MAX_FILE_BYTES = 5L * 1024 * 1024

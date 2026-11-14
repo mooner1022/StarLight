@@ -8,7 +8,7 @@ class Info {
 
         @JvmStatic
         val PLUGINCORE_VERSION: Version =
-            Version.fromString("1.1.0")
+            Version.fromString("1.2.0")
 
         @JvmStatic
         val MIN_PLUGIN_API_VERSION: Version =

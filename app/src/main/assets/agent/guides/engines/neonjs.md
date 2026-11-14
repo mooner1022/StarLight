@@ -43,6 +43,7 @@ strict mode. Pick it for new projects unless the user asks for Rhino.
   is discarded. Wait with `await` or timers, never in a loop, and split heavy work with `setTimeout`.
 - An uncaught error in an event-loop task is logged as `Uncaught exception: …`, a rejected Promise nobody handles as
   `Unhandled promise rejection: …`, both with a JS stack trace.
+- An exported `onUncaughtError` is then called with them too (guide:events#uncaught-errors).
 
 ## Timers
 
@@ -51,7 +52,8 @@ strict mode. Pick it for new projects unless the user asks for Rhino.
 - `setInterval` measures each interval from the end of the previous callback.
 - Recompiling the project or discarding its scope cancels its timers. Turning the project off does not.
 - A callback's error is logged as `Exception on timer <id>`; an interval keeps running.
-- `toast(message, duration?)` shows a short message on screen (`duration` 0 short, 1 long, the default).
+- `toast(message, duration?)` shows a short message on screen; `duration` 1 makes it long, and it is short (0) when
+  omitted. Rhino projects have `toast` too, with the same behaviour.
 
 ## fetch and WebSocket
 
@@ -99,7 +101,8 @@ strict mode. Pick it for new projects unless the user asks for Rhino.
 ## What NeonJS lacks
 
 - `Intl`: `toLocaleString()` ignores locales. Format numbers and dates yourself or with Java's `NumberFormat` and
-  `DateTimeFormatter`.
+  `DateTimeFormatter`; in StarLight original projects, `Format` (`describe_api Format`) writes numbers, dates,
+  durations and Korean particles.
 - Node.js: no `require`, `process`, `Buffer` or `node:` modules. Bytes are `Uint8Array`.
 - DOM: no `window` or `document`.
 - Rhino's Java syntax: no `Packages`, `java.lang...`, `importClass()`, `importPackage()` or `JavaAdapter`.

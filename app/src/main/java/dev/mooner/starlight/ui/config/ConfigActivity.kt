@@ -59,6 +59,13 @@ class ConfigActivity : AppCompatActivity() {
 
         binding.leave.setOnClickListener { finish() }
 
+        // Brought back in a new process: what the screen showed went with the old one, and it can only close.
+        if (!hasConfigHolder(intent.getStringExtra(EXTRA_ACTIVITY_ID).orEmpty())) {
+            LOG.verbose { "A settings screen whose contents are gone was brought back; closing it" }
+            activityId = intent.getStringExtra(EXTRA_ACTIVITY_ID).orEmpty()
+            finish()
+            return
+        }
         try {
             initAdapter()
             if (!this::holder.isInitialized)
@@ -107,36 +114,22 @@ class ConfigActivity : AppCompatActivity() {
         }
     }
 
-    /*
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        // Bypass onDestroyed()
-        //Logger.v("onSaveInstanceState called, bypassing onDestroyed() call on ID: $activityId")
-        //bypassDestroy = true
-        //onDestroyed()
-    }
-     */
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        onPaused()
-    }
-
     override fun onDestroy() {
-        EventHandler.fireEventWithScope(
-            ApplicationEvent.ConfigActivity.Destroy(
-                uuid = activityId
+        // Only a screen that is closed tells so and lets go of what it was made of. One Android takes down to make
+        // anew, on a rotation or a theme change, comes back with the same id: telling of its end would close the
+        // new one, and without its holder the new one couldn't be made at all.
+        if (isFinishing) {
+            EventHandler.fireEventWithScope(
+                ApplicationEvent.ConfigActivity.Destroy(
+                    uuid = activityId
+                )
             )
-        )
+            onClosed()
+        }
         eventHandlerScope.cancel()
         recyclerAdapter?.destroy()
         recyclerAdapter = null
-        onDestroyed()
         super.onDestroy()
-        //if (bypassDestroy) {
-        //    bypassDestroy = false
-        //    return
-        //}
-        //onDestroyed()
     }
 
     private fun onDestroyCall(event: ApplicationEvent.ConfigActivity.Destroy) {

@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import dev.mooner.starlight.plugincore.logger.internal.Logger
 
 object NetworkUtil {
     const val NETWORK_STATUS_NOT_CONNECTED = 0
@@ -20,16 +21,24 @@ object NetworkUtil {
         connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
-                val status = getConnectivityStatus(connectivityManager!!)
-                for (listener in listeners) {
-                    listener(status)
-                }
+                dispatch(getConnectivityStatus(connectivityManager!!))
             }
 
             override fun onLost(network: Network) {
-                for (listener in listeners) {
-                    listener(NETWORK_STATUS_NOT_CONNECTED)
-                }
+                dispatch(NETWORK_STATUS_NOT_CONNECTED)
+            }
+
+            // On the system's connectivity thread: a listener that throws would end the process, and the ones
+            // after it wouldn't hear of the change.
+            private fun dispatch(status: Int) {
+                for (listener in listeners.toList())
+                    try {
+                        listener(status)
+                    } catch (e: Exception) {
+                        Logger.e("NetworkUtil", "A network state listener failed: $e")
+                    } catch (e: LinkageError) {
+                        Logger.e("NetworkUtil", "A network state listener failed: $e")
+                    }
             }
         }
         connectivityManager!!.registerDefaultNetworkCallback(callback!!)

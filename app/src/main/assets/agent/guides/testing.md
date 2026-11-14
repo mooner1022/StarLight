@@ -26,12 +26,17 @@ Check `event.room.isDebugRoom()` in a script to tell them apart.
 | `event.room.isDebugRoom()` (or `event.room.debugRoom`) | `true` |
 | `event.room.name` | The debug room's room name; `"undefined"` until the user sets one |
 | `event.sender.id` | `null` |
-| `event.chatLogId` | `-1` |
-| `event.image` | `null` |
+| `event.chatLogId` (`onMessage`) | `-1` |
+| `event.image` (`onMessage`) | `null` |
 | `event.hasMention` | `false` from the tool; in the screen, a message with `<@name>` is a mention |
 | `event.packageName` | The debug room's app package, `com.kakao.talk` by default |
-| `replier.reply(room, text)` | Ignores the room and answers in the debug room. |
-| API2 `msg.channelId` | `null`: the debug room's ID isn't numeric. |
+| `replier.reply(room, text)` | Naming the open debug room (its name or ID) answers there; any other room is looked up among the real rooms, and an unknown one gives `false`. |
+| API2 `msg.channelId` and `msg.logId` | `0` (BigInt) |
+| API2 `msg.author.hash` | `"DEBUG ROOM"` |
+| API2 `msg.isMultiChat` | `false` |
+| API2 `msg.image` | The sender's profile picture (the same as `msg.author.avatar`) |
+| API2 `msg.markAsRead()` | `false` |
+| Legacy `response` | `logId` 0, `channelId` 0, `userHash` `"DEBUG ROOM"`; `isMention` is true for a message typed with `<@name>` |
 
 Sending to another room by name (`Api.replyRoom`, `bot.send`) needs a real room StarLight has received a message
 from; in tests such a call usually reports failure.

@@ -11,9 +11,14 @@ import dev.mooner.starlight.R
 import dev.mooner.starlight.api.api2.AppApi
 import dev.mooner.starlight.api.api2.BotManagerApi
 import dev.mooner.starlight.api.api2.BroadcastApi
+import dev.mooner.starlight.api.api2.DatabaseApi
 import dev.mooner.starlight.api.api2.EventApi
 import dev.mooner.starlight.api.api2.HomeWidgetApi
 import dev.mooner.starlight.api.legacy.*
+import dev.mooner.starlight.api.msgbot.AppDataApi
+import dev.mooner.starlight.api.msgbot.GlobalLogApi
+import dev.mooner.starlight.api.msgbot.HttpApi
+import dev.mooner.starlight.api.msgbot.SecurityApi
 import dev.mooner.starlight.api.node.EventEmitterApi
 import dev.mooner.starlight.api.original.*
 import dev.mooner.starlight.listener.event.*
@@ -52,6 +57,12 @@ object ApiLevels {
         val preferredLanguageId: String? = null,
     )
 
+    /** What MessengerBot R gives its legacy and API2 scripts alike. */
+    private val MESSENGERBOT_COMMON: Set<KClass<out Api<*>>> = setOf(
+        DeviceApi::class, FileStreamApi::class, BroadcastApi::class, AppDataApi::class, GlobalLogApi::class,
+        HttpApi::class, SecurityApi::class,
+    )
+
     private val definitions = listOf(
         Definition(
             id = ORIGINAL,
@@ -61,7 +72,8 @@ object ApiLevels {
             apis = setOf(
                 ProjectLoggerApi::class, EnvironmentApi::class, JavaClassApi::class, LanguagesApi::class,
                 NotificationApi::class, PlatformApi::class, PluginsApi::class, ProjectsApi::class,
-                HomeWidgetApi::class, EventEmitterApi::class, MediaSharerApi::class,
+                HomeWidgetApi::class, EventEmitterApi::class, MediaSharerApi::class, StoreApi::class,
+                ChatApi::class, ScheduleApi::class, FormatApi::class,
             ),
             events = setOf(
                 ProjectOnMessageEvent::class, ProjectOnMessageDeleteEvent::class,
@@ -76,9 +88,8 @@ object ApiLevels {
             group = R.string.api_level_group_msgbot,
             description = R.string.api_level_api2_description,
             apis = setOf(
-                ProjectLoggerApi::class, AppApi::class, BotManagerApi::class, BroadcastApi::class, EventApi::class,
-                DeviceApi::class, FileStreamApi::class,
-            ),
+                ProjectLoggerApi::class, AppApi::class, BotManagerApi::class, EventApi::class, DatabaseApi::class,
+            ) + MESSENGERBOT_COMMON,
             events = setOf(
                 Api2MessageEvent::class, Api2CommandEvent::class, Api2NotificationPostedEvent::class,
                 Api2NotificationRemovedEvent::class, Api2StartCompileEvent::class,
@@ -91,11 +102,11 @@ object ApiLevels {
             group = R.string.api_level_group_msgbot,
             description = R.string.api_level_legacy_description,
             apis = setOf(
-                ProjectLoggerApi::class, LegacyApi::class, UtilsApi::class, DataBaseApi::class,
-                DeviceApi::class, FileStreamApi::class, BridgeApi::class,
-            ),
+                ProjectLoggerApi::class, LegacyApi::class, UtilsApi::class, DataBaseApi::class, BridgeApi::class,
+            ) + MESSENGERBOT_COMMON,
             events = setOf(
-                LegacyEvent::class, OnNotificationPostedEvent::class, ProjectOnStartCompileEvent::class,
+                LegacyEvent::class, OnNotificationPostedEvent::class, OnNotificationRemovedEvent::class,
+                ProjectOnStartCompileEvent::class,
             ),
         ),
     )

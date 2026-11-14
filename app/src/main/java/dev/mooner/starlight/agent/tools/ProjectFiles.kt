@@ -44,19 +44,33 @@ class ProjectFiles(directory: File) {
         return file to file.readText()
     }
 
-    /** Writes [text], checking [expectedHash] first; `""` means the file must not exist yet. */
-    fun write(path: String, text: String, expectedHash: String?): File = synchronized(LOCK) {
+    /**
+     * Writes [text], checking [expectedHash] first; `""` means the file must not exist yet.
+     *
+     * A file that exists is only replaced with the hash of what it holds now. The whole file is written, from what
+     * the caller last read: without the hash, whatever was written to it since, by the user in the editor or by a
+     * script, would be gone without anyone seeing. A new file needs none.
+     *
+     * [beforeWrite] is called once everything is checked, just before the file changes, with the file as it still is.
+     */
+    fun write(path: String, text: String, expectedHash: String?, beforeWrite: (File) -> Unit = {}): File = synchronized(LOCK) {
         val file = resolve(path)
         if (file.isDirectory)
             throw ToolException("Is a directory: $path")
+        if (expectedHash == null && file.isFile)
+            throw ToolException("$path already exists, and expectedHash wasn't given. Nothing was written. Read the " +
+                "file with read_file, then call write_file again with expectedHash set to the hash on the last line of " +
+                "what read_file returned; a write_file or edit_file result gives the new hash the same way. For a " +
+                "small change, use edit_file instead.")
         checkHash(file, expectedHash)
+        beforeWrite(file)
         file.parentFile?.mkdirs()
         file.writeText(text)
         file
     }
 
-    /** Replaces the one occurrence of [old] with [new]. */
-    fun edit(path: String, old: String, new: String, expectedHash: String?): File = synchronized(LOCK) {
+    /** Replaces the one occurrence of [old] with [new]. [beforeWrite] is as in [write]. */
+    fun edit(path: String, old: String, new: String, expectedHash: String?, beforeWrite: (File) -> Unit = {}): File = synchronized(LOCK) {
         if (old.isEmpty())
             throw ToolException("The text to replace is empty")
         val file = resolve(path)
@@ -69,6 +83,7 @@ class ProjectFiles(directory: File) {
             throw ToolException("The text to replace was not found in $path. Read the file again; it may have changed.")
         if (text.indexOf(old, first + 1) >= 0)
             throw ToolException("The text to replace occurs more than once in $path; include more surrounding lines")
+        beforeWrite(file)
         file.writeText(text.substring(0, first) + new + text.substring(first + old.length))
         file
     }

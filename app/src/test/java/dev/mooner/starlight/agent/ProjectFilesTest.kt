@@ -60,6 +60,42 @@ class ProjectFilesTest {
     }
 
     @Test
+    fun overwritingAFileNeedsItsHash() {
+        val files = files()
+
+        // The whole file would be replaced by what the caller last read of it, whenever that was.
+        assertRefused { files.write("main.js", "rewritten", null) }
+        assertTrue(files.read("main.js").second.startsWith("export function onMessage"))
+
+        // A new file has nothing to lose.
+        files.write("fresh.js", "one", null)
+        // The hash of what a write left is the one the next write needs.
+        val hash = ProjectFiles.sha256(files.resolve("fresh.js").readBytes())
+        files.write("fresh.js", "two", hash)
+        assertEquals("two", files.read("fresh.js").second)
+    }
+
+    @Test
+    fun theFileIsHandedOverOnlyWhenTheWriteIsSureToHappen() {
+        val files = files()
+        val seen = mutableListOf<String>()
+        val before: (java.io.File) -> Unit = { seen += if (it.isFile) it.readText() else "(none)" }
+        val original = files.read("main.js").second
+        val hash = ProjectFiles.sha256(files.resolve("main.js").readBytes())
+
+        assertRefused { files.write("main.js", "x", null, before) }
+        assertRefused { files.write("main.js", "x", "0000", before) }
+        assertRefused { files.edit("main.js", "not there", "x", null, before) }
+        assertRefused { files.edit("main.js", "onMessage", "x", "0000", before) }
+        assertTrue(seen.isEmpty())
+
+        files.write("main.js", "rewritten", hash, before)
+        files.edit("main.js", "rewritten", "edited", null, before)
+        files.write("fresh.js", "new", null, before)
+        assertEquals(listOf(original, "rewritten", "(none)"), seen)
+    }
+
+    @Test
     fun searchesTextFiles() {
         val files = files()
         val hits = files.search("onmessage", isRegex = false, ignoreCase = true, limit = 10)

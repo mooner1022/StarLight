@@ -11,6 +11,7 @@ import android.service.notification.StatusBarNotification
 import dev.mooner.starlight.api.api2.Api2Command
 import dev.mooner.starlight.api.api2.Api2Message
 import dev.mooner.starlight.api.api2.BotManagerApi.Bot
+import dev.mooner.starlight.listener.chat.SessionManager
 import dev.mooner.starlight.plugincore.chat.Message
 import dev.mooner.starlight.plugincore.language.CodeGenerator
 import dev.mooner.starlight.plugincore.project.Project
@@ -19,6 +20,7 @@ import dev.mooner.starlight.plugincore.project.event.ProjectEventManager
 import dev.mooner.starlight.plugincore.translation.Locale
 import dev.mooner.starlight.plugincore.translation.translate
 import kotlin.reflect.KClass
+import dev.mooner.starlight.script.chat.ChatWaits
 
 /** The names of MessengerBot R's API2 events, which scripts listen for with `bot.on(…)`. */
 object Api2Events {
@@ -54,10 +56,17 @@ abstract class Api2Event: ProjectEvent() {
     /** Calls [deliver] with the project's bot, on its workers, if the script has a bot. */
     override fun dispatch(project: Project, args: Array<out Any>, onFailure: (Throwable) -> Unit) {
         val bot = Bot.find(project) ?: return
-        project.runEvent({ deliver(bot, args) }, onFailure)
+        project.runEvent({
+            // Decided as it is about to run, as the call gate decides for onMessage.
+            if (!isHeldBack(project, args))
+                deliver(bot, args)
+        }, onFailure)
     }
 
     protected abstract fun deliver(bot: Bot, args: Array<out Any>)
+
+    /** Whether the event is kept from the listeners: a message a script waits for as an answer (`Chat.waitFor`). */
+    protected open fun isHeldBack(project: Project, args: Array<out Any>): Boolean = false
 
     // onApi2Message beside StarLight's onMessage: in Rhino, a top-level function of an event's name is called as that
     // event, so the listener would run twice.
@@ -110,14 +119,18 @@ class Api2MessageEvent: Api2Event() {
 
     override fun deliver(bot: Bot, args: Array<out Any>) =
         bot.deliverMessage(args[0] as Message)
+
+    override fun isHeldBack(project: Project, args: Array<out Any>): Boolean =
+        ChatWaits.claim(project, args[0] as Message)
 }
 
 /**
  * A chat message starting with the bot's command prefix arrived; the bot's `command` listeners receive it.
  *
- * Nothing is called until the script sets a prefix with `bot.setCommandPrefix(…)`, and a word must follow the prefix:
- * with the prefix `/`, the message `/help me` is the command `help` with the argument `me`, while `/` alone isn't a
- * command. The message reaches `message` listeners as well.
+ * A message is a command when its first word, up to the first space, starts with the prefix set with
+ * `bot.setCommandPrefix(…)`: with the prefix `/`, the message `/help me` is the command `help` with the argument `me`.
+ * The prefix is `""` until the script sets one, which makes every message a command, as in MessengerBot R. The message
+ * reaches `message` listeners as well.
  *
  * @param msg The command: the message's members, plus its command name and arguments.
  * @see guide:events#api2-listeners
@@ -139,6 +152,9 @@ class Api2CommandEvent: Api2Event() {
 
     override fun deliver(bot: Bot, args: Array<out Any>) =
         bot.deliverCommand(args[0] as Message)
+
+    override fun isHeldBack(project: Project, args: Array<out Any>): Boolean =
+        ChatWaits.claim(project, args[0] as Message)
 }
 
 /**
@@ -148,7 +164,8 @@ class Api2CommandEvent: Api2Event() {
  * Every app's notifications count, except StarLight's own. The setting is off by default.
  *
  * @param sbn The notification, as Android's `StatusBarNotification`.
- * @param sessionManager Always `null`: StarLight has no MessengerBot R `SessionManager`.
+ * @param sessionManager The notification's session: its reply and mark-as-read actions, and `bindSession` to make a
+ * room of it replyable.
  * @see guide:events#notification-events
  */
 class Api2NotificationPostedEvent: Api2Event() {
@@ -162,14 +179,13 @@ class Api2NotificationPostedEvent: Api2Event() {
     override val constant = "NOTIFICATION_POSTED"
     override val listenerName = Api2Events.NOTIFICATION_POSTED
     override val parameters = "sbn, sessionManager"
-    override val argTypes: Array<CodeGenerator.Argument<*>> = arrayOf("sbn" typedAs StatusBarNotification::class)
-    override val scriptArguments: Array<CodeGenerator.Argument<*>> = arrayOf(
+    override val argTypes: Array<CodeGenerator.Argument<*>> = arrayOf(
         "sbn" typedAs StatusBarNotification::class,
-        "sessionManager" typedAs Nothing::class,
+        "sessionManager" typedAs SessionManager::class,
     )
 
     override fun deliver(bot: Bot, args: Array<out Any>) =
-        bot.deliver(Api2Events.NOTIFICATION_POSTED, args[0], null)
+        bot.deliver(Api2Events.NOTIFICATION_POSTED, args[0], args[1])
 }
 
 /**

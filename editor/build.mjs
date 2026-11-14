@@ -1,4 +1,4 @@
-import { build, transform } from "esbuild";
+import { build } from "esbuild";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -82,10 +82,3 @@ await build({
     outfile: join(out, "editor.js"),
     legalComments: "none",
 });
-
-const jshint = await transform(readFileSync(join(root, "node_modules/jshint/dist/jshint.js"), "utf8"), {
-    minify: true,
-    target: "chrome90",
-    legalComments: "none",
-});
-writeFileSync(join(out, "jshint.js"), jshint.code);

@@ -1654,6 +1654,26 @@ public final class dev/mooner/starlight/plugincore/project/ProjectButton$Compani
 	public final fun serializer ()Lkotlinx/serialization/KSerializer;
 }
 
+public abstract interface class dev/mooner/starlight/plugincore/project/ProjectCallGate {
+	public static final field Companion Ldev/mooner/starlight/plugincore/project/ProjectCallGate$Companion;
+	public abstract fun allows (Ldev/mooner/starlight/plugincore/project/Project;Ljava/lang/String;[Ljava/lang/Object;)Z
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectCallGate$Companion {
+	public final fun getCurrent ()Ldev/mooner/starlight/plugincore/project/ProjectCallGate;
+	public final fun setCurrent (Ldev/mooner/starlight/plugincore/project/ProjectCallGate;)V
+}
+
+public abstract interface class dev/mooner/starlight/plugincore/project/ProjectErrorListener {
+	public static final field Companion Ldev/mooner/starlight/plugincore/project/ProjectErrorListener$Companion;
+	public abstract fun onEventError (Ldev/mooner/starlight/plugincore/project/Project;Ljava/lang/Object;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
+}
+
+public final class dev/mooner/starlight/plugincore/project/ProjectErrorListener$Companion {
+	public final fun getCurrent ()Ldev/mooner/starlight/plugincore/project/ProjectErrorListener;
+	public final fun setCurrent (Ldev/mooner/starlight/plugincore/project/ProjectErrorListener;)V
+}
+
 public final class dev/mooner/starlight/plugincore/project/ProjectImpl : dev/mooner/starlight/plugincore/project/Project {
 	public static final field Companion Ldev/mooner/starlight/plugincore/project/ProjectImpl$Companion;
 	public fun activeJobs ()I

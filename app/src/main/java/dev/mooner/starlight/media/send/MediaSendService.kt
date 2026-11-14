@@ -11,6 +11,7 @@ import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.media.media.Downloader
 import dev.mooner.starlight.media.media.MediaCache
 import dev.mooner.starlight.media.media.MediaPreparer
+import dev.mooner.starlight.media.room.Destination
 import dev.mooner.starlight.media.room.DirectRoom
 import dev.mooner.starlight.media.room.RoomRegistry
 import dev.mooner.starlight.media.room.RoomResolver
@@ -123,6 +124,98 @@ class MediaSendService(
                 future.completeExceptionally(SendException("Sending was stopped"))
         }
         return future
+    }
+
+    /**
+     * Starts sending [text] with [attachment] (from [KakaoTextAttachment.toJson], or null) to [target], or to the memo
+     * chat (나와의 채팅) when it is null, on the plugin's scope. KakaoTalk is started one send at a time, files and
+     * texts alike. The debug room shows the text itself.
+     *
+     * The future completes once KakaoTalk was started: KakaoTalk sends the text then, and says nothing back.
+     */
+    fun sendText(target: Destination?, text: String, attachment: String?, leaveTo: LeaveTo?, log: SendLog): CompletableFuture<SendOutcome> {
+        val future = CompletableFuture<SendOutcome>()
+        val job = scope.launch {
+            try {
+                future.complete(doSendText(target, text, attachment, leaveTo, log))
+            } catch (e: Throwable) {
+                future.completeExceptionally(e)
+                if (e is CancellationException)
+                    throw e
+            }
+        }
+        job.invokeOnCompletion { cause ->
+            if (cause != null)
+                future.completeExceptionally(SendException("Sending was stopped"))
+        }
+        return future
+    }
+
+    private suspend fun doSendText(target: Destination?, text: String, attachment: String?, leaveTo: LeaveTo?, log: SendLog): SendOutcome {
+        val startedAt = System.currentTimeMillis()
+        val settings = settings()
+        val label = target?.label ?: MEMO_CHAT_LABEL
+        var error: String? = null
+        var via: String? = null
+        try {
+            if (target is DirectRoom) {
+                withContext(Dispatchers.Main) { target.room.send(text) }
+                return SendOutcome(1, emptyList(), null)
+            }
+            val context = GlobalApplication.requireContext()
+            var sentAt = 0L
+            val route = sendLock.withLock {
+                val wait = lastSentAt + settings.sendIntervalMillis - System.currentTimeMillis()
+                if (wait > 0)
+                    delay(wait)
+                val route = try {
+                    withContext(Dispatchers.IO) {
+                        when (target) {
+                            is Target -> KakaoShare.shareText(context, target.channelId, text, attachment, target.userId)
+                            else      -> {
+                                KakaoShare.shareTextToMemo(context, text, attachment)
+                                null
+                            }
+                        }
+                    }
+                } catch (e: ActivityNotFoundException) {
+                    throw SendException("KakaoTalk is not installed or has no share screen")
+                }
+                sentAt = System.currentTimeMillis()
+                lastSentAt = sentAt
+                route
+            }
+            via = when (route) {
+                null, KakaoShare.Route.Direct -> null
+                is KakaoShare.Route.OtherUser -> "user ${route.userId}"
+                is KakaoShare.Route.Chooser   -> "chooser"
+            }
+            if (route is KakaoShare.Route.Chooser)
+                log.warn("$label: Android asks which KakaoTalk to use, so the text waits for a choice: ${route.reason}")
+            // KakaoTalk opens the room to send; the memo chat shows nothing, and leaving would close a chooser.
+            // Files sent just before may still be read, so leaving waits for them as well.
+            if (route != null && route !is KakaoShare.Route.Chooser)
+                leaveKakao(leaveTo ?: settings.leaveTo, LeaveTiming.AfterReadAndAtLeast(sentAt, TEXT_LEAVE_DELAY_MILLIS))
+            if (settings.logSends)
+                log.info("Sent a text to $label" + (via?.let { " via $it" } ?: ""))
+            return SendOutcome(1, emptyList(), via)
+        } catch (e: Throwable) {
+            error = e.message ?: e.toString()
+            throw e
+        } finally {
+            history.record(
+                SendHistory.Record(
+                    time = startedAt,
+                    project = log.projectName,
+                    room = label,
+                    files = if (error == null) 1 else 0,
+                    failed = if (error == null) 0 else 1,
+                    durationMillis = System.currentTimeMillis() - startedAt,
+                    error = error,
+                    via = via,
+                )
+            )
+        }
     }
 
     private suspend fun doSend(request: SendRequest, log: SendLog): SendOutcome {
@@ -278,6 +371,13 @@ class MediaSendService(
                         true
                     }
                     LeaveTiming.AfterRead -> awaitShareRead()
+                    is LeaveTiming.AfterReadAndAtLeast -> {
+                        // A chooser left waiting by files is covered by the text's room, and Android closes a
+                        // chooser started as a new task once it is covered: there is nothing left to keep open.
+                        awaitShareRead(waitForChoice = false)
+                        delay(timing.since + timing.millis - System.currentTimeMillis())
+                        true
+                    }
                 }
                 if (shouldLeave)
                     KakaoShare.leaveKakao(context, packageName)
@@ -288,12 +388,15 @@ class MediaSendService(
     /**
      * Waits until KakaoTalk has read the files of the latest share, plus [SendSettings.leaveGraceMillis], for at most
      * [SendSettings.leaveMaxWaitMillis] after KakaoTalk was opened. Returns false if the share waits for the user to
-     * pick a KakaoTalk and was never read: leaving would close the chooser.
+     * pick a KakaoTalk and was never read: leaving would close the chooser. With [waitForChoice] false, such a share
+     * isn't waited for.
      */
-    private suspend fun awaitShareRead(): Boolean {
+    private suspend fun awaitShareRead(waitForChoice: Boolean = true): Boolean {
         // A send still being prepared opens KakaoTalk once ready: that is the share to wait for.
         activeSends.first { it == 0 }
         val share = lastShare ?: return true
+        if (share.needsChoice && !waitForChoice)
+            return true
         val settings = settings()
         val limit = if (share.needsChoice) settings.tempRetentionMillis else settings.leaveMaxWaitMillis
         val readAt = share.watch.awaitRead(share.startedAt + limit - System.currentTimeMillis())
@@ -343,5 +446,11 @@ class MediaSendService(
 
     private companion object {
         const val TRASH_PREFIX = "outgoing-old-"
+
+        /** What the memo chat is called in logs and results. */
+        const val MEMO_CHAT_LABEL = "나와의 채팅"
+
+        /** How long KakaoTalk keeps a room open to send a shared text before it may be left. */
+        const val TEXT_LEAVE_DELAY_MILLIS = 1_500L
     }
 }

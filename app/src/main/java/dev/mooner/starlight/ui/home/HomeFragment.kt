@@ -36,6 +36,7 @@ import dev.mooner.starlight.plugincore.widget.WidgetSpan
 import dev.mooner.starlight.ui.common.Sheet
 import dev.mooner.starlight.ui.common.showSheet
 import dev.mooner.starlight.utils.LAYOUT_TABLET
+import dev.mooner.starlight.utils.callPlugin
 import dev.mooner.starlight.utils.configStruct
 import dev.mooner.starlight.utils.getColorCompat
 import dev.mooner.starlight.utils.isDevMode
@@ -131,11 +132,19 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
         val grid = binding.widgetGrid
         val card = layoutInflater.inflate(R.layout.card_widget_grid, grid, false)
         val container = card.findViewById<FrameLayout>(R.id.view)
-        val widget = HomeWidget(instanceId, definition, card, container, definition.newController(), settings)
+        // A widget of a plugin may fail as it is made. Its card then says so, as when it fails later: left to throw,
+        // it would take the home tab down each time it opens, since the layout it is in is saved.
+        var failure: Throwable? = null
+        val controller = callPlugin({ failure = it }) { definition.newController() }
+        val widget = HomeWidget(instanceId, definition, card, container, controller, settings)
         widgets[card] = widget
         grid.addWidget(card, definition.spanSpec, span, definition.isAutoHeight)
 
-        widget.controller!!.apply {
+        if (controller == null) {
+            showWidgetFailure(widget, failure ?: IllegalStateException("The widget has no controller"))
+            return card
+        }
+        controller.apply {
             onError = { e -> card.post { onWidgetError(widget, e) } }
             create(container, definition.spanSpec.resolve(span, grid.columns), isPreview = false, settings = settings)
             attach(viewLifecycleOwner.lifecycle)
@@ -155,14 +164,19 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
         if (_binding == null || widgets[widget.card] !== widget)
             return
         val controller = widget.controller ?: return
+        widget.controller = null
+        controller.destroy()
+        showWidgetFailure(widget, throwable)
+    }
+
+    /** Logs why [widget] failed and puts the error card in its place. */
+    private fun showWidgetFailure(widget: HomeWidget, throwable: Throwable) {
         logger.error(throwable) {
             translate {
                 Locale.ENGLISH { "Widget '${widget.definition.id}' failed: " }
                 Locale.KOREAN  { "위젯 '${widget.definition.id}' 실행 중 오류 발생: " }
             }
         }
-        widget.controller = null
-        controller.destroy()
         widget.container.removeAllViews()
         layoutInflater.inflate(R.layout.widget_error, widget.container, true)
     }
@@ -218,7 +232,10 @@ class HomeFragment : Fragment(), WidgetGridLayout.Listener {
 
     private fun showWidgetSettings(card: View) {
         val widget = widgets[card] ?: return
-        val form = widget.definition.createSettingsForm(widget.settings) ?: return
+        // The form is the widget's own code.
+        val form = callPlugin({ showWidgetFailure(widget, it) }) {
+            widget.definition.createSettingsForm(widget.settings)
+        } ?: return
         requireContext().showSheet {
             lifecycleOwner = viewLifecycleOwner
             title = widget.definition.name

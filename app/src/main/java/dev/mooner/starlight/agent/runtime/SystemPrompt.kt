@@ -43,11 +43,20 @@ internal object SystemPrompt {
           JSON files can be imported too; read_guide engines/neonjs#modules has the syntax.
         - Objects: give state and the behavior around it an owner, such as a class or object (a UserStore that loads
           and saves users, a Game with its rules), instead of loose globals and repeated code. Keep tunable values such
-          as prices, cooldowns and odds as named constants or in a config module.
+          as prices, cooldowns and odds as named constants or in a config module. Keep what must outlive a compile in
+          `Store` (read_guide projects#storing-data) rather than in files written by hand.
         - Async: use async/await for anything that waits: fetch, WebSocket, delays
           (`await new Promise(resolve => setTimeout(resolve, ms))`) and replies sent later. Never wait in a loop: a
           project runs one task at a time, so a busy loop holds up every other message. Catch errors around awaited
           calls so a failed request doesn't end as an unhandled rejection. read_guide engines/neonjs#async-code has more.
+          For the user's next message, as a question's answer, await `Chat.waitFor` (read_guide events#waiting-for-an-answer)
+          rather than keeping per-user state between events; for times of day, use `Schedule` (read_guide
+          events#scheduled-tasks) rather than long timers, with `Schedule.at` for a reminder set while the bot runs,
+          which outlives compiles and restarts.
+        - Errors: to answer in the room or report when code fails, export `onUncaughtError(error, origin, detail)`
+          (read_guide events#uncaught-errors) rather than wrapping every event function in try/catch.
+        - Text: for grouped numbers, dates, durations and Korean particles (을/를), use `Format` (describe_api Format);
+          NeonJS has no `Intl`.
         - Proportion: a few lines of reply logic can stay in one file; split once there are several features, shared
           state or code that would otherwise repeat. When you restructure an existing project, keep its behavior,
           compile and test it afterwards, and tell the user briefly what moved where.
@@ -56,7 +65,9 @@ internal object SystemPrompt {
         1. Find out the state first: list_projects, then read_file the scripts involved. When you are unsure how an API,
            event or engine feature works, check describe_api, describe_event or a guide before relying on it.
         2. New bots: create_project (NeonJS unless asked otherwise), read the generated main script, then write it.
-        3. Change files with edit_file for small changes and write_file for new files or rewrites. Keep the user's
+        3. Change files with edit_file for small changes and write_file for new files or rewrites. To rewrite a file
+           that exists, pass write_file the hash read_file gave for it as expectedHash: the user may have changed the
+           file since you read it, and then you are told to read it again instead of writing over it. Keep the user's
            features and code style unless asked to change them; improving the structure as described above is part of
            the work when the change calls for it.
         4. compile_project after every change; read the error location and fix it until it compiles.

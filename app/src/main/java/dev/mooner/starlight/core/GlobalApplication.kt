@@ -68,6 +68,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         //Logger.v(T, "Application onCreate() called")
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         isStartupAborted = false // explicit reset
+        blockedReport = null
         isSafeStart = false
         ConfigDSL.registerDialogProvider(SheetDialogProvider)
         ConfigDSL.registerDevModeProvider { GlobalConfig.category("dev").getBoolean("dev_mode", false) }
@@ -108,6 +109,7 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         if (verdict is CrashGuard.Verdict.Blocked) {
             println("The same crash keeps coming back, aborting launch..")
             isStartupAborted = true
+            blockedReport = verdict.crash.report
             startActivity(FatalErrorActivity.intent(this, verdict.crash.report, blocked = true)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return
@@ -208,6 +210,13 @@ class GlobalApplication: Application(), LifecycleEventObserver {
         fun requireContext(): Context = mContext!!
 
         var isStartupAborted: Boolean = false
+            private set
+
+        /**
+         * The crash report of a start that was aborted. The screen showing it is opened as the process starts, which
+         * Android doesn't allow from the background, and the user can close it: the splash opens it again from this.
+         */
+        var blockedReport: String? = null
             private set
 
         /** This process started without plugins and without compiling the projects, as the user chose after a crash. */

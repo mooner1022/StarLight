@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The last row of the conversation list when it holds more than are shown. -->
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_agent_row"
+    android:fontFamily="@font/wantedsans_medium"
+    android:gravity="center"
+    android:minHeight="48dp"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="12dp"
+    android:textColor="@color/agent_text_muted"
+    android:textSize="14sp"
+    tools:text="Show 17 earlier conversations"/>
