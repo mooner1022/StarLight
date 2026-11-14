@@ -35,6 +35,14 @@ class SendOptionsTest {
     }
 
     @Test
+    fun `the saved choice goes home unless stay or StarLight was saved`() {
+        assertEquals(LeaveTo.Home, LeaveTo.ofSetting(null))
+        assertEquals(LeaveTo.Home, LeaveTo.ofSetting("home"))
+        assertEquals(LeaveTo.Stay, LeaveTo.ofSetting("stay"))
+        assertEquals(LeaveTo.StarLight, LeaveTo.ofSetting("starlight"))
+    }
+
+    @Test
     fun mistakesAreReported() {
         assertTrue(failure { SendOptions.read(15000.0) }.contains("must be an object"))
         assertTrue(failure { SendOptions.read(mapOf("filename" to "a")) }.contains("Unknown option 'filename'"))
