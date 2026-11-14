@@ -29,7 +29,7 @@ class DtsRendererTest {
         assertHas(api("BotManager"),
             "declare const BotManager: {",
             "getCurrentBot(): Bot;",
-            "getRooms(packageName?: string | null): JavaList<Api2Room>;",
+            "getRooms(packageName?: any): JavaList<Api2Room>;",
             "interface Bot {",
             "interface JavaList<T>",
             // A type alias is rendered as the function type it stands for.
@@ -66,7 +66,7 @@ class DtsRendererTest {
         val message = event("starlight.api2.message")
         assertHas(message, "type MessageListener = (msg: Api2Message) => void;", "interface Api2Message {")
         assertTrue(!message.contains("declare function"))
-        assertHas(event("starlight.api2.notification_posted"), "sessionManager: null")
+        assertHas(event("starlight.api2.notification_posted"), "sessionManager: SessionManager) => void")
     }
 
     @Test
@@ -79,6 +79,6 @@ class DtsRendererTest {
         api("Log")
         api("Device")
         // A Java interface with one method takes a JS function.
-        assertHas(api("Api"), "UIThread(func: () => any, ")
+        assertHas(api("Api"), "UIThread(func: (() => any) | null, ")
     }
 }

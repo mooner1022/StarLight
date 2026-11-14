@@ -1,48 +1,15 @@
 package dev.mooner.starlight.api
 
-import dev.mooner.starlight.api.api2.Api2Command
 import dev.mooner.starlight.api.api2.EventApi
 import dev.mooner.starlight.listener.event.Api2CommandEvent
 import dev.mooner.starlight.listener.event.Api2MessageEvent
 import dev.mooner.starlight.listener.event.Api2NotificationRemovedEvent
 import dev.mooner.starlight.plugincore.language.DefaultJSCodeGenerator
-import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** API2 as MessengerBot R documents it: commands, event names, and the starting code. */
+/** API2 as MessengerBot R has it: event names and the starting code; command parsing is in Api2CommandParseTest. */
 class Api2Test {
-
-    @Test
-    fun `a command is the word after the prefix, and its arguments the words after that`() {
-        val (command, args) = Api2Command.parse("@add 4 7", "@")!!
-        assertEquals("add", command)
-        assertArrayEquals(arrayOf("4", "7"), args)
-    }
-
-    @Test
-    fun `extra spaces don't make empty arguments`() {
-        val (command, args) = Api2Command.parse("/angles  30   60 90 ", "/")!!
-        assertEquals("angles", command)
-        assertArrayEquals(arrayOf("30", "60", "90"), args)
-    }
-
-    @Test
-    fun `a longer prefix works the same`() {
-        val (command, args) = Api2Command.parse("!!help", "!!")!!
-        assertEquals("help", command)
-        assertArrayEquals(emptyArray<String>(), args)
-    }
-
-    @Test
-    fun `no prefix, another start or a prefix alone isn't a command`() {
-        assertNull(Api2Command.parse("@help", null))
-        assertNull(Api2Command.parse("hello", "@"))
-        assertNull(Api2Command.parse("help@", "@"))
-        assertNull(Api2Command.parse("@", "@"))
-        assertNull(Api2Command.parse("@   ", "@"))
-    }
 
     @Test
     fun `event names are MessengerBot R's`() {

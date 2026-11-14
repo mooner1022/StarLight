@@ -148,8 +148,8 @@ class ChatApi: Api<ChatApi.Chat>() {
         private fun targetOf(target: Any): ChatWaits.Target =
             when (target) {
                 is Message     -> ChatWaits.Target(target.room.id, target.room.name, ChatWaits.senderOf(target))
-                is Api2Message -> ChatWaits.Target(target.channelId?.toString(), target.room,
-                    target.author.hash?.let { "id:$it" } ?: "name:${target.author.name}")
+                // By the message it wraps: its channelId is 0 for a room without a numeric ID, the debug room's included.
+                is Api2Message -> targetOf(target.source)
                 is ChatRoom    -> ChatWaits.Target(target.id, target.name, null)
                 is Api2Room    -> ChatWaits.Target(target.channelId?.toString(), target.name, null)
                 else           -> throw IllegalArgumentException(

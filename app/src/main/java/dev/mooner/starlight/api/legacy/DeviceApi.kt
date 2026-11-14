@@ -9,6 +9,7 @@ import android.os.BatteryManager
 import android.os.Build
 import android.os.PowerManager
 import android.os.PowerManager.WakeLock
+import dev.mooner.starlight.api.msgbot.ScriptArgs
 import dev.mooner.starlight.core.GlobalApplication
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
@@ -30,18 +31,17 @@ class DeviceApi: Api<DeviceApi.Device>() {
     override fun getInstance(project: Project): Any = Device::class.java
 
     /**
-     * The `Device` global: the device's Android version, battery, memory and power state, and a wake lock; a global in
-     * legacy and API2 projects.
+     * The `Device` global: the device's Android version, battery, memory, storage and power state, and a wake lock; a
+     * global in legacy and API2 projects.
      *
-     * Its members are static: use them on `Device` itself. The battery members read `getBatteryIntent()` and throw if the
-     * system has none.
-     *
-     * MessengerBot's `getApiLevel`, `getBatteryTemp`, `getConnectedNetworkType`, `getMaxMemory`, `getModelName`,
-     * `getTotalMemory` and `getTotalStorageSpace` are missing.
+     * Its members are static: use them on `Device` itself. The battery members give `-1` (and `getPlugType()` gives
+     * `"unknown"`) when the system has no battery information.
      */
     class Device {
 
         companion object {
+
+            private const val DEFAULT_TAG = "dev.mooner.starlight:api_wakelock_tag"
 
             private var wakeLock: WakeLock? = null
 
@@ -55,8 +55,8 @@ class DeviceApi: Api<DeviceApi.Device>() {
                 GlobalApplication.requireContext()
                     .registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
 
-            private fun getPluggedState(): Int =
-                getBatteryIntent()!!.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)
+            private fun batteryExtra(name: String): Int =
+                getBatteryIntent()?.getIntExtra(name, -1) ?: -1
 
             /**
              * A new `android.os.Build` object.
@@ -82,61 +82,56 @@ class DeviceApi: Api<DeviceApi.Device>() {
                 Build.VERSION.RELEASE
 
             /**
-             * The device's product name, `android.os.Build.PRODUCT`.
-             *
-             * Despite its name, it isn't the brand that MessengerBot returns: `android.os.Build.BRAND` holds that.
+             * The device's brand, `android.os.Build.BRAND`, such as `"samsung"`.
              */
             @JvmStatic
             fun getPhoneBrand(): String =
-                Build.PRODUCT
+                Build.BRAND
 
             /**
-             * The device's model name, `android.os.Build.MODEL`.
+             * The device's code name, `android.os.Build.DEVICE`, such as `"dm1q"`.
+             *
+             * It isn't the market name of the model, which `android.os.Build.MODEL` holds.
              */
             @JvmStatic
             fun getPhoneModel(): String =
-                Build.MODEL
+                Build.DEVICE
 
             /**
-             * Whether the device is plugged into an AC charger or USB.
+             * Whether the device is plugged into an AC charger, USB or a wireless charger.
              *
-             * Wireless charging counts as not charging.
+             * It is `false` when the system has no battery information.
              */
             @JvmStatic
             fun isCharging(): Boolean {
-                val plugged = getPluggedState()
-                return plugged == BatteryManager.BATTERY_PLUGGED_AC || plugged == BatteryManager.BATTERY_PLUGGED_USB
+                val plugged = batteryExtra(BatteryManager.EXTRA_PLUGGED)
+                return plugged == BatteryManager.BATTERY_PLUGGED_AC ||
+                    plugged == BatteryManager.BATTERY_PLUGGED_USB ||
+                    plugged == BatteryManager.BATTERY_PLUGGED_WIRELESS
             }
 
             /**
-             * What the device is plugged into: `"acc"` (an AC charger), `"usb"`, `"wireless"` or `"unknown"`.
+             * What the device is plugged into: `"ac"` (an AC charger), `"usb"`, `"wireless"` or `"unknown"`.
              *
-             * An AC charger gives `"acc"`, where MessengerBot gives `"ac"`. `"unknown"` also covers not being plugged
-             * in, and docks.
+             * `"unknown"` also covers not being plugged in, and docks.
              */
             @JvmStatic
-            fun getPlugType(): String = when(getPluggedState()) {
-                BatteryManager.BATTERY_PLUGGED_AC -> "acc"
+            fun getPlugType(): String = when (batteryExtra(BatteryManager.EXTRA_PLUGGED)) {
+                BatteryManager.BATTERY_PLUGGED_AC       -> "ac"
+                BatteryManager.BATTERY_PLUGGED_USB      -> "usb"
                 BatteryManager.BATTERY_PLUGGED_WIRELESS -> "wireless"
-                BatteryManager.BATTERY_PLUGGED_USB -> "usb"
-                else -> "unknown"
+                else                                    -> "unknown"
             }
 
             /**
-             * The battery's charge, as a percentage from `0` to `100`.
+             * The battery's level, as the system reports it: a whole number that is a percentage when the battery's
+             * scale is 100, as it is on nearly every device.
              *
-             * It can have a fraction, as it is computed from the battery's level and scale.
+             * @return `-1` if the system doesn't say.
              */
             @JvmStatic
-            fun getBatteryLevel(): Number {
-                val intent = getBatteryIntent()!!
-                with(intent) {
-                    val level = getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-                    val scale = getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-
-                    return (level * 100) / scale.toFloat()
-                }
-            }
+            fun getBatteryLevel(): Int =
+                batteryExtra(BatteryManager.EXTRA_LEVEL)
 
             /**
              * The battery's health, as a `BatteryManager.BATTERY_HEALTH_*` constant.
@@ -145,25 +140,24 @@ class DeviceApi: Api<DeviceApi.Device>() {
              * `-1` if the system doesn't say.
              */
             @JvmStatic
-            fun getBatteryHealth(): Number =
-                getBatteryIntent()!!.getIntExtra(BatteryManager.EXTRA_HEALTH, -1)
+            fun getBatteryHealth(): Int =
+                batteryExtra(BatteryManager.EXTRA_HEALTH)
 
             /**
-             * The battery's temperature in hundredths of a degree Celsius, so `3150` is 31.5 °C.
+             * The battery's temperature in tenths of a degree Celsius, so `315` is 31.5 °C.
              *
-             * This is ten times MessengerBot's value, which is in tenths of a degree (`315` for 31.5 °C). It is `-10`
-             * if the system doesn't say.
+             * @return `-1` if the system doesn't say.
              */
             @JvmStatic
-            fun getBatteryTemperature(): Number =
-                getBatteryIntent()!!.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1) * 10f
+            fun getBatteryTemperature(): Int =
+                batteryExtra(BatteryManager.EXTRA_TEMPERATURE)
 
             /**
              * The battery's voltage in millivolts, or `-1` if the system doesn't say.
              */
             @JvmStatic
-            fun getBatteryVoltage(): Number =
-                getBatteryIntent()!!.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1)
+            fun getBatteryVoltage(): Int =
+                batteryExtra(BatteryManager.EXTRA_VOLTAGE)
 
             /**
              * The battery's charging status, as a `BatteryManager.BATTERY_STATUS_*` constant.
@@ -171,12 +165,8 @@ class DeviceApi: Api<DeviceApi.Device>() {
              * `1` unknown, `2` charging, `3` discharging, `4` not charging, `5` full; `-1` if the system doesn't say.
              */
             @JvmStatic
-            fun getBatteryStatus(): Number =
-                getBatteryIntent()!!.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
-
-            /*
-             * Undocumented APIs.. fuck you
-             */
+            fun getBatteryStatus(): Int =
+                batteryExtra(BatteryManager.EXTRA_STATUS)
 
             private fun getPowerManager() =
                 GlobalApplication.requireContext()
@@ -186,24 +176,29 @@ class DeviceApi: Api<DeviceApi.Device>() {
              * Acquires a wake lock, which keeps the device awake as [levelAndFlags] asks.
              *
              * StarLight holds one wake lock for all projects: a new call first releases the one acquired before, if it
-             * is still held. Without [timeout] the wake lock is held until [releaseWakeLock]; holding one for long
-             * drains the battery.
+             * is still held. Without a [timeout], or with one of `0` or less, the wake lock is held until
+             * [releaseWakeLock]; holding one for long drains the battery.
              *
-             * @param levelAndFlags A `PowerManager` wake lock level, such as `1` (`PARTIAL_WAKE_LOCK`) to keep the CPU
-             * running, optionally combined with its flags using `|`.
-             * @param tag The wake lock's name, shown in the system's battery statistics.
-             * @param timeout How long to hold it, in milliseconds; held until released when left out.
+             * @param levelAndFlags A `PowerManager` wake lock level, such as `1` (`PARTIAL_WAKE_LOCK`, the default) to
+             * keep the CPU running, optionally combined with its flags using `|`. Anything but a number is `1`.
+             * @param tag The wake lock's name, shown in the system's battery statistics. Anything but text is
+             * StarLight's default name.
+             * @param timeout How long to hold it, in milliseconds; held until released when left out. Anything but a
+             * number is no timeout.
              */
             @JvmStatic
             @JvmOverloads
             @SuppressLint("WakelockTimeout")
             @Synchronized
-            fun acquireWakeLock(levelAndFlags: Int, tag: String = "dev.mooner.starlight:api_wakelock_tag", timeout: Long? = null) {
+            fun acquireWakeLock(levelAndFlags: Any? = null, tag: Any? = null, timeout: Any? = null) {
+                val level = ScriptArgs.int(levelAndFlags, "levelAndFlags", PowerManager.PARTIAL_WAKE_LOCK)
+                val name = if (tag is CharSequence) tag.toString() else DEFAULT_TAG
+                val millis = ScriptArgs.long(timeout, "timeout", -1L)
                 wakeLock?.takeIf { it.isHeld }?.release()
                 // Not reference-counted, so that releasing one whose timeout just ended does nothing instead of throwing.
-                val lock = getPowerManager().newWakeLock(levelAndFlags, tag).apply { setReferenceCounted(false) }
+                val lock = getPowerManager().newWakeLock(level, name).apply { setReferenceCounted(false) }
                 wakeLock = lock
-                if (timeout != null) lock.acquire(timeout) else lock.acquire()
+                if (millis > 0) lock.acquire(millis) else lock.acquire()
             }
 
             /**
@@ -212,13 +207,14 @@ class DeviceApi: Api<DeviceApi.Device>() {
              * Nothing happens when no wake lock is held: none was acquired, it was released already, or its timeout
              * ended.
              *
-             * @param flags `0` (the default), or `1` (`PowerManager.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY`).
+             * @param flags `0` (the default), or `1` (`PowerManager.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY`). Anything but
+             * a number is `0`.
              */
             @JvmStatic
             @JvmOverloads
             @Synchronized
-            fun releaseWakeLock(flags: Int = 0) {
-                wakeLock?.takeIf { it.isHeld }?.release(flags)
+            fun releaseWakeLock(flags: Any? = null) {
+                wakeLock?.takeIf { it.isHeld }?.release(ScriptArgs.int(flags, "flags", 0))
             }
 
             /**
@@ -227,34 +223,56 @@ class DeviceApi: Api<DeviceApi.Device>() {
              * It is `Runtime.freeMemory()`: not the device's free memory, and the heap can still grow.
              */
             @JvmStatic
-            fun getFreeMemory(): Long {
-                return Runtime.getRuntime().freeMemory()
-            }
+            fun getFreeMemory(): Long =
+                Runtime.getRuntime().freeMemory()
+
+            /**
+             * The size, in bytes, of the heap StarLight's runtime has reserved so far.
+             *
+             * It is `Runtime.totalMemory()`: not the device's memory, and the heap can still grow.
+             */
+            @JvmStatic
+            fun getTotalMemory(): Long =
+                Runtime.getRuntime().totalMemory()
 
             /**
              * The unallocated space, in bytes, of the storage that holds [path].
              *
              * @param path An absolute path on the storage to measure.
              * @return `0` if [path] doesn't exist.
+             * @throws IllegalArgumentException `"path must be a string"` when [path] is `null` or `undefined`.
              */
             @JvmStatic
-            fun getFreeStorageSpace(path: String): Long {
-                return File(path).freeSpace
-            }
+            fun getFreeStorageSpace(path: Any?): Long =
+                File(ScriptArgs.string(path, "path")).freeSpace
 
             /**
-             * The name (SSID) of the Wi-Fi network the device is connected to.
+             * The size, in bytes, of the storage that holds [path].
              *
-             * Don't rely on it: StarLight doesn't declare the Wi-Fi state permission Android requires for this. Even
-             * with it, Android hides the name from apps without the location permission, which StarLight lacks too.
-             *
-             * @throws SecurityException As StarLight lacks the `ACCESS_WIFI_STATE` permission.
+             * @param path An absolute path on the storage to measure.
+             * @return `0` if [path] doesn't exist.
+             * @throws IllegalArgumentException `"path must be a string"` when [path] is `null` or `undefined`.
              */
             @JvmStatic
-            fun getWifiName(): String {
-                val manager = GlobalApplication.requireContext().getSystemService(Context.WIFI_SERVICE) as WifiManager
-                val connInfo = manager.connectionInfo
-                return connInfo.ssid
+            fun getTotalStorageSpace(path: Any?): Long =
+                File(ScriptArgs.string(path, "path")).totalSpace
+
+            /**
+             * The name (SSID) of the Wi-Fi network the device is connected to, with the double quotes Android puts
+             * around it.
+             *
+             * Android gives `"<unknown ssid>"` when the device isn't connected, and also when the app lacks the
+             * location permission, which StarLight doesn't ask for.
+             *
+             * @return `null` if the device has no Wi-Fi information.
+             */
+            @JvmStatic
+            @SuppressLint("MissingPermission")
+            fun getWifiName(): String? {
+                val manager = GlobalApplication.requireContext().applicationContext
+                    .getSystemService(Context.WIFI_SERVICE) as WifiManager?
+                @Suppress("DEPRECATION")
+                return manager?.connectionInfo?.ssid
             }
 
             /**

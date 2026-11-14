@@ -18,16 +18,21 @@ import androidx.core.app.NotificationCompat.EXTRA_TITLE
 import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.listener.chat.ChatRoomImpl
+import dev.mooner.starlight.listener.chat.ChatSessions
+import dev.mooner.starlight.listener.chat.RoomKey
+import dev.mooner.starlight.listener.chat.SessionManager
 import dev.mooner.starlight.listener.event.Api2CommandEvent
 import dev.mooner.starlight.listener.event.Api2MessageEvent
 import dev.mooner.starlight.listener.event.Api2NotificationPostedEvent
 import dev.mooner.starlight.listener.event.Api2NotificationRemovedEvent
 import dev.mooner.starlight.listener.event.LegacyEvent
 import dev.mooner.starlight.listener.event.OnNotificationPostedEvent
+import dev.mooner.starlight.listener.event.OnNotificationRemovedEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageDeleteEvent
 import dev.mooner.starlight.listener.event.ProjectOnMessageEvent
 import dev.mooner.starlight.listener.legacy.ImageDB
 import dev.mooner.starlight.listener.legacy.Replier
+import dev.mooner.starlight.listener.legacy.ReplierOrigin
 import dev.mooner.starlight.listener.specs.ParserSpecPolicy
 import dev.mooner.starlight.plugincore.Session
 import dev.mooner.starlight.plugincore.chat.ChatRoom
@@ -50,6 +55,7 @@ import dev.mooner.starlight.ui.settings.notifications.RuleData
 import dev.mooner.starlight.utils.decodeIfNotBlank
 import dev.mooner.starlight.utils.getKakaoTalkVersion
 import kotlinx.coroutines.*
+import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import dev.mooner.starlight.script.chat.ChatWaits
 
@@ -57,6 +63,9 @@ private val LOG = LoggerFactory.logger {  }
 
 private typealias RoomID   = String
 private typealias RoomName = String
+
+/** The userHash of the legacy `response` in the debug room is "DEBUG ROOM"; here, for a message without a sender ID. */
+private const val NO_USER_HASH = ""
 
 @Suppress("DEPRECATION")
 class NotificationListener: NotificationListenerService() {
@@ -90,7 +99,7 @@ class NotificationListener: NotificationListenerService() {
     }
 
     /**
-     * Registers the rooms of the message notifications still shown, as the first rule's messages register theirs, so
+     * Registers the rooms of the message notifications still shown, as the messages of every rule register theirs, so
      * that scripts can send to them before a new message comes. Nothing else a message does happens: no events, and
      * rooms already known are kept as they are.
      */
@@ -99,29 +108,29 @@ class NotificationListener: NotificationListenerService() {
             var shown = 0
             var restored = 0
             try {
-                // As in handleMessage: only messages of the first rule register their rooms.
-                val rule = rules.firstOrNull()
-                    ?: return@launch
-                val notifications = activeNotifications.orEmpty().filter { sbn ->
-                    sbn.packageName == rule.packageName && sbn.userId == rule.userId &&
-                        sbn.notification.actions?.any { it.remoteInputs?.isNotEmpty() == true } == true
-                }
-                shown = notifications.size
-                val spec = ParserSpecManager.getSpecById(rule.parserSpecId)
-                    ?: return@launch
                 val ranking = runCatching { currentRanking }.getOrNull()
-                val rooms = RoomRestore.pick(
-                    shown = notifications,
-                    postTime = StatusBarNotification::getPostTime,
-                    parse = { sbn -> spec.parse(sbn.userId, applicationContext, sbn, sbn.notification.actions, ranking)?.room },
-                    isKnown = chatRooms::containsKey,
-                )
-                for (room in rooms)
-                    if (chatRooms.putIfAbsent(room.id, room) == null) {
-                        // A room of the same name that a message came from keeps the name.
-                        roomIdMap.putIfAbsent(room.name, room.id)
-                        restored++
+                val all = activeNotifications.orEmpty()
+                for (rule in rules.distinctBy { it.packageName to it.userId }) {
+                    val notifications = all.filter { sbn ->
+                        sbn.packageName == rule.packageName && sbn.userId == rule.userId &&
+                            sbn.notification.actions?.any { it.remoteInputs?.isNotEmpty() == true } == true
                     }
+                    shown += notifications.size
+                    val spec = ParserSpecManager.getSpecById(rule.parserSpecId)
+                        ?: continue
+                    val rooms = RoomRestore.pick(
+                        shown = notifications,
+                        postTime = StatusBarNotification::getPostTime,
+                        parse = { sbn ->
+                            spec.parse(sbn.userId, applicationContext, sbn, sbn.notification.actions, ranking)?.room
+                                ?.also { room -> (room as? ChatRoomImpl)?.userId = sbn.userId }
+                        },
+                        isKnown = ChatSessions.registry::hasRawId,
+                    )
+                    for (room in rooms)
+                        if (room is ChatRoomImpl && ChatSessions.registerIfAbsent(rule.packageName, room))
+                            restored++
+                }
             } catch (e: Exception) {
                 LOG.debug { "Couldn't restore rooms from the notifications shown: $e" }
             } finally {
@@ -135,8 +144,10 @@ class NotificationListener: NotificationListenerService() {
         if (!isGlobalPowerOn || !ApplicationSession.isInitComplete || sbn.packageName == packageName) return
 
         if (useNPostedEvent) {
-            Session.projectManager.fireEvent<OnNotificationPostedEvent>(sbn, onFailure = ::logEventFailure)
-            Session.projectManager.fireEvent<Api2NotificationPostedEvent>(sbn, onFailure = ::logEventFailure)
+            // One session manager per notification, as every project's listener gets the same one.
+            val sessionManager = SessionManager.of(sbn)
+            Session.projectManager.fireEvent<OnNotificationPostedEvent>(sbn, sessionManager, onFailure = ::logEventFailure)
+            Session.projectManager.fireEvent<Api2NotificationPostedEvent>(sbn, sessionManager, onFailure = ::logEventFailure)
         }
 
         sbn.notification.actions?.let { actions ->
@@ -155,10 +166,8 @@ class NotificationListener: NotificationListenerService() {
         if (isAutoRule && pkgName == PACKAGE_KAKAO_TALK)
             refreshAutoRule()
         if (rules.isEmpty()) return
-        var idx = 0
-        val appliedRule = rules.find { ++idx; it.packageName == pkgName && it.userId == userId }
+        val appliedRule = rules.find { it.packageName == pkgName && it.userId == userId }
             ?: return noteUncovered(pkgName, userId, actions)
-        val isDefaultRule = idx == 1
 
         for (act in actions) {
             if (act.remoteInputs != null && act.remoteInputs.isNotEmpty()) {
@@ -193,6 +202,7 @@ class NotificationListener: NotificationListenerService() {
                     }
                     //val data = sbn.toMessage(this, ruleKey, act) ?: return
                     (data.room as ChatRoomImpl).setLastReceivedId(data.chatLogId)
+                    (data.room as ChatRoomImpl).userId = userId
                     lastReceivedRoom = data.room
 
                     if (deduper.isRepeat(data.chatLogId, sbn.key, sbn.postTime)) {
@@ -207,10 +217,9 @@ class NotificationListener: NotificationListenerService() {
                     val senderId    = data.sender.id
                     val isGroupChat = data.room.isGroupChat
 
-                    if (isDefaultRule) {
-                        roomIdMap[roomName] = roomID
-                        chatRooms[roomID] = data.room
-                    }
+                    // A message with nothing in it names no room worth keeping.
+                    if (roomName.isNotEmpty() || sender.isNotEmpty() || message.isNotEmpty())
+                        ChatSessions.register(pkgName, data.room as ChatRoomImpl)
 
                     if (logRecMessage) {
                         LOG.info {
@@ -232,10 +241,12 @@ class NotificationListener: NotificationListenerService() {
                         Session.projectManager.fireEvent<Api2CommandEvent>(data, onFailure = ::logEventFailure)
 
                         // Each project's levels decide whether it gets this one.
-                        val imageDB = ImageDB(data.sender.profileBitmap)
-                        val replier = getOrCreateReplier(roomID)
+                        val imageDB = ImageDB(data.sender.profileBitmap, data.image)
+                        val replier = getOrCreateReplier(roomName, roomID, pkgName)
 
+                        // All eleven arguments, the same array end to end, as ChatWaits matches the call by it.
                         Session.projectManager.fireEvent<LegacyEvent>(roomName, message, sender, isGroupChat, replier, imageDB, pkgName,
+                            data.hasMention, BigInteger.valueOf(data.chatLogId), RoomKey.idOf(roomID), data.sender.id ?: NO_USER_HASH,
                             onFailure = ::logEventFailure)
                     }
 
@@ -316,8 +327,10 @@ class NotificationListener: NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
         super.onNotificationRemoved(sbn, rankingMap, reason)
-        if (useNPostedEvent && isGlobalPowerOn && ApplicationSession.isInitComplete && sbn.packageName != packageName)
+        if (useNPostedEvent && isGlobalPowerOn && ApplicationSession.isInitComplete && sbn.packageName != packageName) {
+            Session.projectManager.fireEvent<OnNotificationRemovedEvent>(sbn, rankingMap, reason, onFailure = ::logEventFailure)
             Session.projectManager.fireEvent<Api2NotificationRemovedEvent>(sbn, rankingMap, reason, onFailure = ::logEventFailure)
+        }
         if (sbn.packageName != PACKAGE_KAKAO_TALK)
             return
         LOG.verbose { "Notification removed with reason $reason" }
@@ -364,21 +377,14 @@ class NotificationListener: NotificationListenerService() {
         LOG.verbose { "notificationRules(auto)= $rules" }
     }
 
-    private fun getOrCreateReplier(roomId: RoomID): Replier {
-        return replierCache[roomId] ?: Replier { room, message, hideToast ->
-            val chatRoom = room?.let(::getRoomByName) ?: chatRooms[roomId]
-            if (chatRoom == null) {
-                if (!hideToast) {
-                    Handler(Looper.getMainLooper()).post {
-                        Toast.makeText(applicationContext, "메세지가 수신되지 않은 방 '$room' 에 메세지를 보낼 수 없습니다.", Toast.LENGTH_LONG).show()
-                    }
-                }
-                false
-            } else {
-                chatRoom.send(message)
+    /** The replier of a room, kept per room and messenger; its own room is the session, wherever it was named. */
+    private fun getOrCreateReplier(roomName: String, roomId: RoomID, packageName: String): Replier {
+        val key = "$packageName\u0000$roomId"
+        return replierCache.getOrPut(key) {
+            val origin = ReplierOrigin(roomName, RoomKey(roomName, RoomKey.idOf(roomId)), packageName, isDebug = false)
+            Replier(origin) { _, message, _ ->
+                ChatSessions.registry.chatRoomByRawId(roomId)?.send(message) ?: false
             }
-        }.also {
-            replierCache[roomId] = it
         }
     }
 
@@ -394,7 +400,7 @@ class NotificationListener: NotificationListenerService() {
 
         val chatLogId = extras.getLong("chatLogId")
 
-        val chatRoom: ChatRoom? = chatRooms[roomId]
+        val chatRoom: ChatRoom? = roomId?.let(ChatSessions.registry::chatRoomByRawId)
 
         return DeletedMessage(
             message = message,
@@ -414,9 +420,7 @@ class NotificationListener: NotificationListenerService() {
         private val deduper = MessageDeduper()
         /** What was dropped and why, for the problem solver. */
         internal val drops = NotificationDrops()
-        private val roomIdMap: MutableMap<RoomName, RoomID> = ConcurrentHashMap()
-        private val chatRooms: MutableMap<RoomID, ChatRoom> = ConcurrentHashMap()
-        private val replierCache: MutableMap<RoomID, Replier> = ConcurrentHashMap()
+        private val replierCache: MutableMap<String, Replier> = ConcurrentHashMap()
         private var lastReceivedRoom: ChatRoom? = null
         private var rules: List<RuleData> = arrayListOf()
         private var isAutoRule: Boolean = false
@@ -473,35 +477,41 @@ class NotificationListener: NotificationListenerService() {
         }
 
         private fun getRoomByName(roomName: RoomName): ChatRoom? =
-            roomIdMap[roomName]?.let(chatRooms::get)
+            ChatSessions.registry.byName(roomName)?.let(ChatSessions.registry::chatRoom)
 
-        /** The rooms messages came from so far. */
+        /** The rooms messages came from so far, and those scripts bound a session to; of every package. */
         fun getRooms(): Collection<ChatRoom> =
-            chatRooms.values
+            ChatSessions.registry.chatRooms()
 
         /** The room named [nameOrId], or with that ID. */
         fun getRoom(nameOrId: String): ChatRoom? =
-            getRoomByName(nameOrId) ?: chatRooms[nameOrId]
+            getRoomByName(nameOrId) ?: getRoomByID(nameOrId)
+
+        private fun getRoomByID(roomId: RoomID): ChatRoom? =
+            ChatSessions.registry.chatRoomByRawId(roomId)
+                ?: roomId.trim().toBigIntegerOrNull()
+                    ?.let(ChatSessions.registry::byId)
+                    ?.let(ChatSessions.registry::chatRoom)
 
         fun getRoomNames(): Set<String> =
-            roomIdMap.keys
+            ChatSessions.registry.names()
 
         fun hasRoom(roomName: String): Boolean =
-            roomName in roomIdMap
+            ChatSessions.registry.hasName(roomName)
 
         fun send(message: String): Boolean =
             lastReceivedRoom?.send(message) ?: false
         fun sendTo(roomName: String, message: String): Boolean =
             getRoomByName(roomName)?.send(message) ?: false
         fun sendToID(roomId: RoomID, message: String): Boolean =
-            chatRooms[roomId]?.send(message) ?: false
+            getRoomByID(roomId)?.send(message) ?: false
 
         fun markAsRead(): Boolean =
             lastReceivedRoom?.markAsRead() ?: false
         fun markAsRead(roomName: String): Boolean =
             getRoomByName(roomName)?.markAsRead() ?: false
         fun markAsReadByID(roomID: RoomID): Boolean =
-            chatRooms[roomID]?.markAsRead() ?: false
+            getRoomByID(roomID)?.markAsRead() ?: false
     }
 
     private fun logEventFailure(project: Project, e: Throwable) {

@@ -6,17 +6,26 @@
 
 package dev.mooner.starlight.api.api2
 
+import dev.mooner.starlight.api.msgbot.ScriptArgs
+import dev.mooner.starlight.api.msgbot.scriptFunctionIdentity
+import dev.mooner.starlight.languages.neonjs.whileWaitingForAnotherThread
 import dev.mooner.starlight.plugincore.api.Api
 import dev.mooner.starlight.plugincore.api.ApiObject
 import dev.mooner.starlight.plugincore.api.InstanceType
+import dev.mooner.starlight.plugincore.logger.LoggerFactory
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.ProjectID
+import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycle
 import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycleObserver
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArraySet
+import java.util.concurrent.CopyOnWriteArrayList
 
-private typealias BroadcastCallback = (value: Any) -> Unit
-private typealias ProjectCallbacks = MutableMap<String, MutableSet<BroadcastCallback>>
+private val LOG = LoggerFactory.logger {  }
+
+private typealias BroadcastCallback = (value: Any?) -> Unit
+
+private fun requireFunction(function: BroadcastCallback?): BroadcastCallback =
+    function ?: throw IllegalArgumentException("function must be a function")
 
 class BroadcastApi: Api<BroadcastApi.Broadcast>() {
 
@@ -36,86 +45,222 @@ class BroadcastApi: Api<BroadcastApi.Broadcast>() {
     }
 
     /**
-     * MessengerBot R's `Broadcast`: passes values between projects by name; a global in API2 projects.
+     * MessengerBot R's `Broadcast`: passes values between projects by name; a global in legacy and API2 projects.
      *
-     * A project registers receivers for a name, and `send` calls the receivers of that name in every project. Of
-     * MessengerBot R's `Broadcast`, StarLight has only `send`, `register`, `unregister` and `unregisterAll`.
+     * A project registers receivers for a name, and `send` calls the receivers of that name in every project, while
+     * `sendLocal` calls only this project's. Receivers stay until they are unregistered, or until the project compiles
+     * again or is unloaded. Event names are text: a number or boolean is turned into its text (`1` is `"1"`), and
+     * `null` or `undefined` throws `"event must be a string"`.
+     *
+     * Receivers run right away on the thread that called `send`, so a receiver that waits for another project's
+     * script can hang both.
      */
     class Broadcast(
         private val project: Project
     ) {
 
         /**
-         * Calls every receiver registered for [broadcastName], in every project this one included, with [value].
+         * Calls every receiver registered for [event], in every project this one included, with [value].
          *
          * The receivers run right away, one after another, on the sending script's thread rather than on their
-         * projects' workers, and whether or not their projects are on. An error thrown by a receiver reaches the
-         * caller of `send` and skips the receivers after it. Nothing happens when no receiver has the name.
+         * projects' workers, in the order they registered within a project. Projects that aren't compiled are skipped.
+         * An error thrown by a receiver is only logged: it doesn't reach the caller of `send`, and the receivers after
+         * it still run. Nothing happens when no receiver has the name. It returns nothing.
          *
-         * @param broadcastName The name receivers registered for.
-         * @param value The value to pass; it can't be `null`. Send structured data as JSON text.
+         * @param event The name receivers registered for.
+         * @param value The value to pass, as it is and not copied; `null` when left out.
+         * @throws IllegalArgumentException `"event must be a string"` when [event] is `null` or `undefined`.
          */
-        fun send(broadcastName: String, value: Any) =
-            BroadcastManager.send(broadcastName, value)
+        @JvmOverloads
+        fun send(event: Any?, value: Any? = null) =
+            BroadcastManager.send(project, ScriptArgs.identifier(event, "event"), ScriptArgs.handOn(value))
 
         /**
-         * Registers [task] as this project's receiver for [broadcastName].
+         * Calls the receivers this project registered for [event], with [value].
          *
-         * It stays until it is unregistered, or until this project compiles again or is unloaded.
+         * It runs them as `send` does, but only this project's. Nothing happens when this project has none for the
+         * name.
          *
-         * @param broadcastName The name to receive.
-         * @param task The function called with each value sent under the name.
+         * @param event The name receivers registered for.
+         * @param value The value to pass, as it is and not copied; `null` when left out.
+         * @throws IllegalArgumentException `"event must be a string"` when [event] is `null` or `undefined`.
          */
-        fun register(broadcastName: String, task: BroadcastCallback) =
-            BroadcastManager.register(project, broadcastName, task)
+        @JvmOverloads
+        fun sendLocal(event: Any?, value: Any? = null) =
+            BroadcastManager.sendLocal(project, ScriptArgs.identifier(event, "event"), ScriptArgs.handOn(value))
 
         /**
-         * Removes [task] from this project's receivers for [broadcastName].
+         * Registers [function] as this project's receiver for [event].
          *
-         * It is matched by the Java object the engine passed for the function. NeonJS passes a new one each time, so
-         * there this doesn't find the receiver; use `unregisterAll()` instead.
+         * It stays until it is unregistered, or until this project compiles again or is unloaded. Registering the same
+         * function twice makes it run twice for each value sent.
          *
-         * @param broadcastName The name it was registered for.
-         * @param task The function that was registered.
+         * @param event The name to receive.
+         * @param function The function called with the value sent under the name.
+         * @throws IllegalArgumentException `"function must be a function"` when [function] isn't one;
+         * `"event must be a string"` when [event] is `null` or `undefined`.
          */
-        fun unregister(broadcastName: String, task: BroadcastCallback) =
-            BroadcastManager.unregister(project, broadcastName, task)
+        fun register(event: Any?, function: BroadcastCallback?) {
+            val task = requireFunction(function)
+            BroadcastManager.register(project, ScriptArgs.identifier(event, "event"), task)
+        }
+
+        /**
+         * Removes every registration of [function] from this project's receivers for [event].
+         *
+         * The function is matched as the script function itself, in Rhino and NeonJS alike, so pass the same function
+         * that was registered; a new function written out again doesn't match. Nothing happens when nothing matches.
+         *
+         * @param event The name it was registered for.
+         * @param function The function that was registered.
+         * @throws IllegalArgumentException `"function must be a function"` when [function] isn't one;
+         * `"event must be a string"` when [event] is `null` or `undefined`.
+         */
+        fun unregister(event: Any?, function: BroadcastCallback?) {
+            val task = requireFunction(function)
+            BroadcastManager.unregister(project, ScriptArgs.identifier(event, "event"), task)
+        }
 
         /** Removes every receiver this project registered. */
         fun unregisterAll() =
             BroadcastManager.unregisterAll(project)
+
+        /**
+         * The names that have receivers in any project, each once, in no particular order.
+         *
+         * A name whose receivers were all unregistered one by one is still listed, until `unregisterAll` or a new
+         * compile of its project drops it.
+         *
+         * @return A Java `String` array.
+         */
+        fun getAllEvents(): Array<String> =
+            BroadcastManager.allEvents()
+
+        /**
+         * The names this project registered receivers for, as [getAllEvents] lists them but for this project only.
+         *
+         * @return A Java `String` array; empty when there are none.
+         */
+        fun getLocalEvents(): Array<String> =
+            BroadcastManager.localEvents(project)
+
+        /**
+         * How many receivers are registered for [event] in all projects together, one for each registration.
+         *
+         * @param event The name to count.
+         * @throws IllegalArgumentException `"event must be a string"` when [event] is `null` or `undefined`.
+         */
+        fun getListenerCount(event: Any?): Int =
+            BroadcastManager.count(null, ScriptArgs.identifier(event, "event"))
+
+        /**
+         * How many receivers this project registered for [event].
+         *
+         * @param event The name to count.
+         * @throws IllegalArgumentException `"event must be a string"` when [event] is `null` or `undefined`.
+         */
+        fun getLocalListenerCount(event: Any?): Int =
+            BroadcastManager.count(project, ScriptArgs.identifier(event, "event"))
+
+        /**
+         * Whether any project has a receiver registered for [event].
+         *
+         * @param event The name to look for.
+         * @throws IllegalArgumentException `"event must be a string"` when [event] is `null` or `undefined`.
+         */
+        fun hasListeners(event: Any?): Boolean =
+            getListenerCount(event) > 0
+
+        /**
+         * Whether this project has a receiver registered for [event].
+         *
+         * @param event The name to look for.
+         * @throws IllegalArgumentException `"event must be a string"` when [event] is `null` or `undefined`.
+         */
+        fun hasLocalListeners(event: Any?): Boolean =
+            getLocalListenerCount(event) > 0
+
+        /** This project's name, as the other APIs call a script's name. */
+        fun getScriptName(): String =
+            project.info.name
     }
 
-    object BroadcastManager {
+    /** One registration: the function, and the script function behind it, which unregistering compares. */
+    private class Receiver(val callback: BroadcastCallback, val identity: Any)
 
-        private val callbacks: ConcurrentHashMap<ProjectID, ProjectCallbacks> =
+    /** A project's registrations by event name. A name stays once added, even with no receiver left. */
+    private class Receivers(val project: Project) {
+        val events: ConcurrentHashMap<String, CopyOnWriteArrayList<Receiver>> = ConcurrentHashMap()
+    }
+
+    internal object BroadcastManager {
+
+        private val callbacks: ConcurrentHashMap<ProjectID, Receivers> =
             ConcurrentHashMap()
 
-        // Receivers run here, on the sending thread. Two NeonJS projects broadcasting to each other from their handlers
-        // can each hold their own context and wait for the other's, which hangs both: NeonContext waits without a limit.
-        fun send(name: String, value: Any) {
-            for ((_, projCallback) in callbacks) {
-                projCallback[name]
-                    ?.forEach { v -> v.invoke(value) }
+        // Receivers run here, on the sending thread. Another project's receivers run while the sender's own NeonJS
+        // context is released: two NeonJS projects broadcasting to each other would otherwise each hold their own
+        // context and wait for the other's, which hangs both, as NeonContext waits without a limit. The sender's own
+        // receivers stay in its context.
+        fun send(sender: Project, name: String, value: Any?) {
+            for (receivers in callbacks.values) {
+                val project = receivers.project
+                // A project that is compiling is running the code that registers; only a stopped one is skipped.
+                if (!project.isCompiled && project.getLifecycle().state != ProjectLifecycle.State.COMPILING)
+                    continue
+                if (project === sender)
+                    deliver(receivers, name, value)
+                else
+                    whileWaitingForAnotherThread { deliver(receivers, name, value) }
+            }
+        }
+
+        fun sendLocal(project: Project, name: String, value: Any?) {
+            callbacks[project.info.id]?.let { deliver(it, name, value) }
+        }
+
+        private fun deliver(receivers: Receivers, name: String, value: Any?) {
+            // The list is a snapshot while it is walked: a receiver may register or unregister meanwhile.
+            receivers.events[name]?.forEach { receiver ->
+                try {
+                    receiver.callback(value)
+                } catch (e: Exception) {
+                    LOG.error { "Broadcast: receiver of '$name' in '${receivers.project.info.name}' failed: $e" }
+                }
             }
         }
 
         fun register(project: Project, name: String, task: BroadcastCallback) {
-            callbacks.computeIfAbsent(project.info.id) { id ->
+            val receivers = callbacks.computeIfAbsent(project.info.id) { id ->
                 project.getLifecycle().registerObserver(ReceiverObserver(id))
-                ConcurrentHashMap()
-            }.getOrPut(name, ::CopyOnWriteArraySet) += task
+                Receivers(project)
+            }
+            receivers.events.computeIfAbsent(name) { CopyOnWriteArrayList() } += Receiver(task, scriptFunctionIdentity(task))
         }
 
         fun unregister(project: Project, name: String, task: BroadcastCallback) {
+            val identity = scriptFunctionIdentity(task)
             callbacks[project.info.id]
-                ?.get(name)
-                ?.remove(task)
+                ?.events?.get(name)
+                ?.removeAll { it.identity == identity }
         }
 
         fun unregisterAll(project: Project) {
-            callbacks[project.info.id]?.clear()
+            callbacks[project.info.id]?.events?.clear()
         }
+
+        fun allEvents(): Array<String> =
+            callbacks.values.flatMapTo(LinkedHashSet()) { it.events.keys }.toTypedArray()
+
+        fun localEvents(project: Project): Array<String> =
+            callbacks[project.info.id]?.events?.keys?.toTypedArray() ?: emptyArray()
+
+        /** The receivers for [name] in [project], or in every project when it is `null`. */
+        fun count(project: Project?, name: String): Int =
+            if (project != null)
+                callbacks[project.info.id]?.events?.get(name)?.size ?: 0
+            else
+                callbacks.values.sumOf { it.events[name]?.size ?: 0 }
 
         /** The receivers belong to the code that registered them: they go when it's compiled again or destroyed. */
         private class ReceiverObserver(

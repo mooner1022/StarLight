@@ -52,7 +52,8 @@ strict mode. Pick it for new projects unless the user asks for Rhino.
 - `setInterval` measures each interval from the end of the previous callback.
 - Recompiling the project or discarding its scope cancels its timers. Turning the project off does not.
 - A callback's error is logged as `Exception on timer <id>`; an interval keeps running.
-- `toast(message, duration?)` shows a short message on screen (`duration` 0 short, 1 long, the default).
+- `toast(message, duration?)` shows a short message on screen; `duration` 1 makes it long, and it is short (0) when
+  omitted. Rhino projects have `toast` too, with the same behaviour.
 
 ## fetch and WebSocket
 

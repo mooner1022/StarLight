@@ -6,7 +6,12 @@
 
 package dev.mooner.starlight.api.api2
 
-import dev.mooner.starlight.listener.NotificationListener
+import dev.mooner.neonjs.NeonValue
+import dev.mooner.starlight.api.ApiLevels
+import dev.mooner.starlight.api.msgbot.ScriptArgs
+import dev.mooner.starlight.api.msgbot.scriptFunctionIdentity
+import dev.mooner.starlight.listener.chat.ChatSessions
+import dev.mooner.starlight.listener.chat.RoomResolver
 import dev.mooner.starlight.listener.event.Api2Events
 import dev.mooner.starlight.listener.event.Api2StartCompileEvent
 import dev.mooner.starlight.plugincore.Session
@@ -19,13 +24,18 @@ import dev.mooner.starlight.languages.neonjs.compileForScript
 import dev.mooner.starlight.plugincore.project.Project
 import dev.mooner.starlight.plugincore.project.ProjectID
 import dev.mooner.starlight.plugincore.project.lifecycle.ProjectLifecycleObserver
-import java.lang.reflect.Proxy
-import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 /** A listener; it takes as many arguments as the event gives, up to three, and JavaScript ignores the rest. */
 typealias Api2Listener = (arg1: Any?, arg2: Any?, arg3: Any?) -> Unit
+
+/** [value] as text when it is a string, `null` for anything else (numbers, booleans and objects included). */
+private fun stringOnly(value: Any?): String? = when {
+    value is CharSequence                -> value.toString()
+    value is NeonValue && value.isString -> value.asString()
+    else                                 -> null
+}
 
 class BotManagerApi: Api<BotManagerApi.BotManager>() {
 
@@ -47,8 +57,12 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
      * MessengerBot R's `BotManager`: the bots of this device's projects, one per compiled project; a global in API2
      * projects.
      *
-     * Bots are named by their projects' names, matched exactly. Every compiled project counts as a bot, whatever its
-     * API levels and whether it is on. The `packageName` arguments MessengerBot R takes are accepted and ignored.
+     * Bots are named by their projects' names, matched exactly. Only a compiled project whose API levels include
+     * MessengerBot R's API2 counts as a bot, whether or not it is on. A name may be given as any value: a number or a
+     * boolean is read as its text, and `null` or `undefined` throws `"botName must be a string"`.
+     *
+     * Compiling never throws here: a project that fails to compile is reported through the return value and its logs,
+     * whatever `throwOnError` says.
      *
      * @see guide:events#api2-listeners
      */
@@ -67,44 +81,56 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
             Bot.of(project)
 
         /**
-         * The bot of the project named [botName]; `null` if there is none or it isn't compiled.
+         * The bot of the project named [botName]; `null` if there is none, it isn't compiled or it doesn't use API2.
          *
          * @param botName The project's name.
+         * @throws IllegalArgumentException `"botName must be a string"` when [botName] is `null` or `undefined`.
          */
-        fun getBot(botName: String): Bot? =
-            compiledProject(botName)?.let(Bot::of)
+        fun getBot(botName: Any?): Bot? =
+            compiledBotProject(botName)?.let(Bot::of)
 
-        /** The bots of the compiled projects. */
+        /** The bots of the compiled projects that use API2. */
         fun getBotList(): Array<Bot> =
-            compiledProjects().map(Bot::of).toTypedArray()
+            botProjects().map(Bot::of).toTypedArray()
 
-        /** The names of the compiled projects. */
+        /** The names of the compiled projects that use API2. */
         fun getBotNames(): Array<String> =
-            compiledProjects().map { it.info.name }.toTypedArray()
+            botProjects().map { it.info.name }.toTypedArray()
 
-        /** How many projects are compiled. */
+        /** How many compiled projects use API2. */
         fun getBotCount(): Int =
-            compiledProjects().size
+            botProjects().size
 
         /**
-         * The rooms bots can send to: the rooms StarLight has received a message from since it started.
+         * The rooms bots can send to: the rooms StarLight has received a message from since it started, in every app
+         * the notification rules cover, and the rooms a script bound with `sessionManager.bindSession`.
          *
-         * Only rooms of the first notification rule's app are kept, KakaoTalk by default. The debug room is never one.
+         * The debug room is never one. Each room object has `name` and `id` and can be passed back to `bot.send`,
+         * `bot.canReply`, `bot.markAsRead` and `bot.sendMarkdown`.
          *
-         * @param packageName The app to list rooms of. Ignored: every kept room is returned.
-         * @return The rooms, in no particular order.
+         * @param packageName An app's package name to list only the rooms of that app, such as `com.kakao.talk`; an
+         * app without rooms gives an empty array. Leave it out, or pass anything but a string, for every room.
+         * @return The rooms, in the order they were first seen; in no particular order when [packageName] is given.
          */
         @JvmOverloads
-        fun getRooms(packageName: String? = null): Array<Api2Room> =
-            NotificationListener.getRooms().map(::Api2Room).toTypedArray()
+        fun getRooms(packageName: Any? = null): Array<Api2Room> {
+            val registry = ChatSessions.registry
+            val keys = stringOnly(packageName)?.let(registry::roomsOf) ?: registry.rooms()
+            return keys.map { Api2Room(it, registry.chatRoom(it)) }.toTypedArray()
+        }
+
+        /** Every room bots can send to; the same as `getRooms()`. */
+        fun getAllRooms(): Array<Api2Room> =
+            getRooms()
 
         /**
          * Whether the project named [botName] is on.
          *
          * @param botName The project's name.
          * @return `false` also when there is no such project.
+         * @throws IllegalArgumentException `"botName must be a string"` when [botName] is `null` or `undefined`.
          */
-        fun getPower(botName: String): Boolean =
+        fun getPower(botName: Any?): Boolean =
             projectOf(botName)?.info?.isEnabled == true
 
         /**
@@ -113,26 +139,31 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
          * Nothing happens when there is no such project or it isn't compiled.
          *
          * @param botName The project's name.
-         * @param power `true` to turn it on, `false` to turn it off.
+         * @param power `true` to turn it on, `false` to turn it off. A number is `true` unless it is 0, the strings
+         * `"true"` and `"false"` count as booleans, and `null` or `undefined` is `false`.
+         * @throws IllegalArgumentException `"power must be a boolean"` for any other kind of value.
          */
-        fun setPower(botName: String, power: Boolean) {
-            projectOf(botName)?.setEnabled(power)
+        fun setPower(botName: Any?, power: Any?) {
+            val enabled = ScriptArgs.boolean(power, "power", false)
+            projectOf(botName)?.setEnabled(enabled)
         }
 
         /**
          * Compiles the project named [botName] and waits until that is done.
          *
          * Compiling doesn't turn the project on. Naming this script's own project replaces the code that is running.
+         * It never throws: a failed compile is written to that project's logs.
          *
          * @param botName The project's name.
-         * @param throwOnError Whether a failed compile throws its error rather than returning `false`.
+         * @param throwOnError Accepted for MessengerBot R's sake and ignored.
          * @return Whether it compiled; `false` when there is no such project.
-         * @throws Exception The compile error, when [throwOnError] is `true`.
          * @see guide:projects#compiling-and-turning-on
          */
         @JvmOverloads
-        fun compile(botName: String, throwOnError: Boolean = false): Boolean =
-            projectOf(botName)?.compileForScript(throwOnError) == true
+        fun compile(botName: Any?, throwOnError: Any? = null): Boolean {
+            ScriptArgs.boolean(throwOnError, "throwOnError", false)
+            return compileSafely(projectOf(botName))
+        }
 
         /**
          * Compiles every project, one after another, and waits until that is done.
@@ -142,49 +173,53 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
          */
         fun compileAll() {
             for (project in Session.projectManager.getProjects())
-                project.compileForScript()
+                compileSafely(project)
         }
 
         /**
          * Compiles the project named [botName] unless it is compiled: 0 if that failed, 1 if it succeeded, 2 if it was
          * compiled.
          *
+         * A failed compile isn't thrown, whatever `throwOnError` says; it is written to the project's logs. Passing a
+         * boolean alone, as `BotManager.prepare(true)`, prepares this script's own project.
+         *
          * @param botName The project's name; 0 is returned when there is no such project.
-         * @param throwOnError Whether a failed compile throws its error rather than returning 0.
-         * @throws Exception The compile error, when [throwOnError] is `true`.
+         * @param throwOnError Accepted for MessengerBot R's sake and ignored.
          */
         @JvmOverloads
-        fun prepare(botName: String, throwOnError: Boolean = false): Int =
-            prepareActual(projectOf(botName), throwOnError)
+        fun prepare(botName: Any?, throwOnError: Any? = null): Int {
+            if (botName is Boolean)
+                return prepareActual(project)
+            ScriptArgs.boolean(throwOnError, "throwOnError", false)
+            return prepareActual(projectOf(botName))
+        }
+
+        /** [prepare] for this project. */
+        fun prepare(): Int =
+            prepareActual(project)
 
         /**
-         * [prepare] for this project.
+         * [prepare] for every project that isn't compiled; how many it tried to compile, whether that worked or not.
          *
-         * @param throwOnError Whether a failed compile throws its error rather than returning 0.
+         * @param throwOnError Accepted for MessengerBot R's sake and ignored: a failed compile is never thrown.
          */
         @JvmOverloads
-        fun prepare(throwOnError: Boolean = false): Int =
-            prepareActual(project, throwOnError)
-
-        /**
-         * [prepare] for every project; how many it tried to compile, whether that worked or not.
-         *
-         * @param throwOnError Whether a failed compile throws its error, stopping there, rather than going on.
-         */
-        @JvmOverloads
-        fun prepareAll(throwOnError: Boolean = false): Int =
-            Session.projectManager.getProjects()
+        fun prepareAll(throwOnError: Any? = null): Int {
+            ScriptArgs.boolean(throwOnError, "throwOnError", false)
+            return Session.projectManager.getProjects()
                 .filterNot(Project::isCompiled)
-                .onEach { prepareActual(it, throwOnError) }
+                .onEach { prepareActual(it) }
                 .size
+        }
 
         /**
          * Whether the project named [botName] is compiled.
          *
          * @param botName The project's name.
          * @return `false` also when there is no such project.
+         * @throws IllegalArgumentException `"botName must be a string"` when [botName] is `null` or `undefined`.
          */
-        fun isCompiled(botName: String): Boolean =
+        fun isCompiled(botName: Any?): Boolean =
             projectOf(botName)?.isCompiled == true
 
         /**
@@ -194,7 +229,7 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
          *
          * @param botName The project's name.
          */
-        fun unload(botName: String) {
+        fun unload(botName: Any?) {
             projectOf(botName)?.destroy(requestUpdate = true)
         }
 
@@ -202,24 +237,36 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
         fun unload() =
             project.destroy(requestUpdate = true)
 
-        private fun prepareActual(project: Project?, throwOnError: Boolean): Int {
+        private fun compileSafely(project: Project?): Boolean {
+            if (project == null)
+                return false
+            return try {
+                project.compileForScript(throwException = false)
+            } catch (e: Throwable) {
+                project.logger.error("Compiling failed: $e")
+                false
+            }
+        }
+
+        private fun prepareActual(project: Project?): Int {
             if (project == null)
                 return 0
             if (project.isCompiled)
                 return 2
-            return runCatching { project.compileForScript(throwOnError) }
-                .getOrElse { if (throwOnError) throw it else false }
-                .let { if (it) 1 else 0 }
+            return if (compileSafely(project)) 1 else 0
         }
 
-        private fun projectOf(botName: String): Project? =
-            Session.projectManager.getProjectByName(botName)
+        private fun projectOf(botName: Any?): Project? =
+            Session.projectManager.getProjectByName(ScriptArgs.string(botName, "botName"))
 
-        private fun compiledProject(botName: String): Project? =
-            projectOf(botName)?.takeIf(Project::isCompiled)
+        private fun compiledBotProject(botName: Any?): Project? =
+            projectOf(botName)?.takeIf { it.isCompiled && usesApi2(it) }
 
-        private fun compiledProjects(): List<Project> =
-            Session.projectManager.getProjects().filter(Project::isCompiled)
+        private fun botProjects(): List<Project> =
+            Session.projectManager.getProjects().filter { it.isCompiled && usesApi2(it) }
+
+        private fun usesApi2(project: Project): Boolean =
+            project.info.apiLevels?.contains(ApiLevels.API2) ?: true
     }
 
     /**
@@ -227,7 +274,9 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
      * project is compiled again or destroyed, and the listeners go with it. Events reach the listeners through the
      * project, so they follow its power switch and allowed events and run on its workers, like its other events.
      *
-     * The `packageName` arguments MessengerBot R takes are accepted and ignored.
+     * A room is named as `BotManager.getRooms()` gives it, by name (a string is only ever a name, even of digits), by ID
+     * (a BigInt or a whole number), or as a pair `[name, id]`. A `packageName` limits the call to that app's session of
+     * the room. A message is any value: it is sent as its text, `null` as `"null"`.
      *
      * @see guide:events#api2-listeners
      */
@@ -243,69 +292,108 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
 
         /** A listener and what identifies the script function behind it, for [off]. */
         private class Registered(val listener: Api2Listener) {
-            val identity: Any = identityOf(listener)
+            val identity: Any = scriptFunctionIdentity(listener)
         }
 
         @Volatile
-        private var commandPrefix: String? = null
+        private var prefix: String = ""
+
+        /** The debug room the latest debug-room message came from, which sends to its name or ID land in. */
+        @Volatile
+        private var debugRoom: ChatRoom? = null
+
+        /** The wrapper of the latest message delivered, so a command made of it shares its sender. */
+        @Volatile
+        private var lastMessage: Api2Message? = null
 
         /**
          * Sets the prefix that makes a message a command for this bot's `command` listeners.
          *
-         * A message that starts with [prefix] and has a word after it reaches `command` listeners as an `Api2Command`,
-         * and `message` listeners as usual. Until a prefix is set, or while it is `""`, no message is a command.
+         * A message whose first word (the text up to the first space) starts with [prefix] reaches `command` listeners as
+         * an `Api2Command`, and `message` listeners as usual. The prefix is `""` until it is set, which makes every
+         * message a command.
          *
-         * Call it as `bot.setCommandPrefix("/")`; NeonJS also takes `bot.commandPrefix = "/"`. It can't be read back.
-         * Compiling the project again starts without one.
+         * Call it as `bot.setCommandPrefix("/")`; NeonJS also takes `bot.commandPrefix = "/"`. Compiling the project
+         * again starts with `""`.
          *
-         * @param prefix The text a command starts with, such as `"/"`.
+         * @param prefix The text a command starts with, such as `"/"`; not `null`.
          */
         fun setCommandPrefix(prefix: String) {
-            commandPrefix = prefix
+            this.prefix = prefix
         }
+
+        /** The text a message must start with to be a command; `""` until [setCommandPrefix] sets one. */
+        fun getCommandPrefix(): String =
+            prefix
 
         /**
          * Sends [msg] to [room].
          *
-         * The room must be one StarLight has received a message from since it started, as `BotManager.getRooms()`
-         * lists them; the debug room isn't one, so in tests this returns `false`.
+         * The room must be one StarLight has received a message from since it started, as `BotManager.getRooms()` lists
+         * them, or one a script bound. The one exception is the debug room: after a message from it, sending to its name
+         * or ID shows [msg] on the debug screen and returns `true`.
          *
-         * @param room A room name, a room ID, or an `Api2Room`. Give a 64-bit ID as a BigInt or a string, not a number.
-         * @param msg The text to send.
-         * @param packageName The messenger's package name. Ignored.
-         * @return Whether it was handed to the messenger; `false` when the room isn't known or no longer takes replies.
+         * @param room A room name, a room ID (a BigInt or a whole number), a `[name, id]` pair or a room object.
+         * @param msg The text to send; any other value is sent as its text.
+         * @param packageName The messenger's package name, to send through that app's session of the room. Anything but a
+         * string counts as not given.
+         * @return Whether the room has a session to send through, or is the debug room; `false` when the room isn't
+         * known or has no session in [packageName], or when the room's reply action has expired (its notification was
+         * dismissed). `true` doesn't mean the messenger delivered it.
          * @see guide:testing#how-debug-messages-differ
          */
         @JvmOverloads
-        fun send(room: Any, msg: String, packageName: String? = null): Boolean =
-            roomOf(room)?.send(msg) ?: false
+        fun send(room: Any?, msg: Any?, packageName: Any? = null): Boolean {
+            val text = ScriptArgs.stringify(msg)
+            val key = RoomResolver.resolve(room)
+                ?: return sendToDebugRoom(room, text)
+            return ChatSessions.reply(key, text, stringOnly(packageName), cancelledIsSent = false)
+        }
 
         /**
-         * Whether the bot can send to [room]: whether StarLight has received a message from it since it started.
+         * Sends [msg] to [room] as a Markdown message.
+         *
+         * Messengers may refuse such a message; `true` only means it was handed over. KakaoTalk currently doesn't take
+         * it. Without [packageName], the app that has the room is used. Sending to the debug room shows [msg] on its
+         * screen.
+         *
+         * @param room A room name, a room ID (a BigInt or a whole number), a `[name, id]` pair or a room object.
+         * @param msg The text to send; any other value is sent as its text.
+         * @param packageName The messenger's package name. Anything but a string counts as not given.
+         * @return Whether the share was launched; `false` when the room is unknown or no app can take it.
+         */
+        @JvmOverloads
+        fun sendMarkdown(room: Any?, msg: Any?, packageName: Any? = null): Boolean {
+            val text = ScriptArgs.stringify(msg)
+            val key = RoomResolver.resolve(room)
+                ?: return sendToDebugRoom(room, text)
+            return ChatSessions.sendMarkdown(key, text, stringOnly(packageName))
+        }
+
+        /**
+         * Whether the bot can send to [room]: whether a reply session exists for it, in [packageName] if one is given.
          *
          * The debug room is never such a room.
          *
-         * @param room A room name, a room ID, or an `Api2Room`. Give a 64-bit ID as a BigInt or a string, not a number.
-         * @param packageName The messenger's package name. Ignored.
+         * @param room A room name, a room ID (a BigInt or a whole number), a `[name, id]` pair or a room object.
+         * @param packageName The messenger's package name. Anything but a string counts as not given.
          */
         @JvmOverloads
-        fun canReply(room: Any, packageName: String? = null): Boolean =
-            roomOf(room) != null
+        fun canReply(room: Any?, packageName: Any? = null): Boolean =
+            ChatSessions.canReply(room, stringOnly(packageName))
 
         /**
-         * Marks [room] read, or the room the last message came from when it is `null`.
+         * Marks [room] read.
          *
-         * @param room A room name, a room ID, an `Api2Room`, or `null`. Give a 64-bit ID as a BigInt or a string, not a
-         * number.
-         * @param packageName The messenger's package name. Ignored.
-         * @return Whether the messenger took it; `false` when the room isn't known or its read action has expired.
+         * @param room A room name, a room ID (a BigInt or a whole number), a `[name, id]` pair or a room object.
+         * `null` marks nothing and returns `false`.
+         * @param packageName The messenger's package name, to use that app's read action only. Without it, every app
+         * that has the room is asked. Anything but a string counts as not given.
+         * @return Whether a read action was sent; `false` when the room isn't known or has none.
          */
         @JvmOverloads
-        fun markAsRead(room: Any?, packageName: String? = null): Boolean =
-            if (room == null)
-                NotificationListener.markAsRead()
-            else
-                roomOf(room)?.markAsRead() ?: false
+        fun markAsRead(room: Any?, packageName: Any? = null): Boolean =
+            ChatSessions.markRoomAsRead(room, stringOnly(packageName))
 
         /** The bot's name, which is its project's name. */
         fun getName(): String =
@@ -322,11 +410,14 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
         /**
          * Turns the bot's project on or off, as its switch in the app does.
          *
-         * @param power `true` to turn it on, `false` to turn it off.
+         * @param power `true` to turn it on, `false` to turn it off. Boolean-like values are accepted as in
+         * `BotManager.setPower`: a number is `true` unless it is 0, the strings `"true"` and `"false"` count as
+         * booleans, and `null` or `undefined` is `false`.
          * @return Whether it applied; `false` when the project isn't compiled, which leaves it as it was.
+         * @throws IllegalArgumentException `"enabled must be a boolean"` for an object.
          */
-        fun setPower(power: Boolean) =
-            project.setEnabled(power)
+        fun setPower(power: Any?): Boolean =
+            project.setEnabled(ScriptArgs.boolean(power, "enabled", false))
 
         /**
          * Whether the bot's project is on.
@@ -340,15 +431,19 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
         /**
          * Compiles the bot's project again and waits until that is done.
          *
-         * Unlike `BotManager.compile`, a failed compile throws. From the project's own script, this replaces the code
-         * that is running, and this bot's listeners are removed.
+         * It never throws: a failed compile is written to the project's logs. From the project's own script, this
+         * replaces the code that is running, and this bot's listeners are removed.
          *
-         * @return `true` once it compiled.
-         * @throws Exception The compile error.
+         * @return Whether it compiled.
          * @see guide:projects#compiling-and-turning-on
          */
-        fun compile() =
-            project.compileForScript(throwException = true)
+        fun compile(): Boolean =
+            try {
+                project.compileForScript(throwException = false)
+            } catch (e: Throwable) {
+                project.logger.error("Compiling failed: $e")
+                false
+            }
 
         /**
          * Unloads the bot's project: stops what it is running, discards its compiled code and turns it off.
@@ -406,51 +501,68 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
             listenersOf(eventName).add(0, Registered(listener))
 
         /**
-         * Removes [listener] from the event [eventName], or every listener of [eventName] without one.
+         * Removes [listener] from the event [eventName]: only the first time it was added; or, without a listener, the
+         * last listener added to the event.
          *
-         * Pass the same function that was added; every time it was added is removed.
+         * Pass the same function that was added. A function added twice stays once after one call. Nothing happens when
+         * the event has no such listener.
          *
          * @param eventName The event's name, such as `Event.MESSAGE` (`"message"`).
-         * @param listener The function to remove; leave it out to remove them all.
+         * @param listener The function to remove; leave it out to remove the event's last listener.
          */
         @JvmOverloads
         fun off(eventName: String, listener: Api2Listener? = null) {
-            if (listener == null) {
-                listeners.remove(eventName)
-                return
+            val list = listeners[eventName] ?: return
+            synchronized(list) {
+                if (listener == null) {
+                    if (list.isNotEmpty())
+                        list.removeAt(list.size - 1)
+                    return
+                }
+                val identity = scriptFunctionIdentity(listener)
+                val index = list.indexOfFirst { it.identity == identity }
+                if (index >= 0)
+                    list.removeAt(index)
             }
-            val identity = identityOf(listener)
-            listeners[eventName]?.let { registered -> registered.removeAll { it.identity == identity } }
         }
 
         /**
-         * Removes [listener] from the event [eventName], or every listener of [eventName] without one; the same as
-         * `off`.
+         * Removes [listener] from the event [eventName], or the event's last listener without one; the same as `off`.
          *
          * @param eventName The event's name, such as `Event.MESSAGE` (`"message"`).
-         * @param listener The function to remove; leave it out to remove them all.
+         * @param listener The function to remove; leave it out to remove the event's last listener.
          */
         @JvmOverloads
         fun removeListener(eventName: String, listener: Api2Listener? = null) =
             off(eventName, listener)
 
         /**
-         * Removes every listener of the event [eventName].
+         * Removes every listener of the event [eventName], or of every event without one.
          *
-         * @param eventName The event's name, such as `Event.MESSAGE` (`"message"`).
+         * @param eventName The event's name, such as `Event.MESSAGE` (`"message"`). Leave it out, or pass anything but a
+         * string, to remove the listeners of all events.
          */
-        fun removeAllListeners(eventName: String) {
-            listeners.remove(eventName)
+        @JvmOverloads
+        fun removeAllListeners(eventName: Any? = null) {
+            val name = stringOnly(eventName)
+            if (name == null)
+                listeners.clear()
+            else
+                listeners.remove(name)
         }
 
         /**
          * The listeners of the event [eventName], in the order they are called.
          *
          * @param eventName The event's name, such as `Event.MESSAGE` (`"message"`).
-         * @return A copy, empty when there are none. In NeonJS its items are the functions that were added.
+         * @return A copy, empty when there are none; `null` when [eventName] is missing or not a string. In NeonJS its
+         * items are the functions that were added.
          */
-        fun listeners(eventName: String): Array<Api2Listener> =
-            listeners[eventName]?.map(Registered::listener)?.toTypedArray() ?: emptyArray()
+        @JvmOverloads
+        fun listeners(eventName: Any? = null): Array<Api2Listener>? {
+            val name = stringOnly(eventName) ?: return null
+            return listeners[name]?.map(Registered::listener)?.toTypedArray() ?: emptyArray()
+        }
 
         /**
          * Every event's listeners, by event name, each list in the order they are called.
@@ -459,6 +571,11 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
          */
         fun getListenersMap(): Map<String, List<Api2Listener>> =
             listeners.mapValues { (_, list) -> list.map(Registered::listener) }
+
+        /** Removes every listener of every event. */
+        fun cleanup() {
+            listeners.clear()
+        }
 
         private fun listenersOf(eventName: String): MutableList<Registered> =
             listeners.getOrPut(eventName, ::CopyOnWriteArrayList)
@@ -469,24 +586,37 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
                 registered.listener(arg1, arg2, arg3)
         }
 
-        internal fun deliverMessage(message: Message) =
-            deliver(Api2Events.MESSAGE, Api2Message(message))
-
-        /** Delivers [message] to the command listeners if it starts with the prefix the script set. */
-        internal fun deliverCommand(message: Message) {
-            val (command, args) = Api2Command.parse(message.message, commandPrefix) ?: return
-            deliver(Api2Events.COMMAND, Api2Command(message, command, args))
+        internal fun deliverMessage(message: Message) {
+            if (message.room.isDebugRoom)
+                debugRoom = message.room
+            val wrapped = Api2Message(message)
+            lastMessage = wrapped
+            deliver(Api2Events.MESSAGE, wrapped)
         }
 
-        /** The room [room] names: a room name, an ID, or a room from [BotManager.getRooms]. */
-        private fun roomOf(room: Any): ChatRoom? {
-            val key = when (room) {
-                is Api2Room -> room.channelId?.toString() ?: room.name
-                is BigInteger -> room.toString()
-                is Double, is Float -> (room as Number).toLong().toString()
-                else -> room.toString()
-            }
-            return NotificationListener.getRoom(key)
+        /** Delivers [message] to the command listeners if its first word starts with the bot's prefix. */
+        internal fun deliverCommand(message: Message) {
+            if (message.room.isDebugRoom)
+                debugRoom = message.room
+            val (command, args) = Api2Command.parse(message.message, prefix) ?: return
+            val author = lastMessage?.takeIf { it.source === message }?.author
+            deliver(Api2Events.COMMAND, Api2Command(message, command, args, author))
+        }
+
+        /**
+         * Shows [text] in the debug room if [room] names it, by its name or its ID, as MessengerBot R does; `false`
+         * when it doesn't.
+         */
+        private fun sendToDebugRoom(room: Any?, text: String): Boolean {
+            val debug = debugRoom ?: return false
+            val name = stringOnly(room)
+            val id = ScriptArgs.integral(room) ?: name?.trim()?.toBigIntegerOrNull()
+            val matches = (name != null && debug.name == name) ||
+                (id != null && debug.id.trim().toBigIntegerOrNull() == id)
+            if (!matches)
+                return false
+            runCatching { debug.send(text) }
+            return true
         }
 
         private val lifecycleObserver = object : ProjectLifecycleObserver.ExplicitObserver {
@@ -514,18 +644,6 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
         companion object {
 
             private val bots: MutableMap<ProjectID, Bot> = ConcurrentHashMap()
-
-            /**
-             * The script function behind [listener]. NeonJS hands host code a new proxy each time a JS function is
-             * passed, and its proxies equal only themselves, so the same function passed to [on] and [off] would not
-             * match; the function each proxy stands for does. Rhino reuses one adapter per function.
-             */
-            private fun identityOf(listener: Any): Any {
-                if (!Proxy.isProxyClass(listener.javaClass))
-                    return listener
-                val handler = Proxy.getInvocationHandler(listener)
-                return runCatching { handler.javaClass.getMethod("getTarget").invoke(handler) }.getOrNull() ?: listener
-            }
 
             /** The project's bot, made when first asked for. */
             internal fun of(project: Project): Bot =
