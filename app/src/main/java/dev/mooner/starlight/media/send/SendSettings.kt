@@ -76,6 +76,12 @@ sealed interface LeaveTiming {
 
     /** After a fixed time. */
     data class After(val millis: Long) : LeaveTiming
+
+    /**
+     * For a text: once KakaoTalk has read the files of an earlier send it may still be reading, as [AfterRead], and no
+     * sooner than [millis] after [since], so KakaoTalk has its room open to send the text.
+     */
+    data class AfterReadAndAtLeast(val since: Long, val millis: Long) : LeaveTiming
 }
 
 /** A send as a script asked for it, with every script value already read. */

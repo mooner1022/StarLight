@@ -55,6 +55,56 @@ class MediaSharer internal constructor(project: Project) {
         core.send(room, files, options)
 
     /**
+     * Sends [text] to [room] through KakaoTalk's share screen. Resolves to a [MediaSendResult] once KakaoTalk was
+     * started, which then sends it; failures are logged to the project too.
+     *
+     * Unlike `room.send(text)`, which answers through the notification, this opens KakaoTalk and the room, as sending
+     * files does, so it works for any room a message came from and can format the text: see the options below. In the
+     * debug room the text is shown plainly.
+     *
+     * While the room is open, KakaoTalk posts no notifications for it, so its messages don't reach scripts until
+     * KakaoTalk is left: see **전송 후** and the `leave` option.
+     */
+    fun sendText(room: Any?, text: Any?): CompletableFuture<MediaSendResult> =
+        core.sendText(room, text, null, toMemo = false)
+
+    /**
+     * Sends [text] to [room] through KakaoTalk's share screen, as [options] say. Resolves to a [MediaSendResult] once
+     * KakaoTalk was started, which then sends it; failures are logged to the project too.
+     *
+     * [options] is an object with any of these:
+     * - `markdown`: `true` to show the text as Markdown, as `**bold**`, `*italic*`, `` `code` `` and `- list`
+     * - `spoilers`: parts hidden until tapped, each `{ start, length }` or `[start, length]`, counted in characters from
+     *   0. KakaoTalk shows no spoilers in a Markdown message, so the two can't be combined.
+     * - `emoticons`: mini emoticons, each its ID (`"<item code>_<number>"`) for the next placeholder, or
+     *   `{ id, at, length }` for the placeholder at the `at`-th `(` of the text. A placeholder is the text from a `(` to
+     *   the next `)`, such as `(heart)`, 1 to 12 characters. KakaoTalk sends only mini emoticons the account has; others
+     *   stay as their placeholder text.
+     * - `leave`: as for [send], where to go once KakaoTalk has had time to send
+     *
+     * ```js
+     * MediaSharer.sendText(msg, "**Done** in `3s`", { markdown: true });
+     * MediaSharer.sendText(msg, "Answer: spoiler", { spoilers: [{ start: 8, length: 7 }] });
+     * ```
+     *
+     * KakaoTalk refuses secret chats, channel chats and silent rooms. Whether KakaoTalk's servers keep the formatting
+     * for the other people in the room isn't something StarLight can check.
+     */
+    fun sendText(room: Any?, text: Any?, options: Any?): CompletableFuture<MediaSendResult> =
+        core.sendText(room, text, options, toMemo = false)
+
+    /**
+     * Sends [text] to the memo chat (나와의 채팅) of the KakaoTalk in StarLight's own Android user, not a Dual Messenger
+     * copy. KakaoTalk sends it at once without showing a screen, and shows a toast.
+     */
+    fun sendTextToMemo(text: Any?): CompletableFuture<MediaSendResult> =
+        core.sendText(null, text, null, toMemo = true)
+
+    /** Sends [text] to the memo chat (나와의 채팅), with the options of [sendText]; `leave` is ignored. */
+    fun sendTextToMemo(text: Any?, options: Any?): CompletableFuture<MediaSendResult> =
+        core.sendText(null, text, options, toMemo = true)
+
+    /**
      * Leaves KakaoTalk for the home screen once it has read the files of the latest send, waiting for sends still
      * being prepared. While a chat room is open, KakaoTalk posts no notifications, so messages meanwhile are missed.
      */

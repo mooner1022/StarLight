@@ -37,6 +37,9 @@ object KakaoShare {
     /** KakaoTalk's share receiver, used when no matching activity is found. */
     const val SHARE_ACTIVITY = "com.kakao.talk.activity.RecentExcludeIntentFilterActivity"
 
+    /** KakaoTalk's receiver that posts a shared text to the memo chat (나와의 채팅) at once, showing nothing. */
+    const val MEMO_ACTIVITY = "com.kakao.talk.activity.MemoChatConnectActivity"
+
     const val INTERACT_ACROSS_USERS = "android.permission.INTERACT_ACROSS_USERS"
 
     // Extras of KakaoTalk's direct share: the chat room to post into.
@@ -44,6 +47,14 @@ object KakaoShare {
     private const val EXTRA_ROOM_TYPE = "key_type"
     private const val EXTRA_DIRECT_SHARE = "key_from_direct_share"
 
+    // Extras of a chat message KakaoTalk's share screen reads beside the text; the attachment carries Markdown,
+    // spoilers and mini emoticons (KakaoTextAttachment).
+    private const val EXTRA_CHAT_MESSAGE = "EXTRA_CHAT_MESSAGE"
+    private const val EXTRA_CHAT_MESSAGE_TYPE = "EXTRA_CHAT_MESSAGE_TYPE_VALUE"
+    private const val EXTRA_CHAT_ATTACHMENT = "EXTRA_CHAT_ATTACHMENT"
+    private const val MESSAGE_TYPE_TEXT = 1
+
+    private const val TEXT_TYPE = "text/plain"
     private const val MULTIPLE_TYPE = "*/*"
 
     /** UIDs of user N are N * 100000 + app ID. */
@@ -97,6 +108,61 @@ object KakaoShare {
         context.startActivity(shareIntent(channelId, files).setClassName(KAKAO_PACKAGE, className))
         return Route.Chooser(failure)
     }
+
+    /**
+     * Posts [text] with [attachment] (from [KakaoTextAttachment.toJson], or null) to the room [channelId] through the
+     * KakaoTalk of [roomUserId], as [share] posts files: KakaoTalk opens the room and sends it.
+     *
+     * The share is named by KakaoTalk's share receiver itself: more than one of KakaoTalk's activities takes a shared
+     * text, so naming only the package would make Android ask which.
+     */
+    fun shareText(context: Context, channelId: Long, text: String, attachment: String?, roomUserId: Int?): Route {
+        val intent = { withRoom(textIntent(text, attachment), channelId) }
+        val matches = findShareActivities(context, intent().setPackage(KAKAO_PACKAGE))
+        val className = chooseShareActivity(matches.map { it.className }) ?: SHARE_ACTIVITY
+        val myUserId = myUserId()
+        val kakaoUsers = matches.filter { it.className == className }.map { it.userId }
+
+        val failure = when (val userId = targetUser(roomUserId, kakaoUsers, myUserId)) {
+            null     -> "the room's KakaoTalk is not known yet (no notification from it was seen)"
+            myUserId -> {
+                context.startActivity(directed(intent(), className))
+                return Route.Direct
+            }
+            else     -> startAsUser(context, directed(intent(), className), userId)
+                ?: return Route.OtherUser(userId)
+        }
+        context.startActivity(intent().setClassName(KAKAO_PACKAGE, className))
+        return Route.Chooser(failure)
+    }
+
+    /**
+     * Posts [text] with [attachment] to the memo chat (나와의 채팅) of StarLight's own user's KakaoTalk. KakaoTalk sends
+     * it at once without showing a screen, and shows a toast.
+     */
+    fun shareTextToMemo(context: Context, text: String, attachment: String?) {
+        context.startActivity(directed(textIntent(text, attachment), MEMO_ACTIVITY))
+    }
+
+    /** The intent sharing [text] as a chat message with [attachment], naming no app or room yet. */
+    fun textIntent(text: String, attachment: String?): Intent =
+        Intent(Intent.ACTION_SEND).apply {
+            type = TEXT_TYPE
+            putExtra(Intent.EXTRA_TEXT, text)
+            putExtra(EXTRA_CHAT_MESSAGE, text)
+            putExtra(EXTRA_CHAT_MESSAGE_TYPE, MESSAGE_TYPE_TEXT)
+            if (attachment != null)
+                putExtra(EXTRA_CHAT_ATTACHMENT, attachment)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+
+    /** [intent] with KakaoTalk's direct share extras naming the chat room [channelId]. */
+    private fun withRoom(intent: Intent, channelId: Long): Intent =
+        intent.putExtras(Bundle().apply {
+            putLong(EXTRA_ROOM_ID, channelId)
+            putInt(EXTRA_ROOM_TYPE, 1)
+            putBoolean(EXTRA_DIRECT_SHARE, true)
+        })
 
     /**
      * The user to send through: the room's, else the only one with KakaoTalk (StarLight's own if none was found),
