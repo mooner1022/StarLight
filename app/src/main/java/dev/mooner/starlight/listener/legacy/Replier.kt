@@ -147,9 +147,9 @@ class Replier internal constructor(
     /**
      * Sends [message] as a Markdown message to the room the message came from.
      *
-     * The messenger is handed a share that marks the text as Markdown. KakaoTalk currently may refuse it: `true` only
-     * says the share was launched, not that the message arrived. In the debug room the text is shown as it is, and
-     * `true` is returned.
+     * The messenger is handed a share that marks the text as Markdown. KakaoTalk sends it, but shows the formatting only
+     * on this device: the other people in the room see plain text (KakaoTalk 26.9.1). `true` only says the share was
+     * launched, not that the message arrived. In the debug room the text is shown as it is, and `true` is returned.
      *
      * @param message The text to send.
      * @return `false` if no messenger is known for the room, or nothing can take the share.

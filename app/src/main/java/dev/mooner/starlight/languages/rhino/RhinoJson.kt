@@ -27,6 +27,12 @@ internal class RhinoJson(private val scope: Scriptable) : ScriptJson {
             .takeUnless { it == null || it is Undefined }
             ?.let(Context::toString)
 
+    override fun array(items: Array<*>): Any? {
+        val cx = Context.getCurrentContext()
+            ?: throw IllegalStateException("A script array needs the script's thread")
+        return cx.newArray(scope, Array(items.size) { Context.javaToJS(items[it], scope) })
+    }
+
     private fun call(name: String, argument: Any?): Any? {
         // A script calling in, or a callback Rhino runs on another thread, has entered a context.
         val cx = Context.getCurrentContext()

@@ -390,8 +390,9 @@ class LegacyApi: Api<LegacyApi.Api>() {
         /**
          * Sends [message] to [room] as Markdown and says whether the share was launched.
          *
-         * The room's latest messenger gets a share marked as Markdown. KakaoTalk currently may refuse it, so `true`
-         * only means the share was launched. A debug room is written to as with [replyRoom].
+         * The room's latest messenger gets a share marked as Markdown. KakaoTalk sends it, but shows the formatting only
+         * on this device: the other people in the room see plain text (KakaoTalk 26.9.1). `true` only means the share
+         * was launched. A debug room is written to as with [replyRoom].
          *
          * @param room The room's name, ID or object.
          * @param message The text to send.

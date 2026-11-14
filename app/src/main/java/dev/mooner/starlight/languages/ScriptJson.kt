@@ -19,12 +19,13 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.longOrNull
 
 /**
- * JSON in a script engine's own terms, for APIs that keep what scripts give them, such as `Store`.
+ * JSON and arrays in a script engine's own terms, for APIs that keep what scripts give them, such as `Store`, or hand
+ * back several objects, such as `Chat.getRooms()`.
  *
  * Java lists and maps aren't JS arrays and objects in either engine (`Array.isArray` is false, there is no `map`, and
  * NeonJS's `JSON.stringify` writes a list as an object), so an API that hands data back to a script asks the engine:
- * [parse] makes the engine's own objects and arrays, and [stringify] reads a value as the script's `JSON.stringify`
- * does. Both run on the thread the script called from.
+ * [parse] makes the engine's own objects and arrays, [stringify] reads a value as the script's `JSON.stringify` does,
+ * and [array] makes the engine's own array of host objects. They run on the thread the script called from.
  *
  * An engine gives its own to the API objects it creates, through [providing]. A language that doesn't, as a plugin's,
  * leaves them [Plain], which works with Java maps and lists.
@@ -36,6 +37,13 @@ interface ScriptJson {
 
     /** [value] as JSON, written by the engine's `JSON.stringify`; null when it has no JSON form, as `undefined`. */
     fun stringify(value: Any?): String?
+
+    /**
+     * [items] as the engine's own array, each item as it is, so that a script can use `map`, `forEach` and the rest:
+     * a Java array has only `length` and indices in both engines. A language that has no array of its own here gets
+     * [items] unchanged.
+     */
+    fun array(items: Array<*>): Any? = items
 
     companion object {
 

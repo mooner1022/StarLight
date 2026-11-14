@@ -8,6 +8,7 @@ package dev.mooner.starlight.api.original
 
 import dev.mooner.starlight.api.api2.Api2Message
 import dev.mooner.starlight.api.api2.Api2Room
+import dev.mooner.starlight.languages.ScriptJson
 import dev.mooner.starlight.listener.NotificationListener
 import dev.mooner.starlight.media.script.ScriptValues
 import dev.mooner.starlight.plugincore.api.Api
@@ -42,6 +43,7 @@ class ChatApi: Api<ChatApi.Chat>() {
      */
     class Chat internal constructor(
         private val project: Project,
+        private val json: ScriptJson,
     ) {
 
         /**
@@ -141,9 +143,11 @@ class ChatApi: Api<ChatApi.Chat>() {
         /**
          * The rooms messages came from since StarLight started, or whose message notifications were still shown when it
          * started, which the bot can send to.
+         *
+         * @return An array of `ChatRoom`: the engine's own array, so `Chat.getRooms().map(...)` works.
          */
-        fun getRooms(): Array<ChatRoom> =
-            NotificationListener.getRooms().toTypedArray()
+        fun getRooms(): Any? =
+            json.array(NotificationListener.getRooms().toTypedArray())
 
         private fun targetOf(target: Any): ChatWaits.Target =
             when (target) {
@@ -218,5 +222,5 @@ class ChatApi: Api<ChatApi.Chat>() {
         InstanceType.OBJECT
 
     override fun getInstance(project: Project): Any =
-        Chat(project)
+        Chat(project, ScriptJson.current())
 }

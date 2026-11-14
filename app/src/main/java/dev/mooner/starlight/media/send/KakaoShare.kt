@@ -14,6 +14,7 @@ import android.os.Process
 import android.os.UserHandle
 import android.provider.Settings
 import androidx.core.content.FileProvider
+import dev.mooner.starlight.listener.chat.OwnReads
 import java.io.File
 import java.lang.reflect.InvocationTargetException
 
@@ -87,6 +88,8 @@ object KakaoShare {
      * known: then the only KakaoTalk, or Android asks).
      */
     fun share(context: Context, channelId: Long, files: List<Pair<Uri, String>>, roomUserId: Int?): Route {
+        // KakaoTalk opens the room and reads it, taking its notification away: that isn't a deleted message.
+        OwnReads.shared.note(channelId.toString(), OwnReads.SHARE_MILLIS)
         val matches = findShareActivities(context, shareIntent(channelId, files).setPackage(KAKAO_PACKAGE))
         val className = chooseShareActivity(matches.map { it.className }) ?: SHARE_ACTIVITY
         val myUserId = myUserId()
@@ -117,6 +120,7 @@ object KakaoShare {
      * text, so naming only the package would make Android ask which.
      */
     fun shareText(context: Context, channelId: Long, text: String, attachment: String?, roomUserId: Int?): Route {
+        OwnReads.shared.note(channelId.toString(), OwnReads.SHARE_MILLIS)
         val intent = { withRoom(textIntent(text, attachment), channelId) }
         val matches = findShareActivities(context, intent().setPackage(KAKAO_PACKAGE))
         val className = chooseShareActivity(matches.map { it.className }) ?: SHARE_ACTIVITY

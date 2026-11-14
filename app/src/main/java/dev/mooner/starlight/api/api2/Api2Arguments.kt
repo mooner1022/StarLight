@@ -159,8 +159,9 @@ open class Api2Message internal constructor(
     /**
      * Sends [content] to the room the message came from as a Markdown message.
      *
-     * Messengers may refuse such a message; `true` only means it was handed over. KakaoTalk currently doesn't take it.
-     * In the debug room the text shows there, as a reply.
+     * Messengers may refuse such a message; `true` only means it was handed over. KakaoTalk sends it, but shows the
+     * formatting only on this device: the other people in the room see plain text (KakaoTalk 26.9.1). In the debug room
+     * the text shows there, as a reply.
      *
      * @param content The text to send; any other value is sent as its text, `null` as `"null"`.
      * @return Whether the share was launched, or `true` in the debug room; `false` when no app can take it.

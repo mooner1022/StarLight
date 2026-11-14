@@ -19,6 +19,7 @@ import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.core.ApplicationSession
 import dev.mooner.starlight.listener.chat.ChatRoomImpl
 import dev.mooner.starlight.listener.chat.ChatSessions
+import dev.mooner.starlight.listener.chat.OwnReads
 import dev.mooner.starlight.listener.chat.RoomKey
 import dev.mooner.starlight.listener.chat.SessionManager
 import dev.mooner.starlight.listener.event.Api2CommandEvent
@@ -342,11 +343,16 @@ class NotificationListener: NotificationListenerService() {
                 LOG.verbose { "currentChatLogId= ${deduper.lastChatLogId}" }
 
                 sbn.toDeletedMessage()?.let { data ->
-                    if (reason == REASON_APP_CANCEL && data.chatLogId == deduper.lastChatLogId) {
-                        Session.projectManager.fireEvent<ProjectOnMessageDeleteEvent>(data) { project, e ->
-                            e.printStackTrace()
-                            LOG.verbose { "Failed to call event on '${project.info.name}': $e" }
-                        }
+                    if (reason != REASON_APP_CANCEL || data.chatLogId != deduper.lastChatLogId)
+                        return@let
+                    // KakaoTalk takes a notification away alike when StarLight had the room read.
+                    if (OwnReads.shared.explains(sbn.tag)) {
+                        LOG.debug { "The notification of room ${sbn.tag} went after StarLight had it read: not a deletion" }
+                        return@let
+                    }
+                    Session.projectManager.fireEvent<ProjectOnMessageDeleteEvent>(data) { project, e ->
+                        e.printStackTrace()
+                        LOG.verbose { "Failed to call event on '${project.info.name}': $e" }
                     }
                 }
             }
