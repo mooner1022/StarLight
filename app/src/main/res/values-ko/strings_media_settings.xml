@@ -24,7 +24,7 @@
     <string name="media_settings_temp_retention_title">임시 파일 보관 시간 (초)</string>
     <string name="media_settings_temp_retention_desc">다운로드하거나 복사한 파일은 전송 후 이 시간이 지나면 삭제돼요. 큰 동영상은 늘려 주세요.</string>
     <string name="media_settings_after_send_title">전송 후</string>
-    <string name="media_settings_after_send_desc">스크립트의 leave 옵션이 없을 때 적용돼요. 채팅방이 열려 있는 동안에는 알림이 오지 않으니 봇이라면 나가는 것이 좋아요.</string>
+    <string name="media_settings_after_send_desc">스크립트의 leave 옵션이 없을 때 적용돼요. 채팅방이 열려 있는 동안에는 그 방의 알림이 오지 않으니 봇이라면 나가는 것이 좋아요.</string>
     <string name="media_settings_after_send_stay">카카오톡에 머물기</string>
     <string name="media_settings_after_send_home">홈 화면으로 이동</string>
     <string name="media_settings_after_send_starlight">StarLight로 돌아가기</string>

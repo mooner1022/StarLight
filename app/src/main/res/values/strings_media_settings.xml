@@ -24,7 +24,7 @@
     <string name="media_settings_temp_retention_title">Temporary file retention (seconds)</string>
     <string name="media_settings_temp_retention_desc">Downloaded or copied files are deleted this long after sending. Increase it for large videos.</string>
     <string name="media_settings_after_send_title">After sending</string>
-    <string name="media_settings_after_send_desc">Applies when a script sets no leave option. No notifications arrive while the chat room is open, so a bot should leave.</string>
+    <string name="media_settings_after_send_desc">Applies when a script sets no leave option. A chat room\'s notifications don\'t arrive while it is open, so a bot should leave.</string>
     <string name="media_settings_after_send_stay">Stay in KakaoTalk</string>
     <string name="media_settings_after_send_home">Go to the home screen</string>
     <string name="media_settings_after_send_starlight">Return to StarLight</string>

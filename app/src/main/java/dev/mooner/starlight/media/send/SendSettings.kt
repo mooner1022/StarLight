@@ -27,12 +27,15 @@ sealed interface LeaveTo {
         const val KEY_HOME = "home"
         const val KEY_STARLIGHT = "starlight"
 
-        /** The choice saved in the plugin's settings. */
+        /**
+         * The choice saved in the plugin's settings; the home screen when none was saved. A chat room left open gets no
+         * notifications, so a bot that stays misses that room's messages until the screen goes off.
+         */
         fun ofSetting(key: String?): LeaveTo =
             when (key) {
-                KEY_HOME      -> Home
+                KEY_STAY      -> Stay
                 KEY_STARLIGHT -> StarLight
-                else          -> Stay
+                else          -> Home
             }
 
         /** A script's choice: `"stay"`, `"home"`, `"starlight"`, or a package name. */
@@ -57,10 +60,10 @@ data class SendSettings(
     /** Least time between two sends; KakaoTalk may drop a share that arrives while it is handling another. */
     val sendIntervalMillis: Long = 0,
     /** Where sends leave KakaoTalk for unless a script says otherwise. */
-    val leaveTo: LeaveTo = LeaveTo.Stay,
+    val leaveTo: LeaveTo = LeaveTo.Home,
     /**
      * Longest stay in KakaoTalk after a send: KakaoTalk is left once it has read the files, or after this if their
-     * reading isn't seen. While a chat room is open, KakaoTalk posts no notifications, so messages are missed.
+     * reading isn't seen. While a chat room is open, KakaoTalk posts no notifications for it, so its messages are missed.
      */
     val leaveMaxWaitMillis: Long = 5_000,
     /** Time left to KakaoTalk after it read the files, to post the message before it goes to the background. */
