@@ -25,7 +25,8 @@ private val LOG = LoggerFactory.logger {  }
  * `MediaSharer.sendText` does with `{ markdown: true }`.
  *
  * KakaoTalk opens the room and sends the text, so the room needs no reply session. It is sent one KakaoTalk start at a
- * time with files, and KakaoTalk is left afterwards as **미디어 전송** says. Only KakaoTalk reads the Markdown mark.
+ * time with files, and KakaoTalk is left afterwards as **미디어 전송** says. Only KakaoTalk reads the Markdown mark, and it shows the
+ * formatting only on this device: the other people in the room see plain text (KakaoTalk 26.9.1).
  */
 object MarkdownSender {
 

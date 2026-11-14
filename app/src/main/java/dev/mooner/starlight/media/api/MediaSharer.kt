@@ -73,7 +73,8 @@ class MediaSharer internal constructor(project: Project) {
      * KakaoTalk was started, which then sends it; failures are logged to the project too.
      *
      * [options] is an object with any of these:
-     * - `markdown`: `true` to show the text as Markdown, as `**bold**`, `*italic*`, `` `code` `` and `- list`
+     * - `markdown`: `true` to show the text as Markdown, as `**bold**`, `*italic*`, `` `code` `` and `- list`, on this
+     *   device only (see below)
      * - `spoilers`: parts hidden until tapped, each `{ start, length }` or `[start, length]`, counted in characters from
      *   0. KakaoTalk shows no spoilers in a Markdown message, so the two can't be combined.
      * - `emoticons`: mini emoticons, each its ID (`"<item code>_<number>"`) for the next placeholder, or
@@ -87,8 +88,8 @@ class MediaSharer internal constructor(project: Project) {
      * MediaSharer.sendText(msg, "Answer: spoiler", { spoilers: [{ start: 8, length: 7 }] });
      * ```
      *
-     * KakaoTalk refuses secret chats, channel chats and silent rooms. Whether KakaoTalk's servers keep the formatting
-     * for the other people in the room isn't something StarLight can check.
+     * KakaoTalk refuses secret chats, channel chats and silent rooms. KakaoTalk shows Markdown formatted only on
+     * this device: the other people in the room see the text as written (KakaoTalk 26.9.1).
      */
     fun sendText(room: Any?, text: Any?, options: Any?): CompletableFuture<MediaSendResult> =
         core.sendText(room, text, options, toMemo = false)

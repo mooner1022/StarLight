@@ -353,9 +353,9 @@ class BotManagerApi: Api<BotManagerApi.BotManager>() {
         /**
          * Sends [msg] to [room] as a Markdown message.
          *
-         * Messengers may refuse such a message; `true` only means it was handed over. KakaoTalk currently doesn't take
-         * it. Without [packageName], the app that has the room is used. Sending to the debug room shows [msg] on its
-         * screen.
+         * Messengers may refuse such a message; `true` only means it was handed over. KakaoTalk sends it, but shows
+         * the formatting only on this device: the other people in the room see plain text (KakaoTalk 26.9.1). Without
+         * [packageName], the app that has the room is used. Sending to the debug room shows [msg] on its screen.
          *
          * @param room A room name, a room ID (a BigInt or a whole number), a `[name, id]` pair or a room object.
          * @param msg The text to send; any other value is sent as its text.
