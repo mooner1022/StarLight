@@ -112,8 +112,16 @@ jobs:
         EXPECTED_CERT_SHA256: 4b5b75088146ed3a5cfbcf17a26e3ece009d8ea5a8948002a1d65b47a8c295c8
       run: |
         tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
-        actual="$("$tools/apksigner" verify --print-certs "$ARTIFACT_PATH" \
-          | sed -nE 's/^Signer #1 certificate SHA-256 digest: ([0-9a-f]+)$/\1/p')"
+        echo "apksigner from $tools"
+        # Shown in full, so a failed check says why.
+        if ! certs="$("$tools/apksigner" verify --print-certs "$ARTIFACT_PATH" 2>&1)"; then
+          echo "$certs"
+          echo "::error::apksigner couldn't verify the release APK"
+          exit 1
+        fi
+        echo "$certs"
+        actual="$(printf '%s\n' "$certs" \
+          | sed -nE 's/^Signer[^:]*certificate SHA-256 digest: ([0-9a-fA-F]+).*$/\1/p' | head -n 1 | tr 'A-F' 'a-f')"
         if [ "$actual" != "$EXPECTED_CERT_SHA256" ]; then
           echo "::error::The release APK is signed with '${actual:-nothing}', not the published certificate"
           exit 1
