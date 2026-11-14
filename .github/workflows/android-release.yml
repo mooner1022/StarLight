@@ -120,8 +120,10 @@ jobs:
           exit 1
         fi
         echo "$certs"
+        # Every signer's certificate, as "Signer #1 certificate SHA-256 digest: …" or, from build-tools 37,
+        # "V2 Signer: certificate SHA-256 digest: …"; all must be the published one.
         actual="$(printf '%s\n' "$certs" \
-          | sed -nE 's/^Signer[^:]*certificate SHA-256 digest: ([0-9a-fA-F]+).*$/\1/p' | head -n 1 | tr 'A-F' 'a-f')"
+          | sed -nE 's/^.*certificate SHA-256 digest: ([0-9a-fA-F]+).*$/\1/p' | tr 'A-F' 'a-f' | sort -u)"
         if [ "$actual" != "$EXPECTED_CERT_SHA256" ]; then
           echo "::error::The release APK is signed with '${actual:-nothing}', not the published certificate"
           exit 1
