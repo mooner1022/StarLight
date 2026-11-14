@@ -19,6 +19,8 @@ internal class NeonJson(private val context: NeonContext) : ScriptJson {
     // The script's global, as the module sees it: read when first needed, on the script's thread.
     private val json: NeonValue by lazy { context["JSON"] }
 
+    private val arrays: NeonValue by lazy { context["Array"] }
+
     override fun parse(json: String): Any? =
         this.json.callMember("parse", json)
 
@@ -26,4 +28,8 @@ internal class NeonJson(private val context: NeonContext) : ScriptJson {
         val text = json.callMember("stringify", value)
         return if (text.isUndefined) null else text.asString()
     }
+
+    // A Java array reaches the script as an array-like host object, which Array.from copies item by item.
+    override fun array(items: Array<*>): Any? =
+        arrays.callMember("from", items)
 }

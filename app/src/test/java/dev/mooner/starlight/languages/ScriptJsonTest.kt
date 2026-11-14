@@ -18,6 +18,14 @@ class ScriptJsonTest {
         fun stringify(value: Any?): String? = json.stringify(value)
         fun roundTrip(value: Any?, transform: (Any?) -> Any?): String? =
             json.stringify(transform(json.parse(json.stringify(value)!!)))
+        fun items(): Any? = json.array(arrayOf(Item("a"), Item("b")))
+        fun none(): Any? = json.array(emptyArray<Item>())
+    }
+
+    /** A host object, as a `ChatRoom` is, that the engine's array holds as it is. */
+    @Suppress("unused")
+    class Item(@JvmField val name: String) {
+        fun shout(): String = name.uppercase()
     }
 
     private val engines = Engines { json -> mapOf("box" to Box(json)) }
@@ -52,6 +60,22 @@ class ScriptJsonTest {
         // What StoreFile.set's KDoc tells scripts.
         assertEquals("null", engines.neon("box.stringify(undefined)"))
         assertEquals("\"undefined\"", engines.rhino("box.stringify(undefined)"))
+    }
+
+    @Test
+    fun `arrays are the engine's own and hold the host objects`() {
+        engines.both("Array.isArray(box.items())", "true")
+        engines.both("box.items().length", "2")
+        engines.both("box.items().map(function (x) { return x.shout(); }).join(',')", "A,B")
+        engines.both("box.items().filter(function (x) { return x.name == 'b'; }).length", "1")
+        engines.both("box.items()[0].name", "a")
+        engines.both("Array.isArray(box.none()) && box.none().length === 0", "true")
+    }
+
+    @Test
+    fun `Plain keeps the array as it is`() {
+        val items = arrayOf("a", "b")
+        assertTrue(ScriptJson.Plain.array(items) === items)
     }
 
     @Test

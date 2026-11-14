@@ -133,9 +133,13 @@ class ScheduleApi: Api<ScheduleApi.Schedule>() {
         fun once(time: Any, callback: (run: ScheduleRun) -> Unit): ScheduledTask =
             add(ScheduleSpec.Once(instantOf(time)), "Schedule.once", callback)
 
-        /** The project's tasks from `daily`, `cron` and `once` still to run, as an array; not those of `Schedule.at`. */
-        fun getTasks(): Array<ScheduledTask> =
-            Schedules.tasksOf(project.info.id).filterNot { it.stored }.map(::ScheduledTask).toTypedArray()
+        /**
+         * The project's tasks from `daily`, `cron` and `once` still to run; not those of `Schedule.at`.
+         *
+         * @return An array of `ScheduledTask`: the engine's own array, so `map` and `forEach` work.
+         */
+        fun getTasks(): Any? =
+            json.array(Schedules.tasksOf(project.info.id).filterNot { it.stored }.map(::ScheduledTask).toTypedArray())
 
         /**
          * Cancels every task of the project from `daily`, `cron` and `once`. Those of `Schedule.at` stay: cancel them
@@ -201,9 +205,13 @@ class ScheduleApi: Api<ScheduleApi.Schedule>() {
             return StoredTask(stored, stored.at(instant, name, data), json)
         }
 
-        /** The tasks `Schedule.at` keeps for the project, as an array, those still waiting for a handler included. */
-        fun getStored(): Array<StoredTask> =
-            stored.list().map { StoredTask(stored, it, json) }.toTypedArray()
+        /**
+         * The tasks `Schedule.at` keeps for the project, those still waiting for a handler included.
+         *
+         * @return An array of `StoredTask`: the engine's own array, so `map` and `forEach` work.
+         */
+        fun getStored(): Any? =
+            json.array(stored.list().map { StoredTask(stored, it, json) }.toTypedArray())
 
         /**
          * Cancels every task `Schedule.at` keeps under [name].
