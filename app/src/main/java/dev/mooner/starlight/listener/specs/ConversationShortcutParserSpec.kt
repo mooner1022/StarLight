@@ -18,12 +18,14 @@ import androidx.core.app.NotificationCompat
  * only the sender. Nothing in the notification names the room. The name is left on the conversation shortcut
  * KakaoTalk publishes for the room, which the system keeps in the notification's ranking: see
  * [ConversationShortcuts] for how it is read.
+ *
+ * It reads KakaoTalk 26.10.0 or later too, whose tag also names the account: see [ParserSpecPolicy.roomIdOf].
  */
-open class ConversationShortcutParserSpec: AndroidRParserSpec() {
+class ConversationShortcutParserSpec: AndroidRParserSpec() {
 
     override val id: String = ParserSpecPolicy.CONVERSATION_SHORTCUT
 
-    override val name: String = "안드로이드 11 이상, 카카오톡 26.7.0 ~ 26.9.x 메세지 분석 스펙"
+    override val name: String = "안드로이드 11 이상, 카카오톡 26.7.0 이상 메세지 분석 스펙"
 
     override fun resolveRoom(
         sbn       : StatusBarNotification,

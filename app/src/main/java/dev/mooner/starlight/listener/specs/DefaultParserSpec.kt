@@ -15,7 +15,6 @@ import android.os.Bundle
 import android.service.notification.StatusBarNotification
 import android.text.SpannableString
 import androidx.core.app.NotificationCompat
-import dev.mooner.starlight.PACKAGE_KAKAO_TALK
 import dev.mooner.starlight.listener.chat.ChatRoomImpl
 import dev.mooner.starlight.plugincore.chat.ChatRoom
 import dev.mooner.starlight.plugincore.chat.ChatSender
@@ -51,9 +50,7 @@ class DefaultParserSpec: MessageParserSpec {
         } else {
             null
         }
-        // Below Android 11 no spec is picked by KakaoTalk's version, so this one reads the tag of KakaoTalk 26.10.0 or
-        // later too, which starts with the account's ID.
-        val roomId = if (sbn.packageName == PACKAGE_KAKAO_TALK) ParserSpecPolicy.roomIdOf(sbn.tag) else sbn.tag
+        val roomId = ParserSpecPolicy.roomIdOf(sbn.packageName, sbn.tag)
         val room = extras.getString(NotificationCompat.EXTRA_SUMMARY_TEXT, sender)
 
         val profileBitmap = (notification.getLargeIcon().loadDrawable(context) as BitmapDrawable).bitmap

@@ -32,20 +32,19 @@ class ParserSpecPolicyTest {
         assertEquals(ParserSpecPolicy.CONVERSATION_SHORTCUT, ParserSpecPolicy.specIdFor(androidR, Version(26, 7, 0)))
         assertEquals(ParserSpecPolicy.CONVERSATION_SHORTCUT, ParserSpecPolicy.specIdFor(androidR, Version(26, 9, 1)))
         assertEquals(ParserSpecPolicy.CONVERSATION_SHORTCUT, ParserSpecPolicy.specIdFor(androidR, Version(26, 9, 99)))
+        assertEquals(ParserSpecPolicy.CONVERSATION_SHORTCUT, ParserSpecPolicy.specIdFor(androidR, Version(27, 0, 0)))
     }
 
     @Test
-    fun `KakaoTalk tags with the account's ID from 26_10_0 on`() {
-        assertEquals(ParserSpecPolicy.ACCOUNT_IN_TAG, ParserSpecPolicy.specIdFor(androidR, Version(26, 10, 0)))
-        assertEquals(ParserSpecPolicy.ACCOUNT_IN_TAG, ParserSpecPolicy.specIdFor(androidR, Version(26, 10, 3)))
-        assertEquals(ParserSpecPolicy.ACCOUNT_IN_TAG, ParserSpecPolicy.specIdFor(androidR, Version(27, 0, 0)))
-        // Below Android 11 the default spec reads both tags.
+    fun `KakaoTalk 26_10_0, whose tag also names the account, keeps the spec of 26_7_0`() {
+        // The tag's format tells which it is: no spec is picked by it.
+        assertEquals(ParserSpecPolicy.CONVERSATION_SHORTCUT, ParserSpecPolicy.specIdFor(androidR, Version(26, 10, 0)))
         assertEquals(ParserSpecPolicy.DEFAULT, ParserSpecPolicy.specIdFor(androidQ, Version(26, 10, 0)))
     }
 
     @Test
     fun `an unknown KakaoTalk version gets the newest spec`() {
-        assertEquals(ParserSpecPolicy.ACCOUNT_IN_TAG, ParserSpecPolicy.specIdFor(androidR, null))
+        assertEquals(ParserSpecPolicy.CONVERSATION_SHORTCUT, ParserSpecPolicy.specIdFor(androidR, null))
     }
 
     @Test
@@ -63,6 +62,14 @@ class ParserSpecPolicyTest {
         assertEquals("18452224509561830", ParserSpecPolicy.roomIdOf("18452224509561830"))
         for (tag in listOf("", "_18452224509561830", "423005562_", "a_1", "1_a", "1_2_3", "423005562-18452224509561830"))
             assertEquals(tag, ParserSpecPolicy.roomIdOf(tag))
+    }
+
+    @Test
+    fun `only KakaoTalk's tags are read for an account's ID`() {
+        assertEquals("18452224509561830", ParserSpecPolicy.roomIdOf("com.kakao.talk", "423005562_18452224509561830"))
+        assertEquals("18452224509561830", ParserSpecPolicy.roomIdOf("com.kakao.talk", "18452224509561830"))
+        // A rule may apply a spec to another messenger, whose tags mean what they mean there.
+        assertEquals("423005562_18452224509561830", ParserSpecPolicy.roomIdOf("com.example.chat", "423005562_18452224509561830"))
     }
 
     @Test

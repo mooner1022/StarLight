@@ -347,8 +347,8 @@ class NotificationListener: NotificationListenerService() {
                         return@let
                     // KakaoTalk takes a notification away alike when StarLight had the room read.
                     // Reads are noted by the room's ID, which KakaoTalk 26.10.0 or later puts after the account's in the tag.
-                    val roomId = sbn.tag?.let(ParserSpecPolicy::roomIdOf)
-                    if (OwnReads.shared.explains(roomId) || OwnReads.shared.explains(sbn.tag)) {
+                    val roomId = sbn.tag?.let { ParserSpecPolicy.roomIdOf(it) }
+                    if (OwnReads.shared.explains(roomId)) {
                         LOG.debug { "The notification of room $roomId went after StarLight had it read: not a deletion" }
                         return@let
                     }
@@ -408,10 +408,8 @@ class NotificationListener: NotificationListenerService() {
 
         val chatLogId = extras.getLong("chatLogId")
 
-        // From KakaoTalk 26.10.0 the tag starts with the account's ID; a rule pinned to an older spec keyed the room
-        // by the whole tag.
-        val chatRoom: ChatRoom? = tag?.let { ChatSessions.registry.chatRoomByRawId(ParserSpecPolicy.roomIdOf(it))
-            ?: ChatSessions.registry.chatRoomByRawId(it) }
+        // From KakaoTalk 26.10.0 the tag starts with the account's ID, which the room's ID doesn't.
+        val chatRoom: ChatRoom? = tag?.let { ChatSessions.registry.chatRoomByRawId(ParserSpecPolicy.roomIdOf(it)) }
 
         return DeletedMessage(
             message = message,
