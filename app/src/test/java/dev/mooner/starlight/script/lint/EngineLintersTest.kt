@@ -50,6 +50,26 @@ class EngineLintersTest {
     }
 
     @Test
+    fun `a NeonJS module may use Java's packages and print, as JSNeon gives them`() {
+        assertEquals(emptyList<String>(), neon("""
+            const list = new java.util.ArrayList();
+            export function onMessage(event) {
+                list.add(Packages.kotlin.text.Regex);
+                android.widget.Toast.makeText(null, javax.net.ssl.SSLContext, com.example, org.example, edu.example);
+                print(list.size());
+                printErr(event);
+            }
+        """.trimIndent()))
+        // A module's own names of the same, as scripts written before JSNeon gave them have.
+        assertEquals(emptyList<String>(), neon("""
+            const com = { example: 1 };
+            let org = "starlight";
+            function print(text) { Log.i(text); }
+            export function onMessage(event) { print(com.example + org + event); }
+        """.trimIndent()))
+    }
+
+    @Test
     fun `NeonJS findings come all at once, syntax errors with mistakes and names nothing defines`() {
         val source = """
             export function onMessage(event) {

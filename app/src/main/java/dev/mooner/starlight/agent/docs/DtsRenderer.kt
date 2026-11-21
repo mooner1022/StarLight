@@ -406,7 +406,7 @@ class DtsRenderer(
         private val JAVA_CALLBACK_PACKAGES = listOf("java.", "javax.", "android.")
 
         const val JAVA_LIST =
-            "/** A Java array or List: elements by index, `length` and `for...of`. It isn't a JS array: `Array.from(x)` makes one, for array methods. */\n" +
+            "/** A Java array or List: elements by index, `length` and `for...of`. NeonJS also gives it the array methods; in Rhino it isn't a JS array: `Array.from(x)` makes one. */\n" +
                 "interface JavaList<T> { readonly length: number; readonly [index: number]: T; [Symbol.iterator](): Iterator<T> }"
 
         const val JAVA_SET =
@@ -414,7 +414,7 @@ class DtsRenderer(
                 "interface JavaSet<T> { size(): number; contains(value: T): boolean; [Symbol.iterator](): Iterator<T> }"
 
         const val JAVA_MAP =
-            "/** A Java Map: its entries are properties, read as `map[key]` or `map.key`. */\n" +
+            "/** A Java Map: its entries are properties, read as `map[key]` or `map.key`. In NeonJS it is a JS Map too (`for (const [k, v] of map)`, `map.has(k)`), its Java methods first: `map.size()`. */\n" +
                 "interface JavaMap<V> { readonly [key: string]: V }"
     }
 }

@@ -6,6 +6,7 @@
 
 package dev.mooner.starlight.script.lint
 
+import dev.mooner.neonjs.interop.JavaPackageObject
 import dev.mooner.neonjs.lint.Diagnostic
 import dev.mooner.neonjs.lint.EngineGlobals
 import dev.mooner.neonjs.lint.GlobalKind
@@ -55,9 +56,13 @@ internal object EngineLinters {
 
     // ---- NeonJS -------------------------------------------------------------------------------------------------
 
-    /** As JSNeon builds its engines: the web globals, `fetch` and `WebSocket`, `Java`; and what it adds itself. */
+    /**
+     * As JSNeon builds its engines: the web globals, `fetch` and `WebSocket`, `Java`; Java's packages and `print`, which
+     * the linter's engine globals don't know of; and what it adds itself.
+     */
     private val neonGlobals: Globals =
-        EngineGlobals.of(console = true, webGlobals = true, java = true, net = true) + Globals.of(listOf("toast", "repeat"))
+        EngineGlobals.of(console = true, webGlobals = true, java = true, net = true) +
+            Globals.of(listOf("Packages") + JavaPackageObject.GLOBALS + listOf("print", "printErr", "toast", "repeat"))
 
     /**
      * A file of a project that isn't Rhino's, which is a module.

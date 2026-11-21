@@ -25,7 +25,7 @@ With the default language version (ES6, in the project's Rhino settings):
 | Waiting | Blocking calls such as `Utils.getWebText()`; timers | `fetch`, `WebSocket`, Promises, `async`/`await`, timers |
 | Concurrency | Up to three events run at once by default, so shared state needs care | One task at a time |
 | Strictness | Sloppy mode: assigning an undeclared name creates a global | Strict mode |
-| Java | `Packages.java.util.ArrayList`, `java.lang.Math`, `importClass()`, `importPackage()`, `JavaAdapter` | `Java.type()`, `Java.extend()` |
+| Java | `Packages.java.util.ArrayList`, `java.lang.Math`, `importClass()`, `importPackage()`, `JavaAdapter` | `Java.type()`, `Packages` and `java.lang.Math` too, `Java.extend()` |
 | `console` | Logs to the project, in MessengerBot's format: `log`, `info`, `debug`, `warn`, `error`, `clear`, `time`, `timeEnd`, `timeLog`, `count`, `countReset`, `assert`, `table` (no format specifiers, `group`, `dir` or `trace`) | Logs to the project, with more members |
 
 - Because every top-level function is visible, a Rhino project with both the StarLight original and MessengerBot API2
@@ -45,9 +45,10 @@ With the default language version (ES6, in the project's Rhino settings):
 - A Java `long` arrives as a number, so one beyond 2^53, such as a 64-bit room ID, loses precision. The API
   declarations show `number | bigint`, which is NeonJS's; in Rhino, pass IDs as strings where an API takes them,
   and don't compute with them. A `BigInteger` arrives as a BigInt.
-- Java arrays, `List`s and `Map`s read as in NeonJS: by index, `length`, `for...of`, `map.key`. Rhino has no
-  `Java.from`, and reading it throws an `InternalError` rather than giving `undefined`: `Array.from(x)` makes a JS
-  array.
+- Java arrays, `List`s and `Map`s read by index, `length`, `for...of` and `map.key`, but they aren't JS arrays and
+  Maps as they are in NeonJS: `Array.isArray` is false and there are no array methods (`map`, `join`).
+  `Array.from(x)` makes a JS array. Rhino has no `Java.from`, and reading it throws an `InternalError` rather than
+  giving `undefined`.
 - Getters read as properties in Rhino too (`room.groupChat`), and a boolean `isX()` must be called with parentheses
   when written as `room.isGroupChat()`.
 - Java exceptions arrive as errors named `JavaException`, with the Java exception in `e.javaException`.

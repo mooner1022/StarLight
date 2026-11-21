@@ -5,9 +5,9 @@ import dev.mooner.neonjs.NeonContext
 import dev.mooner.neonjs.NeonEngine
 import dev.mooner.neonjs.NeonInterruptedException
 import dev.mooner.neonjs.NeonValue
-import dev.mooner.neonjs.SandboxPolicy
 import dev.mooner.starlight.languages.neonjs.NeonEventGuard
 import dev.mooner.starlight.languages.neonjs.buildHostAccess
+import dev.mooner.starlight.languages.neonjs.buildSandboxPolicy
 import dev.mooner.starlight.languages.neonjs.neonUncaughtHandler
 import dev.mooner.starlight.languages.rhino.PrimitiveWrapFactory
 import dev.mooner.starlight.languages.rhino.rhinoUncaughtHandler
@@ -270,9 +270,9 @@ class UncaughtErrorsTest {
         neonContexts.forEach(NeonContext::close)
     }
 
-    private fun neon(hostAccess: HostAccess = HostAccess.builder(HostAccess.Level.ALL).defaultDenyList(false).allowLookup { true }.build()): NeonContext =
+    private fun neon(hostAccess: HostAccess = buildHostAccess(restricted = false)): NeonContext =
         NeonEngine.builder()
-            .sandbox(SandboxPolicy.builder().exposeJavaGlobal(true).build())
+            .sandbox(buildSandboxPolicy())
             .hostAccess(hostAccess)
             .build()
             .newContext()

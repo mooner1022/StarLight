@@ -1,11 +1,11 @@
 package dev.mooner.starlight.script
 
-import dev.mooner.neonjs.HostAccess
 import dev.mooner.neonjs.NeonContext
 import dev.mooner.neonjs.NeonEngine
-import dev.mooner.neonjs.SandboxPolicy
 import dev.mooner.starlight.languages.ScriptJson
 import dev.mooner.starlight.languages.neonjs.NeonJson
+import dev.mooner.starlight.languages.neonjs.buildHostAccess
+import dev.mooner.starlight.languages.neonjs.buildSandboxPolicy
 import dev.mooner.starlight.languages.rhino.PrimitiveWrapFactory
 import dev.mooner.starlight.languages.rhino.RhinoJson
 import org.junit.Assert.assertEquals
@@ -20,8 +20,8 @@ import org.mozilla.javascript.ScriptableObject
 class Engines(globals: (ScriptJson) -> Map<String, Any>) : AutoCloseable {
 
     private val neon: NeonContext = NeonEngine.builder()
-        .sandbox(SandboxPolicy.builder().exposeJavaGlobal(true).build())
-        .hostAccess(HostAccess.builder(HostAccess.Level.ALL).defaultDenyList(false).allowLookup { true }.build())
+        .sandbox(buildSandboxPolicy())
+        .hostAccess(buildHostAccess(restricted = false))
         .build()
         .newContext()
 

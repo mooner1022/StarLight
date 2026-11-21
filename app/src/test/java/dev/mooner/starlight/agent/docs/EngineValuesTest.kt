@@ -1,9 +1,9 @@
 package dev.mooner.starlight.agent.docs
 
-import dev.mooner.neonjs.HostAccess
 import dev.mooner.neonjs.NeonContext
 import dev.mooner.neonjs.NeonEngine
-import dev.mooner.neonjs.SandboxPolicy
+import dev.mooner.starlight.languages.neonjs.buildHostAccess
+import dev.mooner.starlight.languages.neonjs.buildSandboxPolicy
 import dev.mooner.starlight.languages.rhino.PrimitiveWrapFactory
 import org.junit.AfterClass
 import org.junit.Assert.assertEquals
@@ -14,6 +14,8 @@ import org.mozilla.javascript.Context
 import org.mozilla.javascript.ContextFactory
 import org.mozilla.javascript.ScriptableObject
 import java.math.BigInteger
+import java.time.Instant
+import java.time.LocalDateTime
 
 /**
  * What the docs tell the agent about Java values, checked in both engines: the `JavaList`/`JavaMap` declarations every
@@ -39,6 +41,12 @@ class EngineValuesTest {
         fun run(task: Runnable): String { task.run(); return "ran" }
         fun apply(transform: (String) -> String): String = transform("in")
         fun fail(): String = throw IllegalStateException("boom")
+        fun failWithCause(): String = throw IllegalStateException("outer", java.io.IOException("inner"))
+        val mutable: MutableList<String> = arrayListOf("a")
+        val twice: (Int) -> Int = { it * 2 }
+        val upper: java.util.function.Function<String, String> = java.util.function.Function { it.uppercase() }
+        val instant: Instant = Instant.ofEpochMilli(5)
+        val local: LocalDateTime = LocalDateTime.of(2026, 1, 1, 0, 0)
         fun pick(value: String): String = "string"
         fun pick(value: Int): String = "int"
         val nothing: String? = null
@@ -70,7 +78,7 @@ class EngineValuesTest {
         // Env's KDoc: a TypeError in NeonJS, whose modules are strict, and UnsupportedOperationException in Rhino.
         val neonError = runCatching { neon("(function(){ 'use strict'; fx.realEnv.TOKEN = 'x'; })()") }.exceptionOrNull()
         assertTrue(neonError.toString(), neonError.toString().contains("TypeError: Cannot assign to read only property"))
-        assertEquals("HostError: Env is read-only: change the .env file and compile the project again",
+        assertEquals("java.lang.UnsupportedOperationException: Env is read-only: change the .env file and compile the project again",
             neon("(function(){ try { fx.realEnv.put('TOKEN', 'x') } catch (e) { return e.name + ': ' + e.message } })()"))
         val rhinoError = runCatching { rhino("(fx.realEnv.TOKEN = 'x')") }.exceptionOrNull()
         assertTrue(rhinoError.toString(), rhinoError.toString().contains("UnsupportedOperationException"))
@@ -112,9 +120,23 @@ class EngineValuesTest {
         both("fx['pick(java.lang.String)']('x')", "string")
         both("fx['pick(int)'](1)", "int")
         both("fx.nothing === null", "true")
-        assertEquals("HostError|boom", neon("(function(){ try { fx.fail() } catch (e) { return e.name + '|' + e.message } })()"))
+        assertEquals("java.lang.IllegalStateException|boom|java.lang.IllegalStateException: boom|true|true|false",
+            neon("(function(){ try { fx.fail() } catch (e) { return [e.name, e.message, String(e), e instanceof Error, " +
+                "e instanceof Java.type('java.lang.RuntimeException'), e instanceof Java.type('java.io.IOException')].join('|') } })()"))
+        assertEquals("outer|inner|true",
+            neon("(function(){ try { fx.failWithCause() } catch (e) { return [e.getMessage(), e.getCause().getMessage(), e.getStackTrace().length > 0].join('|') } })()"))
         assertEquals("function", neon("typeof Java.type('java.util.Map').Entry"))
         assertEquals("2", neon("Java.to([1, 2], 'long[]').length"))
+        assertEquals("int[]", neon("Java.typeName(Java.type('int[]'))"))
+        // A Java function is a JS function; its own apply stays Java's.
+        assertEquals("6|6|function", neon("[fx.twice(3), fx.twice.call(null, 3), typeof fx.twice.bind(null)].join('|')"))
+        assertEquals("A|B", neon("[fx.upper('a'), fx.upper.apply('b')].join('|')"))
+        // Packages, as in Rhino: classes where Java.type would load them, any other name a package.
+        assertEquals("0|true|function|function|function",
+            neon("[new java.util.ArrayList().size(), java.util.ArrayList === Java.type('java.util.ArrayList'), " +
+                "typeof android.widget.Toast, typeof Packages.kotlin.text.Regex, typeof java.lang.Math.max].join('|')"))
+        assertEquals("1", neon("(function(){ const ArrayList = java.util.ArrayList; const l = new ArrayList(); l.add('a'); return l.size(); })()"))
+        assertEquals("object|TypeError", neon("[typeof java.util.ArayList, (function(){ try { new java.util.ArayList(); return 'no' } catch (e) { return e.name } })()].join('|')"))
         // guide:engines/rhino#java-values
         assertEquals("JavaException|true", rhino("(function(){ try { fx.fail() } catch (e) { return e.name + '|' + (e.javaException != null) } })()"))
         assertEquals("true", rhino("(function(){ var ran = false; fx.run(new JavaAdapter(java.lang.Runnable, { run: function(){ ran = true; } })); return ran; })()"))
@@ -123,13 +145,25 @@ class EngineValuesTest {
 
     @Test
     fun `what NeonJS lacks, as its guide lists it`() {
-        // guide:engines/neonjs#what-neonjs-lacks, in a context with the web globals JSNeon turns on.
-        val context = NeonEngine.builder().webGlobals(true).build().newContext()
+        // guide:engines/neonjs#what-neonjs-lacks, in a context with the globals JSNeon turns on.
+        val printed = mutableListOf<String>()
+        val context = NeonEngine.builder()
+            .webGlobals(true)
+            .sandbox(buildSandboxPolicy())
+            .hostAccess(buildHostAccess(restricted = false))
+            .console { level, message -> printed += "$level $message" }
+            .build()
+            .newContext()
         try {
-            for (name in listOf("Intl", "require", "module", "process", "Buffer", "window", "document", "Packages", "importClass", "JavaAdapter", "print"))
+            for (name in listOf("Intl", "require", "module", "process", "Buffer", "window", "document", "importClass",
+                "importPackage", "JavaImporter", "JavaAdapter"))
                 assertEquals(name, "undefined", context.eval("typeof $name", "probe.js").toString())
-            for (name in listOf("URL", "URLSearchParams", "TextEncoder", "AbortController", "Temporal", "structuredClone"))
+            for (name in listOf("URL", "URLSearchParams", "TextEncoder", "AbortController", "Temporal", "structuredClone",
+                "Java", "Packages", "java", "javax", "com", "org", "edu", "android", "print", "printErr"))
                 assertTrue(name, context.eval("typeof $name", "probe.js").toString() != "undefined")
+            // guide:engines/neonjs#console
+            context.eval("print('a', 1, [2, 3]); printErr('e')", "probe.js")
+            assertEquals(listOf("LOG a 1 2,3", "ERROR e"), printed)
         } finally {
             context.close()
         }
@@ -144,14 +178,27 @@ class EngineValuesTest {
     fun `arrays and lists are read by index, length and for-of, and Array_from copies them`() {
         assertTrue(DtsRenderer.JAVA_LIST.contains("`Array.from(x)`"))
         for (value in listOf("fx.ids", "fx.list")) {
+            val elements = if (value == "fx.ids") "a,b" else "x,y"
             both("$value.length", "2")
             assertEquals("2", neon("[...$value].length"))
-            both("Array.isArray($value)", "false")
-            both("(function(){ var r = []; for (var v of $value) r.push(v); return r.join(','); })()", if (value == "fx.ids") "a,b" else "x,y")
+            both("(function(){ var r = []; for (var v of $value) r.push(v); return r.join(','); })()", elements)
             both("Array.isArray(Array.from($value))", "true")
+            // NeonJS shows them as JS arrays, with the array methods; Rhino doesn't.
+            assertEquals("true", neon("Array.isArray($value)"))
+            assertEquals("false", rhino("Array.isArray($value)"))
+            assertEquals(elements.replace(",", "-"), neon("$value.join('-')"))
+            assertEquals(elements.split(",").joinToString(",") { "$it!" }, neon("$value.map(function(x){ return x + '!'; }).join()"))
+            assertEquals("true", neon("$value.includes('${elements.take(1)}')"))
+            assertEquals("[\"${elements.replace(",", "\",\"")}\"]", neon("JSON.stringify($value)"))
+            // A Java array, and a read-only list as Kotlin's listOf makes, can't change their length.
+            assertEquals("TypeError", neon("(function(){ try { $value.push('z'); return 'no' } catch (e) { return e.name } })()"))
         }
         both("fx.ids[1]", "b")
         both("fx.list[0]", "x")
+        // They are the Java objects: a List grows, and its own Java methods come first.
+        assertEquals("2|a,b|1,1", neon("(function(){ var n = fx.mutable.push('b'); var r = []; " +
+            "fx.mutable.forEach(function(){ r.push(arguments.length); }); return [n, fx.mutable.join(), r.join()].join('|'); })()"))
+        assertEquals("1|a", neon("(function(){ var r = fx.mutable.indexOf('b'); fx.mutable.length = 1; return r + '|' + fx.mutable.join(); })()"))
     }
 
     @Test
@@ -160,6 +207,12 @@ class EngineValuesTest {
         both("fx.map.a", "1")
         both("fx.map['b']", "2")
         both("Object.keys(fx.map).join(',')", "a,b")
+        // In NeonJS a Map is a JS Map too, its Java methods first: size() and forEach((key, value) => …) are Java's.
+        assertEquals("true|a,1;b,2|2|true|2", neon("[fx.map instanceof Map, [...fx.map].join(';'), Object.fromEntries(fx.map).b, " +
+            "fx.map.has('a'), fx.map.size()].join('|')"))
+        assertEquals("a=1,b=2", neon("(function(){ var r = []; fx.map.forEach(function(k, v){ r.push(k + '=' + v); }); return r.join(); })()"))
+        assertEquals("{\"a\":1,\"b\":2}", neon("JSON.stringify(fx.map)"))
+        assertEquals("false", rhino("fx.map instanceof Map"))
         // Env's KDoc: in NeonJS a map's members come before entries of the same name; in Rhino entries come first.
         both("fx.env.TOKEN", "t")
         assertEquals("S", neon("fx.env.get('size')"))
@@ -167,6 +220,16 @@ class EngineValuesTest {
         assertEquals("function", neon("typeof fx.env.size"))
         assertEquals("G", rhino("fx.env.get"))
         assertEquals("S", rhino("fx.env.size"))
+    }
+
+    @Test
+    fun `an Instant is a Date in NeonJS, and new Date takes a host date-time's instant`() {
+        // guide:engines/neonjs#java-access
+        assertEquals("true|5|1970-01-01T00:00:00.005Z|\"1970-01-01T00:00:00.005Z\"|true|TypeError",
+            neon("[fx.instant instanceof Date, fx.instant.getTime(), fx.instant.toISOString(), JSON.stringify(fx.instant), " +
+                "fx.instant < new Date(6), (function(){ try { fx.instant.setTime(1); return 'no' } catch (e) { return e.name } })()].join('|')"))
+        assertEquals("false|5|true", neon("[fx.local instanceof Date, new Date(fx.instant).getTime(), " +
+            "new Date(fx.local).getTime() === new Date(2026, 0, 1).getTime()].join('|')"))
     }
 
     @Test
@@ -225,8 +288,8 @@ class EngineValuesTest {
         @JvmStatic
         fun setUp() {
             neonContext = NeonEngine.builder()
-                .sandbox(SandboxPolicy.builder().exposeJavaGlobal(true).build())
-                .hostAccess(HostAccess.builder(HostAccess.Level.ALL).defaultDenyList(false).allowLookup { true }.build())
+                .sandbox(buildSandboxPolicy())
+                .hostAccess(buildHostAccess(restricted = false))
                 .build()
                 .newContext()
             neonContext["fx"] = Fixture()

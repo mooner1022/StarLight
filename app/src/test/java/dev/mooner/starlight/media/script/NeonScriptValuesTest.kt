@@ -1,9 +1,9 @@
 package dev.mooner.starlight.media.script
 
-import dev.mooner.neonjs.HostAccess
 import dev.mooner.neonjs.NeonContext
 import dev.mooner.neonjs.NeonEngine
-import dev.mooner.neonjs.SandboxPolicy
+import dev.mooner.starlight.languages.neonjs.buildHostAccess
+import dev.mooner.starlight.languages.neonjs.buildSandboxPolicy
 import dev.mooner.starlight.media.media.MediaSource
 import dev.mooner.starlight.media.media.MediaSources
 import dev.mooner.starlight.media.send.LeaveTo
@@ -56,13 +56,8 @@ class NeonScriptValuesTest {
     @Before
     fun setUp() {
         neon = NeonEngine.builder()
-            .sandbox(SandboxPolicy.builder().exposeJavaGlobal(true).build())
-            .hostAccess(
-                HostAccess.builder(HostAccess.Level.ALL)
-                    .defaultDenyList(false)
-                    .allowLookup { true }
-                    .build()
-            )
+            .sandbox(buildSandboxPolicy())
+            .hostAccess(buildHostAccess(restricted = false))
             .webGlobals(true)
             .build()
             .newContext()

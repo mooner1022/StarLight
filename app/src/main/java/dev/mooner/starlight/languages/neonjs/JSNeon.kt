@@ -92,11 +92,7 @@ class JSNeon: Language() {
         val engine = NeonEngine.builder()
             .executionMode(execMode)
             .optimizingTier(isOptimized && langConf.getBoolean(CONF_ADVANCED_OPTIMIZATION, false))
-            .sandbox(
-                SandboxPolicy.builder()
-                    .exposeJavaGlobal(true)
-                    .build()
-            )
+            .sandbox(buildSandboxPolicy())
             .hostAccess(hostAccess)
             .webGlobals(true)
             .extension(
@@ -229,11 +225,7 @@ class JSNeon: Language() {
 
         val engine = NeonEngine.builder()
             .let { if (BuildConfig.SCRIPT_JIT) it.optimizationLevel(optimizationLevel) else it.executionMode(ExecutionMode.INTERPRETER) }
-            .sandbox(
-                SandboxPolicy.builder()
-                    .exposeJavaGlobal(allowJavaAccess)
-                    .build()
-            )
+            .sandbox(buildSandboxPolicy(javaAccess = allowJavaAccess))
             .hostAccess(if (allowJavaAccess) hostAccess else HostAccess.NONE)
             .webGlobals(true)
             .build()

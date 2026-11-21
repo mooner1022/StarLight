@@ -22,8 +22,9 @@ import kotlinx.serialization.json.longOrNull
  * JSON and arrays in a script engine's own terms, for APIs that keep what scripts give them, such as `Store`, or hand
  * back several objects, such as `Chat.getRooms()`.
  *
- * Java lists and maps aren't JS arrays and objects in either engine (`Array.isArray` is false, there is no `map`, and
- * NeonJS's `JSON.stringify` writes a list as an object), so an API that hands data back to a script asks the engine:
+ * Java lists and maps aren't plain JS arrays and objects in either engine: in Rhino `Array.isArray` is false and there
+ * is no `map`; in NeonJS a list is an array that is the Java list itself (a read-only one throws on `push`) and a map is
+ * a JS Map whose Java methods come first. So an API that hands data back to a script asks the engine:
  * [parse] makes the engine's own objects and arrays, [stringify] reads a value as the script's `JSON.stringify` does,
  * and [array] makes the engine's own array of host objects. They run on the thread the script called from.
  *

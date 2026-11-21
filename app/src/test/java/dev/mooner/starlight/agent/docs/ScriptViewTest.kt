@@ -1,10 +1,10 @@
 package dev.mooner.starlight.agent.docs
 
-import dev.mooner.neonjs.HostAccess
 import dev.mooner.neonjs.HostName
 import dev.mooner.neonjs.NeonContext
 import dev.mooner.neonjs.NeonEngine
-import dev.mooner.neonjs.SandboxPolicy
+import dev.mooner.starlight.languages.neonjs.buildHostAccess
+import dev.mooner.starlight.languages.neonjs.buildSandboxPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -64,8 +64,8 @@ class ScriptViewTest {
     @Before
     fun setUp() {
         neon = NeonEngine.builder()
-            .sandbox(SandboxPolicy.builder().exposeJavaGlobal(true).build())
-            .hostAccess(HostAccess.builder(HostAccess.Level.ALL).defaultDenyList(false).allowLookup { true }.build())
+            .sandbox(buildSandboxPolicy())
+            .hostAccess(buildHostAccess(restricted = false))
             .build()
             .newContext()
         neon["fx"] = Fixture()

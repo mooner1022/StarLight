@@ -206,8 +206,8 @@ class Api2Command internal constructor(
      * The words after the command, split at single spaces, so two spaces in a row make an empty word; empty when there
      * are none.
      *
-     * A Java list: `cmd.args[0]` and `cmd.args.length` work as they do in MessengerBot R. It isn't a JS array in
-     * either engine, so use `Array.from(cmd.args)` for array methods such as `join`.
+     * A Java list: `cmd.args[0]` and `cmd.args.length` work as they do in MessengerBot R. NeonJS also gives it the
+     * array methods, such as `join`; Rhino doesn't, so use `Array.from(cmd.args)` there.
      */
     val args: List<String>,
     author: Api2User? = null,

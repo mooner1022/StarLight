@@ -30,7 +30,9 @@ Tools take paths relative to the project, and so do `DataBase` (in the project's
 ## Java access limits
 
 Scripts in the Google Play build, NeonJS and Rhino alike, can't reach Java APIs that load or run code from outside the
-app. Using one throws an error naming the denied class or member.
+app. Using one throws an error naming the denied class or member. Written as a package path (`java.lang.Runtime`), in
+either engine, a denied class is only a package's name, so the error comes when it is used: "not a function" or "not a
+constructor". `Java.type()` in NeonJS fails at the name itself.
 
 - **Packages:** `dalvik.system`, `java.lang.reflect`, `java.lang.invoke`, `kotlin.reflect`, `kotlin.jvm.internal`,
   `sun`, `com.sun`, `jdk.internal`, `com.android.dx`, `libcore`, and the engines' own packages

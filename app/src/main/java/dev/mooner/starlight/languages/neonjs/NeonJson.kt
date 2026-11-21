@@ -29,7 +29,8 @@ internal class NeonJson(private val context: NeonContext) : ScriptJson {
         return if (text.isUndefined) null else text.asString()
     }
 
-    // A Java array reaches the script as an array-like host object, which Array.from copies item by item.
+    // A Java array reaches the script as a JS array that is the Java array itself, of a fixed length: Array.from copies
+    // it into one of the script's own.
     override fun array(items: Array<*>): Any? =
         arrays.callMember("from", items)
 }

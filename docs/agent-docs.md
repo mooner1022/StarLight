@@ -284,8 +284,8 @@ These rules mirror `HostClassInfo` in NeonJS:
 | `BigInteger` | `bigint` |
 | `Unit`, `void` | `void` |
 | `Any`, `Object` | `any` |
-| `Array<T>`, `List<T>` (and subtypes) | `JavaList<T>`. Both engines read them by index and with `for...of`, and `Array.from(x)` copies them; `Java.from` exists only in NeonJS. |
-| `Map<K, V>` | `JavaMap<V>` |
+| `Array<T>`, `List<T>` (and subtypes) | `JavaList<T>`. Both engines read them by index and with `for...of`, and `Array.from(x)` copies them; NeonJS also gives them the array methods, and `Java.from` exists only there. |
+| `Map<K, V>` | `JavaMap<V>`. Both engines read entries as properties; in NeonJS it is a JS Map too, its Java methods first. |
 | `Set<T>` | `JavaSet<T>`: `for...of`, `size()` and `contains(x)`, no index |
 | an array or `List` parameter | `T[] \| JavaList<T>`: both engines convert a JS array for it (not for a `Set`) |
 | `CompletionStage<T>`, `CompletableFuture<T>` | `Promise<T>` |
@@ -295,12 +295,14 @@ These rules mirror `HostClassInfo` in NeonJS:
 | a documented class | its simple name |
 | any other class, including a `CharSequence` that isn't a `String` | its fully qualified name, such as `android.graphics.Bitmap` |
 
-NeonJS doesn't turn Java arrays, lists and maps into JS values (`HostObjects`), so they get their own types. Every description that uses them begins with:
+Neither engine copies Java arrays, lists and maps into JS values. NeonJS shows them as JS arrays and Maps that are the
+Java objects themselves (`HostObjects`), with their Java methods first; Rhino shows them as Java objects. So they get
+their own types, declared with what both engines share. Every description that uses them begins with:
 
 ```ts
-/** A Java array or List: elements by index, `length` and `for...of`. It isn't a JS array: `Array.from(x)` makes one, for array methods. */
+/** A Java array or List: elements by index, `length` and `for...of`. NeonJS also gives it the array methods; in Rhino it isn't a JS array: `Array.from(x)` makes one. */
 interface JavaList<T> { readonly length: number; readonly [index: number]: T; [Symbol.iterator](): Iterator<T> }
-/** A Java Map: its entries are properties, read as `map[key]` or `map.key`. */
+/** A Java Map: its entries are properties, read as `map[key]` or `map.key`. In NeonJS it is a JS Map too (`for (const [k, v] of map)`, `map.has(k)`), its Java methods first: `map.size()`. */
 interface JavaMap<V> { readonly [key: string]: V }
 ```
 

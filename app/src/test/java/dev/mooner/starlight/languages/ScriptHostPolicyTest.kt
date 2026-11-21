@@ -2,8 +2,8 @@ package dev.mooner.starlight.languages
 
 import dev.mooner.neonjs.ExecutionMode
 import dev.mooner.neonjs.NeonEngine
-import dev.mooner.neonjs.SandboxPolicy
 import dev.mooner.starlight.languages.neonjs.buildHostAccess
+import dev.mooner.starlight.languages.neonjs.buildSandboxPolicy
 import dev.mooner.starlight.languages.rhino.PrimitiveWrapFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -21,7 +21,8 @@ import org.mozilla.javascript.ContextFactory
 class ScriptHostPolicyTest {
 
     /**
-     * A snippet in each engine's syntax: Rhino reaches Java through packages, NeonJS through Java.type().
+     * A snippet in each engine's syntax: Rhino reaches Java through packages, NeonJS here through Java.type() (its
+     * packages are in [packageEscapes]).
      * NeonJS turns Class objects into types, so snippets that call Class methods have no NeonJS form.
      */
     private class Snippet(val rhino: String, val neon: String?)
@@ -169,6 +170,63 @@ class ScriptHostPolicyTest {
             assertWorks("neon restricted: $name", neon(restricted = true), code.neon ?: continue)
     }
 
+    /** NeonJS's package globals reach classes only where `Java.type` would load them: a denied class is a package. */
+    private val packageEscapes = mapOf(
+        "Runtime" to "java.lang.Runtime.getRuntime().availableProcessors() > 0",
+        "ProcessBuilder" to "new java.lang.ProcessBuilder('echo').redirectErrorStream(true).redirectErrorStream()",
+        "System.load and loadLibrary" to "typeof java.lang.System.loadLibrary === 'function' && typeof java.lang.System.load === 'function'",
+        "Os.execve" to "typeof android.system.Os.execve === 'function'",
+        "Class.forName" to "Java.isType(java.lang.Class.forName('java.lang.String'))",
+        "reflection" to "java.lang.reflect.Modifier.isPublic(1)",
+        "Rhino" to "Java.isType(org.mozilla.javascript.Context)",
+        "NeonJS" to "Java.isType(Packages.dev.mooner.neonjs.NeonEngine)",
+    )
+
+    private val packageAllowed = mapOf(
+        "collections" to "var l = new java.util.ArrayList(); l.add('a'); l.size()",
+        "System.currentTimeMillis" to "java.lang.System.currentTimeMillis() > 0",
+        "StringBuilder" to "new java.lang.StringBuilder('a').append('b').toString()",
+        "Packages" to "Packages.java.util.ArrayList === java.util.ArrayList",
+    )
+
+    @Test
+    fun neonPackagesBlockEscapesOnlyWhenRestricted() {
+        for ((name, code) in packageEscapes) {
+            assertWorks("neon packages unrestricted: $name", neon(restricted = false), code)
+            assertBlocked("neon packages restricted: $name", neon(restricted = true), code)
+        }
+        for ((name, code) in packageAllowed)
+            assertWorks("neon packages restricted: $name", neon(restricted = true), code)
+    }
+
+    @Test
+    fun aDeniedClassWrittenAsAPackageFailsWhenUsed() {
+        // guide:play-build#java-access-limits, in both engines.
+        for ((engine, run) in listOf("rhino" to rhino(restricted = true), "neon" to neon(restricted = true))) {
+            assertEquals(engine, "object", run("typeof java.lang.Runtime").toString())
+            val call = runCatching { run("java.lang.Runtime.getRuntime()") }.exceptionOrNull()
+            assertTrue("$engine: $call", call.toString().contains("not a function"))
+            val construct = runCatching { run("new java.lang.ProcessBuilder('echo')") }.exceptionOrNull()
+            assertTrue("$engine: $construct", construct.toString().contains("not a function") || construct.toString().contains("not a constructor"))
+        }
+    }
+
+    @Suppress("unused")
+    class Thrower {
+        /** An exception of a denied class, which a script catches. */
+        fun invoke(): String = throw java.lang.reflect.InvocationTargetException(java.io.IOException("inner"), "outer")
+    }
+
+    @Test
+    fun neonShowsNothingOfADeniedExceptionWhenRestricted() {
+        // Scripts get a caught exception's methods, as the policy shows them for its class.
+        val code = "(function(){ try { t.invoke() } catch (e) { return typeof e.getTargetException === 'function' && e.name } })()"
+        assertEquals("java.lang.reflect.InvocationTargetException", neon(restricted = false, "t" to Thrower())(code))
+        assertEquals("false", neon(restricted = true, "t" to Thrower())(code))
+        assertEquals("java.lang.ReflectiveOperationException|outer", neon(restricted = true, "t" to Thrower())(
+            "(function(){ try { t.invoke() } catch (e) { return e.name + '|' + e.message } })()"))
+    }
+
     private fun assertWorks(message: String, run: (String) -> Any?, code: String) {
         val result = try {
             run(code)
@@ -206,14 +264,18 @@ class ScriptHostPolicyTest {
         }
     }
 
-    private fun neon(restricted: Boolean): (String) -> Any? {
+    private fun neon(restricted: Boolean, vararg globals: Pair<String, Any>): (String) -> Any? {
         val engine = NeonEngine.builder()
             .executionMode(ExecutionMode.INTERPRETER)
-            .sandbox(SandboxPolicy.builder().exposeJavaGlobal(true).build())
+            .sandbox(buildSandboxPolicy())
             .hostAccess(buildHostAccess(restricted))
             .build()
         return { code ->
-            engine.newContext().use { context -> context.eval(code, "test").toString() }
+            engine.newContext().use { context ->
+                for ((name, value) in globals)
+                    context[name] = value
+                context.eval(code, "test").toString()
+            }
         }
     }
 }

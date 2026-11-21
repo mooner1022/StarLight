@@ -36,7 +36,8 @@ bot.addListener(Event.MESSAGE, (msg) => {
     if (msg.content === "/hi") msg.reply("hello");
 });
 bot.setCommandPrefix("/");
-// args is a Java list: Array.from makes a JS array of it, for array methods. Rhino can't spread it.
+// args is a Java list. NeonJS gives it the array methods (msg.args.join(" ")); Rhino doesn't and can't spread it,
+// so Array.from, which makes a JS array of it, works in both.
 bot.on(Event.COMMAND, (msg) => msg.reply(`command ${msg.command} ${Array.from(msg.args).join(" ")}`));
 ```
 

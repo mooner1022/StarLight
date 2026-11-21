@@ -72,6 +72,8 @@ strict mode. Pick it for new projects unless the user asks for Rhino.
 
 - `console.log/info/dir/table/group/count/timeEnd` log at info level, `console.debug` at debug, `console.warn` at
   warning, `console.error/trace` and failed `console.assert` at error. Format specifiers (`%s`, `%d`, `%o`) work.
+- `print(...)` logs its arguments joined by spaces at info level, as GraalJS's does; `printErr(...)` at error. Rhino
+  projects have neither.
 - Output goes to the project's log, which `get_project_logs` and `send_debug_message` show, except the debug level:
   `console.debug` and `Log.d` go only to the app's log, so use `console.log` for anything you need to read back.
 - The project's log keeps about its latest 50 entries.
@@ -81,18 +83,43 @@ strict mode. Pick it for new projects unless the user asks for Rhino.
 
 - `Java.type("java.util.ArrayList")` returns a class: construct it with `new`, call its static members, test with
   `instanceof`. Nested classes: `Java.type("android.os.Build").VERSION` or `Java.type("android.os.Build$VERSION")`.
-  Array types: `Java.type("int[]")`.
+  Array types: `Java.type("int[]")`. `Java.typeName(cls)` gives a class's name.
+- Packages work as in Rhino: `new java.util.ArrayList()`, `android.widget.Toast`, `java.lang.Math.max(1, 2)`.
+  - Only `java`, `javax`, `com`, `org`, `edu` and `android` are globals. Reach any other package through `Packages`:
+    `Packages.kotlin.text.Regex`.
+  - A name that isn't a class scripts may load, whether misspelled or blocked, is a package, not an error:
+    `new java.util.ArayList()` fails only when used, with a TypeError. `Java.type()` fails at the name itself, so use
+    it when a class might not be there.
 - Getters read as properties: `getName()` as `obj.name`, a boolean `isEnabled()` as `obj.enabled`. Written as
   `obj.isEnabled` without parentheses it is the method itself, which is always truthy. `describe_api` shows members the
   way scripts see them.
 - Values crossing over: numbers and strings become JS primitives; a `long` beyond 2^53 and any `BigInteger` become a
   BigInt (compare 64-bit IDs as strings: `String(id)`); `null` stays `null`; other objects, including a
   `CharSequence` that isn't a `String`, stay Java objects (`String(x)` for text).
-- Java arrays and `List`s are array-like: index, `length`, `for...of`, spread. They aren't JS arrays: `Array.from(x)`
-  makes one, as in Rhino (`Java.from(x)` works too). `Java.to([1, 2], "long[]")` makes a Java array. A `Map`'s entries read as properties.
+- Java arrays and `List`s are JS arrays: `Array.isArray` is true, and `map`, `filter`, `join`, `includes`, spread and
+  `JSON.stringify` work without `Array.from`.
+  - They are the Java objects themselves, not copies: `sort()` or writing an element changes the Java array or List.
+  - A `List`'s own Java methods come first: `list.indexOf(x)`, `list.forEach(fn)` (one argument, the element) and
+    `list.sort(comparator)` are Java's.
+  - A `List` grows and shrinks with `push`, `pop`, `shift`, `unshift`, `splice` and `length`. A Java array can't,
+    and neither can a read-only list, such as many an API returns: those throw. Copy it first with `[...list]`.
+  - `Java.to([1, 2], "long[]")` makes a Java array.
+- A Java `Map` is a JS Map: `for (const [k, v] of map)`, `[...map]`, `Object.fromEntries(map)`, `map.has(k)` and
+  `map instanceof Map` work, and its entries read as properties (`map.key`). Its own Java methods come first:
+  `map.size()` is a method, and `map.forEach((k, v) => ...)` gets the key first, the reverse of a JS Map's.
+- A Java `Instant`, `ZonedDateTime`, `OffsetDateTime` or `java.util.Date` is a JS Date: `getTime()`, `toISOString()`,
+  `JSON.stringify`, `<` and `instanceof Date` work.
+  - Its own Java methods come first: `zoned.getMonth()` is Java's (`JANUARY`).
+  - Date's setters throw.
+  - `new Date(x)` makes a JS Date of the same instant from any of them, and from a `LocalDateTime` too.
 - JS functions pass where Java wants a single-method interface (`Runnable`, a callback) or a Kotlin function type.
-  `Java.extend(Base, { ... })` subclasses or implements; `Java.super(obj)` calls the parent's methods.
-- A Java exception is caught as an error named `HostError` whose `message` is the Java message.
+  `Java.extend(Base, { ... })` subclasses or implements; `Java.super(obj)` calls the parent's methods. A Java function
+  a script is given is a JS function: call it, or use `f.call(...)` and `f.bind(...)`. Its own Java methods come
+  first: a `java.util.function.Function`'s `f.apply(x)` is Java's.
+- A Java exception is caught as an `Error` named after its class:
+  - `e.name` is `java.lang.IllegalStateException`, and `e.message` is the Java message.
+  - Test its class with `e instanceof Java.type("java.io.IOException")`, not by `e.name`; superclasses match too.
+  - Its Java methods work: `e.getCause()`, `e.getStackTrace()`.
 - Pick an overload explicitly by signature: `sb["append(java.lang.String)"]("x")`.
 - Scripts run on the project's worker thread. UI calls must go to the main thread (`Handler(Looper.getMainLooper())`);
   `toast()` does that itself.
@@ -105,5 +132,5 @@ strict mode. Pick it for new projects unless the user asks for Rhino.
   durations and Korean particles.
 - Node.js: no `require`, `process`, `Buffer` or `node:` modules. Bytes are `Uint8Array`.
 - DOM: no `window` or `document`.
-- Rhino's Java syntax: no `Packages`, `java.lang...`, `importClass()`, `importPackage()` or `JavaAdapter`.
-- `print()`: use `console.log()`.
+- Rhino's Java helpers: no `importClass()`, `importPackage()`, `JavaImporter` or `JavaAdapter`. Name a class with
+  `const ArrayList = java.util.ArrayList`, and subclass with `Java.extend()`.
