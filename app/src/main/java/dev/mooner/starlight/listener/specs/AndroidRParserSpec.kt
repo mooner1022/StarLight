@@ -77,7 +77,7 @@ open class AndroidRParserSpec: MessageParserSpec {
         }!!
         val senderId = sender.key
 
-        val roomId = sbn.tag
+        val roomId = roomIdOf(sbn)
         val (room, isGroupChat) = resolveRoom(sbn, extras, senderName, rankingMap)
 
         //val image = extras.getBundle("android.wearable.EXTENSIONS")?.getParcelable("background")
@@ -119,6 +119,10 @@ open class AndroidRParserSpec: MessageParserSpec {
             chatLogId = chatLogId
         )
     }
+
+    /** The ID of the room the notification is for: its tag, up to KakaoTalk 26.9.x. */
+    protected open fun roomIdOf(sbn: StatusBarNotification): String =
+        sbn.tag
 
     /** The name of the room the notification is for, and whether it is a group chat. */
     protected open fun resolveRoom(

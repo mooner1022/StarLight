@@ -5,6 +5,7 @@
 package dev.mooner.starlight.media
 
 import android.content.Context
+import dev.mooner.starlight.listener.specs.ParserSpecPolicy
 import dev.mooner.starlight.media.api.MediaSharerCore
 import dev.mooner.starlight.media.send.KakaoShare
 import dev.mooner.starlight.media.send.MediaSendService
@@ -56,12 +57,12 @@ object MediaSharing {
         }
         EventHandler.on<Events.Notification.Post>(scope) {
             // Which KakaoTalk a room belongs to (the owner's, or a clone such as Dual Messenger): its notification's
-            // user. This comes before the message is parsed.
+            // user. This comes before the message is parsed, so the room's ID is read from the tag here too.
             val sbn = statusBarNotification
             val tag = sbn.tag
             if (sbn.packageName == KakaoShare.KAKAO_PACKAGE && tag != null)
                 @Suppress("DEPRECATION")
-                service.rooms.recordUser(tag, sbn.userId)
+                service.rooms.recordUser(ParserSpecPolicy.roomIdOf(tag), sbn.userId)
         }
     }
 

@@ -346,8 +346,10 @@ class NotificationListener: NotificationListenerService() {
                     if (reason != REASON_APP_CANCEL || data.chatLogId != deduper.lastChatLogId)
                         return@let
                     // KakaoTalk takes a notification away alike when StarLight had the room read.
-                    if (OwnReads.shared.explains(sbn.tag)) {
-                        LOG.debug { "The notification of room ${sbn.tag} went after StarLight had it read: not a deletion" }
+                    // Reads are noted by the room's ID, which KakaoTalk 26.10.0 or later puts after the account's in the tag.
+                    val roomId = sbn.tag?.let(ParserSpecPolicy::roomIdOf)
+                    if (OwnReads.shared.explains(roomId) || OwnReads.shared.explains(sbn.tag)) {
+                        LOG.debug { "The notification of room $roomId went after StarLight had it read: not a deletion" }
                         return@let
                     }
                     Session.projectManager.fireEvent<ProjectOnMessageDeleteEvent>(data) { project, e ->
@@ -402,11 +404,14 @@ class NotificationListener: NotificationListenerService() {
 
         val message = extras.getString(EXTRA_TEXT).toString()
         val sender = extras.getString(EXTRA_TITLE).toString()
-        val roomId = this.tag
+        val tag = this.tag
 
         val chatLogId = extras.getLong("chatLogId")
 
-        val chatRoom: ChatRoom? = roomId?.let(ChatSessions.registry::chatRoomByRawId)
+        // From KakaoTalk 26.10.0 the tag starts with the account's ID; a rule pinned to an older spec keyed the room
+        // by the whole tag.
+        val chatRoom: ChatRoom? = tag?.let { ChatSessions.registry.chatRoomByRawId(ParserSpecPolicy.roomIdOf(it))
+            ?: ChatSessions.registry.chatRoomByRawId(it) }
 
         return DeletedMessage(
             message = message,

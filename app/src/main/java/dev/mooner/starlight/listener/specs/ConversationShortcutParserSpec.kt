@@ -19,11 +19,11 @@ import androidx.core.app.NotificationCompat
  * KakaoTalk publishes for the room, which the system keeps in the notification's ranking: see
  * [ConversationShortcuts] for how it is read.
  */
-class ConversationShortcutParserSpec: AndroidRParserSpec() {
+open class ConversationShortcutParserSpec: AndroidRParserSpec() {
 
     override val id: String = ParserSpecPolicy.CONVERSATION_SHORTCUT
 
-    override val name: String = "안드로이드 11 이상, 카카오톡 26.7.0 이상 메세지 분석 스펙"
+    override val name: String = "안드로이드 11 이상, 카카오톡 26.7.0 ~ 26.9.x 메세지 분석 스펙"
 
     override fun resolveRoom(
         sbn       : StatusBarNotification,

@@ -26,6 +26,7 @@ import dev.mooner.starlight.languages.neonjs.JSNeon
 import dev.mooner.starlight.languages.rhino.JSRhino
 import dev.mooner.starlight.listener.NotificationListener
 import dev.mooner.starlight.listener.RoomRestore
+import dev.mooner.starlight.listener.specs.AccountTagParserSpec
 import dev.mooner.starlight.listener.specs.AndroidRParserSpec
 import dev.mooner.starlight.listener.specs.ConversationShortcutParserSpec
 import dev.mooner.starlight.listener.specs.DefaultParserSpec
@@ -150,6 +151,7 @@ object ApplicationSession {
             registerSpec(DefaultParserSpec())
             registerSpec(AndroidRParserSpec())
             registerSpec(ConversationShortcutParserSpec())
+            registerSpec(AccountTagParserSpec())
         }
 
         CoreApis.apis().forEach { Session.apiManager.addApi(it) }

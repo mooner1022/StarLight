@@ -16,7 +16,8 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * KakaoTalk chat rooms seen in received messages, so scripts can send to a room by its name.
  *
- * A room's ID (the notification tag) is the channel ID KakaoTalk's share screen takes. Rooms are kept across restarts
+ * A room's ID (the notification tag, or its part after the account's ID from KakaoTalk 26.10.0 on) is the channel ID
+ * KakaoTalk's share screen takes. Rooms are kept across restarts
  * in [file], written at most every [SAVE_INTERVAL_MILLIS] and on [save].
  */
 class RoomRegistry(
